@@ -21,24 +21,28 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.security.MessageDigest
 
-class HashType {
-  private val md = MessageDigest.getInstance("SHA-256")
+object HashType {
 
   def hash(tpe0: Type): Array[Byte] = {
     hashType(tpe0)
-    md.digest()
   }
 
-  private def hashType(tpe0: Type): Unit = tpe0 match {
+  private def hashType(tpe0: Type): Array[Byte] = tpe0 match {
     case Type.Var(sym, _) =>
-      hashKindedTypeVarSym(sym)
-      md.update(HType.Var.hashCode().byteValue)
+      val h = hashKindedTypeVarSym(sym)
+      hashBytes(h.appended(HType.Var.hashCode().byteValue))
+
 
     case Type.Cst(tc, _) =>
-      hashTypeConstructor(tc)
-      md.update(HType.Cst.hashCode().byteValue)
+      val h = hashTypeConstructor(tc)
+      hashBytes(h.appended(HType.Cst.hashCode().byteValue))
 
-    case Type.Apply(tpe1, tpe2, _) => ???
+    case Type.Apply(tpe1, tpe2, _) =>
+      val h1 = hashType(tpe1)
+      val h2 = hashType(tpe2)
+      val h3 = h1.appended(HType.Apply.hashCode().byteValue).appendedAll(h2)
+      hashBytes(h3)
+
     case Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), arg, kind, _) => ???
     case Type.Alias(symUse, args, tpe, loc) => throw InternalCompilerException("Unexpected type alias", loc)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("Unexpected Java type", loc)
@@ -46,7 +50,7 @@ class HashType {
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("Unexpected Java type", loc)
   }
 
-  private def hashTypeConstructor(tc0: TypeConstructor): Unit = tc0 match {
+  private def hashTypeConstructor(tc0: TypeConstructor): Array[Byte] = tc0 match {
     case TypeConstructor.Void => ???
     case TypeConstructor.AnyType => ???
     case TypeConstructor.Unit => ???
@@ -112,7 +116,19 @@ class HashType {
     case TypeConstructor.Error(id, kind) => throw InternalCompilerException("Unexpected error type constructor", SourceLocation.Unknown)
   }
 
-  private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Unit = ???
+  private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Array[Byte] = ???
+
+  private def hashBytes(bytes: Array[Byte]): Array[Byte] = {
+    val md = MessageDigest.getInstance("SHA-256")
+    md.update(bytes)
+    md.digest()
+  }
+
+  private def hashByte(byte: Byte): Array[Byte] = {
+    val md = MessageDigest.getInstance("SHA-256")
+    md.update(byte)
+    md.digest()
+  }
 
   /**
     * Common super type for hashable types.
@@ -127,6 +143,8 @@ class HashType {
     case object Var extends HType
 
     case object Cst extends HType
+
+    case object Apply extends HType
 
   }
 }
