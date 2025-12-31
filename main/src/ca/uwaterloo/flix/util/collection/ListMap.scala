@@ -124,7 +124,7 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     * Returns a new ListMap with the key-value pairs `k -> v` if `p(k, v)` holds.
     */
   def filter(p: ((K, V)) => Boolean): ListMap[K, V] = {
-    withFilter(p).foldRight(ListMap.empty[K, V])((el, acc) => acc + el)
+    m.foldRight(ListMap.empty[K, V]) { case ((k, l), acc) => acc ++ (k -> l.filter(v => p((k, v)))) }
   }
 
   /**
