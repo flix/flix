@@ -435,7 +435,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  def upgradeEffects(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = ???
+  def upgradeEffects(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    if (!isProjectMode) {
+      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-upgrade'"))
+    }
+    ???
+  }
 
   /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
   private def isProjectMode: Boolean = optManifest.isDefined
