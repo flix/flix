@@ -41,7 +41,7 @@ object HashType {
 
     case Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), arg, kind, _) => ???
 
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException("Unexpected type alias", loc)
+    case Type.Alias(_, _, _, loc) => throw InternalCompilerException("Unexpected type alias", loc)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("Unexpected Java type", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("Unexpected Java type", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("Unexpected Java type", loc)
