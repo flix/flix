@@ -20,21 +20,22 @@ import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.Input
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object EffectLock {
 
   /**
     * Serializes the relevant functions for effect locking in `root` and returns a JSON string.
-    * The result may be written directly to a file.
+    * If it returns `Ok(json)`, then `json` may be written directly to a file.
     */
-  def serialize(root: TypedAst.Root): String = {
+  def serialize(root: TypedAst.Root): Result[String, String] = {
     try {
       val serializableAST = EffectLock.mkSerialization(root)
       val typeHints = effectlock.serialization.formats
-      org.json4s.native.Serialization.write(serializableAST)(typeHints)
+      val res = org.json4s.native.Serialization.write(serializableAST)(typeHints)
+      Result.Ok(res)
     } catch {
-      case e: Exception => throw InternalCompilerException(s"unexpected exception in effect locking: ${e.getMessage}", SourceLocation.Unknown)
+      case e: Exception => Result.Err(s"Invalid AST: ${e.getMessage}")
     }
   }
 
