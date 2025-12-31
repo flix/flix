@@ -450,7 +450,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     for {
       root <- Steps.check(flix)
     } yield {
-      val json = EffectLocking.serialize(root)
+      val json = EffectLock.serialize(root)
       val path = Bootstrap.getEffectLockFile(projectPath)
       // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
       FileOps.writeString(path, json)
@@ -461,7 +461,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def isProjectMode: Boolean = optManifest.isDefined
 
   /** Helper object for effect locking. */
-  private object EffectLocking {
+  private object EffectLock {
 
     /**
       * Serializes the relevant functions for effect locking in `root` and returns a JSON string.
@@ -469,7 +469,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     def serialize(root: TypedAst.Root): String = {
       try {
-        val serializableAST = EffectLocking.mkSerialization(root)
+        val serializableAST = EffectLock.mkSerialization(root)
         val typeHints = effectlock.serialization.formats
         org.json4s.native.Serialization.write(serializableAST)(typeHints)
       } catch {
