@@ -439,6 +439,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-upgrade'"))
     }
+    // 1. Load in file
+    // 2. Deserialize
+    // 3. Check effect lock
+    // TODO: Return Ok(true) / Ok(false)?
     ???
   }
 
