@@ -1,58 +1,61 @@
 mod Test.Exp.Jvm.InvokeMethod.Chaining {
 
-    @test
-    def testInvokeMethod_01(): Bool =
+    use Assert.assertEq
+
+    @Test
+    def testInvokeMethod_01(): Unit \ Assert =
         let obj = "HeLlO WoRlD";
-        obj.toUpperCase().toLowerCase() == "hello world"
+        assertEq(expected = "hello world", obj.toUpperCase().toLowerCase())
 
-    @test
-    def testInvokeMethod_02(): Bool =
+    @Test
+    def testInvokeMethod_02(): Unit \ Assert =
         let obj = "hEllO WoRld";
-        obj.toLowerCase().toUpperCase() == "HELLO WORLD"
+        assertEq(expected = "HELLO WORLD", obj.toLowerCase().toUpperCase())
 
-    @test
-    def testInvokeMethod_03(): Bool =
+    @Test
+    def testInvokeMethod_03(): Unit \ Assert =
         let obj = "hello world";
-        obj.substring(1, 11).length() == 10
+        assertEq(expected = 10, obj.substring(1, 11).length())
 
-    @test
-    def testInvokeMethod_04(): Bool =
+    @Test
+    def testInvokeMethod_04(): Unit \ Assert =
         let obj = "   hello world    ";
         let obj2 = "hello world";
-        obj.trim().length() == obj2.length()
+        assertEq(expected = obj2.length(), obj.trim().length())
 
-    @test
-    def testInvokeMethod_05(): Bool \ IO =
+    @Test
+    def testInvokeMethod_05(): Unit \ Assert + IO =
         let val = 123488ii;
-        val.modPow(10ii, 32023ii).modInverse(4831ii) == 4493ii
+        assertEq(expected = 4493ii, val.modPow(10ii, 32023ii).modInverse(4831ii))
 
-    @test
-    def testInvokeMethod_06(): Bool =
+    @Test
+    def testInvokeMethod_06(): Unit \ Assert =
         let val = 94832ii;
-        val.multiply(11ii).negate() == -1043152ii
+        assertEq(expected = -1043152ii, val.multiply(11ii).negate())
 
-    @test
-    def testInvokeMethod_07(): Bool \ IO =
+    @Test
+    def testInvokeMethod_07(): Unit \ Assert + IO =
         let val = 324521ii;
-        val.shiftLeft(2).max(1284ii).modPow(1ii, 10ii) == 4ii
+        assertEq(expected = 4ii, val.shiftLeft(2).max(1284ii).modPow(1ii, 10ii))
 
-    @test
-    def testInvokeMethod_08(): Bool \ IO =
+    @Test
+    def testInvokeMethod_08(): Unit \ Assert + IO =
         let val = 9999.999999999ff;
-        val.max(9999.99999999ff).min(12.4938ff) == 12.4938ff
+        assertEq(expected = 12.4938ff, val.max(9999.99999999ff).min(12.4938ff))
 
-    @test
-    def testInvokeMethod_09(): Bool =
+    @Test
+    def testInvokeMethod_09(): Unit \ Assert =
         let val = -932983.1113ff;
-        val.multiply(1.049309ff).negate() == 978987.5755350917ff
+        assertEq(expected = 978987.5755350917ff, val.multiply(1.049309ff).negate())
 
-    @test
-    def testInvokeMethod_10(): Bool =
+    @Test
+    def testInvokeMethod_10(): Unit \ Assert =
         let val = 833.1ff;
-        val.pow(4).pow(2).pow(1) == 232047597200769719005766.94527841ff
+        assertEq(expected = 232047597200769719005766.94527841ff, val.pow(4).pow(2).pow(1))
 
-    @test
-    def testInvokeMethod_11(): Bool \ IO =
+    @Test
+    def testInvokeMethod_11(): Unit \ Assert + IO =
         let val = 9012111.9834ff;
-        val.remainder(429.01ff).max(32ff) == 327.9234ff
+        assertEq(expected = 327.9234ff, val.remainder(429.01ff).max(32ff))
+
 }

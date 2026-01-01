@@ -1,22 +1,25 @@
 mod Test.Exp.Jvm.InvokeMethod.Overload.Types {
 
-   @test
-   def testInvokeMethod_01(): Bool =
-      let obj = "hello world";
-      obj.replace('O', 'i') == "hello world"
+    use Assert.assertEq
 
-   @test
-   def testInvokeMethod_02(): Bool =
-      let obj = "HELLO WORLD";
-      obj.replace('L', 'l') == "HEllO WORlD"
+    @Test
+    def testInvokeMethod_01(): Unit \ Assert =
+        let obj = "hello world";
+        assertEq(expected = "hello world", obj.replace('O', 'i'))
 
-   @test
-   def testInvokeMethod_03(): Bool =
-      let obj = "HELLO WORLD";
-      obj.replace("LLO", "YO") == "HEYO WORLD"
+    @Test
+    def testInvokeMethod_02(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = "HEllO WORlD", obj.replace('L', 'l'))
 
-   @test
-   def testInvokeMethod_04(): Bool =
-      let obj = "HELLO WORLD";
-      obj.replace("AZERTY", "QWERTY") == "HELLO WORLD"
+    @Test
+    def testInvokeMethod_03(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = "HEYO WORLD", obj.replace("LLO", "YO"))
+
+    @Test
+    def testInvokeMethod_04(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = "HELLO WORLD", obj.replace("AZERTY", "QWERTY"))
+
 }

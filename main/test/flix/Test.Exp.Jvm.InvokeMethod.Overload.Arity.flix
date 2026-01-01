@@ -1,44 +1,45 @@
-mod Test.Exp.Jvm.InvokeMethod2.Overload.Arity {
+mod Test.Exp.Jvm.InvokeMethod.Overload.Arity {
 
-   @test
-   def testInvokeMethod_01(): Bool =
-      let obj = "HELLO WORLD";
-      obj.indexOf("O") == 4
+    use Assert.assertEq
 
-   @test
-   def testInvokeMethod_02(): Bool =
-      let obj = "HELLO WORLD";
-      obj.indexOf("Z") == -1
+    @Test
+    def testInvokeMethod_01(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = 4, obj.indexOf("O"))
 
-   @test
-   def testInvokeMethod_03(): Bool =
-      let obj = "HELLO WORLD";
-      obj.indexOf("W", 5) == 6
+    @Test
+    def testInvokeMethod_02(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = -1, obj.indexOf("Z"))
 
-   @test
-   def testInvokeMethod_04(): Bool =
-      let obj = "HELLO WORLD";
-      obj.indexOf("W", 7) == -1
+    @Test
+    def testInvokeMethod_03(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = 6, obj.indexOf("W", 5))
 
-   @test
-   def testInvokeMethod_05(): Bool =
-      let obj = "HELLO WORLD";
-      obj.lastIndexOf("O") == 7
+    @Test
+    def testInvokeMethod_04(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = -1, obj.indexOf("W", 7))
 
-   @test
-   def testInvokeMethod_06(): Bool =
-      let obj = "HELLO WORLD";
-      obj.lastIndexOf("Z") == -1
+    @Test
+    def testInvokeMethod_05(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = 7, obj.lastIndexOf("O"))
 
-   @test
-   def testInvokeMethod_07(): Bool =
-      let obj = "HELLO WORLD";
-      obj.lastIndexOf("L", 10) == 9
+    @Test
+    def testInvokeMethod_06(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = -1, obj.lastIndexOf("Z"))
 
-   @test
-   def testInvokeMethod_08(): Bool =
-      let obj = "HELLO WORLD";
-      obj.lastIndexOf("W", 3) == -1
+    @Test
+    def testInvokeMethod_07(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = 9, obj.lastIndexOf("L", 10))
 
-   // TODO: support for split with arrays
+    @Test
+    def testInvokeMethod_08(): Unit \ Assert =
+        let obj = "HELLO WORLD";
+        assertEq(expected = -1, obj.lastIndexOf("W", 3))
+
 }
