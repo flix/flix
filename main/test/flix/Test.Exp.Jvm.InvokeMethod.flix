@@ -1,104 +1,164 @@
 mod Test.Exp.Jvm.InvokeMethod {
 
-    import dev.flix.test.TestClassWithInheritedMethod
-    import java.lang.{String => JString}
+    use Assert.{assertEq, assertTrue}
 
-    @test
-    def testInvokeMethod01(): Bool =
-        "HELLO WORLD".toLowerCase() == "hello world"
+    import java.lang.Integer
+    import java.lang.Math
 
-    @test
-    def testInvokeMethod02(): Bool =
-        "hello world".toUpperCase() == "HELLO WORLD"
+    // BigInteger Methods
 
-    @test
-    def testInvokeMethod03(): Bool =
-        "hello world".length() == 11
+    @Test
+    def testBigIntegerAdd01(): Unit \ Assert =
+        assertEq(expected = 468ii, (-32ii).add(500ii))
 
-    @test
-    def testInvokeMethod04(): Bool =
-        "hello world".indexOf("world") == 6
+    @Test
+    def testBigIntegerCompareTo01(): Unit \ Assert =
+        let val = 500ii;
+        assertEq(expected = 1, val.compareTo(-80ii))
 
-    @test
-    def testInvokeMethod05(): Bool =
-        "hello world".replaceAll("hello", "goodbye") == "goodbye world"
+    @Test
+    def testBigIntegerAnd01(): Unit \ Assert =
+        let val = 150ii;
+        assertEq(expected = 148ii, val.$and(-100ii))
 
-    @test
-    def testInvokePureMethod01(): Bool =
-        "HELLO WORLD".toLowerCase() == "hello world"
+    @Test
+    def testBigIntegerMod01(): Unit \ Assert + IO =
+        let val = 123488ii;
+        assertEq(expected = 1ii, val.$mod(23ii))
 
-    @test
-    def testInvokeObjectMethod01(): JString =
-        "HELLO WORLD".toLowerCase()
+    @Test
+    def testBigIntegerModPow01(): Unit \ Assert + IO =
+        let val = 123488ii;
+        assertEq(expected = 8247ii, val.modPow(10ii, 32023ii))
 
-    @test
-    def testInvokeInheritedMethod01(): Bool \ IO =
-        let obj = new TestClassWithInheritedMethod();
-        obj.concreteMethod("bar") == "foobar"
+    @Test
+    def testBigIntegerSubtract01(): Unit \ Assert =
+        let val = 500ii;
+        assertEq(expected = 200ii, val.subtract(300ii))
 
-   @test
-   def testInvokeMethod_01(): Bool =
-       let obj = "HELLO WORLD";
-       obj.indexOf("E") == 1
+    @Test
+    def testBigIntegerDivide01(): Unit \ Assert =
+        let val = 100ii;
+        assertEq(expected = 20ii, val.divide(5ii))
 
-   @test
-   def testInvokeMethod_02(): Bool =
-       let obj = "Hello";
-       obj.concat(" world") == "Hello world"
+    @Test
+    def testBigIntegerGcd01(): Unit \ Assert + IO =
+        let val = 12ii;
+        assertEq(expected = 4ii, val.gcd(8ii))
 
-   @test
-   def testInvokeMethod_03(): Bool =
-       let obj = "Hello world";
-       obj.compareTo("Goodbye world") == 1
+    @Test
+    def testBigIntegerAbs01(): Unit \ Assert + IO =
+        assertEq(expected = 50ii, (-50ii).abs())
 
-   @test
-   def testInvokeMethod_04(): Bool =
-       let obj = "HELLO WORLD";
-       obj.charAt(3) == 'L'
+    @Test
+    def testBigIntegerSignum01(): Unit \ Assert + IO =
+        assertEq(expected = -1, (-100ii).signum())
 
-   @test
-   def testInvokeMethod_05(): Bool =
-       let val = -32ii;
-       val.add(500ii) == 468ii
+    // BigDecimal Methods
 
-   @test
-   def testInvokeMethod_06(): Bool =
-       let val = 500ii;
-       val.compareTo(-80ii) == 1
+    @Test
+    def testBigDecimalMax01(): Unit \ Assert + IO =
+        let val = 9999.999999999ff;
+        assertEq(expected = 9999.999999999ff, val.max(9999.99999999ff))
 
-   @test
-   def testInvokeMethod_07(): Bool =
-       let val = 150ii;
-       val.$and(-100ii) == 148ii
+    @Test
+    def testBigDecimalMultiply01(): Unit \ Assert =
+        assertEq(expected = -4148918.4945ff, (-98432.23ff).multiply(42.15ff))
 
-    @test
-    def testInvokeMethod_08(): Bool \ IO =
-       let val = 123488ii;
-       val.$mod(23ii) == 1ii
+    @Test
+    def testBigDecimalPow01(): Unit \ Assert =
+        let val = 9834.003001ff;
+        assertEq(expected = 9352362803567718.561955395843171390012001ff, val.pow(4))
 
-   @test
-   def testInvokeMethod_09(): Bool \ IO =
-       let val = 123488ii;
-       val.modPow(10ii, 32023ii) == 8247ii
+    @Test
+    def testBigDecimalRemainder01(): Unit \ Assert + IO =
+        let val = 9012111.9834ff;
+        assertEq(expected = 327.9234ff, val.remainder(429.01ff))
 
-   @test
-   def testInvokeMethod_10(): Bool \ IO =
-       let val = 9999.999999999ff;
-       val.max(9999.99999999ff) == 9999.999999999ff
+    @Test
+    def testBigDecimalSubtract01(): Unit \ Assert =
+        let val = 100.50ff;
+        assertEq(expected = 50.25ff, val.subtract(50.25ff))
 
-   @test
-   def testInvokeMethod_11(): Bool =
-       let val = -98432.23ff;
-       val.multiply(42.15ff) == -4148918.4945ff
+    @Test
+    def testBigDecimalAbs01(): Unit \ Assert =
+        assertEq(expected = 99.5ff, (-99.5ff).abs())
 
-   @test
-   def testInvokeMethod_12(): Bool =
-       let val = 9834.003001ff;
-       val.pow(4) == 9352362803567718.561955395843171390012001ff
+    @Test
+    def testBigDecimalSignum01(): Unit \ Assert =
+        assertEq(expected = -1, (-50.0ff).signum())
 
-   @test
-   def testInvokeMethod_13(): Bool \ IO =
-       let val = 9012111.9834ff;
-       val.remainder(429.01ff) == 327.9234ff
+    @Test
+    def testBigDecimalScale01(): Unit \ Assert =
+        let val = 123.456ff;
+        assertEq(expected = 3, val.scale())
+
+    // Other Methods
+
+    @Test
+    def testMathMax01(): Unit \ Assert + IO =
+        assertEq(expected = 10, Math.max(5, 10))
+
+    @Test
+    def testMathMin01(): Unit \ Assert + IO =
+        assertEq(expected = 5, Math.min(5, 10))
+
+    @Test
+    def testMathAbs01(): Unit \ Assert =
+        assertEq(expected = 42, Math.abs(-42))
+
+    @Test
+    def testIntegerParseInt01(): Unit \ Assert =
+        assertEq(expected = 123, Integer.parseInt("123"))
+
+    // String Methods
+
+    @Test
+    def testIndexOf01(): Unit \ Assert =
+        assertEq(expected = 6, "hello world".indexOf("world"))
+
+    @Test
+    def testIndexOf02(): Unit \ Assert =
+        assertEq(expected = 1, "HELLO WORLD".indexOf("E"))
+
+    @Test
+    def testReplaceAll01(): Unit \ Assert =
+        assertEq(expected = "goodbye world", "hello world".replaceAll("hello", "goodbye"))
+
+    @Test
+    def testConcat01(): Unit \ Assert =
+        assertEq(expected = "Hello world", "Hello".concat(" world"))
+
+    @Test
+    def testCompareTo01(): Unit \ Assert =
+        assertEq(expected = 1, "Hello world".compareTo("Goodbye world"))
+
+    @Test
+    def testCharAt01(): Unit \ Assert =
+        assertEq(expected = 'L', "HELLO WORLD".charAt(3))
+
+    @Test
+    def testStartsWith01(): Unit \ Assert =
+        assertTrue("hello world".startsWith("hello"))
+
+    @Test
+    def testEndsWith01(): Unit \ Assert =
+        assertTrue("hello world".endsWith("world"))
+
+    @Test
+    def testIsEmpty01(): Unit \ Assert =
+        assertTrue("".isEmpty())
+
+    @Test
+    def testSubstring01(): Unit \ Assert =
+        assertEq(expected = "llo", "hello".substring(2))
+
+    @Test
+    def testEqualsIgnoreCase01(): Unit \ Assert + IO =
+        assertTrue("HELLO".equalsIgnoreCase("hello"))
+
+    @Test
+    def testMatches01(): Unit \ Assert =
+        assertTrue("hello123".matches(".*\\d+"))
 
 }
