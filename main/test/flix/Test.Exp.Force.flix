@@ -223,4 +223,13 @@ mod Test.Exp.Force {
         }
     }
 
+    instance ToString[Poly[a, b]] with ToString[a], ToString[b] {
+        pub def toString(p: Poly[a, b]): String = match p {
+            case Poly.None       => "Poly.None"
+            case Poly.This(x)    => "Poly.This(${x})"
+            case Poly.That(y)    => "Poly.That(${y})"
+            case Poly.Both(x, y) => "Poly.Both(${x}, ${y})"
+        }
+    }
+
 }
