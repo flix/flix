@@ -1,5 +1,7 @@
 mod Test.Exp.Jvm.Instanceof {
 
+    use Assert.{assertTrue, assertFalse}
+
     import java.lang.CharSequence
     import java.lang.Enum
     import java.lang.Long
@@ -11,55 +13,65 @@ mod Test.Exp.Jvm.Instanceof {
     import java.nio.file.OpenOption
     import java.nio.file.StandardOpenOption
 
-    @test
-    def testInstanceof01(): Bool = "Hello World" instanceof JString
+    @Test
+    def testInstanceof01(): Unit \ Assert =
+        assertTrue("Hello World" instanceof JString)
 
-    @test
-    def testInstanceof02(): Bool = "Hello World" instanceof CharSequence
+    @Test
+    def testInstanceof02(): Unit \ Assert =
+        assertTrue("Hello World" instanceof CharSequence)
 
-    @test
-    def testInstanceof03(): Bool = "Hello World" instanceof Object
+    @Test
+    def testInstanceof03(): Unit \ Assert =
+        assertTrue("Hello World" instanceof Object)
 
-    @test
-    def testInstanceof04(): Bool = 100ii instanceof BigInteger
+    @Test
+    def testInstanceof04(): Unit \ Assert =
+        assertTrue(100ii instanceof BigInteger)
 
-    @test
-    def testInstanceof05(): Bool = 100ii instanceof Number
+    @Test
+    def testInstanceof05(): Unit \ Assert =
+        assertTrue(100ii instanceof Number)
 
-    @test
-    def testInstanceof06(): Bool = 100ii instanceof Object
+    @Test
+    def testInstanceof06(): Unit \ Assert =
+        assertTrue(100ii instanceof Object)
 
-    @test
-    def testInstanceof07(): Bool =
-        StandardOpenOption.DELETE_ON_CLOSE instanceof StandardOpenOption
+    @Test
+    def testInstanceof07(): Unit \ Assert =
+        assertTrue(StandardOpenOption.DELETE_ON_CLOSE instanceof StandardOpenOption)
 
-    @test
-    def testInstanceof08(): Bool =
-        StandardOpenOption.DELETE_ON_CLOSE instanceof OpenOption
+    @Test
+    def testInstanceof08(): Unit \ Assert =
+        assertTrue(StandardOpenOption.DELETE_ON_CLOSE instanceof OpenOption)
 
-    @test
-    def testInstanceof09(): Bool =
-        StandardOpenOption.DELETE_ON_CLOSE instanceof Enum
+    @Test
+    def testInstanceof09(): Unit \ Assert =
+        assertTrue(StandardOpenOption.DELETE_ON_CLOSE instanceof Enum)
 
-    @test
-    def testInstanceof10(): Bool =
-        StandardOpenOption.DELETE_ON_CLOSE instanceof Object
+    @Test
+    def testInstanceof10(): Unit \ Assert =
+        assertTrue(StandardOpenOption.DELETE_ON_CLOSE instanceof Object)
 
-    @test
-    def testInstanceof11(): Bool = (100ii instanceof Long) == false
+    @Test
+    def testInstanceof11(): Unit \ Assert =
+        assertFalse(100ii instanceof Long)
 
-    @test
-    def testInstanceof12(): Bool = ("Hello World" instanceof StringBuilder) == false
+    @Test
+    def testInstanceof12(): Unit \ Assert =
+        assertFalse("Hello World" instanceof StringBuilder)
 
-    @test
-    def testInstanceof13(): Bool \ IO = {
+    @Test
+    def testInstanceof13(): Unit \ Assert + IO = {
         let arr = Array#{"hi"} @ Static;
-        Array.get(0, arr) instanceof JString
+        assertTrue(Array.get(0, arr) instanceof JString)
     }
 
-    @test
-    def testInstanceOf14(): Bool  = (123 instanceof Number) == false
+    @Test
+    def testInstanceof14(): Unit \ Assert =
+        assertFalse(123 instanceof Number)
 
-    @test
-    def testInstanceOf15(): Bool = (true instanceof Object) == false
+    @Test
+    def testInstanceof15(): Unit \ Assert =
+        assertFalse(true instanceof Object)
 }
