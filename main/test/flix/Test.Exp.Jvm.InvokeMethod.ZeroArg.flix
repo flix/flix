@@ -1,77 +1,79 @@
 mod Test.Exp.Jvm.InvokeMethod.ZeroArg {
 
-    @test
-    def testInvokeMethod_01(): Bool =
+    use Assert.assertEq
+
+    @Test
+    def testInvokeMethod_01(): Unit \ Assert =
         let obj = "HELLO WORLD";
-        obj.toLowerCase() == "hello world"
+        assertEq(expected = "hello world", obj.toLowerCase())
 
-    @test
-    def testInvokeMethod_02(): Bool =
+    @Test
+    def testInvokeMethod_02(): Unit \ Assert =
         let obj = "hello world";
-        obj.toUpperCase() == "HELLO WORLD"
+        assertEq(expected = "HELLO WORLD", obj.toUpperCase())
 
-    @test
-    def testInvokeMethod_03(): Bool =
+    @Test
+    def testInvokeMethod_03(): Unit \ Assert =
         let obj = "hello world";
-        obj.length() == 11
+        assertEq(expected = 11, obj.length())
 
-    @test
-    def testInvokeMethod_04(): Bool =
+    @Test
+    def testInvokeMethod_04(): Unit \ Assert =
         let obj = "   hello world    ";
-        obj.trim() == "hello world"
+        assertEq(expected = "hello world", obj.trim())
 
-    @test
-    def testInvokeMethod_05(): Bool \ IO =
+    @Test
+    def testInvokeMethod_05(): Unit \ Assert + IO =
         let obj = "hello world";
-        obj.intern() == obj
+        assertEq(expected = obj, obj.intern())
 
-    @test
-    def testInvokeMethod_6(): Bool =
+    @Test
+    def testInvokeMethod_06(): Unit \ Assert =
         let val = 12093ii;
-        val.intValueExact() == 12093
+        assertEq(expected = 12093, val.intValueExact())
 
-    @test
-    def testInvokeMethod_7(): Bool \ IO =
+    @Test
+    def testInvokeMethod_07(): Unit \ Assert + IO =
         let val = -20938ii;
-        val.floatValue() == -20938f32
+        assertEq(expected = -20938f32, val.floatValue())
 
-    @test
-    def testInvokeMethod_8(): Bool \ IO =
+    @Test
+    def testInvokeMethod_08(): Unit \ Assert + IO =
         let val = 34882ii;
-        val.getLowestSetBit() == 1
+        assertEq(expected = 1, val.getLowestSetBit())
 
-    @test
-    def testInvokeMethod_9(): Bool \ IO =
+    @Test
+    def testInvokeMethod_09(): Unit \ Assert + IO =
         let val = 2384721ii;
-        val.bitCount() == 9
+        assertEq(expected = 9, val.bitCount())
 
-    @test
-    def testInvokeMethod_10(): Bool \ IO =
+    @Test
+    def testInvokeMethod_10(): Unit \ Assert + IO =
         let val = -32ii;
-        val.abs() == 32ii
+        assertEq(expected = 32ii, val.abs())
 
-    @test
-    def testInvokeMethod_11(): Bool =
+    @Test
+    def testInvokeMethod_11(): Unit \ Assert =
         let val = -123.45ff;
-        val.abs() == 123.45ff
+        assertEq(expected = 123.45ff, val.abs())
 
-    @test
-    def testInvokeMethod_12(): Bool =
+    @Test
+    def testInvokeMethod_12(): Unit \ Assert =
         let val = 12443.1489ff;
-        val.precision() == 9
+        assertEq(expected = 9, val.precision())
 
-    @test
-    def testInvokeMethod_13(): Bool \ IO =
+    @Test
+    def testInvokeMethod_13(): Unit \ Assert + IO =
         let val = -50.000001ff;
-        val.plus() == -50.000001ff
+        assertEq(expected = -50.000001ff, val.plus())
 
-    @test
-    def testInvokeMethod_14(): Bool =
+    @Test
+    def testInvokeMethod_14(): Unit \ Assert =
         let val = 23984.1119ff;
-        val.doubleValue() == 23984.1119f64
+        assertEq(expected = 23984.1119f64, val.doubleValue())
 
-    @test
-    def testInvokeMethod_15(): Bool =
+    @Test
+    def testInvokeMethod_15(): Unit \ Assert =
         let val = 57842.0109ff;
-        val.floatValue() == 57842.0109f32
+        assertEq(expected = 57842.0109f32, val.floatValue())
 }
