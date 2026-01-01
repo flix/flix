@@ -1,4 +1,4 @@
-mod Test.Exp.Instanceof {
+mod Test.Exp.Jvm.Instanceof {
 
     import java.lang.CharSequence
     import java.lang.Enum
