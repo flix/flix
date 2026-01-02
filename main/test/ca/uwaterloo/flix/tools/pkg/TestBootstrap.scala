@@ -283,7 +283,7 @@ class TestBootstrap extends AnyFunSuite {
     val main =
       """
         |pub def main(): Unit \ IO =
-        |    println(Upgr.entrypoint())
+        |    println(Upgr.entrypoint(42))
         |""".stripMargin
     FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
 
