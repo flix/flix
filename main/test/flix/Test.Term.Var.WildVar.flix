@@ -1,7 +1,9 @@
 mod Test.Term.Var.WildVar {
 
-    @test
-    def testWildVar01(): Bool =
+    use Assert.assertMemberOf
+
+    @Test
+    def testWildVar01(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -10,10 +12,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, y, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar02(): Bool =
+    @Test
+    def testWildVar02(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -22,10 +24,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(_, y, z), B(x, y, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar03(): Bool =
+    @Test
+    def testWildVar03(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -34,10 +36,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, _, z), B(x, y, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar04(): Bool =
+    @Test
+    def testWildVar04(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -46,10 +48,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, _), B(x, y, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar05(): Bool =
+    @Test
+    def testWildVar05(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -58,11 +60,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(_, y, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-
-    @test
-    def testWildVar06(): Bool =
+    @Test
+    def testWildVar06(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -71,10 +72,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, _, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar07(): Bool =
+    @Test
+    def testWildVar07(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -83,10 +84,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, y, _), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar08(): Bool =
+    @Test
+    def testWildVar08(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -95,10 +96,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, y, z), C(_, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar09(): Bool =
+    @Test
+    def testWildVar09(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -107,10 +108,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, y, z), C(x, _, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar10(): Bool =
+    @Test
+    def testWildVar10(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -119,10 +120,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, y, z), C(x, y, _), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar11(): Bool =
+    @Test
+    def testWildVar11(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -131,10 +132,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(_, _, z), B(x, y, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar12(): Bool =
+    @Test
+    def testWildVar12(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -143,10 +144,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, _, _), B(x, y, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar13(): Bool =
+    @Test
+    def testWildVar13(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -155,10 +156,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, _), B(_, y, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar14(): Bool =
+    @Test
+    def testWildVar14(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -167,10 +168,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(_, _, z), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar15(): Bool =
+    @Test
+    def testWildVar15(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -179,10 +180,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, _, _), C(x, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar16(): Bool =
+    @Test
+    def testWildVar16(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -191,10 +192,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, y, _), C(_, y, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar17(): Bool =
+    @Test
+    def testWildVar17(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -203,10 +204,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, y, z), C(_, _, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar18(): Bool =
+    @Test
+    def testWildVar18(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -215,10 +216,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, y, z), B(x, y, z), C(x, _, _), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar19(): Bool =
+    @Test
+    def testWildVar19(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -227,10 +228,10 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, _, z), B(x, y, z), C(x, _, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
-    @test
-    def testWildVar20(): Bool =
+    @Test
+    def testWildVar20(): Unit \ Assert =
         let p = #{
             A(1, 2, 3).
             B(1, 2, 3).
@@ -239,6 +240,6 @@ mod Test.Term.Var.WildVar {
             F() :- A(x, _, _), B(_, y, _), C(_, _, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
-        not Vector.isEmpty(m)
+        assertMemberOf(42, m)
 
 }
