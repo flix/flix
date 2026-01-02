@@ -3656,53 +3656,74 @@ mod TestArray {
     // groupBy                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
+    enum A with ToString {
+        case A(Int32, Int32)
+    }
+
+    instance Eq[A] {
+        pub def eq(l1: A, l2: A): Bool = match (l1, l2) {
+            case (A.A(x, _), A.A(y, _)) => x == y
+        }
+    }
+
     @Test
     def groupBy01(): Unit \ Assert = region rc {
-        let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, ((Array#{} @ rc): Array[Int32, rc]));
+        let arr = Array.groupBy(rc, identity, (Array#{} @ rc: Array[A, rc]));
         let xs = Array.toList(arr) |> List.map(Array.toList);
         assertEq(expected = Nil, xs)
     }
 
     @Test
     def groupBy02(): Unit \ Assert = region rc {
-        let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, Array#{1} @ rc);
+        let arr = Array.groupBy(rc, identity, Array#{A.A(1, 1)} @ rc);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = (A.A(1, 1) :: Nil) :: Nil, xs)
+    }
+
+    @Test
+    def groupBy03(): Unit \ Assert = region rc {
+        let arr = Array.groupBy(rc, identity, Array#{A.A(1, 1), A.A(2, 1), A.A(1, 2), A.A(1, 1), A.A(2, 4)} @ rc);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = (A.A(1, 1) :: A.A(1, 2) :: A.A(1, 1) :: Nil) :: (A.A(2, 1) :: A.A(2, 4) :: Nil) :: Nil, xs)
+    }
+
+    // /////////////////////////////////////////////////////////////////////////////
+    // // groupWith                                                               //
+    // /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def groupWith01(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> a > 3 and b > 3, (Array#{} @ rc: Array[Int32, rc]));
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = Nil, xs)
+    }
+
+    @Test
+    def groupWith02(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> a > 3 and b > 3, Array#{1} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         assertEq(expected = (1 :: Nil) :: Nil, xs)
     }
 
     @Test
-    def groupBy03(): Unit \ Assert = region rc {
-        let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, Array#{1,4} @ rc);
+    def groupWith03(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> a > 3 and b > 3, Array#{1, 4} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         assertEq(expected = (1 :: Nil) :: (4 :: Nil) :: Nil, xs)
     }
 
     @Test
-    def groupBy04(): Unit \ Assert = region rc {
-        let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, Array#{1,9} @ rc);
+    def groupWith04(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> a > 3 and b > 3, Array#{4, 9} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        assertEq(expected = (1 :: 9 :: Nil) :: Nil, xs)
+        assertEq(expected = (4 :: 9 :: Nil) :: Nil, xs)
     }
 
     @Test
-    def groupBy05(): Unit \ Assert = region rc {
-        let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, Array#{1, 4, 7, 6, 9, 2, 4, 4, 8, 16} @ rc);
+    def groupWith05(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> (a > 3 and b > 3) or (a < 1 and b < 1) or ((a >= 1 and a <= 3) and (b >= 1 and b <= 3)), Array#{1, 4, 7, 6, 9, 2, 4, -1, 4, -5, 8, 16, 0} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        assertEq(expected = (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil, xs)
-    }
-
-    @Test
-    def groupBy06(): Unit \ Assert = region rc {
-        let arr = Array.groupBy(rc, (a, b) -> a > -6 or a*b >= 0, Array#{-1, -11, 4, -11, 0, 8, 2, 1, -3, -24} @ rc);
-        let xs = Array.toList(arr) |> List.map(Array.toList);
-        assertEq(expected = (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil, xs)
-    }
-
-    @Test
-    def groupBy07(): Unit \ Assert = region rc {
-        let arr = Array.groupBy(rc, (a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), Array#{-5, 6, 11, 8, 8, -11, -1, 0, 4, -1} @ rc);
-        let xs = Array.toList(arr) |> List.map(Array.toList);
-        assertEq(expected = (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil, xs)
+        assertEq(expected = (1 :: 2 :: Nil) :: (4 :: 7 :: 6 :: 9 :: 4 :: 4 :: 8 :: 16 :: Nil) :: (-1 :: -5 :: 0 :: Nil) :: Nil, xs)
     }
 
     /////////////////////////////////////////////////////////////////////////////

@@ -1221,7 +1221,7 @@ pub mod Vector {
         groupWith(Eq.eq `on` f, v)
 
     ///
-    /// Helper function for `groupBy`.
+    /// Helper function for `groupWith`.
     ///
     def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Vector[a]]): List[Vector[a]] = match xs {
         case Nil     => List.reverse(ac)
@@ -1231,7 +1231,7 @@ pub mod Vector {
     }
 
     ///
-    /// Helper function for `groupBy`.
+    /// Helper function for `groupWith`.
     ///
     def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Vector[a], List[a]) = match xs {
         case Nil => {
