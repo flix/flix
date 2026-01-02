@@ -1,89 +1,93 @@
-mod Test.Exp.ApplicativeFor {
+mod Test.Exp.ForA {
+
+    use Assert.assertEq
 
     /////////////////////////////////////////////////////////////////////////////
     // List                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testApplicativeFor01(): List[String] =
-        forA (
-            x <- "Hello" :: Nil
-        ) yield {
-            "${x} world"
-        }
-
-    @test
-    def testApplicativeFor02(): Bool =
+    @Test
+    def testApplicativeFor01(): Unit \ Assert =
         let res = forA (
             x <- "Hello" :: Nil
         ) yield {
             "${x} world"
         };
-        res == "Hello world" :: Nil
+        assertEq(expected = "Hello world" :: Nil, res)
 
-    @test
-    def testApplicativeFor03(): List[String] =
-        forA (
-            x <- "Hello" :: Nil;
-            y <- "world" :: Nil
+    @Test
+    def testApplicativeFor02(): Unit \ Assert =
+        let res = forA (
+            x <- "Hello" :: Nil
         ) yield {
-            "${x} ${y}"
-        }
+            "${x} world"
+        };
+        assertEq(expected = "Hello world" :: Nil, res)
 
-    @test
-    def testApplicativeFor04(): Bool =
+    @Test
+    def testApplicativeFor03(): Unit \ Assert =
         let res = forA (
             x <- "Hello" :: Nil;
             y <- "world" :: Nil
         ) yield {
             "${x} ${y}"
         };
-        res == "Hello world" :: Nil
+        assertEq(expected = "Hello world" :: Nil, res)
 
-    @test
-    def testApplicativeFor05(): Bool =
+    @Test
+    def testApplicativeFor04(): Unit \ Assert =
+        let res = forA (
+            x <- "Hello" :: Nil;
+            y <- "world" :: Nil
+        ) yield {
+            "${x} ${y}"
+        };
+        assertEq(expected = "Hello world" :: Nil, res)
+
+    @Test
+    def testApplicativeFor05(): Unit \ Assert =
         let res = forA (
             (a, b) <- (1, 2) :: Nil;
             (c, d) <- (3, 4) :: Nil
         ) yield (a + b) * c + d;
-        res == ((1 + 2) * 3 + 4) :: Nil
+        assertEq(expected = ((1 + 2) * 3 + 4) :: Nil, res)
 
-    @test
-    def testApplicativeFor06(): Bool =
+    @Test
+    def testApplicativeFor06(): Unit \ Assert =
         let res = forA (
             x <- "Hello" :: Nil;
             y <- "world" :: "a" :: "b" :: "c" :: Nil
         ) yield {
             "${x} ${y}"
         };
-        res == "Hello world" :: "Hello a" :: "Hello b" :: "Hello c" :: Nil
+        assertEq(expected = "Hello world" :: "Hello a" :: "Hello b" :: "Hello c" :: Nil, res)
 
-    @test
-    def testApplicativeFor07(): Bool =
+    @Test
+    def testApplicativeFor07(): Unit \ Assert =
         let res = forA (
             x <- "1" :: "2" :: "3" :: Nil;
             y <- "a" :: "b" :: "c" :: Nil
         ) yield {
             "${x} ${y}"
         };
-        res == "1 a" :: "1 b" :: "1 c" ::
+        assertEq(expected = "1 a" :: "1 b" :: "1 c" ::
                "2 a" :: "2 b" :: "2 c" ::
-               "3 a" :: "3 b" :: "3 c" :: Nil
+               "3 a" :: "3 b" :: "3 c" :: Nil, res)
 
-    @test
-    def testApplicativeFor08(): Bool =
+    @Test
+    def testApplicativeFor08(): Unit \ Assert =
         let res = forA (
             (a, b) <- ("1", "1") :: ("2", "2") :: ("3", "3") :: Nil;
             x <- "a" :: "b" :: "c" :: Nil
         ) yield {
             "${a}${x}${b}"
         };
-        res == "1a1" :: "1b1" :: "1c1" ::
+        assertEq(expected = "1a1" :: "1b1" :: "1c1" ::
                "2a2" :: "2b2" :: "2c2" ::
-               "3a3" :: "3b3" :: "3c3" :: Nil
+               "3a3" :: "3b3" :: "3c3" :: Nil, res)
 
-    @test
-    def testApplicativeFor09(): Bool =
+    @Test
+    def testApplicativeFor09(): Unit \ Assert =
         let res = forA (
             x <- "1" :: "2" :: "3" :: Nil;
             y <- "a" :: "b" :: "c" :: Nil;
@@ -91,7 +95,7 @@ mod Test.Exp.ApplicativeFor {
         ) yield {
             "${x}${y}${z}"
         };
-        res == "1ax" :: "1ay" :: "1az" ::
+        assertEq(expected = "1ax" :: "1ay" :: "1az" ::
                "1bx" :: "1by" :: "1bz" ::
                "1cx" :: "1cy" :: "1cz" ::
                "2ax" :: "2ay" :: "2az" ::
@@ -99,10 +103,10 @@ mod Test.Exp.ApplicativeFor {
                "2cx" :: "2cy" :: "2cz" ::
                "3ax" :: "3ay" :: "3az" ::
                "3bx" :: "3by" :: "3bz" ::
-               "3cx" :: "3cy" :: "3cz" :: Nil
+               "3cx" :: "3cy" :: "3cz" :: Nil, res)
 
-    @test
-    def testApplicativeFor10(): Bool =
+    @Test
+    def testApplicativeFor10(): Unit \ Assert =
         let res = forA (
             x <- "1" :: "2" :: "3" :: Nil;
             y <- "a" :: "b" :: "c" :: Nil
@@ -111,7 +115,7 @@ mod Test.Exp.ApplicativeFor {
                 z <- "x" :: "y" :: "z" :: Nil
             ) yield "${x}${y}${z}"
         };
-        res == ("1ax" :: "1ay" :: "1az" :: Nil) ::
+        assertEq(expected = ("1ax" :: "1ay" :: "1az" :: Nil) ::
                ("1bx" :: "1by" :: "1bz" :: Nil) ::
                ("1cx" :: "1cy" :: "1cz" :: Nil) ::
                ("2ax" :: "2ay" :: "2az" :: Nil) ::
@@ -119,68 +123,68 @@ mod Test.Exp.ApplicativeFor {
                ("2cx" :: "2cy" :: "2cz" :: Nil) ::
                ("3ax" :: "3ay" :: "3az" :: Nil) ::
                ("3bx" :: "3by" :: "3bz" :: Nil) ::
-               ("3cx" :: "3cy" :: "3cz" :: Nil) :: Nil
+               ("3cx" :: "3cy" :: "3cz" :: Nil) :: Nil, res)
 
 
     /////////////////////////////////////////////////////////////////////////////
     // Validation                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testApplicativeFor11(): Bool =
+    @Test
+    def testApplicativeFor11(): Unit \ Assert =
         let res = forA (
             x <- (s("Hello"): Validation[Int32, String])
         ) yield {
             "${x} world"
         };
-        res == s("Hello world")
+        assertEq(expected = s("Hello world"), res)
 
-    @test
-    def testApplicativeFor12(): Bool =
+    @Test
+    def testApplicativeFor12(): Unit \ Assert =
         let res = forA (
             x <- (s("Hello"): Validation[Int32, String]);
             y <- s("world")
         ) yield {
             "${x} ${y}"
         };
-        res == s("Hello world")
+        assertEq(expected = s("Hello world"), res)
 
-    @test
-    def testApplicativeFor13(): Bool =
+    @Test
+    def testApplicativeFor13(): Unit \ Assert =
         let res = forA (
             (a, b) <- (s((1, 2)): Validation[String, (Int32, Int32)]);
             (c, d) <- s((3, 4))
         ) yield (a + b) * c + d;
-        res == s((1 + 2) * 3 + 4)
+        assertEq(expected = s((1 + 2) * 3 + 4), res)
 
-    @test
-    def testApplicativeFor14(): Bool =
+    @Test
+    def testApplicativeFor14(): Unit \ Assert =
         let res = forA (
             (a, b) <- (s((1, 2)): Validation[String, (Int32, Int32)]);
             (c, d) <- f("err")
         ) yield (a + b) * c + d;
-        res == f("err")
+        assertEq(expected = f("err"), res)
 
-    @test
-    def testApplicativeFor15(): Bool =
+    @Test
+    def testApplicativeFor15(): Unit \ Assert =
         let res = forA (
             (a, b) <- (s((1, 2)): Validation[String, (Int32, Int32)]);
             (c, d) <- f("err1");
             (_, _) <- f("err2")
         ) yield (a + b) * c + d;
-        res == fs("err1" :: "err2" :: Nil)
+        assertEq(expected = fs("err1" :: "err2" :: Nil), res)
 
-    @test
-    def testApplicativeFor16(): Bool =
+    @Test
+    def testApplicativeFor16(): Unit \ Assert =
         let res = forA (
             a <- (s("a"): Validation[Bool, String]);
             b <- s("1");
             c <- s("x")
         ) yield "${a}${b}${c}";
-        res == s("a1x")
+        assertEq(expected = s("a1x"), res)
 
-    @test
-    def testApplicativeFor17(): Bool =
+    @Test
+    def testApplicativeFor17(): Unit \ Assert =
         let res = forA (
             a <- (s("a"): Validation[Bool, String]);
             b <- s("1")
@@ -189,10 +193,10 @@ mod Test.Exp.ApplicativeFor {
                 c <- (s("x"): Validation[Int32, String])
             ) yield "${a}${b}${c}"
         };
-        res == s(s("a1x"))
+        assertEq(expected = s(s("a1x")), res)
 
-    @test
-    def testApplicativeFor18(): Bool =
+    @Test
+    def testApplicativeFor18(): Unit \ Assert =
         let res = forA (
             (a, b) <- (s((1, 2)): Validation[String, (Int32, Int32)]);
             (c, d) <- f("err1");
@@ -208,7 +212,7 @@ mod Test.Exp.ApplicativeFor {
             _ <- f("err11");
             _ <- f("err12")
         ) yield (a + b) * c + d;
-        res == fs("err1" :: "err2" :: "err3" :: "err4" :: "err5" :: "err6" :: "err7" :: "err8" :: "err9" :: "err10" :: "err11" :: "err12" :: Nil)
+        assertEq(expected = fs("err1" :: "err2" :: "err3" :: "err4" :: "err5" :: "err6" :: "err7" :: "err8" :: "err9" :: "err10" :: "err11" :: "err12" :: Nil), res)
 
     ///
     /// Returns a `Validation.Success` containing element `t`.
