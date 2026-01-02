@@ -489,6 +489,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme], useGraph: ListMap[String, SourceLocation])(implicit flix: Flix): List[(String, Scheme, List[SourceLocation])] = {
     val errorBuf = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
     for ((sym, lockedScheme) <- lockedFunctions) {
+      println(s"Checking: $sym")
       if (upgradeFunctions.contains(sym)) {
         val upgradedScheme = upgradeFunctions(sym)
         val uses = useGraph.get(sym)
