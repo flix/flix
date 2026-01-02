@@ -326,6 +326,9 @@ class TestBootstrap extends AnyFunSuite {
     if (Files.exists(p.resolve("lib/jaschdoc/flix-test-pkg-eff-upgrade/"))) {
       println("flix prefix is valid")
     }
+    if (Files.exists(p.resolve("lib/jaschdoc/test-pkg-eff-upgrade/"))) {
+      println("flix prefix is invalid")
+    }
     // FileOps.delete(p.resolve("lib/jaschdoc/flix-test-pkg-eff-upgrade/")).unsafeGet
 
     //val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
