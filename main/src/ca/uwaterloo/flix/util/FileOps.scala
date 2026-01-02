@@ -56,8 +56,7 @@ object FileOps {
     try {
       Result.Ok(Files.exists(path))
     } catch {
-      case e: Exception =>
-        Result.Err(e)
+      case e: Exception => Result.Err(e)
     }
   }
 
@@ -69,6 +68,20 @@ object FileOps {
       Some(Files.lines(p).findFirst().get())
     } catch {
       case _: Throwable => None
+    }
+  }
+
+  /**
+    * Returns the contents of the file at `path` as a string.
+    *
+    * @param path the path to read. The caller must check if it exists first.
+    * @return the contents of the file.
+    */
+  def readString(path: Path): Result[String, Exception] = {
+    try {
+      Result.Ok(Files.readString(path))
+    } catch {
+      case e: Exception => Result.Err(e)
     }
   }
 

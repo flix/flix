@@ -453,12 +453,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
 
-      val json =
-        try {
-          Files.readString(Bootstrap.getEffectLockFile(projectPath))
-        } catch {
-          case _: Exception => return Err(BootstrapError.FileError("Unable to read 'effects.lock'. Refusing to run 'eff-check'."))
-        }
+      val json = FileOps.readString(Bootstrap.getEffectLockFile(projectPath)) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+        case Ok(str) => str
+      }
 
       EffectLock.deserialize(json) match {
         case Err(e) => return Err(BootstrapError.FileError(e))
