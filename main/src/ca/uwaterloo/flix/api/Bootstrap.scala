@@ -465,6 +465,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case (f, UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
         case (f, UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
       })
+      println(s"Use graph: ${UseGraph.computeGraph(root)}")
+      println(s"Inverted use graph: $useGraph")
 
       // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
       val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
