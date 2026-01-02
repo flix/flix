@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
-import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -438,6 +438,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  /**
+    * Returns `Ok(())` if the current program is an effect-safe upgrade with respect to `effects.lock` file.
+    * Returns `Err(e)` if an error `e` occurred or if the upgrade is not effect safe.
+    */
   def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-check'"))
@@ -456,71 +460,44 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
 
-      // 3. Check effect lock
-      // N.B.: Map to strings to remove different internal sym ids
-      val erasedDefnSymIdsMap = root.defs.map {
-        case (sym, scheme) => sym.toString -> scheme
-      }
-      val defnBuf = mutable.HashMap.empty[String, (Scheme, Scheme)]
-      for ((sym, lockedScheme) <- lockedDefs) {
-        val symStr = sym.toString
-        if (erasedDefnSymIdsMap.contains(symStr)) {
-          val upgradedScheme = erasedDefnSymIdsMap(symStr).spec.declaredScheme
-          defnBuf.addOne(symStr -> (lockedScheme, upgradedScheme))
-        }
-      }
-      val strToLockedDefs = lockedDefs.map {
-        case (sym, scheme) => sym.toString -> scheme
-      }
-      val strToLockedSigs = lockedSigs.map {
-        case (sym, scheme) => sym.toString -> scheme
-      }
-      val strToNewDefs = root.defs.map {
-        case (sym, scheme) => sym.toString -> scheme
-      }
-      val strToNewSigs = root.sigs.map {
-        case (sym, scheme) => sym.toString -> scheme
-      }
-      val defSchemes = strToLockedDefs.collect {
-        case (sym, originalScheme) if strToNewDefs.contains(sym) =>
-          val upgradeScheme = strToNewDefs(sym)
-          sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
-      }
-      val sigSchemes = strToLockedSigs.collect {
-        case (sym, originalScheme) if strToNewSigs.contains(sym) =>
-          val upgradeScheme = strToNewSigs(sym)
-          sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
-      }
       // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
       val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
         case (f, UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
         case (f, UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
       })
-      val defUpgradeErrors = defSchemes.map {
-        case (sym, (original, upgrade)) =>
-          val uses = useGraph.get(sym)
-          if (uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix)) {
-            None
-          } else {
-            Some((sym, upgrade, uses))
-          }
-      }.toList.flatten
-      val sigUpgradeErrors = sigSchemes.map {
-        case (sym, (original, upgrade)) =>
-          val uses = useGraph.get(sym)
-          if (uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix)) {
-            None
-          } else {
-            Some((sym, upgrade, uses))
-          }
-      }.toList.flatten
-      val allErrors = defUpgradeErrors ::: sigUpgradeErrors
+
+      // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
+      val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
+      val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
+      val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
+      val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
+      val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)(flix)
+      val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)(flix)
+      val allErrors = defnErrors ::: sigErrors
+
       if (allErrors.isEmpty) {
         Ok(())
       } else {
         Err(BootstrapError.EffectUpgradeError(allErrors))
       }
     }
+  }
+
+  /**
+    * Collects a list of tuples `(sym, scheme, uses)` if function represented by `sym` is not an effect safe upgrade.
+    */
+  private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme], useGraph: ListMap[String, SourceLocation])(implicit flix: Flix): List[(String, Scheme, List[SourceLocation])] = {
+    val errorBuf = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
+    for ((sym, lockedScheme) <- lockedFunctions) {
+      if (upgradeFunctions.contains(sym)) {
+        val upgradedScheme = upgradeFunctions(sym)
+        val uses = useGraph.get(sym)
+        if (!(uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix))) {
+          errorBuf.addOne((sym, upgradedScheme, uses))
+        }
+      }
+    }
+    errorBuf.toList
   }
 
   /**
