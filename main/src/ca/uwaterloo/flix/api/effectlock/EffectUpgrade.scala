@@ -36,8 +36,8 @@ object EffectUpgrade {
     */
   def isEffSafeUpgrade(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
     // Alpha rename so equality of types can be done via `==`.
-    val originalErased = Util.erase(original)
-    val upgradeErased = Util.erase(upgrade)
+    val originalErased = Scheme.eraseAliases(original)
+    val upgradeErased = Scheme.eraseAliases(upgrade)
     val orig = Util.alpha(originalErased)
     val upgr = Util.alpha(upgradeErased)
     isGeneralizable(originalErased, upgradeErased) || isSubset(orig, upgr)

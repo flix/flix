@@ -64,11 +64,4 @@ object Util {
     Scheme(qs, tconstrs, econstrs, base)
   }
 
-  /**
-    * Erases type aliases in `scheme0`.
-    */
-  def erase(scheme0: Scheme): Scheme = {
-    scheme0.copy(base = eraseAliases(scheme0.base))
-  }
-
 }
