@@ -1,4 +1,5 @@
 mod Test.Derives.Coerce {
+
     enum UnitEnum with Coerce {
         case UnitEnum
     }
@@ -28,4 +29,5 @@ mod Test.Derives.Coerce {
         let (_, x) = Coerce.coerce(RegionEnum.RegionEnum(rc, 123));
         x == 123
     }
+
 }
