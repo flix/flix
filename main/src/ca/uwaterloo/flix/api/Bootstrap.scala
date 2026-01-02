@@ -437,9 +437,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  def upgradeEffects(flix: Flix): Result[Unit, BootstrapError] = {
+  def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
-      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-upgrade'"))
+      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-check'"))
     }
     Steps.updateStaleSources(flix)
     for {
@@ -447,7 +447,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       try {
         if (!Files.exists(Bootstrap.getEffectLockFile(projectPath))) {
-          return Err(BootstrapError.FileError("No 'effects.lock' file found. Refusing to run 'eff-upgrade'."))
+          return Err(BootstrapError.FileError("No 'effects.lock' file found. Unable to run 'eff-check'."))
         }
       } catch {
         case e: Exception => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
@@ -456,7 +456,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         try {
           Files.readString(Bootstrap.getEffectLockFile(projectPath))
         } catch {
-          case _: Exception => return Err(BootstrapError.FileError("Unable to read 'effects.lock'. Refusing to run 'eff-upgrade'."))
+          case _: Exception => return Err(BootstrapError.FileError("Unable to read 'effects.lock'. Refusing to run 'eff-check'."))
         }
 
       EffectLock.deserialize(json) match {
