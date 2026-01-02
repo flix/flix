@@ -71,10 +71,17 @@ object BootstrapError {
          |""".stripMargin
     }
 
+    /**
+      * Returns a formatted string containing each new symbol and what new effects it has.
+      *
+      * E.g.,if `f` has effect set `A, B, C` then the string is formatted as
+      *
+      * `"  + 'f' now uses *{ A, B, C }*"`
+      */
     private def effectSets: String = {
       e.map {
         case (sym, upgrade, _) =>
-          val effs = upgrade.base.effects.mkString("*{", ", ", "}*")
+          val effs = upgrade.base.effects.mkString("*{ ", ", ", " }*")
           s"  + '$sym' now uses $effs"
       }.mkString(System.lineSeparator())
     }
