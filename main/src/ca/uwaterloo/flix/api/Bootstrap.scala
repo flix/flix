@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Scheme, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -32,6 +32,7 @@ import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
+import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.util.{Failure, Success, Using}
@@ -451,15 +452,27 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     for {
       json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      (defs, sigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
+      (lockedDefs, lockedSigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
       root <- Steps.check(flix)
     } yield {
+
       // 3. Check effect lock
       // N.B.: Map to strings to remove different internal sym ids
-      val strToLockedDefs = defs.map {
+      val erasedDefnSymIdsMap = root.defs.map {
         case (sym, scheme) => sym.toString -> scheme
       }
-      val strToLockedSigs = sigs.map {
+      val defnBuf = mutable.HashMap.empty[String, (Scheme, Scheme)]
+      for ((sym, lockedScheme) <- lockedDefs) {
+        val symStr = sym.toString
+        if (erasedDefnSymIdsMap.contains(symStr)) {
+          val upgradedScheme = erasedDefnSymIdsMap(symStr).spec.declaredScheme
+          defnBuf.addOne(symStr -> (lockedScheme, upgradedScheme))
+        }
+      }
+      val strToLockedDefs = lockedDefs.map {
+        case (sym, scheme) => sym.toString -> scheme
+      }
+      val strToLockedSigs = lockedSigs.map {
         case (sym, scheme) => sym.toString -> scheme
       }
       val strToNewDefs = root.defs.map {
