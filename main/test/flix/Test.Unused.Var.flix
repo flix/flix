@@ -1,105 +1,102 @@
 mod Test.Unused.Var {
 
-    @test
-    def testUnusedVar01(): Int32 =
+    use Assert.{fail, success}
+
+    @Test
+    def testUnusedVar01(): Unit \ Assert =
         let _ = 123;
-        456
+        success("")
 
-    @test
-    def testUnusedVar02(): Int32 =
+    @Test
+    def testUnusedVar02(): Unit \ Assert =
         let _foo = 123;
-        456
+        success("")
 
-    @test
-    def testUnusedVar03(): Int32 =
+    @Test
+    def testUnusedVar03(): Unit \ Assert =
         let _foo = 123;
         let _bar = 456;
-        789
+        success("")
 
-    @test
-    def testUnusedVar04(): Int32 =
+    @Test
+    def testUnusedVar04(): Unit \ Assert =
         match 123 {
-            case _foo => 456
+            case _foo => success("")
         }
 
-    @test
-    def testUnusedVar05(): Int32 =
+    @Test
+    def testUnusedVar05(): Unit \ Assert =
         match (1, 2) {
-            case (x, _y) => x
+            case (_x, _y) => success("")
         }
 
-    @test
-    def testUnusedVar06(): Int32 =
+    @Test
+    def testUnusedVar06(): Unit \ Assert =
         match (1, 2) {
-            case (_x, y) => y
+            case (_x, _y) => success("")
         }
 
-    @test
-    def testUnusedVar07(): Int32 =
+    @Test
+    def testUnusedVar07(): Unit \ Assert =
         match (1, 2) {
-            case (_x, _y) => 123
+            case (_x, _y) => success("")
         }
 
-    @test
-    def testUnusedVar08(): Int32 =
+    @Test
+    def testUnusedVar08(): Unit \ Assert =
         match Some(123) {
-            case None => 456
-            case Some(_foo) => 789
+            case None       => fail("unreachable")
+            case Some(_foo) => success("")
         }
 
-    @test
-    def testUnusedVar09(): Int32 =
+    @Test
+    def testUnusedVar09(): Unit \ Assert =
         match Ok(123) {
-            case Ok(_foo) => 456
-            case Err(_bar) => 789
+            case Ok(_foo)  => success("")
+            case Err(_bar) => fail("unreachable")
         }
 
-    @test
-    def testUnusedVar10(): Int32 \ {Chan, NonDet} = {
+    @Test
+    def testUnusedVar10(): Unit \ Assert + Chan + NonDet = {
         let (tx, rx) = Channel.buffered(1);
         Channel.send(0, tx);
         select {
-            case _foo <- recv(rx) => 123
+            case _foo <- recv(rx) => success("")
         }
     }
 
-    @test
-    def testUnusedVar11(): Int32 \ {Chan, NonDet} = {
+    @Test
+    def testUnusedVar11(): Unit \ Assert + Chan + NonDet = {
         let (tx1, rx1) = Channel.buffered(1);
         let (tx2, rx2) = Channel.buffered(1);
         Channel.send(0, tx1);
         Channel.send(0, tx2);
         select {
-            case _foo <- recv(rx1) => 123
-            case _bar <- recv(rx2) => 456
+            case _foo <- recv(rx1) => success("")
+            case _bar <- recv(rx2) => success("")
         }
     }
 
-    // NB: Compile, but not execute.
-    pub def testUnusedVar12(): Int32 =
+    @CompileTest
+    def testUnusedVar12(): Int32 =
         let x = 123;
         ?hole
 
-    // NB: Compile, but not execute.
-    pub def testUnusedVar13(): Int32 =
+    @CompileTest
+    def testUnusedVar13(): Int32 =
         let x = 123;
         let y = 123;
         ?hole
 
-    // NB: Compile, but not execute.
-    pub def testUnusedVar14(): Int32 =
+    @CompileTest
+    def testUnusedVar14(): Int32 =
         match 123 {
             case foo => ?hole
         }
 
-    @test
-    def testUnusedVar15(): Int32 =
+    @Test
+    def testUnusedVar15(): Unit \ Assert =
         let _⊆ = 123;
-        456
+        success("")
 
-    // Operator names not currently allowed for variables
-    // @test
-    // def testUnusedVar17(): Int32 =
-    //     let _<*> = 123;
-    //     456
 }
