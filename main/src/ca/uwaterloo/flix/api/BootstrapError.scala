@@ -72,11 +72,11 @@ object BootstrapError {
     }
 
     /**
-      * Returns a formatted string containing each new symbol and what new effects it has.
+      * Returns a formatted string containing each symbol and what new effects it has.
       *
       * E.g.,if `f` has effect set `A, B, C` then the string is formatted as
       *
-      * `"  + 'f' now uses *{ A, B, C }*"`
+      * {{{"  + 'f' now uses *{ A, B, C }*"}}}
       */
     private def effectSets: String = {
       e.map {
@@ -86,11 +86,23 @@ object BootstrapError {
       }.mkString(System.lineSeparator())
     }
 
+    /**
+      * Returns a formatted string containing each symbol and where it is used.
+      *
+      * E.g.,if `f` is used in `main` and `mainHelper` then the string is formatted as
+      *
+      * {{{
+      * "  + 'f':
+      *      - main:13:2
+      *      - mainHelper:2:42
+      * "
+      * }}}
+      */
     private def uses: String = {
       e.map {
         case (sym, _, uses) =>
-          val formattedSym = s"  '$sym':"
-          val formattedUses = uses.map(loc => s"    $loc").mkString(System.lineSeparator())
+          val formattedSym = s"  + '$sym':"
+          val formattedUses = uses.map(loc => s"    - $loc").mkString(System.lineSeparator())
           s""""$formattedSym
              |$formattedUses""".stripMargin
       }.mkString(System.lineSeparator())
