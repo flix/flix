@@ -9,11 +9,13 @@ mod Test.Exp.Jvm.Complex {
     import com.sun.net.httpserver.HttpHandler;
     import com.sun.net.httpserver.HttpServer;
 
+    @CompileTest
     pub def start(): Unit \ IO =
         let server = HttpServer.create(new InetSocketAddress(3000), 0);
         server.createContext("/", httpHandler());
         ()
 
+    @CompileTest
     def httpHandler(): HttpHandler \ IO = new HttpHandler {
         def handle(_this:HttpHandler, t:HttpExchange): Unit \ IO =
           let response = "Hello world!";

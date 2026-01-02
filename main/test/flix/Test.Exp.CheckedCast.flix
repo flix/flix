@@ -5,65 +5,64 @@ mod Test.Exp.CheckedTypeCast {
     import java.lang.Object
     import java.lang.{StringBuilder => JStringBuilder}
 
-    @test
+    @CompileTest
     def testCheckedTypeCast01(): Object = checked_cast(null)
 
-    @test
+    @CompileTest
     def testCheckedTypeCast02(): String = checked_cast(null)
 
-    @test
+    @CompileTest
     def testCheckedTypeCast03(): Integer = checked_cast(null)
 
-    @test
+    @CompileTest
     def testCheckedTypeCast04(): Serializable = checked_cast(null)
 
-    @test
+    @CompileTest
     def testCheckedTypeCast05(): Array[String, Static] = checked_cast(null)
 
-    @test
-
+    @CompileTest
     def testCheckedTypeCast06(): Serializable \ IO = {
         checked_cast(new JStringBuilder())
     }
 
-    @test
+    @CompileTest
     def testCheckedTypeCast07(): Object \ IO = {
         checked_cast(new JStringBuilder())
     }
 
-    @test
+    @CompileTest
     def testCheckedTypeCast08(): Object = checked_cast("ABC")
 
-    @test
+    @CompileTest
     def testCheckedTypeCast09(): Object = region rc {
         checked_cast(Array#{} @ rc)
     }
 
-    @test
+    @CompileTest
     def testCheckedTypeCast10(): Object = checked_cast(Box.box(42i8))
 
-    @test
+    @CompileTest
     def testCheckedTypeCast11(): Object = checked_cast(Box.box(42i16))
 
-    @test
+    @CompileTest
     def testCheckedTypeCast12(): Object = checked_cast(Box.box(42i32))
 
-    @test
+    @CompileTest
     def testCheckedTypeCast13(): Object = checked_cast(Box.box(42i64))
 
-    @test
+    @CompileTest
     def testCheckedTypeCast14(): Object = checked_cast(Box.box(42.0f32))
 
-    @test
+    @CompileTest
     def testCheckedTypeCast15(): Object = checked_cast(Box.box(42.0f64))
 
-    @test
+    @CompileTest
     def testCheckedTypeCast16(): Object = checked_cast(Box.box('c'))
 
-    @test
+    @CompileTest
     def testCheckedTypeCast17(): Object = checked_cast(Box.box(true))
 
-    @test
+    @CompileTest
     def testCheckedTypeCast18(): Object = upcast(42)
 
     type alias Num = Int32

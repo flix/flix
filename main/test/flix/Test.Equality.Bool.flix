@@ -1,15 +1,21 @@
 mod Test.Equality.Bool {
 
-    @test
-    def testEqBool01(): Bool = true == true
+    use Assert.{assertEq, assertNeq}
 
-    @test
-    def testEqBool02(): Bool = false == false
+    @Test
+    def testEqBool01(): Unit \ Assert =
+        assertEq(expected = true, true)
 
-    @test
-    def testNeqBool01(): Bool = true != false
+    @Test
+    def testEqBool02(): Unit \ Assert =
+        assertEq(expected = false, false)
 
-    @test
-    def testNeqBool02(): Bool = false != true
+    @Test
+    def testNeqBool01(): Unit \ Assert =
+        assertNeq(unexpected = true, false)
+
+    @Test
+    def testNeqBool02(): Unit \ Assert =
+        assertNeq(unexpected = false, true)
 
 }

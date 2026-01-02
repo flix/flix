@@ -1,94 +1,96 @@
  mod Test.Exp.CheckedEffectCast {
 
-    enum A[a](a)
-
-    @test
+    @CompileTest
     def testCheckedEffectCast01(): Unit \ IO = checked_ecast(())
 
-    @test
+    @CompileTest
     def testCheckedEffectCast02(): Bool \ IO = checked_ecast(true)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast03(): Bool \ IO = checked_ecast(not false)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast04(): Char \ IO = checked_ecast('a')
 
-    @test
+    @CompileTest
     def testCheckedEffectCast05(): Char \ IO = checked_ecast('b')
 
-    @test
+    @CompileTest
     def testCheckedEffectCast06(): Char \ IO = checked_ecast('Z')
 
-    @test
+    @CompileTest
     def testCheckedEffectCast07(): Char \ IO = checked_ecast('0')
 
-    @test
+    @CompileTest
     def testCheckedEffectCast08(): Float32 \ IO = checked_ecast(0.0f32)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast09(): Float32 \ IO = checked_ecast(123.4f32)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast10(): Float64 \ IO = checked_ecast(0.0f64)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast11(): Float64 \ IO = checked_ecast(123.4f64)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast12(): Int8 \ IO = checked_ecast(0i8)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast13(): Int8 \ IO = checked_ecast(64i8)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast14(): Int16 \ IO = checked_ecast(0i16)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast15(): Int16 \ IO = checked_ecast(64i16)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast16(): Int32 \ IO = checked_ecast(0i32)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast17(): Int32 \ IO = checked_ecast(64i32)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast18(): Int64 \ IO = checked_ecast(0i64)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast19(): Int64 \ IO = checked_ecast(64i64)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast20(): BigInt \ IO = checked_ecast(0ii)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast21(): BigInt \ IO = checked_ecast(64ii)
 
-    @test
+    @CompileTest
     def testCheckedEffectCast22(): String \ IO = checked_ecast("ABC")
 
-    @test
+    @CompileTest
     def testCheckedEffectCast23(): Unit \ IO = region rc {
         discard checked_ecast(%%ARRAY_NEW%%(rc, 'A', 8));
         ()
     }
 
-    @test
+    @CompileTest
     def testCheckedEffectCast24(): Unit \ IO = region rc {
         discard checked_ecast(%%ARRAY_NEW%%(rc, Some(42), 8));
         ()
     }
 
-    @test
+    @CompileTest
     def testCheckedEffectCast25(): (Char, Int32, Bool) \ IO = checked_ecast(('a', 42, false))
 
-    @test
+    @CompileTest
     def testCheckedEffectCast26(): A[String] \ IO = checked_ecast(A.A("ABC"))
 
-    def _testCheckedEffectCast27(): (a -> a \ IO) = x -> checked_ecast(x)
+    @CompileTest
+    def testCheckedEffectCast27(): (a -> a \ IO) = x -> checked_ecast(x)
 
-    def _testCheckedEffectCast28(): (a -> a) \ IO = checked_ecast(x -> x)
+    @CompileTest
+    def testCheckedEffectCast28(): (a -> a) \ IO = checked_ecast(x -> x)
+
+    enum A[a](a)
 
     pub eff E
 
