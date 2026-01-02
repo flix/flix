@@ -324,6 +324,7 @@ class TestBootstrap extends AnyFunSuite {
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
     // Delete old files
+    fail(FileOps.getFilesIn(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade"), Int.MaxValue).toString())
     FileOps.delete(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade/flix.toml")).unsafeGet
     FileOps.delete(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade/test-pkg-eff-upgrade.fpkg")).unsafeGet
 
