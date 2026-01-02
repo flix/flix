@@ -9,7 +9,7 @@ import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipFile
-import scala.jdk.CollectionConverters.{CollectionHasAsScala, EnumerationHasAsScala}
+import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
 class TestBootstrap extends AnyFunSuite {
