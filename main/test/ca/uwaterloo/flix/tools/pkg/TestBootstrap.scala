@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.Bootstrap
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -323,19 +323,18 @@ class TestBootstrap extends AnyFunSuite {
         |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
-    if (Files.exists(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade/"))) {
-      fail("flix prefix is valid")
+    // Delete old files
+    FileOps.delete(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade/flix.toml")).unsafeGet
+    FileOps.delete(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade/test-pkg-eff-upgrade.fpkg")).unsafeGet
+
+    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+
+    bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) match {
+      case Result.Err(BootstrapError.EffectUpgradeError(_)) => succeed
+      case Result.Err(e) => fail(e.message(Formatter.getDefault))
+      case Result.Ok(()) => fail("expected effect upgrade error")
     }
-    if (Files.exists(p.resolve("lib/github/jaschdoc/test-pkg-eff-upgrade/"))) {
-      fail("flix prefix is invalid")
-    }
-    // FileOps.delete(p.resolve("lib/jaschdoc/flix-test-pkg-eff-upgrade/")).unsafeGet
-
-    //val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-    fail("wip")
-
-
-    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
   }
 
   private def calcHash(p: Path): String = {
