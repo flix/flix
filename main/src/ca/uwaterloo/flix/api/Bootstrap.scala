@@ -478,9 +478,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           val upgradeScheme = strToNewSigs(sym)
           sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
       }
-      val useGraph = ListMap.from(UseGraph.computeGraph(root).map {
-        case (src, UseGraph.UsedSym.DefnSym(dst)) => src.toString -> dst.loc
-        case (src, UseGraph.UsedSym.SigSym(dst)) => src.toString -> dst.loc
+      // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
+      val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
+        case (f, UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+        case (f, UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
       })
       val defUpgradeErrors = defSchemes.map {
         case (sym, (original, upgrade)) =>
