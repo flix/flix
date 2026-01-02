@@ -451,63 +451,60 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     for {
       json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      (defs, sigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
       root <- Steps.check(flix)
     } yield {
-      EffectLock.deserialize(json) match {
-        case Err(e) => return Err(BootstrapError.FileError(e))
-        case Ok((defs, sigs)) =>
-          // 3. Check effect lock
-          // N.B.: Map to strings to remove different internal sym ids
-          val strToLockedDefs = defs.map {
-            case (sym, scheme) => sym.toString -> scheme
-          }
-          val strToLockedSigs = sigs.map {
-            case (sym, scheme) => sym.toString -> scheme
-          }
-          val strToNewDefs = root.defs.map {
-            case (sym, scheme) => sym.toString -> scheme
-          }
-          val strToNewSigs = root.sigs.map {
-            case (sym, scheme) => sym.toString -> scheme
-          }
-          val defSchemes = strToLockedDefs.collect {
-            case (sym, originalScheme) if strToNewDefs.contains(sym) =>
-              val upgradeScheme = strToNewDefs(sym)
-              sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
-          }
-          val sigSchemes = strToLockedSigs.collect {
-            case (sym, originalScheme) if strToNewSigs.contains(sym) =>
-              val upgradeScheme = strToNewSigs(sym)
-              sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
-          }
-          val useGraph = ListMap.from(UseGraph.computeGraph(root).map {
-            case (src, UseGraph.UsedSym.DefnSym(dst)) => src.toString -> dst.loc
-            case (src, UseGraph.UsedSym.SigSym(dst)) => src.toString -> dst.loc
-          })
-          val defUpgradeErrors = defSchemes.map {
-            case (sym, (original, upgrade)) =>
-              val uses = useGraph.get(sym)
-              if (uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix)) {
-                None
-              } else {
-                Some((sym, upgrade, uses))
-              }
-          }.toList.flatten
-          val sigUpgradeErrors = sigSchemes.map {
-            case (sym, (original, upgrade)) =>
-              val uses = useGraph.get(sym)
-              if (uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix)) {
-                None
-              } else {
-                Some((sym, upgrade, uses))
-              }
-          }.toList.flatten
-          val allErrors = defUpgradeErrors ::: sigUpgradeErrors
-          if (allErrors.isEmpty) {
-            Ok(())
+      // 3. Check effect lock
+      // N.B.: Map to strings to remove different internal sym ids
+      val strToLockedDefs = defs.map {
+        case (sym, scheme) => sym.toString -> scheme
+      }
+      val strToLockedSigs = sigs.map {
+        case (sym, scheme) => sym.toString -> scheme
+      }
+      val strToNewDefs = root.defs.map {
+        case (sym, scheme) => sym.toString -> scheme
+      }
+      val strToNewSigs = root.sigs.map {
+        case (sym, scheme) => sym.toString -> scheme
+      }
+      val defSchemes = strToLockedDefs.collect {
+        case (sym, originalScheme) if strToNewDefs.contains(sym) =>
+          val upgradeScheme = strToNewDefs(sym)
+          sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
+      }
+      val sigSchemes = strToLockedSigs.collect {
+        case (sym, originalScheme) if strToNewSigs.contains(sym) =>
+          val upgradeScheme = strToNewSigs(sym)
+          sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
+      }
+      val useGraph = ListMap.from(UseGraph.computeGraph(root).map {
+        case (src, UseGraph.UsedSym.DefnSym(dst)) => src.toString -> dst.loc
+        case (src, UseGraph.UsedSym.SigSym(dst)) => src.toString -> dst.loc
+      })
+      val defUpgradeErrors = defSchemes.map {
+        case (sym, (original, upgrade)) =>
+          val uses = useGraph.get(sym)
+          if (uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix)) {
+            None
           } else {
-            Err(BootstrapError.EffectUpgradeError(allErrors))
+            Some((sym, upgrade, uses))
           }
+      }.toList.flatten
+      val sigUpgradeErrors = sigSchemes.map {
+        case (sym, (original, upgrade)) =>
+          val uses = useGraph.get(sym)
+          if (uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix)) {
+            None
+          } else {
+            Some((sym, upgrade, uses))
+          }
+      }.toList.flatten
+      val allErrors = defUpgradeErrors ::: sigUpgradeErrors
+      if (allErrors.isEmpty) {
+        Ok(())
+      } else {
+        Err(BootstrapError.EffectUpgradeError(allErrors))
       }
     }
   }
