@@ -441,17 +441,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-check'"))
     }
+
+    FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(false) => return Err(BootstrapError.FileError("No 'effects.lock' file found. Unable to run 'eff-check'."))
+      case Ok(true) => ()
+    }
+
     Steps.updateStaleSources(flix)
     for {
       root <- Steps.check(flix)
     } yield {
-      try {
-        if (!Files.exists(Bootstrap.getEffectLockFile(projectPath))) {
-          return Err(BootstrapError.FileError("No 'effects.lock' file found. Unable to run 'eff-check'."))
-        }
-      } catch {
-        case e: Exception => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-      }
+
       val json =
         try {
           Files.readString(Bootstrap.getEffectLockFile(projectPath))
