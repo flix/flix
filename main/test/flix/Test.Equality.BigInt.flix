@@ -1,18 +1,29 @@
 mod Test.Equality.BigInt {
 
-    @test
-    def testEqBigInt01(): Bool = 0ii == 0ii
+    use Assert.{assertEq, assertNeq}
 
-    @test
-    def testEqBigInt02(): Bool = +1ii == +1ii
+    @Test
+    def testEqBigInt01(): Unit \ Assert =
+        assertEq(expected = 0ii, 0ii)
 
-    @test
-    def testEqBigInt03(): Bool = -1ii == -1ii
+    @Test
+    def testEqBigInt02(): Unit \ Assert =
+        assertEq(expected = +1ii, +1ii)
 
-    @test
-    def testNeqBigInt01(): Bool = -1ii != +1ii
+    @Test
+    def testEqBigInt03(): Unit \ Assert =
+        assertEq(expected = -1ii, -1ii)
 
-    @test
-    def testNeqBigInt02(): Bool = +1ii != -1ii
+    @Test
+    def testNeqBigInt01(): Unit \ Assert =
+        assertNeq(unexpected = -1ii, +1ii)
+
+    @Test
+    def testNeqBigInt02(): Unit \ Assert =
+        assertNeq(unexpected = +1ii, -1ii)
+
+    @Test
+    def testNeqBigInt03(): Unit \ Assert =
+        assertNeq(unexpected = 1ii, 2ii)
 
 }
