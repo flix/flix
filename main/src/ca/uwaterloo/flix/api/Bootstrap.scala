@@ -450,14 +450,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     Steps.updateStaleSources(flix)
     for {
+      json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
       root <- Steps.check(flix)
     } yield {
-
-      val json = FileOps.readString(Bootstrap.getEffectLockFile(projectPath)) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
-        case Ok(str) => str
-      }
-
       EffectLock.deserialize(json) match {
         case Err(e) => return Err(BootstrapError.FileError(e))
         case Ok((defs, sigs)) =>
