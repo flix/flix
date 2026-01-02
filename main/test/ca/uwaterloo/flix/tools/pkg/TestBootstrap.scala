@@ -324,10 +324,10 @@ class TestBootstrap extends AnyFunSuite {
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
     if (Files.exists(p.resolve("lib/jaschdoc/flix-test-pkg-eff-upgrade/"))) {
-      println("flix prefix is valid")
+      fail("flix prefix is valid")
     }
     if (Files.exists(p.resolve("lib/jaschdoc/test-pkg-eff-upgrade/"))) {
-      println("flix prefix is invalid")
+      fail("flix prefix is invalid")
     }
     // FileOps.delete(p.resolve("lib/jaschdoc/flix-test-pkg-eff-upgrade/")).unsafeGet
 
