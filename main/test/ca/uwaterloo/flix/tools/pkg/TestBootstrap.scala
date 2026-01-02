@@ -329,7 +329,6 @@ class TestBootstrap extends AnyFunSuite {
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
     // Delete old files
-    println(FileOps.getFilesIn(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld"), Int.MaxValue))
     FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName-$vOld.toml")).unsafeGet
     FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName-$vOld.fpkg")).unsafeGet
 
