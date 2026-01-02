@@ -459,11 +459,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       (lockedDefs, lockedSigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
       root <- Steps.check(flix)
     } yield {
-      println("root defs:")
-      root.defs.keys.toList.sortBy(sym => sym.toString).foreach(println)
 
       println("root entrypoints:")
       root.entryPoints.toList.sortBy(sym => sym.toString).foreach(println)
+
+
+      println("root defs:")
+      root.defs.keys.toList.sortBy(sym => sym.toString).foreach(println)
 
       // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
       val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
