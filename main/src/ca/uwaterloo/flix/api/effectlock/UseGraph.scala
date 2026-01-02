@@ -35,9 +35,9 @@ object UseGraph {
     * in the definition of `f` and `f` is either a function or signature.
     */
   def computeGraph(root: TypedAst.Root): ListMap[UsedSym, UsedSym] = {
-    val missingFromDefs = root.defs.values.map(visitDef).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
-    val missingFromSigs = root.sigs.values.map(visitSig).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
-    missingFromDefs ++ missingFromSigs
+    val defUses = root.defs.values.map(visitDef).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
+    val sigUses = root.sigs.values.map(visitSig).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
+    defUses ++ sigUses
   }
 
   /** Returns the all the uses of functions and signatures in `defn0`. */
