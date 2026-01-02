@@ -139,6 +139,4 @@ mod Test.Kind.Def {
         }
     }
 
-    @test
-    def empty(): Bool = true
 }
