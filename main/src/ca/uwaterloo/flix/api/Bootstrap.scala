@@ -518,6 +518,28 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  /**
+    * Type checks the program and performs effect locking, overwriting the current 'effects.lock' file if it exists.
+    * If the program does not type check, then effect locking is aborted without touching the file system.
+    */
+  def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
+    if (!isProjectMode) {
+      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-lock'"))
+    }
+    Steps.updateStaleSources(flix)
+    for {
+      root <- Steps.check(flix)
+    } yield {
+      EffectLock.lock(root) match {
+        case Err(e) => return Err(BootstrapError.GeneralError(List(s"Unexpected serialization error: $e")))
+        case Ok(json) =>
+          val path = Bootstrap.getEffectLockFile(projectPath)
+          // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
+          FileOps.writeString(path, json)
+      }
+    }
+  }
+
   /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
   private def isProjectMode: Boolean = optManifest.isDefined
 
