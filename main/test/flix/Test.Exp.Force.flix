@@ -206,30 +206,11 @@ mod Test.Exp.Force {
         case Card(Suit, Rank)
     }
 
-    pub enum Poly[a, b] {
+    pub enum Poly[a, b] with Eq, ToString {
         case None,
         case This(a)
         case That(b)
         case Both(a, b)
-    }
-
-    instance Eq[Poly[a, b]] with Eq[a], Eq[b] {
-        pub def eq(p1: Poly[a, b], p2: Poly[a, b]): Bool = match (p1, p2) {
-            case (Poly.None, Poly.None) => true
-            case (Poly.This(x1), Poly.This(y1)) => x1 == y1
-            case (Poly.That(x1), Poly.That(y1)) => x1 == y1
-            case (Poly.Both(x1, x2), Poly.Both(y1, y2)) => x1 == y1 and x2 == y2
-            case _ => false
-        }
-    }
-
-    instance ToString[Poly[a, b]] with ToString[a], ToString[b] {
-        pub def toString(p: Poly[a, b]): String = match p {
-            case Poly.None       => "Poly.None"
-            case Poly.This(x)    => "Poly.This(${x})"
-            case Poly.That(y)    => "Poly.That(${y})"
-            case Poly.Both(x, y) => "Poly.Both(${x}, ${y})"
-        }
     }
 
 }
