@@ -297,11 +297,16 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
 
+    val pkgAuthor = "jaschdoc"
+    val pkgName = "flix-test-pkg-eff-upgrade"
+    val vOld = "0.1.0"
+    val vNew = "0.1.1"
+
     // Override manifest
     val toml = PkgTestUtils.mkTomlWithDeps(
-      """
-        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
-        |""".stripMargin
+      s"""
+         |"github:$pkgAuthor/$pkgName" = "$vOld"
+         |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
 
@@ -318,18 +323,16 @@ class TestBootstrap extends AnyFunSuite {
 
     // Perform upgrade by overriding manifest
     val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
-      """
-        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.1"
-        |""".stripMargin
+      s"""
+         |"github:$pkgAuthor/$pkgName" = "$vNew"
+         |""".stripMargin
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
     // Delete old files
-    fail(FileOps.getFilesIn(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade"), Int.MaxValue).toString())
-    FileOps.delete(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade/flix.toml")).unsafeGet
-    FileOps.delete(p.resolve("lib/github/jaschdoc/flix-test-pkg-eff-upgrade/test-pkg-eff-upgrade.fpkg")).unsafeGet
+    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName.toml")).unsafeGet
+    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName.fpkg")).unsafeGet
 
     val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
-
 
     bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) match {
       case Result.Err(BootstrapError.EffectUpgradeError(_)) => succeed
