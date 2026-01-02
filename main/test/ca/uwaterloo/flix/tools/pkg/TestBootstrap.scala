@@ -267,6 +267,32 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
+  test("eff-check on same version as before is ok") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
+
+    // Override manifest
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
+        |""".stripMargin
+    )
+    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+
+    // Override main file
+    val main =
+      """
+        |pub def main(): Unit \ IO =
+        |    println(Upgr.entrypoint())
+        |""".stripMargin
+    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
+
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+
+    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
+  }
+
   private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
