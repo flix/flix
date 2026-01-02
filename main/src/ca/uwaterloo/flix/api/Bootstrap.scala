@@ -462,6 +462,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       println("root defs:")
       root.defs.keys.toList.sortBy(sym => sym.toString).foreach(println)
 
+      println("root entrypoints:")
+      root.entryPoints.toList.sortBy(sym => sym.toString).foreach(println)
+
       // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
       val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
         case (f, UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
