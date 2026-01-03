@@ -12,34 +12,34 @@ mod Test.Import.Alias {
     import java.util.concurrent.atomic.{AtomicInteger => JAtomicInteger}
 
     @CompileTest
-    def importAlias01(x: JFile): JFile = x
+    def importAlias01(x: JFile): JFile = (x: JFile)
 
     @CompileTest
-    def importAlias02(x: JObject): JObject = x
+    def importAlias02(x: JObject): JObject = (x: JObject)
 
     @CompileTest
-    def importAlias03(x: JProcess): JProcess = x
+    def importAlias03(x: JProcess): JProcess = (x: JProcess)
 
     @CompileTest
-    def importAlias04(x: JRuntime): JRuntime = x
+    def importAlias04(x: JRuntime): JRuntime = (x: JRuntime)
 
     @CompileTest
-    def importAlias05(x: JStringBuffer): JStringBuffer = x
+    def importAlias05(x: JStringBuffer): JStringBuffer = (x: JStringBuffer)
 
     @CompileTest
-    def importAlias06(x: JStringBuilder): JStringBuilder = x
+    def importAlias06(x: JStringBuilder): JStringBuilder = (x: JStringBuilder)
 
     @CompileTest
-    def importAlias07(x: JThread): JThread = x
+    def importAlias07(x: JThread): JThread = (x: JThread)
 
     @CompileTest
-    def importAlias08(x: JCharset): JCharset = x
+    def importAlias08(x: JCharset): JCharset = (x: JCharset)
 
     @CompileTest
-    def importAlias09(x: JLocale): JLocale = x
+    def importAlias09(x: JLocale): JLocale = (x: JLocale)
 
     @CompileTest
-    def importAlias10(x: JAtomicInteger): JAtomicInteger = x
+    def importAlias10(x: JAtomicInteger): JAtomicInteger = (x: JAtomicInteger)
 
     pub enum E {
         case C01(JFile)

@@ -12,34 +12,34 @@ mod Test.Import.Class {
     import java.util.concurrent.atomic.AtomicLong
 
     @CompileTest
-    def importClass01(x: File): File = x
+    def importClass01(x: File): File = (x: File)
 
     @CompileTest
-    def importClass02(x: Runtime): Runtime = x
+    def importClass02(x: Runtime): Runtime = (x: Runtime)
 
     @CompileTest
-    def importClass03(x: StringBuffer): StringBuffer = x
+    def importClass03(x: StringBuffer): StringBuffer = (x: StringBuffer)
 
     @CompileTest
-    def importClass04(x: StringBuilder): StringBuilder = x
+    def importClass04(x: StringBuilder): StringBuilder = (x: StringBuilder)
 
     @CompileTest
-    def importClass05(x: Thread): Thread = x
+    def importClass05(x: Thread): Thread = (x: Thread)
 
     @CompileTest
-    def importClass06(x: BigDecimal): BigDecimal = x
+    def importClass06(x: BigDecimal): BigDecimal = (x: BigDecimal)
 
     @CompileTest
-    def importClass07(x: BigInteger): BigInteger = x
+    def importClass07(x: BigInteger): BigInteger = (x: BigInteger)
 
     @CompileTest
-    def importClass08(x: Path): Path = x
+    def importClass08(x: Path): Path = (x: Path)
 
     @CompileTest
-    def importClass09(x: Locale): Locale = x
+    def importClass09(x: Locale): Locale = (x: Locale)
 
     @CompileTest
-    def importClass10(x: AtomicLong): AtomicLong = x
+    def importClass10(x: AtomicLong): AtomicLong = (x: AtomicLong)
 
     pub enum E {
         case C01(File)

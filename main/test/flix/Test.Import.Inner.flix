@@ -12,34 +12,34 @@ mod Test.Import.Inner {
     import java.util.{Locale$Category => LocaleCategory}
 
     @CompileTest
-    def importInner01(x: CharSubset): CharSubset = x
+    def importInner01(x: CharSubset): CharSubset = (x: CharSubset)
 
     @CompileTest
-    def importInner02(x: UnicodeBlock): UnicodeBlock = x
+    def importInner02(x: UnicodeBlock): UnicodeBlock = (x: UnicodeBlock)
 
     @CompileTest
-    def importInner03(x: Redirect): Redirect = x
+    def importInner03(x: Redirect): Redirect = (x: Redirect)
 
     @CompileTest
-    def importInner04(x: SystemLogger): SystemLogger = x
+    def importInner04(x: SystemLogger): SystemLogger = (x: SystemLogger)
 
     @CompileTest
-    def importInner05(x: ThreadState): ThreadState = x
+    def importInner05(x: ThreadState): ThreadState = (x: ThreadState)
 
     @CompileTest
-    def importInner06(x: UncaughtExceptionHandler): UncaughtExceptionHandler = x
+    def importInner06(x: UncaughtExceptionHandler): UncaughtExceptionHandler = (x: UncaughtExceptionHandler)
 
     @CompileTest
-    def importInner07(x: Lookup): Lookup = x
+    def importInner07(x: Lookup): Lookup = (x: Lookup)
 
     @CompileTest
-    def importInner08(x: BigDecimalLayoutForm): BigDecimalLayoutForm = x
+    def importInner08(x: BigDecimalLayoutForm): BigDecimalLayoutForm = (x: BigDecimalLayoutForm)
 
     @CompileTest
-    def importInner09(x: LocaleBuilder): LocaleBuilder = x
+    def importInner09(x: LocaleBuilder): LocaleBuilder = (x: LocaleBuilder)
 
     @CompileTest
-    def importInner10(x: LocaleCategory): LocaleCategory = x
+    def importInner10(x: LocaleCategory): LocaleCategory = (x: LocaleCategory)
 
     pub enum E {
         case C01(CharSubset)

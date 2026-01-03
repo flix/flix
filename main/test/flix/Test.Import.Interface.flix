@@ -12,34 +12,34 @@ mod Test.Import.Interface {
     import java.util.concurrent.locks.Lock
 
     @CompileTest
-    def importInterface01(x: Closeable): Closeable = x
+    def importInterface01(x: Closeable): Closeable = (x: Closeable)
 
     @CompileTest
-    def importInterface02(x: Flushable): Flushable = x
+    def importInterface02(x: Flushable): Flushable = (x: Flushable)
 
     @CompileTest
-    def importInterface03(x: Appendable): Appendable = x
+    def importInterface03(x: Appendable): Appendable = (x: Appendable)
 
     @CompileTest
-    def importInterface04(x: AutoCloseable): AutoCloseable = x
+    def importInterface04(x: AutoCloseable): AutoCloseable = (x: AutoCloseable)
 
     @CompileTest
-    def importInterface05(x: CharSequence): CharSequence = x
+    def importInterface05(x: CharSequence): CharSequence = (x: CharSequence)
 
     @CompileTest
-    def importInterface06(x: Cloneable): Cloneable = x
+    def importInterface06(x: Cloneable): Cloneable = (x: Cloneable)
 
     @CompileTest
-    def importInterface07(x: Readable): Readable = x
+    def importInterface07(x: Readable): Readable = (x: Readable)
 
     @CompileTest
-    def importInterface08(x: Runnable): Runnable = x
+    def importInterface08(x: Runnable): Runnable = (x: Runnable)
 
     @CompileTest
-    def importInterface09(x: Future): Future = x
+    def importInterface09(x: Future): Future = (x: Future)
 
     @CompileTest
-    def importInterface10(x: Lock): Lock = x
+    def importInterface10(x: Lock): Lock = (x: Lock)
 
     pub enum E {
         case C01(Closeable)

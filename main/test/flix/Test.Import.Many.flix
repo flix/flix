@@ -8,86 +8,86 @@ mod Test.Import.Many {
 
     // java.io
     @CompileTest
-    def importMany01(x: File): File = x
+    def importMany01(x: File): File = (x: File)
 
     @CompileTest
-    def importMany02(x: InputStream): InputStream = x
+    def importMany02(x: InputStream): InputStream = (x: InputStream)
 
     @CompileTest
-    def importMany03(x: OutputStream): OutputStream = x
+    def importMany03(x: OutputStream): OutputStream = (x: OutputStream)
 
     @CompileTest
-    def importMany04(x: Reader): Reader = x
+    def importMany04(x: Reader): Reader = (x: Reader)
 
     @CompileTest
-    def importMany05(x: Writer): Writer = x
+    def importMany05(x: Writer): Writer = (x: Writer)
 
     // java.lang
     @CompileTest
-    def importMany06(x: Boolean): Boolean = x
+    def importMany06(x: Boolean): Boolean = (x: Boolean)
 
     @CompileTest
-    def importMany07(x: Byte): Byte = x
+    def importMany07(x: Byte): Byte = (x: Byte)
 
     @CompileTest
-    def importMany08(x: Character): Character = x
+    def importMany08(x: Character): Character = (x: Character)
 
     @CompileTest
-    def importMany09(x: Double): Double = x
+    def importMany09(x: Double): Double = (x: Double)
 
     @CompileTest
-    def importMany10(x: Float): Float = x
+    def importMany10(x: Float): Float = (x: Float)
 
     @CompileTest
-    def importMany11(x: Integer): Integer = x
+    def importMany11(x: Integer): Integer = (x: Integer)
 
     @CompileTest
-    def importMany12(x: Long): Long = x
+    def importMany12(x: Long): Long = (x: Long)
 
     @CompileTest
-    def importMany13(x: Number): Number = x
+    def importMany13(x: Number): Number = (x: Number)
 
     @CompileTest
-    def importMany14(x: Short): Short = x
+    def importMany14(x: Short): Short = (x: Short)
 
     @CompileTest
-    def importMany15(x: System): System = x
+    def importMany15(x: System): System = (x: System)
 
     // java.nio.charset
     @CompileTest
-    def importMany16(x: Charset): Charset = x
+    def importMany16(x: Charset): Charset = (x: Charset)
 
     @CompileTest
-    def importMany17(x: CharsetDecoder): CharsetDecoder = x
+    def importMany17(x: CharsetDecoder): CharsetDecoder = (x: CharsetDecoder)
 
     @CompileTest
-    def importMany18(x: CharsetEncoder): CharsetEncoder = x
+    def importMany18(x: CharsetEncoder): CharsetEncoder = (x: CharsetEncoder)
 
     // java.util
     @CompileTest
-    def importMany19(x: Date): Date = x
+    def importMany19(x: Date): Date = (x: Date)
 
     @CompileTest
-    def importMany20(x: Locale): Locale = x
+    def importMany20(x: Locale): Locale = (x: Locale)
 
     @CompileTest
-    def importMany21(x: Random): Random = x
+    def importMany21(x: Random): Random = (x: Random)
 
     @CompileTest
-    def importMany22(x: TimeZone): TimeZone = x
+    def importMany22(x: TimeZone): TimeZone = (x: TimeZone)
 
     @CompileTest
-    def importMany23(x: UUID): UUID = x
+    def importMany23(x: UUID): UUID = (x: UUID)
 
     // java.util.concurrent.atomic
     @CompileTest
-    def importMany24(x: AtomicBoolean): AtomicBoolean = x
+    def importMany24(x: AtomicBoolean): AtomicBoolean = (x: AtomicBoolean)
 
     @CompileTest
-    def importMany25(x: AtomicInteger): AtomicInteger = x
+    def importMany25(x: AtomicInteger): AtomicInteger = (x: AtomicInteger)
 
     @CompileTest
-    def importMany26(x: AtomicLong): AtomicLong = x
+    def importMany26(x: AtomicLong): AtomicLong = (x: AtomicLong)
 
     pub enum E {
         case C01(File)
