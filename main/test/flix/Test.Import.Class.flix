@@ -54,4 +54,28 @@ mod Test.Import.Class {
         case C10(AtomicLong)
     }
 
+    type alias A01 = File
+    type alias A02 = Runtime
+    type alias A03 = StringBuffer
+    type alias A04 = StringBuilder
+    type alias A05 = Thread
+    type alias A06 = BigDecimal
+    type alias A07 = BigInteger
+    type alias A08 = Path
+    type alias A09 = Locale
+    type alias A10 = AtomicLong
+
+    pub struct S[r] {
+        f01: File,
+        f02: Runtime,
+        f03: StringBuffer,
+        f04: StringBuilder,
+        f05: Thread,
+        f06: BigDecimal,
+        f07: BigInteger,
+        f08: Path,
+        f09: Locale,
+        f10: AtomicLong
+    }
+
 }

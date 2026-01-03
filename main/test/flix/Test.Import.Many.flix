@@ -118,4 +118,60 @@ mod Test.Import.Many {
         case C26(AtomicLong)
     }
 
+    type alias A01 = File
+    type alias A02 = InputStream
+    type alias A03 = OutputStream
+    type alias A04 = Reader
+    type alias A05 = Writer
+    type alias A06 = Boolean
+    type alias A07 = Byte
+    type alias A08 = Character
+    type alias A09 = Double
+    type alias A10 = Float
+    type alias A11 = Integer
+    type alias A12 = Long
+    type alias A13 = Number
+    type alias A14 = Short
+    type alias A15 = System
+    type alias A16 = Charset
+    type alias A17 = CharsetDecoder
+    type alias A18 = CharsetEncoder
+    type alias A19 = Date
+    type alias A20 = Locale
+    type alias A21 = Random
+    type alias A22 = TimeZone
+    type alias A23 = UUID
+    type alias A24 = AtomicBoolean
+    type alias A25 = AtomicInteger
+    type alias A26 = AtomicLong
+
+    pub struct S[r] {
+        f01: File,
+        f02: InputStream,
+        f03: OutputStream,
+        f04: Reader,
+        f05: Writer,
+        f06: Boolean,
+        f07: Byte,
+        f08: Character,
+        f09: Double,
+        f10: Float,
+        f11: Integer,
+        f12: Long,
+        f13: Number,
+        f14: Short,
+        f15: System,
+        f16: Charset,
+        f17: CharsetDecoder,
+        f18: CharsetEncoder,
+        f19: Date,
+        f20: Locale,
+        f21: Random,
+        f22: TimeZone,
+        f23: UUID,
+        f24: AtomicBoolean,
+        f25: AtomicInteger,
+        f26: AtomicLong
+    }
+
 }

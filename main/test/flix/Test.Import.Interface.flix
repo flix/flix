@@ -54,4 +54,28 @@ mod Test.Import.Interface {
         case C10(Lock)
     }
 
+    type alias A01 = Closeable
+    type alias A02 = Flushable
+    type alias A03 = Appendable
+    type alias A04 = AutoCloseable
+    type alias A05 = CharSequence
+    type alias A06 = Cloneable
+    type alias A07 = Readable
+    type alias A08 = Runnable
+    type alias A09 = Future
+    type alias A10 = Lock
+
+    pub struct S[r] {
+        f01: Closeable,
+        f02: Flushable,
+        f03: Appendable,
+        f04: AutoCloseable,
+        f05: CharSequence,
+        f06: Cloneable,
+        f07: Readable,
+        f08: Runnable,
+        f09: Future,
+        f10: Lock
+    }
+
 }

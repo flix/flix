@@ -54,4 +54,28 @@ mod Test.Import.Alias {
         case C10(JAtomicInteger)
     }
 
+    type alias A01 = JFile
+    type alias A02 = JObject
+    type alias A03 = JProcess
+    type alias A04 = JRuntime
+    type alias A05 = JStringBuffer
+    type alias A06 = JStringBuilder
+    type alias A07 = JThread
+    type alias A08 = JCharset
+    type alias A09 = JLocale
+    type alias A10 = JAtomicInteger
+
+    pub struct S[r] {
+        f01: JFile,
+        f02: JObject,
+        f03: JProcess,
+        f04: JRuntime,
+        f05: JStringBuffer,
+        f06: JStringBuilder,
+        f07: JThread,
+        f08: JCharset,
+        f09: JLocale,
+        f10: JAtomicInteger
+    }
+
 }

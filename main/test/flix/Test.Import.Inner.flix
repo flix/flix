@@ -54,4 +54,28 @@ mod Test.Import.Inner {
         case C10(LocaleCategory)
     }
 
+    type alias A01 = CharSubset
+    type alias A02 = UnicodeBlock
+    type alias A03 = Redirect
+    type alias A04 = SystemLogger
+    type alias A05 = ThreadState
+    type alias A06 = UncaughtExceptionHandler
+    type alias A07 = Lookup
+    type alias A08 = BigDecimalLayoutForm
+    type alias A09 = LocaleBuilder
+    type alias A10 = LocaleCategory
+
+    pub struct S[r] {
+        f01: CharSubset,
+        f02: UnicodeBlock,
+        f03: Redirect,
+        f04: SystemLogger,
+        f05: ThreadState,
+        f06: UncaughtExceptionHandler,
+        f07: Lookup,
+        f08: BigDecimalLayoutForm,
+        f09: LocaleBuilder,
+        f10: LocaleCategory
+    }
+
 }
