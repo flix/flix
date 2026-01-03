@@ -174,4 +174,62 @@ mod Test.Import.Many {
         f26: AtomicLong
     }
 
+    pub trait T[a] {
+        pub def f01(x: a): File
+        pub def f02(x: a): InputStream
+        pub def f03(x: a): OutputStream
+        pub def f04(x: a): Reader
+        pub def f05(x: a): Writer
+        pub def f06(x: a): Boolean
+        pub def f07(x: a): Byte
+        pub def f08(x: a): Character
+        pub def f09(x: a): Double
+        pub def f10(x: a): Float
+        pub def f11(x: a): Integer
+        pub def f12(x: a): Long
+        pub def f13(x: a): Number
+        pub def f14(x: a): Short
+        pub def f15(x: a): System
+        pub def f16(x: a): Charset
+        pub def f17(x: a): CharsetDecoder
+        pub def f18(x: a): CharsetEncoder
+        pub def f19(x: a): Date
+        pub def f20(x: a): Locale
+        pub def f21(x: a): Random
+        pub def f22(x: a): TimeZone
+        pub def f23(x: a): UUID
+        pub def f24(x: a): AtomicBoolean
+        pub def f25(x: a): AtomicInteger
+        pub def f26(x: a): AtomicLong
+    }
+
+    instance T[Unit] {
+        pub def f01(_x: Unit): File = ???
+        pub def f02(_x: Unit): InputStream = ???
+        pub def f03(_x: Unit): OutputStream = ???
+        pub def f04(_x: Unit): Reader = ???
+        pub def f05(_x: Unit): Writer = ???
+        pub def f06(_x: Unit): Boolean = ???
+        pub def f07(_x: Unit): Byte = ???
+        pub def f08(_x: Unit): Character = ???
+        pub def f09(_x: Unit): Double = ???
+        pub def f10(_x: Unit): Float = ???
+        pub def f11(_x: Unit): Integer = ???
+        pub def f12(_x: Unit): Long = ???
+        pub def f13(_x: Unit): Number = ???
+        pub def f14(_x: Unit): Short = ???
+        pub def f15(_x: Unit): System = ???
+        pub def f16(_x: Unit): Charset = ???
+        pub def f17(_x: Unit): CharsetDecoder = ???
+        pub def f18(_x: Unit): CharsetEncoder = ???
+        pub def f19(_x: Unit): Date = ???
+        pub def f20(_x: Unit): Locale = ???
+        pub def f21(_x: Unit): Random = ???
+        pub def f22(_x: Unit): TimeZone = ???
+        pub def f23(_x: Unit): UUID = ???
+        pub def f24(_x: Unit): AtomicBoolean = ???
+        pub def f25(_x: Unit): AtomicInteger = ???
+        pub def f26(_x: Unit): AtomicLong = ???
+    }
+
 }

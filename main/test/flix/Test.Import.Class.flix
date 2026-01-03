@@ -78,4 +78,30 @@ mod Test.Import.Class {
         f10: AtomicLong
     }
 
+    pub trait T[a] {
+        pub def f01(x: a): File
+        pub def f02(x: a): Runtime
+        pub def f03(x: a): StringBuffer
+        pub def f04(x: a): StringBuilder
+        pub def f05(x: a): Thread
+        pub def f06(x: a): BigDecimal
+        pub def f07(x: a): BigInteger
+        pub def f08(x: a): Path
+        pub def f09(x: a): Locale
+        pub def f10(x: a): AtomicLong
+    }
+
+    instance T[Unit] {
+        pub def f01(_x: Unit): File = ???
+        pub def f02(_x: Unit): Runtime = ???
+        pub def f03(_x: Unit): StringBuffer = ???
+        pub def f04(_x: Unit): StringBuilder = ???
+        pub def f05(_x: Unit): Thread = ???
+        pub def f06(_x: Unit): BigDecimal = ???
+        pub def f07(_x: Unit): BigInteger = ???
+        pub def f08(_x: Unit): Path = ???
+        pub def f09(_x: Unit): Locale = ???
+        pub def f10(_x: Unit): AtomicLong = ???
+    }
+
 }

@@ -78,4 +78,30 @@ mod Test.Import.Interface {
         f10: Lock
     }
 
+    pub trait T[a] {
+        pub def f01(x: a): Closeable
+        pub def f02(x: a): Flushable
+        pub def f03(x: a): Appendable
+        pub def f04(x: a): AutoCloseable
+        pub def f05(x: a): CharSequence
+        pub def f06(x: a): Cloneable
+        pub def f07(x: a): Readable
+        pub def f08(x: a): Runnable
+        pub def f09(x: a): Future
+        pub def f10(x: a): Lock
+    }
+
+    instance T[Unit] {
+        pub def f01(_x: Unit): Closeable = ???
+        pub def f02(_x: Unit): Flushable = ???
+        pub def f03(_x: Unit): Appendable = ???
+        pub def f04(_x: Unit): AutoCloseable = ???
+        pub def f05(_x: Unit): CharSequence = ???
+        pub def f06(_x: Unit): Cloneable = ???
+        pub def f07(_x: Unit): Readable = ???
+        pub def f08(_x: Unit): Runnable = ???
+        pub def f09(_x: Unit): Future = ???
+        pub def f10(_x: Unit): Lock = ???
+    }
+
 }

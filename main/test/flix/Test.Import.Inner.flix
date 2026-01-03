@@ -78,4 +78,30 @@ mod Test.Import.Inner {
         f10: LocaleCategory
     }
 
+    pub trait T[a] {
+        pub def f01(x: a): CharSubset
+        pub def f02(x: a): UnicodeBlock
+        pub def f03(x: a): Redirect
+        pub def f04(x: a): SystemLogger
+        pub def f05(x: a): ThreadState
+        pub def f06(x: a): UncaughtExceptionHandler
+        pub def f07(x: a): Lookup
+        pub def f08(x: a): BigDecimalLayoutForm
+        pub def f09(x: a): LocaleBuilder
+        pub def f10(x: a): LocaleCategory
+    }
+
+    instance T[Unit] {
+        pub def f01(_x: Unit): CharSubset = ???
+        pub def f02(_x: Unit): UnicodeBlock = ???
+        pub def f03(_x: Unit): Redirect = ???
+        pub def f04(_x: Unit): SystemLogger = ???
+        pub def f05(_x: Unit): ThreadState = ???
+        pub def f06(_x: Unit): UncaughtExceptionHandler = ???
+        pub def f07(_x: Unit): Lookup = ???
+        pub def f08(_x: Unit): BigDecimalLayoutForm = ???
+        pub def f09(_x: Unit): LocaleBuilder = ???
+        pub def f10(_x: Unit): LocaleCategory = ???
+    }
+
 }

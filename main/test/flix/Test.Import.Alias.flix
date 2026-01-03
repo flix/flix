@@ -78,4 +78,30 @@ mod Test.Import.Alias {
         f10: JAtomicInteger
     }
 
+    pub trait T[a] {
+        pub def f01(x: a): JFile
+        pub def f02(x: a): JObject
+        pub def f03(x: a): JProcess
+        pub def f04(x: a): JRuntime
+        pub def f05(x: a): JStringBuffer
+        pub def f06(x: a): JStringBuilder
+        pub def f07(x: a): JThread
+        pub def f08(x: a): JCharset
+        pub def f09(x: a): JLocale
+        pub def f10(x: a): JAtomicInteger
+    }
+
+    instance T[Unit] {
+        pub def f01(_x: Unit): JFile = ???
+        pub def f02(_x: Unit): JObject = ???
+        pub def f03(_x: Unit): JProcess = ???
+        pub def f04(_x: Unit): JRuntime = ???
+        pub def f05(_x: Unit): JStringBuffer = ???
+        pub def f06(_x: Unit): JStringBuilder = ???
+        pub def f07(_x: Unit): JThread = ???
+        pub def f08(_x: Unit): JCharset = ???
+        pub def f09(_x: Unit): JLocale = ???
+        pub def f10(_x: Unit): JAtomicInteger = ???
+    }
+
 }
