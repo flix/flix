@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.Bootstrap
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -264,6 +264,80 @@ class TestBootstrap extends AnyFunSuite {
       succeed
     } else {
       fail("File 'effects.lock' does not exist")
+    }
+  }
+
+  test("eff-check on same version as before is ok") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
+
+    // Override manifest
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      """
+        |"github:jaschdoc/flix-test-pkg-eff-upgrade" = "0.1.0"
+        |""".stripMargin
+    )
+    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+
+    // Override main file
+    val main =
+      """
+        |pub def main(): Unit \ IO =
+        |    println(Upgr.entrypoint(42))
+        |""".stripMargin
+    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
+
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+
+    assert(bootstrap.checkEffects(PkgTestUtils.mkFlix) == Result.Ok(()))
+  }
+
+  test("eff-check on effect unsafe upgrade reports error") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
+
+    val pkgAuthor = "jaschdoc"
+    val pkgName = "flix-test-pkg-eff-upgrade"
+    val vOld = "0.1.0"
+    val vNew = "0.1.1"
+
+    // Override manifest
+    val toml = PkgTestUtils.mkTomlWithDeps(
+      s"""
+         |"github:$pkgAuthor/$pkgName" = "$vOld"
+         |""".stripMargin
+    )
+    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+
+    // Override main file
+    val main =
+      """
+        |pub def main(): Unit \ IO =
+        |    println(Upgr.entrypoint(42))
+        |""".stripMargin
+    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
+
+    val bootstrap = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+    bootstrap.lockEffects(PkgTestUtils.mkFlix).unsafeGet
+
+    // Perform upgrade by overriding manifest
+    val tomlUpgr = PkgTestUtils.mkTomlWithDeps(
+      s"""
+         |"github:$pkgAuthor/$pkgName" = "$vNew"
+         |""".stripMargin
+    )
+    FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
+    // Delete old files
+    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName-$vOld.toml")).unsafeGet
+    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vOld/$pkgName-$vOld.fpkg")).unsafeGet
+
+    val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
+
+    bootstrapUpgr.checkEffects(PkgTestUtils.mkFlix) match {
+      case Result.Err(BootstrapError.EffectUpgradeError(_)) => succeed
+      case Result.Err(e) => fail(e.message(Formatter.getDefault))
+      case Result.Ok(()) => fail("expected effect upgrade error")
     }
   }
 

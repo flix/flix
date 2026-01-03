@@ -46,6 +46,21 @@ object FileOps {
   }
 
   /**
+    * Checks if `path` exists on the file system.
+    *
+    * @param path the path to check for existence.
+    * @return `Ok(true)` if the path exists on the file system, `Ok(true)` otherwise.
+    *         Returns `Err(e)` if an exception `e` occurred.
+    */
+  def exists(path: Path): Result[Boolean, Exception] = {
+    try {
+      Result.Ok(Files.exists(path))
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  /**
     * Reads the first line of the file at the given path `p` if it is possible.
     */
   def readLine(p: Path): Option[String] = {
@@ -53,6 +68,20 @@ object FileOps {
       Some(Files.lines(p).findFirst().get())
     } catch {
       case _: Throwable => None
+    }
+  }
+
+  /**
+    * Returns the contents of the file at `path` as a string.
+    *
+    * @param path the path to read. The caller must check if it exists first.
+    * @return the contents of the file.
+    */
+  def readString(path: Path): Result[String, Exception] = {
+    try {
+      Result.Ok(Files.readString(path))
+    } catch {
+      case e: Exception => Result.Err(e)
     }
   }
 
