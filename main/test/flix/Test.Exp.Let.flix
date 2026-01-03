@@ -1,25 +1,27 @@
 mod Test.Exp.Let {
 
-    @test
-    def testLet01(): Bool =
-        let x = 1;
-        x == 1
+    use Assert.assertEq
 
-    @test
-    def testLet02(): Bool =
+    @Test
+    def testLet01(): Unit \ Assert =
+        let x = 1;
+        assertEq(expected = true, x == 1)
+
+    @Test
+    def testLet02(): Unit \ Assert =
         let x = 1;
         let y = 2;
-        x + y == 1 + 2
+        assertEq(expected = true, x + y == 1 + 2)
 
-    @test
-    def testLet03(): Bool =
+    @Test
+    def testLet03(): Unit \ Assert =
         let x = 1;
         let y = 2;
         let z = 3;
-        x + y + z == 1 + 2 + 3
+        assertEq(expected = true, x + y + z == 1 + 2 + 3)
 
-    @test
-    def testLet04(): Bool =
+    @Test
+    def testLet04(): Unit \ Assert =
         let x = {
             let x1 = 1;
             x1
@@ -28,10 +30,10 @@ mod Test.Exp.Let {
             let y1 = 2;
             y1
         };
-        x + y == 1 + 2
+        assertEq(expected = true, x + y == 1 + 2)
 
-    @test
-    def testLet05(): Bool =
+    @Test
+    def testLet05(): Unit \ Assert =
         let x = {
             let x1 = 1;
             let x2 = 2;
@@ -42,83 +44,83 @@ mod Test.Exp.Let {
             let y2 = 4;
             y1 + y2
         };
-        x + y == 1 + 2 + 3 + 4
+        assertEq(expected = true, x + y == 1 + 2 + 3 + 4)
 
-    @test
-    def testLet06(): Bool =
-        if (let x = true; x) true else false
+    @Test
+    def testLet06(): Unit \ Assert =
+        assertEq(expected = true, if (let x = true; x) true else false)
 
-    @test
-    def testLet07(): Bool =
-        if (true) {
+    @Test
+    def testLet07(): Unit \ Assert =
+        assertEq(expected = true, if (true) {
             let x = 1;
             x == 1
         } else {
             false
-        }
+        })
 
-    @test
-    def testLet08(): Bool =
-        if (false) {
+    @Test
+    def testLet08(): Unit \ Assert =
+        assertEq(expected = true, if (false) {
             false
         } else {
             let x = 1;
             x == 1
-        }
+        })
 
-    @test
-    def testLetUnit01(): Bool =
+    @Test
+    def testLetUnit01(): Unit \ Assert =
         let x = ();
-        x == ()
+        assertEq(expected = true, x == ())
 
-    @test
-    def testLetBool01(): Bool =
+    @Test
+    def testLetBool01(): Unit \ Assert =
         let x = true;
-        x == true
+        assertEq(expected = true, x == true)
 
-    @test
-    def testLetBool02(): Bool =
+    @Test
+    def testLetBool02(): Unit \ Assert =
         let x = false;
-        x == false
+        assertEq(expected = true, x == false)
 
-    @test
-    def testLetChar01(): Bool =
+    @Test
+    def testLetChar01(): Unit \ Assert =
         let x = 'a';
-        x == 'a'
+        assertEq(expected = true, x == 'a')
 
-    @test
-    def testLetFloat3201(): Bool =
+    @Test
+    def testLetFloat3201(): Unit \ Assert =
         let x = 123.456f32;
-        x == 123.456f32
+        assertEq(expected = true, x == 123.456f32)
 
-    @test
-    def testLetFloat6401(): Bool =
+    @Test
+    def testLetFloat6401(): Unit \ Assert =
         let x = 123.456f64;
-        x == 123.456f64
+        assertEq(expected = true, x == 123.456f64)
 
-    @test
-    def testLetInt8(): Bool =
+    @Test
+    def testLetInt8(): Unit \ Assert =
         let x = 123i8;
-        x == 123i8
+        assertEq(expected = true, x == 123i8)
 
-    @test
-    def testLetInt16(): Bool =
+    @Test
+    def testLetInt16(): Unit \ Assert =
         let x = 123i16;
-        x == 123i16
+        assertEq(expected = true, x == 123i16)
 
-    @test
-    def testLetInt32(): Bool =
+    @Test
+    def testLetInt32(): Unit \ Assert =
         let x = 123i32;
-        x == 123i32
+        assertEq(expected = true, x == 123i32)
 
-    @test
-    def testLetInt64(): Bool =
+    @Test
+    def testLetInt64(): Unit \ Assert =
         let x = 123i64;
-        x == 123i64
+        assertEq(expected = true, x == 123i64)
 
-    @test
-    def testLetString01(): Bool =
+    @Test
+    def testLetString01(): Unit \ Assert =
         let x = "Hello World!";
-        x == "Hello World!"
+        assertEq(expected = true, x == "Hello World!")
 
 }

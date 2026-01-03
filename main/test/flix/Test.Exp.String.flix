@@ -65,4 +65,5 @@ mod Test.Exp.String {
 
     @test
     def testString22(): Bool = "\%{" == "%" + "{"
+
 }
