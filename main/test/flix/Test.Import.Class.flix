@@ -104,4 +104,17 @@ mod Test.Import.Class {
         pub def f10(_x: Unit): AtomicLong = ???
     }
 
+    pub eff F {
+        def f01(x: File): File
+        def f02(x: Runtime): Runtime
+        def f03(x: StringBuffer): StringBuffer
+        def f04(x: StringBuilder): StringBuilder
+        def f05(x: Thread): Thread
+        def f06(x: BigDecimal): BigDecimal
+        def f07(x: BigInteger): BigInteger
+        def f08(x: Path): Path
+        def f09(x: Locale): Locale
+        def f10(x: AtomicLong): AtomicLong
+    }
+
 }

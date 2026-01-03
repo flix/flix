@@ -232,4 +232,33 @@ mod Test.Import.Many {
         pub def f26(_x: Unit): AtomicLong = ???
     }
 
+    pub eff F {
+        def f01(x: File): File
+        def f02(x: InputStream): InputStream
+        def f03(x: OutputStream): OutputStream
+        def f04(x: Reader): Reader
+        def f05(x: Writer): Writer
+        def f06(x: Boolean): Boolean
+        def f07(x: Byte): Byte
+        def f08(x: Character): Character
+        def f09(x: Double): Double
+        def f10(x: Float): Float
+        def f11(x: Integer): Integer
+        def f12(x: Long): Long
+        def f13(x: Number): Number
+        def f14(x: Short): Short
+        def f15(x: System): System
+        def f16(x: Charset): Charset
+        def f17(x: CharsetDecoder): CharsetDecoder
+        def f18(x: CharsetEncoder): CharsetEncoder
+        def f19(x: Date): Date
+        def f20(x: Locale): Locale
+        def f21(x: Random): Random
+        def f22(x: TimeZone): TimeZone
+        def f23(x: UUID): UUID
+        def f24(x: AtomicBoolean): AtomicBoolean
+        def f25(x: AtomicInteger): AtomicInteger
+        def f26(x: AtomicLong): AtomicLong
+    }
+
 }

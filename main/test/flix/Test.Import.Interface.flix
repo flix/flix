@@ -104,4 +104,17 @@ mod Test.Import.Interface {
         pub def f10(_x: Unit): Lock = ???
     }
 
+    pub eff F {
+        def f01(x: Closeable): Closeable
+        def f02(x: Flushable): Flushable
+        def f03(x: Appendable): Appendable
+        def f04(x: AutoCloseable): AutoCloseable
+        def f05(x: CharSequence): CharSequence
+        def f06(x: Cloneable): Cloneable
+        def f07(x: Readable): Readable
+        def f08(x: Runnable): Runnable
+        def f09(x: Future): Future
+        def f10(x: Lock): Lock
+    }
+
 }

@@ -104,4 +104,17 @@ mod Test.Import.Alias {
         pub def f10(_x: Unit): JAtomicInteger = ???
     }
 
+    pub eff F {
+        def f01(x: JFile): JFile
+        def f02(x: JObject): JObject
+        def f03(x: JProcess): JProcess
+        def f04(x: JRuntime): JRuntime
+        def f05(x: JStringBuffer): JStringBuffer
+        def f06(x: JStringBuilder): JStringBuilder
+        def f07(x: JThread): JThread
+        def f08(x: JCharset): JCharset
+        def f09(x: JLocale): JLocale
+        def f10(x: JAtomicInteger): JAtomicInteger
+    }
+
 }

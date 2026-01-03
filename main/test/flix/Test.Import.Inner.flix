@@ -104,4 +104,17 @@ mod Test.Import.Inner {
         pub def f10(_x: Unit): LocaleCategory = ???
     }
 
+    pub eff F {
+        def f01(x: CharSubset): CharSubset
+        def f02(x: UnicodeBlock): UnicodeBlock
+        def f03(x: Redirect): Redirect
+        def f04(x: SystemLogger): SystemLogger
+        def f05(x: ThreadState): ThreadState
+        def f06(x: UncaughtExceptionHandler): UncaughtExceptionHandler
+        def f07(x: Lookup): Lookup
+        def f08(x: BigDecimalLayoutForm): BigDecimalLayoutForm
+        def f09(x: LocaleBuilder): LocaleBuilder
+        def f10(x: LocaleCategory): LocaleCategory
+    }
+
 }
