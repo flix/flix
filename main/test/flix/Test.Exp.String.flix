@@ -1,69 +1,93 @@
 mod Test.Exp.String {
 
-    @test
-    def testString01(): String = ""
+    use Assert.assertEq
 
-    @test
-    def testString02(): String = "a"
+    @Test
+    def testString01(): Unit \ Assert =
+        assertEq(expected = "", "")
 
-    @test
-    def testString03(): String = "z"
+    @Test
+    def testString02(): Unit \ Assert =
+        assertEq(expected = "a", "a")
 
-    @test
-    def testString04(): String = "A"
+    @Test
+    def testString03(): Unit \ Assert =
+        assertEq(expected = "z", "z")
 
-    @test
-    def testString05(): String = "Z"
+    @Test
+    def testString04(): Unit \ Assert =
+        assertEq(expected = "A", "A")
 
-    @test
-    def testString06(): String = "\r"
+    @Test
+    def testString05(): Unit \ Assert =
+        assertEq(expected = "Z", "Z")
 
-    @test
-    def testString07(): String = "\n"
+    @Test
+    def testString06(): Unit \ Assert =
+        assertEq(expected = "\r", "\r")
 
-    @test
-    def testString08(): String = "\t"
+    @Test
+    def testString07(): Unit \ Assert =
+        assertEq(expected = "\n", "\n")
 
-    @test
-    def testString09(): String = "\\"
+    @Test
+    def testString08(): Unit \ Assert =
+        assertEq(expected = "\t", "\t")
 
-    @test
-    def testString10(): String = "\""
+    @Test
+    def testString09(): Unit \ Assert =
+        assertEq(expected = "\\", "\\")
 
-    @test
-    def testString11(): String = "\'"
+    @Test
+    def testString10(): Unit \ Assert =
+        assertEq(expected = "\"", "\"")
 
-    @test
-    def testString12(): String = "\'\t\r\n\""
+    @Test
+    def testString11(): Unit \ Assert =
+        assertEq(expected = "\'", "\'")
 
-    @test
-    def testString13(): String = "\uffff"
+    @Test
+    def testString12(): Unit \ Assert =
+        assertEq(expected = "\'\t\r\n\"", "\'\t\r\n\"")
 
-    @test
-    def testString14(): String = "十"
+    @Test
+    def testString13(): Unit \ Assert =
+        assertEq(expected = "\uffff", "\uffff")
 
-    @test
-    def testString15(): String = "\u200b"
+    @Test
+    def testString14(): Unit \ Assert =
+        assertEq(expected = "十", "十")
 
-    @test
-    def testString16(): Bool = "\u0041" == "A"
+    @Test
+    def testString15(): Unit \ Assert =
+        assertEq(expected = "\u200b", "\u200b")
 
-    @test
-    def testString17(): Bool = "\u005A" == "Z"
+    @Test
+    def testString16(): Unit \ Assert =
+        assertEq(expected = "A", "\u0041")
 
-    @test
-    def testString18(): Bool = "\u0061" == "a"
+    @Test
+    def testString17(): Unit \ Assert =
+        assertEq(expected = "Z", "\u005A")
 
-    @test
-    def testString19(): Bool = "\u007a" == "z"
+    @Test
+    def testString18(): Unit \ Assert =
+        assertEq(expected = "a", "\u0061")
 
-    @test
-    def testString20(): Bool = "\u2603" == "☃"
+    @Test
+    def testString19(): Unit \ Assert =
+        assertEq(expected = "z", "\u007a")
 
-    @test
-    def testString21(): Bool = "\${" == "$" + "{"
+    @Test
+    def testString20(): Unit \ Assert =
+        assertEq(expected = "☃", "\u2603")
 
-    @test
-    def testString22(): Bool = "\%{" == "%" + "{"
+    @Test
+    def testString21(): Unit \ Assert =
+        assertEq(expected = "$" + "{", "\${")
+
+    @Test
+    def testString22(): Unit \ Assert =
+        assertEq(expected = "%" + "{", "\%{")
 
 }
