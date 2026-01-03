@@ -1,10 +1,10 @@
 mod Test.Import.Many {
 
-    import java.io.{File, InputStream, OutputStream, Reader, Writer}
-    import java.lang.{Boolean, Byte, Character, Double, Float, Integer, Long, Number, Short, System}
-    import java.nio.charset.{Charset, CharsetDecoder, CharsetEncoder}
-    import java.util.{Date, Locale, Random, TimeZone, UUID}
-    import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
+    import java.io.{File, InputStream, OutputStream, Reader, Writer}                                               // no aliases
+    import java.lang.{Boolean => JBoolean, Byte, Character, Double, Float, Integer, Long, Number, Short, System}   // alias first
+    import java.nio.charset.{Charset, CharsetDecoder => JCharsetDecoder, CharsetEncoder}                           // alias middle
+    import java.util.{Date, Locale, Random, TimeZone, UUID => JUUID}                                               // alias last
+    import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger => JAtomicInteger, AtomicLong => JAtomicLong} // alias multiple
 
     // java.io
     @CompileTest
@@ -24,7 +24,7 @@ mod Test.Import.Many {
 
     // java.lang
     @CompileTest
-    def importMany06(x: Boolean): Boolean = (x: Boolean)
+    def importMany06(x: JBoolean): JBoolean = (x: JBoolean)
 
     @CompileTest
     def importMany07(x: Byte): Byte = (x: Byte)
@@ -58,7 +58,7 @@ mod Test.Import.Many {
     def importMany16(x: Charset): Charset = (x: Charset)
 
     @CompileTest
-    def importMany17(x: CharsetDecoder): CharsetDecoder = (x: CharsetDecoder)
+    def importMany17(x: JCharsetDecoder): JCharsetDecoder = (x: JCharsetDecoder)
 
     @CompileTest
     def importMany18(x: CharsetEncoder): CharsetEncoder = (x: CharsetEncoder)
@@ -77,17 +77,17 @@ mod Test.Import.Many {
     def importMany22(x: TimeZone): TimeZone = (x: TimeZone)
 
     @CompileTest
-    def importMany23(x: UUID): UUID = (x: UUID)
+    def importMany23(x: JUUID): JUUID = (x: JUUID)
 
     // java.util.concurrent.atomic
     @CompileTest
     def importMany24(x: AtomicBoolean): AtomicBoolean = (x: AtomicBoolean)
 
     @CompileTest
-    def importMany25(x: AtomicInteger): AtomicInteger = (x: AtomicInteger)
+    def importMany25(x: JAtomicInteger): JAtomicInteger = (x: JAtomicInteger)
 
     @CompileTest
-    def importMany26(x: AtomicLong): AtomicLong = (x: AtomicLong)
+    def importMany26(x: JAtomicLong): JAtomicLong = (x: JAtomicLong)
 
     pub enum E {
         case C01(File)
@@ -95,7 +95,7 @@ mod Test.Import.Many {
         case C03(OutputStream)
         case C04(Reader)
         case C05(Writer)
-        case C06(Boolean)
+        case C06(JBoolean)
         case C07(Byte)
         case C08(Character)
         case C09(Double)
@@ -106,16 +106,16 @@ mod Test.Import.Many {
         case C14(Short)
         case C15(System)
         case C16(Charset)
-        case C17(CharsetDecoder)
+        case C17(JCharsetDecoder)
         case C18(CharsetEncoder)
         case C19(Date)
         case C20(Locale)
         case C21(Random)
         case C22(TimeZone)
-        case C23(UUID)
+        case C23(JUUID)
         case C24(AtomicBoolean)
-        case C25(AtomicInteger)
-        case C26(AtomicLong)
+        case C25(JAtomicInteger)
+        case C26(JAtomicLong)
     }
 
     type alias A01 = File
@@ -123,7 +123,7 @@ mod Test.Import.Many {
     type alias A03 = OutputStream
     type alias A04 = Reader
     type alias A05 = Writer
-    type alias A06 = Boolean
+    type alias A06 = JBoolean
     type alias A07 = Byte
     type alias A08 = Character
     type alias A09 = Double
@@ -134,16 +134,16 @@ mod Test.Import.Many {
     type alias A14 = Short
     type alias A15 = System
     type alias A16 = Charset
-    type alias A17 = CharsetDecoder
+    type alias A17 = JCharsetDecoder
     type alias A18 = CharsetEncoder
     type alias A19 = Date
     type alias A20 = Locale
     type alias A21 = Random
     type alias A22 = TimeZone
-    type alias A23 = UUID
+    type alias A23 = JUUID
     type alias A24 = AtomicBoolean
-    type alias A25 = AtomicInteger
-    type alias A26 = AtomicLong
+    type alias A25 = JAtomicInteger
+    type alias A26 = JAtomicLong
 
     pub struct S[r] {
         f01: File,
@@ -151,7 +151,7 @@ mod Test.Import.Many {
         f03: OutputStream,
         f04: Reader,
         f05: Writer,
-        f06: Boolean,
+        f06: JBoolean,
         f07: Byte,
         f08: Character,
         f09: Double,
@@ -162,16 +162,16 @@ mod Test.Import.Many {
         f14: Short,
         f15: System,
         f16: Charset,
-        f17: CharsetDecoder,
+        f17: JCharsetDecoder,
         f18: CharsetEncoder,
         f19: Date,
         f20: Locale,
         f21: Random,
         f22: TimeZone,
-        f23: UUID,
+        f23: JUUID,
         f24: AtomicBoolean,
-        f25: AtomicInteger,
-        f26: AtomicLong
+        f25: JAtomicInteger,
+        f26: JAtomicLong
     }
 
     pub trait T[a] {
@@ -180,7 +180,7 @@ mod Test.Import.Many {
         pub def f03(x: a): OutputStream
         pub def f04(x: a): Reader
         pub def f05(x: a): Writer
-        pub def f06(x: a): Boolean
+        pub def f06(x: a): JBoolean
         pub def f07(x: a): Byte
         pub def f08(x: a): Character
         pub def f09(x: a): Double
@@ -191,16 +191,16 @@ mod Test.Import.Many {
         pub def f14(x: a): Short
         pub def f15(x: a): System
         pub def f16(x: a): Charset
-        pub def f17(x: a): CharsetDecoder
+        pub def f17(x: a): JCharsetDecoder
         pub def f18(x: a): CharsetEncoder
         pub def f19(x: a): Date
         pub def f20(x: a): Locale
         pub def f21(x: a): Random
         pub def f22(x: a): TimeZone
-        pub def f23(x: a): UUID
+        pub def f23(x: a): JUUID
         pub def f24(x: a): AtomicBoolean
-        pub def f25(x: a): AtomicInteger
-        pub def f26(x: a): AtomicLong
+        pub def f25(x: a): JAtomicInteger
+        pub def f26(x: a): JAtomicLong
     }
 
     instance T[Unit] {
@@ -209,7 +209,7 @@ mod Test.Import.Many {
         pub def f03(_x: Unit): OutputStream = ???
         pub def f04(_x: Unit): Reader = ???
         pub def f05(_x: Unit): Writer = ???
-        pub def f06(_x: Unit): Boolean = ???
+        pub def f06(_x: Unit): JBoolean = ???
         pub def f07(_x: Unit): Byte = ???
         pub def f08(_x: Unit): Character = ???
         pub def f09(_x: Unit): Double = ???
@@ -220,16 +220,16 @@ mod Test.Import.Many {
         pub def f14(_x: Unit): Short = ???
         pub def f15(_x: Unit): System = ???
         pub def f16(_x: Unit): Charset = ???
-        pub def f17(_x: Unit): CharsetDecoder = ???
+        pub def f17(_x: Unit): JCharsetDecoder = ???
         pub def f18(_x: Unit): CharsetEncoder = ???
         pub def f19(_x: Unit): Date = ???
         pub def f20(_x: Unit): Locale = ???
         pub def f21(_x: Unit): Random = ???
         pub def f22(_x: Unit): TimeZone = ???
-        pub def f23(_x: Unit): UUID = ???
+        pub def f23(_x: Unit): JUUID = ???
         pub def f24(_x: Unit): AtomicBoolean = ???
-        pub def f25(_x: Unit): AtomicInteger = ???
-        pub def f26(_x: Unit): AtomicLong = ???
+        pub def f25(_x: Unit): JAtomicInteger = ???
+        pub def f26(_x: Unit): JAtomicLong = ???
     }
 
     pub eff F {
@@ -238,7 +238,7 @@ mod Test.Import.Many {
         def f03(x: OutputStream): OutputStream
         def f04(x: Reader): Reader
         def f05(x: Writer): Writer
-        def f06(x: Boolean): Boolean
+        def f06(x: JBoolean): JBoolean
         def f07(x: Byte): Byte
         def f08(x: Character): Character
         def f09(x: Double): Double
@@ -249,16 +249,16 @@ mod Test.Import.Many {
         def f14(x: Short): Short
         def f15(x: System): System
         def f16(x: Charset): Charset
-        def f17(x: CharsetDecoder): CharsetDecoder
+        def f17(x: JCharsetDecoder): JCharsetDecoder
         def f18(x: CharsetEncoder): CharsetEncoder
         def f19(x: Date): Date
         def f20(x: Locale): Locale
         def f21(x: Random): Random
         def f22(x: TimeZone): TimeZone
-        def f23(x: UUID): UUID
+        def f23(x: JUUID): JUUID
         def f24(x: AtomicBoolean): AtomicBoolean
-        def f25(x: AtomicInteger): AtomicInteger
-        def f26(x: AtomicLong): AtomicLong
+        def f25(x: JAtomicInteger): JAtomicInteger
+        def f26(x: JAtomicLong): JAtomicLong
     }
 
 }
