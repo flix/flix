@@ -1,25 +1,27 @@
 mod Test.Exp.Let {
 
-    @test
-    def testLet01(): Bool =
-        let x = 1;
-        x == 1
+    use Assert.{assertEq, assertTrue}
 
-    @test
-    def testLet02(): Bool =
+    @Test
+    def testLet01(): Unit \ Assert =
+        let x = 1;
+        assertEq(expected = 1, x)
+
+    @Test
+    def testLet02(): Unit \ Assert =
         let x = 1;
         let y = 2;
-        x + y == 1 + 2
+        assertEq(expected = 1 + 2, x + y)
 
-    @test
-    def testLet03(): Bool =
+    @Test
+    def testLet03(): Unit \ Assert =
         let x = 1;
         let y = 2;
         let z = 3;
-        x + y + z == 1 + 2 + 3
+        assertEq(expected = 1 + 2 + 3, x + y + z)
 
-    @test
-    def testLet04(): Bool =
+    @Test
+    def testLet04(): Unit \ Assert =
         let x = {
             let x1 = 1;
             x1
@@ -28,10 +30,10 @@ mod Test.Exp.Let {
             let y1 = 2;
             y1
         };
-        x + y == 1 + 2
+        assertEq(expected = 1 + 2, x + y)
 
-    @test
-    def testLet05(): Bool =
+    @Test
+    def testLet05(): Unit \ Assert =
         let x = {
             let x1 = 1;
             let x2 = 2;
@@ -42,83 +44,83 @@ mod Test.Exp.Let {
             let y2 = 4;
             y1 + y2
         };
-        x + y == 1 + 2 + 3 + 4
+        assertEq(expected = 1 + 2 + 3 + 4, x + y)
 
-    @test
-    def testLet06(): Bool =
-        if (let x = true; x) true else false
+    @Test
+    def testLet06(): Unit \ Assert =
+        assertTrue(if (let x = true; x) true else false)
 
-    @test
-    def testLet07(): Bool =
-        if (true) {
+    @Test
+    def testLet07(): Unit \ Assert =
+        assertTrue(if (true) {
             let x = 1;
             x == 1
         } else {
             false
-        }
+        })
 
-    @test
-    def testLet08(): Bool =
-        if (false) {
+    @Test
+    def testLet08(): Unit \ Assert =
+        assertTrue(if (false) {
             false
         } else {
             let x = 1;
             x == 1
-        }
+        })
 
-    @test
-    def testLetUnit01(): Bool =
+    @Test
+    def testLetUnit01(): Unit \ Assert =
         let x = ();
-        x == ()
+        assertEq(expected = (), x)
 
-    @test
-    def testLetBool01(): Bool =
+    @Test
+    def testLetBool01(): Unit \ Assert =
         let x = true;
-        x == true
+        assertEq(expected = true, x)
 
-    @test
-    def testLetBool02(): Bool =
+    @Test
+    def testLetBool02(): Unit \ Assert =
         let x = false;
-        x == false
+        assertEq(expected = false, x)
 
-    @test
-    def testLetChar01(): Bool =
+    @Test
+    def testLetChar01(): Unit \ Assert =
         let x = 'a';
-        x == 'a'
+        assertEq(expected = 'a', x)
 
-    @test
-    def testLetFloat3201(): Bool =
+    @Test
+    def testLetFloat3201(): Unit \ Assert =
         let x = 123.456f32;
-        x == 123.456f32
+        assertEq(expected = 123.456f32, x)
 
-    @test
-    def testLetFloat6401(): Bool =
+    @Test
+    def testLetFloat6401(): Unit \ Assert =
         let x = 123.456f64;
-        x == 123.456f64
+        assertEq(expected = 123.456f64, x)
 
-    @test
-    def testLetInt8(): Bool =
+    @Test
+    def testLetInt8(): Unit \ Assert =
         let x = 123i8;
-        x == 123i8
+        assertEq(expected = 123i8, x)
 
-    @test
-    def testLetInt16(): Bool =
+    @Test
+    def testLetInt16(): Unit \ Assert =
         let x = 123i16;
-        x == 123i16
+        assertEq(expected = 123i16, x)
 
-    @test
-    def testLetInt32(): Bool =
+    @Test
+    def testLetInt32(): Unit \ Assert =
         let x = 123i32;
-        x == 123i32
+        assertEq(expected = 123i32, x)
 
-    @test
-    def testLetInt64(): Bool =
+    @Test
+    def testLetInt64(): Unit \ Assert =
         let x = 123i64;
-        x == 123i64
+        assertEq(expected = 123i64, x)
 
-    @test
-    def testLetString01(): Bool =
+    @Test
+    def testLetString01(): Unit \ Assert =
         let x = "Hello World!";
-        x == "Hello World!"
+        assertEq(expected = "Hello World!", x)
 
 }
