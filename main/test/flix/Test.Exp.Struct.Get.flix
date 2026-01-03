@@ -9,39 +9,44 @@ mod Test.Exp.Struct.Get {
 
     mod Get {
 
-        @test
-        def testStructGet01(): Bool =
+        use Assert.{assertEq, assertTrue}
+
+        @Test
+        def testStructGet01(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-                s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42 and s->cowboy == true
+                assertEq(expected = "Lucky", s->fstName);
+                assertEq(expected = "Luke", s->lstName);
+                assertEq(expected = 42, s->age);
+                assertTrue(s->cowboy)
             }
 
-        @test
-        def testStructGet02(): String =
+        @Test
+        def testStructGet02(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-                s->lstName
+                assertEq(expected = "Luke", s->lstName)
             }
 
-        @test
-        def testStructGet03(): Int32 =
+        @Test
+        def testStructGet03(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-                s->age
+                assertEq(expected = 42, s->age)
             }
 
-        @test
-        def testStructGet04(): Bool =
+        @Test
+        def testStructGet04(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-                s->cowboy
+                assertTrue(s->cowboy)
             }
 
-        @test
-        def testStructGet05(): Bool =
+        @Test
+        def testStructGet05(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { lstName = "Luke", cowboy = true, age = 42, fstName = "Lucky" };
-                s->cowboy
+                assertTrue(s->cowboy)
             }
 
         // From https://github.com/flix/flix/issues/10057
@@ -54,8 +59,10 @@ mod Test.Exp.Struct.Get {
         }
 
         mod Node {
-            @test
-            pub def empty(): Unit \ IO = region rc {
+            use Assert.assertEq
+
+            @Test
+            pub def empty(): Unit \ Assert = region rc {
                 let node = new Node @ rc {
                     keys = 0,
                     children = None,
@@ -63,95 +70,112 @@ mod Test.Exp.Struct.Get {
                     size = 0,
                     parent = None
                 };
-                println(node->size) // Just to have an IO effect.
+                assertEq(expected = 0, node->size)
             }
         }
 
-        @test
-        def testStructGet06(): Unit \ IO = region _ {
-            Node.empty();
-            ()
+        @Test
+        def testStructGet06(): Unit \ Assert = region _ {
+            Node.empty()
         }
 
-        @test
-        def testStructMultiGet01(): Bool =
+        @Test
+        def testStructMultiGet01(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
                 let fstName = s->fstName;
                 let lstName = s->lstName;
                 let age = s->age;
                 let cowboy = s->cowboy;
-                fstName == "Lucky" and lstName == "Luke" and age == 42 and cowboy
+                assertEq(expected = "Lucky", fstName);
+                assertEq(expected = "Luke", lstName);
+                assertEq(expected = 42, age);
+                assertTrue(cowboy)
             }
 
-        @test
-        def testStructMultiGet02(): Bool =
+        @Test
+        def testStructMultiGet02(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
                 let cowboy = s->cowboy;
                 let age = s->age;
                 let lstName = s->lstName;
                 let fstName = s->fstName;
-                fstName == "Lucky" and lstName == "Luke" and age == 42 and cowboy
+                assertEq(expected = "Lucky", fstName);
+                assertEq(expected = "Luke", lstName);
+                assertEq(expected = 42, age);
+                assertTrue(cowboy)
             }
 
-        @test
-        def testStructMultiGet03(): Bool =
+        @Test
+        def testStructMultiGet03(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
                 let fstName1 = s->fstName;
                 let fstName2 = s->fstName;
                 let lstName1 = s->lstName;
                 let lstName2 = s->lstName;
-                fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
+                assertEq(expected = "Lucky", fstName1);
+                assertEq(expected = "Lucky", fstName2);
+                assertEq(expected = "Luke", lstName1);
+                assertEq(expected = "Luke", lstName2)
             }
 
-        @test
-        def testStructMultiGet04(): Bool =
+        @Test
+        def testStructMultiGet04(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
                 let lstName1 = s->lstName;
                 let fstName1 = s->fstName;
                 let lstName2 = s->lstName;
                 let fstName2 = s->fstName;
-                fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
+                assertEq(expected = "Lucky", fstName1);
+                assertEq(expected = "Lucky", fstName2);
+                assertEq(expected = "Luke", lstName1);
+                assertEq(expected = "Luke", lstName2)
             }
 
-        @test
-        def testStructMultiGet05(): Bool =
+        @Test
+        def testStructMultiGet05(): Unit \ Assert =
             region rc {
                 let s = new Get @ rc { lstName = "Luke", fstName = "Lucky", cowboy = true, age = 42 };
                 let lstName1 = s->lstName;
                 let fstName1 = s->fstName;
                 let lstName2 = s->lstName;
                 let fstName2 = s->fstName;
-                fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
+                assertEq(expected = "Lucky", fstName1);
+                assertEq(expected = "Lucky", fstName2);
+                assertEq(expected = "Luke", lstName1);
+                assertEq(expected = "Luke", lstName2)
             }
 
-        @test
-        def testStructPureGet01(): Bool = {
-            let f = region rc {
-                let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-                msg -> "${msg} ${s->fstName}"
+        @Test
+        def testStructPureGet01(): Unit \ Assert = {
+            let result = {
+                let f: String -> String = region rc {
+                    let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
+                    msg -> "${msg} ${s->fstName}"
+                };
+                f("Hello")
             };
-            f("Hello") == "Hello Lucky"
+            assertEq(expected = "Hello Lucky", result)
         }
 
         def getLastName(g: Get[rc]): String \ {} = g->lstName
 
-        @test
-        def testStructPureGet02(): Bool = {
+        @Test
+        def testStructPureGet02(): Unit \ Assert = {
             region rc {
                 let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-                getLastName(s) == "Luke"
+                assertEq(expected = "Luke", getLastName(s))
             }
         }
 
-        @test
-        def testStructPureGet03(): Bool = {
+        @Test
+        def testStructPureGet03(): Unit \ Assert = {
             region rc {
                 let s = new Get @ rc { lstName = "Luke", age = 42, fstName = "Lucky", cowboy = true };
-                getLastName(s) == "Luke"
+                assertEq(expected = "Luke", getLastName(s))
             }
         }
     }
@@ -163,14 +187,16 @@ mod Test.Exp.Struct.Get {
     }
 
     mod BinaryTree {
+        use Assert.assertEq
+
         def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
             match tree {
                 case None => 0
                 case Some(t) => t->value + binaryTreeSum(t->left) + binaryTreeSum(t->right)
             }
 
-        @test
-        def binaryTree01(): Bool =
+        @Test
+        def binaryTree01(): Unit \ Assert =
             region rc {
                 let leaf = new BinaryTree @ rc {
                     left = None,
@@ -187,11 +213,11 @@ mod Test.Exp.Struct.Get {
                     right = Some(innernode),
                     value = 5
                 };
-                binaryTreeSum(Some(tree)) == 25
+                assertEq(expected = 25, binaryTreeSum(Some(tree)))
             }
 
-        @test
-        def binaryTree02(): Bool =
+        @Test
+        def binaryTree02(): Unit \ Assert =
             region rc {
                 let leaf = new BinaryTree @ rc {
                     right = None,
@@ -208,7 +234,7 @@ mod Test.Exp.Struct.Get {
                     right = Some(innernode),
                     left = Some(innernode)
                 };
-                binaryTreeSum(Some(tree)) == 25
+                assertEq(expected = 25, binaryTreeSum(Some(tree)))
             }
     }
 
@@ -216,12 +242,13 @@ mod Test.Exp.Struct.Get {
         mut v: v
     }
     mod Nested {
+        use Assert.assertEq
 
-        @test
-        def nestedPut01(): Bool =
+        @Test
+        def nestedPut01(): Unit \ Assert =
             region rc {
                 let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15}}}};
-                nested->v->v->v->v == 15
+                assertEq(expected = 15, nested->v->v->v->v)
             }
 
     }
