@@ -1,65 +1,48 @@
 mod Test.Exp.Concurrency.Select {
 
-    @test
-    def testSelectBuffered01(): Bool \ {Chan, NonDet} = region rc {
+    use Assert.{assertEq, assertTrue}
+
+    @Test
+    def testSelectBuffered01(): Unit \ (Assert + Chan + NonDet) = region rc {
         let (tx1, rx1) = Channel.buffered(1);
         spawn Channel.send(1, tx1) @ rc;
-        select {
-            case x <- recv(rx1) => x == 1
-        }
+        let r = select {
+            case x <- recv(rx1) => x
+        };
+        assertEq(expected = 1, r)
     }
 
-    @test
-    def testSelectBuffered02(): Bool \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectBuffered02(): Unit \ (Assert + Chan + NonDet) = region rc {
         let (tx1, rx1) = Channel.buffered(1);
         let (tx2, rx2) = Channel.buffered(1);
         spawn Channel.send(1, tx1) @ rc;
         spawn Channel.send(2, tx2) @ rc;
-        select {
+        let r = select {
             case x <- recv(rx1) => x == 1
             case x <- recv(rx2) => x == 2
-        }
+        };
+        assertTrue(r)
     }
 
-    @test
-    def testSelectBuffered03(): Bool \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectBuffered03(): Unit \ (Assert + Chan + NonDet) = region rc {
         let (tx1, rx1) = Channel.buffered(1);
         let (tx2, rx2) = Channel.buffered(1);
         let (tx3, rx3) = Channel.buffered(1);
         spawn Channel.send(1, tx1) @ rc;
         spawn Channel.send(2, tx2) @ rc;
         spawn Channel.send(3, tx3) @ rc;
-        select {
+        let r = select {
             case x <- recv(rx1) => x == 1
             case x <- recv(rx2) => x == 2
             case x <- recv(rx3) => x == 3
-        }
+        };
+        assertTrue(r)
     }
 
-    @test
-    def testSelectBuffered04(): Bool \ {Chan, NonDet} = region rc {
-        let (tx1, rx1) = Channel.buffered(1);
-        let (tx2, rx2) = Channel.buffered(1);
-        let (tx3, rx3) = Channel.buffered(1);
-        let (tx4, rx4) = Channel.buffered(1);
-        spawn Channel.send(1, tx1) @ rc;
-        spawn Channel.send(2, tx2) @ rc;
-        spawn Channel.send(3, tx3) @ rc;
-        spawn Channel.send(4, tx4) @ rc;
-        select {
-            case x <- recv(rx1) => x == 1
-            case x <- recv(rx1) => x == 1
-            case x <- recv(rx2) => x == 2
-            case x <- recv(rx2) => x == 2
-            case x <- recv(rx3) => x == 3
-            case x <- recv(rx3) => x == 3
-            case x <- recv(rx4) => x == 4
-            case x <- recv(rx4) => x == 4
-        }
-    }
-
-    @test
-    def testSelectBuffered05(): Bool \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectBuffered04(): Unit \ (Assert + Chan + NonDet) = region rc {
         let (tx1, rx1) = Channel.buffered(1);
         let (tx2, rx2) = Channel.buffered(1);
         let (tx3, rx3) = Channel.buffered(1);
@@ -68,35 +51,60 @@ mod Test.Exp.Concurrency.Select {
         spawn Channel.send(2, tx2) @ rc;
         spawn Channel.send(3, tx3) @ rc;
         spawn Channel.send(4, tx4) @ rc;
-        select {
-            case x <- recv(rx4) => x == 4
-            case x <- recv(rx3) => x == 3
-            case x <- recv(rx2) => x == 2
+        let r = select {
             case x <- recv(rx1) => x == 1
-            case x <- recv(rx4) => x == 4
-            case x <- recv(rx3) => x == 3
-            case x <- recv(rx2) => x == 2
             case x <- recv(rx1) => x == 1
-        }
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx3) => x == 3
+            case x <- recv(rx3) => x == 3
+            case x <- recv(rx4) => x == 4
+            case x <- recv(rx4) => x == 4
+        };
+        assertTrue(r)
     }
 
-    @test
-    def testSelectBuffered06(): Bool \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectBuffered05(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx1, rx1) = Channel.buffered(1);
+        let (tx2, rx2) = Channel.buffered(1);
+        let (tx3, rx3) = Channel.buffered(1);
+        let (tx4, rx4) = Channel.buffered(1);
+        spawn Channel.send(1, tx1) @ rc;
+        spawn Channel.send(2, tx2) @ rc;
+        spawn Channel.send(3, tx3) @ rc;
+        spawn Channel.send(4, tx4) @ rc;
+        let r = select {
+            case x <- recv(rx4) => x == 4
+            case x <- recv(rx3) => x == 3
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx1) => x == 1
+            case x <- recv(rx4) => x == 4
+            case x <- recv(rx3) => x == 3
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx1) => x == 1
+        };
+        assertTrue(r)
+    }
+
+    @Test
+    def testSelectBuffered06(): Unit \ (Assert + Chan + NonDet) = region rc {
         let (_, rx1) = Channel.buffered(1);
         let (tx2, rx2) = Channel.buffered(1);
         let (_, rx3) = Channel.buffered(1);
         let (_, rx4) = Channel.buffered(1);
         spawn Channel.send(1, tx2) @ rc;
-        select {
+        let r = select {
             case _ <- recv(rx4) => false
             case _ <- recv(rx3) => false
             case x <- recv(rx2) => x == 1
             case _ <- recv(rx1) => false
-        }
+        };
+        assertTrue(r)
     }
 
-    @test
-    def testSelectBuffered07(): Bool \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectBuffered07(): Unit \ (Assert + Chan + NonDet) = region rc {
         let (tx1, rx1) = Channel.buffered(1);
         let (tx2, rx2) = Channel.buffered(1);
         let (tx3, rx3) = Channel.buffered(1);
@@ -105,49 +113,52 @@ mod Test.Exp.Concurrency.Select {
         spawn Channel.send(2i16, tx2) @ rc;
         spawn Channel.send(3i32, tx3) @ rc;
         spawn Channel.send(4i64, tx4) @ rc;
-        select {
+        let r = select {
             case x <- recv(rx4) => x == 4i64
             case x <- recv(rx3) => x == 3i32
             case x <- recv(rx2) => x == 2i16
             case x <- recv(rx1) => x == 1i8
-        }
+        };
+        assertTrue(r)
     }
 
-    @test
-    def testSelectDefault01(): Bool \ {Chan, NonDet} = {
-        select {
+    @Test
+    def testSelectDefault01(): Unit \ (Assert + Chan + NonDet) = {
+        let r = select {
             case x <- recv({let (_, rx) = Channel.buffered(1); rx}) => x
             case _                                                  => true
-        }
+        };
+        assertTrue(r)
     }
 
-    @test
-    def testSelectDefault02(): Bool \ {Chan, NonDet} = {
-        (1 + select {
+    @Test
+    def testSelectDefault02(): Unit \ (Assert + Chan + NonDet) = {
+        let r = (1 + select {
             case _ <- recv({let (_, rx) = Channel.buffered(2); rx}) => 2
             case _                                                  => 1
-        }) == 2
+        }) == 2;
+        assertTrue(r)
     }
 
-    def recvWithDefault(rx: Receiver[Int32]): Int32 \ {Chan, NonDet} = {
+    def recvWithDefault(rx: Receiver[Int32]): Int32 \ (Chan + NonDet) = {
         select {
             case x <- Channel.recv(rx) => x
             case _                     => 1
         }
     }
 
-    def mainx(): Int32 \ {Chan, NonDet} = {
+    def mainx(): Int32 \ (Chan + NonDet) = {
       let (_, rx) = Channel.buffered(1);
       recvWithDefault(rx)
     }
 
-    @test
+    @Test
     def testSelectDefault03(): Unit \ IO =
       // This test is from a bug report so its form is subtle and intentional
       unchecked_cast(println(mainx()) as _ \ IO)
 
-    @test
-    def testSelectRandom01(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom01(): Unit \ (Chan + NonDet) = region rc {
         let (tx9, rx9) = Channel.buffered(0);
         let (tx10, rx10) = Channel.buffered(0);
         let (tx11, rx11) = Channel.buffered(0);
@@ -180,8 +191,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom02(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom02(): Unit \ (Chan + NonDet) = region rc {
         let (tx10, rx10) = Channel.buffered(0);
         let (tx11, rx11) = Channel.buffered(0);
         let (tx12, rx12) = Channel.buffered(0);
@@ -194,8 +205,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom03(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom03(): Unit \ (Chan + NonDet) = region rc {
         let (tx14, rx14) = Channel.buffered(0);
         let (tx15, rx15) = Channel.buffered(0);
         let (tx16, rx16) = Channel.buffered(0);
@@ -229,8 +240,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom04(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom04(): Unit \ (Chan + NonDet) = region rc {
         let (tx10, rx10) = Channel.buffered(0);
         let (tx11, rx11) = Channel.buffered(0);
         let (tx12, rx12) = Channel.buffered(0);
@@ -253,8 +264,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom05(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom05(): Unit \ (Chan + NonDet) = region rc {
         let (tx14, rx14) = Channel.buffered(0);
         let (tx15, rx15) = Channel.buffered(0);
         let (tx16, rx16) = Channel.buffered(0);
@@ -290,8 +301,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom06(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom06(): Unit \ (Chan + NonDet) = region rc {
         let (tx2, rx2) = Channel.buffered(0);
         let (tx3, rx3) = Channel.buffered(0);
         spawn { Channel.send((), tx3) ; () } @ rc; spawn { Channel.send((), tx2) ; () } @ rc; Channel.recv(rx3) ; select {
@@ -305,8 +316,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom07(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom07(): Unit \ (Chan + NonDet) = region rc {
         let (tx12, rx12) = Channel.buffered(0);
         let (tx13, rx13) = Channel.buffered(0);
         let (tx14, rx14) = Channel.buffered(0);
@@ -337,8 +348,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom08(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom08(): Unit \ (Chan + NonDet) = region rc {
         let (tx15, rx15) = Channel.buffered(0);
         let (tx16, rx16) = Channel.buffered(0);
         let (tx17, rx17) = Channel.buffered(0);
@@ -374,8 +385,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom09(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom09(): Unit \ (Chan + NonDet) = region rc {
         let (tx6, rx6) = Channel.buffered(0);
         let (tx7, rx7) = Channel.buffered(0);
         let (tx8, rx8) = Channel.buffered(0);
@@ -390,8 +401,8 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectRandom10(): Unit \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectRandom10(): Unit \ (Chan + NonDet) = region rc {
         let (tx10, rx10) = Channel.buffered(0);
         let (tx11, rx11) = Channel.buffered(0);
         let (tx12, rx12) = Channel.buffered(0);
@@ -408,53 +419,57 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
-    def testSelectSideEffecting01(): Bool \ {Chan, NonDet} = {
+    @Test
+    def testSelectSideEffecting01(): Unit \ (Assert + Chan + NonDet) = {
         def mkChan(): Receiver[Int32] = {
             let (tx, rx) = Channel.buffered(1);
             Channel.send(42, tx);
             rx
         };
 
-        select {
-            case x <- recv(mkChan()) => x == 42
-        }
+        let r = select {
+            case x <- recv(mkChan()) => x
+        };
+        assertEq(expected = 42, r)
     }
 
-    @test
-    def testSelectSideEffecting02(): Bool \ {Chan, NonDet} = {
+    @Test
+    def testSelectSideEffecting02(): Unit \ (Assert + Chan + NonDet) = {
         let (tx1, rx1) = Channel.buffered(10);
         let (tx2, rx2) = Channel.buffered(10);
         let (tx3, rx3) = Channel.buffered(10);
 
-        select {
+        let r = select {
             case x <- recv({Channel.send(1, tx3); rx1}) => x + (Channel.recv(rx2)) + (Channel.recv(rx3)) == 6
             case x <- recv({Channel.send(2, tx2); rx2}) => x + (Channel.recv(rx1)) + (Channel.recv(rx3)) == 6
             case x <- recv({Channel.send(3, tx1); rx3}) => x + (Channel.recv(rx1)) + (Channel.recv(rx2)) == 6
-        }
+        };
+        assertTrue(r)
     }
 
     type alias MyReceiver[a: Type] = Receiver[a]
 
-    @test
-    def testSelectAliasedChannel(): Bool \ {Chan, NonDet} = {
+    @Test
+    def testSelectAliasedChannel(): Unit \ (Assert + Chan + NonDet) = {
         let (tx, rx) = Channel.buffered(1);
 
-        def useChan(mr: MyReceiver[Int32]) : Bool =
+        def useChan(mr: MyReceiver[Int32]) : Int32 =
             select {
-                case x <- recv(mr) => x == 42
+                case x <- recv(mr) => x
             };
 
         Channel.send(42, tx);
-        useChan(rx)
+        let r = useChan(rx);
+        assertEq(expected = 42, r)
     }
 
-    @test
-    def testSelectOptionalSyntax01(): Bool \ {Chan, NonDet} = region rc {
+    @Test
+    def testSelectOptionalSyntax01(): Unit \ (Assert + Chan + NonDet) = region rc {
         let (tx1, rx1) = Channel.buffered(1);
         spawn Channel.send(1, tx1) @ rc;
-        select {
-            case x <- Channel.recv(rx1) => x == 1
-        }
+        let r = select {
+            case x <- Channel.recv(rx1) => x
+        };
+        assertEq(expected = 1, r)
     }
 }
