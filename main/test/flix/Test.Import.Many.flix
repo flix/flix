@@ -2,7 +2,9 @@ mod Test.Import.Many {
 
     import java.io.{File, InputStream, OutputStream, Reader, Writer}
     import java.lang.{Boolean, Byte, Character, Double, Float, Integer, Long, Number, Short, System}
+    import java.nio.charset.{Charset, CharsetDecoder, CharsetEncoder}
     import java.util.{Date, Locale, Random, TimeZone, UUID}
+    import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 
     // java.io
     @CompileTest
@@ -51,20 +53,40 @@ mod Test.Import.Many {
     @CompileTest
     def importMany15(x: System): System = x
 
+    // java.nio.charset
+    @CompileTest
+    def importMany16(x: Charset): Charset = x
+
+    @CompileTest
+    def importMany17(x: CharsetDecoder): CharsetDecoder = x
+
+    @CompileTest
+    def importMany18(x: CharsetEncoder): CharsetEncoder = x
+
     // java.util
     @CompileTest
-    def importMany16(x: Date): Date = x
+    def importMany19(x: Date): Date = x
 
     @CompileTest
-    def importMany17(x: Locale): Locale = x
+    def importMany20(x: Locale): Locale = x
 
     @CompileTest
-    def importMany18(x: Random): Random = x
+    def importMany21(x: Random): Random = x
 
     @CompileTest
-    def importMany19(x: TimeZone): TimeZone = x
+    def importMany22(x: TimeZone): TimeZone = x
 
     @CompileTest
-    def importMany20(x: UUID): UUID = x
+    def importMany23(x: UUID): UUID = x
+
+    // java.util.concurrent.atomic
+    @CompileTest
+    def importMany24(x: AtomicBoolean): AtomicBoolean = x
+
+    @CompileTest
+    def importMany25(x: AtomicInteger): AtomicInteger = x
+
+    @CompileTest
+    def importMany26(x: AtomicLong): AtomicLong = x
 
 }

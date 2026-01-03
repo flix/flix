@@ -7,9 +7,9 @@ mod Test.Import.Class {
     import java.lang.Thread
     import java.math.BigDecimal
     import java.math.BigInteger
-    import java.util.Date
+    import java.nio.file.Path
     import java.util.Locale
-    import java.util.Random
+    import java.util.concurrent.atomic.AtomicLong
 
     @CompileTest
     def importClass01(x: File): File = x
@@ -33,12 +33,12 @@ mod Test.Import.Class {
     def importClass07(x: BigInteger): BigInteger = x
 
     @CompileTest
-    def importClass08(x: Date): Date = x
+    def importClass08(x: Path): Path = x
 
     @CompileTest
     def importClass09(x: Locale): Locale = x
 
     @CompileTest
-    def importClass10(x: Random): Random = x
+    def importClass10(x: AtomicLong): AtomicLong = x
 
 }

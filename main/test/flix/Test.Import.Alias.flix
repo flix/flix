@@ -7,9 +7,9 @@ mod Test.Import.Alias {
     import java.lang.{StringBuffer => JStringBuffer}
     import java.lang.{StringBuilder => JStringBuilder}
     import java.lang.{Thread => JThread}
-    import java.util.{Date => JDate}
+    import java.nio.charset.{Charset => JCharset}
     import java.util.{Locale => JLocale}
-    import java.util.{Random => JRandom}
+    import java.util.concurrent.atomic.{AtomicInteger => JAtomicInteger}
 
     @CompileTest
     def importAlias01(x: JFile): JFile = x
@@ -33,12 +33,12 @@ mod Test.Import.Alias {
     def importAlias07(x: JThread): JThread = x
 
     @CompileTest
-    def importAlias08(x: JDate): JDate = x
+    def importAlias08(x: JCharset): JCharset = x
 
     @CompileTest
     def importAlias09(x: JLocale): JLocale = x
 
     @CompileTest
-    def importAlias10(x: JRandom): JRandom = x
+    def importAlias10(x: JAtomicInteger): JAtomicInteger = x
 
 }

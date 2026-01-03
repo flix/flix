@@ -2,14 +2,14 @@ mod Test.Import.Interface {
 
     import java.io.Closeable
     import java.io.Flushable
-    import java.io.Serializable
     import java.lang.Appendable
     import java.lang.AutoCloseable
     import java.lang.CharSequence
     import java.lang.Cloneable
     import java.lang.Readable
     import java.lang.Runnable
-    import java.util.EventListener
+    import java.util.concurrent.Future
+    import java.util.concurrent.locks.Lock
 
     @CompileTest
     def importInterface01(x: Closeable): Closeable = x
@@ -18,27 +18,27 @@ mod Test.Import.Interface {
     def importInterface02(x: Flushable): Flushable = x
 
     @CompileTest
-    def importInterface03(x: Serializable): Serializable = x
+    def importInterface03(x: Appendable): Appendable = x
 
     @CompileTest
-    def importInterface04(x: Appendable): Appendable = x
+    def importInterface04(x: AutoCloseable): AutoCloseable = x
 
     @CompileTest
-    def importInterface05(x: AutoCloseable): AutoCloseable = x
+    def importInterface05(x: CharSequence): CharSequence = x
 
     @CompileTest
-    def importInterface06(x: CharSequence): CharSequence = x
+    def importInterface06(x: Cloneable): Cloneable = x
 
     @CompileTest
-    def importInterface07(x: Cloneable): Cloneable = x
+    def importInterface07(x: Readable): Readable = x
 
     @CompileTest
-    def importInterface08(x: Readable): Readable = x
+    def importInterface08(x: Runnable): Runnable = x
 
     @CompileTest
-    def importInterface09(x: Runnable): Runnable = x
+    def importInterface09(x: Future): Future = x
 
     @CompileTest
-    def importInterface10(x: EventListener): EventListener = x
+    def importInterface10(x: Lock): Lock = x
 
 }
