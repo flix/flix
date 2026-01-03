@@ -41,4 +41,17 @@ mod Test.Import.Interface {
     @CompileTest
     def importInterface10(x: Lock): Lock = x
 
+    pub enum E {
+        case C01(Closeable)
+        case C02(Flushable)
+        case C03(Appendable)
+        case C04(AutoCloseable)
+        case C05(CharSequence)
+        case C06(Cloneable)
+        case C07(Readable)
+        case C08(Runnable)
+        case C09(Future)
+        case C10(Lock)
+    }
+
 }

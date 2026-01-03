@@ -41,4 +41,17 @@ mod Test.Import.Class {
     @CompileTest
     def importClass10(x: AtomicLong): AtomicLong = x
 
+    pub enum E {
+        case C01(File)
+        case C02(Runtime)
+        case C03(StringBuffer)
+        case C04(StringBuilder)
+        case C05(Thread)
+        case C06(BigDecimal)
+        case C07(BigInteger)
+        case C08(Path)
+        case C09(Locale)
+        case C10(AtomicLong)
+    }
+
 }

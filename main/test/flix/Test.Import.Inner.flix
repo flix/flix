@@ -41,4 +41,17 @@ mod Test.Import.Inner {
     @CompileTest
     def importInner10(x: LocaleCategory): LocaleCategory = x
 
+    pub enum E {
+        case C01(CharSubset)
+        case C02(UnicodeBlock)
+        case C03(Redirect)
+        case C04(SystemLogger)
+        case C05(ThreadState)
+        case C06(UncaughtExceptionHandler)
+        case C07(Lookup)
+        case C08(BigDecimalLayoutForm)
+        case C09(LocaleBuilder)
+        case C10(LocaleCategory)
+    }
+
 }

@@ -41,4 +41,17 @@ mod Test.Import.Alias {
     @CompileTest
     def importAlias10(x: JAtomicInteger): JAtomicInteger = x
 
+    pub enum E {
+        case C01(JFile)
+        case C02(JObject)
+        case C03(JProcess)
+        case C04(JRuntime)
+        case C05(JStringBuffer)
+        case C06(JStringBuilder)
+        case C07(JThread)
+        case C08(JCharset)
+        case C09(JLocale)
+        case C10(JAtomicInteger)
+    }
+
 }

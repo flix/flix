@@ -89,4 +89,33 @@ mod Test.Import.Many {
     @CompileTest
     def importMany26(x: AtomicLong): AtomicLong = x
 
+    pub enum E {
+        case C01(File)
+        case C02(InputStream)
+        case C03(OutputStream)
+        case C04(Reader)
+        case C05(Writer)
+        case C06(Boolean)
+        case C07(Byte)
+        case C08(Character)
+        case C09(Double)
+        case C10(Float)
+        case C11(Integer)
+        case C12(Long)
+        case C13(Number)
+        case C14(Short)
+        case C15(System)
+        case C16(Charset)
+        case C17(CharsetDecoder)
+        case C18(CharsetEncoder)
+        case C19(Date)
+        case C20(Locale)
+        case C21(Random)
+        case C22(TimeZone)
+        case C23(UUID)
+        case C24(AtomicBoolean)
+        case C25(AtomicInteger)
+        case C26(AtomicLong)
+    }
+
 }
