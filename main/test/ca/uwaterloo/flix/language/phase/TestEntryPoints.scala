@@ -79,7 +79,6 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
-
   test("IllegalEntryPointSignature.01") {
     val input =
       """
