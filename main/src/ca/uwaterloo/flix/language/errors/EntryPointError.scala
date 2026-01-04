@@ -313,4 +313,21 @@ object EntryPointError {
     }
   }
 
+  /**
+    * An error raised to indicate a @Test function that as a non-`Unit` return type.
+    *
+    * @param loc the location of the return type.
+    */
+  case class TestNonUnitReturnType(loc: SourceLocation) extends EntryPointError {
+    override def summary: String = s"A @Test function must return Unit."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> A @Test function must return Unit.
+         |
+         |${code(loc, "unexpected return type")}
+         |""".stripMargin
+    }
+  }
+
 }
