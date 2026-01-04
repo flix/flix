@@ -512,6 +512,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         println(s"Upgraded Scheme: $upgradedScheme")
         val uses = useGraph.get(sym)
         println(s"Uses: $uses")
+        println(s"uses.isEmpty = ${uses.isEmpty}")
+        println(s"EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix) = ${EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix)}")
         if (!(uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix))) {
           errorBuf.addOne((sym, upgradedScheme, uses))
         }
