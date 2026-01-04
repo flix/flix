@@ -25,7 +25,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateAnnotation.01") {
     val input =
-      """@test @test
+      """@Test @Test
         |def foo(x: Int32): Int32 = 42
     """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -36,9 +36,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = {
-        | @Tailrec @Tailrec
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
+        |  @Tailrec @Tailrec
+        |  def g(i) = if (i <= 0) 0 else g(i - 1);
+        |  g(10)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -246,9 +246,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = {
-        |  @test @Tailrec
-        |  def g(i) = if (i <= 0) 0 else g(i - 1);
-        |  g(10)
+        |   @Test @Tailrec
+        |   def g(i) = if (i <= 0) 0 else g(i - 1);
+        |   g(10)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
