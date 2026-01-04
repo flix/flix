@@ -488,6 +488,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)(flix)
       val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)(flix)
       val allErrors = defnErrors ::: sigErrors
+      println(s"allErrors = $allErrors")
 
       if (allErrors.isEmpty) {
         Ok(())
