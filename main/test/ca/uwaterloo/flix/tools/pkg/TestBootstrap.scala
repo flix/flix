@@ -341,7 +341,7 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  ignore("eff-check on effect downgrade is ok") {
+  test("eff-check on effect downgrade is ok") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
 
