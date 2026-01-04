@@ -1,6 +1,6 @@
 mod Test.Dec.AssocEff {
 
-    use Assert.{assertEq, assertTrue}
+    use Assert.assertEq
 
     eff Time {
         def getTime(): String
