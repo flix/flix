@@ -482,6 +482,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
       val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
       val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
+      println(s"erasedUpgradedDefs.toList.filter { case (sym, _) => sym == \"Upgr.entrypoint\" } = ${erasedUpgradedDefs.toList.filter { case (sym, _) => sym == "Upgr.entrypoint" }}")
       val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
       val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
       val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)(flix)
