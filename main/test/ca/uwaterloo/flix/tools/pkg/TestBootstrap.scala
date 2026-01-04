@@ -341,6 +341,10 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
+  test("eff-check on effect downgrade is ok") {
+    fail("test not implemented")
+  }
+
   private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
