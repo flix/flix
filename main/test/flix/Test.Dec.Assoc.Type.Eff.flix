@@ -207,54 +207,54 @@ mod Test.Dec.Assoc.Type.Eff {
 
     @Test
     pub def testString01(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceString01, "Hello") == "Hello" :: Nil)
+        assertEq(expected = "Hello" :: Nil, handleWithListString(runOnceString01, "Hello"))
 
     @Test
     pub def testString02(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceString02, "Hello") == "Hello" :: Nil)
+        assertEq(expected = "Hello" :: Nil, handleWithListString(runOnceString02, "Hello"))
 
     @Test
     pub def testString03(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceString01, "Hello") == "Hello" :: "Hello" :: Nil)
+        assertEq(expected = "Hello" :: "Hello" :: Nil, handleWithListString(runTwiceString01, "Hello"))
 
     @Test
     pub def testString04(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceString02, "Hello") == "Hello" :: "Hello" :: Nil)
+        assertEq(expected = "Hello" :: "Hello" :: Nil, handleWithListString(runTwiceString02, "Hello"))
 
 
     // Vector[Int32]
 
     @Test
     pub def testVectorInt32_01(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runOnceVectorInt32_01, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil)
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, handleWithListInt32(runOnceVectorInt32_01, Vector#{1, 2, 3}))
 
     @Test
     pub def testVectorInt32_02(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runOnceVectorInt32_02, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil)
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, handleWithListInt32(runOnceVectorInt32_02, Vector#{1, 2, 3}))
 
     @Test
     pub def testVectorInt32_03(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runTwiceVectorInt32_01, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil)
+        assertEq(expected = 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil, handleWithListInt32(runTwiceVectorInt32_01, Vector#{1, 2, 3}))
 
     @Test
     pub def testVectorInt32_04(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runTwiceVectorInt32_02, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil)
+        assertEq(expected = 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil, handleWithListInt32(runTwiceVectorInt32_02, Vector#{1, 2, 3}))
 
     @Test
     pub def testVectorInt32_05(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runOnceVectorInt32_01, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListInt32(runOnceVectorInt32_01, Vector#{}))
 
     @Test
     pub def testVectorInt32_06(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runOnceVectorInt32_02, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListInt32(runOnceVectorInt32_02, Vector#{}))
 
     @Test
     pub def testVectorInt32_07(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runTwiceVectorInt32_01, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListInt32(runTwiceVectorInt32_01, Vector#{}))
 
     @Test
     pub def testVectorInt32_08(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runTwiceVectorInt32_02, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListInt32(runTwiceVectorInt32_02, Vector#{}))
 
     @Test
     pub def testVectorInt32_09(): Unit \ Assert =
@@ -275,35 +275,35 @@ mod Test.Dec.Assoc.Type.Eff {
 
     @Test
     pub def testVectorString01(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceVectorString01, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: Nil)
+        assertEq(expected = "a" :: "b" :: "c" :: Nil, handleWithListString(runOnceVectorString01, Vector#{"a", "b", "c"}))
 
     @Test
     pub def testVectorString02(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceVectorString02, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: Nil)
+        assertEq(expected = "a" :: "b" :: "c" :: Nil, handleWithListString(runOnceVectorString02, Vector#{"a", "b", "c"}))
 
     @Test
     pub def testVectorString03(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceVectorString01, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil)
+        assertEq(expected = "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil, handleWithListString(runTwiceVectorString01, Vector#{"a", "b", "c"}))
 
     @Test
     pub def testVectorString04(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceVectorString02, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil)
+        assertEq(expected = "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil, handleWithListString(runTwiceVectorString02, Vector#{"a", "b", "c"}))
 
     @Test
     pub def testVectorString05(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceVectorString01, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListString(runOnceVectorString01, Vector#{}))
 
     @Test
     pub def testVectorString06(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceVectorString02, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListString(runOnceVectorString02, Vector#{}))
 
     @Test
     pub def testVectorString07(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceVectorString01, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListString(runTwiceVectorString01, Vector#{}))
 
     @Test
     pub def testVectorString08(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceVectorString02, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListString(runTwiceVectorString02, Vector#{}))
 
     @Test
     pub def testVectorString09(): Unit \ Assert =
@@ -323,35 +323,35 @@ mod Test.Dec.Assoc.Type.Eff {
 
     @Test
     pub def testVectorVectorInt32_01(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil)
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}))
 
     @Test
     pub def testVectorVectorInt32_02(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil)
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}))
 
     @Test
     pub def testVectorVectorInt32_03(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil)
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil, handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}))
 
     @Test
     pub def testVectorVectorInt32_04(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil)
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil, handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}))
 
     @Test
     pub def testVectorVectorInt32_05(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{}))
 
     @Test
     pub def testVectorVectorInt32_06(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{}))
 
     @Test
     pub def testVectorVectorInt32_07(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{}))
 
     @Test
     pub def testVectorVectorInt32_08(): Unit \ Assert =
-        assertTrue(handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{}))
 
     @Test
     pub def testVectorVectorInt32_09(): Unit \ Assert =
@@ -372,35 +372,35 @@ mod Test.Dec.Assoc.Type.Eff {
 
     @Test
     pub def testVectorVectorString01(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceVectorVectorString01, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: Nil)
+        assertEq(expected = "a" :: "b" :: "c" :: "d" :: Nil, handleWithListString(runOnceVectorVectorString01, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}))
 
     @Test
     pub def testVectorVectorString02(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceVectorVectorString02, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: Nil)
+        assertEq(expected = "a" :: "b" :: "c" :: "d" :: Nil, handleWithListString(runOnceVectorVectorString02, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}))
 
     @Test
     pub def testVectorVectorString03(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceVectorVectorString01, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: "a" :: "b" :: "c" :: "d" :: Nil)
+        assertEq(expected = "a" :: "b" :: "c" :: "d" :: "a" :: "b" :: "c" :: "d" :: Nil, handleWithListString(runTwiceVectorVectorString01, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}))
 
     @Test
     pub def testVectorVectorString04(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceVectorVectorString02, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: "a" :: "b" :: "c" :: "d" :: Nil)
+        assertEq(expected = "a" :: "b" :: "c" :: "d" :: "a" :: "b" :: "c" :: "d" :: Nil, handleWithListString(runTwiceVectorVectorString02, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}))
 
     @Test
     pub def testVectorVectorString05(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceVectorVectorString01, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListString(runOnceVectorVectorString01, Vector#{}))
 
     @Test
     pub def testVectorVectorString06(): Unit \ Assert =
-        assertTrue(handleWithListString(runOnceVectorVectorString02, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListString(runOnceVectorVectorString02, Vector#{}))
 
     @Test
     pub def testVectorVectorString07(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceVectorVectorString01, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListString(runTwiceVectorVectorString01, Vector#{}))
 
     @Test
     pub def testVectorVectorString08(): Unit \ Assert =
-        assertTrue(handleWithListString(runTwiceVectorVectorString02, Vector#{}) == Nil)
+        assertEq(expected = Nil, handleWithListString(runTwiceVectorVectorString02, Vector#{}))
 
     @Test
     pub def testVectorVectorString09(): Unit \ Assert =

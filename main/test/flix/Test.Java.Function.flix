@@ -1,6 +1,6 @@
 mod Test.Java.Function {
 
-    use Assert.assertTrue
+    use Assert.assertEq
 
     import java.lang.Object
     import java.util.Optional
@@ -30,7 +30,7 @@ mod Test.Java.Function {
             def toString(_this: Object): String = "${i}"
         };
         let stream = Stream.of(mkObject(42));
-        assertTrue(stream.findFirst().get().toString() == "42")
+        assertEq(expected = "42", stream.findFirst().get().toString())
     }
 
     @Test
@@ -41,7 +41,7 @@ mod Test.Java.Function {
         let st = Ref.fresh(Static, "<none>");
         let stream = Stream.of(mkObject(8));
         stream.forEach((obj: Object) -> let s1 = obj.toString(); Ref.put(s1, st));
-        assertTrue(Ref.get(st) == "8")
+        assertEq(expected = "8", Ref.get(st))
     }
 
     @Test
@@ -51,7 +51,7 @@ mod Test.Java.Function {
         };
         let stream0 = Stream.of(Array#{mkObject(1), mkObject(2), mkObject(3), mkObject(4), mkObject(5)} @ rc);
         let stream1 = stream0.filter((obj: Object) -> obj.toString() == "5");
-        assertTrue(stream1.findFirst().get().toString() == "5")
+        assertEq(expected = "5", stream1.findFirst().get().toString())
     }
 
     @Test
@@ -61,7 +61,7 @@ mod Test.Java.Function {
             def toString(_this: Object): String = "${i}"
         };
         let stream1 = stream0.mapToObj(f);
-        assertTrue(stream1.findFirst().get().toString() == "42")
+        assertEq(expected = "42", stream1.findFirst().get().toString())
     }
 
     @Test
@@ -69,21 +69,21 @@ mod Test.Java.Function {
         let st = Ref.fresh(Static, 0);
         let stream = IntStream.range(0, 9);
         stream.forEach(i -> Ref.put(i, st));
-        assertTrue(Ref.get(st) == 8)
+        assertEq(expected = 8, Ref.get(st))
     }
 
     @Test
     def testIntPredicate(): Unit \ { Assert, IO } = {
         let stream0 = IntStream.range(0, 9);
         let stream1 = stream0.filter(i -> i `Int32.remainder` 2 == 0);
-        assertTrue(stream1.sum() == 20)
+        assertEq(expected = 20, stream1.sum())
     }
 
     @Test
     def testIntUnaryOperator(): Unit \ { Assert, IO } = {
         let stream0 = IntStream.of(5);
         let stream1 = stream0.map(i -> checked_ecast(i+7));
-        assertTrue(stream1.sum() == 12)
+        assertEq(expected = 12, stream1.sum())
     }
 
     @Test
@@ -93,7 +93,7 @@ mod Test.Java.Function {
             def toString(_this: Object): String = "${i}"
         };
         let stream1 = stream0.mapToObj(f);
-        assertTrue(stream1.findFirst().get().toString() == "42")
+        assertEq(expected = "42", stream1.findFirst().get().toString())
     }
 
     @Test
@@ -101,21 +101,21 @@ mod Test.Java.Function {
         let st = Ref.fresh(Static, 0i64);
         let stream = LongStream.range(0i64, 9i64);
         stream.forEach(i -> Ref.put(i, st));
-        assertTrue(Ref.get(st) == 8i64)
+        assertEq(expected = 8i64, Ref.get(st))
     }
 
     @Test
     def testLongPredicate(): Unit \ { Assert, IO } = {
         let stream0 = LongStream.range(0i64, 9i64);
         let stream1 = stream0.filter(i -> checked_ecast(i `Int64.remainder` 2i64 == 0i64));
-        assertTrue(stream1.sum() == 20i64)
+        assertEq(expected = 20i64, stream1.sum())
     }
 
     @Test
     def testLongUnaryOperator(): Unit \ { Assert, IO } = {
         let stream0 = LongStream.of(5i64);
         let stream1 = stream0.map(i -> checked_ecast(i+7i64));
-        assertTrue(stream1.sum() == 12i64)
+        assertEq(expected = 12i64, stream1.sum())
     }
 
     @Test
@@ -128,7 +128,7 @@ mod Test.Java.Function {
            }
         };
         let stream1 = stream0.mapToObj(f);
-        assertTrue(stream1.findFirst().get().toString() == "42")
+        assertEq(expected = "42", stream1.findFirst().get().toString())
     }
 
     @Test
@@ -137,7 +137,7 @@ mod Test.Java.Function {
         let stream = DoubleStream.of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ Static);
         stream.forEach(i -> Ref.put(i, st));
         let last = Ref.get(st);
-        assertTrue(Float64.tryToInt32(last) == Some(8))
+        assertEq(expected = Some(8), Float64.tryToInt32(last))
     }
 
     @Test
@@ -148,7 +148,7 @@ mod Test.Java.Function {
             case None    => false
             }));
         let tot = stream1.sum();
-        assertTrue(Float64.tryToInt32(tot) == Some(20))
+        assertEq(expected = Some(20), Float64.tryToInt32(tot))
     }
 
     @Test
@@ -156,7 +156,7 @@ mod Test.Java.Function {
         let stream0 = DoubleStream.of(5.0f64);
         let stream1 = stream0.map(d -> checked_ecast(d + 7.0f64));
         let tot = stream1.sum();
-        assertTrue(Float64.tryToInt32(tot) == Some(12))
+        assertEq(expected = Some(12), Float64.tryToInt32(tot))
     }
 
 }
