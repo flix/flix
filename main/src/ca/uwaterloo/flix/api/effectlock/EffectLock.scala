@@ -66,7 +66,6 @@ object EffectLock {
   private def mkSerialization(root: TypedAst.Root): Map[String, serialization.DefOrSig] = {
     val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root)).map { case (_, libDefn) => libDefn }
     val defs = useGraph.flatMap(getLibraryDefn(_, root)).toMap
-    println(s"locking defs: ${defs.toList.map(_._1)}")
     val defSerialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
     val sigs = useGraph.flatMap(getLibrarySig(_, root)).toMap
     val sigSerialization = sigs.map { case (sym, sig) => sym.toString -> Serialize.serializeSig(sig) }
