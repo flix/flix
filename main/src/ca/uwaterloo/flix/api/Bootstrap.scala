@@ -465,7 +465,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       println("root entrypoints:")
       root.entryPoints.toList.foreach(println)
       println(s"root.entryPoints.toList.sortBy(_.toString) = ${root.entryPoints.toList.sortBy(_.toString)}")
-
+      root.entryPoints.toList.sortBy(_.toString).foreach(println)
 
       println("root defs:")
       root.defs.keys.toList.sortBy(sym => sym.toString).foreach(println)
