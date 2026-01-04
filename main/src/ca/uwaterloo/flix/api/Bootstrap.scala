@@ -470,8 +470,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
       val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
-        case (f, UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
-        case (f, UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
+        case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+        case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
+        case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+        case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
       })
 
       println("usegraph")
