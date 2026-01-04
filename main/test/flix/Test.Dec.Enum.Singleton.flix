@@ -1,5 +1,7 @@
 mod Test.Dec.Enum.Singleton {
 
+    use Assert.assertEq
+
     ///
     /// An enum for degrees celsius.
     ///
@@ -45,101 +47,101 @@ mod Test.Dec.Enum.Singleton {
     ///
     enum D[a, b, c](Result[Result[c, b], a])
 
-    @test
+    @CompileTest
     def testOpaqueType01(): Celsius = Celsius.Celsius(123)
 
-    @test
-    def testOpaqueType02(): Bool = match Celsius.Celsius(123) {
-        case Celsius.Celsius(x) => x == 123
+    @Test
+    def testOpaqueType02(): Unit \ Assert = match Celsius.Celsius(123) {
+        case Celsius.Celsius(x) => assertEq(expected = 123, x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType03(): Fahrenheit = Fahrenheit.Fahrenheit(123)
 
-    @test
-    def testOpaqueType04(): Bool = match Fahrenheit.Fahrenheit(123) {
-        case Fahrenheit.Fahrenheit(x) => x == 123
+    @Test
+    def testOpaqueType04(): Unit \ Assert = match Fahrenheit.Fahrenheit(123) {
+        case Fahrenheit.Fahrenheit(x) => assertEq(expected = 123, x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType05(): USD = USD.USD(123.456)
 
-    @test
-    def testOpaqueType06(): Bool = match USD.USD(123.456) {
-        case USD.USD(x) => x == 123.456
+    @Test
+    def testOpaqueType06(): Unit \ Assert = match USD.USD(123.456) {
+        case USD.USD(x) => assertEq(expected = 123.456, x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType07(): CAD = CAD.CAD(123.456)
 
-    @test
-    def testOpaqueType08(): Bool = match CAD.CAD(123.456) {
-        case CAD.CAD(x) => x == 123.456
+    @Test
+    def testOpaqueType08(): Unit \ Assert = match CAD.CAD(123.456) {
+        case CAD.CAD(x) => assertEq(expected = 123.456, x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType09(): A = A.A(None)
 
-    @test
+    @CompileTest
     def testOpaqueType10(): A = A.A(Some(123))
 
-    @test
-    def testOpaqueType11(): Bool = match A.A(None) {
-        case A.A(x) => x == None
+    @Test
+    def testOpaqueType11(): Unit \ Assert = match A.A(None) {
+        case A.A(x) => assertEq(expected = None, x)
     }
 
-    @test
-    def testOpaqueType12(): Bool = match A.A(Some(123)) {
-        case A.A(x) => x == Some(123)
+    @Test
+    def testOpaqueType12(): Unit \ Assert = match A.A(Some(123)) {
+        case A.A(x) => assertEq(expected = Some(123), x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType13(): B = B.B(Ok(123))
 
-    @test
+    @CompileTest
     def testOpaqueType14(): B = B.B(Err("Hello World"))
 
-    @test
-    def testOpaqueType15(): Bool = match B.B(Ok(123)) {
-        case B.B(x) => x == Ok(123)
+    @Test
+    def testOpaqueType15(): Unit \ Assert = match B.B(Ok(123)) {
+        case B.B(x) => assertEq(expected = Ok(123), x)
     }
 
-    @test
-    def testOpaqueType16(): Bool = match B.B(Err("Hello World")) {
-        case B.B(x) => x == Err("Hello World")
+    @Test
+    def testOpaqueType16(): Unit \ Assert = match B.B(Err("Hello World")) {
+        case B.B(x) => assertEq(expected = Err("Hello World"), x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType17(): Pair[Int32, Int32] = Pair.Pair(21, 42)
 
-    @test
-    def testOpaqueType18(): Bool = match Pair.Pair(21, 42) {
-        case Pair.Pair(x, y) => (x, y) == (21, 42)
+    @Test
+    def testOpaqueType18(): Unit \ Assert = match Pair.Pair(21, 42) {
+        case Pair.Pair(x, y) => assertEq(expected = (21, 42), (x, y))
     }
 
-    @test
+    @CompileTest
     def testOpaqueType19(): Pair[Bool, Int32] = Pair.Pair(true, 42)
 
-    @test
-    def testOpaqueType20(): Bool = match Pair.Pair(true, 42) {
-        case Pair.Pair(x, y) => (x, y) == (true, 42)
+    @Test
+    def testOpaqueType20(): Unit \ Assert = match Pair.Pair(true, 42) {
+        case Pair.Pair(x, y) => assertEq(expected = (true, 42), (x, y))
     }
 
-    @test
+    @CompileTest
     def testOpaqueType21(): C[Bool] = C.C(Ok(true))
 
-    @test
-    def testOpaqueType22(): Bool = match C.C(Ok(true)) {
-        case C.C(x) => x == Ok(true)
+    @Test
+    def testOpaqueType22(): Unit \ Assert = match C.C(Ok(true)) {
+        case C.C(x) => assertEq(expected = Ok(true), x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType23(): D[Bool, Int32, String] = D.D(Ok(true))
 
-    @test
+    @CompileTest
     def testOpaqueType24(): D[Bool, Int32, String] = D.D(Err(Ok(123)))
 
-    @test
+    @CompileTest
     def testOpaqueType25(): D[Bool, Int32, String] = D.D(Err(Err("hello")))
 
     ///
@@ -167,36 +169,36 @@ mod Test.Dec.Enum.Singleton {
     ///
     enum V(Result[X, Y])
 
-    @test
+    @CompileTest
     def testOpaqueType26(): U = U.U(None)
 
-    @test
-    def testOpaqueType27(): Bool = match U.U(None) {
-        case U.U(x) => x == None
+    @Test
+    def testOpaqueType27(): Unit \ Assert = match U.U(None) {
+        case U.U(x) => assertEq(expected = None, x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType28(): U = U.U(Some(true))
 
-    @test
-    def testOpaqueType29(): Bool = match U.U(Some(true)) {
-        case U.U(x) => x == Some(true)
+    @Test
+    def testOpaqueType29(): Unit \ Assert = match U.U(Some(true)) {
+        case U.U(x) => assertEq(expected = Some(true), x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType30(): V = V.V(Err(true))
 
-    @test
-    def testOpaqueType31(): Bool = match V.V(Err(true)) {
-        case V.V(x) => x == Err(true)
+    @Test
+    def testOpaqueType31(): Unit \ Assert = match V.V(Err(true)) {
+        case V.V(x) => assertEq(expected = Err(true), x)
     }
 
-    @test
+    @CompileTest
     def testOpaqueType32(): V = V.V(Ok(123))
 
-    @test
-    def testOpaqueType33(): Bool = match V.V(Ok(123)) {
-        case V.V(x) => x == Ok(123)
+    @Test
+    def testOpaqueType33(): Unit \ Assert = match V.V(Ok(123)) {
+        case V.V(x) => assertEq(expected = Ok(123), x)
     }
 
 }
