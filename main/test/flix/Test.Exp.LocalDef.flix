@@ -1,93 +1,95 @@
 mod Test.Exp.LocalDef {
 
+    use Assert.assertEq
+
     ///
     /// Basic Tail Recursion.
     ///
-    @test
-    def testLocalDef01(): Bool =
+    @Test
+    def testLocalDef01(): Unit \ Assert =
         def loop(n, acc) = if (n == 0) acc else loop(n - 1, acc + 1);
-        loop(10, 0) == 10
+        assertEq(expected = 10, loop(10, 0))
 
-    @test
-    def testLocalDef02(): Bool =
+    @Test
+    def testLocalDef02(): Unit \ Assert =
         def loop(acc, n) = if (n == 0) acc else loop(acc + 1, n - 1);
-        loop(0, 10) == 10
+        assertEq(expected = 10, loop(0, 10))
 
     ///
     /// Partial Application.
     ///
 
-    @test
-    def testLocalDefPartialApply01(): Bool =
+    @Test
+    def testLocalDefPartialApply01(): Unit \ Assert =
         def loop(n, acc) = if (n == 0) acc else loop(n - 1)(acc + 1);
-        loop(10)(0) == 10
+        assertEq(expected = 10, loop(10)(0))
 
-    @test
-    def testLocalDefPartialApply02(): Bool =
+    @Test
+    def testLocalDefPartialApply02(): Unit \ Assert =
         def loop(acc, n) = if (n == 0) acc else loop(acc + 1)(n - 1);
-        loop(0)(10) == 10
+        assertEq(expected = 10, loop(0)(10))
 
     ///
     /// Capturing.
     ///
 
-    @test
-    def testLocalDefCapture01(): Bool =
+    @Test
+    def testLocalDefCapture01(): Unit \ Assert =
         let a = 21;
         def loop(n) = if (n == 0) a else loop(n - 1);
-        loop(10) == a
+        assertEq(expected = a, loop(10))
 
-    @test
-    def testLocalDefCapture02(): Bool =
+    @Test
+    def testLocalDefCapture02(): Unit \ Assert =
         let a = 21;
         let b = 42;
         def loop(n) = if (n == 0) a + b else loop(n - 1);
-        loop(00) == a + b
+        assertEq(expected = a + b, loop(00))
 
-    @test
-    def testLocalDefCapture03(): Bool =
+    @Test
+    def testLocalDefCapture03(): Unit \ Assert =
         let inc = x -> x + 1;
         let dec = x -> x - 1;
         def loop(n) = if (n == 0) inc(0) else loop(dec(n));
-        loop(10) == 1
+        assertEq(expected = 1, loop(10))
 
-    @test
-    def testLocalDefCapture04(): Bool =
+    @Test
+    def testLocalDefCapture04(): Unit \ Assert =
         def inc(x) = x + 1;
         def dec(x) = x - 1;
         def loop(n) = if (n == 0) inc(0) else loop(dec(n));
-        loop(10) == 1
+        assertEq(expected = 1, loop(10))
 
-    @test
-    def testLocalDefCapture05(): Bool =
+    @Test
+    def testLocalDefCapture05(): Unit \ Assert =
         let a = 1;
         let b = 2;
         def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
-        f(10)() == 4
+        assertEq(expected = 4, f(10)())
 
-    @test
-    def testLocalDefCapture06(): Bool =
+    @Test
+    def testLocalDefCapture06(): Unit \ Assert =
         let a = 1;
         let b = 2;
         def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
-        ((q) -> f(q))(10)() == 4
+        assertEq(expected = 4, ((q) -> f(q))(10)())
 
-    @test
-    def testLocalDefCapture07(): Bool =
+    @Test
+    def testLocalDefCapture07(): Unit \ Assert =
         let a = 1;
         let b = 2;
         def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
-        (() -> f)()(10)() == 4
+        assertEq(expected = 4, (() -> f)()(10)())
 
-    @test
-    def testLocalDefCapture08(): Bool =
+    @Test
+    def testLocalDefCapture08(): Unit \ Assert =
         let a = 1;
         let b = 2;
         def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
-        (() -> f(b))()() == 4
+        assertEq(expected = 4, (() -> f(b))()())
 
-    @test
-    def testLocalDefCapture09(): Bool =
+    @Test
+    def testLocalDefCapture09(): Unit \ Assert =
         let a = 1;
         let b = 2;
         let g = {
@@ -95,11 +97,11 @@ mod Test.Exp.LocalDef {
             def f(l) = if (l == 4) () -> d + l else f(a + b + 1);
             () -> f
         };
-        g()(5)() == 7
+        assertEq(expected = 7, g()(5)())
 
-    @test
-    def testLocalDefCapture10(): Bool =
-        foo(42, _ -> -1)() == 1
+    @Test
+    def testLocalDefCapture10(): Unit \ Assert =
+        assertEq(expected = 1, foo(42, _ -> -1)())
 
     def foo(x: Int32, r: Unit -> Int32): Unit -> Int32 =
         def local() = x;
@@ -108,127 +110,127 @@ mod Test.Exp.LocalDef {
     ///
     /// Nested Let Recs.
     ///
-    @test
-    def testLocalDefNested01(): Bool =
+    @Test
+    def testLocalDefNested01(): Unit \ Assert =
         def outer(n) = {
             def inner(m) = if (m == 0) 0 else inner(m - 1);
             inner(n)
         };
-        outer(10) == 0
+        assertEq(expected = 0, outer(10))
 
-    @test
-    def testLocalDefNested02(): Bool =
+    @Test
+    def testLocalDefNested02(): Unit \ Assert =
         def outer(n) = {
             def inner(m) = if (m == 0) n else inner(m - 1);
             inner(n)
         };
-        outer(10) == 10
+        assertEq(expected = 10, outer(10))
 
-    @test
-    def testLocalDefNested03(): Bool =
+    @Test
+    def testLocalDefNested03(): Unit \ Assert =
         def outer(n) = {
             def inc(x) = x + 1;
             def dec(x) = x - 1;
             def inner(m) = if (m == 0) inc(m) else inner(dec(m));
             inner(n)
         };
-        outer(10) == 1
+        assertEq(expected = 1, outer(10))
 
     ///
     /// Primitive Types.
     ///
-    @test
-    def testLocalDefUnit01(): Bool =
+    @Test
+    def testLocalDefUnit01(): Unit \ Assert =
         def loop(n) = if (n == 0) () else loop(n - 1);
-        loop(10) == ()
+        assertEq(expected = (), loop(10))
 
-    @test
-    def testLocalDefBool01(): Bool =
+    @Test
+    def testLocalDefBool01(): Unit \ Assert =
         def loop(n) = if (n == 0) true else loop(n - 1);
-        loop(10) == true
+        assertEq(expected = true, loop(10))
 
-    @test
-    def testLocalDefChar01(): Bool =
+    @Test
+    def testLocalDefChar01(): Unit \ Assert =
         def loop(n) = if (n == 0) 'a' else loop(n - 1);
-        loop(10) == 'a'
+        assertEq(expected = 'a', loop(10))
 
-    @test
-    def testLocalDefFloat3201(): Bool =
+    @Test
+    def testLocalDefFloat3201(): Unit \ Assert =
         def loop(n) = if (n == 0) 123.456f32 else loop(n - 1);
-        loop(10) == 123.456f32
+        assertEq(expected = 123.456f32, loop(10))
 
-    @test
-    def testLocalDefFloat6401(): Bool =
+    @Test
+    def testLocalDefFloat6401(): Unit \ Assert =
         def loop(n) = if (n == 0) 123.456f64 else loop(n - 1);
-        loop(10) == 123.456f64
+        assertEq(expected = 123.456f64, loop(10))
 
-    @test
-    def testLocalDefBigDecimal01(): Bool =
+    @Test
+    def testLocalDefBigDecimal01(): Unit \ Assert =
         def loop(n) = if (n == 0) 123.456ff else loop(n - 1);
-        loop(10) == 123.456ff
+        assertEq(expected = 123.456ff, loop(10))
 
-    @test
-    def testLocalDefInt801(): Bool =
+    @Test
+    def testLocalDefInt801(): Unit \ Assert =
         def loop(n) = if (n == 0) 123i8 else loop(n - 1);
-        loop(10) == 123i8
+        assertEq(expected = 123i8, loop(10))
 
-    @test
-    def testLocalDefInt1601(): Bool =
+    @Test
+    def testLocalDefInt1601(): Unit \ Assert =
         def loop(n) = if (n == 0) 123i16 else loop(n - 1);
-        loop(10) == 123i16
+        assertEq(expected = 123i16, loop(10))
 
-    @test
-    def testLocalDefInt3201(): Bool =
+    @Test
+    def testLocalDefInt3201(): Unit \ Assert =
         def loop(n) = if (n == 0) 123i32 else loop(n - 1);
-        loop(10) == 123i32
+        assertEq(expected = 123i32, loop(10))
 
-    @test
-    def testLocalDefInt6401(): Bool =
+    @Test
+    def testLocalDefInt6401(): Unit \ Assert =
         def loop(n) = if (n == 0) 123i64 else loop(n - 1);
-        loop(10) == 123i64
+        assertEq(expected = 123i64, loop(10))
 
-    @test
-    def testLocalDefBigInt01(): Bool =
+    @Test
+    def testLocalDefBigInt01(): Unit \ Assert =
         def loop(n) = if (n == 0) 123ii else loop(n - 1);
-        loop(10) == 123ii
+        assertEq(expected = 123ii, loop(10))
 
-    @test
-    def testLocalDefString01(): Bool =
+    @Test
+    def testLocalDefString01(): Unit \ Assert =
         def loop(n) = if (n == 0) "hello" else loop(n - 1);
-        loop(10) == "hello"
+        assertEq(expected = "hello", loop(10))
 
     ///
     /// Symbolic nested definitions
     ///
-    @test
-    def testLocalDefSymbol01(): Bool =
+    @Test
+    def testLocalDefSymbol01(): Unit \ Assert =
         def <><(a, b) = a + " <>< " + b;
-        "left" <>< "right" == "left <>< right"
+        assertEq(expected = "left <>< right", "left" <>< "right")
 
     ///
     /// Nested definitions with type ascription
     ///
-    @test
-    def testLocalDefAscribed01(): Bool =
+    @Test
+    def testLocalDefAscribed01(): Unit \ Assert =
         def succ(x): Int32 = x + 1;
-        succ(1) == 2
+        assertEq(expected = 2, succ(1))
 
     ///
     /// Nested definitions with type ascription
     ///
-    @test
-    def testLocalDefAscribed02(): Bool =
+    @Test
+    def testLocalDefAscribed02(): Unit \ Assert =
         def succ(x): Int32 \ {} = x + 1;
-        succ(1) == 2
+        assertEq(expected = 2, succ(1))
 
     ///
     /// Nested definitions with type ascription
     ///
-    @test
-    def testLocalDefAscribed03(): Bool = region rc {
+    @Test
+    def testLocalDefAscribed03(): Unit \ Assert = region rc {
         def incr(x): Unit \ rc = Ref.put(Ref.get(x) + 1, x);
         let r = Ref.fresh(rc, 1);
         incr(r);
-        Ref.get(r) == 2
+        assertEq(expected = 2, Ref.get(r))
     }
 }
