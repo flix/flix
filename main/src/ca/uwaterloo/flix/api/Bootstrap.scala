@@ -461,9 +461,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
 
       println(s"root.entryPoints.toList.isEmpty = ${root.entryPoints.toList.isEmpty}")
-      println("root entrypoints:")
       println(s"root.entryPoints = ${root.entryPoints}")
+      println("root entrypoints:")
       root.entryPoints.toList.foreach(println)
+      println(s"root.entryPoints.toList.sortBy(_.toString) = ${root.entryPoints.toList.sortBy(_.toString)}")
 
 
       println("root defs:")
