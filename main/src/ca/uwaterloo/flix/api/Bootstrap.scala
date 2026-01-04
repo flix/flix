@@ -473,26 +473,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case (f, UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
         case (f, UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
       })
-      println("inverted use graph:")
-      UseGraph.computeGraph(root).invert.map { case (src, dst) => (src, dst) }.toList.filter {
-        case (UseGraph.UsedSym.DefnSym(src), _) => src.toString == "Upgr.entrypoint"
-        case (UseGraph.UsedSym.SigSym(_), _) => false
-      }.foreach(println)
-      println("use graph:")
-      UseGraph.computeGraph(root).map { case (src, dst) => (src, dst) }.toList.filter {
-        case (UseGraph.UsedSym.DefnSym(src), _) => src.toString == "main"
-        case (UseGraph.UsedSym.SigSym(_), _) => false
-      }.foreach(println)
 
-      println(s"Use graph (filtered): ${
-        UseGraph.computeGraph(root).filter {
-          case (UseGraph.UsedSym.DefnSym(src), _) => src.toString == "main"
-          case (UseGraph.UsedSym.SigSym(src), _) => src.toString == "main"
-        }
-      }")
-      println(s"Inverted use graph (filtered): ${useGraph.filter { case (src, _) => src == "Upgr.entrypoint" }}")
-      println(s"Use graph: ${UseGraph.computeGraph(root)}")
-      println(s"Inverted use graph: $useGraph")
+      println("usegraph")
+      println(useGraph.map { case (src, dst) => (src, dst) }.toList.filter { case (src, _) => src == "Upgr.entrypoint" })
 
       // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
       val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
