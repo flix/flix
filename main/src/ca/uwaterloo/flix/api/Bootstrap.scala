@@ -460,14 +460,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
 
-      println(s"root.entryPoints.toList.isEmpty = ${root.entryPoints.toList.isEmpty}")
-      println(s"root.entryPoints = ${root.entryPoints}")
-      println("root entrypoints:")
-      root.entryPoints.toList.foreach(println)
-      println(s"root.entryPoints.toList.sortBy(_.toString) = ${root.entryPoints.toList.sortBy(_.toString)}")
-      root.entryPoints.toList.sortBy(_.toString).foreach(println)
-
-
       // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
       val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
         case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
@@ -476,25 +468,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
       })
 
-      println("usegraph")
-      println(useGraph.map { case (src, dst) => (src, dst) }.toList.filter { case (src, _) => src == "Upgr.entrypoint" })
-
       // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
       val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
       val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
-      println(s"erasedUpgradedDefs.toList.filter { case (sym, _) => sym == \"Upgr.entrypoint\" } = ${erasedUpgradedDefs.toList.filter { case (sym, _) => sym == "Upgr.entrypoint" }}")
       val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
       val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
       val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)(flix)
       val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)(flix)
       val allErrors = defnErrors ::: sigErrors
-      println(s"allErrors = $allErrors")
 
-      if (allErrors.isEmpty) {
-        Ok(())
-      } else {
-        Err(BootstrapError.EffectUpgradeError(allErrors))
+      if (allErrors.nonEmpty) {
+        return Err(BootstrapError.EffectUpgradeError(allErrors))
       }
+
+      ()
     }
   }
 
@@ -504,17 +491,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme], useGraph: ListMap[String, SourceLocation])(implicit flix: Flix): List[(String, Scheme, List[SourceLocation])] = {
     val errorBuf = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
     for ((sym, lockedScheme) <- lockedFunctions) {
-      println(
-        s"""Checking: $sym
-           |Locked Scheme: $lockedScheme""".stripMargin
-      )
       if (upgradeFunctions.contains(sym)) {
         val upgradedScheme = upgradeFunctions(sym)
-        println(s"Upgraded Scheme: $upgradedScheme")
         val uses = useGraph.get(sym)
-        println(s"Uses: $uses")
-        println(s"uses.isEmpty = ${uses.isEmpty}")
-        println(s"EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix) = ${EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix)}")
         if (!(uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix))) {
           errorBuf.addOne((sym, upgradedScheme, uses))
         }
