@@ -166,7 +166,9 @@ mod Test.Exp.Lambda.Op {
     //
 
     @Test
-    def testLambdaOpType01(): (Int32, Int32) -> Int32 = (+)
+    def testLambdaOpType01(): Unit \ Assert =
+        let f: (Int32, Int32) -> Int32 = (+);
+        assertEq(expected = 5, f(2, 3))
 
     @Test
     def testLambdaOpHigherOrder01(): Unit \ Assert =
