@@ -496,7 +496,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           case (UseGraph.UsedSym.SigSym(src), _) => src.toString == "main"
         }
       }")
-      println(s"Inverted use graph (filterd): ${useGraph.filter { case (src, _) => src == "Upgr.entrypoint" }}")
+      println(s"Inverted use graph (filtered): ${useGraph.filter { case (src, _) => src == "Upgr.entrypoint" }}")
       println(s"Use graph: ${UseGraph.computeGraph(root)}")
       println(s"Inverted use graph: $useGraph")
 
