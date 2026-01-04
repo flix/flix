@@ -1,5 +1,7 @@
 mod Test.Dec.AssocEff {
 
+    use Assert.{assertEq, assertTrue}
+
     eff Time {
         def getTime(): String
     }
@@ -46,7 +48,7 @@ mod Test.Dec.AssocEff {
         List.foldLeft(Add.add, FromInt32.fromInt32(0), l) `Div.div` FromInt32.fromInt32(List.length(l))
 
     @Test
-    pub def testAvg(): Bool = avg(List#{1, 2, 3}) == 2
+    pub def testAvg(): Unit \ Assert = assertEq(expected = 2, avg(List#{1, 2, 3}))
 
     //////////////
     // Iterator //
@@ -139,36 +141,36 @@ mod Test.Dec.AssocEff {
     }
 
     @Test
-    pub def testDeepIterableInt32_01(): Bool = region rc {
+    pub def testDeepIterableInt32_01(): Unit \ Assert = region rc {
         let x1 = 123;
         let it = DeepIterable.iterator(rc, x1);
         let l2 = Iterator.toList(it);
-        List#{123} == l2
+        assertEq(expected = List#{123}, l2)
     }
 
     @Test
-    pub def testDeepIterableInt32_02(): Bool = region rc {
+    pub def testDeepIterableInt32_02(): Unit \ Assert = region rc {
         let l1 = List#{1, 2, 3};
         let it = List.iterator(rc, l1);
         let it2 = Iterator.flatMap(DeepIterable.iterator(rc), it);
         let l2 = Iterator.toList(it2);
-        l1 == l2
+        assertEq(expected = l1, l2)
     }
 
 //    @Test
-    pub def testDeepIterableLoudInt32_01(): Bool \ Console = region rc {
+    pub def testDeepIterableLoudInt32_01(): Unit \ { Assert, Console } = region rc {
         let x1 = LoudInt32.LoudInt32(123);
         let it = DeepIterable.iterator(rc, x1);
         let l2 = Iterator.toList(it);
-        List#{123} == l2
+        assertTrue(List#{123} == l2)
     }
 
     @Test
-    pub def testDeepIterableInt32(): Bool = region rc {
+    pub def testDeepIterableInt32(): Unit \ Assert = region rc {
         let l1 = List#{1, 2, 3};
         let it = DeepIterable.iterator(rc, l1);
         let l2 = Iterator.toList(it);
-        l1 == l2
+        assertEq(expected = l1, l2)
     }
 
 

@@ -1,5 +1,7 @@
 mod Test.Dec.Assoc.Type.Eff {
 
+    use Assert.{assertEq, assertTrue}
+
     ////////////////////////////////////////////////////////
     // Type Definitions                                   //
     ////////////////////////////////////////////////////////
@@ -177,20 +179,20 @@ mod Test.Dec.Assoc.Type.Eff {
         }
 
     @Test
-    pub def testInt32_01(): Bool =
-        handleWithListInt32(runOnceInt32_01, 42) == 42 :: Nil
+    pub def testInt32_01(): Unit \ Assert =
+        assertEq(expected = 42 :: Nil, handleWithListInt32(runOnceInt32_01, 42))
 
     @Test
-    pub def testInt32_02(): Bool =
-        handleWithListInt32(runOnceInt32_02, 42) == 42 :: Nil
+    pub def testInt32_02(): Unit \ Assert =
+        assertEq(expected = 42 :: Nil, handleWithListInt32(runOnceInt32_02, 42))
 
     @Test
-    pub def testInt32_03(): Bool =
-        handleWithListInt32(runTwiceInt32_01, 42) == 42 :: 42 :: Nil
+    pub def testInt32_03(): Unit \ Assert =
+        assertEq(expected = 42 :: 42 :: Nil, handleWithListInt32(runTwiceInt32_01, 42))
 
     @Test
-    pub def testInt32_04(): Bool =
-        handleWithListInt32(runTwiceInt32_02, 42) == 42 :: 42 :: Nil
+    pub def testInt32_04(): Unit \ Assert =
+        assertEq(expected = 42 :: 42 :: Nil, handleWithListInt32(runTwiceInt32_02, 42))
 
 
     // String
@@ -204,214 +206,214 @@ mod Test.Dec.Assoc.Type.Eff {
         }
 
     @Test
-    pub def testString01(): Bool =
-        handleWithListString(runOnceString01, "Hello") == "Hello" :: Nil
+    pub def testString01(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceString01, "Hello") == "Hello" :: Nil)
 
     @Test
-    pub def testString02(): Bool =
-        handleWithListString(runOnceString02, "Hello") == "Hello" :: Nil
+    pub def testString02(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceString02, "Hello") == "Hello" :: Nil)
 
     @Test
-    pub def testString03(): Bool =
-        handleWithListString(runTwiceString01, "Hello") == "Hello" :: "Hello" :: Nil
+    pub def testString03(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceString01, "Hello") == "Hello" :: "Hello" :: Nil)
 
     @Test
-    pub def testString04(): Bool =
-        handleWithListString(runTwiceString02, "Hello") == "Hello" :: "Hello" :: Nil
+    pub def testString04(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceString02, "Hello") == "Hello" :: "Hello" :: Nil)
 
 
     // Vector[Int32]
 
     @Test
-    pub def testVectorInt32_01(): Bool =
-        handleWithListInt32(runOnceVectorInt32_01, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
+    pub def testVectorInt32_01(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runOnceVectorInt32_01, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil)
 
     @Test
-    pub def testVectorInt32_02(): Bool =
-        handleWithListInt32(runOnceVectorInt32_02, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
+    pub def testVectorInt32_02(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runOnceVectorInt32_02, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil)
 
     @Test
-    pub def testVectorInt32_03(): Bool =
-        handleWithListInt32(runTwiceVectorInt32_01, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil
+    pub def testVectorInt32_03(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runTwiceVectorInt32_01, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil)
 
     @Test
-    pub def testVectorInt32_04(): Bool =
-        handleWithListInt32(runTwiceVectorInt32_02, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil
+    pub def testVectorInt32_04(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runTwiceVectorInt32_02, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil)
 
     @Test
-    pub def testVectorInt32_05(): Bool =
-        handleWithListInt32(runOnceVectorInt32_01, Vector#{}) == Nil
+    pub def testVectorInt32_05(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runOnceVectorInt32_01, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorInt32_06(): Bool =
-        handleWithListInt32(runOnceVectorInt32_02, Vector#{}) == Nil
+    pub def testVectorInt32_06(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runOnceVectorInt32_02, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorInt32_07(): Bool =
-        handleWithListInt32(runTwiceVectorInt32_01, Vector#{}) == Nil
+    pub def testVectorInt32_07(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runTwiceVectorInt32_01, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorInt32_08(): Bool =
-        handleWithListInt32(runTwiceVectorInt32_02, Vector#{}) == Nil
+    pub def testVectorInt32_08(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runTwiceVectorInt32_02, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorInt32_09(): Bool =
+    pub def testVectorInt32_09(): Unit \ Assert =
         let v = Vector.range(0, 100);
         let left = handleWithListInt32(runOnceVectorInt32_01, v);
         let right = handleWithListInt32(runOnceVectorInt32_02, v);
-        left == right
+        assertTrue(left == right)
 
     @Test
-    pub def testVectorInt32_10(): Bool =
+    pub def testVectorInt32_10(): Unit \ Assert =
         let v = Vector.range(0, 100);
         let left = handleWithListInt32(runTwiceVectorInt32_01, v);
         let right = handleWithListInt32(runTwiceVectorInt32_02, v);
-        left == right
+        assertTrue(left == right)
 
 
     // Vector[String]
 
     @Test
-    pub def testVectorString01(): Bool =
-        handleWithListString(runOnceVectorString01, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: Nil
+    pub def testVectorString01(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceVectorString01, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: Nil)
 
     @Test
-    pub def testVectorString02(): Bool =
-        handleWithListString(runOnceVectorString02, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: Nil
+    pub def testVectorString02(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceVectorString02, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: Nil)
 
     @Test
-    pub def testVectorString03(): Bool =
-        handleWithListString(runTwiceVectorString01, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil
+    pub def testVectorString03(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceVectorString01, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil)
 
     @Test
-    pub def testVectorString04(): Bool =
-        handleWithListString(runTwiceVectorString02, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil
+    pub def testVectorString04(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceVectorString02, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil)
 
     @Test
-    pub def testVectorString05(): Bool =
-        handleWithListString(runOnceVectorString01, Vector#{}) == Nil
+    pub def testVectorString05(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceVectorString01, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorString06(): Bool =
-        handleWithListString(runOnceVectorString02, Vector#{}) == Nil
+    pub def testVectorString06(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceVectorString02, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorString07(): Bool =
-        handleWithListString(runTwiceVectorString01, Vector#{}) == Nil
+    pub def testVectorString07(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceVectorString01, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorString08(): Bool =
-        handleWithListString(runTwiceVectorString02, Vector#{}) == Nil
+    pub def testVectorString08(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceVectorString02, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorString09(): Bool =
+    pub def testVectorString09(): Unit \ Assert =
         let v = Vector.range(0, 100) |> Vector.map(Int32.toString);
         let left = handleWithListString(runOnceVectorString01, v);
         let right = handleWithListString(runOnceVectorString02, v);
-        left == right
+        assertTrue(left == right)
 
     @Test
-    pub def testVectorString10(): Bool =
+    pub def testVectorString10(): Unit \ Assert =
         let v = Vector.range(0, 100) |> Vector.map(Int32.toString);
         let left = handleWithListString(runTwiceVectorString01, v);
         let right = handleWithListString(runTwiceVectorString02, v);
-        left == right
+        assertTrue(left == right)
 
     // Vector[Vector[Int32]]
 
     @Test
-    pub def testVectorVectorInt32_01(): Bool =
-        handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil
+    pub def testVectorVectorInt32_01(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil)
 
     @Test
-    pub def testVectorVectorInt32_02(): Bool =
-        handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil
+    pub def testVectorVectorInt32_02(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil)
 
     @Test
-    pub def testVectorVectorInt32_03(): Bool =
-        handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil
+    pub def testVectorVectorInt32_03(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
     @Test
-    pub def testVectorVectorInt32_04(): Bool =
-        handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil
+    pub def testVectorVectorInt32_04(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
     @Test
-    pub def testVectorVectorInt32_05(): Bool =
-        handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{}) == Nil
+    pub def testVectorVectorInt32_05(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorVectorInt32_06(): Bool =
-        handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{}) == Nil
+    pub def testVectorVectorInt32_06(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorVectorInt32_07(): Bool =
-        handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{}) == Nil
+    pub def testVectorVectorInt32_07(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorVectorInt32_08(): Bool =
-        handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{}) == Nil
+    pub def testVectorVectorInt32_08(): Unit \ Assert =
+        assertTrue(handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorVectorInt32_09(): Bool =
+    pub def testVectorVectorInt32_09(): Unit \ Assert =
         let v = Vector.repeat(10, Vector.range(0, 10));
         let left = handleWithListInt32(runOnceVectorVectorInt32_01, v);
         let right = handleWithListInt32(runOnceVectorVectorInt32_02, v);
-        left == right
+        assertTrue(left == right)
 
     @Test
-    pub def testVectorVectorInt32_10(): Bool =
+    pub def testVectorVectorInt32_10(): Unit \ Assert =
         let v = Vector.repeat(10, Vector.range(0, 10));
         let left = handleWithListInt32(runTwiceVectorVectorInt32_01, v);
         let right = handleWithListInt32(runTwiceVectorVectorInt32_02, v);
-        left == right
+        assertTrue(left == right)
 
 
     // Vector[Vector[String]]
 
     @Test
-    pub def testVectorVectorString01(): Bool =
-        handleWithListString(runOnceVectorVectorString01, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: Nil
+    pub def testVectorVectorString01(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceVectorVectorString01, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: Nil)
 
     @Test
-    pub def testVectorVectorString02(): Bool =
-        handleWithListString(runOnceVectorVectorString02, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: Nil
+    pub def testVectorVectorString02(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceVectorVectorString02, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: Nil)
 
     @Test
-    pub def testVectorVectorString03(): Bool =
-        handleWithListString(runTwiceVectorVectorString01, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: "a" :: "b" :: "c" :: "d" :: Nil
+    pub def testVectorVectorString03(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceVectorVectorString01, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: "a" :: "b" :: "c" :: "d" :: Nil)
 
     @Test
-    pub def testVectorVectorString04(): Bool =
-        handleWithListString(runTwiceVectorVectorString02, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: "a" :: "b" :: "c" :: "d" :: Nil
+    pub def testVectorVectorString04(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceVectorVectorString02, Vector#{Vector#{"a", "b"}, Vector#{"c", "d"}}) == "a" :: "b" :: "c" :: "d" :: "a" :: "b" :: "c" :: "d" :: Nil)
 
     @Test
-    pub def testVectorVectorString05(): Bool =
-        handleWithListString(runOnceVectorVectorString01, Vector#{}) == Nil
+    pub def testVectorVectorString05(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceVectorVectorString01, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorVectorString06(): Bool =
-        handleWithListString(runOnceVectorVectorString02, Vector#{}) == Nil
+    pub def testVectorVectorString06(): Unit \ Assert =
+        assertTrue(handleWithListString(runOnceVectorVectorString02, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorVectorString07(): Bool =
-        handleWithListString(runTwiceVectorVectorString01, Vector#{}) == Nil
+    pub def testVectorVectorString07(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceVectorVectorString01, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorVectorString08(): Bool =
-        handleWithListString(runTwiceVectorVectorString02, Vector#{}) == Nil
+    pub def testVectorVectorString08(): Unit \ Assert =
+        assertTrue(handleWithListString(runTwiceVectorVectorString02, Vector#{}) == Nil)
 
     @Test
-    pub def testVectorVectorString09(): Bool =
+    pub def testVectorVectorString09(): Unit \ Assert =
         let v = Vector.repeat(10, Vector.range(0, 10) |> Vector.map(Int32.toString));
         let left = handleWithListString(runOnceVectorVectorString01, v);
         let right = handleWithListString(runOnceVectorVectorString02, v);
-        left == right
+        assertTrue(left == right)
 
     @Test
-    pub def testVectorVectorString10(): Bool =
+    pub def testVectorVectorString10(): Unit \ Assert =
         let v = Vector.repeat(10, Vector.range(0, 10) |> Vector.map(Int32.toString));
         let left = handleWithListString(runTwiceVectorVectorString01, v);
         let right = handleWithListString(runTwiceVectorVectorString02, v);
-        left == right
+        assertTrue(left == right)
 
 }
