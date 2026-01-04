@@ -467,8 +467,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       println(s"root.entryPoints.toList.sortBy(_.toString) = ${root.entryPoints.toList.sortBy(_.toString)}")
       root.entryPoints.toList.sortBy(_.toString).foreach(println)
 
-      println("root defs:")
-      root.defs.keys.toList.sortBy(sym => sym.toString).foreach(println)
 
       // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
       val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
@@ -476,18 +474,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case (f, UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
       })
       println("inverted use graph:")
-      UseGraph.computeGraph(root).invert.map { case (src, dst) => (src, dst) }.toList.sortBy {
-        case (UseGraph.UsedSym.DefnSym(src), UseGraph.UsedSym.DefnSym(dst)) => (src.toString, dst.toString)
-        case (UseGraph.UsedSym.DefnSym(src), UseGraph.UsedSym.SigSym(dst)) => (src.toString, dst.toString)
-        case (UseGraph.UsedSym.SigSym(src), UseGraph.UsedSym.DefnSym(dst)) => (src.toString, dst.toString)
-        case (UseGraph.UsedSym.SigSym(src), UseGraph.UsedSym.SigSym(dst)) => (src.toString, dst.toString)
+      UseGraph.computeGraph(root).invert.map { case (src, dst) => (src, dst) }.toList.filter {
+        case (UseGraph.UsedSym.DefnSym(src), _) => src.toString == "Upgr.entrypoint"
+        case (UseGraph.UsedSym.SigSym(_), _) => false
       }.foreach(println)
       println("use graph:")
-      UseGraph.computeGraph(root).map { case (src, dst) => (src, dst) }.toList.sortBy {
-        case (UseGraph.UsedSym.DefnSym(src), UseGraph.UsedSym.DefnSym(dst)) => (src.toString, dst.toString)
-        case (UseGraph.UsedSym.DefnSym(src), UseGraph.UsedSym.SigSym(dst)) => (src.toString, dst.toString)
-        case (UseGraph.UsedSym.SigSym(src), UseGraph.UsedSym.DefnSym(dst)) => (src.toString, dst.toString)
-        case (UseGraph.UsedSym.SigSym(src), UseGraph.UsedSym.SigSym(dst)) => (src.toString, dst.toString)
+      UseGraph.computeGraph(root).map { case (src, dst) => (src, dst) }.toList.filter {
+        case (UseGraph.UsedSym.DefnSym(src), _) => src.toString == "main"
+        case (UseGraph.UsedSym.SigSym(_), _) => false
       }.foreach(println)
 
       println(s"Use graph (filtered): ${
