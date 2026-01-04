@@ -377,8 +377,8 @@ class TestBootstrap extends AnyFunSuite {
     )
     FileOps.writeString(p.resolve("flix.toml").normalize(), tomlUpgr)
     // Delete old files
-    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vSafe/$pkgName-$vUnsafe.toml")).unsafeGet
-    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vSafe/$pkgName-$vUnsafe.fpkg")).unsafeGet
+    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vUnsafe/$pkgName-$vUnsafe.toml")).unsafeGet
+    FileOps.delete(p.resolve(s"lib/github/$pkgAuthor/$pkgName/$vUnsafe/$pkgName-$vUnsafe.fpkg")).unsafeGet
 
     val bootstrapUpgr = Bootstrap.bootstrap(p, PkgTestUtils.gitHubToken)(Formatter.getDefault, System.out).unsafeGet
 
