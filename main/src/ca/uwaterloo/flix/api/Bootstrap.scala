@@ -475,9 +475,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case (f, UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
         case (f, UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
       })
-      UseGraph.computeGraph(root).m.keys.toList.sortBy {
-        case UseGraph.UsedSym.DefnSym(sym) => sym.toString
-        case UseGraph.UsedSym.SigSym(sym) => sym.toString
+      println("use graph:")
+      UseGraph.computeGraph(root).map { case (src, dst) => (src, dst) }.toList.sortBy {
+        case (UseGraph.UsedSym.DefnSym(src), UseGraph.UsedSym.DefnSym(dst)) => (src.toString, dst.toString)
+        case (UseGraph.UsedSym.DefnSym(src), UseGraph.UsedSym.SigSym(dst)) => (src.toString, dst.toString)
+        case (UseGraph.UsedSym.SigSym(src), UseGraph.UsedSym.DefnSym(dst)) => (src.toString, dst.toString)
+        case (UseGraph.UsedSym.SigSym(src), UseGraph.UsedSym.SigSym(dst)) => (src.toString, dst.toString)
       }.foreach(println)
       println(s"Use graph (filtered): ${UseGraph.computeGraph(root).filter { case (src, _) => src.toString == "main" }}")
       println(s"Inverted use graph (filterd): ${useGraph.filter { case (src, _) => src == "Upgr.entrypoint" }}")
