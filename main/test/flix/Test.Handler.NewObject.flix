@@ -4,6 +4,8 @@ mod Test.Handler.NewObject {
 
     import java.lang.Runnable
 
+    use Assert.assertEq;
+
     eff Ask {
         def ask(x: Int32): Unit
     }
@@ -46,7 +48,7 @@ mod Test.Handler.NewObject {
     }
 
     @Test
-    def testRunnable01(): Unit \ {Assert, IO} =
+    def testRunnable01(): Unit \ Assert + IO =
         region rc {
             let r = Ref.fresh(rc, 0);
             newAskRunnable(r).$run();
@@ -55,7 +57,7 @@ mod Test.Handler.NewObject {
         }
 
     @Test
-    def testRunnable02(): Unit \ {Assert, IO} =
+    def testRunnable02(): Unit \ Assert + IO =
         region rc {
             let r = Ref.fresh(rc, 0);
             newGenRunnable(r).$run();
@@ -64,7 +66,7 @@ mod Test.Handler.NewObject {
         }
 
     @Test
-    def testRunnable03(): Unit \ {Assert, IO} =
+    def testRunnable03(): Unit \ Assert + IO =
         region rc {
             let r = Ref.fresh(rc, 0);
             newGenAskRunnable(r).$run();

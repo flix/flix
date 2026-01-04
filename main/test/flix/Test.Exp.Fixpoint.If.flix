@@ -1,18 +1,18 @@
 mod Test.Exp.Fixpoint.If {
 
-    use Assert.{assertEq};
+    use Assert.{assertEq, assertTrue};
 
     /////////////////////////////////////////////////////////////////////////////
     // Test if-guard with 0 parameters                                         //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testIfGuardZero01(): Bool = {
+    def testIfGuardZero01(): Unit \ Assert = {
         let f = inject Vector.range(0, 10) into A/1;
         let r = #{
             Empty(x) :- A(x), if (false).
         };
-        query f, r select x from Empty(x) |> Vector.isEmpty
+        assertTrue(query f, r select x from Empty(x) |> Vector.isEmpty)
     }
 
     @Test

@@ -38,7 +38,7 @@ mod Test.Handler.Spawn {
         }
 
     @Test
-    def testSpawn01(): Unit \ {Assert, Chan, NonDet} =
+    def testSpawn01(): Unit \ Assert + Chan + NonDet =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runGen(tx) @ rc;
@@ -47,7 +47,7 @@ mod Test.Handler.Spawn {
         assertEq(expected = 42, result)
 
     @Test
-    def testSpawn02(): Unit \ {Assert, Chan, NonDet} =
+    def testSpawn02(): Unit \ Assert + Chan + NonDet =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runAsk(tx) @ rc;
@@ -56,7 +56,7 @@ mod Test.Handler.Spawn {
         assertEq(expected = 42, result)
 
     @Test
-    def testSpawn03(): Unit \ {Assert, Chan, NonDet} =
+    def testSpawn03(): Unit \ Assert + Chan + NonDet =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runGenAsk(tx) @ rc;
