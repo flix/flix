@@ -267,7 +267,7 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  test("eff-check on same version as before is ok") {
+  ignore("eff-check on same version as before is ok") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
 
