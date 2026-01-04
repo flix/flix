@@ -118,7 +118,7 @@ object Bootstrap {
 
     FileOps.newFileIfAbsent(mainTestFile) {
       """@Test
-        |def test01(): Bool = 1 + 1 == 2
+        |def test01(): Unit \ Assert = Assert.assertEq(expected = 1 + 1, 2)
         |""".stripMargin
     }
     Result.Ok(())
