@@ -157,14 +157,6 @@ mod Test.Dec.AssocEff {
         assertEq(expected = l1, l2)
     }
 
-//    @Test
-    pub def testDeepIterableLoudInt32_01(): Unit \ { Assert, Console } = region rc {
-        let x1 = LoudInt32.LoudInt32(123);
-        let it = DeepIterable.iterator(rc, x1);
-        let l2 = Iterator.toList(it);
-        assertTrue(List#{123} == l2)
-    }
-
     @Test
     pub def testDeepIterableInt32(): Unit \ Assert = region rc {
         let l1 = List#{1, 2, 3};
