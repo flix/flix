@@ -458,30 +458,40 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
       (lockedDefs, lockedSigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
       root <- Steps.check(flix)
+      errors <- reportEffectUpgradeErrors(lockedDefs, lockedSigs, root)(flix)
     } yield {
+      errors
+    }
+  }
 
-      // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
-      val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
-        case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
-        case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
-        case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
-        case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
-      })
+  /**
+    * Helper function for [[checkEffects]] to be used in for comprehension.
+    *
+    * Returns `Ok(())` if no effect upgrade errors are found.
+    * Returns `Err(BootstrapError.EffectUpgradeError(errors))` otherwise.
+    */
+  private def reportEffectUpgradeErrors(lockedDefs: Map[Symbol.DefnSym, Scheme], lockedSigs: Map[Symbol.SigSym, Scheme], root: TypedAst.Root)(implicit flix: Flix): Result[Unit, BootstrapError] = {
+    // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
+    val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
+      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
+    })
 
-      // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
-      val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
-      val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
-      val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
-      val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
-      val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)(flix)
-      val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)(flix)
-      val allErrors = defnErrors ::: sigErrors
+    // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
+    val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
+    val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
+    val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
+    val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
+    val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)
+    val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)
+    val allErrors = defnErrors ::: sigErrors
 
-      if (allErrors.nonEmpty) {
-        return Err(BootstrapError.EffectUpgradeError(allErrors))
-      }
-
-      ()
+    if (allErrors.isEmpty) {
+      Ok(())
+    } else {
+      Err(BootstrapError.EffectUpgradeError(allErrors))
     }
   }
 
