@@ -259,8 +259,8 @@ mod ShortestPath {
         Set#{ (0, 1), (0, 3), (1, 2), (1, 5), (2, 6), (3, 5), (3, 4), (5, 6) }
 
     @Test
-    def testExampleGraphShortestPaths01(): Bool =
-        sssp(0, exampleGraph01()) |> 
+    def testExampleGraphShortestPaths01(): Unit \ Assert =
+        Assert.assertTrue(sssp(0, exampleGraph01()) |>
         Map.forAll(k -> v -> match k {
             case 1 => v == Vector#{0, 1}
             case 2 => v == Vector#{0, 1, 2}
@@ -272,11 +272,11 @@ mod ShortestPath {
                 let shortestPathFound = v == Vector#{0, 1, 2, 5} or v == Vector#{0, 3, 4, 5} or v == Vector#{0, 1, 4, 5};
                 shortestPathFound
             case _ => unreachable!()
-        })
+        }))
 
     @Test
-    def testExampleGraphShortestPaths02(): Bool =
-        sssp(0, exampleGraph02()) |>
+    def testExampleGraphShortestPaths02(): Unit \ Assert =
+        Assert.assertTrue(sssp(0, exampleGraph02()) |>
         Map.forAll(k -> v -> match k {
             case 1 => v == Vector#{0, 1}
             case 2 => v == Vector#{0, 1, 2}
@@ -288,23 +288,23 @@ mod ShortestPath {
                 let shortestPathFound = v == Vector#{0, 1, 4, 5} or v == Vector#{0, 1, 2, 5} or v == Vector#{0, 3, 4, 5};
                 shortestPathFound
             case _ => unreachable!()
-        })
+        }))
 
     @Test
-    def testExampleGraphShortestPaths03(): Bool =
-        sssp(0, exampleGraph03()) |>
+    def testExampleGraphShortestPaths03(): Unit \ Assert =
+        Assert.assertTrue(sssp(0, exampleGraph03()) |>
             Map.forAll(k -> v -> match k {
                 case 1 => v == Vector#{0, 1}
                 case 2 => v == Vector#{0, 2}
                 case 3 =>
                     let shortestPathFound = v == Vector#{0, 2, 3} or v == Vector#{0, 1, 3};
                     shortestPathFound
-                case _ => unreachable!()                
-            })
+                case _ => unreachable!()
+            }))
 
     @Test
-    def testExampleGraphShortestPaths04(): Bool =
-        sssp(0, exampleGraph04()) |>
+    def testExampleGraphShortestPaths04(): Unit \ Assert =
+        Assert.assertTrue(sssp(0, exampleGraph04()) |>
         Map.forAll(k -> v -> match k {
             case 1 => v == Vector#{0, 1}
             case 2 => v == Vector#{0, 1, 2}
@@ -312,7 +312,7 @@ mod ShortestPath {
             case 4 => v == Vector#{0, 4}
             case 5 => v == Vector#{0, 4, 5}
             case 6 =>
-                let shortestPathFound = v == 
+                let shortestPathFound = v ==
                 Vector#{0, 4, 5, 6} or
                 v == Vector#{0, 1, 2, 6} or
                 v == Vector#{0, 7, 8, 6} or
@@ -322,7 +322,7 @@ mod ShortestPath {
             case 8 => v == Vector#{0, 7, 8}
             case 9 => v == Vector#{0, 7, 8, 9}
             case 10 =>
-                let shortestPathFound = 
+                let shortestPathFound =
                     v == Vector#{0, 1, 2, 3, 10} or
                     v == Vector#{0, 1, 2, 6, 10} or
                     v == Vector#{0, 4, 5, 6, 10} or
@@ -331,11 +331,11 @@ mod ShortestPath {
                     v == Vector#{0, 7, 8, 9, 10};
                 shortestPathFound
             case _ => unreachable!()
-        })
+        }))
 
     @Test
-    def testExampleGraphShortestPaths05(): Bool =
-        sssp(0, exampleGraph05()) |>
+    def testExampleGraphShortestPaths05(): Unit \ Assert =
+        Assert.assertTrue(sssp(0, exampleGraph05()) |>
         Map.forAll(k -> v -> match k {
             case 1 => v == Vector#{0, 1}
             case 2 => v == Vector#{0, 1, 2}
@@ -348,5 +348,5 @@ mod ShortestPath {
                 let shortestPathFound = v == Vector#{0, 1, 2, 6} or v == Vector#{0, 1, 5, 6} or v == Vector#{0, 3, 5, 6};
                 shortestPathFound
             case _ => unreachable!()
-        })
+        }))
 }
