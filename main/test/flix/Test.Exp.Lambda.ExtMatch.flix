@@ -2,22 +2,22 @@ mod Test.Exp.Lambda.ExtMatch {
 
     use Assert.assertEq
 
-    @Test
+    @CompileTest
     def testLambdaExtMatch01(): #| A(Int32) |# -> Int32 = ematch A(x) -> x
 
-    @Test
+    @CompileTest
     def testLambdaExtMatch02(): #| A(Int32, Int32) |# -> Int32 = ematch A(x, y) -> ((x + y) : Int32)
 
-    @Test
+    @CompileTest
     def testLambdaExtMatch03(): #| A(Int32, Int32, Int32) |# -> Int32 = ematch A(x, y, z) -> ((x + y + z) : Int32)
 
-    @Test
+    @CompileTest
     def testLambdaExtMatch04(): #| A(Int32, Int32, Int32, Int32) |# -> Int32 = ematch A(x, y, z, _) -> ((x + y + z) : Int32)
 
-    @Test
+    @CompileTest
     def testLambdaExtMatch05(): #| A(Int32) |# -> Int32 = ematch _ -> 42
 
-    @Test
+    @CompileTest
     def testLambdaExtMatch06(): #| A(Int32), B(Bool) |# -> Int32 = ematch _ -> 42
 
     @Test
