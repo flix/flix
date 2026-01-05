@@ -1,5 +1,7 @@
 mod Test.Handler.Gen.Unit {
 
+    use Assert.assertEq;
+
     eff Gen {
         def gen(): Unit
     }
@@ -28,39 +30,39 @@ mod Test.Handler.Gen.Unit {
         List.unfold(i -> if (i >= b) None else Some(((), i + 1)), a)
 
     @Test
-    def testSample01(): Bool =
-        Nil == sample(0)
+    def testSample01(): Unit \ Assert =
+        assertEq(expected = Nil, sample(0))
 
     @Test
-    def testSample02(): Bool =
-        () :: Nil == sample(1)
+    def testSample02(): Unit \ Assert =
+        assertEq(expected = () :: Nil, sample(1))
 
     @Test
-    def testSample03(): Bool =
-        () :: () :: Nil == sample(2)
+    def testSample03(): Unit \ Assert =
+        assertEq(expected = () :: () :: Nil, sample(2))
 
     @Test
-    def testSample04(): Bool =
-        () :: () :: () :: Nil == sample(3)
+    def testSample04(): Unit \ Assert =
+        assertEq(expected = () :: () :: () :: Nil, sample(3))
 
     @Test
-    def testSample05(): Bool =
-        () :: () :: () :: () :: Nil == sample(4)
+    def testSample05(): Unit \ Assert =
+        assertEq(expected = () :: () :: () :: () :: Nil, sample(4))
 
     @Test
-    def testSample06(): Bool =
-        () :: () :: () :: () :: () :: Nil == sample(5)
+    def testSample06(): Unit \ Assert =
+        assertEq(expected = () :: () :: () :: () :: () :: Nil, sample(5))
 
     @Test
-    def testSample07(): Bool =
-        () :: () :: () :: () :: () :: () :: Nil == sample(6)
+    def testSample07(): Unit \ Assert =
+        assertEq(expected = () :: () :: () :: () :: () :: () :: Nil, sample(6))
 
     @Test
-    def testSample08(): Bool =
-        range(0, 10) == sample(10)
+    def testSample08(): Unit \ Assert =
+        assertEq(expected = range(0, 10), sample(10))
 
     @Test
-    def testSample09(): Bool =
-        range(0, 100) == sample(100)
+    def testSample09(): Unit \ Assert =
+        assertEq(expected = range(0, 100), sample(100))
 
 }

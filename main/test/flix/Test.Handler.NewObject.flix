@@ -1,5 +1,7 @@
 mod Test.Handler.NewObject {
 
+    use Assert.assertEq;
+
     import java.lang.Runnable
 
     use Assert.assertEq;
