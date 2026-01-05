@@ -274,25 +274,30 @@ mod ShortestPathN {
         Set#{ (0, 1, 1), (0, 1, 3), (1, 1, 2), (1, 1, 5), (2, 2, 6), (3, 10, 5), (3, 1, 4), (5, 1, 6) }
 
     @Test
-    def testExampleGraphShortestPaths01(): Bool =
-        ssspn(0, exampleGraph01()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 3, 4, 2}, 3 => Vector#{0, 1, 3}, 4 => Vector#{0, 1, 3, 4}, 5 => Vector#{0, 1, 3, 4, 2, 5}}
+    def testExampleGraphShortestPaths01(): Unit \ Assert =
+        let expected = Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 3, 4, 2}, 3 => Vector#{0, 1, 3}, 4 => Vector#{0, 1, 3, 4}, 5 => Vector#{0, 1, 3, 4, 2, 5}};
+        Assert.assertEq(expected = expected, ssspn(0, exampleGraph01()))
 
     @Test
-    def testExampleGraphShortestPaths02(): Bool =
-        ssspn(0, exampleGraph02()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 3}, 4 => Vector#{0, 1, 4}, 5 => Vector#{0, 1, 4, 5}}
+    def testExampleGraphShortestPaths02(): Unit \ Assert =
+        let expected = Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 3}, 4 => Vector#{0, 1, 4}, 5 => Vector#{0, 1, 4, 5}};
+        Assert.assertEq(expected = expected, ssspn(0, exampleGraph02()))
 
     @Test
-    def testExampleGraphShortestPaths03(): Bool =
-        ssspn(0, exampleGraph03()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 1, 2, 3}}
+    def testExampleGraphShortestPaths03(): Unit \ Assert =
+        let expected = Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 1, 2, 3}};
+        Assert.assertEq(expected = expected, ssspn(0, exampleGraph03()))
 
     @Test
-    def testExampleGraphShortestPaths04(): Bool =
-        ssspn(0, exampleGraph04()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 1, 2, 3}, 4 => Vector#{0, 4},
+    def testExampleGraphShortestPaths04(): Unit \ Assert =
+        let expected = Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 1, 2, 3}, 4 => Vector#{0, 4},
             5 => Vector#{0, 1, 2, 5}, 6 => Vector#{0, 1, 2, 5, 6}, 7 => Vector#{0, 1, 2, 5, 7}, 8 => Vector#{0, 1, 2, 5, 7, 8},
-            9 => Vector#{0, 1, 2, 5, 6, 9}, 10 => Vector#{0, 1, 2, 3, 10}}
+            9 => Vector#{0, 1, 2, 5, 6, 9}, 10 => Vector#{0, 1, 2, 3, 10}};
+        Assert.assertEq(expected = expected, ssspn(0, exampleGraph04()))
 
     @Test
-    def testExampleGraphShortestPaths05(): Bool =
-        ssspn(0, exampleGraph05()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 3}, 4 => Vector#{0, 3, 4}, 5 => Vector#{0, 1, 5}, 6 => Vector#{0, 1, 5, 6}}
+    def testExampleGraphShortestPaths05(): Unit \ Assert =
+        let expected = Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 3}, 4 => Vector#{0, 3, 4}, 5 => Vector#{0, 1, 5}, 6 => Vector#{0, 1, 5, 6}};
+        Assert.assertEq(expected = expected, ssspn(0, exampleGraph05()))
 
 }
