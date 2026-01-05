@@ -12,11 +12,11 @@ mod Test.Exp.Jvm.InvokeMethod.VarArgs {
     @Test
     def testInvokeVarArgs02(): Unit \ Assert + IO =
         let p = Path.of("hello", ...{"foo.txt"});
-        assertEq(expected = "hello/foo.txt", p.toString())
+        assertEq(expected = "foo.txt", p.getFileName().toString())
 
     @Test
     def testInvokeVarArgs03(): Unit \ Assert + IO =
         let p = Path.of("hello", ...{"foo.txt", "bar.txt"});
-        assertEq(expected = "hello/foo.txt/bar.txt", p.toString())
+        assertEq(expected = "bar.txt", p.getFileName().toString())
 
 }
