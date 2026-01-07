@@ -15,16 +15,37 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
+import ca.uwaterloo.flix.api.effectlock.serialization.{Deserialize, Serialize}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
 import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
-import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.Input
 import ca.uwaterloo.flix.util.Result
 
 object EffectLock {
 
   /**
-    * Serializes the relevant functions for effect locking in `root` and returns a JSON string.
+    * Deserializes `json` to a collection of schemes pointed to by either a def or sig.
+    */
+  def deserialize(json: String): Result[(Map[Symbol.DefnSym, Scheme], Map[Symbol.SigSym, Scheme]), String] = {
+    try {
+      implicit val formats: org.json4s.Formats = serialization.formats
+      val serializableAST = org.json4s.native.Serialization.read[Map[String, serialization.DefOrSig]](json)
+      val sdefs = serializableAST.collect {
+        case (_, defn: serialization.SDef) => defn
+      }
+      val ssigs = serializableAST.collect {
+        case (_, sig: serialization.SSig) => sig
+      }
+      val defs = sdefs.map(Deserialize.deserializeDef).toMap
+      val sigs = ssigs.map(Deserialize.deserializeSig).toMap
+      Result.Ok((defs, sigs))
+    } catch {
+      case e: Exception => Result.Err(s"Unexpected JSON: ${e.getMessage}")
+    }
+  }
+
+  /**
+    * Serializes the relevant functions  for effect locking in `root` and returns a JSON string.
     * If it returns `Ok(json)`, then `json` may be written directly to a file.
     */
   def lock(root: TypedAst.Root): Result[String, String] = {
@@ -107,4 +128,5 @@ object EffectLock {
     case UsedSym.SigSym(sym) =>
       Some(sym -> root.sigs(sym))
   }
+
 }

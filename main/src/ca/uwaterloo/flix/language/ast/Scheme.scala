@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.typer.*
@@ -193,6 +194,11 @@ object Scheme {
       case (_ :: _, _) => false
     }
 
+  }
+
+  /** Replaces type aliases with the types they represent in `sc0.base`. */
+  def eraseAliases(sc0: Scheme): Scheme = {
+    sc0.copy(base = Type.eraseAliases(sc0.base))
   }
 
 }
