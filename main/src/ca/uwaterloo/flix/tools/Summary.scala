@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, Root}
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, EqualityConstraint, Input, SecurityContext, Source, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.Path
@@ -38,9 +38,9 @@ object Summary {
     *|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
     * }}}
     *
-    * @param root    the root to create data for
-    * @param nsDepth after this folder depth, files will be summarized under the
-    *                folder
+    * @param root     the root to create data for
+    * @param nsDepth  after this folder depth, files will be summarized under the
+    *                 folder
     * @param minLines all files with less lines than this will not be in the
     *                 table but it will still be reflected in the total row
     */
@@ -309,20 +309,179 @@ object Summary {
   private val unknownSource =
     Source.empty(Input.VirtualFile(CompilerConstants.VirtualTestFile, "", SecurityContext.Unrestricted))
 
+  def visitDef(defn: TypedAst.Def): SpecData = {
+    case TypedAst.Def(sym, spec, expr, loc) =>
+      collectSpecTypes(spec)
+  }
+
+  def visitSpec(spec: TypedAst.Spec): Data = {
+    val tpes = collectSpecTypes(spec)
+    val nestedTpes = tpes.flatMap(getNestedTypes)
+
+    // MAGNUS wants:
+    // all the star types nested somewhere
+    val starTpesNonVar = nestedTpes.filter(_.kind == Kind.Star).filterNot(_.isInstanceOf[Type.Var])
+    val starTpesVar = nestedTpes.filter(_.kind == Kind.Star).filter(_.isInstanceOf[Type.Var])
+
+    // all the eff types nested somewhere
+    val effTpesNonVar = nestedTpes.filter(_.kind == Kind.Eff).filterNot(_.isInstanceOf[Type.Var])
+    val effTpesVar = nestedTpes.filter(_.kind == Kind.Eff).filter(_.isInstanceOf[Type.Var])
+
+    // MATT wants:
+    // all the type constructors with a star type
+    val starTycons = nestedTpes.collect { case Type.Cst(tc, _) if tc.kind == Kind.Star => tc }
+
+    // all type constructors with a to-star type
+    // all type constructors with an eff type
+    // all type constructors with a to-eff type (type connectives)
+    //
+  }
+
+
+  def collectSpecTypes(spec: TypedAst.Spec): List[Type] = spec match {
+    case TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs) =>
+      fparams.flatMap(collectFormalParamTypes) :::
+        List(retTpe, eff) :::
+        tconstrs.flatMap(collectTraitConstraintTypes) :::
+        econstrs.flatMap(collectEqualityConstraintTypes)
+  }
+
+  def collectTraitConstraintTypes(tconstr: TraitConstraint): List[Type] = tconstr match {
+    case TraitConstraint(sym, tpe, loc) => List(tpe)
+  }
+
+  def collectEqualityConstraintTypes(econstr: EqualityConstraint): List[Type] = econstr match {
+    case EqualityConstraint(symUse, tpe1, tpe2, loc) => List(tpe1, tpe2)
+  }
+
+  def collectFormalParamTypes(fparam: TypedAst.FormalParam): List[Type] = fparam match {
+    case TypedAst.FormalParam(sym, tpe, mod, loc) => List(tpe)
+  }
+
+  private case class DefCounts(
+    tycons: Subdata,
+    effcons: Subdata,
+    ocons: Subdata,
+    tvars: Subdata,
+    evars: Subdata,
+    ovars: Subdata,
+    stars: Subdata,
+  )
+
+  def toSubData(list: List[?]): Subdata = Subdata(list.length, list.distinct.length)
+
+  def getAllTycons(tpe: Type): List[TypeConstructor] = {
+    getNestedTypes(tpe).collect { case Type.Cst(tc, _) => tc }
+  }
+
+  def getAllVars(tpe: Type): List[Symbol.KindedTypeVarSym] = {
+    getAllVars(tpe).collect { case Type.Var(sym, _) => sym }
+  }
+
+  def getAllStarTycons(tpe: Type): List[TypeConstructor] = {
+    getAllTycons(tpe).filter(_.kind == Kind.Star)
+  }
+
+  def getAllStarVars(tpe: Type): List[Symbol.KindedTypeVarSym] = {
+    getAllVars(tpe).filter(_.kind == Kind.Star)
+  }
+
+  def getAllEffVars(tpe: Type): List[Symbol.KindedTypeVarSym] = {
+    getAllEffVars()
+  }
+
+  def getNestedTypes(tpe: Type): List[Type] = {
+    val tail = tpe match {
+      case Type.Var(sym, loc) => Nil
+      case Type.Cst(tc, loc) => Nil
+      case Type.Apply(tpe1, tpe2, loc) => getNestedTypes(tpe1) ++ getNestedTypes(tpe2)
+      case Type.Alias(symUse, args, tpe, loc) => args.flatMap(getNestedTypes)
+      case Type.AssocType(symUse, arg, kind, loc) => getNestedTypes(arg)
+      case Type.JvmToType(tpe, loc) => ???
+      case Type.JvmToEff(tpe, loc) => ???
+      case Type.UnresolvedJvmType(member, loc) => ???
+    }
+    tpe :: tail
+  }
+
+  def getAllStars(tpe: Type): List[Type] = {
+    getNestedTypes(tpe).filter(_.kind == Kind.Star)
+  }
+
+  def getAllEffs(tpe: Type): List[Type] = {
+    getNestedTypes(tpe).filter(_.kind == Kind.Eff)
+  }
+
+  private case class Data(
+    tycons: Subdata,
+    effcons: Subdata,
+    ocons: Subdata,
+    tvars: Subdata,
+    evars: Subdata,
+    ovars: Subdata,
+    stars: Subdata,
+  ) {
+    def ++(that: Data): Data = Data(tycons ++ that.tycons, effcons ++ that.effcons, ocons ++ that.ocons, tvars ++ that.tvars, evars ++ that.evars, ovars ++ that.ovars, stars ++ that.stars)
+  }
+
+  case class Subdata(occs: Int, unique: Int) {
+    def ++(that: Subdata): Subdata = Subdata(occs + that.occs, unique + that.unique)
+  }
+
+  case object Subdata {
+    def empty: Subdata = Subdata(0, 0)
+  }
+
+  case object Data {
+    def empty: Data = Data(Subdata.empty, Subdata.empty, Subdata.empty, Subdata.empty, Subdata.empty, Subdata.empty, Subdata.empty)
+
+    val tycon: Data = Data.empty.copy(tycons = 1)
+    val effcon: Data = Data.empty.copy(effcons = 1)
+    val ocon: Data = Data.empty.copy(ocons = 1)
+    val tvar: Data = Data.empty.copy(tvars = 1)
+    val evar: Data = Data.empty.copy(evars = 1)
+    val ovar: Data = Data.empty.copy(ovars = 1)
+
+    def combineAll(datas: List[Data]): Data = {
+      datas.foldLeft(Data.empty)(_ ++ _)
+    }
+
+    def traverse[A](l: List[A])(f: A => Data): Data = {
+      combineAll(l.map(f))
+    }
+  }
+
+  private case class SpecData(tycons: Int, effcons: Int, tvars: Int, evars: Int)
+
+  private case class FileData2(
+    debugSrc: Option[Source],
+    lines: Int,
+    defs: Int,
+    tycons: Int,
+    effcons: Int,
+    tvars: Int,
+    evars: Int
+  ) {
+    def ++(that: FileData2): FileData2 = {
+      FileData2(debugSrc.orElse(that.debugSrc), lines + that.lines, defs + that.defs, tycons + that.tycons, effcons + that.effcons, tvars + that.tvars, evars + that.evars)
+    }
+  }
+
+
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(
-                                      debugSrc: Option[Source],
-                                      lines: Int,
-                                      defs: Int,
-                                      pureDefs: Int,
-                                      groundNonPureDefs: Int,
-                                      polyDefs: Int,
-                                      checkedEcasts: Int,
-                                      baseEffVars: Int,
-                                      modDefSubEffVars: Int,
-                                      insDefSubEffVars: Int,
-                                      lambdaSubEffVars: Int
-                                    ) {
+    debugSrc: Option[Source],
+    lines: Int,
+    defs: Int,
+    pureDefs: Int,
+    groundNonPureDefs: Int,
+    polyDefs: Int,
+    checkedEcasts: Int,
+    baseEffVars: Int,
+    modDefSubEffVars: Int,
+    insDefSubEffVars: Int,
+    lambdaSubEffVars: Int
+  ) {
     if (defs != pureDefs + groundNonPureDefs + polyDefs) {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
@@ -431,14 +590,14 @@ object Summary {
   }
 
   private sealed case class DefSummary(
-                                        fun: FunctionSym,
-                                        eff: ResEffect,
-                                        checkedEcasts: Int,
-                                        baseEffVars: Int,
-                                        modDefSubEffVars: Int,
-                                        insDefSubEffVars: Int,
-                                        lambdaSubEffVars: Int
-                                      ) {
+    fun: FunctionSym,
+    eff: ResEffect,
+    checkedEcasts: Int,
+    baseEffVars: Int,
+    modDefSubEffVars: Int,
+    insDefSubEffVars: Int,
+    lambdaSubEffVars: Int
+  ) {
     def src: Source = loc.source
 
     def loc: SourceLocation = fun.loc
