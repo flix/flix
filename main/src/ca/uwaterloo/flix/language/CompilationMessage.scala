@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.errors.ErrorCode
 import ca.uwaterloo.flix.util.Formatter
 
 import scala.collection.mutable
@@ -46,6 +47,11 @@ trait CompilationMessage {
     * Returns additional locations associated with the error.
     */
   def locs: List[SourceLocation] = Nil
+
+  /**
+    * Returns the error code.
+    */
+  def code: ErrorCode
 
   /**
     * Returns a short description of the error message.
