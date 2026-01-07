@@ -34,6 +34,11 @@ trait CompilationMessage {
   def kind: CompilationMessageKind
 
   /**
+    * Returns the error code.
+    */
+  def code: ErrorCode
+
+  /**
     * Returns the input source of the error message.
     */
   def source: Source = loc.source
@@ -47,11 +52,6 @@ trait CompilationMessage {
     * Returns additional locations associated with the error.
     */
   def locs: List[SourceLocation] = Nil
-
-  /**
-    * Returns the error code.
-    */
-  def code: ErrorCode
 
   /**
     * Returns a short description of the error message.
