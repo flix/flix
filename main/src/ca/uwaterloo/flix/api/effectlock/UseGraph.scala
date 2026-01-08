@@ -268,12 +268,9 @@ object UseGraph {
     case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
       visitExps(exps) ++ visitPredicateHead(select)
 
-    case Expr.FixpointQueryWithSelect(exps1, exp, exps2, from, exps3, _, _, _, _) =>
+    case Expr.FixpointQueryWithSelect(exps1, exp, predArity, _, _, _, _) =>
       visitExps(exps1) ++
-        visitExp(exp) ++
-        visitExps(exps2) ++
-        from.map(visitPredicateBody).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _) ++
-        visitExps(exps3)
+        visitExp(exp)
 
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       visitExps(exps)

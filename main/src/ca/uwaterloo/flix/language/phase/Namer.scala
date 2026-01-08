@@ -1020,13 +1020,10 @@ object Namer {
       val es = exps.map(visitExp)
       NamedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
 
-    case DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+    case DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, predArity, pred, loc) =>
       val es = exps.map(visitExp)
       val qe = visitExp(queryExp)
-      val ss = selects.map(visitExp)
-      val f = from.map(visitBodyPredicate)
-      val w = where.map(visitExp)
-      NamedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, loc)
+      NamedAst.Expr.FixpointQueryWithSelect(es, qe, predArity, pred, loc)
 
     case DesugaredAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       val es = exps.map(visitExp)

@@ -389,9 +389,8 @@ object EffectVerifier {
       }
       // TODO ?
       ()
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithSelect(exps, queryExp, _, pred, tpe, eff, loc) =>
       exps.foreach(visitExp)
-      where.foreach(visitExp)
       // TODO ?
       ()
     case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>

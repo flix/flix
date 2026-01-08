@@ -289,8 +289,8 @@ object Summary {
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.FixpointQueryWithProvenance(exps, TypedAst.Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
       exps.map(countCheckedEcasts).sum + terms.map(countCheckedEcasts).sum
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
-      exps.map(countCheckedEcasts).sum + countCheckedEcasts(queryExp) + selects.map(countCheckedEcasts).sum + where.map(countCheckedEcasts).sum
+    case Expr.FixpointQueryWithSelect(exps, queryExp, _, _, _, _, _) =>
+      exps.map(countCheckedEcasts).sum + countCheckedEcasts(queryExp)
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Error(_, _, _) => 0

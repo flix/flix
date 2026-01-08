@@ -99,7 +99,7 @@ object SchemaConstraintGen {
   def visitFixpointQueryWithSelect(e: KindedAst.Expr.FixpointQueryWithSelect)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tvar, loc) =>
+      case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, predArity, pred, tvar, loc) =>
         //
         //  exp = exps[0] <+> exps[1] <+> ... (exp is conceptual; it does not actually exist)
         //
@@ -108,7 +108,6 @@ object SchemaConstraintGen {
         //  --------------------------------------------------------------------
         //  FixpointQueryWithSelect(exps, queryExp, ...) : Vector[(α₁, α₂, ...)]
         //
-        val predArity = selects.length
         val freshRelOrLat = Type.freshVar(Kind.mkArrowTo(predArity, Kind.Predicate), loc)
         val freshTermVars = List.range(0, predArity).map(_ => Type.freshVar(Kind.Star, loc))
         val tuple = Type.mkTuplish(freshTermVars, loc)

@@ -335,12 +335,9 @@ object PatMatch {
 
       case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.foreach(visitExp)
 
-      case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+      case Expr.FixpointQueryWithSelect(exps, queryExp, _, _, _, _, _) =>
         exps.foreach(visitExp)
         visitExp(queryExp)
-        selects.foreach(visitExp)
-        from.foreach(visitBodyPred)
-        where.foreach(visitExp)
 
       case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.foreach(visitExp)
 

@@ -600,15 +600,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.FixpointQueryWithProvenance(es, s, withh, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tvar, loc) =>
+    case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, predArity, pred, tvar, loc) =>
       val es = exps.map(visitExp)
       val qe = visitExp(queryExp)
-      val ss = selects.map(visitExp)
-      val f = from.map(visitBodyPredicate)
-      val w = where.map(visitExp)
-      val effs = es.map(_.eff) ::: ss.map(_.eff) ::: w.map(_.eff)
+      val effs = es.map(_.eff)
       val eff = Type.mkUnion(effs, loc)
-      TypedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, subst(tvar), eff, loc)
+      TypedAst.Expr.FixpointQueryWithSelect(es, qe, predArity, pred, subst(tvar), eff, loc)
 
     case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tvar, loc) =>
       val es = exps.map(visitExp)

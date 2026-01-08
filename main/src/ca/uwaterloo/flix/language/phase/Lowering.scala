@@ -771,7 +771,7 @@ object Lowering {
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tpe, eff, loc) =>
+    case TypedAst.Expr.FixpointQueryWithSelect(exps, queryExp, predArity, pred, tpe, eff, loc) =>
       val loweredExps = exps.map(visitExp)
       val loweredQueryExp = visitExp(queryExp)
 
@@ -785,8 +785,6 @@ object Lowering {
         }
         case t => throw InternalCompilerException(s"Unexpected non-foldable type: '${t}'.", loc)
       }
-
-      val predArity = selects.length
 
       // Define the name and type of the appropriate factsX function in Solver.flix
       val sym = Defs.Facts(predArity)

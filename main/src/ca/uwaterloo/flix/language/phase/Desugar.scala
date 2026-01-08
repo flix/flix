@@ -1373,7 +1373,7 @@ object Desugar {
     // Construct a constraint set that contains the single pseudo constraint.
     val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc0)
 
-    DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc0)
+    DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects.length, pred, loc0)
   }
 
   /**

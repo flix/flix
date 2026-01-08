@@ -419,12 +419,10 @@ object Stratifier {
       val ts = terms.map(visitExp)
       Expr.FixpointQueryWithProvenance(es, Head.Atom(pred, den, ts, tpe2, loc2), withh, tpe1, eff1, loc1)
 
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithSelect(exps, queryExp, predArity, pred, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val qe = visitExp(queryExp)
-      val ss = selects.map(visitExp)
-      val w = where.map(visitExp)
-      Expr.FixpointQueryWithSelect(es, qe, ss, from, w, pred, tpe, eff, loc)
+      Expr.FixpointQueryWithSelect(es, qe, predArity, pred, tpe, eff, loc)
 
     case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
       // Compute the stratification.

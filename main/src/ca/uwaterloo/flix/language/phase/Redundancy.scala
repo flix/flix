@@ -910,15 +910,10 @@ object Redundancy {
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+    case Expr.FixpointQueryWithSelect(exps, queryExp, _, _, _, _, _) =>
       val us1 = visitExps(exps, env0, rc)
       val us2 = visitExp(queryExp, env0, rc)
-      val us3 = visitExps(selects, env0, rc)
-      val us4 = from.foldLeft(Used.empty) {
-        case (acc, b) => acc ++ visitBodyPred(b, env0, rc)
-      }
-      val us5 = visitExps(where, env0, rc)
-      us1 ++ us2 ++ us3 ++ us4 ++ us5
+      us1 ++ us2
 
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
       visitExps(exps, env0, rc)
