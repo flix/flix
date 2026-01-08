@@ -12,7 +12,7 @@ type alias Time    = (Int32, Int32)     // e.g. (10, 32) which is 10.32 AM.
 ///
 /// We then compute the detailed itinerary for the earliest connection.
 ///
-def main(): Unit \ IO =
+def main(): Unit \ IO = run {
     let src = "Aalborg";
     let dst = "Copenhagen";
     let db = database();
@@ -35,20 +35,22 @@ def main(): Unit \ IO =
             let (h, m) = duration(t1, t2);
             println("  ${fmt(t1)} ${x} ~~> ${y} ${fmt(t2)} [${h} hrs, ${m} min]")
         };
-        println("\nThe itinerary for the earliest connection is:");
-        let (_, _, t1, t2) = Vector.get(0, connections);
+        let msg = "Choose a connection:";
+        let i = Console.promptInt32(start = 0, end = Vector.length(connections), msg);
+        let (_, _, t1, t2) = Vector.get(i, connections);
 
         // Use a provenance query to compute the edges that connect `src` and `dst`.
         let p = pquery db, pr select Path(src, dst, t1, t2) with {Edge};
         let itinerary = Vector.map(v -> ematch v { case Edge(s, d, train, tx, ty) => (s, d, train, tx, ty) }, p);
 
+        println("\nThe itinerary for the chosen connection is:");
         foreach ((s, d, t, tx, ty) <- itinerary) {
             let fmtS = String.padRight(10, ' ', s);
             let fmtT = String.center(16, ' ', t);
             let fmtD = String.padRight(10, ' ', d);
             println("  ${fmt(tx)} ${fmtS} -- ${fmtT} --> ${fmtD} ${fmt(ty)}")
         }
-    }
+    }} with Console.runWithIO
 
 ///
 /// Returns the database of scheduled train departures and arrivals.
