@@ -13,25 +13,25 @@ pub eff Github {
 
     ///
     /// Gets all the commits from the user in the given repositories.
-    /// 
+    ///
     /// Returns a map from the repository name to a list of commit shas.
     ///
     def getCommits(repos: List[String]): Map[String, List[String]]
 
     ///
     /// Gets all the language data from the given repository name.
-    /// 
+    ///
     /// Returns the json of lanuage data.
     ///
     /// The language data should be a map from language name to the byte of code for this language in this repository.
     ///
     def getLanguages(repo: String): JsonElement
-    
+
     ///
     /// Gets the detailed statistic of a specific commit in the repository.
     ///
     def getCommit(repo: String, sha: String): JsonElement
-} 
+}
 
 mod Github {
     use Util.accessJson
@@ -47,7 +47,7 @@ mod Github {
             "X-Github-Api-Version"  => "2022-11-28" :: Nil
         }
     }
-    
+
     ///
     /// The handler that gets data from github through REST API.
     ///
@@ -67,7 +67,7 @@ mod Github {
                     Map.insert(repo, shas, acc)
                 }, Map.empty(), repos) |> resume
             }
-            
+
             def getLanguages(repo, resume) = {
                 let url = "https://api.github.com/repos/${repo}/languages";
                 Util.getAndParse(url, buildHeader()) |> resume
@@ -76,7 +76,7 @@ mod Github {
            def getCommit(repo, sha, resume) = {
                 let url = "https://api.github.com/repos/${repo}/commits/${sha}";
                 Util.getAndParse(url, buildHeader()) |> resume
-           } 
+           }
         }
     }
 }

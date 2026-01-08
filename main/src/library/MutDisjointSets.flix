@@ -159,7 +159,7 @@ pub mod MutDisjointSets {
     ///
     /// Returns true if `x` and `y` have the same value.
     ///
-    def equal(x: Node[t, r], y: Node[t, r]): Bool with Eq[t] = 
+    def equal(x: Node[t, r], y: Node[t, r]): Bool with Eq[t] =
         Node.value(x) == Node.value(y)
 
     ///
