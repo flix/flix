@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.*
+import ca.uwaterloo.flix.language.ast.LoweredAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -165,12 +166,57 @@ object TreeShaker1 {
     case Expr.ParYield(frags, exp, _, _, _) =>
       visitExps(frags.map(_.exp)) ++ visitExp(exp)
 
+    case Expr.FixpointConstraintSet(cs, _, _) =>
+      cs.map(visitConstraint).fold(Set())(_ ++ _)
+
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+      visitExps(exps) ++ visitHead(select)
+
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from0, where0, _, _, _, _) =>
+      visitExps(exps) ++
+        visitExp(queryExp) ++
+        visitExps(selects) ++
+        visitBodies(from0) ++
+        visitExps(where0)
+
+    case Expr.FixpointSolveWithProject(exps0, _, _, _, _, _) =>
+      visitExps(exps0)
+
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      visitExps(exps)
   }
 
   /** Returns the symbols reachable from `exps`. */
   private def visitExps(exps: List[Expr]): Set[ReachableSym] =
     exps.map(visitExp).fold(Set())(_ ++ _)
 
+  /** Returns the symbols reachable from `cs`. */
+  private def visitConstraint(cs: Constraint): Set[ReachableSym] = cs match {
+    case Constraint(_, head, bodies, _) =>
+      visitHead(head) ++ visitBodies(bodies)
+  }
+
+  /** Returns the symbols reachable from `bodies`. */
+  private def visitBodies(bodies: List[Predicate.Body]): Set[ReachableSym] =
+    bodies.map(visitBody).fold(Set())(_ ++ _)
+
+  /** Returns the symbols reachable from `head`. */
+  private def visitHead(head: Predicate.Head): Set[ReachableSym] = head match {
+    case Head.Atom(_, _, exps, _, _) => visitExps(exps)
+  }
+
+  /** Returns the symbols reachable from `body`. */
+  private def visitBody(body: Predicate.Body): Set[ReachableSym] = body match {
+    case Body.Atom(_, _, _, _, _, _, _) => Set()
+    case Body.Functional(_, exp, _) => visitExp(exp)
+    case Body.Guard(exp, _) => visitExp(exp)
+  }
 
   /** Reachable symbols (defs, traits, sigs). */
   private sealed trait ReachableSym
