@@ -1962,6 +1962,27 @@ object Lowering {
     case Expr.ParYield(_, _, _, _, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
 
+    case LoweredAst.Expr.FixpointConstraintSet(cs, tpe, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
   }
 
   /**

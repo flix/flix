@@ -690,6 +690,27 @@ object Specialization {
       val e = specializeExp(exp, curEnv, subst)
       LoweredAst.Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
 
+    case LoweredAst.Expr.FixpointConstraintSet(cs, tpe, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
   }
 
   /**
@@ -998,7 +1019,7 @@ object Specialization {
   /**
     * Applies `normalize` on both sides of the application, then simplifies the remaining type.
     *
-    * @param isGround If true then `app` will be normalized.
+    * @param isGround  If true then `app` will be normalized.
     * @param normalize Must not output [[Type.AssocType]] or [[Type.Alias]]. If `isGround` is true
     *                  then `normalize` should also normalize the type.
     */
