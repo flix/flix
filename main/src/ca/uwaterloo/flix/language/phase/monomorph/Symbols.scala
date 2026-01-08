@@ -18,7 +18,6 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.Lowering.Enums
 
 object Symbols {
   protected[monomorph] object Defs {
@@ -31,6 +30,10 @@ object Symbols {
     lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
 
+    val version: String = "3"
+    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.union")
+    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.rename")
+
   }
 
   protected[monomorph] object Enums {
@@ -38,6 +41,10 @@ object Symbols {
     lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.MpmcAdmin")
     lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
+
+    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Datalog")
+
+    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Shared.PredSym")
   }
 
   protected[monomorph] object Types {
@@ -46,6 +53,17 @@ object Symbols {
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
+
+
+    lazy val Datalog: Type = Type.mkEnum(Enums.Datalog, Nil, SourceLocation.Unknown)
+
+    //
+    // Function Types.
+    //
+    lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
+    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
+
+    lazy val PredSym: Type = Type.mkEnum(Enums.PredSym, Nil, SourceLocation.Unknown)
 
   }
 

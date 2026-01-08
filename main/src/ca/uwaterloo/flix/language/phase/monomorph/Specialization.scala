@@ -693,11 +693,19 @@ object Specialization {
     case LoweredAst.Expr.FixpointConstraintSet(cs, tpe, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
 
-    case LoweredAst.Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
+      val pparams = pparams0.map {
+        case LoweredAst.PredicateParam(pred, tpe0, loc0) => LoweredAst.PredicateParam(pred, subst(tpe0), loc0)
+      }
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      LoweredAst.Expr.FixpointLambda(pparams, e, t, subst(eff), loc)
 
     case LoweredAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      LoweredAst.Expr.FixpointMerge(e1, e2, t, subst(eff), loc)
 
     case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
       throw InternalCompilerException("not implemented yet", loc)

@@ -740,18 +740,19 @@ object Lowering {
     case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       mkDatalog(cs, loc)
 
-    case TypedAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Rename)
-      val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
-      val argExps = predExps :: visitExp(exp) :: Nil
-      val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.RenameType, resultType, eff, loc)
+    case TypedAst.Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
+      val pparams = pparams0.map {
+        case TypedAst.PredicateParam(pred, tpe0, loc0) => LoweredAst.PredicateParam(pred, visitType(tpe0), loc0)
+      }
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointLambda(pparams, e, t, eff, loc)
 
-    case TypedAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Merge)
-      val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
-      val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
+    case TypedAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointMerge(e1, e2, t, eff, loc)
 
     case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
       // Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from

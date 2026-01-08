@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Scope}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, MonoAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, MonoAst, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -42,15 +42,18 @@ import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 object Lowering {
 
   /**
-    * Lowers the type `t`. Currently implemented as a no-op.
+    * Lowers the given type `tpe0`.
     *
-    * When implemented:
     * Replaces schema types with the Datalog enum type and channel-related types with the channel enum type.
-    *
-    * @param tpe0 the type to be lowered.
-    * @return
     */
-  private def lowerType(tpe0: Type): Type = tpe0 match {
+  private def lowerType(tpe0: Type): Type = tpe0.typeConstructor match {
+    case Some(TypeConstructor.Schema) =>
+      // We replace any Schema type, no matter the number of polymorphic type applications, with the erased Datalog type.
+      Types.Datalog
+    case _ => lowerTypeNonSchema(tpe0)
+  }
+
+  private def lowerTypeNonSchema(tpe0: Type): Type = tpe0 match {
     case Type.Cst(_, _) => tpe0 // Performance: Reuse tpe0.
 
     case Type.Var(_, _) => tpe0
@@ -313,10 +316,17 @@ object Lowering {
       throw InternalCompilerException("not implemented yet", loc)
 
     case LoweredAst.Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+      val resultType = Types.Datalog
+      val defn = lookup(Defs.Rename, resultType)
+      val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
+      val argExps = predExps :: lowerExp(exp) :: Nil
+      MonoAst.Expr.ApplyDef(defn, argExps, Types.RenameType, resultType, eff, loc)
 
-    case LoweredAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
+      val resultType = Types.Datalog
+      val defn = lookup(Defs.Merge, resultType)
+      val argExps = lowerExp(exp1) :: lowerExp(exp2) :: Nil
+      MonoAst.Expr.ApplyDef(defn, argExps, Types.MergeType, resultType, eff, loc)
 
     case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
@@ -831,4 +841,18 @@ object Lowering {
     Type.Apply(Type.Apply(Types.ChannelMpmc, tpe1, loc), tpe2, loc)
   }
 
+  /**
+    * Datalog lowering
+    */
+
+  /**
+    * Constructs a `Fixpoint/Ast/Shared.PredSym` from the given predicate `pred`.
+    */
+  private def mkPredSym(pred: Name.Pred): MonoAst.Expr = pred match {
+    case Name.Pred(sym, loc) =>
+      val nameExp = MonoAst.Expr.Cst(Constant.Str(sym), Type.Str, loc)
+      val idExp = MonoAst.Expr.Cst(Constant.Int64(0), Type.Int64, loc)
+      val inner = List(nameExp, idExp)
+      mkTag(Enums.PredSym, "PredSym", inner, Types.PredSym, loc)
+  }
 }
