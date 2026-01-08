@@ -902,7 +902,7 @@ mod TestBPlusTree {
     /////////////////////////////////////////////////////////////////////////////
     // joinValues                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     @Test
     def joinValues01(): Unit \ Assert = region rc {
         let t: BPlusTree[_, Int32, _] = BPlusTree.empty(rc);
@@ -1767,7 +1767,7 @@ mod TestBPlusTree {
         let t = BPlusTree.emptyWithArity(rc, 4);
         foreach (i <- Range.Range(1, 16))
             BPlusTree.put(i, (), t);
-        
+
         def fizzBuzz(n, _) = {
             let divBy3 = Int32.modulo(n, 3) == 0;
             let divBy5 = Int32.modulo(n, 5) == 0;
@@ -1810,9 +1810,9 @@ mod TestBPlusTree {
         let t = BPlusTree.emptyWithArity(rc, 3);
         foreach (i <- Range.Range(1, 7))
             BPlusTree.put(i, i*10, t);
-            
+
         Assert.assertEq(
-            expected = Map#{1 => 10, 2 => 20, 3 => 30, 4 => 40, 5 => 50, 6 => 60 }, 
+            expected = Map#{1 => 10, 2 => 20, 3 => 30, 4 => 40, 5 => 50, 6 => 60 },
             BPlusTree.toMap(t)
         )
     }
