@@ -37,13 +37,15 @@ object NameError {
     * @param loc the location of the deprecated feature.
     */
   case class Deprecated(loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5281
+
     def summary: String = s"Deprecated feature."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Deprecated feature. Use --Xdeprecated to enable.
          |
-         |${code(loc, "deprecated")}
+         |${src(loc, "deprecated")}
          |""".stripMargin
     }
 
@@ -58,15 +60,17 @@ object NameError {
     * @param loc2 the location of the second name.
     */
   case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5394
+
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Duplicate definition of '${red(name)}'.
          |
-         |${code(loc1, "the first definition was here.")}
+         |${src(loc1, "the first definition was here.")}
          |
-         |${code(loc2, "the second definition was here.")}
+         |${src(loc2, "the second definition was here.")}
          |""".stripMargin
     }
 
@@ -92,15 +96,17 @@ object NameError {
     * @param loc2 the location of the second name.
     */
   case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5407
+
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Duplicate definition of '${red(name)}'.
          |
-         |${code(loc1, "the first definition was here.")}
+         |${src(loc1, "the first definition was here.")}
          |
-         |${code(loc2, "the second definition was here.")}
+         |${src(loc2, "the second definition was here.")}
          |""".stripMargin
     }
 
@@ -116,13 +122,15 @@ object NameError {
     * @param loc       the location where the orphaned module is declared.
     */
   case class OrphanModule(sym: Symbol.ModuleSym, parentSym: Symbol.ModuleSym, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5512
+
     def summary: String = s"Module '$sym' is orphaned. Missing declaration of parent: '$parentSym'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Module '${blue(sym.toString)}' is orphaned. Missing declaration of parent: '${red(parentSym.toString)}'.
          |
-         |${code(loc, "orphaned module")}
+         |${src(loc, "orphaned module")}
          |""".stripMargin
     }
   }
@@ -135,13 +143,15 @@ object NameError {
     * @param loc   The source location the qname.
     */
   case class IllegalModuleFile(qname: Name.QName, path: Path, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5623
+
     def summary: String = s"Module '$qname' unexpectedly declared in file '$path'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Module '${blue(qname.toString)}' unexpectedly declared in '${red(path.toString)}'.
          |
-         |${code(loc, "mismatched module name and path.")}
+         |${src(loc, "mismatched module name and path.")}
          |""".stripMargin
     }
   }
@@ -152,13 +162,15 @@ object NameError {
     * @param name The reserved name with location
     */
   case class IllegalReservedName(name: Name.Ident) extends NameError {
+    def code: ErrorCode = ErrorCode.E5736
+
     def summary: String = s"Redefinition of a reserved name: ${name.name}"
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Redefinition of a reserved name: ${name.name}
          |
-         |${code(name.loc, "illegal name")}
+         |${src(name.loc, "illegal name")}
          |""".stripMargin
     }
 
@@ -172,13 +184,15 @@ object NameError {
     * @param loc  the location of the suspicious type variable.
     */
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5849
+
     def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
          |
-         |${code(loc, "suspicious type variable.")}
+         |${src(loc, "suspicious type variable.")}
          |""".stripMargin
     }
 

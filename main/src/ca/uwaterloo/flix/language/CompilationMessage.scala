@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.errors.ErrorCode
 import ca.uwaterloo.flix.util.Formatter
 
 import scala.collection.mutable
@@ -31,6 +32,11 @@ trait CompilationMessage {
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
     */
   def kind: CompilationMessageKind
+
+  /**
+    * Returns the error code.
+    */
+  def code: ErrorCode
 
   /**
     * Returns the input source of the error message.

@@ -138,7 +138,7 @@ object TokenVerifier {
     val msg =
       s""">> Found non-eof last token: ${found.kind}.
          |
-         |${Formatter.NoFormatter.code(loc, "here")}
+         |${Formatter.NoFormatter.src(loc, "here")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -149,7 +149,7 @@ object TokenVerifier {
     val msg =
       s""">> Found ${TokenKind.Eof} with tokens following it.
          |
-         |${Formatter.NoFormatter.code(loc, "here")}
+         |${Formatter.NoFormatter.src(loc, "here")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -160,7 +160,7 @@ object TokenVerifier {
     val msg =
       s""">> Found token with source ${found.src.name} in the tokens of ${src.name}.
          |
-         |${Formatter.NoFormatter.code(loc, s"here (${found.kind})")}
+         |${Formatter.NoFormatter.src(loc, s"here (${found.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -171,7 +171,7 @@ object TokenVerifier {
     val msg =
       s""">> Invalid offset range: ${found.startIndex} - ${found.endIndex}.
          |
-         |${Formatter.NoFormatter.code(loc, s"here (${found.kind})")}
+         |${Formatter.NoFormatter.src(loc, s"here (${found.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -183,7 +183,7 @@ object TokenVerifier {
     val msg =
       s""">> Invalid position range: $positionRangeString.
          |
-         |${Formatter.NoFormatter.code(loc, s"here (${found.kind})")}
+         |${Formatter.NoFormatter.src(loc, s"here (${found.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -194,7 +194,7 @@ object TokenVerifier {
     val msg =
       s""">> Token with out-of-bound offsets: ${found.startIndex} - ${found.endIndex}.
          |
-         |${Formatter.NoFormatter.code(loc, s"here (${found.kind})")}
+         |${Formatter.NoFormatter.src(loc, s"here (${found.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -207,9 +207,9 @@ object TokenVerifier {
     val msg =
       s""">> Overlapping tokens (position): $leftPos and $rightPos.
          |
-         |${Formatter.NoFormatter.code(left.mkSourceLocation(), s"left token here (${left.kind})")}
+         |${Formatter.NoFormatter.src(left.mkSourceLocation(), s"left token here (${left.kind})")}
          |
-         |${Formatter.NoFormatter.code(right.mkSourceLocation(), s"right token here (${right.kind})")}
+         |${Formatter.NoFormatter.src(right.mkSourceLocation(), s"right token here (${right.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -220,9 +220,9 @@ object TokenVerifier {
     val msg =
       s""">> Overlapping tokens: ${left.startIndex} - ${right.endIndex} and ${right.startIndex} - ${right.endIndex}.
          |
-         |${Formatter.NoFormatter.code(left.mkSourceLocation(), s"left token here (${left.kind})")}
+         |${Formatter.NoFormatter.src(left.mkSourceLocation(), s"left token here (${left.kind})")}
          |
-         |${Formatter.NoFormatter.code(right.mkSourceLocation(), s"right token here (${right.kind})")}
+         |${Formatter.NoFormatter.src(right.mkSourceLocation(), s"right token here (${right.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -233,7 +233,7 @@ object TokenVerifier {
     val msg =
       s""">> End column is the first column of next line instead of last column of the existing line.
          |
-         |${Formatter.NoFormatter.code(found.mkSourceLocation(), s"here (${found.kind})")}
+         |${Formatter.NoFormatter.src(found.mkSourceLocation(), s"here (${found.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)

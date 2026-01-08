@@ -31,13 +31,15 @@ object LexerError {
     * @param loc The location of the unexpected char.
     */
   case class ExpectedDigit(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E3736
+
     override def summary: String = s"A digit (0-9) is expected here."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> A digit (0-9) is expected here.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "Here")}
          |""".stripMargin
     }
   }
@@ -48,13 +50,15 @@ object LexerError {
     * @param loc The location of the unexpected char.
     */
   case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E3849
+
     override def summary: String = s"A hexadecimal digit (0-9, a-f, or A-F) is expected here."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> A hexadecimal digit (0-9, a-f, or A-F) is expected here.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "Here")}
          |""".stripMargin
     }
   }
@@ -66,13 +70,15 @@ object LexerError {
     * @param loc The location of the '.'.
     */
   case class FreeDot(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E3952
+
     override def summary: String = s"'.' has leading whitespace."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> '.' has leading whitespace.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -84,13 +90,15 @@ object LexerError {
     * @param loc The location of the start of the suffix.
     */
   case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4063
+
     override def summary: String = s"Incorrect hexadecimal number suffix."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Incorrect hexadecimal number suffix.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "Here")}
          |
          |Hexadecimal number suffixes are i8, i16, i32, i64, and ii.
          |
@@ -104,13 +112,15 @@ object LexerError {
     * @param loc The location of the start of the suffix.
     */
   case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4176
+
     override def summary: String = s"Incorrect number suffix."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Incorrect number suffix.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "Here")}
          |
          |Number suffixes are i8, i16, i32, i64, ii, f32, f64, and ff.
          |
@@ -124,13 +134,15 @@ object LexerError {
     * @param loc The location of the start of the suffix.
     */
   case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4289
+
     override def summary: String = s"A decimal number cannot have integer suffix."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> A decimal number cannot have integer suffix.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "Here")}
          |
          |Float suffixes are f32, f64, and ff.
          |
@@ -144,13 +156,15 @@ object LexerError {
     * @param loc The location of `found`.
     */
   case class MalformedHexNumber(found: Char, loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4392
+
     override def summary: String = s"Malformed hexadecimal number, found '${showChar(found)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Malformed hexadecimal number, found '${showChar(found)}'.
          |
-         |${code(loc, "Number was correct up to here")}
+         |${src(loc, "Number was correct up to here")}
          |
          |""".stripMargin
     }
@@ -162,13 +176,15 @@ object LexerError {
     * @param loc the location of `found`.
     */
   case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4405
+
     override def summary: String = s"Malformed number, found '${showChar(found)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Malformed number, found '${showChar(found)}'.
          |
-         |${code(loc, "Number was correct up to here")}
+         |${src(loc, "Number was correct up to here")}
          |
          |""".stripMargin
     }
@@ -180,13 +196,15 @@ object LexerError {
     * @param loc the location of `found`.
     */
   case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4518
+
     override def summary: String = s"Unexpected character '${showChar(found)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected character '${red(showChar(found))}'.
          |
-         |${code(loc, "Unexpected character.")}
+         |${src(loc, "Unexpected character.")}
          |
          |""".stripMargin
     }
@@ -198,13 +216,15 @@ object LexerError {
     * @param loc The location of the block comment.
     */
   case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4629
+
     override def summary: String = s"Unterminated block-comment."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing '*/' in block-comment.
          |
-         |${code(loc, "Here.")}
+         |${src(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -216,13 +236,15 @@ object LexerError {
     * @param loc The location of the built-in.
     */
   case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4736
+
     override def summary: String = s"Unterminated built-in."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing '%%' in built-in.
          |
-         |${code(loc, "Here.")}
+         |${src(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -234,13 +256,15 @@ object LexerError {
     * @param loc The location of the char.
     */
   case class UnterminatedChar(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4843
+
     override def summary: String = s"Unterminated char."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing `'` in char.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -252,13 +276,15 @@ object LexerError {
     * @param loc The location of the regex.
     */
   case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E4956
+
     override def summary: String = s"Unterminated regex."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing `"` in regex.
          |
-         |${code(loc, "Here")}
+         |${src(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -270,13 +296,15 @@ object LexerError {
     * @param loc The location of the string.
     */
   case class UnterminatedString(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E5067
+
     override def summary: String = s"Unterminated string."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing '"' in string.
          |
-         |${code(loc, "Here.")}
+         |${src(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -288,13 +316,15 @@ object LexerError {
     * @param loc The location of the opening `{`.
     */
   case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError {
+    def code: ErrorCode = ErrorCode.E5178
+
     override def summary: String = s"Unterminated string interpolation."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing '}' in string interpolation.
          |
-         |${code(loc, "Interpolation starts here.")}
+         |${src(loc, "Interpolation starts here.")}
          |
          |""".stripMargin
     }

@@ -10,7 +10,7 @@ trait Formatter {
   def line(left: String, right: String): String =
     this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
 
-  def code(loc: SourceLocation, msg: String): String = {
+  def src(loc: SourceLocation, msg: String): String = {
     val beginLine = loc.startLine
     val beginCol = loc.startCol
     val endLine = loc.endLine

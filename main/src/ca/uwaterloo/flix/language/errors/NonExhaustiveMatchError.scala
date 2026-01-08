@@ -26,13 +26,15 @@ import ca.uwaterloo.flix.util.Formatter
 case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends CompilationMessage {
   val kind: CompilationMessageKind = CompilationMessageKind.PatternMatchError
 
+  def code: ErrorCode = ErrorCode.E5952
+
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
 
   def message(formatter: Formatter): String = {
     import formatter.*
     s""">> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
        |
-       |${code(loc, "incomplete pattern.")}
+       |${src(loc, "incomplete pattern.")}
        |""".stripMargin
   }
 
