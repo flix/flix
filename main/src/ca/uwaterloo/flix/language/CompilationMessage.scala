@@ -74,7 +74,7 @@ trait CompilationMessage {
     * Returns the error message formatted with source location.
     */
   def messageWithLoc(formatter: Formatter): String = {
-    formatter.line(kind.toString, source.name) + System.lineSeparator() + message(formatter)
+    formatter.line(kind, code, source) + System.lineSeparator() + message(formatter)
   }
 
   /**
