@@ -190,7 +190,7 @@ class TestBootstrap extends AnyFunSuite {
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.build(PkgTestUtils.mkFlix)
     val buildDir = p.resolve("./build/").normalize()
-    FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
+    FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello").unsafeGet
     b.clean() match {
       case Result.Ok(_) => fail("expected clean to abort")
       case Result.Err(_) => succeed
@@ -216,7 +216,7 @@ class TestBootstrap extends AnyFunSuite {
     FileOps.writeString(p.resolve("./Main.flix").normalize(),
       """
         |def main(): Unit = ()
-        |""".stripMargin)
+        |""".stripMargin).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val buildDir = p.resolve("./build/").normalize()
     if (Files.exists(buildDir)) {
@@ -239,7 +239,7 @@ class TestBootstrap extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
-    FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+    FileOps.writeString(p.resolve("flix.toml").normalize(), toml).unsafeGet
 
     // Override main file
     val main =
@@ -247,7 +247,7 @@ class TestBootstrap extends AnyFunSuite {
         |pub def main(): Unit \ IO =
         |    TestPkgTrustTransitive.entry()
         |""".stripMargin
-    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main)
+    FileOps.writeString(p.resolve("src/Main.flix").normalize(), main).unsafeGet
 
     // Assert effects.lock does not exist
     val effectLockFile = p.resolve("effects.lock").normalize()

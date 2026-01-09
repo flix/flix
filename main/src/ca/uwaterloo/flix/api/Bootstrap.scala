@@ -447,14 +447,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     for {
       root <- Steps.check(flix)
+      json <- EffectLock.lock(root).mapErr(e => BootstrapError.GeneralError(List(s"Unexpected serialization error: $e")))
+      res <- FileOps.writeString(Bootstrap.getEffectLockFile(projectPath), json).mapErr(e => BootstrapError.FileError(s"IO Error: ${e.getMessage}"))
     } yield {
-      EffectLock.lock(root) match {
-        case Err(e) => return Err(BootstrapError.GeneralError(List(s"Unexpected serialization error: $e")))
-        case Ok(json) =>
-          val path = Bootstrap.getEffectLockFile(projectPath)
-          // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
-          FileOps.writeString(path, json)
-      }
+      res
     }
   }
 

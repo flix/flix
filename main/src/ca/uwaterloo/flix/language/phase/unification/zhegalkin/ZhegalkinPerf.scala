@@ -149,8 +149,8 @@ object ZhegalkinPerf {
     }
 
     val data = "Constraints,FlexVars,RigidVars,Effects" + "\n" + table.map(t => s"${t._1},${t._2},${t._3},${t._4}").mkString("\n")
-    FileOps.writeString(Paths.get("./data.txt"), data)
-    FileOps.writeString(Paths.get("./plots.py"), py1)
+    FileOps.writeString(Paths.get("./data.txt"), data).unsafeGet
+    FileOps.writeString(Paths.get("./plots.py"), py1).unsafeGet
 
 
     println("-" * 80)

@@ -136,19 +136,19 @@ object AstPrinter {
     */
   private def writeToDisk(phaseName: String, content: String)(implicit flix: Flix): Unit = {
     val filePath = phaseOutputPath(phaseName)
-    FileOps.writeString(filePath, content)
+    FileOps.writeString(filePath, content).unsafeGet
   }
 
   /** Makes sure that the phases file exists and is empty. */
   def resetPhaseFile()(implicit flix: Flix): Unit = {
     val filePath = astFolderPath.resolve("0phases.txt")
-    FileOps.writeString(filePath, "")
+    FileOps.writeString(filePath, "").unsafeGet
   }
 
   def appendPhaseToDisk(phaseName: String, hasAst: Boolean)(implicit flix: Flix): Unit = {
     val filePath = astFolderPath.resolve("0phases.txt")
     val line = s"$phaseName${if (hasAst) "" else " (no output)"}${System.lineSeparator()}"
-    FileOps.writeString(filePath, line, append = true)
+    FileOps.writeString(filePath, line, append = true).unsafeGet
   }
 
   /**
