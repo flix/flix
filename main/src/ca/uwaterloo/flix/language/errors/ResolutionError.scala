@@ -119,8 +119,6 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
-
     val loc: SourceLocation = loc1
   }
 
@@ -144,15 +142,11 @@ object ResolutionError {
          |
          |${src(loc2, "the second occurrence was here.")}
          |
+         |${underline("Tip:")} Remove one of the occurrences.
          |""".stripMargin
     }
 
     override def loc: SourceLocation = loc1
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove one of the occurrences."
-    })
 
   }
 
@@ -194,12 +188,11 @@ object ResolutionError {
       s""">> Illegal associated type application.
          |
          |${src(loc, "illegal associated type application.")}
+         |
+         |${underline("Explanation:")}
+         |An associated type may only be applied to a variable.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "An associated type may only be applied to a variable."
-    })
   }
 
   /**
@@ -240,12 +233,11 @@ object ResolutionError {
       s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the trait.
          |
          |${src(loc, "unexpected signature.")}
+         |
+         |${underline("Explanation:")}
+         |Every signature in a trait must mention the type variable of the trait.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Every signature in a trait must mention the type variable of the trait."
-    })
 
   }
 
@@ -265,12 +257,11 @@ object ResolutionError {
       s""">> Illegal wildcard type: '$ident'.
          |
          |${src(loc, "illegal wildcard type.")}
+         |
+         |${underline("Explanation:")}
+         |Wildcard types (types starting with an underscore) are not allowed in this position.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Wildcard types (types starting with an underscore) are not allowed in this position."
-    })
   }
 
   /**
@@ -313,14 +304,10 @@ object ResolutionError {
          |
          |${src(loc, "inaccessible trait.")}
          |
+         |${underline("Tip:")} Mark the trait as public.
          |""".stripMargin
 
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the trait as public."
-    })
   }
 
   /**
@@ -341,13 +328,9 @@ object ResolutionError {
          |
          |${src(loc, "inaccessible definition.")}
          |
+         |${underline("Tip:")} Mark the definition as public.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
 
   }
 
@@ -369,13 +352,9 @@ object ResolutionError {
          |
          |${src(loc, "inaccessible effect.")}
          |
+         |${underline("Tip:")} Mark the effect as public.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the effect as public."
-    })
 
   }
 
@@ -397,13 +376,9 @@ object ResolutionError {
          |
          |${src(loc, "inaccessible enum.")}
          |
+         |${underline("Tip:")} Mark the definition as public.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
 
   }
 
@@ -425,13 +400,9 @@ object ResolutionError {
          |
          |${src(loc, "inaccessible struct.")}
          |
+         |${underline("Tip:")} Mark the definition as public.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
   }
 
   /**
@@ -452,13 +423,9 @@ object ResolutionError {
          |
          |${src(loc, "inaccessible enum.")}
          |
+         |${underline("Tip:")} Mark the definition as public.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
 
   }
 
@@ -479,13 +446,10 @@ object ResolutionError {
       s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${src(loc, "inaccessible definition.")}
+         |
+         |${underline("Tip:")} Mark the definition as public.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
 
   }
 
@@ -507,13 +471,9 @@ object ResolutionError {
          |
          |${src(loc, "inaccessible type alias.")}
          |
+         |${underline("Tip:")} Mark the type alias as public.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the type alias as public."
-    })
 
   }
 
@@ -645,13 +605,9 @@ object ResolutionError {
          |
          |${src(loc, "sealed trait.")}
          |
+         |${underline("Tip:")} Move the instance or subtrait to the trait's module.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Move the instance or subtrait to the trait's module."
-    })
 
   }
 
@@ -672,13 +628,9 @@ object ResolutionError {
          |
          |${src(loc, "associated type not found.")}
          |
+         |${underline("Tip:")} Possible typo or non-existent associated type?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent associated type?"
-    })
   }
 
   /**
@@ -701,13 +653,9 @@ object ResolutionError {
          |
          |${src(loc, "effect not found")}
          |
+         |${underline("Tip:")} Possible typo or non-existent effect?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent effect?"
-    })
 
   }
 
@@ -755,17 +703,18 @@ object ResolutionError {
          |${src(loc, "undefined class.")}
          |
          |$msg
+         |$nestedClassHint
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = {
+    private def nestedClassHint: String = {
       if (raw".*\.[A-Z].*\.[A-Z].*".r matches name)
-        Some(s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder")
+        s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder"
       else
-        None
+        ""
     }
   }
 
@@ -807,13 +756,10 @@ object ResolutionError {
       s""">> Undefined kind '${red(qn.toString)}'.
          |
          |${src(loc, "undefined kind.")}
+         |
+         |${underline("Tip:")} Possible typo or non-existent kind?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent kind?"
-    })
   }
 
   /**
@@ -835,13 +781,9 @@ object ResolutionError {
          |
          |${src(loc, "name not found")}
          |
+         |${underline("Tip:")} Possible typo or non-existent definition?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent definition?"
-    })
 
   }
 
@@ -864,13 +806,9 @@ object ResolutionError {
          |
          |${src(loc, "name not found")}
          |
+         |${underline("Tip:")} Possible typo or non-existent definition?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent definition?"
-    })
 
   }
 
@@ -916,13 +854,9 @@ object ResolutionError {
          |
          |${src(loc, "operation not found")}
          |
+         |${underline("Tip:")} Possible typo or non-existent operation?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent operation?"
-    })
   }
 
   /**
@@ -943,13 +877,9 @@ object ResolutionError {
          |
          |${src(loc, "tag not found.")}
          |
+         |${underline("Tip:")} Possible typo or non-existent tag?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent tag?"
-    })
 
   }
 
@@ -971,13 +901,9 @@ object ResolutionError {
          |
          |${src(loc, "type not found.")}
          |
+         |${underline("Tip:")} Possible typo or non-existent type?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent type?"
-    })
 
   }
 
@@ -999,13 +925,9 @@ object ResolutionError {
          |
          |${src(loc, "tag not found.")}
          |
+         |${underline("Tip:")} Possible typo or non-existent tag?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent tag?"
-    })
 
   }
 
@@ -1030,13 +952,9 @@ object ResolutionError {
          |
          |${src(loc, "trait not found")}
          |
+         |${underline("Tip:")} Possible typo or non-existent trait?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent trait?"
-    })
 
   }
 
@@ -1059,13 +977,9 @@ object ResolutionError {
          |
          |${src(loc, "type not found.")}
          |
+         |${underline("Tip:")} Possible typo or non-existent type?
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent type?"
-    })
 
   }
 
@@ -1085,13 +999,12 @@ object ResolutionError {
       s""">> Undefined type variable '${red(name)}'.
          |
          |${src(loc, "undefined type variable.")}
+         |
+         |${underline("Explanation:")}
+         |Flix cannot find the type variable. Maybe there is a typo?
          |""".stripMargin
 
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Flix cannot find the type variable. Maybe there is a typo?"
-    })
   }
 
   /**
@@ -1133,13 +1046,10 @@ object ResolutionError {
       s""">> Under-applied associated type '${red(sym.name)}'.
          |
          |${src(loc, "Under-applied associated type.")}
+         |
+         |${underline("Tip:")} Associated types must be fully applied.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Associated types must be fully applied."
-    })
 
   }
 
@@ -1159,13 +1069,10 @@ object ResolutionError {
       s""">> Under-applied type alias '${red(sym.name)}'.
          |
          |${src(loc, "Under-applied type alias.")}
+         |
+         |${underline("Tip:")} Type aliases must be fully applied.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Type aliases must be fully applied."
-    })
 
   }
 

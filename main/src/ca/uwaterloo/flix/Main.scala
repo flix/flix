@@ -64,7 +64,6 @@ object Main {
       lib = cmdOpts.xlib,
       build = Build.Development,
       entryPoint = entryPoint,
-      explain = cmdOpts.explain,
       githubToken = githubToken,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
@@ -437,7 +436,6 @@ object Main {
   case class CmdOpts(command: Command = Command.None,
                      args: List[String] = Nil,
                      entryPoint: Option[String] = None,
-                     explain: Boolean = false,
                      installDeps: Boolean = true,
                      githubToken: Option[String] = None,
                      json: Boolean = false,
@@ -610,9 +608,6 @@ object Main {
 
       opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
         text("specifies the main entry point.")
-
-      opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
-        text("provides suggestions on how to solve a problem.")
 
       opt[String]("github-token").action((s, c) => c.copy(githubToken = Some(s))).
         text("API key to use for GitHub dependency resolution.")

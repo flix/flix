@@ -93,19 +93,13 @@ object RedundancyError {
       s""">> Hidden variable symbol '${red(sym.text)}'. The symbol is marked as unused.
          |
          |${src(loc, "hidden symbol.")}
-         |""".stripMargin
-
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Don't use the variable symbol.
          |  (2)  Rename the underscore prefix from the variable symbol name.
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -184,17 +178,12 @@ object RedundancyError {
       s""">> Type constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
          |
          |${src(loc, "redundant type constraint.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Remove the type constraint.
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -326,19 +315,15 @@ object RedundancyError {
       s""">> Unused definition '${red(sym.name)}'. The definition is never referenced.
          |
          |${src(sym.loc, "unused definition.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the definition.
          |  (2)  Remove the definition.
          |  (3)  Mark the definition as public.
          |  (4)  Prefix the definition name with an underscore.
-         |
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = sym.loc
   }
@@ -358,19 +343,15 @@ object RedundancyError {
       s""">> Unused effect '${red(sym.name)}'. The effect is never referenced.
          |
          |${src(sym.loc, "unused effect.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the effect.
          |  (2)  Remove the effect.
          |  (3)  Mark the effect as public.
          |  (4)  Prefix the effect name with an underscore.
-         |
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = sym.loc
   }
@@ -390,20 +371,15 @@ object RedundancyError {
       s""">> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
          |${src(sym.loc, "unused enum.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the enum.
          |  (2)  Remove the enum.
          |  (3)  Mark the enum as public.
          |  (4)  Prefix the enum name with an underscore.
-         |
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = sym.loc
   }
@@ -424,20 +400,14 @@ object RedundancyError {
       s""">> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
          |
          |${src(tag.loc, "unused tag.")}
-         |""".stripMargin
-
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the case.
          |  (2)  Remove the case.
          |  (3)  Prefix the case with an underscore.
-         |
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = tag.loc
   }
@@ -457,20 +427,15 @@ object RedundancyError {
       s""">> Unused struct '${red(sym.name)}'.
          |
          |${src(sym.loc, "unused struct.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the struct.
          |  (2)  Remove the struct.
          |  (3)  Mark the struct as public.
          |  (4)  Prefix the struct name with an underscore.
-         |
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = sym.loc
   }
@@ -490,19 +455,14 @@ object RedundancyError {
       s""">> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
          |
          |${src(sym.loc, "unused formal parameter.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the formal parameter.
          |  (2)  Remove the formal parameter.
          |  (3)  Prefix the formal parameter name with an underscore.
-         |
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = sym.loc
   }
@@ -522,19 +482,14 @@ object RedundancyError {
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
          |
          |${src(ident.loc, "unused type parameter.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the type parameter.
          |  (2)  Remove type parameter.
          |  (3)  Prefix the type parameter name with an underscore.
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -552,19 +507,14 @@ object RedundancyError {
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced in the signature.
          |
          |${src(ident.loc, "type parameter unused in function signature.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the type parameter in the signature.
          |  (2)  Remove type parameter.
          |  (3)  Prefix the type parameter name with an underscore.
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -582,19 +532,14 @@ object RedundancyError {
       s""">> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
          |
          |${src(sym.loc, "unused local variable.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the local variable.
          |  (2)  Remove local variable declaration.
          |  (3)  Prefix the variable name with an underscore.
-         |
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = sym.loc
   }
@@ -619,18 +564,13 @@ object RedundancyError {
          |Covered by the following pattern:
          |
          |${src(defaultLoc, "covering pattern.")}
+         |
+         |${underline("Possible fixes:")}
+         |
+         |  (1)  Remove the covered case.
+         |  (2)  Remove the covering '_' case.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      """
-        |Possible fixes:
-        |
-        |  (1)  Remove the covered case.
-        |  (2)  Remove the covering '_' case.
-        |
-        |""".stripMargin
-    })
   }
 
   /**
@@ -651,19 +591,14 @@ object RedundancyError {
          |${src(loc, "useless expression.")}
          |
          |The expression has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Use the result computed by the expression.
          |  (2)  Remove the expression statement.
          |  (3)  Introduce a let-binding with a wildcard name.
-         |
          |""".stripMargin
-    })
+    }
   }
 
 }

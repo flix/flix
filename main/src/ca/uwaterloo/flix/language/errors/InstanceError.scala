@@ -72,13 +72,10 @@ object InstanceError {
       s""">> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${magenta(sym.name)}'.
          |
          |${src(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
+         |
+         |${underline("Tip:")} Rename one of the instances of the type variable.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Rename one of the instances of the type variable."
-    })
 
   }
 
@@ -99,13 +96,10 @@ object InstanceError {
       s""">> The signature '${red(defnSym.name)}' is not present in the '${magenta(traitSym.name)}' trait.
          |
          |${src(loc, s"extraneous def")}
+         |
+         |${underline("Tip:")} Remove this definition from the instance.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove this definition from the instance."
-    })
   }
 
   /**
@@ -198,13 +192,10 @@ object InstanceError {
          |
          |Expected scheme: ${FormatScheme.formatScheme(expected)}
          |Actual scheme:   ${FormatScheme.formatScheme(actual)}
+         |
+         |${underline("Tip:")} Modify the definition to match the signature.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Modify the definition to match the signature."
-    })
   }
 
   /**
@@ -226,13 +217,10 @@ object InstanceError {
          |The constraint ${FormatEqualityConstraint.formatEqualityConstraint(econstr)} is required because it is a constraint on super trait ${superTrait.name}.
          |
          |${src(loc, s"missing equality constraint")}
-      """.stripMargin
+         |
+         |${underline("Tip:")} Add the missing equality constraint.
+         |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Add the missing equality constraint."
-    })
   }
 
   /**
@@ -251,13 +239,10 @@ object InstanceError {
       s""">> Missing implementation of '${red(sig.name)}' required by '${magenta(sig.trt.name)}'.
          |
          |${src(loc, s"missing implementation")}
+         |
+         |${underline("Tip:")} Add an implementation of the signature to the instance.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Add an implementation of the signature to the instance."
-    })
   }
 
   /**
@@ -282,13 +267,10 @@ object InstanceError {
          |The trait '${red(subTrait.name)}' extends the trait '${red(superTrait.name)}'.
          |
          |If you provide an instance for '${red(subTrait.name)}' you must also provide an instance for '${red(superTrait.name)}'.
+         |
+         |${underline("Tip:")} Add an instance of '${superTrait.name}' for '${FormatType.formatType(tpe)}'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Add an instance of '${superTrait.name}' for '${FormatType.formatType(tpe)}'."
-    })
   }
 
   /**
@@ -310,13 +292,10 @@ object InstanceError {
          |The constraint ${FormatTraitConstraint.formatTraitConstraint(tconstr)} is required because it is a constraint on super trait ${superTrait.name}.
          |
          |${src(loc, s"missing type constraint")}
-      """.stripMargin
+         |
+         |${underline("Tip:")} Add the missing type constraint.
+         |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Add the missing type constraint."
-    })
   }
 
   /**
@@ -361,13 +340,10 @@ object InstanceError {
          |${src(loc1, "the first instance was declared here.")}
          |
          |${src(loc2, "the second instance was declared here.")}
+         |
+         |${underline("Tip:")} Remove or change the type of one of the instances.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip: ")} Remove or change the type of one of the instances."
-    })
 
     def loc: SourceLocation = loc1
   }

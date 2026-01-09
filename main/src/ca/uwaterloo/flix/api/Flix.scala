@@ -429,13 +429,9 @@ class Flix {
 
   /**
     * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to append the explanation.
     */
   def mkMessages(errors: List[CompilationMessage]): List[String] = {
-    if (options.explain)
-      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse(""))
-    else
-      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
+    errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
   }
 
   /**

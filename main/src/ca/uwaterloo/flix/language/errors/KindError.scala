@@ -93,12 +93,8 @@ object KindError {
          |
          |${src(loc, "uninferred kind.")}
          |
+         |${underline("Tip:")} Add a kind annotation.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip: ")} Add a kind annotation."
-    })
   }
 }
