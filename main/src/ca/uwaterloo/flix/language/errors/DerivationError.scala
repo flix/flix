@@ -46,13 +46,10 @@ object DerivationError {
       s""">> Illegal derivation '${red(sym.name)}'.
          |
          |${src(loc, "Illegal derivation.")}
+         |
+         |${underline("Tip:")} Only the following traits may be derived: ${legalSyms.map(_.name).mkString(", ")}.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Only the following traits may be derived: ${legalSyms.map(_.name).mkString(", ")}."
-    })
   }
 
   /**

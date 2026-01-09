@@ -30,24 +30,20 @@ object SafetyError {
       s""">> Operation not permitted in security context: $sctx
          |
          |${src(loc, s"forbidden in security context $sctx")}
+         |
+         |${underline("Explanation:")}
+         |Remove or replace the dependency with one that respects the security context.
+         |
+         |  The security contexts are defined as follows:
+         |    - paranoid: prohibits any use of Java, unchecked casts, and the IO effect.
+         |    - plain (default): same as paranoid, except it permits the IO effect.
+         |    - unrestricted: permits everything.
+         |
+         |  Alternatively, you can give your dependency broader permissions but in doing so
+         |  you may risk exposing yourself to a supply-chain attack.
+         |
+         |  Learn more at https://doc.flix.dev/packages.html
          |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = {
-      Some(
-        s"""Tip: Remove or replace the dependency with one that respects the security context.
-           |
-           |  The security contexts are defined as follows:
-           |    - paranoid: prohibits any use of Java, unchecked casts, and the IO effect.
-           |    - plain (default): same as paranoid, except it permits the IO effect.
-           |    - unrestricted: permits everything.
-           |
-           |  Alternatively, you can give your dependency broader permissions but in doing so
-           |  you may risk exposing yourself to a supply-chain attack.
-           |
-           |  Learn more at https://doc.flix.dev/packages.html
-           |""".stripMargin
-      )
     }
   }
 
@@ -279,19 +275,16 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
+      val explanation = if (!sym.isWild) {
+        s"""
+           |
+           |${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.""".stripMargin
+      } else ""
       s""">> Illegal non-positively bound variable '${red(sym.text)}'.
          |
-         |${src(loc, "the variable occurs in this negated atom.")}
+         |${src(loc, "the variable occurs in this negated atom.")}$explanation
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      if (!sym.isWild)
-        s"""${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.""".stripMargin
-      else
-        ""
-    })
   }
 
   /**
@@ -329,14 +322,12 @@ object SafetyError {
       s""">> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
          |
          |${src(loc, "the illegal use occurs here.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""A lattice variable cannot be used as relational variable unless the atom
+         |
+         |${underline("Explanation:")}
+         |A lattice variable cannot be used as relational variable unless the atom
          |from which it originates is marked with `fix`.
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -378,20 +369,16 @@ object SafetyError {
       s""">> Missing default case.
          |
          |${src(loc, "missing default case.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         | A typematch expression must have a default case. For example:
+         |
+         |${underline("Explanation:")}
+         |A typematch expression must have a default case. For example:
          |
          | typematch x {
          |     case y: Int32 => ...
          |     case _: _ => ... // default case
          | }
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -434,14 +421,11 @@ object SafetyError {
          |Expected 'this' type is ${cyan(s"${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
          |
          |${src(loc, "the method occurs here.")}
+         |
+         |${underline("Explanation:")}
+         |The first argument to any method must be 'this', and must have the same type as the superclass.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         | The first argument to any method must be 'this', and must have the same type as the superclass.
-         |""".stripMargin
-    })
   }
 
   /**
@@ -458,22 +442,19 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
+      val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
+      val returnType = formatJavaType(method.getReturnType)
       s""">> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
          |>> Signature: '${method.toString}'
          |
          |${src(loc, "the object occurs here.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
-      val returnType = formatJavaType(method.getReturnType)
-      s"""
-         | Try adding a method with the following signature:
+         |
+         |${underline("Explanation:")}
+         |Try adding a method with the following signature:
          |
          | def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -515,14 +496,11 @@ object SafetyError {
          |The 'this' parameter should have type ${cyan(s"${clazz.getName}")}
          |
          |${src(loc, "the method occurs here.")}
+         |
+         |${underline("Explanation:")}
+         |The first argument to any method must be 'this', and must have the same type as the superclass.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         | The first argument to any method must be 'this', and must have the same type as the superclass.
-         |""".stripMargin
-    })
   }
 
   /**

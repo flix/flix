@@ -48,8 +48,6 @@ object NameError {
          |${src(loc, "deprecated")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -71,19 +69,17 @@ object NameError {
          |${src(loc1, "the first definition was here.")}
          |
          |${src(loc2, "the second definition was here.")}
+         |
+         |${underline("Explanation:")}
+         |Flix does not support overloading. For example, you cannot define two
+         |functions with the same name, even if their formal parameters differ.
+         |
+         |If you want two functions to share the same name you have to either:
+         |
+         |    (a) put each function into its own namespace, or
+         |    (b) introduce a trait and implement two instances.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      """Flix does not support overloading. For example, you cannot define two
-        |functions with the same name, even if their formal parameters differ.
-        |
-        |If you want two functions to share the same name you have to either:
-        |
-        |    (a) put each function into its own namespace, or
-        |    (b) introduce a trait and implement two instances.
-        |""".stripMargin
-    })
 
     def loc: SourceLocation = loc1
   }
@@ -193,19 +189,17 @@ object NameError {
       s""">> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
          |
          |${src(loc, "suspicious type variable.")}
+         |
+         |${underline("Explanation:")}
+         |Flix uses lowercase variable names.
+         |
+         |The type variable looks suspiciously like the name of a built-in type.
+         |
+         |Perhaps you meant to use the built-in type?
+         |
+         |For example, `Int32` is a built-in type whereas `int32` is a type variable.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      """Flix uses lowercase variable names.
-        |
-        |The type variable looks suspiciously like the name of a built-in type.
-        |
-        |Perhaps you meant to use the built-in type?
-        |
-        |For example, `Int32` is a built-in type whereas `int32` is a type variable.
-        |""".stripMargin
-    })
 
   }
 }

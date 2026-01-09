@@ -66,11 +66,6 @@ trait CompilationMessage {
   def message(formatter: Formatter): String
 
   /**
-    * Returns a formatted string with helpful suggestions.
-    */
-  def explain(formatter: Formatter): Option[String] = None
-
-  /**
     * Returns the error message formatted with source location.
     */
   def messageWithLoc(formatter: Formatter): String = {

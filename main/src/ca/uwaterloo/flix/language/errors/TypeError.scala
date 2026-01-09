@@ -296,11 +296,8 @@ object TypeError {
          |
          |${src(loc, s"missing Eq instance")}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define equality on '${formatType(tpe, Some(renv))}', either:
+         |${underline("Explanation:")}
+         |To define equality on '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of Eq for '${formatType(tpe, Some(renv))}', or
          |  (b) use 'with' to derive an instance of Eq for '${formatType(tpe, Some(renv))}', for example:.
@@ -308,9 +305,8 @@ object TypeError {
          |  enum Color with Eq {
          |    case Red, Green, Blue
          |  }
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -331,11 +327,8 @@ object TypeError {
          |
          |${src(loc, s"missing Order instance")}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define an order on '${formatType(tpe, Some(renv))}', either:
+         |${underline("Explanation:")}
+         |To define an order on '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of Order for '${formatType(tpe, Some(renv))}', or
          |  (b) use 'with' to derive an instance of Order for '${formatType(tpe, Some(renv))}', for example:.
@@ -346,7 +339,7 @@ object TypeError {
          |
          |Note: To derive Order you must also derive Eq.
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -367,11 +360,8 @@ object TypeError {
          |
          |${src(loc, s"missing ToString instance")}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define a string representation of '${formatType(tpe, Some(renv))}', either:
+         |${underline("Explanation:")}
+         |To define a string representation of '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of ToString for '${formatType(tpe, Some(renv))}', or
          |  (b) use 'with' to derive an instance of ToString for '${formatType(tpe, Some(renv))}', for example:.
@@ -379,9 +369,8 @@ object TypeError {
          |  enum Color with ToString {
          |    case Red, Green, Blue
          |  }
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**

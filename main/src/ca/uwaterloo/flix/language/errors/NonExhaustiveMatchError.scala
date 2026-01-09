@@ -35,17 +35,14 @@ case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends Com
     s""">> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
        |
        |${src(loc, "incomplete pattern.")}
-       |""".stripMargin
-  }
-
-  override def explain(formatter: Formatter): Option[String] = Some({
-    s"""Flix requires every pattern match expression to be exhaustive, i.e. to cover all
+       |
+       |${underline("Explanation:")}
+       |Flix requires every pattern match expression to be exhaustive, i.e. to cover all
        |possible cases. A wild card pattern, written with an underscore, can be used to
        |handle all other cases. For example:
        |
        |    case _ => // handle all other cases.
-       |
        |""".stripMargin
-  })
+  }
 
 }

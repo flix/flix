@@ -29,20 +29,12 @@ import scala.jdk.CollectionConverters.*
   * Companion object for [[Diagnostic]].
   */
 object Diagnostic {
-  def from(m: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
+  def from(m: CompilationMessage, formatter: Formatter): Diagnostic = {
     val range = Range.from(m.loc)
     val severity = Some(DiagnosticSeverity.Error)
     val code = m.kind.toString
     val summary = m.summary
-    val explanationHeading =
-      s"""
-         |${formatter.underline("Explanation:")}
-         |""".stripMargin
-    val explanation = m.explain(formatter) match {
-      case Some(expl) if explain => explanationHeading + expl
-      case _ => ""
-    }
-    val fullMessage = m.messageWithLoc(formatter) + explanation
+    val fullMessage = m.messageWithLoc(formatter)
     val relatedInformation = m.locs.map(l => DiagnosticRelatedInformation(Location.from(l), m.summary))
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil, relatedInformation)
   }

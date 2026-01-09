@@ -28,7 +28,7 @@ import scala.jdk.CollectionConverters.*
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def fromMessages(errors: Iterable[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
+  def fromMessages(errors: Iterable[CompilationMessage]): List[PublishDiagnosticsParams] = {
     val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
@@ -37,7 +37,7 @@ object PublishDiagnosticsParams {
     // Translate each compilation message to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
       case (acc, (source, compilationMessages)) =>
-        val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, explain, formatter))
+        val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, formatter))
         PublishDiagnosticsParams(source.name, diagnostics) :: acc
     }
   }

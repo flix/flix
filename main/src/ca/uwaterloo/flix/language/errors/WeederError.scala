@@ -49,13 +49,9 @@ object WeederError {
          |
          |${src(loc2, "the second occurrence was here.")}
          |
+         |${underline("Tip:")} Remove one of the two annotations.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove one of the two annotations."
-    })
 
     def loc: SourceLocation = loc1
 
@@ -81,13 +77,9 @@ object WeederError {
          |
          |${src(loc2, "the second declaration was here.")}
          |
+         |${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
-    })
 
     def loc: SourceLocation = loc1
 
@@ -142,13 +134,9 @@ object WeederError {
          |
          |${src(field2Loc, "the second occurrence was here")}
          |
+         |${underline("Tip:")} Remove one of the two fields.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove one of the two fields."
-    })
   }
 
   /**
@@ -167,18 +155,15 @@ object WeederError {
          |
          |${src(loc, "Loop does not iterate over any collection.")}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""A loop must contain a collection comprehension.
+         |${underline("Explanation:")}
+         |A loop must contain a collection comprehension.
          |
          |A minimal loop is written as follows:
          |
          |    foreach (x <- xs) yield x
          |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -197,13 +182,9 @@ object WeederError {
          |
          |${src(loc, "empty interpolated expression")}
          |
+         |${underline("Tip:")} Add an expression to the interpolation or remove the interpolation.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
-    })
 
   }
 
@@ -225,8 +206,6 @@ object WeederError {
          |
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -265,13 +244,9 @@ object WeederError {
          |
          |${src(loc, "unexpected effect type parameters")}
          |
+         |${underline("Tip:")} Type parameters are not allowed on effects.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Type parameters are not allowed on effects."
-    })
   }
 
   /**
@@ -310,11 +285,8 @@ object WeederError {
          |
          |${src(loc, "unexpected enum format")}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""This enum uses both the singleton syntax and the case syntax.
+         |${underline("Explanation:")}
+         |This enum uses both the singleton syntax and the case syntax.
          |
          |Only one of the enum forms may be used.
          |If you only need one case for the enum, use the singleton syntax:
@@ -329,7 +301,7 @@ object WeederError {
          |    }
          |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -350,8 +322,6 @@ object WeederError {
          |
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -371,13 +341,9 @@ object WeederError {
          |
          |${src(loc, "invalid escape sequence")}
          |
+         |${underline("Tip:")} The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\$$', '\\n', and '\\r'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\${', '\\n', and '\\r'."
-    })
   }
 
   /**
@@ -396,13 +362,9 @@ object WeederError {
          |
          |${src(loc, "unexpected pattern")}
          |
+         |${underline("Tip:")} Only a default pattern or tags with wild or variable patterns are allowed, e.g., '_' or 'A(x, _, z)', respectively.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      underline("Tip:") + " Only a default pattern or tags with wild or variable patterns are allowed, e.g., '_' or 'A(x, _, z)', respectively."
-    })
   }
 
   /**
@@ -440,11 +402,8 @@ object WeederError {
          |
          |${src(loc, "Loop does not start with collection comprehension.")}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""A loop must start with collection comprehension where the collection
+         |${underline("Explanation:")}
+         |A loop must start with collection comprehension where the collection
          |has an instance of the Iterable trait on it.
          |
          |A minimal loop is written as follows:
@@ -452,7 +411,7 @@ object WeederError {
          |    foreach (x <- xs) yield x
          |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -612,13 +571,9 @@ object WeederError {
          |
          |${src(loc, "unexpected qualified pattern")}
          |
+         |${underline("Tip:")} Extensible variants can never be qualified, i.e., A.B is not allowed. Consider using just B instead.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      underline("Tip:") + " Extensible variants can never be qualified, i.e., A.B is not allowed. Consider using just B instead."
-    })
   }
 
   /**
@@ -639,8 +594,6 @@ object WeederError {
          |
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -661,8 +614,6 @@ object WeederError {
          |
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -680,16 +631,10 @@ object WeederError {
       s""">> Illegal regex pattern.
          |
          |${src(loc, "regex not allowed here.")}
+         |
+         |${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`.
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`."
-    })
   }
 
   /**
@@ -785,13 +730,9 @@ object WeederError {
          |
          |${src(loc, "illegal type constraint parameter")}
          |
+         |${underline("Tip:")} Type constraint parameters must be composed only of type variables.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Type constraint parameters must be composed only of type variables."
-    })
 
   }
 
@@ -813,16 +754,13 @@ object WeederError {
          |
          |${src(loc, s"The case of '$fromName' does not match the case of '$toName'.")}
          |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""An alias must match the case of the name it replaces.
+         |${underline("Explanation:")}
+         |An alias must match the case of the name it replaces.
          |
          |If a name is lowercase, the alias must be lowercase.
          |If a name is uppercase, the alias must be uppercase.
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -843,8 +781,6 @@ object WeederError {
          |
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -869,8 +805,6 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
-
     override def loc: SourceLocation = inlineLoc.min(dontInlineLoc)
   }
 
@@ -891,13 +825,9 @@ object WeederError {
          |
          |${src(loc, "non-single-character literal")}
          |
+         |${underline("Tip:")} A character literal must consist of a single character.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} A character literal must consist of a single character."
-    })
 
   }
 
@@ -917,13 +847,9 @@ object WeederError {
          |
          |${src(loc, "malformed float.")}
          |
+         |${underline("Tip:")} Ensure that the literal is within bounds.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Ensure that the literal is within bounds."
-    })
 
   }
 
@@ -943,13 +869,9 @@ object WeederError {
          |
          |${src(loc, "malformed int.")}
          |
+         |${underline("Tip:")} Ensure that the literal is within bounds.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Ensure that the literal is within bounds."
-    })
 
   }
 
@@ -972,12 +894,11 @@ object WeederError {
          |
          |Pattern compilation error:
          |$err
+         |
+         |${underline("Explanation:")}
+         |A pattern literal must be a valid regular expression.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"A pattern literal must be a valid regular expression."
-    })
   }
 
   /**
@@ -992,17 +913,14 @@ object WeederError {
     def summary: String = s"Malformed unicode escape sequence."
 
     def message(formatter: Formatter): String = {
+      import formatter.*
       s""">> Malformed unicode escape sequence.
          |
-         |${formatter.src(loc, "malformed unicode escape sequence")}
+         |${src(loc, "malformed unicode escape sequence")}
          |
+         |${underline("Tip:")} A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
-    })
   }
 
   /**
@@ -1042,13 +960,9 @@ object WeederError {
          |
          |${src(loc, "inconsistent type parameters")}
          |
+         |${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
-    })
 
   }
 
@@ -1153,12 +1067,9 @@ object WeederError {
          |${src(loc2, "the second occurrence was here.")}
          |
          |A variable may only occur once in a pattern.
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"""${underline("Tip:")} You can replace
+         |
+         |${underline("Explanation:")}
+         |Tip: You can replace
          |
          |  case (x, x) => ...
          |
@@ -1166,7 +1077,7 @@ object WeederError {
          |
          |  case (x, y) if x == y => ...
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = loc1 min loc2
 
@@ -1292,13 +1203,10 @@ object WeederError {
       s""">> Unqualified use.
          |
          |${src(loc, "unqualified use.")}
+         |
+         |${underline("Tip:")} A use must be qualified: It should have the form `use Foo.bar`
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} A use must be qualified: It should have the form `use Foo.bar`"
-    })
   }
 
   /**

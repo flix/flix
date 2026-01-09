@@ -75,8 +75,6 @@ object EntryPointError {
     }
 
     override def loc: SourceLocation = loc1
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -125,8 +123,6 @@ object EntryPointError {
          |${src(loc, "unhandled effect")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -227,11 +223,9 @@ object EntryPointError {
       s""">> The type: '${red(FormatType.formatType(tpe))}' is not a valid result type for the main function.
          |
          |${src(loc, "Unexpected result type for main.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""A ToString instance must be defined for the result type.
+         |
+         |${underline("Explanation:")}
+         |A ToString instance must be defined for the result type.
          |
          |To define a string representation of '${FormatType.formatType(tpe)}', either:
          |
@@ -243,9 +237,8 @@ object EntryPointError {
          |  enum Color with ToString {
          |    case Red, Green, Blue
          |  }
-         |
          |""".stripMargin
-    })
+    }
   }
 
   /**
@@ -265,8 +258,6 @@ object EntryPointError {
          |${src(loc, "unexpected entry point argument(s).")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -281,19 +272,15 @@ object EntryPointError {
 
     // NB: We do not print the symbol source location as it is always Unknown.
     override def message(formatter: Formatter): String = {
+      import formatter.*
       s""">> The entry point $sym cannot be found.
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+         |
+         |${underline("Possible fixes:")}
          |
          |  (1)  Change the specified entry point to an existing function.
          |  (2)  Add an entry point function $sym.
-         |
          |""".stripMargin
-    })
+    }
 
     override def loc: SourceLocation = SourceLocation.Unknown
   }
