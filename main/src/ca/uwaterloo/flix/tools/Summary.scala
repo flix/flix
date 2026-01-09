@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.CompilerConstants
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, EqualityConstraint, Input, SecurityContext, Source, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -32,8 +32,8 @@ object Summary {
       case defn => visitDef(defn)
     }
     val data = Data.combineAll(allData)
-    println(Data.csvHeader)
-    println(Data.csvRow(data))
+    val record = Data.csvRow(data) :+ numDefs
+    println(record.mkString(","))
   }
 
   /**
@@ -489,17 +489,17 @@ object Summary {
       data.foldLeft(Data.empty)(_ ++ _)
     }
 
-    def csvHeader: String = {
-      Data.empty.productElementNames.flatMap {
+    def csvHeader: List[String] = {
+      Data.empty.productElementNames.toList.flatMap {
         case name => List(name + "_occs", name + "_uniq")
-      }.mkString(",")
+      }
     }
 
-    def csvRow(data: Data): String = {
-      data.productIterator.flatMap {
-        case Subdata(occs, unique) => List(occs, unique)
+    def csvRow(data: Data): List[String] = {
+      data.productIterator.toList.flatMap {
+        case Subdata(occs, unique) => List(occs.toString, unique.toString)
         case _ => ??? // impossible
-      }.mkString(",")
+      }
     }
   }
 
