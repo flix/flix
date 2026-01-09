@@ -26,9 +26,6 @@ object Summary {
     val allData = root.defs.values.map {
       case defn =>
         val res = visitDef(defn)
-        if (res.effTpesVar.occs + res.effTpesNonVar.occs > res.starTpesVar.occs + res.starTpesNonVar.occs) {
-          println("AHH")
-        }
         res
     }
     val data = Data.combineAll(allData)
