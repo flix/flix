@@ -11,7 +11,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
   test("TestCompilationMessage") {
     val expected =
-      s"""-- ${TestCompilationMessage.kind} -------------------------------------------------- ${TestCompilationMessage.source.name}
+      s"""-- ${TestCompilationMessage.kind} [E9999] -------------------------------------------------- ${TestCompilationMessage.source.name}
          |
          |>> ${TestCompilationMessage.summary}
          |
