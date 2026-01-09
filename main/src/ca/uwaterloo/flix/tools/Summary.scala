@@ -32,6 +32,8 @@ object Summary {
       case defn => visitDef(defn)
     }
     val data = Data.combineAll(allData)
+    val header = Data.csvHeader :+ "defs"
+    println(header.mkString(","))
     val record = Data.csvRow(data) :+ numDefs
     println(record.mkString(","))
   }
