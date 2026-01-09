@@ -26,6 +26,16 @@ import scala.collection.mutable
 
 object Summary {
 
+  def go(root: Root): Unit = {
+    val numDefs = root.defs.size
+    val allData = root.defs.values.map {
+      case defn => visitDef(defn)
+    }
+    val data = Data.combineAll(allData)
+    println(Data.csvHeader)
+    println(Data.csvRow(data))
+  }
+
   /**
     * Returns a table of the file data of the root
     *
@@ -209,7 +219,7 @@ object Summary {
     case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Discard(exp, _, _) => countCheckedEcasts(exp)
     case Expr.Match(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.MatchRule(_, guard, exp, loc) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
+      case TypedAst.MatchRule(_, guard, exp, _) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
     }.sum
     case Expr.TypeMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.TypeMatchRule(_, _, exp, _) => countCheckedEcasts(exp)
@@ -309,9 +319,21 @@ object Summary {
   private val unknownSource =
     Source.empty(Input.VirtualFile(CompilerConstants.VirtualTestFile, "", SecurityContext.Unrestricted))
 
-  def visitDef(defn: TypedAst.Def): SpecData = {
-    case TypedAst.Def(sym, spec, expr, loc) =>
-      collectSpecTypes(spec)
+  def visitDef(defn: TypedAst.Def): Data = defn match {
+    case TypedAst.Def(_, spec, _, _) =>
+      visitSpec(spec)
+  }
+
+  private def isToStar(kind: Kind): Boolean = kind match {
+    case Kind.Arrow(_, Kind.Star) => true
+    case Kind.Arrow(_, k2) => isToStar(k2)
+    case _ => false
+  }
+
+  private def isToEff(kind: Kind): Boolean = kind match {
+    case Kind.Arrow(_, Kind.Eff) => true
+    case Kind.Arrow(_, k2) => isToEff(k2)
+    case _ => false
   }
 
   def visitSpec(spec: TypedAst.Spec): Data = {
@@ -332,96 +354,153 @@ object Summary {
     val starTycons = nestedTpes.collect { case Type.Cst(tc, _) if tc.kind == Kind.Star => tc }
 
     // all type constructors with a to-star type
+    val toStarTycons = nestedTpes.collect { case Type.Cst(tc, _) if isToStar(tc.kind) => tc }
+
     // all type constructors with an eff type
+    val effTycons = nestedTpes.collect { case Type.Cst(tc, _) if tc.kind == Kind.Eff => tc }
+
     // all type constructors with a to-eff type (type connectives)
-    //
+    val toEffTycons = nestedTpes.collect { case Type.Cst(tc, _) if isToEff(tc.kind) => tc }
+
+    val starAssocs = nestedTpes.collect { case Type.AssocType(symUse, _, Kind.Star, _) => symUse.sym }
+
+    val effAssocs = nestedTpes.collect { case Type.AssocType(symUse, _, Kind.Eff, _) => symUse.sym }
+
+    // all the type constructors with a star type
+    val starVars = nestedTpes.collect { case Type.Var(sym, _) if sym.kind == Kind.Star => sym }
+
+    // all type constructors with a to-star type
+    val toStarVars = nestedTpes.collect { case Type.Var(sym, _) if isToStar(sym.kind) => sym }
+
+    // all type constructors with an eff type
+    val effVars = nestedTpes.collect { case Type.Var(sym, _) if sym.kind == Kind.Eff => sym }
+
+    // all type constructors with a to-eff type (type connectives)
+    val toEffVars = nestedTpes.collect { case Type.Var(sym, _) if isToEff(sym.kind) => sym }
+
+    Data(
+      starTpesNonVar = toSubData(starTpesNonVar),
+      starTpesVar = toSubData(starTpesVar),
+      effTpesNonVar = toSubData(effTpesNonVar),
+      effTpesVar = toSubData(effTpesVar),
+      starTycons = toSubData(starTycons),
+      toStarTycons = toSubData(toStarTycons),
+      effTycons = toSubData(effTycons),
+      toEffTycons = toSubData(toEffTycons),
+      starVars = toSubData(starVars),
+      toStarVars = toSubData(toStarVars),
+      effVars = toSubData(effVars),
+      toEffVars = toSubData(toEffVars),
+      starAssocs = toSubData(starAssocs),
+      effAssocs = toSubData(effAssocs),
+    )
   }
 
 
-  def collectSpecTypes(spec: TypedAst.Spec): List[Type] = spec match {
-    case TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs) =>
+  private def collectSpecTypes(spec: TypedAst.Spec): List[Type] = spec match {
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       fparams.flatMap(collectFormalParamTypes) :::
         List(retTpe, eff) :::
         tconstrs.flatMap(collectTraitConstraintTypes) :::
         econstrs.flatMap(collectEqualityConstraintTypes)
   }
 
-  def collectTraitConstraintTypes(tconstr: TraitConstraint): List[Type] = tconstr match {
-    case TraitConstraint(sym, tpe, loc) => List(tpe)
+  private def collectTraitConstraintTypes(tconstr: TraitConstraint): List[Type] = tconstr match {
+    case TraitConstraint(_, tpe, _) => List(tpe)
   }
 
-  def collectEqualityConstraintTypes(econstr: EqualityConstraint): List[Type] = econstr match {
-    case EqualityConstraint(symUse, tpe1, tpe2, loc) => List(tpe1, tpe2)
+  private def collectEqualityConstraintTypes(econstr: EqualityConstraint): List[Type] = econstr match {
+    case EqualityConstraint(symUse, tpe1, tpe2, loc) => List(Type.AssocType(symUse, tpe1, tpe2.kind, loc), tpe2)
   }
 
-  def collectFormalParamTypes(fparam: TypedAst.FormalParam): List[Type] = fparam match {
-    case TypedAst.FormalParam(sym, tpe, mod, loc) => List(tpe)
+  private def collectFormalParamTypes(fparam: TypedAst.FormalParam): List[Type] = fparam match {
+    case TypedAst.FormalParam(_, tpe, _, _) => List(tpe)
   }
 
-  private case class DefCounts(
-    tycons: Subdata,
-    effcons: Subdata,
-    ocons: Subdata,
-    tvars: Subdata,
-    evars: Subdata,
-    ovars: Subdata,
-    stars: Subdata,
-  )
+  private def toSubData(list: List[?]): Subdata = Subdata(list.length, list.distinct.length)
 
-  def toSubData(list: List[?]): Subdata = Subdata(list.length, list.distinct.length)
-
-  def getAllTycons(tpe: Type): List[TypeConstructor] = {
-    getNestedTypes(tpe).collect { case Type.Cst(tc, _) => tc }
-  }
-
-  def getAllVars(tpe: Type): List[Symbol.KindedTypeVarSym] = {
-    getAllVars(tpe).collect { case Type.Var(sym, _) => sym }
-  }
-
-  def getAllStarTycons(tpe: Type): List[TypeConstructor] = {
-    getAllTycons(tpe).filter(_.kind == Kind.Star)
-  }
-
-  def getAllStarVars(tpe: Type): List[Symbol.KindedTypeVarSym] = {
-    getAllVars(tpe).filter(_.kind == Kind.Star)
-  }
-
-  def getAllEffVars(tpe: Type): List[Symbol.KindedTypeVarSym] = {
-    getAllEffVars()
-  }
-
-  def getNestedTypes(tpe: Type): List[Type] = {
+  private def getNestedTypes(tpe: Type): List[Type] = {
     val tail = tpe match {
-      case Type.Var(sym, loc) => Nil
-      case Type.Cst(tc, loc) => Nil
-      case Type.Apply(tpe1, tpe2, loc) => getNestedTypes(tpe1) ++ getNestedTypes(tpe2)
-      case Type.Alias(symUse, args, tpe, loc) => args.flatMap(getNestedTypes)
-      case Type.AssocType(symUse, arg, kind, loc) => getNestedTypes(arg)
-      case Type.JvmToType(tpe, loc) => ???
-      case Type.JvmToEff(tpe, loc) => ???
-      case Type.UnresolvedJvmType(member, loc) => ???
+      case Type.Var(_, _) => Nil
+      case Type.Cst(_, _) => Nil
+      case Type.Apply(tpe1, tpe2, _) => getNestedTypes(tpe1) ++ getNestedTypes(tpe2)
+      case Type.Alias(_, args, _, _) => args.flatMap(getNestedTypes)
+      case Type.AssocType(_, arg, _, _) => getNestedTypes(arg)
+      case Type.JvmToType(_, _) => ???
+      case Type.JvmToEff(_, _) => ???
+      case Type.UnresolvedJvmType(_, _) => ???
     }
     tpe :: tail
   }
 
-  def getAllStars(tpe: Type): List[Type] = {
-    getNestedTypes(tpe).filter(_.kind == Kind.Star)
-  }
-
-  def getAllEffs(tpe: Type): List[Type] = {
-    getNestedTypes(tpe).filter(_.kind == Kind.Eff)
-  }
-
-  private case class Data(
-    tycons: Subdata,
-    effcons: Subdata,
-    ocons: Subdata,
-    tvars: Subdata,
-    evars: Subdata,
-    ovars: Subdata,
-    stars: Subdata,
+  case class Data(
+    starTpesNonVar: Subdata,
+    starTpesVar: Subdata,
+    effTpesNonVar: Subdata,
+    effTpesVar: Subdata,
+    starTycons: Subdata,
+    toStarTycons: Subdata,
+    effTycons: Subdata,
+    toEffTycons: Subdata,
+    starVars: Subdata,
+    toStarVars: Subdata,
+    effVars: Subdata,
+    toEffVars: Subdata,
+    starAssocs: Subdata,
+    effAssocs: Subdata,
   ) {
-    def ++(that: Data): Data = Data(tycons ++ that.tycons, effcons ++ that.effcons, ocons ++ that.ocons, tvars ++ that.tvars, evars ++ that.evars, ovars ++ that.ovars, stars ++ that.stars)
+    def ++(that: Data): Data = Data(
+      starTpesNonVar = this.starTpesNonVar ++ that.starTpesNonVar,
+      starTpesVar = this.starTpesVar ++ that.starTpesVar,
+      effTpesNonVar = this.effTpesNonVar ++ that.effTpesNonVar,
+      effTpesVar = this.effTpesVar ++ that.effTpesVar,
+      starTycons = this.starTycons ++ that.starTycons,
+      toStarTycons = this.toStarTycons ++ that.toStarTycons,
+      effTycons = this.effTycons ++ that.effTycons,
+      toEffTycons = this.toEffTycons ++ that.toEffTycons,
+      starVars = this.starVars ++ that.starVars,
+      toStarVars = this.toStarVars ++ that.toStarVars,
+      effVars = this.effVars ++ that.effVars,
+      toEffVars = this.toEffVars ++ that.toEffVars,
+      starAssocs = this.starAssocs ++ that.starAssocs,
+      effAssocs = this.effAssocs ++ that.effAssocs,
+    )
+  }
+
+  object Data {
+    val empty: Data = Data(
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+      Subdata.empty,
+    )
+
+    def combineAll(data: Iterable[Data]): Data = {
+      data.foldLeft(Data.empty)(_ ++ _)
+    }
+
+    def csvHeader: String = {
+      Data.empty.productElementNames.flatMap {
+        case name => List(name + "_occs", name + "_uniq")
+      }.mkString(",")
+    }
+
+    def csvRow(data: Data): String = {
+      data.productIterator.flatMap {
+        case Subdata(occs, unique) => List(occs, unique)
+        case _ => ??? // impossible
+      }.mkString(",")
+    }
   }
 
   case class Subdata(occs: Int, unique: Int) {
@@ -430,25 +509,6 @@ object Summary {
 
   case object Subdata {
     def empty: Subdata = Subdata(0, 0)
-  }
-
-  case object Data {
-    def empty: Data = Data(Subdata.empty, Subdata.empty, Subdata.empty, Subdata.empty, Subdata.empty, Subdata.empty, Subdata.empty)
-
-    val tycon: Data = Data.empty.copy(tycons = 1)
-    val effcon: Data = Data.empty.copy(effcons = 1)
-    val ocon: Data = Data.empty.copy(ocons = 1)
-    val tvar: Data = Data.empty.copy(tvars = 1)
-    val evar: Data = Data.empty.copy(evars = 1)
-    val ovar: Data = Data.empty.copy(ovars = 1)
-
-    def combineAll(datas: List[Data]): Data = {
-      datas.foldLeft(Data.empty)(_ ++ _)
-    }
-
-    def traverse[A](l: List[A])(f: A => Data): Data = {
-      combineAll(l.map(f))
-    }
   }
 
   private case class SpecData(tycons: Int, effcons: Int, tvars: Int, evars: Int)
