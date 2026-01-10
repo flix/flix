@@ -16,7 +16,7 @@ mod TestOrder {
 
     @Test
     def fromInt03(): Unit \ Assert =
-        assertEq(expected = Comparison.GreaterThan, Comparison.fromInt32(+1))
+        assertEq(expected = Comparison.GreaterThan, Comparison.fromInt32(1))
 
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //

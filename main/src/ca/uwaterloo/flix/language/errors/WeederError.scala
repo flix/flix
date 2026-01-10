@@ -1231,4 +1231,22 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate a non-unary associated type.
+    */
+  case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3236
+
+    override def summary: String = "Unexpected unary '+'"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected unary '+'.
+         |
+         |${src(loc, s"Unary '+'")}
+         |
+         |""".stripMargin
+    }
+  }
+
 }
