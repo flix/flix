@@ -23,26 +23,32 @@ object SafetyError {
   case class Forbidden(sctx: SecurityContext, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3685
 
-    override def summary: String = "Operation not permitted"
+    def summary: String = s"Operation not permitted in '$sctx' security context."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Operation not permitted in security context: $sctx
+      s""">> Operation not permitted in '${red(sctx.toString)}' security context.
          |
-         |${src(loc, s"forbidden in security context $sctx")}
+         |${src(loc, "not permitted")}
          |
-         |${underline("Explanation:")}
-         |Remove or replace the dependency with one that respects the security context.
+         |${underline("Explanation:")} Security contexts control which language features a
+         |dependency can use, reducing the risk of supply-chain attacks.
          |
-         |  The security contexts are defined as follows:
-         |    - paranoid: prohibits any use of Java, unchecked casts, and the IO effect.
-         |    - plain (default): same as paranoid, except it permits the IO effect.
-         |    - unrestricted: permits everything.
+         |The security contexts are:
+         |  - paranoid: forbids Java interop, unchecked casts, and the IO effect.
+         |  - plain (default): forbids Java interop and unchecked casts, but allows IO.
+         |  - unrestricted: permits everything.
          |
-         |  Alternatively, you can give your dependency broader permissions but in doing so
-         |  you may risk exposing yourself to a supply-chain attack.
+         |To resolve this error, either replace the dependency with one that respects the
+         |security context, or grant the dependency broader permissions. Be aware that
+         |granting broader permissions may increase your exposure to supply-chain attacks.
          |
-         |  Learn more at https://doc.flix.dev/packages.html
+         |To grant unrestricted permissions, update your flix.toml:
+         |
+         |  [dependencies]
+         |  "github:xxx/yyy" = { version = "1.2.3", security = "unrestricted" }
+         |
+         |Learn more: https://doc.flix.dev/packages.html#security
          |""".stripMargin
     }
   }
@@ -57,9 +63,9 @@ object SafetyError {
   case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3796
 
-    override def summary: String = "Illegal checked cast"
+    def summary: String = "Illegal checked cast"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal checked cast.
          |
@@ -81,9 +87,9 @@ object SafetyError {
   case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[?], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3807
 
-    override def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
+    def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal checked cast: Attempt to cast a non-Java type to a Java type.
          |
@@ -105,9 +111,9 @@ object SafetyError {
   case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3918
 
-    override def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
+    def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal checked cast: Attempt to cast a type variable to a type.
          |
@@ -129,9 +135,9 @@ object SafetyError {
   case class IllegalCheckedCastToNonJava(from: java.lang.Class[?], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4029
 
-    override def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
+    def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal checked cast: Attempt to cast a Java type to a non-Java type.
          |
@@ -153,9 +159,9 @@ object SafetyError {
   case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4132
 
-    override def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
+    def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal checked cast: Attempt to cast a type to a type variable.
          |
@@ -176,9 +182,9 @@ object SafetyError {
   case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4243
 
-    override def summary: String = "Illegal method effect"
+    def summary: String = "Illegal method effect"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal method effect: '${red(FormatType.formatType(eff, None))}'. A method must be pure or have a primitive effect.
          |
@@ -197,7 +203,7 @@ object SafetyError {
 
     def summary: String = s"Exception type is not a subclass of Throwable."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> $summary
          |
@@ -216,7 +222,7 @@ object SafetyError {
 
     def summary: String = s"Exception type is not a subclass of Throwable."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> $summary
          |
@@ -340,9 +346,9 @@ object SafetyError {
   case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5023
 
-    override def summary: String = "Impossible cast."
+    def summary: String = "Impossible cast."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> The following cast is impossible and will never succeed.
          |
@@ -362,9 +368,9 @@ object SafetyError {
   case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5134
 
-    override def summary: String = s"Missing default case."
+    def summary: String = s"Missing default case."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing default case.
          |
@@ -390,9 +396,9 @@ object SafetyError {
   case class PrimitiveEffectInRunWith(sym: Symbol.EffSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5245
 
-    override def summary: String = s"The ${sym.name} effect cannot be handled."
+    def summary: String = s"The ${sym.name} effect cannot be handled."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> The ${sym.name} effect cannot be handled.
          |
