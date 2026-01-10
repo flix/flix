@@ -24,7 +24,7 @@ Every error consists of three components, each with a distinct purpose:
    A single, concise sentence shown on hover in VS Code. It should be understandable in isolation.
 
 2. **Message**  
-   Multi-line content that highlights relevant symbols, identifiers, and code fragments.
+   Multi-line content that highlights relevant symbols, identifiers, and code fragments. Typically shown in the terminal.
 
 3. **Explanation**  
    A brief explanation of why the problem occurs and how to fix it.
