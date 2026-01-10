@@ -257,7 +257,7 @@ object EntryPoints {
         case Some(err) => List(err)
         case None =>
           // Only run these on functions without type variables.
-          checkUnitArg(defn) ++ checkEffects(defn, Symbol.TestEffs)
+          checkUnitArg(defn) ++ checkUnitReturnType(defn) ++ checkEffects(defn, Symbol.TestEffs)
       }
       if (errs.isEmpty) {
         defn
@@ -358,6 +358,15 @@ object EntryPoints {
         // Zero parameters.
         case Nil => throw InternalCompilerException(s"Unexpected main with zero parameters ('${defn.sym}'", defn.sym.loc)
       }
+    }
+
+    /** Returns `None` if `defn` has a Unit return type. Returns an error otherwise. */
+    private def checkUnitReturnType(defn: TypedAst.Def): Option[EntryPointError] = {
+      val returnType = defn.spec.retTpe
+      if (returnType == Type.Unit)
+        None
+      else
+        Some(EntryPointError.TestNonUnitReturnType(returnType.loc))
     }
 
     /**
