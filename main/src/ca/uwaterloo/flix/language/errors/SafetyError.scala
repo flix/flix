@@ -18,7 +18,7 @@ object SafetyError {
     * An error raised to indicate a forbidden operation.
     *
     * @param sctx the security context of the location where the error occurred.
-    * @param loc the source location of the forbidden operation.
+    * @param loc  the source location of the forbidden operation.
     */
   case class Forbidden(sctx: SecurityContext, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3685
@@ -63,16 +63,19 @@ object SafetyError {
   case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3796
 
-    def summary: String = "Illegal checked cast"
+    def summary: String = "Impossible cast: neither type is a subtype of the other."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast.
+      s""">> Impossible cast: neither type is a subtype of the other.
          |
-         |${src(loc, "illegal cast.")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(FormatType.formatType(from, None))}
+         |To  : ${red(FormatType.formatType(to, None))}
+         |
+         |${underline("Explanation:")} A checked cast between Java types requires a subtype
+         |relationship. Neither type is a subtype of the other.
          |""".stripMargin
     }
   }
@@ -87,16 +90,18 @@ object SafetyError {
   case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[?], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3807
 
-    def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
+    def summary: String = "Impossible cast: cannot cast a Flix type to a Java type."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast: Attempt to cast a non-Java type to a Java type.
+      s""">> Impossible cast: cannot cast a Flix type to a Java type.
          |
-         |${src(loc, "illegal cast")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${formatJavaType(to)}
+         |From: ${red(FormatType.formatType(from, None))}
+         |To  : ${red(formatJavaType(to))}
+         |
+         |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
     }
   }
