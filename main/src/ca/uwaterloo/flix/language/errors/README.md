@@ -12,7 +12,7 @@ A good error message should:
 - Explain **why it happened** in approachable terms
 - Provide **clear next steps** to resolve the issue
 
-Error messages are part of the user experience. Treat them as documentation that appears at exactly the moment it is needed.
+Error messages are part of the user experience. Treat them as documentation that appears exactly when it is needed.
 
 ---
 
@@ -27,9 +27,9 @@ Every error consists of three components, each with a distinct purpose:
    Multi-line content that highlights relevant symbols, identifiers, and code fragments.
 
 3. **Explanation**  
-   A short explanation of why the problem occurs and how to fix it.
+   A brief explanation of why the problem occurs and how to fix it.
 
-Avoid blurring the responsibilities of these components. Each should add new information.
+Avoid blurring the responsibilities of these components. Each should contribute new information.
 
 ---
 
@@ -41,7 +41,7 @@ Avoid blurring the responsibilities of these components. Each should add new inf
 
 ### Straight to the Point
 
-Lead with the error type or category. This helps users scan quickly.
+Lead with the error type or category to support quick scanning.
 
 **Good:**  
 `Duplicate definition: 'foo'`
@@ -49,7 +49,9 @@ Lead with the error type or category. This helps users scan quickly.
 **Less effective:**  
 `The definition 'foo' is defined twice`
 
-The first word should already orient the reader.
+The first word should immediately orient the reader.
+
+---
 
 ### Be Actionable
 
@@ -60,6 +62,8 @@ Include concrete guidance such as:
 - Which construct to change
 - Which keyword to use instead
 - Where a definition is expected to appear
+
+---
 
 ### Consistent Error Shapes
 
@@ -75,6 +79,8 @@ Users learn how to read error messages through pattern recognition.
 - `Undefined variable: 'x'`
 - `Undefined effect: 'IO'`
 - `Undefined type: 'Foo'`
+
+---
 
 ### Avoid Over-Explaining Obvious Errors
 
@@ -102,6 +108,8 @@ Treat explanations as **progressively disclosed**, not mandatory. Overly verbose
 
 Use color to guide attention, not to decorate.
 
+---
+
 ### Labels
 
 Use labels consistently to signal intent:
@@ -111,6 +119,8 @@ Use labels consistently to signal intent:
 - **`Possible fixes:`** — a list of concrete alternatives
 
 Avoid inventing new labels unless they serve a clearly distinct purpose.
+
+---
 
 ### Source Hints
 
