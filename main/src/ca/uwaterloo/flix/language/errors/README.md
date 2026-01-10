@@ -61,6 +61,30 @@ Include concrete guidance such as:
 - Which keyword to use instead
 - Where a definition is expected to appear
 
+### Consistent Error Shapes
+
+Similar errors should look similar.
+
+- Use the same summary patterns
+- Use the same labels
+- Present information in the same order
+
+Users learn how to read error messages through pattern recognition.
+
+**Example:**
+- `Undefined variable: 'x'`
+- `Undefined effect: 'IO'`
+- `Undefined type: 'Foo'`
+
+### Avoid Over-Explaining Obvious Errors
+
+Not every error needs a tutorial.
+
+- Simple syntax mistakes → brief explanation and fix
+- Advanced typing or effect errors → deeper explanation
+
+Treat explanations as **progressively disclosed**, not mandatory. Overly verbose messages for common mistakes slow users down.
+
 ---
 
 ## Formatting
