@@ -504,7 +504,7 @@ object Parser2 {
   /** Returns the distance to the first non-comment token after lookahead. */
   @tailrec
   private def previousNonComment(lookbehind: Int)(implicit s: State): Int = {
-    if (s.position - lookbehind < 1) {
+    if (s.position + lookbehind < 1) {
       Math.abs(lookbehind)
     } else s.tokens(s.position + lookbehind).kind match {
       case t if t.isComment => previousNonComment(lookbehind - 1)
