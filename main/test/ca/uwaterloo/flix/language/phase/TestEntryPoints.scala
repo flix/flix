@@ -79,6 +79,46 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
+  test("IllegalEntryPointSignature.01") {
+    val input =
+      """
+        |@Test
+        |def f(x: Int32): Int32 = x
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+  }
+
+  test("IllegalEntryPointSignature.02") {
+    val input =
+      """
+        |@Test
+        |def g(x: Int32, _y: Int32, _a: Float64): Int32 = x
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+  }
+
+  test("IllegalEntryPointSignature.03") {
+    val input =
+      """
+        |@Test
+        |def f(_x: Int32, _y: Int32, a: Float64): Float64 = a
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+  }
+
+  test("IllegalEntryPointSignature.04") {
+    val input =
+      """
+        |@Test
+        |def f(_x: Int32, _y: Int32, _a: Float64): Float64 = 1.0f64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
+  }
+
   test("Test.IllegalEntryPointEffect.Main.01") {
     val input =
       """

@@ -26,7 +26,7 @@
 /// This purpose of this module is to transform `PredSym`s defined by `(name, id)`, to `PredSym`s
 /// uniquely defined by their `id`.
 ///
-mod Fixpoint3.Phase.RenamePredSyms {
+pub mod Fixpoint3.Phase.RenamePredSyms {
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
@@ -48,7 +48,6 @@ mod Fixpoint3.Phase.RenamePredSyms {
     /// This function expects `PredSym`s to be defined by their `(name, id)`, while afterwards they
     /// will be uniquely defined by their `id`.
     ///
-    @Internal
     pub def assignUniqueIdentifiersToPredSyms(rc: Region[r], d: Datalog): (Datalog, FixInformation) \ r =
         let mapping = UniqueInts.empty(rc);
         let fixed = fixPredSymsInternal(d, mapping);
@@ -85,7 +84,6 @@ mod Fixpoint3.Phase.RenamePredSyms {
     ///
     /// Replaces `PredSym(name, id)` in `d` with `Map.get(id, fixing)`.
     ///
-    @Internal
     pub def renamePredSyms(d: Datalog, fixing: FixInformation): Datalog = match d {
         case Datalog(facts, rules) =>
             let transformer = mapBack(fixing);

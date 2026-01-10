@@ -52,7 +52,7 @@ pub lawful trait Monad[m : Type -> Type] with Applicative[m] {
 }
 
 
-mod Monad {
+pub mod Monad {
 
     ///
     /// The monadic `join` operator.

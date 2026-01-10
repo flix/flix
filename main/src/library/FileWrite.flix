@@ -88,7 +88,7 @@ pub eff FileWrite {
 
 }
 
-mod FileWrite {
+pub mod FileWrite {
 
     import java.io.IOException
     import java.lang.IllegalArgumentException

@@ -50,7 +50,7 @@ object Main {
     // get GitHub token
     val githubToken =
       cmdOpts.githubToken
-        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN")))
+        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN").normalize()))
         .orElse(sys.env.get("GITHUB_TOKEN"))
 
     // compute the main entry point
@@ -64,7 +64,6 @@ object Main {
       lib = cmdOpts.xlib,
       build = Build.Development,
       entryPoint = entryPoint,
-      explain = cmdOpts.explain,
       githubToken = githubToken,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
@@ -158,7 +157,7 @@ object Main {
           for (file <- cmdOpts.files) {
             val ext = file.getName.split('.').last
             ext match {
-              case "flix" => flix.addFlix(file.toPath)
+              case "flix" => flix.addFile(file.toPath)
               case "fpkg" => flix.addPkg(file.toPath)
               case "jar" => flix.addJar(file.toPath)
               case _ =>
@@ -400,6 +399,20 @@ object Main {
               System.exit(1)
           }
 
+        case Command.EffLock =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'eff-lock' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options.copy(progress = false))
+                bootstrap.lockEffects(flix)
+            }
+          }
+
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
@@ -423,7 +436,6 @@ object Main {
   case class CmdOpts(command: Command = Command.None,
                      args: List[String] = Nil,
                      entryPoint: Option[String] = None,
-                     explain: Boolean = false,
                      installDeps: Boolean = true,
                      githubToken: Option[String] = None,
                      json: Boolean = false,
@@ -485,6 +497,8 @@ object Main {
     case object Release extends Command
 
     case object Outdated extends Command
+
+    case object EffLock extends Command
 
     case object CompilerPerf extends Command
 
@@ -567,6 +581,9 @@ object Main {
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
 
+      cmd("eff-lock").text("  locks the current effect signatures.")
+        .action((_, c) => c.copy(command = Command.EffLock))
+
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
@@ -591,9 +608,6 @@ object Main {
 
       opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
         text("specifies the main entry point.")
-
-      opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
-        text("provides suggestions on how to solve a problem.")
 
       opt[String]("github-token").action((s, c) => c.copy(githubToken = Some(s))).
         text("API key to use for GitHub dependency resolution.")
@@ -684,7 +698,7 @@ object Main {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     for (file <- files) {
       if (file.getName.endsWith(".flix")) {
-        flix.addFlix(file.toPath)
+        flix.addFile(file.toPath)
       } else {
         Console.println(s"Unrecognized file: '${file.getName}'. Only .flix files are supported.")
         System.exit(1)

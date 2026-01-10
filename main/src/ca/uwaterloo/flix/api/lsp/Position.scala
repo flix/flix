@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -31,13 +32,13 @@ object Position {
     * Returns a position from the given source location `loc` using its beginning line and col.
     */
   def fromBegin(loc: SourceLocation): Position =
-    Position(loc.beginLine, loc.beginCol)
+    Position.from(loc.start)
 
   /**
     * Returns a position from the given source location `loc` using its ending line and col.
     */
   def fromEnd(loc: SourceLocation): Position =
-    Position(loc.endLine, loc.endCol)
+    Position.from(loc.end)
 
   /**
     * Returns a position from the given LSP `Position` `pos`.
@@ -50,6 +51,11 @@ object Position {
     * Returns a position from the given source position `pos`.
     */
   def from(pos: SourcePosition): Position = Position(pos.lineOneIndexed, pos.colOneIndexed)
+
+  /**
+    * Returns a position from the given anchor position `ap`.
+    */
+  def fromAnchorPosition(ap: AnchorPosition): Position = Position(ap.line, ap.col)
 
   /**
     * Tries to parse the given `json` value as a [[Position]].
@@ -93,7 +99,10 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
     * Returns `true` if `this` position is contained by the given source location `loc`
     * This check is inclusive for both ends.
     */
-  def containedBy(loc: SourceLocation): Boolean =
-    loc.beginLine <= line && line <= loc.endLine &&
-      loc.beginCol <= character && character <= loc.endCol
+  def containedBy(loc: SourceLocation): Boolean = {
+    loc.startLine <= line &&
+      line <= loc.endLine &&
+      (line != loc.startLine || loc.startCol <= character) &&
+      (line != loc.endLine || character <= loc.endCol)
+  }
 }

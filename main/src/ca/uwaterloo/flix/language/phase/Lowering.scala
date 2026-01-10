@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, Scheme,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.collection.{CofiniteSet}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -60,10 +61,6 @@ object Lowering {
 
     def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.facts$arity")
 
-    lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
-    lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
-    lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.get")
-
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -93,8 +90,6 @@ object Lowering {
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
-
-    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
   }
 
   private object Types {
@@ -118,8 +113,6 @@ object Lowering {
     lazy val Fixity: Type = Type.mkEnum(Enums.Fixity, Nil, SourceLocation.Unknown)
 
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
-
-    lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
 
     lazy val VectorOfBoxed: Type = Type.mkVector(Types.Boxed, SourceLocation.Unknown)
 
@@ -851,7 +844,7 @@ object Lowering {
       }
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkParYield(fs, e, t, eff, loc)
+      LoweredAst.Expr.ParYield(fs, e, t, eff, loc)
 
     case TypedAst.Expr.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -866,116 +859,43 @@ object Lowering {
     case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       mkDatalog(cs, loc)
 
-    case TypedAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Rename)
-      val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
-      val argExps = predExps :: visitExp(exp) :: Nil
-      val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.RenameType, resultType, eff, loc)
-
-    case TypedAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Merge)
-      val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
-      val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
-
-    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
-      // Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
-      // PredSym and terms to an extensible variant.
-      val defn = Defs.lookup(Defs.ProvenanceOf)
-      val mergedExp = mergeExps(exps.map(visitExp), loc)
-      val (goalPredSym, goalTerms) = select match {
-        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
-          val boxedTerms = terms.map(t => box(visitExp(t)))
-          (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
+    case TypedAst.Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
+      val pparams = pparams0.map {
+        case TypedAst.PredicateParam(pred, tpe0, loc0) => LoweredAst.PredicateParam(pred, visitType(tpe0), loc0)
       }
-      val withPredSyms = mkVector(withh.map(mkPredSym), Types.PredSym, loc)
-      val extVarType = unwrapVectorType(tpe, loc)
-      val preds = predicatesOfExtVar(extVarType, loc)
-      val lambdaExp = mkExtVarLambda(preds, extVarType, loc)
-      val argExps = goalPredSym :: goalTerms :: withPredSyms :: lambdaExp :: mergedExp :: Nil
-      val itpe = Types.mkProvenanceOf(extVarType, loc)
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointLambda(pparams, e, t, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tpe, eff, loc) =>
-      val loweredExps = exps.map(visitExp)
-      val loweredQueryExp = visitExp(queryExp)
+    case TypedAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointMerge(e1, e2, t, eff, loc)
 
-      // Compute the arity of the predicate symbol.
-      // The type is either of the form `Vector[(a, b, c)]` or `Vector[a]`.
-      val (_, targs) = Type.eraseAliases(tpe) match {
-        case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-          case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
-          case Some(TypeConstructor.Unit) => (tycon, Nil)
-          case _ => (innerType, List(innerType))
-        }
-        case t => throw InternalCompilerException(s"Unexpected non-foldable type: '${t}'.", loc)
-      }
-
-      val predArity = selects.length
-
-      // Define the name and type of the appropriate factsX function in Solver.flix
-      val sym = Defs.Facts(predArity)
-      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
-
-      // Merge and solve exps
-      val mergedExp = mergeExps(loweredQueryExp :: loweredExps, loc)
-      val solvedExp = LoweredAst.Expr.ApplyDef(Defs.Solve, mergedExp :: Nil, List.empty, Types.SolveType, Types.Datalog, eff, loc)
-
-      // Put everything together
-      val argExps = mkPredSym(pred) :: solvedExp :: Nil
-      LoweredAst.Expr.ApplyDef(sym, argExps, targs, defTpe, tpe, eff, loc)
-
-    case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, _, eff, loc) =>
-      // Rewrites
-      //     solve e₁, e₂, e₃ project P₁, P₂, P₃
-      // to
-      //     let tmp% = solve e₁ <+> e₂ <+> e₃;
-      //     merge (project P₁ tmp%, project P₂ tmp%, project P₃ tmp%)
-      //
-      val defn = mode match {
-        case SolveMode.Default => Defs.lookup(Defs.Solve)
-        case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
-      }
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
       val exps = exps0.map(visitExp)
-      val mergedExp = mergeExps(exps, loc)
-      val argExps = mergedExp :: Nil
-      val solvedExp = LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.SolveType, Types.Datalog, eff, loc)
-      val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)
-      val letBodyExp = optPreds match {
-        case Some(preds) =>
-          mergeExps(preds.map(pred => {
-            val varExp = LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
-            projectSym(mkPredSym(pred), varExp, loc)
-          }), loc)
-        case None => LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
-      }
-      LoweredAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, loc)
+      val select = visitHeadPred(select0)
+      LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, visitType(tpe), eff, loc)
 
-    case TypedAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
-      val loweredExps = exps.zip(predsAndArities).map {
-        case (exp, PredicateAndArity(pred, _)) =>
-          // Compute the types arguments of the functor F[(a, b, c)] or F[a].
-          val (targ, targs) = Type.eraseAliases(exp.tpe) match {
-            case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-              case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
-              case Some(TypeConstructor.Unit) => (tycon, Nil)
-              case _ => (tycon, List(innerType))
-            }
-            case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
-          }
+    case TypedAst.Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
+      val exps = exps0.map(visitExp)
+      val queryExp = visitExp(queryExp0)
+      val selects = selects0.map(visitExp)
+      val t = visitType(tpe)
+      val from = from0.map(visitBodyPred)
+      val where = where0.map(visitExp)
+      LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, t, eff, loc)
 
-          // Compute the symbol of the function.
-          val sym = Defs.ProjectInto(targs.length)
+    case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
+      val exps = exps0.map(visitExp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, t, eff, loc)
 
-          // The type of the function.
-          val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
-
-          // Put everything together.
-          val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-          LoweredAst.Expr.ApplyDef(sym, argExps, targ :: targs, defTpe, Types.Datalog, exp.eff, loc)
-      }
-      mergeExps(loweredExps, loc)
+    case TypedAst.Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
+      val exps = exps0.map(visitExp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, t, eff, loc)
 
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
@@ -1050,16 +970,6 @@ object Lowering {
     case Type.Cst(_, _) => tpe0 // Performance: Reuse tpe0.
 
     case Type.Var(_, _) => tpe0
-
-    // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
-    case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
-      val t = visitType(tpe)
-      mkChannelTpe(t, loc)
-
-    // Rewrite Receiver[t] to Concurrent.Channel.Mpmc[t, IO]
-    case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _) =>
-      val t = visitType(tpe)
-      mkChannelTpe(t, loc)
 
     case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
@@ -1570,32 +1480,6 @@ object Lowering {
   }
 
   /**
-    * Make a new channel expression
-    */
-  private def mkNewChannel(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
-    val (targ, _) = extractChannelTpe(tpe)
-    LoweredAst.Expr.ApplyDef(Defs.ChannelNew, exp :: Nil, List(targ), itpe, tpe, eff, loc)
-  }
-
-  /**
-    * Make a channel get expression
-    */
-  private def mkGetChannel(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
-    LoweredAst.Expr.ApplyDef(Defs.ChannelGet, exp :: Nil, List(tpe), itpe, tpe, eff, loc)
-  }
-
-  /**
-    * Make a channel put expression
-    */
-  private def mkPutChannel(exp1: LoweredAst.Expr, exp2: LoweredAst.Expr, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val itpe = Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc)
-    val targ = exp2.tpe
-    LoweredAst.Expr.ApplyDef(Defs.ChannelPut, List(exp2, exp1), List(targ), itpe, Type.Unit, eff, loc)
-  }
-
-  /**
     * Lifts the given lambda expression `exp0` with the given argument types `argTypes`.
     *
     * Note: liftX and liftXb are similar and should probably be maintained together.
@@ -1720,16 +1604,6 @@ object Lowering {
   private def mkTag(sym: Symbol.EnumSym, tag: String, exps: List[LoweredAst.Expr], tpe: Type, loc: SourceLocation): LoweredAst.Expr = {
     val caseSym = new Symbol.CaseSym(sym, tag, loc.asSynthetic)
     LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, tpe, Type.Pure, loc)
-  }
-
-  /**
-    * Returns a new `VarSym` for use in a let-binding.
-    *
-    * This function is called `mkLetSym` to avoid confusion with [[mkVarSym]].
-    */
-  private def mkLetSym(prefix: String, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Symbol.VarSym = {
-    val name = prefix + Flix.Delimiter + flix.genSym.freshId()
-    Symbol.freshVarSym(name, BoundBy.Let, loc)
   }
 
   /**
@@ -1938,25 +1812,30 @@ object Lowering {
   }
 
   /**
-    * The type of a channel which can transmit variables of type `tpe`.
+    * Lowers the given head predicate `p0`.
     */
-  private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
-    mkChannelTpe(tpe, Type.IO, loc)
+  private def visitHeadPred(p0: TypedAst.Predicate.Head)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Predicate.Head = p0 match {
+    case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
+      val t = visitType(tpe)
+      val visitedTerms = terms.map(visitExp)
+      LoweredAst.Predicate.Head.Atom(pred, den, visitedTerms, t, loc)
   }
 
   /**
-    * The type of a channel which can transmit variables of type `tpe1` in region `tpe2`.
+    * Lowers the given body predicate `p0`.
     */
-  private def mkChannelTpe(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = {
-    Type.Apply(Type.Apply(Types.ChannelMpmc, tpe1, loc), tpe2, loc)
-  }
+  private def visitBodyPred(p0: TypedAst.Predicate.Body)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Predicate.Body = p0 match {
+    case TypedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms0, tpe, loc) =>
+      val terms = terms0.map(visitPat)
+      val t = visitType(tpe)
+      LoweredAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, t, loc)
+    case TypedAst.Predicate.Body.Functional(outBnds, exp, loc) =>
+      val outSyms = outBnds.map(_.sym)
+      val e = visitExp(exp)
+      LoweredAst.Predicate.Body.Functional(outSyms, e, loc)
+    case TypedAst.Predicate.Body.Guard(exp, loc) =>
+      LoweredAst.Predicate.Body.Guard(visitExp(exp), loc)
 
-  /**
-    * Returns `(t1, t2)` where `tpe = Concurrent.Channel.Mpmc[t1, t2]`.
-    */
-  private def extractChannelTpe(tpe: Type): (Type, Type) = eraseAliases(tpe) match {
-    case Type.Apply(Type.Apply(Types.ChannelMpmc, elmType, _), regionType, _) => (elmType, regionType)
-    case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a channel type", tpe.loc)
   }
 
   /**
@@ -1972,105 +1851,6 @@ object Lowering {
       case Some(TypeConstructor.Unit) => Nil
       case _ => List(tpe)
     }
-  }
-
-  /**
-    * An expression for a channel variable called `sym`
-    */
-  private def mkChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): LoweredAst.Expr = {
-    LoweredAst.Expr.Var(sym, mkChannelTpe(tpe, loc), loc)
-  }
-
-  /**
-    * Returns a full `par yield` expression.
-    */
-  private def mkParChannels(exp: LoweredAst.Expr, chanSymsWithExps: List[(Symbol.VarSym, LoweredAst.Expr)]): LoweredAst.Expr = {
-    // Make spawn expressions `spawn ch <- exp`.
-    val spawns = chanSymsWithExps.foldRight(exp: LoweredAst.Expr) {
-      case ((sym, e), acc) =>
-        val loc = e.loc.asSynthetic
-        val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
-        val e2 = mkPutChannel(e1, e, Type.IO, loc) // The put exp: `ch <- exp0`.
-        val e3 = LoweredAst.Expr.Cst(Constant.Static, Type.mkRegionToStar(Type.IO, loc), loc)
-        val e4 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.IO, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        LoweredAst.Expr.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
-    }
-
-    // Make let bindings `let ch = chan 1;`.
-    chanSymsWithExps.foldRight(spawns: LoweredAst.Expr) {
-      case ((sym, e), acc) =>
-        val loc = e.loc.asSynthetic
-        val chan = mkNewChannel(LoweredAst.Expr.Cst(Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.IO, loc) // The channel exp `chan 1`
-        LoweredAst.Expr.Let(sym, chan, acc, acc.tpe, Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
-    }
-  }
-
-  /**
-    * Returns a desugared let-match expression, i.e.
-    * {{{
-    *   let pattern = exp;
-    *   body
-    * }}}
-    * is desugared to
-    * {{{
-    *   match exp {
-    *     case pattern => body
-    *   }
-    * }}}
-    */
-  private def mkLetMatch(pat: LoweredAst.Pattern, exp: LoweredAst.Expr, body: LoweredAst.Expr): LoweredAst.Expr = {
-    val loc = exp.loc.asSynthetic
-    val rule = List(LoweredAst.MatchRule(pat, None, body))
-    val eff = Type.mkUnion(exp.eff, body.eff, loc)
-    LoweredAst.Expr.Match(exp, rule, body.tpe, eff, loc)
-  }
-
-  /**
-    * Returns an expression where the pattern variables used in `exp` are
-    * bound to [[TypedAst.Expr.GetChannel]] expressions,
-    * i.e.
-    * {{{
-    *   let pat1 = <- ch1;
-    *   let pat2 = <- ch2;
-    *   let pat3 = <- ch3;
-    *   ...
-    *   let patn = <- chn;
-    *   exp
-    * }}}
-    */
-  private def mkBoundParWaits(patSymExps: List[(LoweredAst.Pattern, Symbol.VarSym, LoweredAst.Expr)], exp: LoweredAst.Expr): LoweredAst.Expr =
-    patSymExps.map {
-      case (p, sym, e) =>
-        val loc = e.loc.asSynthetic
-        val chExp = mkChannelExp(sym, e.tpe, loc)
-        (p, mkGetChannel(chExp, e.tpe, Type.IO, loc))
-    }.foldRight(exp) {
-      case ((pat, chan), e) => mkLetMatch(pat, chan, e)
-    }
-
-  /**
-    * Returns a desugared [[TypedAst.Expr.ParYield]] expression as a nested match-expression.
-    */
-  private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): LoweredAst.Expr = {
-    // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
-    val fs = frags.init
-    val last = frags.last
-
-    // Generate symbols for each channel.
-    val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
-
-    // Make `GetChannel` exps for the spawnable exps.
-    val waitExps = mkBoundParWaits(chanSymsWithPatAndExp, exp)
-
-    // Evaluate the last expression in the current thread (so just make let-binding)
-    val desugaredYieldExp = mkLetMatch(last.pat, last.exp, waitExps)
-
-    // Generate channels and spawn exps.
-    val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
-    val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
-
-    // Wrap everything in a purity cast,
-    LoweredAst.Expr.Cast(blockExp, None, Some(Type.Pure), tpe, eff, loc.asSynthetic)
   }
 
   /**
@@ -2250,6 +2030,30 @@ object Lowering {
       throw InternalCompilerException("not implemented yet", loc)
 
     case Expr.SelectChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case Expr.ParYield(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointConstraintSet(cs, tpe, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
 
   }

@@ -3805,7 +3805,7 @@ mod TestString {
     def escapeInterpolation03(): Unit \ Assert = assertEq(expected = ("$" + "{}"), "\${}")
 
     @Test
-    def escapeInterpolation04(): String = "$"
+    def escapeInterpolation04(): Unit \ Assert = assertEq(expected = "$", "$")
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //

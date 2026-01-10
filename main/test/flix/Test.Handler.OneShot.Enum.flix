@@ -1,21 +1,23 @@
 mod Test.Handler.OneShot.Enum {
 
+    use Assert.{assertEq, assertTrue};
+
     eff AskTell {
         def askTell(x: Int32): Option[Int32]
     }
 
     @Test
-    def testLinear01(): Bool =
+    def testLinear01(): Unit \ Assert =
         def f1() = AskTell.askTell(42);
         let result = run {
             f1()
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testLinear02(): Bool =
+    def testLinear02(): Unit \ Assert =
         def f1() = AskTell.askTell(42);
         def f2() = f1();
         let result = run {
@@ -23,10 +25,10 @@ mod Test.Handler.OneShot.Enum {
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testLinear03(): Bool =
+    def testLinear03(): Unit \ Assert =
         def f1() = AskTell.askTell(42);
         def f2() = f1();
         def f3() = f2();
@@ -35,10 +37,10 @@ mod Test.Handler.OneShot.Enum {
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testRecursiveLetRec01(): Bool =
+    def testRecursiveLetRec01(): Unit \ Assert =
         def f() = AskTell.askTell(42);
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = run {
@@ -46,10 +48,10 @@ mod Test.Handler.OneShot.Enum {
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testRecursiveLetRec02(): Bool =
+    def testRecursiveLetRec02(): Unit \ Assert =
         def f() = AskTell.askTell(42);
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = run {
@@ -57,10 +59,10 @@ mod Test.Handler.OneShot.Enum {
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testRecursiveLetRec03(): Bool =
+    def testRecursiveLetRec03(): Unit \ Assert =
         def f1() = AskTell.askTell(42);
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = run {
@@ -68,52 +70,52 @@ mod Test.Handler.OneShot.Enum {
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testMutualRecursive01(): Bool =
+    def testMutualRecursive01(): Unit \ Assert =
         let result = run {
             mutual1(0)
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testMutualRecursive02(): Bool =
+    def testMutualRecursive02(): Unit \ Assert =
         let result = run {
             mutual1(1)
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testMutualRecursive03(): Bool =
+    def testMutualRecursive03(): Unit \ Assert =
         let result = run {
             mutual1(2)
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testMutualRecursive04(): Bool =
+    def testMutualRecursive04(): Unit \ Assert =
         let result = run {
             mutual1(3)
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     @Test
-    def testMutualRecursive05(): Bool =
+    def testMutualRecursive05(): Unit \ Assert =
         let result = run {
             mutual1(10)
         } with handler AskTell {
             def askTell(x, k) = k(Some(x + x))
         };
-        Some(84) == result
+        assertEq(expected = Some(84), result)
 
     def f(): Option[Int32] \ AskTell = AskTell.askTell(42)
 

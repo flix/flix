@@ -26,7 +26,7 @@ pub eff Logger {
 
 }
 
-mod Logger {
+pub mod Logger {
 
     use RichString.{gray, cyan, green, yellow, red, bold, text};
 

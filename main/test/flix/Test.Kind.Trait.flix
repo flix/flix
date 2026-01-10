@@ -201,6 +201,4 @@ mod Test.Kind.Trait {
         }
     }
 
-    @test
-    def empty(): Bool = true
 }

@@ -21,7 +21,7 @@ eff TcpConnect {
     def connect(ip: IpAddr, port: Int16): TcpSocket
 }
 
-mod TcpConnect {
+pub mod TcpConnect {
     use IoError.ErrorKind
     use IoError.IoError
 

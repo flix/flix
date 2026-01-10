@@ -84,34 +84,34 @@ def evalBExp(e: BExp): Bool = match e {
 //
 
 @Test
-def testEvalAExp1(): Int32 = evalAExp(AExp.Cst(42))
+def testEvalAExp1(): Unit \ Assert = Assert.assertEq(expected = 42, evalAExp(AExp.Cst(42)))
 
 @Test
-def testEvalAExp2(): Int32 = evalAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21)))
+def testEvalAExp2(): Unit \ Assert = Assert.assertEq(expected = 63, evalAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21))))
 
 @Test
-def testEvalAExp3(): Int32 = evalAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21)))
+def testEvalAExp3(): Unit \ Assert = Assert.assertEq(expected = 21, evalAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21))))
 
 @Test
-def testEvalAExp4(): Int32 = evalAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2)))
+def testEvalAExp4(): Unit \ Assert = Assert.assertEq(expected = 1, evalAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2))))
 
 @Test
-def testEvalAExp5(): Int32 = evalAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21)))
+def testEvalAExp5(): Unit \ Assert = Assert.assertEq(expected = 42, evalAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21))))
 
 @Test
-def testEvalBExp1(): Bool = evalBExp(BExp.True)
+def testEvalBExp1(): Unit \ Assert = Assert.assertTrue(evalBExp(BExp.True))
 
 @Test
-def testEvalBExp2(): Bool = not evalBExp(BExp.Not(BExp.True))
+def testEvalBExp2(): Unit \ Assert = Assert.assertTrue(not evalBExp(BExp.Not(BExp.True)))
 
 @Test
-def testEvalBExp3(): Bool = not evalBExp(BExp.Conj(BExp.True, BExp.False))
+def testEvalBExp3(): Unit \ Assert = Assert.assertTrue(not evalBExp(BExp.Conj(BExp.True, BExp.False)))
 
 @Test
-def testEvalBExp4(): Bool = evalBExp(BExp.Disj(BExp.True, BExp.False))
+def testEvalBExp4(): Unit \ Assert = Assert.assertTrue(evalBExp(BExp.Disj(BExp.True, BExp.False)))
 
 @Test
-def testEvalBExp5(): Bool = evalBExp(BExp.Neq(AExp.Cst(1), AExp.Cst(2)))
+def testEvalBExp5(): Unit \ Assert = Assert.assertTrue(evalBExp(BExp.Neq(AExp.Cst(1), AExp.Cst(2))))
 
 //
 // We now write two compilers that translate arithmetic and boolean expressions
@@ -121,7 +121,7 @@ def testEvalBExp5(): Bool = evalBExp(BExp.Neq(AExp.Cst(1), AExp.Cst(2)))
 //
 // We define an enum to capture the syntax of instructions.
 //
-enum Inst {
+enum Inst with Eq, ToString {
 
     // an instruction that pushes the constant integer on the stack.
     case Push(Int32),
@@ -208,34 +208,54 @@ def compileBExp(e: BExp): List[Inst] = match e {
 // We test each compiler by writing some tests:
 //
 @Test
-def testCompileAExp1(): List[Inst] = compileAExp(AExp.Cst(42))
+def testCompileAExp1(): Unit \ Assert =
+    let expected = Inst.Push(42) :: Nil;
+    Assert.assertEq(expected = expected, compileAExp(AExp.Cst(42)))
 
 @Test
-def testCompileAExp2(): List[Inst] = compileAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21)))
+def testCompileAExp2(): Unit \ Assert =
+    let expected = Inst.Push(21) :: Inst.Push(42) :: Inst.Add :: Nil;
+    Assert.assertEq(expected = expected, compileAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21))))
 
 @Test
-def testCompileAExp3(): List[Inst] = compileAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21)))
+def testCompileAExp3(): Unit \ Assert =
+    let expected = Inst.Push(21) :: Inst.Push(42) :: Inst.Sub :: Nil;
+    Assert.assertEq(expected = expected, compileAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21))))
 
 @Test
-def testCompileAExp4(): List[Inst] = compileAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2)))
+def testCompileAExp4(): Unit \ Assert =
+    let expected = Inst.Push(1) :: Inst.Branch(Inst.Push(1) :: Nil, Inst.Push(2) :: Nil) :: Nil;
+    Assert.assertEq(expected = expected, compileAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2))))
 
 @Test
-def testCompileAExp5(): List[Inst] = compileAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21)))
+def testCompileAExp5(): Unit \ Assert =
+    let expected = Inst.Push(2) :: Inst.Push(1) :: Inst.Neg :: Inst.Cmp :: Inst.Branch(Inst.Push(42) :: Nil, Inst.Push(21) :: Nil) :: Nil;
+    Assert.assertEq(expected = expected, compileAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21))))
 
 @Test
-def testCompileBExp1(): List[Inst] = compileBExp(BExp.True)
+def testCompileBExp1(): Unit \ Assert =
+    let expected = Inst.Push(1) :: Nil;
+    Assert.assertEq(expected = expected, compileBExp(BExp.True))
 
 @Test
-def testCompileBExp2(): List[Inst] = compileBExp(BExp.Not(BExp.True))
+def testCompileBExp2(): Unit \ Assert =
+    let expected = Inst.Push(1) :: Inst.Neg :: Nil;
+    Assert.assertEq(expected = expected, compileBExp(BExp.Not(BExp.True)))
 
 @Test
-def testCompileBExp3(): List[Inst] = compileBExp(BExp.Conj(BExp.True, BExp.False))
+def testCompileBExp3(): Unit \ Assert =
+    let expected = Inst.Push(0) :: Inst.Push(1) :: Inst.And :: Nil;
+    Assert.assertEq(expected = expected, compileBExp(BExp.Conj(BExp.True, BExp.False)))
 
 @Test
-def testCompileBExp4(): List[Inst] = compileBExp(BExp.Disj(BExp.True, BExp.False))
+def testCompileBExp4(): Unit \ Assert =
+    let expected = Inst.Push(0) :: Inst.Push(1) :: Inst.Or :: Nil;
+    Assert.assertEq(expected = expected, compileBExp(BExp.Disj(BExp.True, BExp.False)))
 
 @Test
-def testCompileBExp5(): List[Inst] = compileBExp(BExp.Neq(AExp.Cst(1), AExp.Cst(2)))
+def testCompileBExp5(): Unit \ Assert =
+    let expected = Inst.Push(2) :: Inst.Push(1) :: Inst.Neg :: Inst.Cmp :: Nil;
+    Assert.assertEq(expected = expected, compileBExp(BExp.Neq(AExp.Cst(1), AExp.Cst(2))))
 
 //
 // Finally, we write an interpreter for the stack-based language:
@@ -278,19 +298,19 @@ def evalInst(instructions: List[Inst], stack: List[Int32]): Int32 = match (instr
 // and we can test the compiler and interpreter:
 //
 @Test
-def testCompileAndEval1(): Int32 = evalInst(compileAExp(AExp.Cst(42)), Nil)
+def testCompileAndEval1(): Unit \ Assert = Assert.assertEq(expected = 42, evalInst(compileAExp(AExp.Cst(42)), Nil))
 
 @Test
-def testCompileAndEval2(): Int32 = evalInst(compileAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21))), Nil)
+def testCompileAndEval2(): Unit \ Assert = Assert.assertEq(expected = 63, evalInst(compileAExp(AExp.Plus(AExp.Cst(42), AExp.Cst(21))), Nil))
 
 @Test
-def testCompileAndEval3(): Int32 = evalInst(compileAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21))), Nil)
+def testCompileAndEval3(): Unit \ Assert = Assert.assertEq(expected = 21, evalInst(compileAExp(AExp.Minus(AExp.Cst(42), AExp.Cst(21))), Nil))
 
 @Test
-def testCompileAndEval4(): Int32 = evalInst(compileAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2))), Nil)
+def testCompileAndEval4(): Unit \ Assert = Assert.assertEq(expected = 1, evalInst(compileAExp(AExp.IfThenElse(BExp.True, AExp.Cst(1), AExp.Cst(2))), Nil))
 
 @Test
-def testCompileAndEval5(): Int32 = evalInst(compileAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21))), Nil)
+def testCompileAndEval5(): Unit \ Assert = Assert.assertEq(expected = 21, evalInst(compileAExp(AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21))), Nil))
 
 @Test
-def testCompileAndEval6(): Int32 = evalInst(compileAExp(AExp.IfThenElse(BExp.Eq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Times(AExp.Cst(21), AExp.Cst(82)))), Nil)
+def testCompileAndEval6(): Unit \ Assert = Assert.assertEq(expected = 1722, evalInst(compileAExp(AExp.IfThenElse(BExp.Eq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Times(AExp.Cst(21), AExp.Cst(82)))), Nil))

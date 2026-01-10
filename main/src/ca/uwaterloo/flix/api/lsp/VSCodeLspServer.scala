@@ -82,7 +82,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   /**
     * A map from source URIs to source code.
     */
-  private val sources: mutable.Map[String, String] = mutable.Map.empty
+  private val sources: mutable.Map[URI, String] = mutable.Map.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -195,19 +195,21 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   }
 
   /**
-    * Add the given source code to the compiler
+    * Add the given source code to the compiler.
     */
-  private def addSourceCode(uri: String, src: String): Unit = {
-    flix.addSourceCode(uri, src)(SecurityContext.Unrestricted) // TODO
-    sources += (uri -> src)
+  private def addUri(uri: String, src: String): Unit = {
+    val u = new URI(uri)
+    flix.addVirtualUri(u, src)(SecurityContext.Unrestricted)
+    sources += (u -> src)
   }
 
   /**
     * Remove the source code associated with the given uri from the compiler
     */
-  private def remSourceCode(uri: String): Unit = {
-    flix.remSourceCode(uri)
-    sources -= uri
+  private def remUri(uri: String): Unit = {
+    val u = new URI(uri)
+    flix.remVirtualUri(u)
+    sources -= u
   }
 
   /**
@@ -216,11 +218,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private def processRequest(request: Request)(implicit ws: WebSocket, root: Root): JValue = request match {
 
     case Request.AddUri(id, uri, src) =>
-      addSourceCode(uri, src)
+      addUri(uri, src)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemUri(id, uri) =>
-      remSourceCode(uri)
+      remUri(uri)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.AddPkg(id, uri, data) =>
@@ -232,7 +234,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
         if (name.endsWith(".flix")) {
           val bytes = StreamOps.readAllBytes(inputStream)
           val src = new String(bytes, Charset.forName("UTF-8"))
-          addSourceCode(s"$uri/$name", src)
+          addUri(s"$uri/$name", src)
         }
         entry = inputStream.getNextEntry
       }
@@ -242,9 +244,9 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.RemPkg(id, uri) =>
       // clone is necessary because `remSourceCode` modifies `sources`
-      for ((file, _) <- sources.clone()
-           if file.startsWith(uri)) {
-        remSourceCode(file)
+      for ((u, _) <- sources.clone()
+           if u.toString.startsWith(uri)) {
+        remUri(u.toString)
       }
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
@@ -349,11 +351,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       flix.check() match {
         case (Some(r), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, r, List.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, r, List.empty, t)
 
         case (Some(r), errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
-          processSuccessfulCheck(requestId, r, errors, flix.options.explain, t)
+          processSuccessfulCheck(requestId, r, errors, t)
 
         case (None, errors) =>
           // Case 3: Compilation failed. Send back the error messages.
@@ -362,7 +364,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
           this.currentErrors = errors
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
+          val results = PublishDiagnosticsParams.fromMessages(currentErrors)
           ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
@@ -377,7 +379,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], t0: Long): JValue = {
     // Update the root and the errors.
     this.root = root
     this.currentErrors = errors
@@ -389,10 +391,10 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // println(s"lsp/check: ${e / 1_000_000}ms")
 
     // Compute Code Quality hints.
-    val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
+    val codeHints = CodeHinter.run(sources.keysIterator.map(_.toString).toSet)(root)
 
     // Determine the status based on whether there are errors.
-    val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    val results = PublishDiagnosticsParams.fromMessages(currentErrors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 

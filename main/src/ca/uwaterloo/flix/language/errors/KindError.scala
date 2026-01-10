@@ -37,13 +37,15 @@ object KindError {
     * @param loc the location where the error occurred.
     */
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3407
+
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}'"
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
          |
-         |${code(loc, "mismatched kind.")}
+         |${src(loc, "mismatched kind.")}
          |
          |Kind One: ${cyan(formatKind(k1))}
          |Kind Two: ${magenta(formatKind(k2))}
@@ -59,13 +61,15 @@ object KindError {
     * @param loc          the location where the error occurred.
     */
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3512
+
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
          |
-         |${code(loc, "unexpected kind.")}
+         |${src(loc, "unexpected kind.")}
          |
          |Expected kind: ${cyan(formatKind(expectedKind))}
          |Actual kind:   ${magenta(formatKind(actualKind))}
@@ -79,20 +83,18 @@ object KindError {
     * @param loc The location where the error occurred.
     */
   case class UninferrableKind(loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3623
+
     override def summary: String = "Unable to infer kind."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unable to infer kind.
          |
-         |${code(loc, "uninferred kind.")}
+         |${src(loc, "uninferred kind.")}
          |
+         |${underline("Tip:")} Add a kind annotation.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip: ")} Add a kind annotation."
-    })
   }
 }

@@ -186,11 +186,11 @@ object Parser2 {
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
-            mkSourceLocation(lastAdvance.sp2, lastAdvance.sp2)
+            mkSourceLocation(lastAdvance.end, lastAdvance.end)
           else
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
-            mkSourceLocation(openToken.sp1, lastAdvance.sp2)
+            mkSourceLocation(openToken.start, lastAdvance.end)
           locationStack = locationStack.tail
           stack = stack.tail
           stack.head.children = stack.head.children :+ child
@@ -207,7 +207,7 @@ object Parser2 {
       isReal = true,
       s.src,
       SourcePosition.FirstPosition,
-      tokens.head.sp2
+      tokens.head.end
     )
 
     // The stack should now contain a single Source tree, and there should only be an <eof> token
@@ -893,14 +893,14 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       val mark = open(consumeDocComments = false)
       docComment()
-      // Handle modules.
-      if (at(TokenKind.KeywordMod)) {
-        return moduleDecl(mark, nestingLevel)
-      }
       // Handle declarations
       val wasAtEofBeforeAnnotations = at(TokenKind.Eof)
       annotations()
       modifiers()
+      // Handle modules.
+      if (at(TokenKind.KeywordMod)) {
+        return moduleDecl(mark, nestingLevel)
+      }
       // If a new declaration is added to this then add it to FIRST_DECL too.
       nth(0) match {
         case TokenKind.KeywordTrait => traitDecl(mark)
@@ -2847,7 +2847,7 @@ object Parser2 {
         // `new Type { ... }`.
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-          checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
+          checkForItem = _ => nth(nextNonComment(0))  == TokenKind.KeywordDef,
           getItem = jvmMethod,
           breakWhen = _.isRecoverInExpr,
           delimiterL = TokenKind.CurlyL,
@@ -2873,8 +2873,9 @@ object Parser2 {
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordDef))
+      // Have to eat potential comments before the `assert`.
       val mark = open()
+      assert(at(TokenKind.KeywordDef))
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_JAVA)
       Decl.parameters()

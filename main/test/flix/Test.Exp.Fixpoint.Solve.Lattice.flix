@@ -1,6 +1,6 @@
 mod Test.Exp.Fixpoint.Solve.Lattice {
 
-    use Assert.{assertEq, assertTrue};
+    use Assert.assertEq
 
     enum Constant {
         case Top,
@@ -77,90 +77,90 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         case _                  => Constant.Top
     }
 
-    @test
+    @Test
     def testFixpointLattice01(): Unit \ Assert =
         let m = solve #{
             LocalVar((); Constant.Top). LocalVar((); Constant.Top). LocalVar((); Constant.Top). LocalVar((); Constant.Top).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Top), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Top), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice02(): Unit \ Assert =
         let m = solve #{
             LocalVar((); Constant.Bot). LocalVar((); Constant.Top). LocalVar((); Constant.Bot). LocalVar((); Constant.Top).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Top), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Top), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice03(): Unit \ Assert =
         let m = solve #{
             LocalVar((); Constant.Cst(39)).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Cst(39)), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Cst(39)), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice04(): Unit \ Assert =
         let m = solve #{
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Bot).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Cst(39)), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Cst(39)), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice05(): Unit \ Assert =
         let m = solve #{
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(39)).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Cst(39)), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Cst(39)), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice06(): Unit \ Assert =
         let m = solve #{
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(12)).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Top), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Top), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice07(): Unit \ Assert =
         let m = solve #{
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(12)). LocalVar((); Constant.Bot).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Top), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Top), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice08(): Unit \ Assert =
         let m = solve #{
             LitStm("a", 39).
             LocalVar(x; Constant.Cst(c)) :- LitStm(x, c).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Cst(39)), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Cst(39)), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice09(): Unit \ Assert =
         let m = solve #{
             LitStm("a", 39). LitStm("a", 345).
             LocalVar(x; Constant.Cst(c)) :- LitStm(x, c).
         };
-        let ans = query m select t from LocalVar(_; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Top), Vector.head(ans))
+        let r = query m select t from LocalVar(_; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Top), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice10(): Unit \ Assert =
         let m = solve #{
             LitStm("a", 39).
@@ -169,11 +169,11 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y), LocalVar(x; v1), LocalVar(y; v2).
 
         };
-        let ans = query m select t from LocalVar("r"; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Cst(39+39)), Vector.head(ans))
+        let r = query m select t from LocalVar("r"; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Cst(39+39)), Vector.head(r))
 
-    @test
+    @Test
     def testFixpointLattice11(): Unit \ Assert =
         let m = solve #{
             LitStm("a", 39).
@@ -182,9 +182,9 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar(x; Constant.Cst(c)) :- LitStm(x, c).
             LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y), LocalVar(x; v1), LocalVar(y; v2).
         };
-        let ans = query m select t from LocalVar("r"; t);
-        assertEq(expected = 1, Vector.length(ans));
-        assertEq(expected = Some(Constant.Cst(39+12)), Vector.head(ans))
+        let r = query m select t from LocalVar("r"; t);
+        assertEq(expected = 1, Vector.length(r));
+        assertEq(expected = Some(Constant.Cst(39+12)), Vector.head(r))
 
     @Test
     def testFixpointLattice12(): Unit \ Assert =
@@ -193,8 +193,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             B(;2).
             R(;x) :- A(;x), B(;x).
         };
-        let mm = query pr select x from R(;x);
-        assertEq(expected = Vector#{1}, mm)
+        let r = query pr select x from R(;x);
+        assertEq(expected = Vector#{1}, r)
 
     @Test
     def testFixpointLattice13(): Unit \ Assert =
@@ -203,8 +203,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             B(;1).
             R(;x) :- A(;x), B(;x).
         };
-        let mm = query pr select x from R(;x);
-        assertEq(expected = Vector#{1}, mm)
+        let r = query pr select x from R(;x);
+        assertEq(expected = Vector#{1}, r)
 
     @Test
     def testFixpointLattice14(): Unit \ Assert =
@@ -215,8 +215,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             C(5).
             R(y;x) :- A(;x), B(;x), C(y).
         };
-        let mm = query pr select (y, x) from R(y; x);
-        assertEq(expected = Vector#{(4, 1), (5, 1)}, mm)
+        let r = query pr select (y, x) from R(y; x);
+        assertEq(expected = Vector#{(4, 1), (5, 1)}, r)
 
     @Test
     def testFixpointLattice15(): Unit \ Assert =
@@ -224,8 +224,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             A(;1).
             A(;2).
         };
-        let mm = query pr select x from A(;x);
-        assertEq(expected = Vector#{2}, mm)
+        let r = query pr select x from A(;x);
+        assertEq(expected = Vector#{2}, r)
 
     @Test
     def testFixpointLattice16(): Unit \ Assert =
@@ -234,8 +234,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             A(2).
             R(;x) :- A(x).
         };
-        let mm = query pr select x from R(;x);
-        assertEq(expected = Vector#{2}, mm)
+        let r = query pr select x from R(;x);
+        assertEq(expected = Vector#{2}, r)
 
     @Test
     def testFixpointLattice17(): Unit \ Assert =
@@ -244,8 +244,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             A(2).
             R(;x) :- A(x).
         };
-        let mm = query pr select x from R(;x);
-        assertEq(expected = Vector#{2}, mm)
+        let r = query pr select x from R(;x);
+        assertEq(expected = Vector#{2}, r)
 
     @Test
     def testFixpointLattice18(): Unit \ Assert =
@@ -255,8 +255,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             A(3).
             R(;Set#{x}) :- A(x).
         };
-        let mm = query pr select x from R(;x);
-        assertEq(expected = Vector#{Set#{1, 2, 3}}, mm)
+        let r = query pr select x from R(;x);
+        assertEq(expected = Vector#{Set#{1, 2, 3}}, r)
 
     @Test
     def testFixpointLattice19(): Unit \ Assert =
@@ -267,8 +267,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             D(;Set#{x}) :- B(x).
             R(;x) :- C(;x), D(;x).
         };
-        let mm = query db1, db2, pr select x from R(;x);
-        assertEq(expected = Vector#{Set#{2, 3, 4}}, mm)
+        let r = query db1, db2, pr select x from R(;x);
+        assertEq(expected = Vector#{Set#{2, 3, 4}}, r)
 
     @Test
     def testFix01(): Unit \ Assert =
@@ -278,8 +278,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             B(;x) :- A(x).
             R(x) :- fix B(;x).
         };
-        let mm = query pr select x from R(x);
-        assertEq(expected = Vector#{2}, mm)
+        let r = query pr select x from R(x);
+        assertEq(expected = Vector#{2}, r)
 
     @Test
     def testFix02(): Unit \ Assert =
@@ -289,8 +289,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             B(;x) :- A(x).
             R(x) :- fix B(;x).
         };
-        let mm = query pr select x from R(x);
-        assertEq(expected = Vector#{2}, mm)
+        let r = query pr select x from R(x);
+        assertEq(expected = Vector#{2}, r)
 
     @Test
     def testFix03(): Unit \ Assert =
@@ -301,8 +301,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             C(x) :- fix B(;x).
             R(x) :- fix C(x).
         };
-        let mm = query pr select x from R(x);
-        assertEq(expected = Vector#{2}, mm)
+        let r = query pr select x from R(x);
+        assertEq(expected = Vector#{2}, r)
 
     @Test
     def testFix04(): Unit \ Assert =
@@ -315,8 +315,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             C2(x) :- fix B2(;x).
             R(x) :- C1(x), C2(x).
         };
-        let mm = query pr select x from R(x);
-        assertEq(expected = Vector#{2}, mm)
+        let r = query pr select x from R(x);
+        assertEq(expected = Vector#{2}, r)
 
     @Test
     def testRelationToLattice01(): Unit \ Assert =
@@ -325,8 +325,8 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             Foo("b", 2).
             Bar(n; v) :- Foo(n, v).
         };
-        let result = query pr select (x, y) from Bar(x; y);
-        assertEq(expected = Vector#{("a", 1), ("b", 2)}, result)
+        let r = query pr select (x, y) from Bar(x; y);
+        assertEq(expected = Vector#{("a", 1), ("b", 2)}, r)
 
     @Test
     def testRelationToLattice02(): Unit \ Assert =
@@ -337,7 +337,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             Foo("b", 4).
             Bar(n; v) :- Foo(n, v).
         };
-        let result = query pr select (x, y) from Bar(x; y);
-        assertEq(expected = Vector#{("a", 2), ("b", 4)}, result)
+        let r = query pr select (x, y) from Bar(x; y);
+        assertEq(expected = Vector#{("a", 2), ("b", 4)}, r)
 
 }

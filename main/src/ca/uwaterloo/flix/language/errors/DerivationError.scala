@@ -37,20 +37,19 @@ object DerivationError {
     * @param loc       the location where the error occurred.
     */
   case class IllegalDerivation(sym: Symbol.TraitSym, legalSyms: List[Symbol.TraitSym], loc: SourceLocation) extends DerivationError {
+    def code: ErrorCode = ErrorCode.E0147
+
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal derivation '${red(sym.name)}'.
          |
-         |${code(loc, "Illegal derivation.")}
+         |${src(loc, "Illegal derivation.")}
+         |
+         |${underline("Tip:")} Only the following traits may be derived: ${legalSyms.map(_.name).mkString(", ")}.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Only the following traits may be derived: ${legalSyms.map(_.name).mkString(", ")}."
-    })
   }
 
   /**
@@ -61,13 +60,15 @@ object DerivationError {
     * @param loc      The source location where the error occurred.
     */
   case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, traitSym: Symbol.TraitSym, loc: SourceLocation) extends DerivationError {
+    def code: ErrorCode = ErrorCode.E0283
+
     def summary: String = s"Cannot derive '${traitSym.name}' for the empty enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Cannot derive '${magenta(traitSym.name)}' for the empty enum '${red(sym.name)}'.
          |
-         |${code(loc, "illegal derivation")}
+         |${src(loc, "illegal derivation")}
          |
          |Flix cannot derive any instances for an empty enumeration.
          |""".stripMargin
@@ -81,13 +82,15 @@ object DerivationError {
     * @param loc the source location where the error occurred.
     */
   case class IllegalNonSingletonCoerce(sym: Symbol.EnumSym, loc: SourceLocation) extends DerivationError {
+    def code: ErrorCode = ErrorCode.E0519
+
     def summary: String = s"Cannot derive 'Coerce' for the non-singleton enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
          |
-         |${code(loc, "illegal derivation")}
+         |${src(loc, "illegal derivation")}
          |
          |'Coerce' can only be derived for enums with exactly one case.
          |""".stripMargin

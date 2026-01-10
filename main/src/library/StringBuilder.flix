@@ -16,12 +16,27 @@
 
 import java.lang.{StringBuilder => JStringBuilder}
 
+use IoError.IoError
+
 ///
 /// Represents a StringBuilder.
 ///
 enum StringBuilder[_: Region](JStringBuilder)
 
-mod StringBuilder {
+instance Writable[StringBuilder[r]] {
+
+    type Elm = Char
+
+    type Aef = r
+
+    pub def write(buffer: Array[Char, r1], sb: StringBuilder[r]): Result[IoError, Int32] \ r1 + r =
+        let len = Array.length(buffer);
+        Array.forEach(c -> StringBuilder.append(c, sb), buffer);
+        Ok(len)
+
+}
+
+pub mod StringBuilder {
     import java.lang.{StringBuilder => JStringBuilder};
 
     ///

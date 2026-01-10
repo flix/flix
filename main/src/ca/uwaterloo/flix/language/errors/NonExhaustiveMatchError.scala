@@ -26,24 +26,23 @@ import ca.uwaterloo.flix.util.Formatter
 case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends CompilationMessage {
   val kind: CompilationMessageKind = CompilationMessageKind.PatternMatchError
 
+  def code: ErrorCode = ErrorCode.E5952
+
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
 
   def message(formatter: Formatter): String = {
     import formatter.*
     s""">> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
        |
-       |${code(loc, "incomplete pattern.")}
-       |""".stripMargin
-  }
-
-  override def explain(formatter: Formatter): Option[String] = Some({
-    s"""Flix requires every pattern match expression to be exhaustive, i.e. to cover all
+       |${src(loc, "incomplete pattern.")}
+       |
+       |${underline("Explanation:")}
+       |Flix requires every pattern match expression to be exhaustive, i.e. to cover all
        |possible cases. A wild card pattern, written with an underscore, can be used to
        |handle all other cases. For example:
        |
        |    case _ => // handle all other cases.
-       |
        |""".stripMargin
-  })
+  }
 
 }

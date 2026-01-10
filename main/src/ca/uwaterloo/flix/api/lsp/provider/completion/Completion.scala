@@ -927,7 +927,7 @@ object Completion {
     * TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
     */
   private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
-    val insertPosition = Position(ap.line, ap.col)
+    val insertPosition = Position.fromAnchorPosition(ap)
     val leadingSpaces = " " * ap.spaces
     TextEdit(
       Range(insertPosition, insertPosition),

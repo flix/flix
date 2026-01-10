@@ -25,7 +25,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateAnnotation.01") {
     val input =
-      """@test @test
+      """@Test @Test
         |def foo(x: Int32): Int32 = 42
     """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -36,9 +36,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = {
-        | @Tailrec @Tailrec
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
+        |  @Tailrec @Tailrec
+        |  def g(i) = if (i <= 0) 0 else g(i - 1);
+        |  g(10)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -246,9 +246,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = {
-        |  @test @Tailrec
-        |  def g(i) = if (i <= 0) 0 else g(i - 1);
-        |  g(10)
+        |   @Test @Tailrec
+        |   def g(i) = if (i <= 0) 0 else g(i - 1);
+        |   g(10)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -263,6 +263,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         | def g(i) = if (i <= 0) 0 else g(i - 1);
         | g(10)
         |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotation](result)
+  }
+
+  test("IllegalAnnotation.04") {
+    val input =
+      """
+        |@Lazy
+        |mod A {}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalAnnotation](result)
@@ -1055,7 +1065,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordOperation](result)
   }
 
-  test("IllegalSelectChannelRuleFunctionCall.01") {
+  test("UnexpectedBinaryTypeOperator.01") {
+    val input =
+      """
+        |def f(): A[true not false] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedBinaryTypeOperator](result)
+  }
+
+  test("UnexpectedSelectChannelRuleFunctionCall.01") {
     val input =
       """
         |def f(): Int32 = select {
@@ -1864,6 +1883,18 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("IllegalUnaryPlus.01") {
+    val input =
+      """
+        |def main(): Unit = {
+        |  let x = +("hello");
+        |  ()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUnaryPlus](result)
   }
 
 }

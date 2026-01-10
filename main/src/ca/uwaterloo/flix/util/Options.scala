@@ -28,7 +28,6 @@ object Options {
     lib = LibLevel.All,
     build = Build.Development,
     entryPoint = None,
-    explain = false,
     githubToken = None,
     installDeps = false,
     incremental = true,
@@ -76,7 +75,6 @@ object Options {
   * @param lib            selects the level of libraries to include.
   * @param build          selects development or production mode.
   * @param entryPoint     specifies the main entry point.
-  * @param explain        enables additional explanations.
   * @param githubToken    the API key to use for GitHub dependency resolution.
   * @param incremental    enables incremental compilation.
   * @param installDeps    enables automatic installation of dependencies.
@@ -91,7 +89,6 @@ object Options {
 case class Options(lib: LibLevel,
                    build: Build,
                    entryPoint: Option[Symbol.DefnSym],
-                   explain: Boolean,
                    githubToken: Option[String],
                    incremental: Boolean,
                    installDeps: Boolean,

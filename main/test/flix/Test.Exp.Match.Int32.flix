@@ -1,47 +1,49 @@
 mod Test.Exp.Match.Int32 {
 
-    @test
-    def testMatchInt32_01(): Bool = match 0i32 {
-        case 0i32 => true
-        case 1i32 => false
-        case 2i32 => false
-        case _    => false
+    use Assert.{assertEq, success, fail}
+
+    @Test
+    def matchInt32_01(): Unit \ Assert = match 0i32 {
+        case 0i32 => success("matched 0i32")
+        case 1i32 => fail("unexpected match on 1i32")
+        case 2i32 => fail("unexpected match on 2i32")
+        case _    => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchInt32_02(): Bool = match 1i32 {
-        case 0i32 => false
-        case 1i32 => true
-        case 2i32 => false
-        case _    => false
+    @Test
+    def matchInt32_02(): Unit \ Assert = match 1i32 {
+        case 0i32 => fail("unexpected match on 0i32")
+        case 1i32 => success("matched 1i32")
+        case 2i32 => fail("unexpected match on 2i32")
+        case _    => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchInt32_03(): Bool = match 2i32 {
-        case 0i32 => false
-        case 1i32 => false
-        case 2i32 => true
-        case _    => false
+    @Test
+    def matchInt32_03(): Unit \ Assert = match 2i32 {
+        case 0i32 => fail("unexpected match on 0i32")
+        case 1i32 => fail("unexpected match on 1i32")
+        case 2i32 => success("matched 2i32")
+        case _    => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchInt32_04(): Bool = match 3i32 {
-        case 0i32 => false
-        case 1i32 => false
-        case 2i32 => false
-        case _    => true
+    @Test
+    def matchInt32_04(): Unit \ Assert = match 3i32 {
+        case 0i32 => fail("unexpected match on 0i32")
+        case 1i32 => fail("unexpected match on 1i32")
+        case 2i32 => fail("unexpected match on 2i32")
+        case _    => success("matched wildcard")
     }
 
-    @test
-    def testMatchInt32Var01(): Bool = match 0i32 {
-        case x => x == 0i32
+    @Test
+    def matchInt32Var01(): Unit \ Assert = match 0i32 {
+        case x => assertEq(expected = 0i32, x)
     }
 
-    @test
-    def testMatchInt32Var02(): Bool = match 2i32 {
-        case 0i32 => false
-        case 1i32 => false
-        case x   => x == 2i32
+    @Test
+    def matchInt32Var02(): Unit \ Assert = match 2i32 {
+        case 0i32 => fail("unexpected match on 0i32")
+        case 1i32 => fail("unexpected match on 1i32")
+        case x    => assertEq(expected = 2i32, x)
     }
 
 }

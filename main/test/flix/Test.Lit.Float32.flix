@@ -1,7 +1,7 @@
 mod Test.Lit.Float32 {
 
     @CompileTest
-    def float32Lit01(): Float32 = +0.0f32
+    def float32Lit01(): Float32 = 0.0f32
 
     @CompileTest
     def float32Lit02(): Float32 = -0.0f32

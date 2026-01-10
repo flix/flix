@@ -1,8 +1,8 @@
 mod Test.Exp.Fixpoint.Solve {
 
-    use Assert.{assertEq, assertTrue};
+    use Assert.{assertEq, assertMemberOf}
 
-    @test
+    @Test
     def testFixpointSolveUnit(): Unit \ Assert =
         let p = #{
             Edge((), ()). Edge((), ()). Edge((), ()). Edge((), ()).
@@ -10,10 +10,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf(((), ()), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf(((), ()), r)
 
-    @test
+    @Test
     def testFixpointSolveBool(): Unit \ Assert =
         let p = #{
             Edge(true, false). Edge(false, true). Edge(true, false). Edge(false, true).
@@ -21,10 +21,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((false, true), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((false, true), r)
 
-    @test
+    @Test
     def testFixpointSolveChar(): Unit \ Assert =
         let p = #{
             Edge('a', 'b'). Edge('b', 'c'). Edge('c', 'd'). Edge('d', 'e').
@@ -32,10 +32,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf(('d', 'b'), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf(('d', 'b'), r)
 
-    @test
+    @Test
     def testFixpointSolveInt8(): Unit \ Assert =
         let p = #{
             Edge(1i8, 2i8). Edge(2i8, 3i8). Edge(3i8, 4i8). Edge(4i8, 5i8).
@@ -43,10 +43,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((4i8, 3i8), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((4i8, 3i8), r)
 
-    @test
+    @Test
     def testFixpointSolveInt16(): Unit \ Assert =
         let p = #{
             Edge(1i16, 2i16). Edge(2i16, 3i16). Edge(3i16, 4i16). Edge(4i16, 5i16).
@@ -54,10 +54,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((4i16, 3i16), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((4i16, 3i16), r)
 
-    @test
+    @Test
     def testFixpointSolveInt32(): Unit \ Assert =
         let p = #{
             Edge(1i32, 2i32). Edge(2i32, 3i32). Edge(3i32, 4i32). Edge(4i32, 5i32).
@@ -65,10 +65,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((4i32, 3i32), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((4i32, 3i32), r)
 
-    @test
+    @Test
     def testFixpointSolveInt64(): Unit \ Assert =
         let p = #{
             Edge(1i64, 2i64). Edge(2i64, 3i64). Edge(3i64, 4i64). Edge(4i64, 5i64).
@@ -76,10 +76,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((4i64, 3i64), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((4i64, 3i64), r)
 
-    @test
+    @Test
     def testFixpointSolveBigInt(): Unit \ Assert =
         let p = #{
             Edge(1ii, 2ii). Edge(2ii, 3ii). Edge(3ii, 4ii). Edge(4ii, 5ii).
@@ -87,10 +87,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((4ii, 3ii), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((4ii, 3ii), r)
 
-    @test
+    @Test
     def testFixpointSolveString(): Unit \ Assert =
         let p = #{
             Edge("a", "b"). Edge("b", "c"). Edge("c", "d"). Edge("d", "e").
@@ -98,10 +98,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf(("d", "b"), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf(("d", "b"), r)
 
-    @test
+    @Test
     def testFixpointOption(): Unit \ Assert =
         let p = #{
             Edge(Some("a"), Some("b")). Edge(Some("b"), Some("c")). Edge(Some("c"), Some("d")). Edge(Some("d"), Some("e")).
@@ -111,10 +111,10 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((Some("d"), Some("b")), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((Some("d"), Some("b")), r)
 
-    @test
+    @Test
     def testFixpointSolveResult(): Unit \ Assert =
         let p = #{
             Edge(Ok("a"), Ok("b")). Edge(Ok("b"), Ok("c")). Edge(Ok("c"), Ok("d")). Edge(Ok("d"), Ok("e")).
@@ -124,32 +124,32 @@ mod Test.Exp.Fixpoint.Solve {
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((Ok("d"), Ok("b")), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((Ok("d"), Ok("b")), r)
 
-    @test
+    @Test
     def testFixpointSolvePoly01(): Unit \ Assert =
         let p = closure() <+> #{
             Edge(1i32, 2i32). Edge(2i32, 3i32). Edge(3i32, 4i32). Edge(4i32, 5i32).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((4i32, 2i32), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((4i32, 2i32), r)
 
-    @test
+    @Test
     def testFixpointSolvePoly02(): Unit \ Assert =
         let p = closure() <+> #{
             Edge(1i64, 2i64). Edge(2i64, 3i64). Edge(3i64, 4i64). Edge(4i64, 5i64).
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf((4i64, 2i64), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf((4i64, 2i64), r)
 
-    @test
+    @Test
     def testFixpointSolvePoly03(): Unit \ Assert =
         let p = closure() <+> #{
             Edge("a", "b"). Edge("b", "c"). Edge("c", "d"). Edge("d", "e").
         };
-        let m = query p select (x, y) from Path(x, y);
-        assertTrue(Vector.memberOf(("d", "b"), m))
+        let r = query p select (x, y) from Path(x, y);
+        assertMemberOf(("d", "b"), r)
 
     def closure(): #{Edge(a, a), Path(a, a) | r} with Order[a] = #{
         Edge(y, x) :- Edge(x, y).
@@ -157,42 +157,42 @@ mod Test.Exp.Fixpoint.Solve {
         Path(x, z) :- Path(x, y), Edge(y, z).
     }
 
-    @test
+    @Test
     def testFixpointSolveArity1(): Unit \ Assert =
         let p = #{
             One("one").
             Last(x) :- One(x).
         };
-        let m = query p select x from Last(x);
-        assertEq(expected = Vector#{"one"}, m)
+        let r = query p select x from Last(x);
+        assertEq(expected = Vector#{"one"}, r)
 
-    @test
+    @Test
     def testFixpointSolveArity5(): Unit \ Assert =
         let p = #{
             Five("one", "two", "three", "four", "five").
             Last(x) :- Five(_, _, _,   _, x).
         };
-        let m = query p select x from Last(x);
-        assertEq(expected = Vector#{"five"}, m)
+        let r = query p select x from Last(x);
+        assertEq(expected = Vector#{"five"}, r)
 
-    @test
+    @Test
     def testFixpointSolveArity10(): Unit \ Assert =
         let p = #{
             Ten("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten").
             Last(x) :- Ten(_, _, _,   _, _, _,   _, _, _,  x).
         };
-        let m = query p select x from Last(x);
-        assertEq(expected = Vector#{"ten"}, m)
+        let r = query p select x from Last(x);
+        assertEq(expected = Vector#{"ten"}, r)
 
 
-    @test
+    @Test
     def testFixpointSolveArity15(): Unit \ Assert =
         let p = #{
             Fifteen("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen").
             Last(x) :- Fifteen(_, _, _,   _, _, _,   _, _, _,   _, _, _,    _, _, x).
         };
-        let m = query p select x from Last(x);
-        assertEq(expected = Vector#{"fifteen"}, m)
+        let r = query p select x from Last(x);
+        assertEq(expected = Vector#{"fifteen"}, r)
 
 
     /////////////////////////////////////////////////////////////////////////////

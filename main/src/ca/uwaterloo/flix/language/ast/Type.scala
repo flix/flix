@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.collection.CofiniteSet
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
 import scala.annotation.tailrec

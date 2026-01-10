@@ -24,7 +24,7 @@
 /// their identifiers in same order. It also has a tight coupling with `Lowering`, which assumes
 /// that a `Type` is the same as a `UnifiedTypePoss`.
 ///
-mod Fixpoint3.TypeInfo {
+pub mod Fixpoint3.TypeInfo {
     use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Datalog, Constraint, HeadPredicate, HeadTerm, VarSym}
     use Fixpoint3.Ast.Ram.{RamProgram, RelSym, Predicates}
     use Fixpoint3.Ast.Shared.PredSym
@@ -39,13 +39,11 @@ mod Fixpoint3.TypeInfo {
     /// As far as we are concerned a `Type` is simply a description of where
     /// its boxing/unboxing information is saved.
     ///
-    @Internal
     pub type alias Type = UnifiedTypePos
 
     ///
     /// The type of a relation is simply a vector of its types.
     ///
-    @Internal
     pub type alias RelType = Vector[Type]
 
     ///
@@ -55,7 +53,6 @@ mod Fixpoint3.TypeInfo {
     /// For functional predicates the vector contains the types of the
     /// functional predicates in the same order they are met by the compiler.
     ///
-    @Internal
     pub type alias TypeInformation = Vector[RelType]
 
     type alias TypeUnifier[r: Region] = MutDisjointSets[(Int64, Int32), r]
@@ -72,7 +69,6 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Returns the type of provenance annotations.
     ///
-    @Internal
     pub def provType(): Type = 0
 
     ///
@@ -81,7 +77,6 @@ mod Fixpoint3.TypeInfo {
     /// For functional predicates the vector returned vector contains the types of the
     /// functional predicates in the same order they are met by the compiler.
     ///
-    @Internal
     pub def typeDatalog(d: Datalog, pseudoStratums: PseudoStrataOrder[r], predicates: Predicates, withProv: Bool): TypeInformation \ r = match d {
         case Datalog.Datalog(_, _) => region rc {
             let idCreator = Counter.fresh(rc);
@@ -145,7 +140,6 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Expands `typeInfo` to include the provenance annotations types.
     ///
-    @Internal
     pub def expandTypeInfoToProv(typeInfo: TypeInformation, predicates: Predicates): TypeInformation =
         let max = getMax(predicates);
         Vector.mapWithIndex(i -> v -> match Int32.toInt64(i) < max {
@@ -157,7 +151,6 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Expands `relType` to include the provenance annotations types.
     ///
-    @Internal
     pub def expandTypeToProv(relType: RelType): RelType = relType ++ Vector#{provType(), provType()}
 
     ///
@@ -172,7 +165,6 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Returns the type of the `index`'th value of the relation with predicate `PredSym(_, id)`.
     ///
-    @Internal
     pub def getType(id: Int64, index: Int32, typeInfo: TypeInformation): Type = {
         Vector.get(index, getTypeOf(id, typeInfo))
     }
@@ -180,7 +172,6 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Returns the type of the relation with predicate `PredSym(_, id)`.
     ///
-    @Internal
     pub def getTypeOf(id: Int64, typeInfo: TypeInformation): RelType = {
         Vector.get(toInt32(id), typeInfo)
     }

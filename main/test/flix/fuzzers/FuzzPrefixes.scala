@@ -16,7 +16,7 @@
 package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -62,7 +62,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
       // We use the same name for all inputs to simulate editing a file
-      flix.addSourceCode("<input>", prefix)(SecurityContext.Unrestricted)
+      flix.addVirtualPath(CompilerConstants.VirtualTestFile, prefix)(SecurityContext.Unrestricted)
       flix.compile() // We simply care that this does not crash.
     }
   }

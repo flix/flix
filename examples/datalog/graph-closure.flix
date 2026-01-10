@@ -13,6 +13,6 @@ def closure(edges: List[(t, t)]): Set[(t, t )] with Order[t] =
 ///
 /// Runs `paths` on a small graph.
 ///
-def main(): Unit \ IO = 
+def main(): Unit \ IO =
     let edges = List#{(1, 2), (2, 3), (4, 5), (5, 6)};
     println(closure(edges))

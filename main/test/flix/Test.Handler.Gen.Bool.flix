@@ -1,5 +1,7 @@
 mod Test.Handler.Gen.Bool {
 
+    use Assert.assertEq;
+
     eff Gen {
         def gen(): Bool
     }
@@ -28,39 +30,39 @@ mod Test.Handler.Gen.Bool {
         List.unfold(match (i, v) -> if (i >= b) None else Some((v, (i + 1, not v))), (a, true))
 
     @Test
-    def testSample01(): Bool =
-        Nil == sample(0)
+    def testSample01(): Unit \ Assert =
+        assertEq(expected = Nil, sample(0))
 
     @Test
-    def testSample02(): Bool =
-        true :: Nil == sample(1)
+    def testSample02(): Unit \ Assert =
+        assertEq(expected = true :: Nil, sample(1))
 
     @Test
-    def testSample03(): Bool =
-        true :: false :: Nil == sample(2)
+    def testSample03(): Unit \ Assert =
+        assertEq(expected = true :: false :: Nil, sample(2))
 
     @Test
-    def testSample04(): Bool =
-        true :: false :: true :: Nil == sample(3)
+    def testSample04(): Unit \ Assert =
+        assertEq(expected = true :: false :: true :: Nil, sample(3))
 
     @Test
-    def testSample05(): Bool =
-        true :: false :: true :: false :: Nil == sample(4)
+    def testSample05(): Unit \ Assert =
+        assertEq(expected = true :: false :: true :: false :: Nil, sample(4))
 
     @Test
-    def testSample06(): Bool =
-        true :: false :: true :: false :: true :: Nil == sample(5)
+    def testSample06(): Unit \ Assert =
+        assertEq(expected = true :: false :: true :: false :: true :: Nil, sample(5))
 
     @Test
-    def testSample07(): Bool =
-        true :: false :: true :: false :: true :: false :: Nil == sample(6)
+    def testSample07(): Unit \ Assert =
+        assertEq(expected = true :: false :: true :: false :: true :: false :: Nil, sample(6))
 
     @Test
-    def testSample08(): Bool =
-        range(0, 10) == sample(10)
+    def testSample08(): Unit \ Assert =
+        assertEq(expected = range(0, 10), sample(10))
 
     @Test
-    def testSample09(): Bool =
-        range(0, 100) == sample(100)
+    def testSample09(): Unit \ Assert =
+        assertEq(expected = range(0, 100), sample(100))
 
 }

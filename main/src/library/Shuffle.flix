@@ -29,7 +29,7 @@ eff Shuffle {
 
 }
 
-mod Shuffle {
+pub mod Shuffle {
 
     import java.util.{Random => JRandom}
 
