@@ -116,16 +116,19 @@ object SafetyError {
   case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3918
 
-    def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
+    def summary: String = "Impossible cast: cannot cast from a type variable."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast: Attempt to cast a type variable to a type.
+      s""">> Impossible cast: cannot cast from a type variable.
          |
-         |${src(loc, "illegal cast")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(FormatType.formatType(from, None))}
+         |To  : ${red(FormatType.formatType(to, None))}
+         |
+         |${underline("Explanation:")} A checked cast requires the source type to be known
+         |at compile time.
          |""".stripMargin
     }
   }
@@ -140,16 +143,18 @@ object SafetyError {
   case class IllegalCheckedCastToNonJava(from: java.lang.Class[?], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4029
 
-    def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
+    def summary: String = "Impossible cast: cannot cast a Java type to a Flix type."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast: Attempt to cast a Java type to a non-Java type.
+      s""">> Impossible cast: cannot cast a Java type to a Flix type.
          |
-         |${src(loc, "illegal cast")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${formatJavaType(from)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(formatJavaType(from))}
+         |To  : ${red(FormatType.formatType(to, None))}
+         |
+         |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
     }
   }
@@ -164,16 +169,19 @@ object SafetyError {
   case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4132
 
-    def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
+    def summary: String = "Impossible cast: cannot cast to a type variable."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast: Attempt to cast a type to a type variable.
+      s""">> Impossible cast: cannot cast to a type variable.
          |
-         |${src(loc, "illegal checked cast.")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(FormatType.formatType(from, None))}
+         |To  : ${red(FormatType.formatType(to, None))}
+         |
+         |${underline("Explanation:")} A checked cast requires the target type to be known
+         |at compile time.
          |""".stripMargin
     }
   }
