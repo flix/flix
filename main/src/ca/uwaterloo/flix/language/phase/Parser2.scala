@@ -2847,7 +2847,7 @@ object Parser2 {
         // `new Type { ... }`.
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-          checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
+          checkForItem = _ => nth(nextNonComment(0))  == TokenKind.KeywordDef,
           getItem = jvmMethod,
           breakWhen = _.isRecoverInExpr,
           delimiterL = TokenKind.CurlyL,
@@ -2873,8 +2873,9 @@ object Parser2 {
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordDef))
+      // Have to eat potential comments before the `assert`.
       val mark = open()
+      assert(at(TokenKind.KeywordDef))
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_JAVA)
       Decl.parameters()
