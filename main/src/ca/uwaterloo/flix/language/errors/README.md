@@ -118,7 +118,7 @@ Use labels consistently to signal intent:
 - **`Explanation:`** — multi-line educational content
 - **`Possible fixes:`** — a list of concrete alternatives
 
-Avoid inventing new labels unless they serve a clearly distinct purpose.
+Use at most one label per error. Avoid inventing new labels unless they serve a clearly distinct purpose.
 
 ---
 
@@ -165,7 +165,9 @@ Example II:
                        ^
                        effect 'E' requires handler for 'op'
 
-Tip: Add a handler definition for 'op'.
+Explanation: When handling an effect, you must provide definitions for
+all its operations. The effect 'E' declares 'op', but no handler was
+provided. Add a handler definition for 'op'.
 ```
 
 Example III:
