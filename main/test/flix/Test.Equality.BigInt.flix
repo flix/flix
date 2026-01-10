@@ -8,7 +8,7 @@ mod Test.Equality.BigInt {
 
     @Test
     def testEqBigInt02(): Unit \ Assert =
-        assertEq(expected = +1ii, +1ii)
+        assertEq(expected = 1ii, 1ii)
 
     @Test
     def testEqBigInt03(): Unit \ Assert =
@@ -16,11 +16,11 @@ mod Test.Equality.BigInt {
 
     @Test
     def testNeqBigInt01(): Unit \ Assert =
-        assertNeq(unexpected = -1ii, +1ii)
+        assertNeq(unexpected = -1ii, 1ii)
 
     @Test
     def testNeqBigInt02(): Unit \ Assert =
-        assertNeq(unexpected = +1ii, -1ii)
+        assertNeq(unexpected = 1ii, -1ii)
 
     @Test
     def testNeqBigInt03(): Unit \ Assert =

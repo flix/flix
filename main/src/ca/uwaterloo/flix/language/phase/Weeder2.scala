@@ -1244,7 +1244,10 @@ object Weeder2 {
                     case "lazy" => Expr.Lazy(expr, tree.loc)
                     case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
                     case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", tree.loc), opTree.loc), List(expr), tree.loc)
-                    case "+" => expr
+                    case "+" =>
+                      val error = IllegalUnaryPlus(opTree.loc)
+                      sctx.errors.add(error)
+                      expr
                     case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, tree.loc), opTree.loc), List(expr), tree.loc)
                   }
                 })
