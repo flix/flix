@@ -141,29 +141,46 @@ Example I:
 ```
 -- Syntax Error [E8465] ----------------------------------------------- foo.flix
 
->> Multiple occurrences of the annotation '@Test'.
+>> Duplicate annotation '@Test'.
 
 1 | @Test @Test
-^^^^^
-the first occurrence was here.
+    ^^^^^
+    first occurrence
 
 1 | @Test @Test
-^^^^^
-the second occurrence was here.
-
-Tip: Remove one of the two annotations.
+          ^^^^^
+          duplicate
 ```
+
+Note: This error is self-explanatory—no tip, explanation, or possible fixes needed.
 
 Example II:
 
-```flix
+```
 -- Resolution Error [E1245] ------------------------------------------- foo.flix
 
->> Missing handler definition 'op' for effect E'.
+>> Missing handler definition 'op' for effect 'E'.
 
 8 |     } with handler E {
                        ^
-                       missing handler definition
+                       effect 'E' requires handler for 'op'
 
-Add a handler definition for op
+Tip: Add a handler definition for 'op'.
+```
+
+Example III:
+
+```
+-- Instance Error [E2518] --------------------------------------------- foo.flix
+
+>> Mismatched signature 'get' required by 'C'.
+
+6 |     pub def get(_i: Int32): Bool = false
+^^^
+mismatched signature.
+
+Expected scheme: Unit -> Bool with C[Bool]
+Actual scheme:   Int32 -> Bool with C[Bool]
+
+Tip: Modify the definition to match the signature.
 ```
