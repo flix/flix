@@ -31,13 +31,18 @@ object Symbols {
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
 
     val version: String = "3"
+    lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Boxable.box")
+    lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Boxable.unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.runSolver")
     lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.runSolverWithProvenance")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.projectSym")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.rename")
+    lazy val ProvenanceOf: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.provenanceOf")
 
     def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.injectInto$arity")
+
+    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.facts$arity")
 
   }
 
@@ -50,6 +55,8 @@ object Symbols {
     lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Datalog")
 
     lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Shared.PredSym")
+
+    lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
   }
 
   protected[monomorph] object Types {
@@ -72,6 +79,20 @@ object Symbols {
 
     lazy val PredSym: Type = Type.mkEnum(Enums.PredSym, Nil, SourceLocation.Unknown)
 
+    lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
+    lazy val VectorOfBoxed: Type = Type.mkVector(Types.Boxed, SourceLocation.Unknown)
+
+    def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
+      Type.mkPureUncurriedArrow(
+        List(
+          PredSym,
+          Type.mkVector(Boxed, loc),
+          Type.mkVector(PredSym, loc),
+          Type.mkPureCurriedArrow(List(PredSym, Type.mkVector(Boxed, loc)), t, loc),
+          Datalog
+        ),
+        Type.mkVector(t, loc), loc
+      )
   }
 
 }
