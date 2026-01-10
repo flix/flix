@@ -754,52 +754,19 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.FixpointMerge(e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
-      // Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
-      // PredSym and terms to an extensible variant.
-      val defn = Defs.lookup(Defs.ProvenanceOf)
-      val mergedExp = mergeExps(exps.map(visitExp), loc)
-      val (goalPredSym, goalTerms) = select match {
-        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
-          val boxedTerms = terms.map(t => box(visitExp(t)))
-          (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
-      }
-      val withPredSyms = mkVector(withh.map(mkPredSym), Types.PredSym, loc)
-      val extVarType = unwrapVectorType(tpe, loc)
-      val preds = predicatesOfExtVar(extVarType, loc)
-      val lambdaExp = mkExtVarLambda(preds, extVarType, loc)
-      val argExps = goalPredSym :: goalTerms :: withPredSyms :: lambdaExp :: mergedExp :: Nil
-      val itpe = Types.mkProvenanceOf(extVarType, loc)
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
+      val exps = exps0.map(visitExp)
+      val select = visitHeadPred(select0)
+      LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, visitType(tpe), eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tpe, eff, loc) =>
-      val loweredExps = exps.map(visitExp)
-      val loweredQueryExp = visitExp(queryExp)
-
-      // Compute the arity of the predicate symbol.
-      // The type is either of the form `Vector[(a, b, c)]` or `Vector[a]`.
-      val (_, targs) = Type.eraseAliases(tpe) match {
-        case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-          case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
-          case Some(TypeConstructor.Unit) => (tycon, Nil)
-          case _ => (innerType, List(innerType))
-        }
-        case t => throw InternalCompilerException(s"Unexpected non-foldable type: '${t}'.", loc)
-      }
-
-      val predArity = selects.length
-
-      // Define the name and type of the appropriate factsX function in Solver.flix
-      val sym = Defs.Facts(predArity)
-      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
-
-      // Merge and solve exps
-      val mergedExp = mergeExps(loweredQueryExp :: loweredExps, loc)
-      val solvedExp = LoweredAst.Expr.ApplyDef(Defs.Solve, mergedExp :: Nil, List.empty, Types.SolveType, Types.Datalog, eff, loc)
-
-      // Put everything together
-      val argExps = mkPredSym(pred) :: solvedExp :: Nil
-      LoweredAst.Expr.ApplyDef(sym, argExps, targs, defTpe, tpe, eff, loc)
+    case TypedAst.Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
+      val exps = exps0.map(visitExp)
+      val queryExp = visitExp(queryExp0)
+      val selects = selects0.map(visitExp)
+      val t = visitType(tpe)
+      val from = from0.map(visitBodyPred)
+      val where = where0.map(visitExp)
+      LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, t, eff, loc)
 
     case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
       val exps = exps0.map(visitExp)
@@ -1723,6 +1690,33 @@ object Lowering {
       itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc),
       tpe = tpe, eff = Type.Pure, loc = loc
     )
+  }
+
+  /**
+    * Lowers the given head predicate `p0`.
+    */
+  private def visitHeadPred(p0: TypedAst.Predicate.Head)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Predicate.Head = p0 match {
+    case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
+      val t = visitType(tpe)
+      val visitedTerms = terms.map(visitExp)
+      LoweredAst.Predicate.Head.Atom(pred, den, visitedTerms, t, loc)
+  }
+
+  /**
+    * Lowers the given body predicate `p0`.
+    */
+  private def visitBodyPred(p0: TypedAst.Predicate.Body)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Predicate.Body = p0 match {
+    case TypedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms0, tpe, loc) =>
+      val terms = terms0.map(visitPat)
+      val t = visitType(tpe)
+      LoweredAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, t, loc)
+    case TypedAst.Predicate.Body.Functional(outBnds, exp, loc) =>
+      val outSyms = outBnds.map(_.sym)
+      val e = visitExp(exp)
+      LoweredAst.Predicate.Body.Functional(outSyms, e, loc)
+    case TypedAst.Predicate.Body.Guard(exp, loc) =>
+      LoweredAst.Predicate.Body.Guard(visitExp(exp), loc)
+
   }
 
   /**

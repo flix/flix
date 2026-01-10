@@ -18,9 +18,9 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.LoweredAst.Predicate
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, PredicateAndArity, Scope, SolveMode}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, PredicateAndArity, Scope, SolveMode, SymUse}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, MonoAst, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -315,7 +315,7 @@ object Lowering {
     case LoweredAst.Expr.FixpointConstraintSet(cs, tpe, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
 
-    case LoweredAst.Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
+    case LoweredAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
       val resultType = Types.Datalog
       val defn = lookup(Defs.Rename, resultType)
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
@@ -328,11 +328,11 @@ object Lowering {
       val argExps = lowerExp(exp1) :: lowerExp(exp2) :: Nil
       MonoAst.Expr.ApplyDef(defn, argExps, Types.MergeType, resultType, eff, loc)
 
-    case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe0, eff, loc) =>
+      lowerQueryWithProvenance(exps, select, withh, tpe0, eff, loc)
 
-    case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tpe, eff, loc) =>
+      lowerQueryWithSelect(exps, queryExp, selects, pred, tpe, eff, loc)
 
     case LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, _, eff, loc) =>
       lowerSolveWithProject(exps, optPreds, mode, eff, loc)
@@ -803,7 +803,7 @@ object Lowering {
     *
     * @param tpe is assumed to be specialized, but not lowered.
     */
-  private def extractChannelTpe(tpe: Type): Type = eraseAliases(tpe) match {
+  private def extractChannelTpe(tpe: Type): Type = tpe match {
     case Type.Apply(Type.Apply(Types.ChannelMpmc, elmType, _), _, _) => elmType
     case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a channel type", tpe.loc)
   }
@@ -844,6 +844,50 @@ object Lowering {
   /*
     * Datalog lowering
     */
+
+  /**
+    *
+    * Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
+    * PredSym and terms to an extensible variant.
+    */
+  private def lowerQueryWithProvenance(exps: List[LoweredAst.Expr], select: Predicate.Head, withh: List[Name.Pred], tpe0: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val tpe = lowerType(tpe0)
+    val mergedExp = mergeExps(exps.map(lowerExp), loc)
+    val (goalPredSym, goalTerms) = select match {
+      case LoweredAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
+        val boxedTerms = terms.map(t => box(lowerExp(t)))
+        (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
+    }
+    val withPredSyms = mkVector(withh.map(mkPredSym), Types.PredSym, loc)
+    val extVarType = unwrapVectorType(tpe, loc)
+    val preds = predicatesOfExtVar(extVarType, loc)
+    val lambdaExp = mkExtVarLambda(preds, extVarType, loc)
+    val argExps = goalPredSym :: goalTerms :: withPredSyms :: lambdaExp :: mergedExp :: Nil
+    val itpe = Types.mkProvenanceOf(extVarType, loc)
+    val defn = lookup(Defs.ProvenanceOf, itpe)
+    MonoAst.Expr.ApplyDef(defn, argExps, itpe, tpe, eff, loc)
+  }
+
+  private def lowerQueryWithSelect(exps: List[LoweredAst.Expr], queryExp: LoweredAst.Expr, selects: List[LoweredAst.Expr], pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val loweredExps = exps.map(lowerExp)
+    val loweredQueryExp = lowerExp(queryExp)
+
+    val predArity = selects.length
+
+    // Define the name and type of the appropriate factsX function in Solver.flix
+    val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
+    val sym = lookup(Defs.Facts(predArity), defTpe)
+
+    // Merge and solve exps
+    val mergedExp = mergeExps(loweredQueryExp :: loweredExps, loc)
+    val solveDefn = lookup(Defs.Solve, Types.SolveType)
+    val solvedExp = MonoAst.Expr.ApplyDef(solveDefn, mergedExp :: Nil, Types.SolveType, Types.Datalog, eff, loc)
+
+    // Put everything together
+    val argExps = mkPredSym(pred) :: solvedExp :: Nil
+    MonoAst.Expr.ApplyDef(sym, argExps, defTpe, tpe, eff, loc)
+
+  }
 
   /**
     * Rewrites
@@ -940,4 +984,205 @@ object Lowering {
       val inner = List(nameExp, idExp)
       mkTag(Enums.PredSym, "PredSym", inner, Types.PredSym, loc)
   }
+
+  /**
+    * Returns the given expression `exp` in a box.
+    */
+  private def box(exp: MonoAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val loc = exp.loc
+    val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
+    MonoAst.Expr.ApplyDef(lookup(Defs.Box, tpe), List(exp), tpe, Types.Boxed, Type.Pure, loc)
+  }
+
+  /**
+    * Returns a vector expression constructed from the given `exps` with type list of `elmType`.
+    */
+  private def mkVector(exps: List[MonoAst.Expr], elmType: Type, loc: SourceLocation): MonoAst.Expr = {
+    MonoAst.Expr.VectorLit(exps, Type.mkVector(elmType, loc), Type.Pure, loc)
+  }
+
+  /*
+   * Methods for lowering provenance datalog expressions.
+   */
+
+  /**
+    * Returns `t` from the Flix type `Vector[t]`.
+    */
+  private def unwrapVectorType(tpe: Type, loc: SourceLocation): Type = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
+    case t => throw InternalCompilerException(
+      s"Expected Type.Apply(Type.Cst(TypeConstructor.Vector, _), _, _), but got $t",
+      loc
+    )
+  }
+
+  /**
+    * Returns the pairs consisting of predicates and their term types from the extensible variant
+    * type `tpe`.
+    */
+  private def predicatesOfExtVar(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, loc1) =>
+      predicatesOfSchemaRow(tpe1, loc1)
+    case t => throw InternalCompilerException(
+      s"Expected Type.Apply(Type.Cst(TypeConstructor.Extensible, _), _, _), but got $t",
+      loc
+    )
+  }
+
+  /**
+    * Returns the pairs consisting of predicates and their term types from the SchemaRow `row`.
+    */
+  private def predicatesOfSchemaRow(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
+      (pred, termTypesOfRelation(rel, loc2)) :: predicatesOfSchemaRow(tpe2, loc1)
+    case Type.Var(_, _) => Nil
+    case Type.SchemaRowEmpty => Nil
+    case t => throw InternalCompilerException(s"Got unexpected $t", loc)
+  }
+
+  /**
+    * Returns the types constituting a `Type.Relation`.
+    */
+  private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
+    def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
+      case Type.Cst(TypeConstructor.Relation(_), _) => Nil
+      case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
+      case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got $t", loc0)
+    }
+
+    f(rel, loc).reverse
+  }
+
+  /**
+    * Returns the `MonoAst` lambda expression
+    * {{{
+    *   predSym: PredSym -> terms: Vector[Boxed] -> match predSym {
+    *     case PredSym.PredSym(name, _) => match name {
+    *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       ...
+    *     }
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types.
+    */
+  private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)(Scope.Top, flix)
+    val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)(Scope.Top, flix)
+    mkLambdaExp(predSymVar, Types.PredSym,
+      mkLambdaExp(termsVar, Types.VectorOfBoxed,
+        mkExtVarBody(preds, predSymVar, termsVar, tpe, loc),
+        tpe, Type.Pure, loc
+      ),
+      Type.mkPureArrow(Types.VectorOfBoxed, tpe, loc), Type.Pure, loc
+    )
+  }
+
+  /**
+    * Returns the `MonoAst` lambda expression
+    * {{{
+    *   paramName -> exp
+    * }}}
+    * where `"paramName" == param.text` and `exp` has type `expType` and effect `eff`.
+    */
+  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: MonoAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr =
+    MonoAst.Expr.Lambda(
+      MonoAst.FormalParam(param, paramTpe, Occur.Unknown, loc),
+      exp,
+      Type.mkArrowWithEffect(paramTpe, eff, expTpe, loc),
+      loc
+    )
+
+  /**
+    * Returns the `MonoAst` match expression
+    * {{{
+    *   match predSym {
+    *     case PredSym.PredSym(name, _) => match name {
+    *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       ...
+    *     }
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types, `"predSym" == predSymVar.text`
+    * and `"terms" == termsVar.text`.
+    */
+  private def mkExtVarBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val nameVar = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)(Scope.Top, flix)
+    MonoAst.Expr.Match(
+      exp = MonoAst.Expr.Var(predSymVar, Types.PredSym, loc),
+      rules = List(
+        MonoAst.MatchRule(
+          pat = MonoAst.Pattern.Tag(
+            symUse = SymUse.CaseSymUse(Symbol.mkCaseSym(Enums.PredSym, Name.Ident("PredSym", loc)), loc),
+            pats = List(
+              MonoAst.Pattern.Var(nameVar, Type.Str, Occur.Unknown, loc),
+              MonoAst.Pattern.Wild(Type.Int64, loc)
+            ),
+            tpe = Types.PredSym, loc = loc
+          ),
+          guard = None,
+          exp = MonoAst.Expr.Match(
+            exp = MonoAst.Expr.Var(nameVar, Type.Str, loc),
+            rules = preds.map {
+              case (p, types) => mkProvenanceMatchRule(termsVar, tpe, p, types, loc)
+            },
+            tpe = tpe, eff = Type.Pure, loc = loc
+          ),
+        )
+      ),
+      tpe = tpe, eff = Type.Pure, loc
+    )
+  }
+
+  /**
+    * Returns the pattern match rule
+    * {{{
+    *   case "P" => xvar P(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    * }}}
+    * where `"P" == p.name`
+    */
+  private def mkProvenanceMatchRule(termsVar: Symbol.VarSym, tpe: Type, p: Name.Pred, types: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.MatchRule = {
+    val termsExps = types.zipWithIndex.map {
+      case (tpe1, i) => mkUnboxedTerm(termsVar, tpe1, i, loc)
+    }
+    MonoAst.MatchRule(
+      pat = MonoAst.Pattern.Cst(Constant.Str(p.name), Type.Str, loc),
+      guard = None,
+      exp = MonoAst.Expr.ApplyAtomic(
+        op = AtomicOp.ExtTag(Name.Label(p.name, loc)),
+        exps = termsExps,
+        tpe = tpe, eff = Type.Pure, loc = loc
+      )
+    )
+  }
+
+  /**
+    * Returns the `MonoAst` expression
+    * {{{
+    *   unbox(Vector.get(i, terms))
+    * }}}
+    * where `"terms" == termsVar.text`.
+    */
+  private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val outerItpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc)
+    val innerItpe = Type.mkPureUncurriedArrow(List(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc)
+    MonoAst.Expr.ApplyDef(
+      sym = lookup(Defs.Unbox, outerItpe),
+      exps = List(
+        MonoAst.Expr.ApplyDef(
+          sym = lookup(Symbol.mkDefnSym(s"Vector.get"), innerItpe),
+          exps = List(
+            MonoAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
+            MonoAst.Expr.Var(termsVar, Types.VectorOfBoxed, loc)
+          ),
+          itpe = innerItpe,
+          tpe = Types.Boxed, eff = Type.Pure, loc = loc
+        )
+      ),
+      itpe = outerItpe,
+      tpe = tpe, eff = Type.Pure, loc = loc
+    )
+  }
+
 }

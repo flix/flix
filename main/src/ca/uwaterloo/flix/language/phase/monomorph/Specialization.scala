@@ -707,11 +707,18 @@ object Specialization {
       val t = subst(tpe)
       LoweredAst.Expr.FixpointMerge(e1, e2, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
+      val exps = exps0.map(specializeExp(_, env0, subst))
+      val select = specializeHeadPred(select0, env0, subst)
+      val t = subst(tpe)
+      LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    // We do not care about `selects`, `from`, or `where`. I'm unsure why they're not just dropped after desugaring.
+    case LoweredAst.Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
+      val exps = exps0.map(specializeExp(_, env0, subst))
+      val queryExp = specializeExp(queryExp0, env0, subst)
+      val t = subst(tpe)
+      LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects0, from0, where0, pred, t, subst(eff), loc)
 
     case LoweredAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
@@ -748,6 +755,16 @@ object Specialization {
         val crash = LoweredAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
         LoweredAst.Expr.Stm(exp, crash, tpe, eff, loc)
     }
+  }
+
+  /**
+    * Specializes `p`.
+    */
+  private def specializeHeadPred(p: LoweredAst.Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Predicate.Head = p match {
+    case LoweredAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
+      val t = subst(tpe)
+      val visitedTerms = terms.map(specializeExp(_, env0, subst))
+      LoweredAst.Predicate.Head.Atom(pred, den, visitedTerms, t, loc)
   }
 
   /**
