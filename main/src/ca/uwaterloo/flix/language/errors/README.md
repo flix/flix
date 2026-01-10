@@ -177,12 +177,10 @@ Example III:
 
 >> Mismatched signature 'get' required by 'C'.
 
-6 |     pub def get(_i: Int32): Bool = false
-^^^
-mismatched signature.
+6 |     pub def get(): Bool = false
+                       ^^^^
+                       unexpected return type
 
-Expected scheme: Unit -> Bool with C[Bool]
-Actual scheme:   Int32 -> Bool with C[Bool]
-
-Tip: Modify the definition to match the signature.
+Expected signature: Unit -> Int32
+Actual signature:   Unit -> Bool
 ```
