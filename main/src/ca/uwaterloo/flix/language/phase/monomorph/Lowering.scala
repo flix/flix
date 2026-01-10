@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.monomorph
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, PredicateAndArity, Scope, SolveMode}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, MonoAst, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -334,11 +334,11 @@ object Lowering {
     case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
 
-    case LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, _, eff, loc) =>
+      lowerSolveWithProject(exps, optPreds, mode, eff, loc)
 
-    case LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
+      lowerInjectInto(exps, predsAndArities, loc)
 
     case LoweredAst.Expr.ApplySig(_, _, _, _, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected ApplySig", exp0.loc)
@@ -841,9 +841,94 @@ object Lowering {
     Type.Apply(Type.Apply(Types.ChannelMpmc, tpe1, loc), tpe2, loc)
   }
 
-  /**
+  /*
     * Datalog lowering
     */
+
+  /**
+    * Rewrites
+    * {{{
+    *     solve e₁, e₂, e₃ project P₁, P₂, P₃
+    * }}}
+    * to
+    * {{{
+    *     let tmp% = solve e₁ <+> e₂ <+> e₃;
+    *     merge (project P₁ tmp%, project P₂ tmp%, project P₃ tmp%)
+    * }}}
+    */
+  private def lowerSolveWithProject(exps0: List[LoweredAst.Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+      val defn = mode match {
+        case SolveMode.Default => lookup(Defs.Solve, Types.Datalog)
+        case SolveMode.WithProvenance => lookup(Defs.SolveWithProvenance, Types.Datalog)
+      }
+      val exps = exps0.map(lowerExp)
+      val mergedExp = mergeExps(exps, loc)
+      val argExps = mergedExp :: Nil
+      val solvedExp = MonoAst.Expr.ApplyDef(defn, argExps, Types.SolveType, Types.Datalog, eff, loc)
+      val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)(Scope.Top, flix)
+      val letBodyExp = optPreds match {
+        case Some(preds) =>
+          mergeExps(preds.map(pred => {
+            val varExp = MonoAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
+            projectSym(mkPredSym(pred), varExp, loc)
+          }), loc)
+        case None => MonoAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
+      }
+      MonoAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, Occur.Unknown, loc)
+
+  }
+
+  private def lowerInjectInto(exps: List[LoweredAst.Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val loweredExps = exps.zip(predsAndArities).map {
+      case (exp, PredicateAndArity(pred, _)) =>
+        // Compute the types arguments of the functor F[(a, b, c)] or F[a].
+        val (_, targsLength) = exp.tpe match {
+          case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
+            case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments.length)
+            case Some(TypeConstructor.Unit) => (tycon, 0)
+            case _ => (tycon, 1)
+          }
+          case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
+        }
+
+        // The type of the function.
+        val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, lowerType(exp.tpe)), Types.Datalog, loc)
+
+        // Compute the symbol of the function.
+        val sym = lookup(Defs.ProjectInto(targsLength), defTpe)
+
+        // Put everything together.
+        val argExps = mkPredSym(pred) :: lowerExp(exp) :: Nil
+        MonoAst.Expr.ApplyDef(sym, argExps, defTpe, Types.Datalog, exp.eff, loc)
+    }
+    mergeExps(loweredExps, loc)
+
+  }
+
+  /**
+    * Returns an expression merging `exps` using `Defs.Merge`.
+    */
+  private def mergeExps(exps: List[MonoAst.Expr], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr =
+    exps.reduceRight {
+      (exp, acc) =>
+        val resultType = Types.Datalog
+        val defn = lookup(Defs.Merge, resultType)
+        val argExps = exp :: acc :: Nil
+        val itpe = Types.MergeType
+        MonoAst.Expr.ApplyDef(defn, argExps, itpe, resultType, exp.eff, loc)
+    }
+
+  /**
+    * Returns a new `Datalog` from `datalogExp` containing only facts from the predicate given by the `PredSym` `predSymExp`
+    * using `Defs.Filter`.
+    */
+  private def projectSym(predSymExp: MonoAst.Expr, datalogExp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val resultType = Types.Datalog
+    val defn = lookup(Defs.Filter, resultType)
+    val argExps = predSymExp :: datalogExp :: Nil
+    val itpe = Types.FilterType
+    MonoAst.Expr.ApplyDef(defn, argExps, itpe, resultType, datalogExp.eff, loc)
+  }
 
   /**
     * Constructs a `Fixpoint/Ast/Shared.PredSym` from the given predicate `pred`.

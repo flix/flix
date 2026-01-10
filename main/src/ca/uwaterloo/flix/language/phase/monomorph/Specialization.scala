@@ -713,11 +713,15 @@ object Specialization {
     case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
 
-    case LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
+      val exps = exps0.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
+      val exps = exps0.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, t, subst(eff), loc)
 
   }
 

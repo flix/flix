@@ -31,8 +31,13 @@ object Symbols {
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
 
     val version: String = "3"
+    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.runSolver")
+    lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.runSolverWithProvenance")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.union")
+    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.projectSym")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.rename")
+
+    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint$version.Solver.injectInto$arity")
 
   }
 
@@ -60,7 +65,9 @@ object Symbols {
     //
     // Function Types.
     //
+    lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog, SourceLocation.Unknown)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
+    lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
     lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
 
     lazy val PredSym: Type = Type.mkEnum(Enums.PredSym, Nil, SourceLocation.Unknown)

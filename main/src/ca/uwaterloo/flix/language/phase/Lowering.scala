@@ -801,56 +801,15 @@ object Lowering {
       val argExps = mkPredSym(pred) :: solvedExp :: Nil
       LoweredAst.Expr.ApplyDef(sym, argExps, targs, defTpe, tpe, eff, loc)
 
-    case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, _, eff, loc) =>
-      // Rewrites
-      //     solve e₁, e₂, e₃ project P₁, P₂, P₃
-      // to
-      //     let tmp% = solve e₁ <+> e₂ <+> e₃;
-      //     merge (project P₁ tmp%, project P₂ tmp%, project P₃ tmp%)
-      //
-      val defn = mode match {
-        case SolveMode.Default => Defs.lookup(Defs.Solve)
-        case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
-      }
+    case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
       val exps = exps0.map(visitExp)
-      val mergedExp = mergeExps(exps, loc)
-      val argExps = mergedExp :: Nil
-      val solvedExp = LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.SolveType, Types.Datalog, eff, loc)
-      val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)
-      val letBodyExp = optPreds match {
-        case Some(preds) =>
-          mergeExps(preds.map(pred => {
-            val varExp = LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
-            projectSym(mkPredSym(pred), varExp, loc)
-          }), loc)
-        case None => LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
-      }
-      LoweredAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, loc)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, t, eff, loc)
 
-    case TypedAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
-      val loweredExps = exps.zip(predsAndArities).map {
-        case (exp, PredicateAndArity(pred, _)) =>
-          // Compute the types arguments of the functor F[(a, b, c)] or F[a].
-          val (targ, targs) = Type.eraseAliases(exp.tpe) match {
-            case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-              case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
-              case Some(TypeConstructor.Unit) => (tycon, Nil)
-              case _ => (tycon, List(innerType))
-            }
-            case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
-          }
-
-          // Compute the symbol of the function.
-          val sym = Defs.ProjectInto(targs.length)
-
-          // The type of the function.
-          val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
-
-          // Put everything together.
-          val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-          LoweredAst.Expr.ApplyDef(sym, argExps, targ :: targs, defTpe, Types.Datalog, exp.eff, loc)
-      }
-      mergeExps(loweredExps, loc)
+    case TypedAst.Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
+      val exps = exps0.map(visitExp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, t, eff, loc)
 
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
