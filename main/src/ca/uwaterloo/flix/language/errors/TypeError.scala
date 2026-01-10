@@ -55,6 +55,81 @@ object TypeError {
   }
 
   /**
+    * An error raised to indicate that a default handler is not in the companion module of its effect.
+    *
+    * @param handlerSym the symbol of the default handler.
+    * @param loc        the location of the default handler.
+    */
+  case class DefaultHandlerNotInModule(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0621
+
+    def summary: String = s"The default handler '${handlerSym.name}' is not in the companion module of an effect."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> The default handler '${red(handlerSym.name)}' is not in the companion module of an effect.
+         |
+         |${src(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that there are multiple default handlers for the same effect.
+    *
+    * @param sym  the symbol of the effect.
+    * @param loc1 the location of the first default handler.
+    * @param loc2 the location of the second default handler.
+    */
+  case class DuplicateDefaultHandler(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0734
+
+    def summary: String = s"Duplicate default handler for '$sym'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Duplicate default handler for '${red(sym.toString)}'.
+         |
+         |${src(loc1, "the first default handler was here.")}
+         |
+         |${src(loc2, "the second default handler was here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def loc: SourceLocation = loc1
+  }
+
+  /**
+    * An error raised to indicate that the signature of a default handler is illegal.
+    *
+    * @param effSym     the symbol of the effect.
+    * @param handlerSym the symbol of the handler.
+    * @param loc        the location of the default handler.
+    */
+  case class IllegalDefaultHandlerSignature(effSym: Symbol.EffSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0847
+
+    def summary: String = s"Illegal signature for '$effSym's default handler."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal default effect handler signature for '${red(effSym.toString)}'.
+         |
+         |The default handler for '${red(effSym.toString)}' should have the exact signature:
+         |
+         |  pub def ${handlerSym.name}(f: Unit -> a \\ ef) : a \\ (ef - ${effSym.name}) + IO
+         |
+         |The default handler was declared here:
+         |
+         |${src(loc, "illegal signature.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Java method not found type error.
     *
     * @param tpe  the type of the receiver object.
@@ -71,6 +146,27 @@ object TypeError {
       s""">> Java method '$methodName' from type '${red(formatType(tpe, None))}' with arguments types (${tpes.mkString(", ")}) not found.
          |
          |${src(loc, s"Java method '$methodName' not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a default handler is not public.
+    *
+    * @param handlerSym the symbol of the handler.
+    * @param loc        the location of the handler.
+    */
+  case class NonPublicDefaultHandler(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E1738
+
+    def summary: String = s"The default handler '${handlerSym.name}' must be public (`pub`)"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> The default handler '${red(handlerSym.name)}' must be public (`${cyan("pub")}`).
+         |
+         |${src(loc, "non-public default handler.")}
+         |
          |""".stripMargin
     }
   }
