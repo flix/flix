@@ -118,7 +118,7 @@ Use labels consistently to signal intent:
 - **`Explanation:`** — multi-line educational content
 - **`Possible fixes:`** — a list of concrete alternatives
 
-Use at most one label per error. Avoid inventing new labels unless they serve a clearly distinct purpose.
+Labels must be formatted with the `underline()` function. Use at most one label per error. Avoid inventing new labels unless they serve a clearly distinct purpose.
 
 ---
 
