@@ -1,59 +1,99 @@
 # Error Message Guidelines
 
-Best practices for writing error messages in the Flix compiler.
+Best practices for writing clear, helpful, and consistent error messages in the Flix compiler.
 
-## The 80/20 Rule
+---
 
-80% of the time developers need minimal info (they've seen the error before). 20% of the time they need full context (it's new to them). Messages should accommodate both.
+## Goals
+
+A good error message should:
+
+- Help the programmer quickly understand **what went wrong**
+- Explain **why it happened** in approachable terms
+- Provide **clear next steps** to resolve the issue
+
+Error messages are part of the user experience. Treat them as documentation that appears at exactly the moment it is needed.
+
+---
 
 ## Structure
 
-Every error has three components:
+Every error consists of three components, each with a distinct purpose:
 
-1. **Summary** - One sentence shown on hover in VS Code
-2. **Message** - Multi-line text with relevant symbols and code fragments
-3. **Explanation** - Why the problem occurs and how to fix it
+1. **Summary**  
+   A single, concise sentence shown on hover in VS Code. It should be understandable in isolation.
+
+2. **Message**  
+   Multi-line content that highlights relevant symbols, identifiers, and code fragments.
+
+3. **Explanation**  
+   A short explanation of why the problem occurs and how to fix it.
+
+Avoid blurring the responsibilities of these components. Each should add new information.
+
+---
 
 ## Style and Tone
 
-Messages should be crisp, concise, and clear. Language should be friendly, never blame the programmer. Prefer "unexpected" over "illegal".
+- Be **crisp, concise, and precise**
+- Use **friendly, neutral language**—never blame the programmer
+- Prefer neutral wording such as **“unexpected”** over judgmental terms like “illegal”
 
 ### Straight to the Point
 
-Lead with the error type. "Duplicate definition: 'foo'" beats "The definition 'foo' is defined twice" - the programmer only has to scan the first word.
+Lead with the error type or category. This helps users scan quickly.
 
-## Key Principles
+**Good:**  
+`Duplicate definition: 'foo'`
 
-### 1. Don't Repeat Yourself
-Each component (summary, message lead, src hint) should add new information.
+**Less effective:**  
+`The definition 'foo' is defined twice`
 
-### 2. Show What's Allowed
-When rejecting something, explain what is valid in that context.
+The first word should already orient the reader.
 
-### 3. Explain Technical Concepts
-Don't assume users know type theory, Datalog, or compiler internals.
+### Be Actionable
 
-### 4. Be Actionable
-Include concrete guidance on how to fix the error.
+Every error should answer the implicit question: *“What should I do next?”*
 
-### 5. Suggest Alternatives
-When applicable, suggest "did you mean?" for typos or list available options.
+Include concrete guidance such as:
+
+- Which construct to change
+- Which keyword to use instead
+- Where a definition is expected to appear
+
+---
 
 ## Formatting
 
 ### Identifiers
 
-User-written identifiers should be quoted with single quotes and colored (color depends on context).
+- User-written identifiers must be quoted with **single quotes**
+- Apply color consistently based on semantic role
 
 ### Colors
-- `red()` - Problematic code
-- `cyan()` - Expected values
-- `magenta()` - Names and symbols
+
+- `red()` — problematic or rejected code
+- `cyan()` — expected values or shapes
+- `magenta()` — names, symbols, and identifiers
+
+Use color to guide attention, not to decorate.
 
 ### Labels
-- `Tip:` - Single-line advice
-- `Explanation:` - Multi-line educational content
-- `Possible fixes:` - List of alternatives
+
+Use labels consistently to signal intent:
+
+- **`Tip:`** — a single-line, practical hint
+- **`Explanation:`** — multi-line educational content
+- **`Possible fixes:`** — a list of concrete alternatives
+
+Avoid inventing new labels unless they serve a clearly distinct purpose.
 
 ### Source Hints
-The `src(loc, hint)` hint should provide context, not echo the summary.
+
+The `src(loc, hint)` annotation should:
+
+- Add *contextual* information
+- Highlight the relevant code region
+- Avoid restating the summary or message lead
+
+A good source hint helps the user understand *why this location matters*.
