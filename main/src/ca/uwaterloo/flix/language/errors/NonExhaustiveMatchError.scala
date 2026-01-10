@@ -34,7 +34,7 @@ case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends Com
     import formatter.*
     s""">> Non-exhaustive match: missing case '${red(pat)}'.
        |
-       |${src(loc, "incomplete pattern.")}
+       |${src(loc, "incomplete match.")}
        |
        |${underline("Explanation:")} Every match expression must be exhaustive, i.e. cover all
        |possible cases. A wildcard pattern can be used to handle remaining cases. For example:
