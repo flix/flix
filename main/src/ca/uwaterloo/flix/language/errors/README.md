@@ -131,3 +131,39 @@ The `src(loc, hint)` annotation should:
 - Avoid restating the summary or message lead
 
 A good source hint helps the user understand *why this location matters*.
+
+---
+
+### Complete Example
+
+Example I:
+
+```
+-- Syntax Error [E8465] ----------------------------------------------- foo.flix
+
+>> Multiple occurrences of the annotation '@Test'.
+
+1 | @Test @Test
+^^^^^
+the first occurrence was here.
+
+1 | @Test @Test
+^^^^^
+the second occurrence was here.
+
+Tip: Remove one of the two annotations.
+```
+
+Example II:
+
+```flix
+-- Resolution Error [E1245] ------------------------------------------- foo.flix
+
+>> Missing handler definition 'op' for effect E'.
+
+8 |     } with handler E {
+                       ^
+                       missing handler definition
+
+Add a handler definition for op
+```
