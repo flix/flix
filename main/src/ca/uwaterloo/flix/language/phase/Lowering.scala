@@ -27,7 +27,6 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, Scheme,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.collection.{CofiniteSet}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -170,7 +169,8 @@ object Lowering {
     * Lowers the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = {
-    // Wrap the definition in default handlers if entry point
+    // If the definition is an entry point it is wrapped with the required default handlers before the rest of lowering.
+    // For example, tests with an Assert effect will be wrapped with a call to Assert.runWithIO
     val defn = if (EntryPoints.isEntryPoint(defn0)) {
         wrapDefWithDefaultHandlers(defn0, root)
     } else {
@@ -221,12 +221,13 @@ object Lowering {
       // This means eff is either not well-formed or it has type variables.
       // Either way, in this case we will wrap with all default handlers
       // to make sure that the effects present in the signature that have default handlers are handled
-      case Result.Err(_) => CofiniteSet.universe
+      case Result.Err(_) => throw InternalCompilerException("Unexpected illegal effect set on entry point", currentDef.spec.eff.loc)
     }
-    val necessaryHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
-    // Wrap the expression in each of the default handlers for the effects appearing in the signature.
+    // Gather only the default handlers for the effects appearing in the signature of the definition.
+    val requiredHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+    // Wrap the expression in each of the required default handlers.
     // Right now, the order depends on the order of defaultHandlers.
-    necessaryHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler, root))
+    requiredHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler, root))
   }
 
   /**

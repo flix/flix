@@ -234,6 +234,10 @@ object EntryPoints {
         case Some(err) => List(err)
         case None =>
           // Only run these on functions without type variables.
+          // A main function should have:
+          //  - A single Unit argument
+          //  - An String or Unit return value
+          //  - An effect set containing only primitive effects or effects that have default handlers
           checkUnitArg(defn) ++ checkToStringOrUnitResult(defn) ++ checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym))
       }
       if (errs.nonEmpty) {
@@ -254,6 +258,9 @@ object EntryPoints {
         case Some(err) => List(err)
         case None =>
           // Only run these on functions without type variables.
+          // A test function should have:
+          //  - A single Unit argument
+          //  - An effect set containing only primitive effects or effects that have default handlers
           checkUnitArg(defn) ++ checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym))
       }
       if (errs.isEmpty) {

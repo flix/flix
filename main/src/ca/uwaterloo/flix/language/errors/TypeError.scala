@@ -61,13 +61,15 @@ object TypeError {
     * @param loc        the location of the default handler.
     */
   case class DefaultHandlerNotInModule(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0621
+
     def summary: String = s"The default handler '${handlerSym.name}' is not in the companion module of an effect."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> The default handler '${red(handlerSym.name)}' is not in the companion module of an effect.
          |
-         |${code(loc, "default handler.")}
+         |${src(loc, "default handler.")}
          |
          |""".stripMargin
     }
@@ -81,22 +83,22 @@ object TypeError {
     * @param loc2 the location of the second default handler.
     */
   case class DuplicateDefaultHandler(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0734
+
     def summary: String = s"Duplicate default handler for '$sym'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Duplicate default handler for '${red(sym.toString)}'.
          |
-         |${code(loc1, "the first default handler was here.")}
+         |${src(loc1, "the first default handler was here.")}
          |
-         |${code(loc2, "the second default handler was here.")}
+         |${src(loc2, "the second default handler was here.")}
          |
          |""".stripMargin
     }
 
     override def loc: SourceLocation = loc1
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -107,6 +109,8 @@ object TypeError {
     * @param loc        the location of the default handler.
     */
   case class IllegalDefaultHandlerSignature(effSym: Symbol.EffSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E0847
+
     def summary: String = s"Illegal signature for '$effSym's default handler."
 
     def message(formatter: Formatter): String = {
@@ -119,7 +123,7 @@ object TypeError {
          |
          |The default handler was declared here:
          |
-         |${code(loc, "illegal signature.")}
+         |${src(loc, "illegal signature.")}
          |
          |""".stripMargin
     }
@@ -153,13 +157,15 @@ object TypeError {
     * @param loc        the location of the handler.
     */
   case class NonPublicDefaultHandler(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E1738
+
     def summary: String = s"The default handler '${handlerSym.name}' must be public (`pub`)"
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> The default handler '${red(handlerSym.name)}' must be public (`${cyan("pub")}`).
          |
-         |${code(loc, "non-public default handler.")}
+         |${src(loc, "non-public default handler.")}
          |
          |""".stripMargin
     }

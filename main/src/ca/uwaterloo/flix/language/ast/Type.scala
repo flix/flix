@@ -654,6 +654,12 @@ object Type {
   /**
     * Evaluates `eff` if it is well-formed and has no type variables,
     * associated types, or error types.
+    *
+    * Evaluates `eff` to a Cofinite set of effect symbols.
+    *
+    * - Returns `Ok[s]` if `eff` is well-formed and has no type variables, associated types,
+    *   or error types and hence reduces to a single Cofinite set.
+    * - Returns `Err[()]` otherwise.
     */
   def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], Unit] = eff match {
     case Type.Cst(tc, _) => tc match {
@@ -683,12 +689,7 @@ object Type {
         case (x, y) => CofiniteSet.xor(x, y)
       }
     case Type.Alias(_, _, tpe, _) => eval(tpe)
-    case Type.Var(_, _) => Result.Err(())
-    case Type.Apply(_, _, _) => Result.Err(())
-    case Type.AssocType(_, _, _, _) => Result.Err(())
-    case Type.JvmToType(_, _) => Result.Err(())
-    case Type.JvmToEff(_, _) => Result.Err(())
-    case Type.UnresolvedJvmType(_, _) => Result.Err(())
+    case _ => Result.Err(())
   }
 
   /**
