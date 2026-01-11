@@ -500,7 +500,7 @@ object Redundancy {
       val us = visitExp(exp, env0, rc)
 
       if (isPure(exp))
-        us + DiscardedPureValue(exp.loc)
+        us + DiscardedPureExpression(exp.loc)
       else if (exp.tpe == Type.Unit)
         us + RedundantDiscard(exp.loc)
       else

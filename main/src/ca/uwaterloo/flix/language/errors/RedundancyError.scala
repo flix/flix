@@ -17,10 +17,9 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.ExtPattern
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -38,16 +37,25 @@ object RedundancyError {
     *
     * @param loc the location of the expression.
     */
-  case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError {
+  case class DiscardedPureExpression(loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E6736
 
-    def summary: String = "A pure expression should not be discarded."
+    def summary: String = "Discarded pure expression."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> A pure expression should not be discarded.
+      s""">> Discarded pure expression.
          |
-         |${src(loc, "pure expression.")}
+         |${src(loc, "discarded pure expression.")}
+         |
+         |${underline("Explanation:")} A pure expression has no side-effects, so discarding
+         |its result is pointless. Either use the result or remove the expression.
+         |
+         |If you want to keep the expression, use:
+         |
+         |    let _ = <exp>
+         |
+         |although the compiler may still optimize away the expression.
          |""".stripMargin
     }
   }
