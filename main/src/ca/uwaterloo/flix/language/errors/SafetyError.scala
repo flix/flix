@@ -195,13 +195,16 @@ object SafetyError {
   case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4243
 
-    def summary: String = "Illegal method effect"
+    def summary: String = s"Unexpected method effect: '${FormatType.formatType(eff, None)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal method effect: '${red(FormatType.formatType(eff, None))}'. A method must be pure or have a primitive effect.
+      s""">> Unexpected method effect: '${red(FormatType.formatType(eff, None))}'.
          |
-         |${src(loc, "illegal effect.")}
+         |${src(loc, "unexpected effect")}
+         |
+         |${underline("Explanation:")} Methods in a 'new' expression must be pure or have
+         |primitive effects. Control effects cannot escape to Java.
          |""".stripMargin
     }
   }
@@ -211,16 +214,19 @@ object SafetyError {
     *
     * @param loc the location of the catch parameter.
     */
-  case class IllegalCatchType(loc: SourceLocation) extends SafetyError {
+  case class IllegalCatchType(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4354
 
-    def summary: String = s"Exception type is not a subclass of Throwable."
+    def summary: String = s"Unexpected catch type: '${clazz.getName}' is not a subclass of Throwable."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> $summary
+      s""">> Unexpected catch type: '${red(clazz.getName)}' is not a subclass of Throwable.
          |
-         |${src(loc, "Type should be java.lang.Throwable or a subclass.")}
+         |${src(loc, "unexpected type")}
+         |
+         |${underline("Explanation:")} A catch clause can only catch subclasses of
+         |'java.lang.Throwable'.
          |""".stripMargin
     }
   }
@@ -230,16 +236,19 @@ object SafetyError {
     *
     * @param loc the location of the object
     */
-  case class IllegalThrowType(loc: SourceLocation) extends SafetyError {
+  case class IllegalThrowType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4465
 
-    def summary: String = s"Exception type is not a subclass of Throwable."
+    def summary: String = s"Unexpected throw type: '${FormatType.formatType(tpe, None)}' is not a subclass of Throwable."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> $summary
+      s""">> Unexpected throw type: '${red(FormatType.formatType(tpe, None))}' is not a subclass of Throwable.
          |
-         |${src(loc, "Type should be java.lang.Throwable or a subclass.")}
+         |${src(loc, "unexpected type")}
+         |
+         |${underline("Explanation:")} A throw expression can only throw subclasses of
+         |'java.lang.Throwable'.
          |""".stripMargin
     }
   }
