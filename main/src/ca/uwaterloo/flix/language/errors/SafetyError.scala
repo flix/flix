@@ -305,18 +305,15 @@ object SafetyError {
   case class IllegalNonPositivelyBoundVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4798
 
-    def summary: String = s"Illegal non-positively bound variable '$sym'."
+    def summary: String = s"Unexpected variable '$sym' in negated atom: not bound by a positive atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      val explanation = if (!sym.isWild) {
-        s"""
-           |
-           |${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.""".stripMargin
-      } else ""
-      s""">> Illegal non-positively bound variable '${red(sym.text)}'.
+      s""">> Unexpected variable '${red(sym.text)}' in negated atom: not bound by a positive atom.
          |
-         |${src(loc, "the variable occurs in this negated atom.")}$explanation
+         |${src(loc, "negated atom")}
+         |
+         |${underline("Explanation:")} Variables in negated atoms must be bound by a positive atom.
          |""".stripMargin
     }
   }
