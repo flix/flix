@@ -509,13 +509,16 @@ object SafetyError {
   case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5578
 
-    def summary: String = s"Class '${clazz.getName}' lacks a public zero argument constructor."
+    def summary: String = s"Class '${clazz.getName}' lacks a public zero-argument constructor."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Class '${red(clazz.getName)}' lacks a public zero argument constructor.
+      s""">> Class '${red(clazz.getName)}' lacks a public zero-argument constructor.
          |
-         |${src(loc, "missing constructor.")}
+         |${src(loc, "missing constructor")}
+         |
+         |${underline("Explanation:")} A 'new' expression requires the class to have a public
+         |constructor with no arguments.
          |""".stripMargin
     }
   }
@@ -530,18 +533,20 @@ object SafetyError {
   case class NewObjectMissingThisArg(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5689
 
-    def summary: String = s"Missing `this` parameter for method '$name'."
+    def summary: String = s"Missing 'this' parameter for method '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing 'this' parameter for method '${red(name)}''.
+      s""">> Missing 'this' parameter for method '${red(name)}'.
          |
-         |The 'this' parameter should have type ${cyan(s"${clazz.getName}")}
+         |${src(loc, "missing 'this' parameter")}
          |
-         |${src(loc, "the method occurs here.")}
+         |${underline("Explanation:")} The first argument to any method must be 'this' and must
+         |have the same type as the superclass. For example:
          |
-         |${underline("Explanation:")}
-         |The first argument to any method must be 'this', and must have the same type as the superclass.
+         |  new ${clazz.getSimpleName} {
+         |      def $name(_this: ${clazz.getSimpleName}, ...): ... = ...
+         |  }
          |""".stripMargin
     }
   }
