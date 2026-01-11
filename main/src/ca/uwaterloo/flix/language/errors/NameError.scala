@@ -170,20 +170,23 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given `name` is a reserved name
+    * An error raised to indicate that the given `name` is a reserved name.
     *
-    * @param name The reserved name with location
+    * @param name The reserved name with location.
     */
   case class IllegalReservedName(name: Name.Ident) extends NameError {
     def code: ErrorCode = ErrorCode.E5736
 
-    def summary: String = s"Redefinition of a reserved name: ${name.name}"
+    def summary: String = s"Reserved name: '${name.name}' cannot be redefined."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Redefinition of a reserved name: ${name.name}
+      s""">> Reserved name: '${red(name.name)}' cannot be redefined.
          |
-         |${src(name.loc, "illegal name")}
+         |${src(name.loc, "reserved identifier")}
+         |
+         |${underline("Explanation:")} Certain names are reserved for internal use and cannot
+         |be used as identifiers. Choose a different name.
          |""".stripMargin
     }
 
@@ -199,24 +202,19 @@ object NameError {
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5849
 
-    def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
+    def summary: String = s"Suspicious type variable: '$name'. Did you mean '${name.capitalize}'?"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
+      s""">> Suspicious type variable: '${red(name)}'. Did you mean '${cyan(name.capitalize)}'?
          |
-         |${src(loc, "suspicious type variable.")}
+         |${src(loc, "possible typo")}
          |
-         |${underline("Explanation:")}
-         |Flix uses lowercase variable names.
+         |${underline("Explanation:")} Type variables in Flix are lowercase, but '${red(name)}'
+         |looks like the built-in type '${cyan(name.capitalize)}'.
          |
-         |The type variable looks suspiciously like the name of a built-in type.
-         |
-         |Perhaps you meant to use the built-in type?
-         |
-         |For example, `Int32` is a built-in type whereas `int32` is a type variable.
+         |For example, '${cyan("Int32")}' is a built-in type whereas '${red("int32")}' is a type variable.
          |""".stripMargin
     }
-
   }
 }
