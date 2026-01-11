@@ -483,21 +483,19 @@ object SafetyError {
   case class NewObjectMissingMethod(clazz: java.lang.Class[?], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5467
 
-    def summary: String = s"No implementation found for method '${method.getName}' of superclass '${clazz.getName}'."
+    def summary: String = s"Missing implementation of method '${method.getName}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
       val returnType = formatJavaType(method.getReturnType)
-      s""">> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
-         |>> Signature: '${method.toString}'
+      s""">> Missing implementation of method '${red(method.getName)}' of '${magenta(clazz.getName)}'.
          |
-         |${src(loc, "the object occurs here.")}
+         |${src(loc, "new object")}
          |
-         |${underline("Explanation:")}
-         |Try adding a method with the following signature:
+         |${underline("Explanation:")} Add a method with the following signature:
          |
-         | def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
+         |  def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
          |""".stripMargin
     }
   }
