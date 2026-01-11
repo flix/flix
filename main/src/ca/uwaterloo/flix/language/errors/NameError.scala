@@ -39,45 +39,45 @@ object NameError {
   case class Deprecated(loc: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5281
 
-    def summary: String = s"Deprecated feature."
+    def summary: String = "Deprecated feature."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Deprecated feature. Use --Xdeprecated to enable.
+      s""">> Deprecated feature.
          |
-         |${src(loc, "deprecated")}
+         |${src(loc, "deprecated feature")}
+         |
+         |${underline("Tip:")} Enable with the '${cyan("--Xdeprecated")}' compiler flag.
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the given `name` is defined multiple time.
+    * An error raised to indicate that the given `name` is defined multiple times.
     *
     * @param name the name.
-    * @param loc1 the location of the first name.
-    * @param loc2 the location of the second name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
     */
   case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5394
 
-    def summary: String = s"Duplicate definition of '$name'."
+    def summary: String = s"Duplicate definition: '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Duplicate definition of '${red(name)}'.
+      s""">> Duplicate definition: '${red(name)}'.
          |
-         |${src(loc1, "the first definition was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${src(loc2, "the second definition was here.")}
+         |${src(loc2, "duplicate")}
          |
-         |${underline("Explanation:")}
-         |Flix does not support overloading. For example, you cannot define two
-         |functions with the same name, even if their formal parameters differ.
+         |${underline("Explanation:")} Flix does not support overloading. You cannot define
+         |two functions with the same name, even if their parameters differ.
          |
-         |If you want two functions to share the same name you have to either:
-         |
-         |    (a) put each function into its own namespace, or
-         |    (b) introduce a trait and implement two instances.
+         |${underline("Possible fixes:")}
+         |  - Put each definition into its own module.
+         |  - Introduce a trait and implement two instances.
          |""".stripMargin
     }
 
@@ -85,29 +85,28 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given `name` is defined multiple time.
+    * An error raised to indicate that the given `name` is defined multiple times.
     *
     * @param name the name.
-    * @param loc1 the location of the first name.
-    * @param loc2 the location of the second name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
     */
   case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5407
 
-    def summary: String = s"Duplicate definition of '$name'."
+    def summary: String = s"Duplicate definition: '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Duplicate definition of '${red(name)}'.
+      s""">> Duplicate definition: '${red(name)}'.
          |
-         |${src(loc1, "the first definition was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${src(loc2, "the second definition was here.")}
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
-
   }
 
   /**
@@ -120,13 +119,22 @@ object NameError {
   case class OrphanModule(sym: Symbol.ModuleSym, parentSym: Symbol.ModuleSym, loc: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5512
 
-    def summary: String = s"Module '$sym' is orphaned. Missing declaration of parent: '$parentSym'."
+    def summary: String = s"Orphaned module: '$sym' (missing parent '$parentSym')."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Module '${blue(sym.toString)}' is orphaned. Missing declaration of parent: '${red(parentSym.toString)}'.
+      s""">> Orphaned module: '${magenta(sym.toString)}' (missing parent '${red(parentSym.toString)}').
          |
          |${src(loc, "orphaned module")}
+         |
+         |${underline("Explanation:")} A module cannot be declared without its parent module.
+         |Declare the parent module first. For example:
+         |
+         |  // File A.flix
+         |  mod A { ... }
+         |
+         |  // File A/B.flix
+         |  mod A.B { ... }  // OK: parent 'A' exists
          |""".stripMargin
     }
   }
