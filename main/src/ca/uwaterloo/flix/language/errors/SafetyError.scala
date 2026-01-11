@@ -261,13 +261,16 @@ object SafetyError {
   case class IllegalNegativelyBoundWildCard(loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4576
 
-    def summary: String = s"Illegal negatively bound wildcard '_'."
+    def summary: String = "Unexpected wildcard '_' in negated atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal negatively bound wildcard '${red("_")}'.
+      s""">> Unexpected wildcard '${red("_")}' in negated atom.
          |
-         |${src(loc, "the wildcard occurs in this negated atom.")}
+         |${src(loc, "negated atom")}
+         |
+         |${underline("Explanation:")} Wildcards cannot appear in negated atoms because
+         |negation requires all variables to be bound by a positive atom.
          |""".stripMargin
     }
   }
@@ -280,13 +283,16 @@ object SafetyError {
   case class IllegalNegativelyBoundWildVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4687
 
-    def summary: String = s"Illegal negatively bound variable '$sym'."
+    def summary: String = s"Unexpected wild variable '$sym' in negated atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal negatively bound variable '${red(sym.text)}'.
+      s""">> Unexpected wild variable '${red(sym.text)}' in negated atom.
          |
-         |${src(loc, "the variable occurs in this negated atom.")}
+         |${src(loc, "negated atom")}
+         |
+         |${underline("Explanation:")} Wild variables cannot appear in negated atoms because
+         |negation requires all variables to be bound by a positive atom.
          |""".stripMargin
     }
   }
