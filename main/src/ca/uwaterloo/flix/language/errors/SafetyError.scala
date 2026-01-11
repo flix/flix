@@ -71,8 +71,8 @@ object SafetyError {
          |
          |${src(loc, "impossible cast")}
          |
-         |From: ${red(FormatType.formatType(from, None))}
-         |To  : ${red(FormatType.formatType(to, None))}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(FormatType.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast between Java types requires a subtype
          |relationship. Neither type is a subtype of the other.
@@ -98,7 +98,7 @@ object SafetyError {
          |
          |${src(loc, "impossible cast")}
          |
-         |From: ${red(FormatType.formatType(from, None))}
+         |From: ${red(FormatType.formatType(from))}
          |To  : ${red(formatJavaType(to))}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
@@ -124,8 +124,8 @@ object SafetyError {
          |
          |${src(loc, "impossible cast")}
          |
-         |From: ${red(FormatType.formatType(from, None))}
-         |To  : ${red(FormatType.formatType(to, None))}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(FormatType.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast requires the source type to be known
          |at compile time.
@@ -152,7 +152,7 @@ object SafetyError {
          |${src(loc, "impossible cast")}
          |
          |From: ${red(formatJavaType(from))}
-         |To  : ${red(FormatType.formatType(to, None))}
+         |To  : ${red(FormatType.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
@@ -177,8 +177,8 @@ object SafetyError {
          |
          |${src(loc, "impossible cast")}
          |
-         |From: ${red(FormatType.formatType(from, None))}
-         |To  : ${red(FormatType.formatType(to, None))}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(FormatType.formatType(to))}
          |
          |${underline("Explanation:")} A checked cast requires the target type to be known
          |at compile time.
@@ -195,11 +195,11 @@ object SafetyError {
   case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4243
 
-    def summary: String = s"Unexpected method effect: '${FormatType.formatType(eff, None)}'."
+    def summary: String = s"Unexpected method effect: '${FormatType.formatType(eff)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected method effect: '${red(FormatType.formatType(eff, None))}'.
+      s""">> Unexpected method effect: '${red(FormatType.formatType(eff))}'.
          |
          |${src(loc, "unexpected effect")}
          |
@@ -239,11 +239,11 @@ object SafetyError {
   case class IllegalThrowType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4465
 
-    def summary: String = s"Unexpected throw type: '${FormatType.formatType(tpe, None)}' is not a subclass of Throwable."
+    def summary: String = s"Unexpected throw type: '${FormatType.formatType(tpe)}' is not a subclass of Throwable."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected throw type: '${red(FormatType.formatType(tpe, None))}' is not a subclass of Throwable.
+      s""">> Unexpected throw type: '${red(FormatType.formatType(tpe))}' is not a subclass of Throwable.
          |
          |${src(loc, "unexpected type")}
          |
@@ -385,8 +385,8 @@ object SafetyError {
          |
          |${src(loc, "impossible cast")}
          |
-         |From: ${red(FormatType.formatType(from, None))}
-         |To  : ${red(FormatType.formatType(to, None))}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(FormatType.formatType(to))}
          |
          |${underline("Explanation:")} An unchecked cast between these types will never succeed.
          |""".stripMargin
