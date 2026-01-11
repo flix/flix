@@ -35,7 +35,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="fun").get)
     assert(actual == expected)
   }
 
@@ -51,7 +51,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="fun").get)
     assert(actual == expected)
   }
 
@@ -67,7 +67,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="toUnit").get)
     assert(actual == expected)
   }
 
@@ -83,7 +83,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="answer").get)
     assert(actual == expected)
   }
 
@@ -114,7 +114,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="toInt32").get)
     assert(actual == expected)
   }
 
@@ -134,7 +134,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="pretty").get)
     assert(actual == expected)
   }
 
@@ -158,7 +158,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="prettyPrint").get)
     assert(actual == expected)
   }
 
@@ -196,7 +196,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="prettyPrint").get)
     assert(actual == expected)
   }
 
@@ -214,7 +214,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="fun").get)
     assert(actual == expected)
   }
 
@@ -237,7 +237,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val actual = Serialize.serializeDef(defs.find(_.sym.name=="h").get)
     assert(actual == expected)
   }
 
