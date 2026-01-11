@@ -54,7 +54,7 @@ object Namer {
 
       // TODO NS-REFACTOR remove use of NName
       val symbols = symbols0.map {
-        case (k, v) => Name.mkUnlocatedNName(k) -> (v.m + (Reflection.getTestsFnName -> (getTestFunction(k)::Nil)))
+        case (k, v) => Name.mkUnlocatedNName(k) -> (v.m + (CompileTimeCodeGeneration.getTestsFnName -> (getTestFunction(k)::Nil)))
       }
       val instances = instances0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
@@ -71,7 +71,7 @@ object Namer {
     NamedAst.Declaration.Def(
         sym = Symbol.mkDefnSym(
           Name.mkUnlocatedNName(module_name),
-          Name.Ident(Reflection.getTestsFnName, SourceLocation.Unknown)
+          Name.Ident(CompileTimeCodeGeneration.getTestsFnName, SourceLocation.Unknown)
         ),
         spec = NamedAst.Spec(
           doc = Doc(List.empty, SourceLocation.Unknown),
@@ -351,7 +351,7 @@ object Namer {
     case "BigInt" => true
     case "String" => true
     case "Regex" => true
-    case Reflection.`getTestsFnName` => true
+    case CompileTimeCodeGeneration.`getTestsFnName` => true
     case _ => false
   }
 

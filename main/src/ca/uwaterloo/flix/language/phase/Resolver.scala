@@ -155,7 +155,7 @@ object Resolver {
       ResolvedAst.Declaration.Def(
       sym = Symbol.mkDefnSym(
         Name.mkUnlocatedNName(module_name),
-        Name.Ident(Reflection.getTestsFnName, SourceLocation.Unknown)
+        Name.Ident(CompileTimeCodeGeneration.getTestsFnName, SourceLocation.Unknown)
       ),
       spec = ResolvedAst.Spec(
         doc = Doc(List.empty, SourceLocation.Unknown),
@@ -364,7 +364,7 @@ object Resolver {
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
           val declsVal = traverse(decls0)(visitDecl(_, scp, Name.RootNS.copy(loc = loc), defaultUses))
           mapN(declsVal) {
-            case decls => ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
+            case decls => ResolvedAst.CompilationUnit(usesAndImports, getTestsFunction(Nil)::decls, loc)
           }
       }
   }
