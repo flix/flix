@@ -474,7 +474,7 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate an unimplemented superclass method
+    * An error raised to indicate an unimplemented superclass method.
     *
     * @param clazz  The type of the superclass.
     * @param method The unimplemented method.
@@ -501,7 +501,7 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a class lacks a public zero argument constructor.
+    * An error raised to indicate that a class lacks a public zero-argument constructor.
     *
     * @param clazz the class.
     * @param loc   the source location of the new object expression.
@@ -527,7 +527,7 @@ object SafetyError {
     * An error raised to indicate a missing `this` parameter for a method.
     *
     * @param clazz The expected `this` type.
-    * @param name  The name of the method with the invalid `this` parameter.
+    * @param name  The name of the method with the missing `this` parameter.
     * @param loc   The source location of the method.
     */
   case class NewObjectMissingThisArg(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
@@ -575,7 +575,7 @@ object SafetyError {
     * An error raised to indicate that an object derivation includes a method that doesn't exist
     * in the superclass being implemented.
     *
-    * @param clazz The type of superclass
+    * @param clazz The type of superclass.
     * @param name  The name of the undefined method.
     * @param loc   The source location of the method.
     */
