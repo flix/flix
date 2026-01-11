@@ -18,31 +18,37 @@ object SafetyError {
     * An error raised to indicate a forbidden operation.
     *
     * @param sctx the security context of the location where the error occurred.
-    * @param loc the source location of the forbidden operation.
+    * @param loc  the source location of the forbidden operation.
     */
   case class Forbidden(sctx: SecurityContext, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3685
 
-    override def summary: String = "Operation not permitted"
+    def summary: String = s"Operation not permitted in '$sctx' security context."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Operation not permitted in security context: $sctx
+      s""">> Operation not permitted in '${red(sctx.toString)}' security context.
          |
-         |${src(loc, s"forbidden in security context $sctx")}
+         |${src(loc, "not permitted")}
          |
-         |${underline("Explanation:")}
-         |Remove or replace the dependency with one that respects the security context.
+         |${underline("Explanation:")} Security contexts control which language features a
+         |dependency can use, reducing the risk of supply-chain attacks.
          |
-         |  The security contexts are defined as follows:
-         |    - paranoid: prohibits any use of Java, unchecked casts, and the IO effect.
-         |    - plain (default): same as paranoid, except it permits the IO effect.
-         |    - unrestricted: permits everything.
+         |The security contexts are:
+         |  - paranoid: forbids Java interop, unchecked casts, and the IO effect.
+         |  - plain (default): forbids Java interop and unchecked casts, but allows IO.
+         |  - unrestricted: permits everything.
          |
-         |  Alternatively, you can give your dependency broader permissions but in doing so
-         |  you may risk exposing yourself to a supply-chain attack.
+         |To resolve this error, either replace the dependency with one that respects the
+         |security context, or grant the dependency broader permissions. Be aware that
+         |granting broader permissions may increase your exposure to supply-chain attacks.
          |
-         |  Learn more at https://doc.flix.dev/packages.html
+         |To grant unrestricted permissions, update your flix.toml:
+         |
+         |  [dependencies]
+         |  "github:xxx/yyy" = { version = "1.2.3", security = "unrestricted" }
+         |
+         |Learn more: https://doc.flix.dev/packages.html#security
          |""".stripMargin
     }
   }
@@ -57,16 +63,19 @@ object SafetyError {
   case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3796
 
-    override def summary: String = "Illegal checked cast"
+    def summary: String = "Impossible cast: neither type is a subtype of the other."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast.
+      s""">> Impossible cast: neither type is a subtype of the other.
          |
-         |${src(loc, "illegal cast.")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(FormatType.formatType(to))}
+         |
+         |${underline("Explanation:")} A checked cast between Java types requires a subtype
+         |relationship. Neither type is a subtype of the other.
          |""".stripMargin
     }
   }
@@ -81,16 +90,18 @@ object SafetyError {
   case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[?], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3807
 
-    override def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
+    def summary: String = "Impossible cast: cannot cast a Flix type to a Java type."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast: Attempt to cast a non-Java type to a Java type.
+      s""">> Impossible cast: cannot cast a Flix type to a Java type.
          |
-         |${src(loc, "illegal cast")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${formatJavaType(to)}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(formatJavaType(to))}
+         |
+         |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
     }
   }
@@ -105,16 +116,19 @@ object SafetyError {
   case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E3918
 
-    override def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
+    def summary: String = "Impossible cast: cannot cast from a type variable."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast: Attempt to cast a type variable to a type.
+      s""">> Impossible cast: cannot cast from a type variable.
          |
-         |${src(loc, "illegal cast")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(FormatType.formatType(to))}
+         |
+         |${underline("Explanation:")} A checked cast requires the source type to be known
+         |at compile time.
          |""".stripMargin
     }
   }
@@ -129,16 +143,18 @@ object SafetyError {
   case class IllegalCheckedCastToNonJava(from: java.lang.Class[?], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4029
 
-    override def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
+    def summary: String = "Impossible cast: cannot cast a Java type to a Flix type."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast: Attempt to cast a Java type to a non-Java type.
+      s""">> Impossible cast: cannot cast a Java type to a Flix type.
          |
-         |${src(loc, "illegal cast")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${formatJavaType(from)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(formatJavaType(from))}
+         |To  : ${red(FormatType.formatType(to))}
+         |
+         |${underline("Explanation:")} A checked cast can only be used between Java types.
          |""".stripMargin
     }
   }
@@ -153,16 +169,19 @@ object SafetyError {
   case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4132
 
-    override def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
+    def summary: String = "Impossible cast: cannot cast to a type variable."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal checked cast: Attempt to cast a type to a type variable.
+      s""">> Impossible cast: cannot cast to a type variable.
          |
-         |${src(loc, "illegal checked cast.")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(FormatType.formatType(to))}
+         |
+         |${underline("Explanation:")} A checked cast requires the target type to be known
+         |at compile time.
          |""".stripMargin
     }
   }
@@ -176,13 +195,16 @@ object SafetyError {
   case class IllegalMethodEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4243
 
-    override def summary: String = "Illegal method effect"
+    def summary: String = s"Unexpected method effect: '${FormatType.formatType(eff)}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal method effect: '${red(FormatType.formatType(eff, None))}'. A method must be pure or have a primitive effect.
+      s""">> Unexpected method effect: '${red(FormatType.formatType(eff))}'.
          |
-         |${src(loc, "illegal effect.")}
+         |${src(loc, "unexpected effect")}
+         |
+         |${underline("Explanation:")} Methods in a 'new' expression must be pure or have
+         |primitive effects. Control effects cannot escape to Java.
          |""".stripMargin
     }
   }
@@ -192,16 +214,19 @@ object SafetyError {
     *
     * @param loc the location of the catch parameter.
     */
-  case class IllegalCatchType(loc: SourceLocation) extends SafetyError {
+  case class IllegalCatchType(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4354
 
-    def summary: String = s"Exception type is not a subclass of Throwable."
+    def summary: String = s"Unexpected catch type: '${clazz.getName}' is not a subclass of Throwable."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> $summary
+      s""">> Unexpected catch type: '${red(clazz.getName)}' is not a subclass of Throwable.
          |
-         |${src(loc, "Type should be java.lang.Throwable or a subclass.")}
+         |${src(loc, "unexpected type")}
+         |
+         |${underline("Explanation:")} A catch clause can only catch subclasses of
+         |'java.lang.Throwable'.
          |""".stripMargin
     }
   }
@@ -211,16 +236,19 @@ object SafetyError {
     *
     * @param loc the location of the object
     */
-  case class IllegalThrowType(loc: SourceLocation) extends SafetyError {
+  case class IllegalThrowType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4465
 
-    def summary: String = s"Exception type is not a subclass of Throwable."
+    def summary: String = s"Unexpected throw type: '${FormatType.formatType(tpe)}' is not a subclass of Throwable."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> $summary
+      s""">> Unexpected throw type: '${red(FormatType.formatType(tpe))}' is not a subclass of Throwable.
          |
-         |${src(loc, "Type should be java.lang.Throwable or a subclass.")}
+         |${src(loc, "unexpected type")}
+         |
+         |${underline("Explanation:")} A throw expression can only throw subclasses of
+         |'java.lang.Throwable'.
          |""".stripMargin
     }
   }
@@ -233,13 +261,16 @@ object SafetyError {
   case class IllegalNegativelyBoundWildCard(loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4576
 
-    def summary: String = s"Illegal negatively bound wildcard '_'."
+    def summary: String = "Unexpected wildcard '_' in negated atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal negatively bound wildcard '${red("_")}'.
+      s""">> Unexpected wildcard '${red("_")}' in negated atom.
          |
-         |${src(loc, "the wildcard occurs in this negated atom.")}
+         |${src(loc, "negated atom")}
+         |
+         |${underline("Explanation:")} Wildcards cannot appear in negated atoms because
+         |negation requires all variables to be bound by a positive atom.
          |""".stripMargin
     }
   }
@@ -252,13 +283,16 @@ object SafetyError {
   case class IllegalNegativelyBoundWildVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4687
 
-    def summary: String = s"Illegal negatively bound variable '$sym'."
+    def summary: String = s"Unexpected wild variable '$sym' in negated atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal negatively bound variable '${red(sym.text)}'.
+      s""">> Unexpected wild variable '${red(sym.text)}' in negated atom.
          |
-         |${src(loc, "the variable occurs in this negated atom.")}
+         |${src(loc, "negated atom")}
+         |
+         |${underline("Explanation:")} Wild variables cannot appear in negated atoms because
+         |negation requires all variables to be bound by a positive atom.
          |""".stripMargin
     }
   }
@@ -271,18 +305,15 @@ object SafetyError {
   case class IllegalNonPositivelyBoundVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4798
 
-    def summary: String = s"Illegal non-positively bound variable '$sym'."
+    def summary: String = s"Unexpected variable '$sym' in negated atom: not bound by a positive atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      val explanation = if (!sym.isWild) {
-        s"""
-           |
-           |${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.""".stripMargin
-      } else ""
-      s""">> Illegal non-positively bound variable '${red(sym.text)}'.
+      s""">> Unexpected variable '${red(sym.text)}' in negated atom: not bound by a positive atom.
          |
-         |${src(loc, "the variable occurs in this negated atom.")}$explanation
+         |${src(loc, "negated atom")}
+         |
+         |${underline("Explanation:")} Variables in negated atoms must be bound by a positive atom.
          |""".stripMargin
     }
   }
@@ -295,13 +326,15 @@ object SafetyError {
   case class IllegalPatternInBodyAtom(loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4809
 
-    def summary: String = s"Unexpected pattern in body atom."
+    def summary: String = "Unexpected pattern in body atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected pattern in body atom.
          |
-         |${src(loc, "pattern occurs in this body atom.")}
+         |${src(loc, "body atom")}
+         |
+         |${underline("Explanation:")} Body atoms can only contain variables, wildcards, and constants.
          |""".stripMargin
     }
   }
@@ -315,17 +348,21 @@ object SafetyError {
   case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4912
 
-    def summary: String = s"Illegal relational use of the lattice variable '$sym'."
+    def summary: String = s"Unexpected use of lattice variable '$sym' in relational position."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
+      s""">> Unexpected use of lattice variable '${red(sym.text)}' in relational position.
          |
-         |${src(loc, "the illegal use occurs here.")}
+         |${src(loc, "relational use")}
          |
-         |${underline("Explanation:")}
-         |A lattice variable cannot be used as relational variable unless the atom
-         |from which it originates is marked with `fix`.
+         |${underline("Explanation:")} A lattice variable cannot be used in a relational atom
+         |unless its origin is marked with 'fix'. For example:
+         |
+         |  P(v) :- L(x; v), Q(v).      // Error: 'v' is a lattice variable used relationally
+         |  P(v) :- fix L(x; v), Q(v).  // OK: 'fix' allows relational use
+         |
+         |Add 'fix' to the atom where '${magenta(sym.text)}' originates.
          |""".stripMargin
     }
   }
@@ -340,16 +377,18 @@ object SafetyError {
   case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5023
 
-    override def summary: String = "Impossible cast."
+    def summary: String = "Impossible cast: types are incompatible."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The following cast is impossible and will never succeed.
+      s""">> Impossible cast: types are incompatible.
          |
-         |${src(loc, "the cast occurs here.")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(FormatType.formatType(from))}
+         |To  : ${red(FormatType.formatType(to))}
+         |
+         |${underline("Explanation:")} An unchecked cast between these types will never succeed.
          |""".stripMargin
     }
   }
@@ -362,21 +401,20 @@ object SafetyError {
   case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5134
 
-    override def summary: String = s"Missing default case."
+    def summary: String = "Missing default case in typematch."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing default case.
+      s""">> Missing default case in typematch.
          |
-         |${src(loc, "missing default case.")}
+         |${src(loc, "typematch expression")}
          |
-         |${underline("Explanation:")}
-         |A typematch expression must have a default case. For example:
+         |${underline("Explanation:")} A typematch expression must have a default case. For example:
          |
-         | typematch x {
-         |     case y: Int32 => ...
-         |     case _: _ => ... // default case
-         | }
+         |  typematch x {
+         |      case y: Int32 => ...
+         |      case _: _ => ... // default case
+         |  }
          |""".stripMargin
     }
   }
@@ -390,13 +428,15 @@ object SafetyError {
   case class PrimitiveEffectInRunWith(sym: Symbol.EffSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5245
 
-    override def summary: String = s"The ${sym.name} effect cannot be handled."
+    def summary: String = s"Primitive effect '${sym.name}' cannot be handled."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The ${sym.name} effect cannot be handled.
+      s""">> Primitive effect '${red(sym.name)}' cannot be handled.
          |
-         |${src(loc, s"attempted to handle the ${sym.name} effect here.")}
+         |${src(loc, "handler")}
+         |
+         |${underline("Explanation:")} Primitive effects like IO cannot be handled with a 'run-with' expression.
          |""".stripMargin
     }
   }
@@ -412,24 +452,29 @@ object SafetyError {
   case class NewObjectIllegalThisType(clazz: java.lang.Class[?], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5356
 
-    def summary: String = s"Invalid `this` parameter for method '$name'."
+    def summary: String = s"Unexpected 'this' type for method '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Invalid 'this' parameter for method '${red(name)}''.
+      s""">> Unexpected 'this' type for method '${red(name)}'.
          |
-         |Expected 'this' type is ${cyan(s"${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
+         |${src(loc, "method definition")}
          |
-         |${src(loc, "the method occurs here.")}
+         |Expected: ${cyan(clazz.getName)}
+         |Actual:   ${red(illegalThisType.toString)}
          |
-         |${underline("Explanation:")}
-         |The first argument to any method must be 'this', and must have the same type as the superclass.
+         |${underline("Explanation:")} The first argument to any method must be 'this' and must
+         |have the same type as the superclass. For example:
+         |
+         |  new ${clazz.getSimpleName} {
+         |      def $name(_this: ${clazz.getSimpleName}, ...): ... = ...
+         |  }
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate an unimplemented superclass method
+    * An error raised to indicate an unimplemented superclass method.
     *
     * @param clazz  The type of the superclass.
     * @param method The unimplemented method.
@@ -438,27 +483,25 @@ object SafetyError {
   case class NewObjectMissingMethod(clazz: java.lang.Class[?], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5467
 
-    def summary: String = s"No implementation found for method '${method.getName}' of superclass '${clazz.getName}'."
+    def summary: String = s"Missing implementation of method '${method.getName}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
       val returnType = formatJavaType(method.getReturnType)
-      s""">> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
-         |>> Signature: '${method.toString}'
+      s""">> Missing implementation of method '${red(method.getName)}' of '${magenta(clazz.getName)}'.
          |
-         |${src(loc, "the object occurs here.")}
+         |${src(loc, "new object")}
          |
-         |${underline("Explanation:")}
-         |Try adding a method with the following signature:
+         |${underline("Explanation:")} Add a method with the following signature:
          |
-         | def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
+         |  def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that a class lacks a public zero argument constructor.
+    * An error raised to indicate that a class lacks a public zero-argument constructor.
     *
     * @param clazz the class.
     * @param loc   the source location of the new object expression.
@@ -466,13 +509,16 @@ object SafetyError {
   case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5578
 
-    def summary: String = s"Class '${clazz.getName}' lacks a public zero argument constructor."
+    def summary: String = s"Class '${clazz.getName}' lacks a public zero-argument constructor."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Class '${red(clazz.getName)}' lacks a public zero argument constructor.
+      s""">> Class '${red(clazz.getName)}' lacks a public zero-argument constructor.
          |
-         |${src(loc, "missing constructor.")}
+         |${src(loc, "missing constructor")}
+         |
+         |${underline("Explanation:")} A 'new' expression requires the class to have a public
+         |constructor with no arguments.
          |""".stripMargin
     }
   }
@@ -481,24 +527,26 @@ object SafetyError {
     * An error raised to indicate a missing `this` parameter for a method.
     *
     * @param clazz The expected `this` type.
-    * @param name  The name of the method with the invalid `this` parameter.
+    * @param name  The name of the method with the missing `this` parameter.
     * @param loc   The source location of the method.
     */
   case class NewObjectMissingThisArg(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5689
 
-    def summary: String = s"Missing `this` parameter for method '$name'."
+    def summary: String = s"Missing 'this' parameter for method '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing 'this' parameter for method '${red(name)}''.
+      s""">> Missing 'this' parameter for method '${red(name)}'.
          |
-         |The 'this' parameter should have type ${cyan(s"${clazz.getName}")}
+         |${src(loc, "missing 'this' parameter")}
          |
-         |${src(loc, "the method occurs here.")}
+         |${underline("Explanation:")} The first argument to any method must be 'this' and must
+         |have the same type as the superclass. For example:
          |
-         |${underline("Explanation:")}
-         |The first argument to any method must be 'this', and must have the same type as the superclass.
+         |  new ${clazz.getSimpleName} {
+         |      def $name(_this: ${clazz.getSimpleName}, ...): ... = ...
+         |  }
          |""".stripMargin
     }
   }
@@ -512,13 +560,13 @@ object SafetyError {
   case class NewObjectNonPublicClass(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5792
 
-    def summary: String = s"Class '${clazz.getName}' is not public"
+    def summary: String = s"Class '${clazz.getName}' is not public."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Class '${red(clazz.getName)}' is not public.
          |
-         |${src(loc, "non-public class.")}
+         |${src(loc, "non-public class")}
          |""".stripMargin
     }
   }
@@ -527,20 +575,23 @@ object SafetyError {
     * An error raised to indicate that an object derivation includes a method that doesn't exist
     * in the superclass being implemented.
     *
-    * @param clazz The type of superclass
+    * @param clazz The type of superclass.
     * @param name  The name of the undefined method.
     * @param loc   The source location of the method.
     */
   case class NewObjectUndefinedMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5803
 
-    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}' with the written signature"
+    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Method '${red(name)}' not found in superclass '${red(clazz.getName)}' with the written signature
+      s""">> Method '${red(name)}' not found in superclass '${magenta(clazz.getName)}'.
          |
-         |${src(loc, "the method occurs here.")}
+         |${src(loc, "undefined method")}
+         |
+         |${underline("Explanation:")} The method does not exist in the superclass with
+         |the given signature. Check the method name and parameter types.
          |""".stripMargin
     }
   }

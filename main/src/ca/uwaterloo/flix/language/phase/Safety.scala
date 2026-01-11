@@ -765,7 +765,7 @@ object Safety {
     */
   private def checkCatchClass(clazz: Class[?], loc: SourceLocation)(implicit sctx: SharedContext): Unit =
     if (!isThrowable(clazz)) {
-      sctx.errors.add(IllegalCatchType(loc))
+      sctx.errors.add(IllegalCatchType(clazz, loc))
     }
 
   /** Returns `true` if `clazz` is [[java.lang.Throwable]] or a subclass of it. */
@@ -773,8 +773,8 @@ object Safety {
     classOf[Throwable].isAssignableFrom(clazz)
 
   /** Checks that the type of the argument to `throw` is [[java.lang.Throwable]] or a subclass. */
-  private def checkThrow(exp: Expr)(implicit sctx: SharedContext): Unit =
-    if (!isThrowableType(exp.tpe)) sctx.errors.add(IllegalThrowType(exp.loc))
+  private def checkThrow(exp: Expr)(implicit sctx: SharedContext, flix: Flix): Unit =
+    if (!isThrowableType(exp.tpe)) sctx.errors.add(IllegalThrowType(exp.tpe, exp.loc))
 
   /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
   @tailrec
