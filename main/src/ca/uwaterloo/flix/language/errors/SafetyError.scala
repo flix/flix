@@ -326,13 +326,15 @@ object SafetyError {
   case class IllegalPatternInBodyAtom(loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4809
 
-    def summary: String = s"Unexpected pattern in body atom."
+    def summary: String = "Unexpected pattern in body atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected pattern in body atom.
          |
-         |${src(loc, "pattern occurs in this body atom.")}
+         |${src(loc, "body atom")}
+         |
+         |${underline("Explanation:")} Body atoms can only contain variables, wildcards, and constants.
          |""".stripMargin
     }
   }
