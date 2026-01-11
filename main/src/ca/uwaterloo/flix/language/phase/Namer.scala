@@ -54,7 +54,7 @@ object Namer {
 
       // TODO NS-REFACTOR remove use of NName
       val symbols = symbols0.map {
-        case (k, v) => Name.mkUnlocatedNName(k) -> v.m
+        case (k, v) => Name.mkUnlocatedNName(k) -> (v.m + (Reflection.getTestsFnName -> (getTestFunction(k)::Nil)))
       }
       val instances = instances0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
@@ -66,6 +66,49 @@ object Namer {
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
+
+  private def getTestFunction(module_name: List[String])(implicit flix: Flix): NamedAst.Declaration = {
+    NamedAst.Declaration.Def(
+        sym = Symbol.mkDefnSym(
+          Name.mkUnlocatedNName(module_name),
+          Name.Ident(Reflection.getTestsFnName, SourceLocation.Unknown)
+        ),
+        spec = NamedAst.Spec(
+          doc = Doc(List.empty, SourceLocation.Unknown),
+          ann = Annotations(List.empty),
+          mod = Modifiers(List(Modifier.Public, Modifier.Synthetic)),
+          tparams = List.empty,
+          fparams = List(
+            NamedAst.FormalParam(
+              sym = Symbol.freshVarSym(
+                "_unit",
+                BoundBy.FormalParam,
+                SourceLocation.Unknown
+              )(Scope.Top, flix),
+              tpe = Some(NamedAst.Type.Unit(SourceLocation.Unknown)),
+              loc = SourceLocation.Unknown
+            )
+          ),
+          retTpe = NamedAst.Type.Apply(
+            tpe1 = NamedAst.Type.Ambiguous(
+              Name.mkQName("Vector", SourceLocation.Unknown),
+              SourceLocation.Unknown
+            ),
+            tpe2 = NamedAst.Type.Ambiguous(
+              Name.mkQName("UnitTest.UnitTest", SourceLocation.Unknown),
+              SourceLocation.Unknown
+            ),
+            loc = SourceLocation.Unknown
+          ),
+          eff = None,
+          tconstrs = List.empty,
+          econstrs = List.empty
+        ),
+        exp = NamedAst.Expr.VectorLit(Nil, SourceLocation.Unknown),
+        loc = SourceLocation.Unknown
+      )
+  }
+
 
   /**
     * Check that every module has a parent.
@@ -308,6 +351,7 @@ object Namer {
     case "BigInt" => true
     case "String" => true
     case "Regex" => true
+    case Reflection.`getTestsFnName` => true
     case _ => false
   }
 

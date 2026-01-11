@@ -143,27 +143,272 @@ object Lowering {
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
-    implicit val r: TypedAst.Root = root
+    val rootWithCompileTimeTests: TypedAst.Root = introduceTests(root)
+    implicit val r: TypedAst.Root = rootWithCompileTimeTests
 
-    val defs = ParOps.parMapValues(root.defs)(visitDef)
-    val sigs = ParOps.parMapValues(root.sigs)(visitSig)
-    val instances = ParOps.parMapValueList(root.instances)(visitInstance)
-    val enums = ParOps.parMapValues(root.enums)(visitEnum)
-    val structs = ParOps.parMapValues(root.structs)(visitStruct)
-    val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
-    val effects = ParOps.parMapValues(root.effects)(visitEffect)
-    val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
+    val defs = ParOps.parMapValues(rootWithCompileTimeTests.defs)(visitDef)
+    val sigs = ParOps.parMapValues(rootWithCompileTimeTests.sigs)(visitSig)
+    val instances = ParOps.parMapValueList(rootWithCompileTimeTests.instances)(visitInstance)
+    val enums = ParOps.parMapValues(rootWithCompileTimeTests.enums)(visitEnum)
+    val structs = ParOps.parMapValues(rootWithCompileTimeTests.structs)(visitStruct)
+    val restrictableEnums = ParOps.parMapValues(rootWithCompileTimeTests.restrictableEnums)(visitRestrictableEnum)
+    val effects = ParOps.parMapValues(rootWithCompileTimeTests.effects)(visitEffect)
+    val aliases = ParOps.parMapValues(rootWithCompileTimeTests.typeAliases)(visitTypeAlias)
 
     // TypedAst.Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting traits.
-    val traits = ParOps.parMapValues(root.traits)(t => visitTrait(t, sigs))
+    val traits = ParOps.parMapValues(rootWithCompileTimeTests.traits)(t => visitTrait(t, sigs))
 
     val newEnums = enums ++ restrictableEnums.map {
       case (_, v) => v.sym -> v
     }
 
-    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.mainEntryPoint, root.entryPoints, root.sources, root.traitEnv, root.eqEnv)
+    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, rootWithCompileTimeTests.mainEntryPoint, rootWithCompileTimeTests.entryPoints, rootWithCompileTimeTests.sources, rootWithCompileTimeTests.traitEnv, rootWithCompileTimeTests.eqEnv)
   }
+
+  private def createFnArg(defnSym: Symbol.DefnSym, fnEff: Type)(implicit flix: Flix): TypedAst.Expr = {
+    val fbind =
+      Symbol.freshVarSym("arg0", BoundBy.FormalParam, SourceLocation.Unknown)(Scope.Top, flix)
+
+    TypedAst.Expr.Lambda(
+      TypedAst.FormalParam(
+        TypedAst.Binder(fbind, Type.Unit),
+        Type.Unit,
+        TypeSource.Inferred,
+        SourceLocation.Unknown
+      ),
+      TypedAst.Expr.ApplyDef(
+        DefSymUse(defnSym, SourceLocation.Unknown),
+        TypedAst.Expr.Var(
+          fbind,
+          Type.Unit,
+          SourceLocation.Unknown
+        ) :: Nil,
+        Nil,
+        Type.mkArrowWithEffect(Type.Unit, fnEff, Type.Unit, SourceLocation.Unknown),
+        Type.Unit,
+        fnEff,
+        SourceLocation.Unknown
+      ),
+      Type.mkArrowWithEffect(Type.Unit, fnEff, Type.Unit, SourceLocation.Unknown),
+      SourceLocation.Unknown
+    )
+  }
+
+  private def createMkUnitTestCall(defnSym: Symbol.DefnSym, defn: TypedAst.Def)(implicit flix: Flix): TypedAst.Expr = {
+    val mkStringArg =
+      (str: String) => TypedAst.Expr.Cst(Constant.Str(str), Type.Str, SourceLocation.Unknown)
+
+    val mkIntArg =
+      (int: Int) => TypedAst.Expr.Cst(Constant.Int32(int), Type.Int32, SourceLocation.Unknown)
+
+    val (eff, symUseName) =
+      if (Type.eval(defn.spec.eff).unsafeGet.contains(Symbol.IO)) {
+        (Type.mkUnion(Type.IO, Type.Assert, SourceLocation.Unknown), "UnitTest.mkIOUnitTest")
+      } else {
+        (Type.Assert, "UnitTest.mkPureUnitTest")
+      }
+
+    val symUse =
+      SymUse.DefSymUse(Symbol.mkDefnSym(symUseName), SourceLocation.Unknown)
+
+    TypedAst.Expr.ApplyDef(
+      targs = List(
+        Type.Cst(
+          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          SourceLocation.Unknown
+        )
+      ),
+      symUse = symUse,
+      exps = List(
+        mkStringArg(defnSym.toString),
+        mkStringArg(defnSym.loc.source.toString),
+        mkIntArg(defnSym.loc.start.lineOneIndexed),
+        mkIntArg(defnSym.loc.start.colOneIndexed),
+        mkIntArg(defnSym.loc.end.lineOneIndexed),
+        mkIntArg(defnSym.loc.end.colOneIndexed),
+        createFnArg(defnSym, eff)
+      ),
+      itpe = Type.mkPureUncurriedArrow(
+        List(
+          Type.Str,
+          Type.Str,
+          Type.Int32,
+          Type.Int32,
+          Type.Int32,
+          Type.Int32,
+          Type.mkArrowWithEffect(Type.Unit, eff, Type.Unit, SourceLocation.Unknown)
+        ),
+        Type.Cst(
+          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          SourceLocation.Unknown
+        ),
+        SourceLocation.Unknown
+      ),
+      tpe = Type.Cst(
+        TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+        SourceLocation.Unknown
+      ),
+      eff = Type.Pure,
+      loc = SourceLocation.Unknown
+    )
+  }
+
+  private def createCallToGetTests(sym: Symbol.DefnSym)(implicit flix: Flix): TypedAst.Expr = {
+    val symUse =
+      SymUse.DefSymUse(sym, SourceLocation.Unknown)
+
+    TypedAst.Expr.ApplyDef(
+      targs = Nil,
+      symUse = symUse,
+      exps = List(TypedAst.Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown)),
+      itpe = Type.mkPureUncurriedArrow(
+        List(Type.Unit),
+        Type.mkVector(
+          Type.Cst(
+            TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+            SourceLocation.Unknown
+          ),
+          SourceLocation.Unknown
+        ),
+        SourceLocation.Unknown
+      ),
+      tpe = Type.mkVector(
+        Type.Cst(
+          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          SourceLocation.Unknown
+        ),
+        SourceLocation.Unknown
+      ),
+      eff = Type.Pure,
+      loc = SourceLocation.Unknown
+    )
+  }
+
+  private def createCombinedTestVector(
+                                        tests: TypedAst.Expr,
+                                        childrenGetTests: List[Symbol.DefnSym]
+                                      )(implicit flix: Flix): TypedAst.Expr = {
+
+    val symUseFlatten =
+      SymUse.DefSymUse(Symbol.mkDefnSym("Vector.flatten"), SourceLocation.Unknown)
+
+    val childrenTests =
+      childrenGetTests.map(createCallToGetTests)
+
+    val allTests =
+      tests :: childrenTests
+
+    val nestedVectorType =
+      Type.mkVector(
+        Type.mkVector(
+          Type.Cst(
+            TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+            SourceLocation.Unknown
+          ),
+          SourceLocation.Unknown
+        ),
+        SourceLocation.Unknown
+      )
+
+    val vectorToFlatten =
+      TypedAst.Expr.VectorLit(
+        exps = allTests,
+        tpe = nestedVectorType,
+        eff = Type.Pure,
+        loc = SourceLocation.Unknown
+      )
+
+    TypedAst.Expr.ApplyDef(
+      targs = List(
+        Type.Cst(
+          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          SourceLocation.Unknown
+        )
+      ),
+      symUse = symUseFlatten,
+      exps = List(vectorToFlatten),
+      itpe = Type.mkPureUncurriedArrow(
+        List(nestedVectorType),
+        Type.mkVector(
+          Type.Cst(
+            TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+            SourceLocation.Unknown
+          ),
+          SourceLocation.Unknown
+        ),
+        SourceLocation.Unknown
+      ),
+      tpe = Type.mkVector(
+        Type.Cst(
+          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          SourceLocation.Unknown
+        ),
+        SourceLocation.Unknown
+      ),
+      eff = Type.Pure,
+      loc = SourceLocation.Unknown
+    )
+  }
+
+  private def introduceTests(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
+    val tests: Map[Symbol.ModuleSym, Iterable[(Symbol.DefnSym, TypedAst.Def)]] =
+      root.defs
+        .filter(_._2.spec.ann.isTest)
+        .groupBy(_._1.namespace)
+        .map {
+          case (ns, defns) =>
+            Symbol.mkModuleSym(ns) -> defns
+        }
+
+    val newGetTests =
+      root.modules.m.collect {
+        case (msym, melements) =>
+          val modTests =
+            tests.getOrElse(msym, List())
+
+          val oldGetTests =
+            melements.collectFirst {
+              case x: Symbol.DefnSym if x.text == "getTests" => x
+            }
+
+          oldGetTests match {
+            case Some(test) =>
+              val oldGetTestsDef =
+                root.defs(test)
+
+              val oldVec =
+                oldGetTestsDef.exp.asInstanceOf[TypedAst.Expr.VectorLit]
+
+              val getTestsChildrenCalls =
+                melements.collect {
+                  case x: Symbol.ModuleSym =>
+                    root.modules
+                      .get(x)
+                      .collectFirst {
+                        case y: Symbol.DefnSym if y.text == "getTests" => y
+                      }
+                }.flatten
+
+              val directTests =
+                oldVec.copy(
+                  exps = modTests.map(t => createMkUnitTestCall(t._1, t._2)).toList
+                )
+
+              Some(
+                test -> oldGetTestsDef.copy(
+                  exp = createCombinedTestVector(directTests, getTestsChildrenCalls)
+                )
+              )
+
+            case None =>
+              None
+          }
+      }.flatten
+
+    root.copy(defs = root.defs ++ newGetTests)
+  }
+
 
   /**
     * Lowers the given definition `defn0`.

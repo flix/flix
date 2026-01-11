@@ -126,15 +126,15 @@ object Resolver {
   /**
     * Builds a symbol table from the compilation unit.
     */
-  private def tableUnit(unit: ResolvedAst.CompilationUnit): SymbolTable = unit match {
+  private def tableUnit(unit: ResolvedAst.CompilationUnit)(implicit flix: Flix): SymbolTable = unit match {
     case ResolvedAst.CompilationUnit(_, decls, _) => SymbolTable.traverse(decls)(tableDecl)
   }
 
   /**
     * Builds a symbol table from the declaration.
     */
-  private def tableDecl(decl: ResolvedAst.Declaration): SymbolTable = decl match {
-    case ResolvedAst.Declaration.Mod(_, _, decls, _) => SymbolTable.traverse(decls)(tableDecl)
+  private def tableDecl(decl: ResolvedAst.Declaration)(implicit flix: Flix): SymbolTable = decl match {
+    case ResolvedAst.Declaration.Mod(s, _, decls, _) => SymbolTable.traverse(decls)(tableDecl).addDef(getTestsFunction(s.ns))
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
@@ -150,6 +150,42 @@ object Resolver {
     case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $symUse", symUse.loc)
   }
+
+  private def getTestsFunction(module_name: List[String])(implicit flix: Flix): ResolvedAst.Declaration.Def = {
+      ResolvedAst.Declaration.Def(
+      sym = Symbol.mkDefnSym(
+        Name.mkUnlocatedNName(module_name),
+        Name.Ident(Reflection.getTestsFnName, SourceLocation.Unknown)
+      ),
+      spec = ResolvedAst.Spec(
+        doc = Doc(List.empty, SourceLocation.Unknown),
+        ann = Annotations(List.empty),
+        mod = Modifiers(List(Modifier.Public, Modifier.Synthetic)),
+        tparams = List.empty,
+        fparams = List(
+          ResolvedAst.FormalParam(
+            sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, SourceLocation.Unknown)(Scope.Top, flix),
+            tpe = Some(UnkindedType.mkUnit(SourceLocation.Unknown)),
+            loc = SourceLocation.Unknown
+          )
+        ),
+        tpe = UnkindedType.Apply(
+          UnkindedType.Cst(TypeConstructor.Vector, SourceLocation.Unknown),
+          UnkindedType.Cst(
+            TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+            SourceLocation.Unknown
+          ),
+          SourceLocation.Unknown
+        ),
+        eff = None,
+        tconstrs = List.empty,
+        econstrs = List.empty
+      ),
+      exp = ResolvedAst.Expr.VectorLit(Nil, SourceLocation.Unknown),
+      loc = SourceLocation.Unknown
+    )
+  }
+
 
   /**
     * Semi-resolves the type aliases in the root.
