@@ -348,17 +348,21 @@ object SafetyError {
   case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4912
 
-    def summary: String = s"Illegal relational use of the lattice variable '$sym'."
+    def summary: String = s"Unexpected use of lattice variable '$sym' in relational position."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
+      s""">> Unexpected use of lattice variable '${red(sym.text)}' in relational position.
          |
-         |${src(loc, "the illegal use occurs here.")}
+         |${src(loc, "relational use")}
          |
-         |${underline("Explanation:")}
-         |A lattice variable cannot be used as relational variable unless the atom
-         |from which it originates is marked with `fix`.
+         |${underline("Explanation:")} A lattice variable cannot be used in a relational atom
+         |unless its origin is marked with 'fix'. For example:
+         |
+         |  P(v) :- L(x; v), Q(v).      // Error: 'v' is a lattice variable used relationally
+         |  P(v) :- fix L(x; v), Q(v).  // OK: 'fix' allows relational use
+         |
+         |Add 'fix' to the atom where '${magenta(sym.text)}' originates.
          |""".stripMargin
     }
   }
