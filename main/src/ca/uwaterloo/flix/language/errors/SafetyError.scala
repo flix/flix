@@ -560,13 +560,13 @@ object SafetyError {
   case class NewObjectNonPublicClass(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5792
 
-    def summary: String = s"Class '${clazz.getName}' is not public"
+    def summary: String = s"Class '${clazz.getName}' is not public."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Class '${red(clazz.getName)}' is not public.
          |
-         |${src(loc, "non-public class.")}
+         |${src(loc, "non-public class")}
          |""".stripMargin
     }
   }
@@ -582,13 +582,16 @@ object SafetyError {
   case class NewObjectUndefinedMethod(clazz: java.lang.Class[?], name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5803
 
-    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}' with the written signature"
+    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Method '${red(name)}' not found in superclass '${red(clazz.getName)}' with the written signature
+      s""">> Method '${red(name)}' not found in superclass '${magenta(clazz.getName)}'.
          |
-         |${src(loc, "the method occurs here.")}
+         |${src(loc, "undefined method")}
+         |
+         |${underline("Explanation:")} The method does not exist in the superclass with
+         |the given signature. Check the method name and parameter types.
          |""".stripMargin
     }
   }
