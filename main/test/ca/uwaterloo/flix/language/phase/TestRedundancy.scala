@@ -1712,7 +1712,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.DiscardedPureValue](result)
+    expectError[RedundancyError.DiscardedPureExpression](result)
   }
 
   test("DiscardedPureValue.02") {
@@ -1728,7 +1728,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.DiscardedPureValue](result)
+    expectError[RedundancyError.DiscardedPureExpression](result)
   }
 
   test("RedundantDiscard.01") {

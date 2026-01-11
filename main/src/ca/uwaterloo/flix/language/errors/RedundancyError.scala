@@ -48,14 +48,14 @@ object RedundancyError {
          |
          |${src(loc, "discarded pure expression.")}
          |
-         |${underline("Explanation:")} A pure expression has no side-effects, so discarding
-         |its result is pointless. Either use the result or remove the expression.
+         |${underline("Explanation:")} Discarding the result of a pure expression is pointless.
+         |It means the expression itself might as well be removed.
          |
          |If you want to keep the expression, use:
          |
          |    let _ = <exp>
          |
-         |although the compiler may still optimize away the expression.
+         |although the compiler will remove the expression during code generation.
          |""".stripMargin
     }
   }
