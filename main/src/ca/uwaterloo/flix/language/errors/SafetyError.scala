@@ -377,16 +377,18 @@ object SafetyError {
   case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5023
 
-    def summary: String = "Impossible cast."
+    def summary: String = "Impossible cast: types are incompatible."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The following cast is impossible and will never succeed.
+      s""">> Impossible cast: types are incompatible.
          |
-         |${src(loc, "the cast occurs here.")}
+         |${src(loc, "impossible cast")}
          |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
+         |From: ${red(FormatType.formatType(from, None))}
+         |To  : ${red(FormatType.formatType(to, None))}
+         |
+         |${underline("Explanation:")} An unchecked cast between these types will never succeed.
          |""".stripMargin
     }
   }
@@ -399,21 +401,20 @@ object SafetyError {
   case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5134
 
-    def summary: String = s"Missing default case."
+    def summary: String = "Missing default case in typematch."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing default case.
+      s""">> Missing default case in typematch.
          |
-         |${src(loc, "missing default case.")}
+         |${src(loc, "typematch expression")}
          |
-         |${underline("Explanation:")}
-         |A typematch expression must have a default case. For example:
+         |${underline("Explanation:")} A typematch expression must have a default case. For example:
          |
-         | typematch x {
-         |     case y: Int32 => ...
-         |     case _: _ => ... // default case
-         | }
+         |  typematch x {
+         |      case y: Int32 => ...
+         |      case _: _ => ... // default case
+         |  }
          |""".stripMargin
     }
   }
@@ -427,13 +428,15 @@ object SafetyError {
   case class PrimitiveEffectInRunWith(sym: Symbol.EffSym, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5245
 
-    def summary: String = s"The ${sym.name} effect cannot be handled."
+    def summary: String = s"Primitive effect '${sym.name}' cannot be handled."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The ${sym.name} effect cannot be handled.
+      s""">> Primitive effect '${red(sym.name)}' cannot be handled.
          |
-         |${src(loc, s"attempted to handle the ${sym.name} effect here.")}
+         |${src(loc, "handler")}
+         |
+         |${underline("Explanation:")} Primitive effects like IO cannot be handled with a 'run-with' expression.
          |""".stripMargin
     }
   }
@@ -449,18 +452,23 @@ object SafetyError {
   case class NewObjectIllegalThisType(clazz: java.lang.Class[?], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
     def code: ErrorCode = ErrorCode.E5356
 
-    def summary: String = s"Invalid `this` parameter for method '$name'."
+    def summary: String = s"Unexpected 'this' type for method '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Invalid 'this' parameter for method '${red(name)}''.
+      s""">> Unexpected 'this' type for method '${red(name)}'.
          |
-         |Expected 'this' type is ${cyan(s"${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
+         |${src(loc, "method definition")}
          |
-         |${src(loc, "the method occurs here.")}
+         |Expected: ${cyan(clazz.getName)}
+         |Actual:   ${red(illegalThisType.toString)}
          |
-         |${underline("Explanation:")}
-         |The first argument to any method must be 'this', and must have the same type as the superclass.
+         |${underline("Explanation:")} The first argument to any method must be 'this' and must
+         |have the same type as the superclass. For example:
+         |
+         |  new ${clazz.getSimpleName} {
+         |      def $name(_this: ${clazz.getSimpleName}, ...): ... = ...
+         |  }
          |""".stripMargin
     }
   }
