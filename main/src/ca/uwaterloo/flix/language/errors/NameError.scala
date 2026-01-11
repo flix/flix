@@ -140,22 +140,31 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the module `qname` is wrongly declared in the file specified by `path`.
+    * An error raised to indicate that the module `qname` is declared in an unexpected file.
     *
     * @param qname The name of the module.
-    * @param path  The real or virtual path where the module is declared.
-    * @param loc   The source location the qname.
+    * @param path  The actual path where the module is declared.
+    * @param loc   The source location of the module declaration.
     */
   case class IllegalModuleFile(qname: Name.QName, path: Path, loc: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5623
 
-    def summary: String = s"Module '$qname' unexpectedly declared in file '$path'."
+    def summary: String = s"Mismatched module and file: '$qname' in '$path'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Module '${blue(qname.toString)}' unexpectedly declared in '${red(path.toString)}'.
+      s""">> Mismatched module and file: '${magenta(qname.toString)}' in '${red(path.toString)}'.
          |
-         |${src(loc, "mismatched module name and path.")}
+         |${src(loc, "unexpected location")}
+         |
+         |${underline("Explanation:")} A module must be declared in a file that matches its name.
+         |For example:
+         |
+         |  // File A.flix
+         |  mod A { ... }      // OK
+         |
+         |  // File A/B.flix
+         |  mod A.B { ... }    // OK
          |""".stripMargin
     }
   }
