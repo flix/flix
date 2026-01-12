@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
-import ca.uwaterloo.flix.util.collection.{CofiniteSet}
+import ca.uwaterloo.flix.util.collection.CofiniteSet
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 /**
@@ -169,9 +169,14 @@ object Lowering {
     * Lowers the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = {
-    // If the definition is an entry point it is wrapped with the required default handlers before the rest of lowering.
-    // For example, tests with an Assert effect will be wrapped with a call to Assert.runWithIO
-    val defn = if (EntryPoints.isEntryPoint(defn0)) {
+    /*
+     If the definition is an entry point it is wrapped with the required default handlers before the rest of lowering.
+       For example:
+          {{{ def myEntryPoint(): Unit \ Assert = e }}}
+       Will be transformed into:
+          {{{ def myEntryPoint(): Unit \ IO = Assert.runWithIO(_ -> e) }}}
+     */
+    val defn = if (TypedAstOps.isEntryPoint(defn0)) {
         wrapDefWithDefaultHandlers(defn0, root)
     } else {
         defn0
@@ -187,8 +192,6 @@ object Lowering {
   /**
     * Wraps an entry point function with calls to the default handlers of each of the effects appearing in
     * its signature. The order in which the handlers are applied is not defined and should not be relied upon.
-    *
-    * If the signature is not well-formed or it has type variables, it adds calls to every default handler.
     *
     * For example, if we had default handlers for some effects A, B and C:
     *

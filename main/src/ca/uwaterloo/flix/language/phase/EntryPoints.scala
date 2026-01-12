@@ -16,15 +16,16 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.util.collection.{Chain, CofiniteSet}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.collection.CofiniteSet
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -148,28 +149,6 @@ object EntryPoints {
     oldShell.copy(spec = spec, exp = newExp)
   }
 
-  /**
-    * A function is an entry point if:
-    *   - It is the main function (called `main` by default, but can configured
-    *     to an arbitrary name).
-    *   - It is a test (annotated with `@Test`).
-    *   - It is an exported function (annotated with `@Export`).
-    */
-  def isEntryPoint(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
-    isMain(defn) || isTest(defn) || isExport(defn)
-
-  /** Returns `true` if `defn` is a test. */
-  private def isTest(defn: TypedAst.Def): Boolean =
-    defn.spec.ann.isTest
-
-  /** Returns `true` if `defn` is an exported function. */
-  private def isExport(defn: TypedAst.Def): Boolean =
-    defn.spec.ann.isExport
-
-  /** Returns `true` if `defn` is the main function. */
-  private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
-    root.mainEntryPoint.contains(defn.sym)
-
   /** Returns `true` if `tpe` is equivalent to Unit (via type aliases). */
   @tailrec
   private def isUnitType(tpe: Type): Result[Boolean, ErrorOrMalformed.type] = tpe match {
@@ -215,9 +194,9 @@ object EntryPoints {
     private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
       // checkMain is different than the other two because the entry point designation exists on
       // root and invalid main functions are communicated via SharedContext.
-      if (isMain(defn)) checkMain(defn)
-      val defn1 = if (isTest(defn)) visitTest(defn) else defn
-      val defn2 = if (isExport(defn)) visitExport(defn1) else defn1
+      if (TypedAstOps.isMain(defn)) checkMain(defn)
+      val defn1 = if (TypedAstOps.isTest(defn)) visitTest(defn) else defn
+      val defn2 = if (TypedAstOps.isExport(defn)) visitExport(defn1) else defn1
       defn2
     }
 
@@ -620,7 +599,7 @@ object EntryPoints {
   /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
   private def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
     val s = mutable.Set.empty[Symbol.DefnSym]
-    for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
+    for ((sym, defn) <- root.defs if TypedAstOps.isEntryPoint(defn)(root)) {
       s += sym
     }
     val entryPoints = s.toSet
