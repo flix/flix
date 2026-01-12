@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap, ListOps, MapOps}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap, ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -562,7 +562,7 @@ object Specialization {
     case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
       val rs = rules map {
         case LoweredAst.MatchRule(pat, guard, body) =>
-          val (p, env1) = specializePat(pat, subst)
+          val (p, env1) = specializePat(pat, Map(), subst)
           val extendedEnv = env0 ++ env1
           val g = guard.map(specializeExp(_, extendedEnv, subst))
           val b = specializeExp(body, extendedEnv, subst)
@@ -683,15 +683,17 @@ object Specialization {
       var curEnv = env0
       val fs = frags.map {
         case LoweredAst.ParYieldFragment(pat, fragExp, fragLoc) =>
-          val (p, env1) = specializePat(pat, subst)
+          val (p, env1) = specializePat(pat, Map(), subst)
           curEnv ++= env1
           LoweredAst.ParYieldFragment(p, specializeExp(fragExp, curEnv, subst), fragLoc)
       }
       val e = specializeExp(exp, curEnv, subst)
       LoweredAst.Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointConstraintSet(cs, tpe, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.FixpointConstraintSet(cs0, tpe, loc) =>
+      val cs = cs0.map(specializeConstraint(_, env0, subst))
+      val t = subst(tpe)
+      LoweredAst.Expr.FixpointConstraintSet(cs, t, loc)
 
     case LoweredAst.Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
       val pparams = pparams0.map {
@@ -768,6 +770,63 @@ object Specialization {
   }
 
   /**
+    * Specializes the given body predicate `p0`.
+    */
+  private def specializeBodyPred(b0: LoweredAst.Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): (LoweredAst.Predicate.Body, Map[Symbol.VarSym, Symbol.VarSym]) = b0 match {
+    case LoweredAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms0, tpe, loc) =>
+      val (terms, env) = specializePats(terms0, env0, subst)
+      val t = subst(tpe)
+      (LoweredAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, t, loc), env)
+    case LoweredAst.Predicate.Body.Functional(outSyms0, exp, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val outSyms = outSyms0.map(env0.apply)
+      (LoweredAst.Predicate.Body.Functional(outSyms, e, loc), env0)
+    case LoweredAst.Predicate.Body.Guard(exp, loc) =>
+      (LoweredAst.Predicate.Body.Guard(specializeExp(exp, env0, subst), loc), env0)
+
+  }
+
+  private def specializePats(ps: List[LoweredAst.Pattern], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (List[LoweredAst.Pattern], Map[Symbol.VarSym, Symbol.VarSym]) = {
+    ps.foldRight((Nil: List[LoweredAst.Pattern], env0)) {
+      case (pat0, (res, env1)) =>
+        val (pat, env) = specializePat(pat0, env1, subst)
+        (pat :: res, env)
+    }
+  }
+
+  private def specializeBodies(bodies: List[LoweredAst.Predicate.Body], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): (List[LoweredAst.Predicate.Body], Map[Symbol.VarSym, Symbol.VarSym]) = {
+    bodies.foldRight((Nil: List[LoweredAst.Predicate.Body], env0)) {
+      case (body, (res, env1)) =>
+        val (pat, env) = specializeBodyPred(body, env1, subst)
+        (pat :: res, env)
+    }
+  }
+
+  /**
+    * Lowers the given constraint `c0`.
+    */
+  private def specializeConstraint(c0: LoweredAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Constraint = c0 match {
+    case LoweredAst.Constraint(cparams0, head0, body0, loc0) =>
+      // For every parameter of the constraint add it to `env0` with a new mapping if it has not been encountered before.
+      val env = cparams0.foldLeft(env0) {
+        case (env1, LoweredAst.ConstraintParam(sym, _, _)) =>
+          if (env1.contains(sym)) {
+            env1
+          } else {
+            val freshSym = Symbol.freshVarSym(sym)
+            env1 + (sym -> freshSym)
+          }
+      }
+      val cparams = cparams0.map {
+        case LoweredAst.ConstraintParam(sym, tpe, loc) =>
+          LoweredAst.ConstraintParam(env(sym), subst(tpe), loc)
+      }
+      val (body, env2) = specializeBodies(body0, env, subst)
+      val head = specializeHeadPred(head0, env2, subst)
+      LoweredAst.Constraint(cparams, head, body, loc0)
+  }
+
+  /**
     * Returns `true` if `tpe` is a primitive type.
     *
     * N.B.: `tpe` must be normalized.
@@ -819,26 +878,31 @@ object Specialization {
     * Specializes `p0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
     * symbols.
     */
-  private def specializePat(p0: LoweredAst.Pattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (LoweredAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
+  private def specializePat(p0: LoweredAst.Pattern, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (LoweredAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
     case LoweredAst.Pattern.Wild(tpe, loc) =>
-      (LoweredAst.Pattern.Wild(subst(tpe), loc), Map.empty)
+      (LoweredAst.Pattern.Wild(subst(tpe), loc), env0)
     case LoweredAst.Pattern.Var(sym, tpe, loc) =>
-      val freshSym = Symbol.freshVarSym(sym)
-      (LoweredAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
-    case LoweredAst.Pattern.Cst(cst, tpe, loc) => (LoweredAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
+      val env = if (env0.contains(sym)) {
+        env0
+      } else {
+        val freshSym = Symbol.freshVarSym(sym)
+        env0 + (sym -> freshSym)
+      }
+      (LoweredAst.Pattern.Var(env(sym), subst(tpe), loc), env)
+    case LoweredAst.Pattern.Cst(cst, tpe, loc) => (LoweredAst.Pattern.Cst(cst, subst(tpe), loc), env0)
     case LoweredAst.Pattern.Tag(symUse, pats, tpe, loc) =>
-      val (ps, envs) = pats.map(specializePat(_, subst)).unzip
-      (LoweredAst.Pattern.Tag(symUse, ps, subst(tpe), loc), combineEnvs(envs))
+      val (ps, env) = specializePats(pats, env0, subst)
+      (LoweredAst.Pattern.Tag(symUse, ps, subst(tpe), loc), env)
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
-      val (ps, envs) = elms.map(specializePat(_, subst)).unzip
-      (LoweredAst.Pattern.Tuple(ps, subst(tpe), loc), combineEnvs(envs))
+      val (ps, env) = specializePats(elms.toList, env0, subst)
+      (LoweredAst.Pattern.Tuple(Nel(ps.head, ps.tail), subst(tpe), loc), env)
     case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, envs) = pats.map {
         case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
-          val (p1, env1) = specializePat(pat1, subst)
+          val (p1, env1) = specializePat(pat1, env0, subst)
           (LoweredAst.Pattern.Record.RecordLabelPattern(label, p1, subst(tpe1), loc1), env1)
       }.unzip
-      val (p, env1) = specializePat(pat, subst)
+      val (p, env1) = specializePat(pat, env0, subst)
       val finalEnv = env1 :: envs
       (LoweredAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
   }
