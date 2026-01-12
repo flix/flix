@@ -737,8 +737,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
 
-    case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
-      mkDatalog(cs, loc)
+    case TypedAst.Expr.FixpointConstraintSet(cs0, tpe, loc) =>
+      val cs = cs0.map(visitConstraint)
+      val t = visitType(tpe)
+      LoweredAst.Expr.FixpointConstraintSet(cs, t, loc)
 
     case TypedAst.Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
       val pparams = pparams0.map {
@@ -835,12 +837,7 @@ object Lowering {
   /**
     * Lowers the given type `tpe0`.
     */
-  private def visitType(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0.typeConstructor match {
-    case Some(TypeConstructor.Schema) =>
-      // We replace any Schema type, no matter the number of polymorphic type applications, with the erased Datalog type.
-      Types.Datalog
-    case _ => visitTypeNonSchema(tpe0)
-  }
+  private def visitType(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0
 
   /**
     * Lowers the given type `tpe0` which must not be a schema type.
@@ -974,8 +971,8 @@ object Lowering {
     * Constructs a `Fixpoint/Ast/Datalog.Datalog` value from the given list of Datalog constraints `cs`.
     */
   private def mkDatalog(cs: List[TypedAst.Constraint], loc: SourceLocation)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
-    val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraint)
-    val ruleExps = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
+    val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraintOld)
+    val ruleExps = cs.filter(c => c.body.nonEmpty).map(visitConstraintOld)
 
     val factListExp = mkVector(factExps, Types.Constraint, loc)
     val ruleListExp = mkVector(ruleExps, Types.Constraint, loc)
@@ -987,7 +984,7 @@ object Lowering {
   /**
     * Lowers the given constraint `c0`.
     */
-  private def visitConstraint(c0: TypedAst.Constraint)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Expr = c0 match {
+  private def visitConstraintOld(c0: TypedAst.Constraint)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Expr = c0 match {
     case TypedAst.Constraint(cparams, head, body, loc) =>
       val headExp = visitHeadPred(cparams, head)
       val bodyExp = mkVector(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
@@ -1690,6 +1687,20 @@ object Lowering {
       itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc),
       tpe = tpe, eff = Type.Pure, loc = loc
     )
+  }
+
+  /**
+    * Lowers the given constraint `c0`.
+    */
+  private def visitConstraint(c0: TypedAst.Constraint)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Constraint = c0 match {
+    case TypedAst.Constraint(cparams0, head0, body0, loc0) =>
+      val cparams = cparams0.map {
+        case TypedAst.ConstraintParam(bnd, tpe, loc) =>
+          LoweredAst.ConstraintParam(bnd.sym, visitType(tpe), loc)
+      }
+      val head = visitHeadPred(head0)
+      val body = body0.map(visitBodyPred)
+      LoweredAst.Constraint(cparams, head, body, loc0)
   }
 
   /**
