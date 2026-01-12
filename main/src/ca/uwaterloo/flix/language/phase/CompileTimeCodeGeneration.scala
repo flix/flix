@@ -22,7 +22,7 @@ object CompileTimeCodeGeneration {
         // If the definition is an entry point it is wrapped with the required default handlers before the rest of lowering.
         // For example, tests with an Assert effect will be wrapped with a call to Assert.runWithIO
         if (EntryPoints.isEntryPoint(defn0)(rootWithTests)) {
-          wrapDefWithDefaultHandlers(defn0, rootWithTests)
+          wrapDefWithDefaultHandlers(defn0, rootWithTests, excludeAssert = false)
         } else {
           defn0
         }
@@ -150,18 +150,17 @@ object CompileTimeCodeGeneration {
   }
 
   private def createCombinedTestVector(
-    tests: TypedAst.Expr,
+    batchedTests: List[Symbol.DefnSym],
     childrenGetTests: List[Symbol.DefnSym]
   ): TypedAst.Expr = {
 
     val symUseFlatten =
       SymUse.DefSymUse(Symbol.mkDefnSym("Vector.flatten"), SourceLocation.Unknown)
-
     val childrenTests =
       childrenGetTests.map(createCallToGetTests)
-
+    val tests = batchedTests.map(createCallToGetTests)
     val allTests =
-      tests :: childrenTests
+      tests ::: childrenTests
 
     val nestedVectorType =
       Type.mkVector(
@@ -214,22 +213,35 @@ object CompileTimeCodeGeneration {
       loc = SourceLocation.Unknown
     )
   }
+  private def copyDefnForReflectTesting(defsym: Symbol.DefnSym, defn: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix) : (Symbol.DefnSym, TypedAst.Def) = {
+    val defnSym = Symbol.mkDefnSym(Name.mkUnlocatedNName(defsym.namespace), Name.Ident(defsym.name ++ reflectedTestNameSuffix, defsym.loc))
+    (defnSym, wrapDefWithDefaultHandlers( defn.copy(
+      sym = defnSym,
+      spec = defn.spec.copy(
+        ann = defn.spec.ann.copy(
+          annotations = defn.spec.ann.annotations.filterNot(_.isInstanceOf[Annotation.Test])
+        )
+      )
+    ), root, excludeAssert = true))
+  }
+
+  private def copyDefnForReflectBatchingTests(defsym: Symbol.DefnSym, defn: TypedAst.Def, index: Int, batch: Iterable[(Symbol.DefnSym, TypedAst.Def)])(implicit flix: Flix) : (Symbol.DefnSym, TypedAst.Def) = {
+    val defnSym = Symbol.mkDefnSym(Name.mkUnlocatedNName(defsym.namespace), Name.Ident(defsym.name ++ f"_test_batch_$index" ++ reflectedTestNameSuffix, defsym.loc))
+    val vector = defn.exp.asInstanceOf[TypedAst.Expr.VectorLit]
+    val newVector = vector.copy(
+      exps = batch.map(t => createMkUnitTestCall(t._1, t._2)).toList
+    )
+    (defnSym, defn.copy(
+      sym = defnSym,
+      exp = newVector
+    ))
+  }
 
   private def introduceTests(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
     val testCopies = root.defs
-      .filter(_._2.spec.ann.isTest)
+      .filter(d => d._2.spec.ann.isTest && !d._2.spec.ann.isSkip)
       .map {
-        case (s, d) => {
-          val defnSym = Symbol.mkDefnSym(Name.mkUnlocatedNName(s.namespace), Name.Ident(s.name ++ reflectedTestNameSuffix, s.loc))
-          (defnSym, d.copy(
-            sym = defnSym,
-            spec = d.spec.copy(
-              ann = d.spec.ann.copy(
-                annotations = d.spec.ann.annotations.filterNot(_.isInstanceOf[Annotation.Test])
-              )
-            )
-          ))
-        }
+        case (s, d) => copyDefnForReflectTesting(s, d, root)
       }
 
     val testsByModule: Map[Symbol.ModuleSym, Iterable[(Symbol.DefnSym, TypedAst.Def)]] =
@@ -240,8 +252,8 @@ object CompileTimeCodeGeneration {
             Symbol.mkModuleSym(ns) -> defns
         }
 
-    val newGetTests =
-      root.modules.m.collect {
+    val newGetTestsFns =
+      root.modules.m.flatMap {
         case (msym, melements) =>
           val modTests =
             testsByModule.getOrElse(msym, List())
@@ -253,9 +265,9 @@ object CompileTimeCodeGeneration {
             case Some(oldGetTestSym) =>
               val oldGetTestsDef =
                 root.defs(oldGetTestSym)
-
-              val oldVec =
-                oldGetTestsDef.exp.asInstanceOf[TypedAst.Expr.VectorLit]
+              val batchDefs = modTests.grouped(128).zipWithIndex.map{
+                case (g, i) => copyDefnForReflectBatchingTests(oldGetTestSym, oldGetTestsDef, i, g)
+              }.toList
 
               val getTestsChildrenCalls =
                 melements.collect {
@@ -267,14 +279,10 @@ object CompileTimeCodeGeneration {
                       }
                 }.flatten
 
-              val directTests =
-                oldVec.copy(
-                  exps = modTests.map(t => createMkUnitTestCall(t._1, t._2)).toList
-                )
               Some(
                 oldGetTestSym -> oldGetTestsDef.copy(
-                  exp = createCombinedTestVector(directTests, getTestsChildrenCalls)
-                )
+                  exp = createCombinedTestVector(batchDefs.map(_._1), getTestsChildrenCalls)
+                ) :: batchDefs
               )
 
             case None =>
@@ -282,7 +290,7 @@ object CompileTimeCodeGeneration {
           }
       }.flatten
 
-    root.copy(defs = root.defs ++ testCopies ++ newGetTests)
+    root.copy(defs = root.defs ++ testCopies ++ newGetTestsFns)
   }
 
   /**
@@ -312,7 +320,7 @@ object CompileTimeCodeGeneration {
     * @param root       The typed AST root
     * @return The wrapped function definition with all necessary default effect handlers
     */
-  private def wrapDefWithDefaultHandlers(currentDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+  private def wrapDefWithDefaultHandlers(currentDef: TypedAst.Def, root: TypedAst.Root, excludeAssert: Boolean)(implicit flix: Flix): TypedAst.Def = {
     // Obtain the concrete effect set of the definition that is going to be wrapped.
     // We are expecting entry points, and all entry points should have a concrete effect set
     // Obtain the concrete effect set of the definition that is going to be wrapped.
@@ -325,10 +333,18 @@ object CompileTimeCodeGeneration {
       case Result.Err(_) => throw InternalCompilerException("Unexpected illegal effect set on entry point", currentDef.spec.eff.loc)
     }
     // Gather only the default handlers for the effects appearing in the signature of the definition.
-    val requiredHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+    val handlersForEffects =
+      root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+
+    val requiredHandlers =
+      if (excludeAssert)
+        handlersForEffects.filterNot(_.handledSym == Symbol.Assert)
+      else
+        handlersForEffects
+
     // Wrap the expression in each of the required default handlers.
     // Right now, the order depends on the order of defaultHandlers.
-    requiredHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler, root))
+    requiredHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler))
   }
 
   /**
@@ -352,10 +368,9 @@ object CompileTimeCodeGeneration {
     *
     * @param defn           The entry point function definition to wrap
     * @param defaultHandler Information about the default handler to apply
-    * @param root           The typed AST root
     * @return The wrapped function definition with updated effect signature
     */
-  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler)(implicit flix: Flix): TypedAst.Def = {
     // Create synthetic locations
     val effLoc = defn.spec.eff.loc.asSynthetic
     val baseTypeLoc = defn.spec.declaredScheme.base.loc.asSynthetic
