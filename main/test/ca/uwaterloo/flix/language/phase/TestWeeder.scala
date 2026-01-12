@@ -26,7 +26,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("DuplicateAnnotation.01") {
     val input =
       """@Test @Test
-        |def foo(x: Int32): Int32 = 42
+        |def f(): Unit = ()
     """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateAnnotation](result)

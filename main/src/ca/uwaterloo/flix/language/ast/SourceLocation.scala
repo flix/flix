@@ -12,7 +12,7 @@ object SourceLocation {
     *
     * Must only be used if *absolutely necessary*.
     */
-  val Unknown: SourceLocation = SourceLocation(isReal = true, Source.Unknown, SourcePosition.Unknown, SourcePosition.Unknown)
+  val Unknown: SourceLocation = SourceLocation(isReal = false, Source.Unknown, SourcePosition.Unknown, SourcePosition.Unknown)
 
   /** Returns the [[SourceLocation]] that refers the the zero-width location `sp`. */
   def zeroPoint(isReal: Boolean, src: Source, sp: SourcePosition): SourceLocation =
