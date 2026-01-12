@@ -529,12 +529,12 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Useless expression: It has no side-effect(s) and its result is discarded.
+      s""">> Useless expression: It is pure and its result is discarded.
          |
          |${src(loc, "useless expression.")}
          |
-         |${underline("Explanation:")} A useless expression has no side-effects and its result
-         |is not used. Either use the result or remove the expression.
+         |${underline("Explanation:")} A useless expression is pure and its result is not used.
+         |Either use the result or remove the expression.
          |""".stripMargin
     }
   }
