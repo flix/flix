@@ -1703,7 +1703,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedEffSym](result)
   }
 
-  test("DiscardedPureValue.01") {
+  test("DiscardedPureExpression.01") {
     val input =
       """
         |def f(): Unit =
@@ -1715,7 +1715,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.DiscardedPureExpression](result)
   }
 
-  test("DiscardedPureValue.02") {
+  test("DiscardedPureExpression.02") {
     val input =
       """
         |def fakePrint(_msg: a): Unit \ IO =
