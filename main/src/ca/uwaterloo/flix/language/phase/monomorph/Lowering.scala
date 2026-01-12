@@ -1720,6 +1720,9 @@ object Lowering {
     def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
       case Type.Cst(TypeConstructor.Relation(_), _) => Nil
       case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
+      // The type has not been assigned. This is either due to an error in the compiler, or because it is free.
+      // We assume the last and let its type correspond to a nullary relation.
+      case _ if rel0.typeConstructor.contains(TypeConstructor.AnyType) => Nil
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got $t", loc0)
     }
 
