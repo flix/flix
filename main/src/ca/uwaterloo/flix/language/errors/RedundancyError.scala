@@ -218,7 +218,6 @@ object RedundancyError {
       s""">> Redundant effect cast. The expression is already pure.
          |
          |${src(loc, "redundant cast.")}
-         |
          |""".stripMargin
     }
   }
