@@ -325,20 +325,13 @@ object RedundancyError {
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7956
 
-    def summary: String = "Unused definition."
+    def summary: String = s"Unused definition '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unused definition '${red(sym.name)}'. The definition is never referenced.
          |
          |${src(sym.loc, "unused definition.")}
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Use the definition.
-         |  (2)  Remove the definition.
-         |  (3)  Mark the definition as public.
-         |  (4)  Prefix the definition name with an underscore.
          |""".stripMargin
     }
 
@@ -353,20 +346,13 @@ object RedundancyError {
   case class UnusedEffSym(sym: Symbol.EffSym) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E8063
 
-    def summary: String = s"Unused effect '${sym.name}'.'"
+    def summary: String = s"Unused effect '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unused effect '${red(sym.name)}'. The effect is never referenced.
          |
          |${src(sym.loc, "unused effect.")}
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Use the effect.
-         |  (2)  Remove the effect.
-         |  (3)  Mark the effect as public.
-         |  (4)  Prefix the effect name with an underscore.
          |""".stripMargin
     }
 
@@ -381,20 +367,13 @@ object RedundancyError {
   case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E8176
 
-    def summary: String = "Unused enum."
+    def summary: String = s"Unused enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
          |${src(sym.loc, "unused enum.")}
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Use the enum.
-         |  (2)  Remove the enum.
-         |  (3)  Mark the enum as public.
-         |  (4)  Prefix the enum name with an underscore.
          |""".stripMargin
     }
 
@@ -417,12 +396,6 @@ object RedundancyError {
       s""">> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
          |
          |${src(tag.loc, "unused tag.")}
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Use the case.
-         |  (2)  Remove the case.
-         |  (3)  Prefix the case with an underscore.
          |""".stripMargin
     }
 
@@ -437,20 +410,13 @@ object RedundancyError {
   case class UnusedStructSym(sym: Symbol.StructSym) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E8392
 
-    def summary: String = "Unused struct."
+    def summary: String = s"Unused struct '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unused struct '${red(sym.name)}'.
          |
          |${src(sym.loc, "unused struct.")}
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Use the struct.
-         |  (2)  Remove the struct.
-         |  (3)  Mark the struct as public.
-         |  (4)  Prefix the struct name with an underscore.
          |""".stripMargin
     }
 
@@ -465,7 +431,7 @@ object RedundancyError {
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E8405
 
-    def summary: String = "Unused formal parameter."
+    def summary: String = s"Unused formal parameter '${sym.text}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -473,11 +439,9 @@ object RedundancyError {
          |
          |${src(sym.loc, "unused formal parameter.")}
          |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Use the formal parameter.
-         |  (2)  Remove the formal parameter.
-         |  (3)  Prefix the formal parameter name with an underscore.
+         |${underline("Explanation:")} Flix does not allow unused formal parameters to prevent
+         |programming bugs. An unused formal parameter can be prefixed with an underscore
+         |to suppress this error.
          |""".stripMargin
     }
 
@@ -492,19 +456,13 @@ object RedundancyError {
   case class UnusedTypeParam(ident: Name.Ident, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E8518
 
-    def summary: String = "Unused type parameter."
+    def summary: String = s"Unused type parameter '${ident.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
          |
          |${src(ident.loc, "unused type parameter.")}
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Use the type parameter.
-         |  (2)  Remove type parameter.
-         |  (3)  Prefix the type parameter name with an underscore.
          |""".stripMargin
     }
   }
@@ -517,19 +475,13 @@ object RedundancyError {
   case class UnusedTypeParamSignature(ident: Name.Ident, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E8629
 
-    def summary: String = "Type parameter unused in function signature."
+    def summary: String = s"Unused type parameter '${ident.name}' in function signature."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced in the signature.
          |
          |${src(ident.loc, "type parameter unused in function signature.")}
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Use the type parameter in the signature.
-         |  (2)  Remove type parameter.
-         |  (3)  Prefix the type parameter name with an underscore.
          |""".stripMargin
     }
   }
@@ -542,7 +494,7 @@ object RedundancyError {
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E8736
 
-    def summary: String = "Unused local variable."
+    def summary: String = s"Unused local variable '${sym.text}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -550,11 +502,11 @@ object RedundancyError {
          |
          |${src(sym.loc, "unused local variable.")}
          |
-         |${underline("Possible fixes:")}
+         |${underline("Explanation:")} Flix does not allow unused local variables to prevent
+         |programming bugs. An unused local variable can be prefixed with an underscore
+         |to suppress this error. For example:
          |
-         |  (1)  Use the local variable.
-         |  (2)  Remove local variable declaration.
-         |  (3)  Prefix the variable name with an underscore.
+         |    let _${sym.text} = <exp>
          |""".stripMargin
     }
 
