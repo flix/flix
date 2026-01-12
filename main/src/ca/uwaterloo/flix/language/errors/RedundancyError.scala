@@ -245,19 +245,22 @@ object RedundancyError {
   /**
     * An error raised to indicate that unsafe was used on a pure expression.
     *
-    * @param loc the source location of the unsafe run.
+    * @param eff the effect that the block unsafely removes.
+    * @param loc the source location of the unsafe block.
     */
-  case class RedundantUnsafe(loc: SourceLocation) extends RedundancyError {
+  case class RedundantUnsafe(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7623
 
-    def summary: String = "Redundant unsafe run, the expression is pure."
+    def summary: String = "Redundant unsafe block, the expression is pure."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Redundant unsafe run, the expression is pure.
+      s""">> Redundant unsafe block, the expression is pure.
          |
-         |${src(loc, "redundant unsafe run.")}
+         |${src(loc, "redundant unsafe block.")}
          |
+         |${underline("Explanation:")} The block unsafely removes the '${cyan(FormatType.formatType(eff))}' effect,
+         |but the body expression is pure.
          |""".stripMargin
     }
   }
