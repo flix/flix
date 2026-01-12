@@ -274,6 +274,9 @@ object EntryPoints {
         case Some(err) => List(err)
         case None =>
           // Only run these on functions without type variables.
+          // An exported function should have:
+          //  - Only valid Java types
+          //  - An effect set containing only primitive effects or effects that have default handlers
           checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym)).toList ++ checkJavaTypes(defn)
       }) ++
         checkNonRootNamespace(defn) ++
