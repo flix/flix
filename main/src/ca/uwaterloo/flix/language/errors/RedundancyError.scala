@@ -110,19 +110,21 @@ object RedundancyError {
   /**
     * An error raised to indicate that a checked effect cast is redundant.
     *
+    * @param eff the effect of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantCheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantCheckedEffectCast(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7067
 
-    def summary: String = "Redundant effect cast. The expression already has the required effect."
+    def summary: String = "Redundant effect cast."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Redundant effect cast. The expression already has the required effect.
+      s""">> Redundant effect cast.
          |
          |${src(loc, "redundant cast.")}
          |
+         |The expression already has the '${cyan(FormatType.formatType(eff))}' effect.
          |""".stripMargin
     }
   }
@@ -130,19 +132,21 @@ object RedundancyError {
   /**
     * An error raised to indicate that a checked type cast is redundant.
     *
+    * @param tpe the type of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantCheckedTypeCast(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7178
 
-    def summary: String = "Redundant type cast. The expression already has the required type."
+    def summary: String = "Redundant type cast."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Redundant type cast. The expression already has the required type.
+      s""">> Redundant type cast.
          |
          |${src(loc, "redundant cast.")}
          |
+         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
          |""".stripMargin
     }
   }
@@ -162,6 +166,9 @@ object RedundancyError {
       s""">> Redundant discard of unit value.
          |
          |${src(loc, "discarded unit value.")}
+         |
+         |${underline("Explanation:")} Discarding a unit value is redundant since unit
+         |has no meaningful value to discard.
          |""".stripMargin
     }
   }
@@ -176,17 +183,22 @@ object RedundancyError {
   case class RedundantTraitConstraint(entailingTconstr: TraitConstraint, redundantTconstr: TraitConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7394
 
-    def summary: String = "Redundant type constraint."
+    def summary: String = "Redundant trait constraint."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Type constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
+      s""">> Redundant trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
          |
-         |${src(loc, "redundant type constraint.")}
+         |${src(loc, "redundant trait constraint.")}
          |
-         |${underline("Possible fixes:")}
+         |The constraint is entailed by '${cyan(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
          |
-         |  (1)  Remove the type constraint.
+         |${underline("Explanation:")} A trait constraint is redundant if it is implied by another
+         |constraint. For example, if we have:
+         |
+         |    def foo(x: a): a with Order[a], Eq[a] = ...
+         |
+         |then the 'Eq[a]' constraint is redundant because 'Order[a]' already implies 'Eq[a]'.
          |""".stripMargin
     }
   }
