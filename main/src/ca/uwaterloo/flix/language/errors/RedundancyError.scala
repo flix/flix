@@ -223,26 +223,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an `unsafe` block is redundant.
-    *
-    * @param loc the source location of the unsafe block.
-    */
-  case class UselessUnsafe(loc: SourceLocation) extends RedundancyError {
-    def code: ErrorCode = ErrorCode.E7512
-
-    def summary: String = "Redundant unsafe block"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Redundant unsafe block
-         |
-         |${src(loc, "redundant")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that unsafe was used on a pure expression.
     *
     * @param eff the effect that the block unsafely removes.
@@ -540,10 +520,9 @@ object RedundancyError {
   /**
     * An error raised to indicate that an expression is useless.
     *
-    * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UselessExpression(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class UselessExpression(loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E8956
 
     def summary: String = "Useless expression."
@@ -554,13 +533,30 @@ object RedundancyError {
          |
          |${src(loc, "useless expression.")}
          |
-         |The expression has type '${FormatType.formatType(tpe)}'
+         |${underline("Explanation:")} A useless expression has no side-effects and its result
+         |is not used. Either use the result or remove the expression.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an `unsafe` block is useless.
+    *
+    * @param loc the source location of the unsafe block.
+    */
+  case class UselessUnsafe(loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7512
+
+    def summary: String = "Useless unsafe block."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Useless unsafe block.
          |
-         |${underline("Possible fixes:")}
+         |${src(loc, "useless unsafe block.")}
          |
-         |  (1)  Use the result computed by the expression.
-         |  (2)  Remove the expression statement.
-         |  (3)  Introduce a let-binding with a wildcard name.
+         |${underline("Explanation:")} An unsafe block that runs the 'Pure' effect is useless
+         |since 'Pure' means no effects.
          |""".stripMargin
     }
   }

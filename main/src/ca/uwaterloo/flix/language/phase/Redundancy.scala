@@ -491,7 +491,7 @@ object Redundancy {
 
       // Check for useless pure expressions.
       if (isUselessExpression(exp1)) {
-        (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
+        (us1 ++ us2) + UselessExpression(exp1.loc)
       } else {
         us1 ++ us2
       }
