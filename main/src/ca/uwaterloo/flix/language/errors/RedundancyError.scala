@@ -70,15 +70,15 @@ object RedundancyError {
   case class DuplicateExtPattern(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E6843
 
-    def summary: String = s"Duplicate extensible variant pattern '${label.name}'."
+    def summary: String = s"Duplicate extensible pattern '${label.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Duplicate extensible pattern '${red(label.name)}'.
          |
-         |${src(loc1, "the first occurrence was here.")}
+         |${src(loc1, "first occurrence.")}
          |
-         |${src(loc2, "the second occurrence was here.")}
+         |${src(loc2, "duplicate occurrence.")}
          |""".stripMargin
     }
 
