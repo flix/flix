@@ -274,7 +274,7 @@ object RedundancyError {
   case class ShadowedName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7736
 
-    def summary: String = "Shadowed name."
+    def summary: String = s"Shadowed name '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -285,7 +285,6 @@ object RedundancyError {
          |The shadowing name was declared here:
          |
          |${src(shadowing, "shadowing name.")}
-         |
          |""".stripMargin
     }
 
@@ -301,7 +300,7 @@ object RedundancyError {
   case class ShadowingName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7843
 
-    def summary: String = "Shadowing name."
+    def summary: String = s"Shadowing name '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -312,7 +311,6 @@ object RedundancyError {
          |The shadowed name was declared here:
          |
          |${src(shadowed, "shadowed name.")}
-         |
          |""".stripMargin
     }
 
@@ -583,11 +581,6 @@ object RedundancyError {
          |Covered by the following pattern:
          |
          |${src(defaultLoc, "covering pattern.")}
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Remove the covered case.
-         |  (2)  Remove the covering '_' case.
          |""".stripMargin
     }
   }
