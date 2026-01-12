@@ -219,9 +219,14 @@ object Parser2 {
 
   /** Get first non-comment previous position of the parser as a [[SourceLocation]]. */
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
-    // TODO: It might make sense to seek the first non-comment position.
-    val token = s.tokens((s.position - 1).max(0))
-    token.mkSourceLocation()
+    val prevPos = (s.position - previousNonComment(1)).max(0)
+    if (0 <= prevPos && prevPos < s.tokens.length) {
+      val token = s.tokens(prevPos)
+      token.mkSourceLocation()
+    } else {
+      // This cannot happen.
+      throw InternalCompilerException(s"Parser arrived in impossible case", currentSourceLocation())
+    }
   }
 
   /** Get current position of the parser as a [[SourceLocation]]. */
@@ -499,6 +504,19 @@ object Parser2 {
     } else s.tokens(s.position + lookahead).kind match {
       case t if t.isComment => nextNonComment(lookahead + 1)
       case _ => lookahead
+    }
+  }
+
+  /**
+    * Returns the distance to the first non-comment token after lookahead.
+    */
+  @tailrec
+  private def previousNonComment(lookbehind: Int)(implicit s: State): Int = {
+    if (s.position - lookbehind < 1) {
+      lookbehind
+    } else s.tokens(s.position - lookbehind).kind match {
+      case t if t.isComment => previousNonComment(lookbehind + 1)
+      case _ => lookbehind
     }
   }
 
