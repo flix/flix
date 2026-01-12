@@ -11,10 +11,25 @@ import ca.uwaterloo.flix.util.collection.CofiniteSet
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 object CompileTimeCodeGeneration {
+  /** The name of the generated function that returns all tests in a module. */
   val getTestsFnName = "getTests"
 
+  /** Suffix appended to reflected test function names to avoid conflicts. */
   val reflectedTestNameSuffix = "€reflected$"
 
+  /** Fully qualified name for the UnitTest enum. */
+  val unitTestEnum = "UnitTest.UnitTest"
+
+  /**
+    * Main entry point for compile-time code generation phase.
+    *
+    * This phase performs two key transformations:
+    * 1. Introduces test reflection infrastructure by generating a getTests function for each module
+    * 2. Wraps entry point functions with their required default effect handlers
+    *
+    * @param root The typed AST root to transform
+    * @return The transformed AST root with generated code
+    */
   def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("Compile Time Code Generation") {
     val rootWithTests = introduceTests(root)
     val defsWithDefaultHandlers = ParOps.parMapValues(rootWithTests.defs) {
@@ -30,6 +45,21 @@ object CompileTimeCodeGeneration {
     rootWithTests.copy(defs = defsWithDefaultHandlers)
   }
 
+  /**
+    * Creates a lambda expression that takes a Unit argument and calls the given definition.
+    *
+    * Produces:
+    * {{{
+    *     arg0 -> defn(arg0)
+    * }}}
+    *
+    * This is used to wrap test functions so they can be stored and invoked later
+    * by the test framework.
+    *
+    * @param defnSym The symbol of the definition to call
+    * @param fnEff   The effect type of the function
+    * @return A lambda expression wrapping the function call
+    */
   private def createFnArg(defnSym: Symbol.DefnSym, fnEff: Type)(implicit flix: Flix): TypedAst.Expr = {
     val fbind =
       Symbol.freshVarSym("arg0", BoundBy.FormalParam, SourceLocation.Unknown)(Scope.Top, flix)
@@ -59,6 +89,20 @@ object CompileTimeCodeGeneration {
     )
   }
 
+  /**
+    * Creates a call to either `mkIOUnitTest` or `mkPureUnitTest` that constructs
+    * a UnitTest value containing metadata about a test function.
+    *
+    * The generated call includes:
+    * - Test name (defnSym name without the reflected suffix)
+    * - Source file location
+    * - Line and column positions (start and end)
+    * - A lambda wrapping the test function
+    *
+    * @param defnSym The symbol of the test definition
+    * @param defn    The test definition itself
+    * @return An expression that creates a UnitTest value
+    */
   private def createMkUnitTestCall(defnSym: Symbol.DefnSym, defn: TypedAst.Def)(implicit flix: Flix): TypedAst.Expr = {
     val mkStringArg =
       (str: String) => TypedAst.Expr.Cst(Constant.Str(str), Type.Str, SourceLocation.Unknown)
@@ -79,7 +123,7 @@ object CompileTimeCodeGeneration {
     TypedAst.Expr.ApplyDef(
       targs = List(
         Type.Cst(
-          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
           SourceLocation.Unknown
         )
       ),
@@ -104,13 +148,13 @@ object CompileTimeCodeGeneration {
           Type.mkArrowWithEffect(Type.Unit, eff, Type.Unit, SourceLocation.Unknown)
         ),
         Type.Cst(
-          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
           SourceLocation.Unknown
         ),
         SourceLocation.Unknown
       ),
       tpe = Type.Cst(
-        TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+        TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
         SourceLocation.Unknown
       ),
       eff = Type.Pure,
@@ -118,6 +162,15 @@ object CompileTimeCodeGeneration {
     )
   }
 
+  /**
+    * Creates a call to a module's `getTests` function.
+    *
+    * This is used to retrieve all tests from a module or submodule when building
+    * the complete test vector.
+    *
+    * @param sym The symbol of the getTests function to call
+    * @return A call to the specified getTests function
+    */
   private def createCallToGetTests(sym: Symbol.DefnSym): TypedAst.Expr = {
     val symUse =
       SymUse.DefSymUse(sym, SourceLocation.Unknown)
@@ -130,7 +183,7 @@ object CompileTimeCodeGeneration {
         List(Type.Unit),
         Type.mkVector(
           Type.Cst(
-            TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+            TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
             SourceLocation.Unknown
           ),
           SourceLocation.Unknown
@@ -139,7 +192,7 @@ object CompileTimeCodeGeneration {
       ),
       tpe = Type.mkVector(
         Type.Cst(
-          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
           SourceLocation.Unknown
         ),
         SourceLocation.Unknown
@@ -149,6 +202,23 @@ object CompileTimeCodeGeneration {
     )
   }
 
+  /**
+    * Creates a flattened vector combining tests from batch functions and child modules.
+    *
+    * Produces:
+    * {{{
+    *     Vector.flatten(Vector#[getTestsBatched1(), ..., children1.getTests(), ...])
+    * }}}
+    *
+    * This aggregates all tests in a module by:
+    * 1. Calling each batch getTests function (for tests defined in this module)
+    * 2. Calling each child module's getTests function
+    * 3. Flattening the resulting nested vector into a single vector of tests
+    *
+    * @param batchedTests     Symbols of the batch getTests functions in this module
+    * @param childrenGetTests Symbols of the getTests functions in child modules
+    * @return An expression that produces a flattened vector of all tests
+    */
   private def createCombinedTestVector(
     batchedTests: List[Symbol.DefnSym],
     childrenGetTests: List[Symbol.DefnSym]
@@ -166,7 +236,7 @@ object CompileTimeCodeGeneration {
       Type.mkVector(
         Type.mkVector(
           Type.Cst(
-            TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+            TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
             SourceLocation.Unknown
           ),
           SourceLocation.Unknown
@@ -185,7 +255,7 @@ object CompileTimeCodeGeneration {
     TypedAst.Expr.ApplyDef(
       targs = List(
         Type.Cst(
-          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
           SourceLocation.Unknown
         )
       ),
@@ -195,7 +265,7 @@ object CompileTimeCodeGeneration {
         List(nestedVectorType),
         Type.mkVector(
           Type.Cst(
-            TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+            TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
             SourceLocation.Unknown
           ),
           SourceLocation.Unknown
@@ -204,7 +274,7 @@ object CompileTimeCodeGeneration {
       ),
       tpe = Type.mkVector(
         Type.Cst(
-          TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+          TypeConstructor.Enum(Symbol.mkEnumSym(unitTestEnum), Kind.Star),
           SourceLocation.Unknown
         ),
         SourceLocation.Unknown
@@ -213,9 +283,26 @@ object CompileTimeCodeGeneration {
       loc = SourceLocation.Unknown
     )
   }
-  private def copyDefnForReflectTesting(defsym: Symbol.DefnSym, defn: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix) : (Symbol.DefnSym, TypedAst.Def) = {
+
+  /**
+    * Creates a copy of a test definition for reflection purposes.
+    *
+    * The copied definition:
+    * - Has a new symbol with the reflected suffix appended to its name
+    * - Has the @Test annotation removed (it's no longer a direct test)
+    * - Is wrapped with default handlers (excluding Assert handler to be able to handle it in a custom way by the user)
+    *
+    * This allows the test framework to invoke tests through reflection while ensuring
+    * proper effect handling.
+    *
+    * @param defsym The original test definition symbol
+    * @param defn   The original test definition
+    * @param root   The typed AST root
+    * @return A tuple of (new symbol, transformed definition)
+    */
+  private def copyDefnForReflectTesting(defsym: Symbol.DefnSym, defn: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): (Symbol.DefnSym, TypedAst.Def) = {
     val defnSym = Symbol.mkDefnSym(Name.mkUnlocatedNName(defsym.namespace), Name.Ident(defsym.name ++ reflectedTestNameSuffix, defsym.loc))
-    (defnSym, wrapDefWithDefaultHandlers( defn.copy(
+    (defnSym, wrapDefWithDefaultHandlers(defn.copy(
       sym = defnSym,
       spec = defn.spec.copy(
         ann = defn.spec.ann.copy(
@@ -225,7 +312,22 @@ object CompileTimeCodeGeneration {
     ), root, excludeAssert = true))
   }
 
-  private def copyDefnForReflectBatchingTests(defsym: Symbol.DefnSym, defn: TypedAst.Def, index: Int, batch: Iterable[(Symbol.DefnSym, TypedAst.Def)])(implicit flix: Flix) : (Symbol.DefnSym, TypedAst.Def) = {
+  /**
+    * Creates a batch getTests function that returns a vector of test metadata.
+    *
+    * Batching is used to avoid creating functions with too much data directly
+    * in the body, which would create expressions too large for the bytecode.
+    * Instead, tests are grouped into batches of 128.
+    *
+    * The generated function has the name: `{originalName}_test_batch_{index}€reflected$`
+    *
+    * @param defsym The symbol of the original getTests function
+    * @param defn   The original getTests definition
+    * @param index  The batch index number
+    * @param batch  The tests to include in this batch
+    * @return A tuple of (batch function symbol, batch function definition)
+    */
+  private def copyDefnForReflectBatchingTests(defsym: Symbol.DefnSym, defn: TypedAst.Def, index: Int, batch: Iterable[(Symbol.DefnSym, TypedAst.Def)])(implicit flix: Flix): (Symbol.DefnSym, TypedAst.Def) = {
     val defnSym = Symbol.mkDefnSym(Name.mkUnlocatedNName(defsym.namespace), Name.Ident(defsym.name ++ f"_test_batch_$index" ++ reflectedTestNameSuffix, defsym.loc))
     val vector = defn.exp.asInstanceOf[TypedAst.Expr.VectorLit]
     val newVector = vector.copy(
@@ -237,13 +339,38 @@ object CompileTimeCodeGeneration {
     ))
   }
 
+  /**
+    * Introduces test reflection infrastructure into the AST.
+    *
+    * This transformation:
+    * 1. Creates reflected copies of all test functions (with €reflected$ suffix)
+    * 2. Groups tests by module
+    * 3. Creates batch getTests functions (128 tests per batch) for each module
+    * 4. Updates each module's getTests function to combine:
+    *    - All batch functions from this module
+    *    - All child module getTests functions
+    *
+    * The result is a hierarchical test discovery system where calling any module's
+    * getTests function returns all tests in that module and its submodules.
+    *
+    * @param root The typed AST root
+    * @return The transformed AST root with test reflection infrastructure
+    */
   private def introduceTests(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
+    // Create reflected copies of all test definitions that are marked with @Test
+    // and not marked with @Skip. Each copy gets a new symbol with the €reflected$ suffix
+    // and has the @Test annotation removed. The reflected version is wrapped with
+    // default handlers (excluding Assert) to ensure proper effect handling.
+    // This is needed in order to preserve a version of the test that is not wrapped with Assert's default handler
     val testCopies = root.defs
       .filter(d => d._2.spec.ann.isTest && !d._2.spec.ann.isSkip)
       .map {
         case (s, d) => copyDefnForReflectTesting(s, d, root)
       }
 
+    // Group all reflected test definitions by their containing module.
+    // This creates a map from module symbols to the tests defined in that module,
+    // which will be used to generate batch getTests functions for each module.
     val testsByModule: Map[Symbol.ModuleSym, Iterable[(Symbol.DefnSym, TypedAst.Def)]] =
       testCopies
         .groupBy(_._1.namespace)
@@ -252,23 +379,38 @@ object CompileTimeCodeGeneration {
             Symbol.mkModuleSym(ns) -> defns
         }
 
+    // For each module in the AST, generate new getTests function definitions:
+    // 1. Find the existing getTests function in the module
+    // 2. Create batch functions (128 tests each) for all tests in this module
+    // 3. Update the main getTests function to call all batch functions and
+    //    recursively call getTests from all child modules
     val newGetTestsFns =
       root.modules.m.flatMap {
         case (msym, melements) =>
+          // Get all tests that belong to this specific module
           val modTests =
             testsByModule.getOrElse(msym, List())
+
+          // Find the existing getTests function symbol in this module
           val oldGetTests =
             melements.collectFirst {
               case x: Symbol.DefnSym if x.text == getTestsFnName => x
             }
           oldGetTests match {
             case Some(oldGetTestSym) =>
+              // Get the definition of the existing getTests function
               val oldGetTestsDef =
                 root.defs(oldGetTestSym)
-              val batchDefs = modTests.grouped(128).zipWithIndex.map{
+
+              // Split tests into batches of 128 and create a batch function for each group.
+              // Batching prevents creating functions with too much data in their body,
+              // which would create expressions too large for the bytecode.
+              val batchDefs = modTests.grouped(128).zipWithIndex.map {
                 case (g, i) => copyDefnForReflectBatchingTests(oldGetTestSym, oldGetTestsDef, i, g)
               }.toList
 
+              // Find all child modules' getTests functions so we can call them
+              // to create a hierarchical test discovery system
               val getTestsChildrenCalls =
                 melements.collect {
                   case x: Symbol.ModuleSym =>
@@ -279,17 +421,28 @@ object CompileTimeCodeGeneration {
                       }
                 }.flatten
 
+              // Create the updated getTests function that:
+              // - Calls all batch functions (for tests in this module)
+              // - Calls all child module getTests functions (for tests in submodules)
+              // - Flattens the results into a single vector
               Some(
-                oldGetTestSym -> oldGetTestsDef.copy(
+                (oldGetTestSym -> oldGetTestsDef.copy(
                   exp = createCombinedTestVector(batchDefs.map(_._1), getTestsChildrenCalls)
-                ) :: batchDefs
+                )
+                  ) :: batchDefs
               )
 
             case None =>
+              // This module has no getTests function, so nothing to update
+              // However, this should never happen
               None
           }
       }.flatten
 
+    // Return the updated AST with:
+    // - All original definitions
+    // - All reflected test copies (with €reflected$ suffix)
+    // - All new and updated getTests functions (both main and batch versions)
     root.copy(defs = root.defs ++ testCopies ++ newGetTestsFns)
   }
 

@@ -134,7 +134,9 @@ object Resolver {
     * Builds a symbol table from the declaration.
     */
   private def tableDecl(decl: ResolvedAst.Declaration)(implicit flix: Flix): SymbolTable = decl match {
-    case ResolvedAst.Declaration.Mod(s, _, decls, _) => SymbolTable.traverse(decls)(tableDecl).addDef(getTestsFunction(s.ns))
+    case ResolvedAst.Declaration.Mod(s, _, decls, _) =>
+      // Add the getTestsFunction defn as it does not have a source backing it up
+      SymbolTable.traverse(decls)(tableDecl).addDef(getTestsFunction(s.ns))
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
@@ -151,6 +153,22 @@ object Resolver {
     case ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $symUse", symUse.loc)
   }
 
+  /**
+    * Creates a synthetic `getTests` function declaration for a module in the ResolvedAst.
+    *
+    * Generates a stub function that will later be populated with actual test metadata
+    * by the CompileTimeCodeGeneration phase. The generated function has the signature:
+    * {{{
+    *     pub def getTests(_unit: Unit): Vector[UnitTest] = Vector#[]
+    * }}}
+    *
+    * This is the ResolvedAst version of the getTests function, where types have been
+    * resolved but not yet kinded. During compile-time code generation, the body
+    * will be replaced with calls to batch test functions and child module getTests functions.
+    *
+    * @param module_name The namespace path of the module (e.g., List("Mod", "SubMod"))
+    * @return A ResolvedAst.Declaration.Def for the getTests function
+    */
   private def getTestsFunction(module_name: List[String])(implicit flix: Flix): ResolvedAst.Declaration.Def = {
       ResolvedAst.Declaration.Def(
       sym = Symbol.mkDefnSym(
@@ -172,7 +190,7 @@ object Resolver {
         tpe = UnkindedType.Apply(
           UnkindedType.Cst(TypeConstructor.Vector, SourceLocation.Unknown),
           UnkindedType.Cst(
-            TypeConstructor.Enum(Symbol.mkEnumSym("UnitTest.UnitTest"), Kind.Star),
+            TypeConstructor.Enum(Symbol.mkEnumSym(CompileTimeCodeGeneration.unitTestEnum), Kind.Star),
             SourceLocation.Unknown
           ),
           SourceLocation.Unknown
@@ -364,7 +382,9 @@ object Resolver {
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
           val declsVal = traverse(decls0)(visitDecl(_, scp, Name.RootNS.copy(loc = loc), defaultUses))
           mapN(declsVal) {
-            case decls => ResolvedAst.CompilationUnit(usesAndImports, getTestsFunction(Nil)::decls, loc)
+            case decls =>
+              // We need to add the getTest function for the root namespace
+              ResolvedAst.CompilationUnit(usesAndImports, getTestsFunction(Nil)::decls, loc)
           }
       }
   }

@@ -54,6 +54,7 @@ object Namer {
 
       // TODO NS-REFACTOR remove use of NName
       val symbols = symbols0.map {
+        // Add the declaration for the getTests function in addition to the other declarations
         case (k, v) => Name.mkUnlocatedNName(k) -> (v.m + (CompileTimeCodeGeneration.getTestsFnName -> (getTestFunction(k)::Nil)))
       }
       val instances = instances0.map {
@@ -67,6 +68,22 @@ object Namer {
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
 
+  /**
+    * Creates a synthetic `getTests` function declaration for a module.
+    *
+    * Generates a stub function that will later be populated with actual test metadata
+    * by the CompileTimeCodeGeneration phase. The generated function has the signature:
+    * {{{
+    *     pub def getTests(_unit: Unit): Vector[UnitTest] = Vector#{}
+    * }}}
+    *
+    * This function is marked as public and synthetic, and initially returns an empty vector.
+    * During compile-time code generation, the body will be replaced with calls to batch
+    * test functions and child module getTests functions.
+    *
+    * @param module_name The namespace path of the module (e.g., List("Mod", "SubMod"))
+    * @return A NamedAst declaration for the getTests function
+    */
   private def getTestFunction(module_name: List[String])(implicit flix: Flix): NamedAst.Declaration = {
     NamedAst.Declaration.Def(
         sym = Symbol.mkDefnSym(
@@ -95,7 +112,7 @@ object Namer {
               SourceLocation.Unknown
             ),
             tpe2 = NamedAst.Type.Ambiguous(
-              Name.mkQName("UnitTest.UnitTest", SourceLocation.Unknown),
+              Name.mkQName(CompileTimeCodeGeneration.unitTestEnum, SourceLocation.Unknown),
               SourceLocation.Unknown
             ),
             loc = SourceLocation.Unknown
