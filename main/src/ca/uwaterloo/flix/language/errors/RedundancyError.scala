@@ -94,18 +94,15 @@ object RedundancyError {
   case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E6956
 
-    def summary: String = "Hidden variable symbol."
+    def summary: String = s"Hidden variable symbol '${sym.text}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Hidden variable symbol '${red(sym.text)}'. The symbol is marked as unused.
+      s""">> Hidden variable symbol '${red(sym.text)}'.
          |
          |${src(loc, "hidden symbol.")}
          |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Don't use the variable symbol.
-         |  (2)  Rename the underscore prefix from the variable symbol name.
+         |${underline("Explanation:")} A hidden variable symbol cannot be accessed.
          |""".stripMargin
     }
   }
