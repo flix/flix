@@ -119,22 +119,40 @@ object Resolver {
             }
         }
     }
-
-    (resolvedRoot, sctx.errors.asScala.toList)
+    // We need to add the getTest function for the root namespace
+    val resolvedRootWithTopLevelGetTests = mapN(resolvedRoot){
+      val getTestsDecl = getTestsFunction(Nil, SourceLocation.Unknown)
+      r => r.copy(defs = r.defs + (getTestsDecl.sym -> getTestsDecl))
+    }
+    (resolvedRootWithTopLevelGetTests, sctx.errors.asScala.toList)
   }(DebugValidation())
 
   /**
     * Builds a symbol table from the compilation unit.
     */
-  private def tableUnit(unit: ResolvedAst.CompilationUnit): SymbolTable = unit match {
+  private def tableUnit(unit: ResolvedAst.CompilationUnit)(implicit flix: Flix): SymbolTable = unit match {
     case ResolvedAst.CompilationUnit(_, decls, _) => SymbolTable.traverse(decls)(tableDecl)
   }
 
   /**
     * Builds a symbol table from the declaration.
     */
-  private def tableDecl(decl: ResolvedAst.Declaration): SymbolTable = decl match {
-    case ResolvedAst.Declaration.Mod(_, _, decls, _) => SymbolTable.traverse(decls)(tableDecl)
+  private def tableDecl(decl: ResolvedAst.Declaration)(implicit flix: Flix): SymbolTable = decl match {
+    case ResolvedAst.Declaration.Mod(s, _, decls, loc) =>
+      // Add the getTestsFunction defn as it does not have a source backing it up
+      val modSymtable = SymbolTable.traverse(decls)(tableDecl).addDef(getTestsFunction(s.ns, loc))
+      // If we find a declaration that contains an orphan module
+      // For example if s is "A" and contains a declaration "A.B.C.D"
+      // Create getTests for modules A.B and A.B.C
+      decls.foldLeft(modSymtable) {
+        case (table, ResolvedAst.Declaration.Mod(s2, _, _, _)) =>
+          (s2.ns diff s.ns).dropRight(1).foldLeft((table, s.ns)){
+            case ((t, path), orphan: String) =>
+              val orphanPath = path.appended(orphan)
+              (t.addDef(getTestsFunction(orphanPath , loc)), orphanPath)
+          }._1
+        case (table: SymbolTable, _) => table
+      }
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
@@ -150,6 +168,59 @@ object Resolver {
     case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $symUse", symUse.loc)
   }
+
+  /**
+    * Creates a synthetic `getTests` function declaration for a module in the ResolvedAst.
+    *
+    * Generates a stub function that will later be populated with actual test metadata
+    * by the CompileTimeCodeGeneration phase. The generated function has the signature:
+    * {{{
+    *     pub def getTests(_unit: Unit): Vector[UnitTest] = Vector#[]
+    * }}}
+    *
+    * This is the ResolvedAst version of the getTests function, where types have been
+    * resolved but not yet kinded. During compile-time code generation, the body
+    * will be replaced with calls to batch test functions and child module getTests functions.
+    *
+    * @param module_name The namespace path of the module (e.g., List("Mod", "SubMod"))
+    * @return A ResolvedAst.Declaration.Def for the getTests function
+    */
+  private def getTestsFunction(module_name: List[String], module_loc: SourceLocation)(implicit flix: Flix): ResolvedAst.Declaration.Def = {
+      val loc = module_loc.asSynthetic
+      ResolvedAst.Declaration.Def(
+      sym = Symbol.mkDefnSym(
+        Name.mkUnlocatedNName(module_name),
+        Name.Ident(CompileTimeCodeGeneration.getTestsFnName, loc)
+      ),
+      spec = ResolvedAst.Spec(
+        doc = Doc(CompileTimeCodeGeneration.generateGetTestsDocString(module_name), loc),
+        ann = Annotations(List.empty),
+        mod = Modifiers(List(Modifier.Public, Modifier.Synthetic)),
+        tparams = List.empty,
+        fparams = List(
+          ResolvedAst.FormalParam(
+            sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(Scope.Top, flix),
+            tpe = Some(UnkindedType.mkUnit(loc)),
+            loc = loc
+          )
+        ),
+        tpe = UnkindedType.Apply(
+          UnkindedType.Cst(TypeConstructor.Vector, loc),
+          UnkindedType.Cst(
+            TypeConstructor.Enum(Symbol.mkEnumSym(CompileTimeCodeGeneration.unitTestEnum), Kind.Star),
+            loc
+          ),
+          loc
+        ),
+        eff = None,
+        tconstrs = List.empty,
+        econstrs = List.empty
+      ),
+      exp = ResolvedAst.Expr.VectorLit(Nil, loc),
+      loc = loc
+    )
+  }
+
 
   /**
     * Semi-resolves the type aliases in the root.
@@ -328,7 +399,8 @@ object Resolver {
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
           val declsVal = traverse(decls0)(visitDecl(_, scp, Name.RootNS.copy(loc = loc), defaultUses))
           mapN(declsVal) {
-            case decls => ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
+            case decls =>
+              ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
           }
       }
   }

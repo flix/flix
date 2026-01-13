@@ -16,11 +16,17 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.LoweredAst.Expr
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
+import ca.uwaterloo.flix.language.ast.TypedAst.DefaultHandler
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -67,11 +73,13 @@ object Lowering {
   /**
     * Lowers the given definition `defn0`.
     */
-  private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = defn0 match {
-    case TypedAst.Def(sym, spec0, exp0, loc) =>
-      val spec = visitSpec(spec0)
-      val exp = visitExp(exp0)(Scope.Top, root, flix)
-      LoweredAst.Def(sym, spec, exp, loc)
+  private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = {
+    defn0 match {
+      case TypedAst.Def(sym, spec0, exp0, loc) =>
+        val spec = visitSpec(spec0)
+        val exp = visitExp(exp0)(Scope.Top, root, flix)
+        LoweredAst.Def(sym, spec, exp, loc)
+    }
   }
 
   /**

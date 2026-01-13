@@ -54,7 +54,8 @@ object Namer {
 
       // TODO NS-REFACTOR remove use of NName
       val symbols = symbols0.map {
-        case (k, v) => Name.mkUnlocatedNName(k) -> v.m
+        // Add the declaration for the getTests function in addition to the other declarations
+        case (k, v) => Name.mkUnlocatedNName(k) -> (v.m + (CompileTimeCodeGeneration.getTestsFnName -> (getTestFunction(k)::Nil)))
       }
       val instances = instances0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
@@ -66,6 +67,65 @@ object Namer {
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
+
+  /**
+    * Creates a synthetic `getTests` function declaration for a module.
+    *
+    * Generates a stub function that will later be populated with actual test metadata
+    * by the CompileTimeCodeGeneration phase. The generated function has the signature:
+    * {{{
+    *     pub def getTests(_unit: Unit): Vector[UnitTest] = Vector#{}
+    * }}}
+    *
+    * This function is marked as public and synthetic, and initially returns an empty vector.
+    * During compile-time code generation, the body will be replaced with calls to batch
+    * test functions and child module getTests functions.
+    *
+    * @param module_name The namespace path of the module (e.g., List("Mod", "SubMod"))
+    * @return A NamedAst declaration for the getTests function
+    */
+  private def getTestFunction(module_name: List[String])(implicit flix: Flix): NamedAst.Declaration = {
+    NamedAst.Declaration.Def(
+        sym = Symbol.mkDefnSym(
+          Name.mkUnlocatedNName(module_name),
+          Name.Ident(CompileTimeCodeGeneration.getTestsFnName, SourceLocation.Unknown)
+        ),
+        spec = NamedAst.Spec(
+          doc = Doc(CompileTimeCodeGeneration.generateGetTestsDocString(module_name), SourceLocation.Unknown),
+          ann = Annotations(List.empty),
+          mod = Modifiers(List(Modifier.Public, Modifier.Synthetic)),
+          tparams = List.empty,
+          fparams = List(
+            NamedAst.FormalParam(
+              sym = Symbol.freshVarSym(
+                "_unit",
+                BoundBy.FormalParam,
+                SourceLocation.Unknown
+              )(Scope.Top, flix),
+              tpe = Some(NamedAst.Type.Unit(SourceLocation.Unknown)),
+              loc = SourceLocation.Unknown
+            )
+          ),
+          retTpe = NamedAst.Type.Apply(
+            tpe1 = NamedAst.Type.Ambiguous(
+              Name.mkQName("Vector", SourceLocation.Unknown),
+              SourceLocation.Unknown
+            ),
+            tpe2 = NamedAst.Type.Ambiguous(
+              Name.mkQName(CompileTimeCodeGeneration.unitTestEnum, SourceLocation.Unknown),
+              SourceLocation.Unknown
+            ),
+            loc = SourceLocation.Unknown
+          ),
+          eff = None,
+          tconstrs = List.empty,
+          econstrs = List.empty
+        ),
+        exp = NamedAst.Expr.VectorLit(Nil, SourceLocation.Unknown),
+        loc = SourceLocation.Unknown
+      )
+  }
+
 
   /**
     * Check that every module has a parent.
@@ -308,6 +368,7 @@ object Namer {
     case "BigInt" => true
     case "String" => true
     case "Regex" => true
+    case CompileTimeCodeGeneration.`getTestsFnName` => true
     case _ => false
   }
 

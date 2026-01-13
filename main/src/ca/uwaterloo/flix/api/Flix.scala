@@ -588,8 +588,8 @@ class Flix {
 
     // Initialize fork-join thread pool.
     initForkJoinPool()
-
-    var loweringAst = Lowering.run(typedAst)
+    val reflectionAst = CompileTimeCodeGeneration.run(typedAst)
+    var loweringAst = Lowering.run(reflectionAst)
     // Note: Do not null typedAst. It is used later.
 
     var treeShaker1Ast = TreeShaker1.run(loweringAst)
