@@ -195,14 +195,13 @@ object LexerError {
   case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4405
 
-    override def summary: String = s"Malformed number, found '${showChar(found)}'."
+    override def summary: String = s"Malformed number: unexpected '${showChar(found)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Malformed number, found '${showChar(found)}'.
+      s""">> Malformed number: unexpected '${red(showChar(found))}'.
          |
-         |${src(loc, "Number was correct up to here")}
-         |
+         |${src(loc, "unexpected character")}
          |""".stripMargin
     }
   }
@@ -221,8 +220,7 @@ object LexerError {
       import formatter.*
       s""">> Unexpected character '${red(showChar(found))}'.
          |
-         |${src(loc, "Unexpected character.")}
-         |
+         |${src(loc, "unexpected character")}
          |""".stripMargin
     }
   }
@@ -235,14 +233,13 @@ object LexerError {
   case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4629
 
-    override def summary: String = s"Unterminated block-comment."
+    override def summary: String = "Unterminated block comment."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing '*/' in block-comment.
+      s""">> Unterminated block comment.
          |
-         |${src(loc, "Here.")}
-         |
+         |${src(loc, "missing closing '*/'")}
          |""".stripMargin
     }
   }
@@ -255,14 +252,13 @@ object LexerError {
   case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4736
 
-    override def summary: String = s"Unterminated built-in."
+    override def summary: String = "Unterminated built-in."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing '%%' in built-in.
+      s""">> Unterminated built-in.
          |
-         |${src(loc, "Here.")}
-         |
+         |${src(loc, "missing closing '%%'")}
          |""".stripMargin
     }
   }
@@ -275,14 +271,13 @@ object LexerError {
   case class UnterminatedChar(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4843
 
-    override def summary: String = s"Unterminated char."
+    override def summary: String = "Unterminated character literal."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing `'` in char.
+      s""">> Unterminated character literal.
          |
-         |${src(loc, "Here")}
-         |
+         |${src(loc, "missing closing `'`")}
          |""".stripMargin
     }
   }
