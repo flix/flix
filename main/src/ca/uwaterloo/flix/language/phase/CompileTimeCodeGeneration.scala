@@ -18,7 +18,13 @@ object CompileTimeCodeGeneration {
   val reflectedTestNameSuffix = "€reflected$"
 
   /** Fully qualified name for the UnitTest enum. */
-  val unitTestEnum = "UnitTest.UnitTest"
+  val unitTestEnum = "Reflect.UnitTest"
+
+  /** Fully qualified name for the function to create IO UnitTests. */
+  val mkIOUnitTest = "Reflect.mkIOUnitTest"
+
+  /** Fully qualified name for the function to create Pure UnitTests. */
+  val mkPureUnitTest = "Reflect.mkPureUnitTest"
 
   /**
     * Main entry point for compile-time code generation phase.
@@ -44,7 +50,16 @@ object CompileTimeCodeGeneration {
     }
     rootWithTests.copy(defs = defsWithDefaultHandlers)
   }
-
+  def generateGetTestsDocString(ns: List[String]) : List[String] = {
+      val firstLine = if(ns.isEmpty) {
+        f"This function returns all of the program's tests as a `Vector[$unitTestEnum]`."
+      } else {
+        f"This function returns all of ${ns.mkString(".")}'s tests (including those in children modules) as a `Vector[$unitTestEnum]`."
+      }
+    firstLine::List(
+      "This function is generated at compile time and thus has no source code backing it up",
+    )
+  }
   /**
     * Creates a lambda expression that takes a Unit argument and calls the given definition.
     *
@@ -110,12 +125,15 @@ object CompileTimeCodeGeneration {
     val mkIntArg =
       (int: Int) => TypedAst.Expr.Cst(Constant.Int32(int), Type.Int32, SourceLocation.Unknown)
 
-    val (eff, symUseName) =
+    val (eff, symUseName) = {
+      // We can use unsafeGet as we now that the spec is eval-able from being in Lowering
+      // If it weren't, this would have failed on the Entry points test checks
       if (Type.eval(defn.spec.eff).unsafeGet.contains(Symbol.IO)) {
-        (Type.mkUnion(Type.IO, Type.Assert, SourceLocation.Unknown), "UnitTest.mkIOUnitTest")
+        (Type.mkUnion(Type.IO, Type.Assert, SourceLocation.Unknown), mkIOUnitTest)
       } else {
-        (Type.Assert, "UnitTest.mkPureUnitTest")
+        (Type.Assert, mkPureUnitTest)
       }
+    }
 
     val symUse =
       SymUse.DefSymUse(Symbol.mkDefnSym(symUseName), SourceLocation.Unknown)

@@ -119,8 +119,12 @@ object Resolver {
             }
         }
     }
-
-    (resolvedRoot, sctx.errors.asScala.toList)
+    // We need to add the getTest function for the root namespace
+    val resolvedRootWithTopLevelGetTests = mapN(resolvedRoot){
+      val getTestsDecl = getTestsFunction(Nil, SourceLocation.Unknown)
+      r => r.copy(defs = r.defs + (getTestsDecl.sym -> getTestsDecl))
+    }
+    (resolvedRootWithTopLevelGetTests, sctx.errors.asScala.toList)
   }(DebugValidation())
 
   /**
@@ -134,9 +138,9 @@ object Resolver {
     * Builds a symbol table from the declaration.
     */
   private def tableDecl(decl: ResolvedAst.Declaration)(implicit flix: Flix): SymbolTable = decl match {
-    case ResolvedAst.Declaration.Mod(s, _, decls, _) =>
+    case ResolvedAst.Declaration.Mod(s, _, decls, loc) =>
       // Add the getTestsFunction defn as it does not have a source backing it up
-      SymbolTable.traverse(decls)(tableDecl).addDef(getTestsFunction(s.ns))
+      SymbolTable.traverse(decls)(tableDecl).addDef(getTestsFunction(s.ns, loc))
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
@@ -169,38 +173,39 @@ object Resolver {
     * @param module_name The namespace path of the module (e.g., List("Mod", "SubMod"))
     * @return A ResolvedAst.Declaration.Def for the getTests function
     */
-  private def getTestsFunction(module_name: List[String])(implicit flix: Flix): ResolvedAst.Declaration.Def = {
+  private def getTestsFunction(module_name: List[String], module_loc: SourceLocation)(implicit flix: Flix): ResolvedAst.Declaration.Def = {
+      val loc = module_loc.asSynthetic
       ResolvedAst.Declaration.Def(
       sym = Symbol.mkDefnSym(
         Name.mkUnlocatedNName(module_name),
-        Name.Ident(CompileTimeCodeGeneration.getTestsFnName, SourceLocation.Unknown)
+        Name.Ident(CompileTimeCodeGeneration.getTestsFnName, loc)
       ),
       spec = ResolvedAst.Spec(
-        doc = Doc(List.empty, SourceLocation.Unknown),
+        doc = Doc(CompileTimeCodeGeneration.generateGetTestsDocString(module_name), loc),
         ann = Annotations(List.empty),
         mod = Modifiers(List(Modifier.Public, Modifier.Synthetic)),
         tparams = List.empty,
         fparams = List(
           ResolvedAst.FormalParam(
-            sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, SourceLocation.Unknown)(Scope.Top, flix),
-            tpe = Some(UnkindedType.mkUnit(SourceLocation.Unknown)),
-            loc = SourceLocation.Unknown
+            sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(Scope.Top, flix),
+            tpe = Some(UnkindedType.mkUnit(loc)),
+            loc = loc
           )
         ),
         tpe = UnkindedType.Apply(
-          UnkindedType.Cst(TypeConstructor.Vector, SourceLocation.Unknown),
+          UnkindedType.Cst(TypeConstructor.Vector, loc),
           UnkindedType.Cst(
             TypeConstructor.Enum(Symbol.mkEnumSym(CompileTimeCodeGeneration.unitTestEnum), Kind.Star),
-            SourceLocation.Unknown
+            loc
           ),
-          SourceLocation.Unknown
+          loc
         ),
         eff = None,
         tconstrs = List.empty,
         econstrs = List.empty
       ),
-      exp = ResolvedAst.Expr.VectorLit(Nil, SourceLocation.Unknown),
-      loc = SourceLocation.Unknown
+      exp = ResolvedAst.Expr.VectorLit(Nil, loc),
+      loc = loc
     )
   }
 
@@ -383,8 +388,7 @@ object Resolver {
           val declsVal = traverse(decls0)(visitDecl(_, scp, Name.RootNS.copy(loc = loc), defaultUses))
           mapN(declsVal) {
             case decls =>
-              // We need to add the getTest function for the root namespace
-              ResolvedAst.CompilationUnit(usesAndImports, getTestsFunction(Nil)::decls, loc)
+              ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
           }
       }
   }

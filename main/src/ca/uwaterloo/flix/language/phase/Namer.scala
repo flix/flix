@@ -91,7 +91,7 @@ object Namer {
           Name.Ident(CompileTimeCodeGeneration.getTestsFnName, SourceLocation.Unknown)
         ),
         spec = NamedAst.Spec(
-          doc = Doc(List.empty, SourceLocation.Unknown),
+          doc = Doc(CompileTimeCodeGeneration.generateGetTestsDocString(module_name), SourceLocation.Unknown),
           ann = Annotations(List.empty),
           mod = Modifiers(List(Modifier.Public, Modifier.Synthetic)),
           tparams = List.empty,
