@@ -140,7 +140,19 @@ object Resolver {
   private def tableDecl(decl: ResolvedAst.Declaration)(implicit flix: Flix): SymbolTable = decl match {
     case ResolvedAst.Declaration.Mod(s, _, decls, loc) =>
       // Add the getTestsFunction defn as it does not have a source backing it up
-      SymbolTable.traverse(decls)(tableDecl).addDef(getTestsFunction(s.ns, loc))
+      val modSymtable = SymbolTable.traverse(decls)(tableDecl).addDef(getTestsFunction(s.ns, loc))
+      // If we find a declaration that contains an orphan module
+      // For example if s is "A" and contains a declaration "A.B.C.D"
+      // Create getTests for modules A.B and A.B.C
+      decls.foldLeft(modSymtable) {
+        case (table, ResolvedAst.Declaration.Mod(s2, _, _, _)) =>
+          (s2.ns diff s.ns).dropRight(1).foldLeft((table, s.ns)){
+            case ((t, path), orphan: String) =>
+              val orphanPath = path.appended(orphan)
+              (t.addDef(getTestsFunction(orphanPath , loc)), orphanPath)
+          }._1
+        case (table: SymbolTable, _) => table
+      }
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)

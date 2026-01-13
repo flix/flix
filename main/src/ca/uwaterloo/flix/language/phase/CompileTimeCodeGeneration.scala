@@ -452,7 +452,7 @@ object CompileTimeCodeGeneration {
 
             case None =>
               // This module has no getTests function, so nothing to update
-              // However, this should never happen
+              // However, this only happens with non-proper modules like traits which don't have tests
               None
           }
       }.flatten
