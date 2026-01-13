@@ -1,6 +1,6 @@
 plugins {
     application
-    id("scala")
+    scala
 }
 
 application {
