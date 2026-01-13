@@ -33,9 +33,9 @@ object LexerError {
   case class ExpectedDigit(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E3736
 
-    override def summary: String = "Expected digit (0-9)."
+    def summary: String = "Expected digit (0-9)."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Expected digit (0-9).
          |
@@ -52,9 +52,9 @@ object LexerError {
   case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E3849
 
-    override def summary: String = "Expected hexadecimal digit (0-9, a-f, A-F)."
+    def summary: String = "Expected hexadecimal digit (0-9, a-f, A-F)."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Expected hexadecimal digit (0-9, a-f, A-F).
          |
@@ -72,9 +72,9 @@ object LexerError {
   case class FreeDot(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E3952
 
-    override def summary: String = "Unexpected whitespace before '.'."
+    def summary: String = "Unexpected whitespace before '.'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected whitespace before '.'.
          |
@@ -91,9 +91,9 @@ object LexerError {
   case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4063
 
-    override def summary: String = "Unexpected hexadecimal number suffix."
+    def summary: String = "Unexpected hexadecimal number suffix."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected hexadecimal number suffix.
          |
@@ -119,9 +119,9 @@ object LexerError {
   case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4176
 
-    override def summary: String = "Unexpected number suffix."
+    def summary: String = "Unexpected number suffix."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected number suffix.
          |
@@ -150,9 +150,9 @@ object LexerError {
   case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4289
 
-    override def summary: String = "Unexpected integer suffix on decimal number."
+    def summary: String = "Unexpected integer suffix on decimal number."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected integer suffix on decimal number.
          |
@@ -176,9 +176,9 @@ object LexerError {
   case class MalformedHexNumber(found: Char, loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4392
 
-    override def summary: String = s"Malformed hexadecimal number: unexpected '${showChar(found)}'."
+    def summary: String = s"Malformed hexadecimal number: unexpected '${showChar(found)}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Malformed hexadecimal number: unexpected '${red(showChar(found))}'.
          |
@@ -195,9 +195,9 @@ object LexerError {
   case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4405
 
-    override def summary: String = s"Malformed number: unexpected '${showChar(found)}'."
+    def summary: String = s"Malformed number: unexpected '${showChar(found)}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Malformed number: unexpected '${red(showChar(found))}'.
          |
@@ -214,9 +214,9 @@ object LexerError {
   case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4518
 
-    override def summary: String = s"Unexpected character '${showChar(found)}'."
+    def summary: String = s"Unexpected character '${showChar(found)}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected character '${red(showChar(found))}'.
          |
@@ -233,9 +233,9 @@ object LexerError {
   case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4629
 
-    override def summary: String = "Unterminated block comment."
+    def summary: String = "Unterminated block comment."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unterminated block comment.
          |
@@ -252,9 +252,9 @@ object LexerError {
   case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4736
 
-    override def summary: String = "Unterminated built-in."
+    def summary: String = "Unterminated built-in."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unterminated built-in.
          |
@@ -271,9 +271,9 @@ object LexerError {
   case class UnterminatedChar(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4843
 
-    override def summary: String = "Unterminated character literal."
+    def summary: String = "Unterminated character literal."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unterminated character literal.
          |
@@ -290,14 +290,13 @@ object LexerError {
   case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4956
 
-    override def summary: String = s"Unterminated regex."
+    def summary: String = "Unterminated regex literal."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing `"` in regex.
+      s""">> Unterminated regex literal.
          |
-         |${src(loc, "Here")}
-         |
+         |${src(loc, "missing closing `\"`")}
          |""".stripMargin
     }
   }
@@ -310,14 +309,13 @@ object LexerError {
   case class UnterminatedString(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E5067
 
-    override def summary: String = s"Unterminated string."
+    def summary: String = "Unterminated string literal."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing '"' in string.
+      s""">> Unterminated string literal.
          |
-         |${src(loc, "Here.")}
-         |
+         |${src(loc, "missing closing `\"`")}
          |""".stripMargin
     }
   }
@@ -330,14 +328,13 @@ object LexerError {
   case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E5178
 
-    override def summary: String = s"Unterminated string interpolation."
+    def summary: String = "Unterminated string interpolation."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing '}' in string interpolation.
+      s""">> Unterminated string interpolation.
          |
-         |${src(loc, "Interpolation starts here.")}
-         |
+         |${src(loc, "missing closing `}`")}
          |""".stripMargin
     }
   }
