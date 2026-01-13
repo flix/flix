@@ -119,16 +119,25 @@ object LexerError {
   case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4176
 
-    override def summary: String = s"Incorrect number suffix."
+    override def summary: String = "Unexpected number suffix."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Incorrect number suffix.
+      s""">> Unexpected number suffix.
          |
-         |${src(loc, "Here")}
+         |${src(loc, "unexpected suffix")}
          |
-         |Number suffixes are i8, i16, i32, i64, ii, f32, f64, and ff.
+         |${underline("Explanation:")} Numeric literals require a valid type suffix.
          |
+         |  Type        Suffix    Example
+         |  Int8        i8        let x: Int8 = 123i8
+         |  Int16       i16       let x: Int16 = 123i16
+         |  Int32       i32       let x: Int32 = 123i32
+         |  Int64       i64       let x: Int64 = 123i64
+         |  BigInt      ii        let x: BigInt = 123ii
+         |  Float32     f32       let x: Float32 = 1.0f32
+         |  Float64     f64       let x: Float64 = 1.0f64
+         |  BigDecimal  ff        let x: BigDecimal = 1.0ff
          |""".stripMargin
     }
   }
@@ -141,16 +150,20 @@ object LexerError {
   case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4289
 
-    override def summary: String = s"A decimal number cannot have integer suffix."
+    override def summary: String = "Unexpected integer suffix on decimal number."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> A decimal number cannot have integer suffix.
+      s""">> Unexpected integer suffix on decimal number.
          |
-         |${src(loc, "Here")}
+         |${src(loc, "integer suffix not allowed here")}
          |
-         |Float suffixes are f32, f64, and ff.
+         |${underline("Explanation:")} Decimal numbers require a float suffix.
          |
+         |  Type        Suffix    Example
+         |  Float32     f32       let x: Float32 = 1.0f32
+         |  Float64     f64       let x: Float64 = 1.0f64
+         |  BigDecimal  ff        let x: BigDecimal = 1.0ff
          |""".stripMargin
     }
   }
@@ -163,14 +176,13 @@ object LexerError {
   case class MalformedHexNumber(found: Char, loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4392
 
-    override def summary: String = s"Malformed hexadecimal number, found '${showChar(found)}'."
+    override def summary: String = s"Malformed hexadecimal number: unexpected '${showChar(found)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Malformed hexadecimal number, found '${showChar(found)}'.
+      s""">> Malformed hexadecimal number: unexpected '${red(showChar(found))}'.
          |
-         |${src(loc, "Number was correct up to here")}
-         |
+         |${src(loc, "unexpected character")}
          |""".stripMargin
     }
   }
