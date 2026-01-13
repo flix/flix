@@ -38,6 +38,7 @@ Avoid blurring the responsibilities of these components. Each should contribute 
 - Be **crisp, concise, and precise**
 - Use **friendly, neutral language**—never blame the programmer
 - Prefer neutral wording such as **"unexpected"** or **"impossible"** over judgmental terms like "illegal"
+- Prefer **"mismatched"** over **"conflicting"** for consistency errors
 
 ### Straight to the Point
 
