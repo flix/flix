@@ -191,7 +191,7 @@ object RedundancyError {
          |
          |${src(loc, "redundant trait constraint.")}
          |
-         |The constraint is entailed by '${cyan(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
+         |The constraint is implied by '${cyan(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
          |
          |${underline("Explanation:")} A trait constraint is redundant if it is implied by another
          |constraint. For example, if we have:
