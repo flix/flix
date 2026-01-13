@@ -33,13 +33,13 @@ object LexerError {
   case class ExpectedDigit(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E3736
 
-    override def summary: String = s"A digit (0-9) is expected here."
+    override def summary: String = "Expected digit (0-9)."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> A digit (0-9) is expected here.
+      s""">> Expected digit (0-9).
          |
-         |${src(loc, "Here")}
+         |${src(loc, "expected digit")}
          |""".stripMargin
     }
   }
@@ -52,13 +52,13 @@ object LexerError {
   case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E3849
 
-    override def summary: String = s"A hexadecimal digit (0-9, a-f, or A-F) is expected here."
+    override def summary: String = "Expected hexadecimal digit (0-9, a-f, A-F)."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> A hexadecimal digit (0-9, a-f, or A-F) is expected here.
+      s""">> Expected hexadecimal digit (0-9, a-f, A-F).
          |
-         |${src(loc, "Here")}
+         |${src(loc, "expected hexadecimal digit")}
          |""".stripMargin
     }
   }
@@ -72,14 +72,13 @@ object LexerError {
   case class FreeDot(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E3952
 
-    override def summary: String = s"'.' has leading whitespace."
+    override def summary: String = "Unexpected whitespace before '.'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> '.' has leading whitespace.
+      s""">> Unexpected whitespace before '.'.
          |
-         |${src(loc, "Here")}
-         |
+         |${src(loc, "unexpected whitespace")}
          |""".stripMargin
     }
   }
@@ -92,16 +91,22 @@ object LexerError {
   case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4063
 
-    override def summary: String = s"Incorrect hexadecimal number suffix."
+    override def summary: String = "Unexpected hexadecimal number suffix."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Incorrect hexadecimal number suffix.
+      s""">> Unexpected hexadecimal number suffix.
          |
-         |${src(loc, "Here")}
+         |${src(loc, "unexpected suffix")}
          |
-         |Hexadecimal number suffixes are i8, i16, i32, i64, and ii.
+         |${underline("Explanation:")} Hexadecimal literals require a valid type suffix.
          |
+         |  Type      Suffix    Example
+         |  Int8      i8        let x: Int8 = 0xFFi8
+         |  Int16     i16       let x: Int16 = 0xFFi16
+         |  Int32     i32       let x: Int32 = 0xFFi32
+         |  Int64     i64       let x: Int64 = 0xFFi64
+         |  BigInt    ii        let x: BigInt = 0xFFii
          |""".stripMargin
     }
   }
