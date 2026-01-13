@@ -82,8 +82,8 @@ tasks.jar {
         attributes("Main-Class" to "ca.uwaterloo.flix.Main")
     }
 
-    // This line has to come before the next
     from(files(
+        // This line has to come before the next
         configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) },
         configurations.compileClasspath.get().map { if (it.isDirectory) it else zipTree(it) }
     )) {
