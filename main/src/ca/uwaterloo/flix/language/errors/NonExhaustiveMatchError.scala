@@ -28,18 +28,16 @@ case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends Com
 
   def code: ErrorCode = ErrorCode.E5952
 
-  def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
+  def summary: String = s"Non-exhaustive match: missing case '$pat'."
 
   def message(formatter: Formatter): String = {
     import formatter.*
-    s""">> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
+    s""">> Non-exhaustive match: missing case '${red(pat)}'.
        |
-       |${src(loc, "incomplete pattern.")}
+       |${src(loc, "incomplete match.")}
        |
-       |${underline("Explanation:")}
-       |Flix requires every pattern match expression to be exhaustive, i.e. to cover all
-       |possible cases. A wild card pattern, written with an underscore, can be used to
-       |handle all other cases. For example:
+       |${underline("Explanation:")} Every match expression must be exhaustive, i.e. cover all
+       |possible cases. A wildcard pattern can be used to handle remaining cases. For example:
        |
        |    case _ => // handle all other cases.
        |""".stripMargin
