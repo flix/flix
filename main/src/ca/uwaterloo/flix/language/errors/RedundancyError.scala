@@ -419,9 +419,9 @@ object RedundancyError {
          |
          |${src(sym.loc, "unused formal parameter.")}
          |
-         |${underline("Explanation:")} Flix does not allow unused formal parameters to prevent
-         |programming bugs. An unused formal parameter can be prefixed with an underscore
-         |to suppress this error.
+         |${underline("Explanation:")} Flix does not allow unused formal parameters.
+         |An unused formal parameter can be prefixed with an underscore to suppress 
+         |this error.
          |""".stripMargin
     }
 
@@ -482,9 +482,9 @@ object RedundancyError {
          |
          |${src(sym.loc, "unused local variable.")}
          |
-         |${underline("Explanation:")} Flix does not allow unused local variables to prevent
-         |programming bugs. An unused local variable can be prefixed with an underscore
-         |to suppress this error. For example:
+         |${underline("Explanation:")} Flix does not allow unused local variables. 
+         |An unused local variable can be prefixed with an underscore to suppress 
+         |this error. For example:
          |
          |    let _${sym.text} = <exp>
          |""".stripMargin
