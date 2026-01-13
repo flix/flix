@@ -48,7 +48,7 @@ object RedundancyError {
          |
          |${src(loc, "discarded pure expression.")}
          |
-         |${underline("Explanation:")} Discarding the result of a pure expression is pointless.
+         |${underline("Explanation:")} The result of this pure expression is explicitly discarded.
          |It means the expression itself might as well be removed.
          |
          |If you want to keep the expression, use:
