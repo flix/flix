@@ -16,15 +16,15 @@ object CompileTimeCodeGeneration {
 
   /** Suffix appended to reflected test function names to avoid conflicts. */
   val reflectedTestNameSuffix = "€reflected$"
-
+  val unitTestsModule = "TestReflection"
   /** Fully qualified name for the UnitTest enum. */
-  val unitTestEnum = "Reflect.UnitTest"
+  val unitTestEnum = f"$unitTestsModule.UnitTest"
 
   /** Fully qualified name for the function to create IO UnitTests. */
-  val mkIOUnitTest = "Reflect.mkIOUnitTest"
+  val mkIOUnitTest = f"$unitTestsModule.mkIOUnitTest"
 
   /** Fully qualified name for the function to create Pure UnitTests. */
-  val mkPureUnitTest = "Reflect.mkPureUnitTest"
+  val mkPureUnitTest = f"$unitTestsModule.mkPureUnitTest"
 
   /**
     * Main entry point for compile-time code generation phase.

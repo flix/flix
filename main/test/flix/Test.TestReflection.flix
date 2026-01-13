@@ -1,5 +1,5 @@
 mod Test.TestReflection {
-    use Reflect.UnitTest;
+    use TestReflection.{UnitTest, getUnitTestName, isUnitTestPure};
     use Assert.{assertEq, assertTrue, assertFalse, assertMemberOf, assertEmpty};
 
     ///
@@ -77,7 +77,7 @@ mod Test.TestReflection {
     @Test
     def testGetTestNames01(): Unit \ Assert = {
         let tests = TestModule01.getTests();
-        let names = Vector.map(Reflect.getUnitTestName, tests);
+        let names = Vector.map(getUnitTestName, tests);
 
         assertEq(expected = 2, Vector.length(names));
         assertMemberOf("Test.TestReflection.TestModule01.test01", names);
@@ -90,7 +90,7 @@ mod Test.TestReflection {
     @Test
     def testGetTestsIncludesSubmodules01(): Unit \ Assert = {
         let tests = TestModule02.getTests();
-        let names = Vector.map(Reflect.getUnitTestName, tests);
+        let names = Vector.map(getUnitTestName, tests);
 
         // Should have 2 tests from TestModule02 + 3 tests from TestModule02.Sub
         assertEq(expected = 5, Vector.length(names));
@@ -107,7 +107,7 @@ mod Test.TestReflection {
     @Test
     def testGetTestsSubmoduleOnly01(): Unit \ Assert = {
         let tests = TestModule02.Sub.getTests();
-        let names = Vector.map(Reflect.getUnitTestName, tests);
+        let names = Vector.map(getUnitTestName, tests);
 
         assertEq(expected = 3, Vector.length(names));
         assertMemberOf("Test.TestReflection.TestModule02.Sub.subTest01", names);
@@ -123,7 +123,7 @@ mod Test.TestReflection {
         let pureTests = TestModule03.getTests();
         assertEq(expected = 1, Vector.length(pureTests));
         let pureTest = Vector.get(0, pureTests);
-        assertTrue(Reflect.isUnitTestPure(pureTest))
+        assertTrue(isUnitTestPure(pureTest))
     }
 
     ///
@@ -134,7 +134,7 @@ mod Test.TestReflection {
         let iOTests = TestModule04.getTests();
         assertEq(expected = 1, Vector.length(iOTests));
         let iOTest = Vector.get(0, iOTests);
-        assertFalse(Reflect.isUnitTestPure(iOTest))
+        assertFalse(isUnitTestPure(iOTest))
     }
 
     ///
@@ -143,7 +143,7 @@ mod Test.TestReflection {
     @Test
     def testGetTestsNestedSubmodules01(): Unit \ Assert = {
         let tests = TestModule05.getTests();
-        let names = Vector.map(Reflect.getUnitTestName, tests);
+        let names = Vector.map(getUnitTestName, tests);
 
         // Should include tests from TestModule05 and TestModule05.Sub.Nested
         assertEq(expected = 2, Vector.length(names));

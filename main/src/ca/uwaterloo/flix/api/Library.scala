@@ -218,6 +218,7 @@ object Library {
     "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
+    "TestReflection.flix" -> LocalResource.get("/src/library/TestReflection.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
