@@ -28,7 +28,7 @@ object LexerError {
   /**
     * An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`).
     *
-    * @param loc The location of the unexpected char.
+    * @param loc The location where a digit is expected.
     */
   case class ExpectedDigit(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E3736
@@ -47,7 +47,7 @@ object LexerError {
   /**
     * An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`).
     *
-    * @param loc The location of the unexpected char.
+    * @param loc The location where a hexadecimal digit is expected.
     */
   case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E3849
@@ -190,7 +190,7 @@ object LexerError {
   /**
     * An error raised when a number is malformed.
     *
-    * @param loc the location of `found`.
+    * @param loc The location of `found`.
     */
   case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4405
@@ -209,7 +209,7 @@ object LexerError {
   /**
     * An error raised when an unexpected character, such as €, is encountered.
     *
-    * @param loc the location of `found`.
+    * @param loc The location of `found`.
     */
   case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4518
@@ -264,9 +264,9 @@ object LexerError {
   }
 
   /**
-    * An error raised when an unterminated char is encountered.
+    * An error raised when an unterminated character literal is encountered.
     *
-    * @param loc The location of the char.
+    * @param loc The location of the character literal.
     */
   case class UnterminatedChar(loc: SourceLocation) extends LexerError {
     def code: ErrorCode = ErrorCode.E4843
@@ -321,7 +321,7 @@ object LexerError {
   }
 
   /**
-    * An error raised when an unterminated string is encountered.
+    * An error raised when an unterminated string interpolation is encountered.
     *
     * @param loc The location of the opening `{`.
     */
