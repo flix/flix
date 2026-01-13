@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 object Typer {
@@ -51,8 +52,8 @@ object Typer {
     val precedenceGraph = LabelledPrecedenceGraph.empty
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
     val modules = ListMap(collectModules(root))
-
-    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty, root.tokens)
+    val defaultHandlers = DefaultHandlers.visitDefaultHandlers(root)(flix, sctx, traitEnv, eqEnv)
+    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, defaultHandlers, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty, root.tokens)
 
     (result, sctx.errors.asScala.toList)
 
@@ -516,6 +517,6 @@ object Typer {
     *
     * @param errors the [[TypeError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[TypeError])
+  case class SharedContext(errors: ConcurrentLinkedQueue[TypeError])
 
 }
