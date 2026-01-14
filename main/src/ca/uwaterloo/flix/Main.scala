@@ -290,8 +290,11 @@ object Main {
 
         case Command.Format =>
           if (cmdOpts.files.isEmpty) {
-            println("The 'format' command requires at least one file argument.")
-            System.exit(1)
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.format(flix)
+            }
           }
           val flix = mkFlixWithFiles(cmdOpts.files, options)
           val (_, errors) = flix.check()
