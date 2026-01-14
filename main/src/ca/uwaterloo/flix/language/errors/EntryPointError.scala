@@ -230,8 +230,8 @@ object EntryPointError {
          |
          |${src(loc, "arguments not allowed")}
          |
-         |${underline("Explanation:")} Entry point functions (main and tests) are called by
-         |the runtime without arguments. They must take a single Unit parameter.
+         |${underline("Explanation:")} Entry point functions (main and tests) must have
+         |no arguments.
          |
          |Expected signature:
          |
