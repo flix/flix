@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.Main.Command.PlainLsp
-import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
+import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, Formatter as LspFormatter}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -238,17 +238,19 @@ object Main {
           }
 
         case Command.Format =>
-          if (cmdOpts.files.nonEmpty) {
-            println("The 'format' command does not support file arguments.")
+          if (cmdOpts.files.isEmpty) {
+            println("The 'format' command requires at least one file argument.")
             System.exit(1)
           }
-          exitOnResult {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
-              bootstrap.format(flix)
-            }
+          val flix = mkFlixWithFiles(cmdOpts.files, options)
+          val (_, errors) = flix.check()
+          if (errors.isEmpty) {
+            val syntaxTree = flix.getParsedAst
+            LspFormatter.formatFiles(syntaxTree, cmdOpts.files.map(_.toPath).toList)
+            System.exit(0)
           }
+          else exitWithErrors(flix, errors)
+
 
         case Command.Run =>
           if (cmdOpts.files.nonEmpty) {
