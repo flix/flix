@@ -228,17 +228,17 @@ object EntryPointError {
   case class MainEntryPointNotFound(sym: Symbol.DefnSym) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1625
 
-    def summary: String = s"Entry point $sym not found."
+    def summary: String = s"Entry point '${sym.name}' not found."
 
     // NB: We do not print the symbol source location as it is always Unknown.
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The entry point $sym cannot be found.
+      s""">> Entry point '${magenta(sym.toString)}' not found.
          |
          |${underline("Possible fixes:")}
          |
-         |  (1)  Change the specified entry point to an existing function.
-         |  (2)  Add an entry point function $sym.
+         |  (1) Change the specified entry point to an existing function.
+         |  (2) Add an entry point function '${magenta(sym.toString)}'.
          |""".stripMargin
     }
 
@@ -253,14 +253,22 @@ object EntryPointError {
   case class NonPublicExport(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1849
 
-    def summary: String = s"Exported functions must be public"
+    def summary: String = s"Non-public exported function."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Exported functions must be public.
+      s""">> Exported function is not public.
          |
-         |${src(loc, "exported function.")}
+         |${src(loc, "missing 'pub' modifier")}
          |
+         |${underline("Explanation:")} Exported functions must be declared with the 'pub'
+         |modifier to be visible from Java code. Private functions cannot be exported
+         |because they are not accessible outside their module.
+         |
+         |To fix this, add the 'pub' modifier:
+         |
+         |  @Export
+         |  pub def myFunction(): Int32 = ...
          |""".stripMargin
     }
   }
