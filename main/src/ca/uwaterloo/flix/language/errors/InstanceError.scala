@@ -42,15 +42,28 @@ object InstanceError {
   case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E1952
 
-    override def summary: String = "Complex instance type."
+    override def summary: String = s"Complex instance type '${FormatType.formatType(tpe)}' for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Complex instance type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+      s""">> Complex instance type '${red(FormatType.formatType(tpe))}' for trait '${magenta(sym.name)}'.
          |
-         |${src(loc, s"complex instance type")}
+         |${src(loc, "expected a type constructor applied to distinct type variables")}
          |
-         |An instance type must be a type constructor applied to zero or more distinct type variables.
+         |${underline("Explanation:")} An instance type must be either:
+         |  - A concrete type (e.g., Bool, Int32, String), or
+         |  - A type constructor applied to zero or more distinct type variables.
+         |
+         |${underline("Examples")} of ${green("simple")} (allowed) instance types:
+         |  - Bool, Int32, String
+         |  - Option[a], List[a], Map[k, v]
+         |  - (a, b), (a, b, c)
+         |
+         |${underline("Examples")} of ${red("complex")} (not allowed) instance types:
+         |  - Option[Int32]       (type argument is not a variable)
+         |  - List[Option[a]]     (type argument is not a variable)
+         |  - (a, a)              (type variable 'a' appears twice)
+         |  - Map[k, k]           (type variable 'k' appears twice)
          |""".stripMargin
     }
   }
