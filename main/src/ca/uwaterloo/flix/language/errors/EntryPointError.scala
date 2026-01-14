@@ -197,13 +197,25 @@ object EntryPointError {
   case class IllegalRunnableEntryPointArgs(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1512
 
-    def summary: String = s"Unexpected entry point argument(s)."
+    def summary: String = s"Unexpected arguments in entry point."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Arguments to the entry point function are not permitted.
+      s""">> Unexpected arguments in entry point function.
          |
-         |${src(loc, "unexpected entry point argument(s).")}
+         |${src(loc, "arguments not allowed")}
+         |
+         |${underline("Explanation:")} Entry point functions (main and tests) are called by
+         |the runtime without arguments. They must take a single Unit parameter.
+         |
+         |Expected signature:
+         |
+         |  def main(): Unit = ...
+         |
+         |or for tests:
+         |
+         |  @Test
+         |  def testFoo(): Unit = ...
          |""".stripMargin
     }
   }
