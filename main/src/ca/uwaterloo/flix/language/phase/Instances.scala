@@ -120,7 +120,7 @@ object Instances {
           case (seen, tvar: Type.Var) =>
             // Case 1.1 We've seen it already. Error.
             if (seen.contains(tvar)) {
-              sctx.errors.add(InstanceError.DuplicateTypeVar(tvar, trt.sym, trt.loc))
+              sctx.errors.add(InstanceError.DuplicateTypeVar(tvar, trt.sym, tvar.loc))
               notFound = false
               seen
             }
