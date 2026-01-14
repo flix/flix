@@ -66,7 +66,7 @@ object Formatter {
     // TODO: Better error handling strategy
     val edits = format(root, sourcePaths)
     edits.foreach {
-      case (file, fileEdits) => applyTextEditsToFile(Some(file), fileEdits)
+      case (file, fileEdits) => applyTextEditsToFile(file, fileEdits)
     }
   }
 
@@ -76,16 +76,16 @@ object Formatter {
     * @param file the file path
     * @param edits the list of text edits to apply
     */
-  def applyTextEditsToFile(file: Option[Path], edits: List[TextEdit]): Unit = {
+  private def applyTextEditsToFile(file: Path, edits: List[TextEdit]): Unit = {
     try {
-      val bytes = Files.readAllBytes(file.get)
+      val bytes = Files.readAllBytes(file)
       val src = new String(bytes, StandardCharsets.UTF_8)
       val updated = applyTextEditsToString(src, edits)
-      Files.write(file.get, updated.getBytes(StandardCharsets.UTF_8))
+      Files.write(file, updated.getBytes(StandardCharsets.UTF_8))
     }
     catch {
       case io: java.io.IOException =>
-        Console.err.println(s"Failed to apply text edits to file: ${file.get.toString}. Error: ${io.getMessage}")
+        Console.err.println(s"Failed to apply text edits to file: ${file.toString}. Error: ${io.getMessage}")
     }
   }
 
@@ -99,19 +99,42 @@ object Formatter {
     */
   private def applyTextEditsToString(src: String, edits: List[TextEdit]): String = {
     val sortedEdits = edits.sortBy(e => (e.range.start.line, e.range.start.character)).reverse
-    sortedEdits.foldLeft(src) { (text, edit) =>
-      val lines = text.split("\n").toBuffer
-      val lineIdx = edit.range.start.line - 1
-      val line = lines(lineIdx)
+    val sb = new StringBuilder(src)
+    val lineOffsets = computeLineOffsets(src) // start index of each line
 
-      val updatedLine =
-        line.substring(0, edit.range.start.character - 1) +
-          edit.newText +
-          line.substring(edit.range.end.character - 1)
+    for (edit <- sortedEdits) {
+      val start =
+        lineOffsets(edit.range.start.line - 1) +
+          (edit.range.start.character - 1)
 
-      lines(lineIdx) = updatedLine
-      lines.mkString("\n")
+      val end =
+        lineOffsets(edit.range.end.line - 1) +
+          (edit.range.end.character - 1)
+
+      sb.replace(start, end, edit.newText)
     }
+
+    sb.toString()
+  }
+
+  /**
+    * Computes the starting offsets of each line in the source string.
+    * Returns an array where each element at index `i` represents the starting offset of line `i`.
+    * The last element represents the total length of the source string.
+    *
+    * @param src the source string
+    * @return an array of line starting offsets
+    */
+  private def computeLineOffsets(src: String): Array[Int] = {
+    val lines = src.split("\n", -1)
+    val offsets = new Array[Int](lines.length + 1)
+    var currentOffset = 0
+    for (i <- lines.indices) {
+      offsets(i) = currentOffset
+      currentOffset += lines(i).length + 1
+    }
+    offsets(lines.length) = currentOffset
+    offsets
   }
 
   /**

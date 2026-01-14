@@ -600,16 +600,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Formats all source files in the project.
     */
   def format(flix: Flix): Result[Unit, BootstrapError] = {
-    val tree = flix.getParsedAst
-    Console.println(s"${tree}")
-    val edits = LspFormatter.format(tree, sourcePaths)
-    val filteredEdits = edits.filter {
-      case (_, textEdits) => textEdits.nonEmpty
+    Steps.updateStaleSources(flix)
+    val (_, errors) = flix.check()
+    if (errors.nonEmpty) {
+      return Result.Err(BootstrapError.GeneralError(errors.map(_.message(flix.getFormatter))))
     }
-
-    filteredEdits.foreach {
-      case (path, textEdits) => LspFormatter.applyTextEditsToFile(Some(path), textEdits)
-    }
+    val syntaxTree = flix.getParsedAst
+    LspFormatter.formatFiles(syntaxTree, sourcePaths)
     Result.Ok(())
   }
 
