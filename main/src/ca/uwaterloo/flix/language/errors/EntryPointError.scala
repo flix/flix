@@ -107,7 +107,7 @@ object EntryPointError {
   }
 
   /**
-    * An error raised to indicate that an exported function has an illegal namespace.
+    * An error raised to indicate that an exported function is in the root namespace.
     *
     * @param loc the location of the defn.
     */
@@ -137,7 +137,7 @@ object EntryPointError {
   }
 
   /**
-    * An error raised to indicate that an exported function uses an illegal type.
+    * An error raised to indicate that an exported function uses an unexpected type.
     *
     * @param t   the type that is not allowed.
     * @param loc the location of the type.
@@ -190,7 +190,7 @@ object EntryPointError {
   }
 
   /**
-    * Error indicating one or more arguments to a runnable (test or main) entry point function.
+    * Error indicating unexpected arguments in a runnable (test or main) entry point function.
     *
     * @param loc the location where the error occurred.
     */
@@ -233,7 +233,7 @@ object EntryPointError {
     // NB: We do not print the symbol source location as it is always Unknown.
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Entry point '${magenta(sym.toString)}' not found.
+      s""">> Entry point '${red(sym.toString)}' not found.
          |
          |${underline("Possible fixes:")}
          |
