@@ -8,7 +8,7 @@ mod Test.Equality.Int8 {
 
     @Test
     def testEqInt8_02(): Unit \ Assert =
-        assertEq(expected = +1i8, +1i8)
+        assertEq(expected = 1i8, 1i8)
 
     @Test
     def testEqInt8_03(): Unit \ Assert =
@@ -16,11 +16,11 @@ mod Test.Equality.Int8 {
 
     @Test
     def testNeqInt8_01(): Unit \ Assert =
-        assertNeq(unexpected = -1i8, +1i8)
+        assertNeq(unexpected = -1i8, 1i8)
 
     @Test
     def testNeqInt8_02(): Unit \ Assert =
-        assertNeq(unexpected = +1i8, -1i8)
+        assertNeq(unexpected = 1i8, -1i8)
 
     @Test
     def testNeqInt8_03(): Unit \ Assert =

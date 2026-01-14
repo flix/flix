@@ -56,6 +56,7 @@ pub mod Fixpoint3.Ast.Shared {
     ///
     /// Returns a latticenal denotation associated with the type `t`.
     ///
+    @LoweringTarget
     pub def lattice(): Denotation[v] with LowerBound[v], JoinLattice[v], MeetLattice[v] =
         Denotation.Latticenal(
             LowerBound.minValue(),
@@ -67,6 +68,7 @@ pub mod Fixpoint3.Ast.Shared {
     ///
     /// Boxes the lattice components inside the given denotation `d`.
     ///
+    @LoweringTarget
     pub def box(d: Denotation[t]): Denotation[Boxed] with Order[t] = match d {
         case Denotation.Relational                     => Denotation.Relational
         case Denotation.Latticenal(bot, leq, lub, glb) =>

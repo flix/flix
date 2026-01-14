@@ -72,7 +72,7 @@ pub mod RichString {
     pub enum Span {
         case Span({text = String, fgColor = Color, bgColor = Color, styles = Set[Style]})
     }
-    
+
     ///
     /// A record type representing a palette of colors.
     ///

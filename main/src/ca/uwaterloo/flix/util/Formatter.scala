@@ -1,16 +1,27 @@
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.CompilationMessageKind
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.errors.ErrorCode
 import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.collection.mutable
 
 trait Formatter {
 
-  def line(left: String, right: String): String =
-    this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
+  def line(kind: CompilationMessageKind, code: ErrorCode, source: Source): String = {
+    val minWidth = 80
+    val fixedChars = 8
+    val k = kind.toString
+    val c = code.toString
+    val s = source.name
+    val numberOfDashes = Math.max(3, minWidth - fixedChars - k.length - c.length - s.length)
+    val dashes = "-" * numberOfDashes
+    s"-- ${blue(k)} ${blue(s"[$c]")} $dashes ${blue(s)}${System.lineSeparator()}"
+  }
 
-  def code(loc: SourceLocation, msg: String): String = {
+  def src(loc: SourceLocation, msg: String): String = {
     val beginLine = loc.startLine
     val beginCol = loc.startCol
     val endLine = loc.endLine

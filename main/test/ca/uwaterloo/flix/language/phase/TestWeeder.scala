@@ -26,7 +26,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("DuplicateAnnotation.01") {
     val input =
       """@Test @Test
-        |def foo(x: Int32): Int32 = 42
+        |def f(): Unit = ()
     """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateAnnotation](result)
@@ -1883,6 +1883,18 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("IllegalUnaryPlus.01") {
+    val input =
+      """
+        |def main(): Unit = {
+        |  let x = +("hello");
+        |  ()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUnaryPlus](result)
   }
 
 }

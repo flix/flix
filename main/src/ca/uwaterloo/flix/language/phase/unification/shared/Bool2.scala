@@ -27,7 +27,7 @@ object Bool2 {
   case object True extends Bool2
 
   object LatticeOps extends BoolLattice[Bool2] {
-    
+
     override def Bot: Bool2 = False
 
     override def Top: Bool2 = True

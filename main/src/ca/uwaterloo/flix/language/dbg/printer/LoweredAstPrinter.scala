@@ -125,6 +125,20 @@ object LoweredAstPrinter {
 
     case LoweredAst.Expr.ParYield(_, _, _, _, _) => DocAst.Expr.Unknown
 
+    case LoweredAst.Expr.FixpointConstraintSet(_, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.FixpointSolveWithProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
+
   }
 
   /**

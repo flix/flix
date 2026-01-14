@@ -9,7 +9,7 @@ eff AnalysisFailure {
     /// This failure means we have trouble sending or receiving a request.
     ///
     def raiseRequestFailure(err: IoError): Void
-    
+
     ///
     /// This failure means we have trouble getting the configuration.
     ///
@@ -19,7 +19,7 @@ eff AnalysisFailure {
     /// This failure means we have trouble parsing a string to a json element.
     ///
     def raiseParseError(): Void
-    
+
     ///
     /// This failure means we have trouble accessing a json element.
     ///
@@ -29,7 +29,7 @@ eff AnalysisFailure {
 mod AnalysisFailure{
     use Json.JsonError.JsonError
     use Exit.exit
-    
+
     ///
     /// Handles analysis failure.
     ///
@@ -38,7 +38,7 @@ mod AnalysisFailure{
             f()
         } with handler AnalysisFailure {
             def raiseRequestFailure(err, _k) = {
-                println(err); 
+                println(err);
                 exit(1)
             }
             def raiseConfigError(msg, _k) = {

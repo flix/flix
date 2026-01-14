@@ -11,11 +11,11 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
   test("TestCompilationMessage") {
     val expected =
-      s"""-- ${TestCompilationMessage.kind} -------------------------------------------------- ${TestCompilationMessage.source.name}
+      s"""-- ${TestCompilationMessage.kind} [E9999] -------------------------------------------------- ${TestCompilationMessage.source.name}
          |
          |>> ${TestCompilationMessage.summary}
          |
-         |${NoFormatter.code(TestCompilationMessage.loc, "The code is highlighted here")}
+         |${NoFormatter.src(TestCompilationMessage.loc, "The code is highlighted here")}
          |
          |""".stripMargin
 
@@ -26,6 +26,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
 
   private case object TestCompilationMessage extends CompilationMessage {
+    override def code: ErrorCode = ErrorCode.E9999
 
     override def kind: CompilationMessageKind = CompilationMessageKind.TestError
 
@@ -37,7 +38,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
       import formatter.*
       s""">> $summary
          |
-         |${code(loc, "The code is highlighted here")}
+         |${src(loc, "The code is highlighted here")}
          |
          |""".stripMargin
     }

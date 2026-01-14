@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.errors.ErrorCode
 import ca.uwaterloo.flix.util.Formatter
 
 import scala.collection.mutable
@@ -31,6 +32,11 @@ trait CompilationMessage {
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
     */
   def kind: CompilationMessageKind
+
+  /**
+    * Returns the error code.
+    */
+  def code: ErrorCode
 
   /**
     * Returns the input source of the error message.
@@ -60,15 +66,10 @@ trait CompilationMessage {
   def message(formatter: Formatter): String
 
   /**
-    * Returns a formatted string with helpful suggestions.
-    */
-  def explain(formatter: Formatter): Option[String] = None
-
-  /**
     * Returns the error message formatted with source location.
     */
   def messageWithLoc(formatter: Formatter): String = {
-    formatter.line(kind.toString, source.name) + System.lineSeparator() + message(formatter)
+    formatter.line(kind, code, source) + System.lineSeparator() + message(formatter)
   }
 
   /**

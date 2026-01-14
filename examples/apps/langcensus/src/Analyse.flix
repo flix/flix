@@ -27,7 +27,7 @@ mod Analyse {
         run {
             f()
         } with handler Analyse {
-            def analyseByRepo(commits, resume) = 
+            def analyseByRepo(commits, resume) =
                 let allStats : List[(String, Stat)] = foreach (
                     (repo, shas) <- commits;
                     sha <- shas
@@ -48,14 +48,14 @@ mod Analyse {
 
     ///
     /// Collect adds and dels from all changed valid files in a commit.
-    /// 
+    ///
     def commitToAddsDels(repo: String, sha: String): (String, Stat) \ AnalysisFailure + Github = {
         let stat = Github.getCommit(repo, sha) |> Util.accessJson("files") |> List.foldLeft((acc, file) -> {
             let filename =  Util.accessJson("filename", file);
             let extOpt =  filename |> Util.extractExt;
             match extOpt {
                 case Option.None  => acc
-                case Option.Some(ext) => 
+                case Option.Some(ext) =>
                     let additions = Util.accessJson("additions", file);
                     let deletions = Util.accessJson("deletions", file);
                     Map.insertWith(
@@ -66,16 +66,16 @@ mod Analyse {
         }, Map.empty());
         (repo, stat)
     }
-    
+
     ///
     /// Convert a list of repository name and stat to a map from language name to stat, with stats for the same repository merged.
     ///
-    def mergeStats(stats: List[(String, Stat)]): Map[String, Stat] = 
+    def mergeStats(stats: List[(String, Stat)]): Map[String, Stat] =
         List.foldLeft(
             match (acc) -> match (repo, stat) -> Map.insertWith(mergeStat, repo, stat, acc),
             Map.empty(), stats
         )
-        
+
     ///
     /// Merge the stat from one commit to the accumulated stat, which should belong to the same repository.
     ///
@@ -87,13 +87,13 @@ mod Analyse {
             )
         }, oldStat, stat)
     }
-    
+
     ///
     /// Convert a list of langauge name and bytes to a map from language name to bytes, with bytes for the same language merged.
     ///
-    def mergeStatsByByte(allStat: List[(String, BigInt)]): Map[String, BigInt] = 
+    def mergeStatsByByte(allStat: List[(String, BigInt)]): Map[String, BigInt] =
         List.foldLeft(
-            match (acc) -> match(lang, bytes) -> Map.insertWith((old_bytes, new_bytes) -> old_bytes + new_bytes, lang, bytes, acc), 
+            match (acc) -> match(lang, bytes) -> Map.insertWith((old_bytes, new_bytes) -> old_bytes + new_bytes, lang, bytes, acc),
             Map.empty(), allStat
         )
 }

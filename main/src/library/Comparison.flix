@@ -32,7 +32,7 @@ pub mod Comparison {
     pub def toInt32(c: Comparison): Int32 = match c {
         case LessThan => -1
         case EqualTo => 0
-        case GreaterThan => +1
+        case GreaterThan => 1
     }
 
     ///

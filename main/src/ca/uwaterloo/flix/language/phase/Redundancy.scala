@@ -491,7 +491,7 @@ object Redundancy {
 
       // Check for useless pure expressions.
       if (isUselessExpression(exp1)) {
-        (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
+        (us1 ++ us2) + UselessExpression(exp1.loc)
       } else {
         us1 ++ us2
       }
@@ -500,7 +500,7 @@ object Redundancy {
       val us = visitExp(exp, env0, rc)
 
       if (isPure(exp))
-        us + DiscardedPureValue(exp.loc)
+        us + DiscardedPureExpression(exp.loc)
       else if (exp.tpe == Type.Unit)
         us + RedundantDiscard(exp.loc)
       else
@@ -730,12 +730,12 @@ object Redundancy {
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
-            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(loc)
+            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(exp.tpe, loc)
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
           if (exp.eff == eff && flix.options.xsubeffecting.isEmpty)
-            visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
+            visitExp(exp, env0, rc) + RedundantCheckedEffectCast(exp.eff, loc)
           else
             visitExp(exp, env0, rc)
       }
@@ -758,7 +758,7 @@ object Redundancy {
     case Expr.Unsafe(exp, runEff, _, _, _, loc) =>
       (runEff, exp.eff) match {
         case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
-        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)
+        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(runEff, loc)
         case _ => visitExp(exp, env0, rc)
       }
 

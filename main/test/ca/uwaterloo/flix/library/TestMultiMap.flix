@@ -12,19 +12,19 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toString01(): Unit \ Assert = 
+    def toString01(): Unit \ Assert =
         assertEq(expected = "MultiMap#{}", ToString.toString((empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def toString02(): Unit \ Assert = 
+    def toString02(): Unit \ Assert =
         assertEq(expected = "MultiMap#{1 => Set#{1}}", ToString.toString(singleton(1, 1)))
 
     @Test
-    def toString03(): Unit \ Assert = 
+    def toString03(): Unit \ Assert =
         assertEq(expected = "MultiMap#{1 => Set#{1, 2}}", ToString.toString(singleton(1, 1) |> insert(1, 2)))
 
     @Test
-    def toString04(): Unit \ Assert = 
+    def toString04(): Unit \ Assert =
         assertEq(expected = "MultiMap#{1 => Set#{1}, 2 => Set#{2}}", ToString.toString(singleton(1, 1) |> insert(2, 2)))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -32,32 +32,32 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def eq01(): Unit \ Assert = 
+    def eq01(): Unit \ Assert =
         assertEq(expected = (empty(): MultiMap[Int32, Char]), (empty(): MultiMap[Int32, Char]))
 
     @Test
-    def eq02(): Unit \ Assert = 
+    def eq02(): Unit \ Assert =
         assertNeq(unexpected = empty(), singleton(1, 'a'))
 
     @Test
-    def eq03(): Unit \ Assert = 
+    def eq03(): Unit \ Assert =
         assertNeq(unexpected = singleton(1, 'a'), empty())
 
     @Test
-    def eq04(): Unit \ Assert = 
+    def eq04(): Unit \ Assert =
         assertNeq(unexpected = singleton(1, 'b'), singleton(1, 'a'))
 
     @Test
-    def eq05(): Unit \ Assert = 
+    def eq05(): Unit \ Assert =
         assertEq(expected = singleton(1, 'a'), singleton(1, 'a'))
 
     @Test
-    def eq06(): Unit \ Assert = 
+    def eq06(): Unit \ Assert =
         assertEq(expected = singleton(1, 'a') |> insert(1, 'b'), singleton(1, 'a') |> insert(1, 'b'))
 
     /// Insert order doesn't matter for MultiMap
     @Test
-    def eq07(): Unit \ Assert = 
+    def eq07(): Unit \ Assert =
         assertEq(expected = singleton(1, 'a') |> insert(1, 'b'), singleton(1, 'b') |> insert(1, 'a'))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -65,23 +65,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def compare01(): Unit \ Assert = 
+    def compare01(): Unit \ Assert =
         assertEq(expected = Comparison.EqualTo, Order.compare((empty(): MultiMap[Int32, Char]), (empty(): MultiMap[Int32, Char])))
 
     @Test
-    def compare02(): Unit \ Assert = 
+    def compare02(): Unit \ Assert =
         assertEq(expected = Comparison.GreaterThan, Order.compare(singleton(1, 'a'), empty()))
 
     @Test
-    def compare03(): Unit \ Assert = 
+    def compare03(): Unit \ Assert =
         assertEq(expected = Comparison.LessThan, Order.compare(empty(), singleton(1, 'a')))
 
     @Test
-    def compare04(): Unit \ Assert = 
+    def compare04(): Unit \ Assert =
         assertEq(expected = Comparison.GreaterThan, Order.compare(singleton(1, 'b'), singleton(1, 'a')))
 
     @Test
-    def compare05(): Unit \ Assert = 
+    def compare05(): Unit \ Assert =
         assertEq(expected = Comparison.LessThan, Order.compare(singleton(1, 'a'), singleton(1, 'b')))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def empty01(): Unit \ Assert = 
+    def empty01(): Unit \ Assert =
         assertTrue(MultiMap.isEmpty(empty()))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def singleton01(): Unit \ Assert = 
+    def singleton01(): Unit \ Assert =
         assertEq(expected = (1, 'a') :: Nil, MultiMap.singleton(1, 'a') |> MultiMap.toList |> List.sort)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -105,11 +105,11 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def isEmpty01(): Unit \ Assert = 
+    def isEmpty01(): Unit \ Assert =
         assertTrue(MultiMap.isEmpty(empty()))
 
     @Test
-    def isEmpty02(): Unit \ Assert = 
+    def isEmpty02(): Unit \ Assert =
         assertFalse(MultiMap.isEmpty(singleton(1, 'a')))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -117,11 +117,11 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def nonEmpty01(): Unit \ Assert = 
+    def nonEmpty01(): Unit \ Assert =
         assertFalse(MultiMap.nonEmpty(empty()))
 
     @Test
-    def nonEmpty02(): Unit \ Assert = 
+    def nonEmpty02(): Unit \ Assert =
         assertTrue(MultiMap.nonEmpty(singleton(1, 'a')))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -129,19 +129,19 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def size01(): Unit \ Assert = 
+    def size01(): Unit \ Assert =
         assertEq(expected = 0, MultiMap.empty() |> MultiMap.size)
 
     @Test
-    def size02(): Unit \ Assert = 
+    def size02(): Unit \ Assert =
         assertEq(expected = 1, singleton("a", 1) |> MultiMap.size)
 
     @Test
-    def size03(): Unit \ Assert = 
+    def size03(): Unit \ Assert =
         assertEq(expected = 2, singleton(1, 'a') |> insert(2, 'b') |> MultiMap.size)
 
     @Test
-    def size04(): Unit \ Assert = 
+    def size04(): Unit \ Assert =
         assertEq(expected = 3, singleton(1, 'a') |> insert(2, 'b') |> insert(3, 'c') |> MultiMap.size)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -149,19 +149,19 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def get01(): Unit \ Assert = 
+    def get01(): Unit \ Assert =
         assertEq(expected = Set#{}, MultiMap.get(1, (empty(): MultiMap[Int32, Char])))
 
     @Test
-    def get02(): Unit \ Assert = 
+    def get02(): Unit \ Assert =
         assertEq(expected = Set#{'a'}, MultiMap.get(1, singleton(1, 'a')))
 
     @Test
-    def get03(): Unit \ Assert = 
+    def get03(): Unit \ Assert =
         assertEq(expected = Set#{'a'}, MultiMap.get(1, singleton(1, 'a') |> insert(2, 'b')))
 
     @Test
-    def get04(): Unit \ Assert = 
+    def get04(): Unit \ Assert =
         assertEq(expected = Set#{'a', 'c'}, MultiMap.get(1, singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c')))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -169,19 +169,19 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def memberOf01(): Unit \ Assert = 
+    def memberOf01(): Unit \ Assert =
         assertFalse(MultiMap.memberOf(1, (empty(): MultiMap[Int32, Char])))
 
     @Test
-    def memberOf02(): Unit \ Assert = 
+    def memberOf02(): Unit \ Assert =
         assertTrue(MultiMap.memberOf(1, singleton(1, 'a')))
 
     @Test
-    def memberOf03(): Unit \ Assert = 
+    def memberOf03(): Unit \ Assert =
         assertFalse(MultiMap.memberOf(1, singleton(2, 'b')))
 
     @Test
-    def memberOf04(): Unit \ Assert = 
+    def memberOf04(): Unit \ Assert =
         assertTrue(MultiMap.memberOf(1, singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c')))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -189,19 +189,19 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def keysOf01(): Unit \ Assert = 
+    def keysOf01(): Unit \ Assert =
         assertEq(expected = Set#{}, MultiMap.keysOf((empty(): MultiMap[Int32, Char])))
 
     @Test
-    def keysOf02(): Unit \ Assert = 
+    def keysOf02(): Unit \ Assert =
         assertEq(expected = Set#{1}, MultiMap.keysOf(singleton(1, 'a')))
 
     @Test
-    def keysOf03(): Unit \ Assert = 
+    def keysOf03(): Unit \ Assert =
         assertEq(expected = Set#{2}, MultiMap.keysOf(singleton(2, 'b')))
 
     @Test
-    def keysOf04(): Unit \ Assert = 
+    def keysOf04(): Unit \ Assert =
         assertEq(expected = Set#{1, 2}, MultiMap.keysOf(singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c')))
 
 
@@ -210,23 +210,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def valuesOf01(): Unit \ Assert = 
+    def valuesOf01(): Unit \ Assert =
         assertEq(expected = Nil, MultiMap.valuesOf((empty(): MultiMap[Int32, Char])))
 
     @Test
-    def valuesOf02(): Unit \ Assert = 
+    def valuesOf02(): Unit \ Assert =
         assertEq(expected = 'a' :: Nil, MultiMap.valuesOf(singleton(1, 'a')) |> List.sort)
 
     @Test
-    def valuesOf03(): Unit \ Assert = 
+    def valuesOf03(): Unit \ Assert =
         assertEq(expected = 'b' :: Nil, MultiMap.valuesOf(singleton(2, 'b')) |> List.sort)
 
     @Test
-    def valuesOf04(): Unit \ Assert = 
+    def valuesOf04(): Unit \ Assert =
         assertEq(expected = 'a' :: 'b' :: 'c' :: Nil, MultiMap.valuesOf(singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c')) |> List.sort)
 
     @Test
-    def valuesOf05(): Unit \ Assert = 
+    def valuesOf05(): Unit \ Assert =
         assertEq(expected = 'a' :: 'a' :: 'b' :: 'c' :: Nil, MultiMap.valuesOf(singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c') |> insert(3, 'a')) |> List.sort)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -234,19 +234,19 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def insert01(): Unit \ Assert = 
+    def insert01(): Unit \ Assert =
         assertEq(expected = (1, Set#{'a'}) :: Nil, MultiMap.insert(1, 'a', empty()) |> toAssocList)
 
     @Test
-    def insert02(): Unit \ Assert = 
+    def insert02(): Unit \ Assert =
         assertEq(expected = (1, Set#{'a'}) :: (2, Set#{'b'}) :: Nil, empty() |> MultiMap.insert(1, 'a') |> MultiMap.insert(2, 'b') |> toAssocList)
 
     @Test
-    def insert03(): Unit \ Assert = 
+    def insert03(): Unit \ Assert =
         assertEq(expected = (1, Set#{'a', 'c'}) :: (2, Set#{'b'}) :: Nil, empty() |> MultiMap.insert(1, 'a') |> MultiMap.insert(2, 'b') |> MultiMap.insert(1, 'c') |> toAssocList)
 
     @Test
-    def insert04(): Unit \ Assert = 
+    def insert04(): Unit \ Assert =
         assertEq(expected = (1, Set#{'a', 'c'}) :: (2, Set#{'b'}) :: (3, Set#{'b'}) :: Nil, empty() |> MultiMap.insert(1, 'a') |> MultiMap.insert(2, 'b') |> MultiMap.insert(1, 'c') |> MultiMap.insert(3, 'b') |> toAssocList)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -254,19 +254,19 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def insertAll01(): Unit \ Assert = 
+    def insertAll01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.insertAll(1, (Nil: List[Char]), empty()))
 
     @Test
-    def insertAll02(): Unit \ Assert = 
+    def insertAll02(): Unit \ Assert =
         assertEq(expected = (1, Set#{'a'}) :: Nil, empty() |> MultiMap.insertAll(1, 'a' :: Nil) |> toAssocList)
 
     @Test
-    def insertAll03(): Unit \ Assert = 
+    def insertAll03(): Unit \ Assert =
         assertEq(expected = (1, Set#{'a', 'c'}) :: (2, Set#{'b'}) :: Nil, empty() |> MultiMap.insertAll(1, 'a' :: 'c' :: Nil) |> MultiMap.insertAll(2, 'b' :: Nil) |> toAssocList)
 
     @Test
-    def insertAll04(): Unit \ Assert = 
+    def insertAll04(): Unit \ Assert =
         assertEq(expected = (1, Set#{'a', 'c'}) :: (2, Set#{'b'}) :: (3, Set#{'b'}) :: Nil, empty() |> MultiMap.insertAll(1, 'a' :: 'c' :: Nil) |> MultiMap.insertAll(2, 'b' :: Nil) |> MultiMap.insertAll(3, 'b' :: Nil) |> toAssocList)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -274,23 +274,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def adjust01(): Unit \ Assert = 
+    def adjust01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.adjust(v -> 2*v, 1, empty()))
 
     @Test
-    def adjust02(): Unit \ Assert = 
+    def adjust02(): Unit \ Assert =
         assertEq(expected = (1, Set#{8}) :: Nil, MultiMap.adjust(v -> 2*v, 1, MultiMap.singleton(1, 4)) |> toAssocList)
 
     @Test
-    def adjust03(): Unit \ Assert = 
+    def adjust03(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: Nil, MultiMap.adjust(v -> 2*v, 3, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def adjust04(): Unit \ Assert = 
+    def adjust04(): Unit \ Assert =
         assertEq(expected = (1, Set#{8, 10}) :: (2, Set#{4}) :: Nil, MultiMap.adjust(v -> 2*v, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def adjust05(): Unit \ Assert = 
+    def adjust05(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: (2, Set#{8}) :: Nil, MultiMap.adjust(v -> 2*v, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -298,23 +298,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def adjustWithKey01(): Unit \ Assert = 
+    def adjustWithKey01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.adjustWithKey((k, v) -> k+v, 1, empty()))
 
     @Test
-    def adjustWithKey02(): Unit \ Assert = 
+    def adjustWithKey02(): Unit \ Assert =
         assertEq(expected = (1, Set#{5}) :: Nil, MultiMap.adjustWithKey((k, v) -> k+v, 1, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def adjustWithKey03(): Unit \ Assert = 
+    def adjustWithKey03(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: Nil, MultiMap.adjustWithKey((k, v) -> k+v, 3, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def adjustWithKey04(): Unit \ Assert = 
+    def adjustWithKey04(): Unit \ Assert =
         assertEq(expected = (1, Set#{5, 6}) :: (2, Set#{4}) :: Nil, MultiMap.adjustWithKey((k, v) -> k+v, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def adjustWithKey05(): Unit \ Assert = 
+    def adjustWithKey05(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: (2, Set#{6}) :: Nil, MultiMap.adjustWithKey((k, v) -> k+v, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -322,23 +322,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def update01(): Unit \ Assert = 
+    def update01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 1, empty()))
 
     @Test
-    def update02(): Unit \ Assert = 
+    def update02(): Unit \ Assert =
         assertEq(expected = (1, Set#{8}) :: Nil, MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 1, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def update03(): Unit \ Assert = 
+    def update03(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: Nil, MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 3, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def update04(): Unit \ Assert = 
+    def update04(): Unit \ Assert =
         assertEq(expected = (1, Set#{5, 8}) :: (2, Set#{4}) :: Nil, MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def update05(): Unit \ Assert = 
+    def update05(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: (2, Set#{8}) :: Nil, MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -346,39 +346,39 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def updateWithKey01(): Unit \ Assert = 
+    def updateWithKey01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 1, empty()))
 
     @Test
-    def updateWithKey02(): Unit \ Assert = 
+    def updateWithKey02(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: Nil, MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 1, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def updateWithKey03(): Unit \ Assert = 
+    def updateWithKey03(): Unit \ Assert =
         assertEq(expected = (1, Set#{5}) :: Nil, MultiMap.updateWithKey((k, v) -> if (isOdd(k)) Some(k+v) else None, 1, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def updateWithKey04(): Unit \ Assert = 
+    def updateWithKey04(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: Nil, MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 3, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def updateWithKey05(): Unit \ Assert = 
+    def updateWithKey05(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: Nil, MultiMap.updateWithKey((k, v) -> if (isOdd(k)) Some(k+v) else None, 3, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def updateWithKey06(): Unit \ Assert = 
+    def updateWithKey06(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: (2, Set#{4}) :: Nil, MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def updateWithKey07(): Unit \ Assert = 
+    def updateWithKey07(): Unit \ Assert =
         assertEq(expected = (1, Set#{5, 6}) :: (2, Set#{4}) :: Nil, MultiMap.updateWithKey((k, v) -> if (isOdd(k)) Some(k+v) else None, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def updateWithKey08(): Unit \ Assert = 
+    def updateWithKey08(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: (2, Set#{6}) :: Nil, MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def updateWithKey09(): Unit \ Assert = 
+    def updateWithKey09(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: (2, Set#{4}) :: Nil, MultiMap.updateWithKey((k, v) -> if (isOdd(k)) Some(k+v) else None, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -386,23 +386,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def remove01(): Unit \ Assert = 
+    def remove01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.remove(1, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def remove02(): Unit \ Assert = 
+    def remove02(): Unit \ Assert =
         assertEq(expected = Nil, MultiMap.remove(1, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def remove03(): Unit \ Assert = 
+    def remove03(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: Nil, MultiMap.remove(3, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def remove04(): Unit \ Assert = 
+    def remove04(): Unit \ Assert =
         assertEq(expected = (2, Set#{4}) :: Nil, MultiMap.remove(1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def remove05(): Unit \ Assert = 
+    def remove05(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: Nil, MultiMap.remove(2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -410,27 +410,27 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def removeWithValue01(): Unit \ Assert = 
+    def removeWithValue01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.removeWithValue(1, 4, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def removeWithValue02(): Unit \ Assert = 
+    def removeWithValue02(): Unit \ Assert =
         assertEq(expected = Nil, MultiMap.removeWithValue(1, 4, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def removeWithValue03(): Unit \ Assert = 
+    def removeWithValue03(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: Nil, MultiMap.removeWithValue(1, 1, singleton(1, 4)) |> toAssocList)
 
     @Test
-    def removeWithValue04(): Unit \ Assert = 
+    def removeWithValue04(): Unit \ Assert =
         assertEq(expected = (1, Set#{5}) :: (2, Set#{4}) :: Nil, MultiMap.removeWithValue(1, 4, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def removeWithValue05(): Unit \ Assert = 
+    def removeWithValue05(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: Nil, MultiMap.removeWithValue(2, 4, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     @Test
-    def removeWithValue06(): Unit \ Assert = 
+    def removeWithValue06(): Unit \ Assert =
         assertEq(expected = (1, Set#{4, 5}) :: (2, Set#{4}) :: Nil, MultiMap.removeWithValue(2, 0, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -438,23 +438,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def find01(): Unit \ Assert = 
+    def find01(): Unit \ Assert =
         assertEq(expected = None, MultiMap.find((k, v) -> k == v, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def find02(): Unit \ Assert = 
+    def find02(): Unit \ Assert =
         assertEq(expected = None, MultiMap.find((k, v) -> k == v, singleton(1, 2)))
 
     @Test
-    def find03(): Unit \ Assert = 
+    def find03(): Unit \ Assert =
         assertEq(expected = Some((1, 1)), MultiMap.find((k, v) -> k == v, singleton(1, 1)))
 
     @Test
-    def find04(): Unit \ Assert = 
+    def find04(): Unit \ Assert =
         assertEq(expected = None, MultiMap.find((k, v) -> k == v, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)))
 
     @Test
-    def find05(): Unit \ Assert = 
+    def find05(): Unit \ Assert =
         assertEq(expected = Some((2, 2)), MultiMap.find((k, v) -> k == v, singleton(1, 4) |> insert(2, 2) |> insert(3, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -462,23 +462,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def findLeft01(): Unit \ Assert = 
+    def findLeft01(): Unit \ Assert =
         assertEq(expected = None, MultiMap.findLeft((k, v) -> k == v, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def findLeft02(): Unit \ Assert = 
+    def findLeft02(): Unit \ Assert =
         assertEq(expected = None, MultiMap.findLeft((k, v) -> k == v, singleton(1, 2)))
 
     @Test
-    def findLeft03(): Unit \ Assert = 
+    def findLeft03(): Unit \ Assert =
         assertEq(expected = Some((1, 1)), MultiMap.findLeft((k, v) -> k == v, singleton(1, 1)))
 
     @Test
-    def findLeft04(): Unit \ Assert = 
+    def findLeft04(): Unit \ Assert =
         assertEq(expected = None, MultiMap.findLeft((k, v) -> k == v, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)))
 
     @Test
-    def findLeft05(): Unit \ Assert = 
+    def findLeft05(): Unit \ Assert =
         assertEq(expected = Some((2, 2)), MultiMap.findLeft((k, v) -> k == v, singleton(1, 4) |> insert(2, 2) |> insert(3, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -486,23 +486,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def findRight01(): Unit \ Assert = 
+    def findRight01(): Unit \ Assert =
         assertEq(expected = None, MultiMap.findRight((k, v) -> k == v, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def findRight02(): Unit \ Assert = 
+    def findRight02(): Unit \ Assert =
         assertEq(expected = None, MultiMap.findRight((k, v) -> k == v, singleton(1, 2)))
 
     @Test
-    def findRight03(): Unit \ Assert = 
+    def findRight03(): Unit \ Assert =
         assertEq(expected = Some((1, 1)), MultiMap.findRight((k, v) -> k == v, singleton(1, 1)))
 
     @Test
-    def findRight04(): Unit \ Assert = 
+    def findRight04(): Unit \ Assert =
         assertEq(expected = None, MultiMap.findRight((k, v) -> k == v, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)))
 
     @Test
-    def findRight05(): Unit \ Assert = 
+    def findRight05(): Unit \ Assert =
         assertEq(expected = Some((3, 3)), MultiMap.findRight((k, v) -> k == v, singleton(1, 4) |> insert(2, 2) |> insert(3, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -510,23 +510,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def filter01(): Unit \ Assert = 
+    def filter01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.filter(isEven, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def filter02(): Unit \ Assert = 
+    def filter02(): Unit \ Assert =
         assertEq(expected = (1, Set#{2}) :: Nil, MultiMap.filter(isEven, singleton(1, 2)) |> toAssocList)
 
     @Test
-    def filter03(): Unit \ Assert = 
+    def filter03(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.filter(isEven, singleton(1, 1)))
 
     @Test
-    def filter04(): Unit \ Assert = 
+    def filter04(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: (2, Set#{4}) :: Nil, MultiMap.filter(isEven, singleton(1, 4) |> insert(2, 4)) |> toAssocList)
 
     @Test
-    def filter05(): Unit \ Assert = 
+    def filter05(): Unit \ Assert =
         assertEq(expected = (1, Set#{4}) :: (2, Set#{2}) :: Nil, MultiMap.filter(isEven, singleton(1, 4) |> insert(2, 2) |> insert(1, 3)) |> toAssocList)
 
 
@@ -539,7 +539,7 @@ mod TestMultiMap {
         assertEq(expected = empty(), MultiMap.filterWithKey((k, v) -> k == v, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def filterWithKey02(): Unit \ Assert = 
+    def filterWithKey02(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.filterWithKey((k, v) -> k == v, singleton(1, 2)))
 
     @Test
@@ -559,7 +559,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def map01(): Unit \ Assert = 
+    def map01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.map(v -> v*3, (empty(): MultiMap[Int32, Int32])))
 
     @Test
@@ -937,15 +937,15 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def exists01(): Unit \ Assert = 
+    def exists01(): Unit \ Assert =
         assertFalse(MultiMap.exists((k, v) -> v > k, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def exists02(): Unit \ Assert = 
+    def exists02(): Unit \ Assert =
         assertTrue(MultiMap.exists((k, v) -> v > k, singleton(1, 2)))
 
     @Test
-    def exists03(): Unit \ Assert = 
+    def exists03(): Unit \ Assert =
         assertTrue(MultiMap.exists((k, v) -> v > k, singleton(1, 4) |> insert(2, 4)))
 
     @Test
@@ -961,15 +961,15 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def forAll01(): Unit \ Assert = 
+    def forAll01(): Unit \ Assert =
         assertTrue(MultiMap.forAll((k, v) -> v > k, (empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def forAll02(): Unit \ Assert = 
+    def forAll02(): Unit \ Assert =
         assertTrue(MultiMap.forAll((k, v) -> v > k, singleton(1, 2)))
 
     @Test
-    def forAll03(): Unit \ Assert = 
+    def forAll03(): Unit \ Assert =
         assertTrue(MultiMap.forAll((k, v) -> v > k, singleton(1, 4) |> insert(2, 4)))
 
     @Test
@@ -988,15 +988,15 @@ mod TestMultiMap {
     // union                                                                   //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def union01(): Unit \ Assert = 
+    def union01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.union((empty(): MultiMap[Int32, Int32]), empty()))
 
     @Test
-    def union02(): Unit \ Assert = 
+    def union02(): Unit \ Assert =
         assertEq(expected = singleton(1, 2), MultiMap.union(singleton(1, 2), empty()))
 
     @Test
-    def union03(): Unit \ Assert = 
+    def union03(): Unit \ Assert =
         assertEq(expected = singleton(1, 2), MultiMap.union(empty(), singleton(1, 2)))
 
     @Test
@@ -1024,23 +1024,23 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def intersection01(): Unit \ Assert = 
+    def intersection01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.intersection((empty(): MultiMap[Int32, Int32]), empty()))
 
     @Test
-    def intersection02(): Unit \ Assert = 
+    def intersection02(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.intersection(singleton(1, 2), empty()))
 
     @Test
-    def intersection03(): Unit \ Assert = 
+    def intersection03(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.intersection(empty(), singleton(1, 2)))
 
     @Test
-    def intersection04(): Unit \ Assert = 
+    def intersection04(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.intersection(singleton(1, 2), singleton(1, 3)))
 
     @Test
-    def intersection05(): Unit \ Assert = 
+    def intersection05(): Unit \ Assert =
         assertEq(expected = singleton(1, 2), MultiMap.intersection(singleton(1, 2), singleton(1, 2)))
 
     @Test
@@ -1060,11 +1060,11 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def difference01(): Unit \ Assert = 
+    def difference01(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.difference((empty(): MultiMap[Int32, Int32]), empty()))
 
     @Test
-    def difference02(): Unit \ Assert = 
+    def difference02(): Unit \ Assert =
         assertEq(expected = singleton(1, 2), MultiMap.difference(singleton(1, 2), empty()))
 
     @Test
@@ -1076,7 +1076,7 @@ mod TestMultiMap {
         assertEq(expected = (1, Set#{2}) :: Nil, MultiMap.difference(singleton(1, 2), singleton(1, 3)) |> toAssocList)
 
     @Test
-    def difference05(): Unit \ Assert = 
+    def difference05(): Unit \ Assert =
         assertEq(expected = empty(), MultiMap.difference(singleton(1, 2), singleton(1, 2)))
 
     @Test
@@ -1104,15 +1104,15 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toList01(): Unit \ Assert = 
+    def toList01(): Unit \ Assert =
         assertEq(expected = Nil, MultiMap.toList((empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def toList02(): Unit \ Assert = 
+    def toList02(): Unit \ Assert =
         assertEq(expected = (1, 4) :: Nil, MultiMap.toList(singleton(1, 4)))
 
     @Test
-    def toList03(): Unit \ Assert = 
+    def toList03(): Unit \ Assert =
         assertEq(expected = (1, 4) :: (2, 4) :: Nil, MultiMap.toList(singleton(1, 4) |> insert(2, 4)))
 
     @Test
@@ -1128,15 +1128,15 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toAscList01(): Unit \ Assert = 
+    def toAscList01(): Unit \ Assert =
         assertEq(expected = Nil, MultiMap.toAscList((empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def toAscList02(): Unit \ Assert = 
+    def toAscList02(): Unit \ Assert =
         assertEq(expected = (1, 4) :: Nil, MultiMap.toAscList(singleton(1, 4)))
 
     @Test
-    def toAscList03(): Unit \ Assert = 
+    def toAscList03(): Unit \ Assert =
         assertEq(expected = (1, 4) :: (2, 4) :: Nil, MultiMap.toAscList(singleton(1, 4) |> insert(2, 4)))
 
     @Test
@@ -1152,15 +1152,15 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toDescList01(): Unit \ Assert = 
+    def toDescList01(): Unit \ Assert =
         assertEq(expected = Nil, MultiMap.toDescList((empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def toDescList02(): Unit \ Assert = 
+    def toDescList02(): Unit \ Assert =
         assertEq(expected = (1, 4) :: Nil, MultiMap.toDescList(singleton(1, 4)))
 
     @Test
-    def toDescList03(): Unit \ Assert = 
+    def toDescList03(): Unit \ Assert =
         assertEq(expected = (2, 4) :: (1, 4) :: Nil, MultiMap.toDescList(singleton(1, 4) |> insert(2, 4)))
 
     @Test
@@ -1176,15 +1176,15 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toMap01(): Unit \ Assert = 
+    def toMap01(): Unit \ Assert =
         assertEq(expected = Map#{}, MultiMap.toMap((empty(): MultiMap[Int32, Int32])))
 
     @Test
-    def toMap02(): Unit \ Assert = 
+    def toMap02(): Unit \ Assert =
         assertEq(expected = Map#{1 => Set#{4}}, MultiMap.toMap(singleton(1, 4)))
 
     @Test
-    def toMap03(): Unit \ Assert = 
+    def toMap03(): Unit \ Assert =
         assertEq(expected = Map#{1 => Set#{4}, 2 => Set#{4}}, MultiMap.toMap(singleton(1, 4) |> insert(2, 4)))
 
     @Test
