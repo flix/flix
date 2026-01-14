@@ -39,9 +39,9 @@ object EntryPointError {
   case class IllegalEntryPointEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E0958
 
-    override def summary: String = s"Unhandled effect: '${FormatType.formatType(eff)}'."
+    def summary: String = s"Unhandled effect: '${FormatType.formatType(eff)}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unhandled effect: '${red(FormatType.formatType(eff))}'.
          |
@@ -142,23 +142,26 @@ object EntryPointError {
     * @param t   the type that is not allowed.
     * @param loc the location of the type.
     */
-  case class IllegalExportType(t: Type, loc: SourceLocation) extends EntryPointError {
+  case class IllegalExportType(t: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1396
 
-    def summary: String = s"Exported functions must use primitive Java types or Object, not '$t'"
+    def summary: String = s"Unexpected type in exported function: '${FormatType.formatType(t)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Exported functions must use primitive Java types or Object, not '$t'.
+      s""">> Unexpected type '${red(FormatType.formatType(t))}' in exported function.
          |
-         |${src(loc, "unsupported type.")}
+         |${src(loc, "type not exportable")}
          |
+         |${underline("Explanation:")} Exported functions can only use primitive Java types:
+         |
+         |  Bool, Char, Int8, Int16, Int32, Int64, Float32, Float64, or java.lang.Object
          |""".stripMargin
     }
   }
 
   /**
-    * Error indicating an illegal result type to the main entry point function.
+    * Error indicating an unexpected result type for the main entry point function.
     *
     * @param tpe the result type.
     * @param loc the location where the error occurred.
@@ -166,27 +169,22 @@ object EntryPointError {
   case class IllegalMainEntryPointResult(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1403
 
-    override def summary: String = s"Unexpected result type for main: ${FormatType.formatType(tpe)}."
+    def summary: String = s"Unexpected result type for main: '${FormatType.formatType(tpe)}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The type: '${red(FormatType.formatType(tpe))}' is not a valid result type for the main function.
+      s""">> Unexpected result type '${red(FormatType.formatType(tpe))}' for main.
          |
-         |${src(loc, "Unexpected result type for main.")}
+         |${src(loc, "type has no ToString instance")}
          |
-         |${underline("Explanation:")}
-         |A ToString instance must be defined for the result type.
+         |${underline("Explanation:")} The main function must return Unit or a type with a
+         |ToString instance so the result can be printed.
          |
-         |To define a string representation of '${FormatType.formatType(tpe)}', either:
+         |To fix this, either:
          |
-         |  (a) define an instance of ToString for '${FormatType.formatType(tpe)}', or
-         |  (b) derive an instance of ToString for '${FormatType.formatType(tpe)}'.
-         |
-         |To automatically derive an instance, you can write:
-         |
-         |  enum Color with ToString {
-         |    case Red, Green, Blue
-         |  }
+         |  (a) Change the return type to Unit,
+         |  (b) Define an instance of ToString for '${magenta(FormatType.formatType(tpe))}', or
+         |  (c) Derive an instance of ToString for '${magenta(FormatType.formatType(tpe))}'.
          |""".stripMargin
     }
   }
@@ -199,9 +197,9 @@ object EntryPointError {
   case class IllegalRunnableEntryPointArgs(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1512
 
-    override def summary: String = s"Unexpected entry point argument(s)."
+    def summary: String = s"Unexpected entry point argument(s)."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Arguments to the entry point function are not permitted.
          |
@@ -218,10 +216,10 @@ object EntryPointError {
   case class MainEntryPointNotFound(sym: Symbol.DefnSym) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1625
 
-    override def summary: String = s"Entry point $sym not found."
+    def summary: String = s"Entry point $sym not found."
 
     // NB: We do not print the symbol source location as it is always Unknown.
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> The entry point $sym cannot be found.
          |
@@ -232,7 +230,7 @@ object EntryPointError {
          |""".stripMargin
     }
 
-    override def loc: SourceLocation = SourceLocation.Unknown
+    def loc: SourceLocation = SourceLocation.Unknown
   }
 
   /**
