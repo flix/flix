@@ -42,11 +42,11 @@ object InstanceError {
   case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E1952
 
-    override def summary: String = s"Complex instance type '${FormatType.formatType(tpe)}' for trait '${sym.name}'."
+    override def summary: String = s"Complex type '${FormatType.formatType(tpe)}' in instance declaration for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Complex instance type '${red(FormatType.formatType(tpe))}' for trait '${magenta(sym.name)}'.
+      s""">> Complex type '${red(FormatType.formatType(tpe))}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${src(loc, "expected a type constructor applied to distinct type variables")}
          |
@@ -78,15 +78,21 @@ object InstanceError {
   case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2063
 
-    override def summary: String = "Duplicate type variable."
+    override def summary: String = s"Duplicate type variable '${FormatType.formatType(tvar)}' in instance declaration for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${magenta(sym.name)}'.
+      s""">> Duplicate type variable '${red(FormatType.formatType(tvar))}' in instance declaration for trait '${magenta(sym.name)}'.
          |
-         |${src(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
+         |${src(loc, "duplicate occurrence")}
          |
-         |${underline("Tip:")} Rename one of the instances of the type variable.
+         |${underline("Explanation:")} Each type variable in an instance type must be distinct.
+         |Rename one of the occurrences to make them unique.
+         |
+         |${underline("Example:")}
+         |
+         |  ${red("instance C[(a, a)] { ... }")}        // Not allowed: 'a' appears twice
+         |  ${green("instance C[(a, b)] { ... }")}        // OK: 'a' and 'b' are distinct
          |""".stripMargin
     }
 
