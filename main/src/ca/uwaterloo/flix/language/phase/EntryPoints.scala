@@ -101,7 +101,7 @@ object EntryPoints {
           (root, Nil)
         case None =>
           // A main is given and it does not exist - no main and give an error.
-          (root.copy(mainEntryPoint = None), List(EntryPointError.MainEntryPointNotFound(sym)))
+          (root.copy(mainEntryPoint = None), List(EntryPointError.EntryPointNotFound(sym)))
       }
     }
   }

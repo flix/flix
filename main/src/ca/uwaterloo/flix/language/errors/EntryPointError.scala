@@ -31,6 +31,31 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
+    * Error indicating the specified entry point is missing.
+    *
+    * @param sym the entry point function.
+    */
+  case class EntryPointNotFound(sym: Symbol.DefnSym) extends EntryPointError {
+    def code: ErrorCode = ErrorCode.E1625
+
+    def summary: String = s"Entry point '${sym.name}' not found."
+
+    // NB: We do not print the symbol source location as it is always Unknown.
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Entry point '${red(sym.toString)}' not found.
+         |
+         |${underline("Possible fixes:")}
+         |
+         |  (1) Change the specified entry point to an existing function.
+         |  (2) Add an entry point function '${magenta(sym.toString)}'.
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = SourceLocation.Unknown
+  }
+
+  /**
     * Error indicating an unhandled effect in an entry point function.
     *
     * @param eff the effect.
@@ -84,7 +109,7 @@ object EntryPointError {
   }
 
   /**
-    * An error raised to indicate that an exported function has an invalid name.
+    * An error raised to indicate that an exported function has an unexpected name.
     *
     * @param loc the location of the defn.
     */
@@ -218,31 +243,6 @@ object EntryPointError {
          |  def testFoo(): Unit = ...
          |""".stripMargin
     }
-  }
-
-  /**
-    * Error indicating the specified main entry point is missing.
-    *
-    * @param sym the entry point function.
-    */
-  case class MainEntryPointNotFound(sym: Symbol.DefnSym) extends EntryPointError {
-    def code: ErrorCode = ErrorCode.E1625
-
-    def summary: String = s"Entry point '${sym.name}' not found."
-
-    // NB: We do not print the symbol source location as it is always Unknown.
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Entry point '${red(sym.toString)}' not found.
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1) Change the specified entry point to an existing function.
-         |  (2) Add an entry point function '${magenta(sym.toString)}'.
-         |""".stripMargin
-    }
-
-    def loc: SourceLocation = SourceLocation.Unknown
   }
 
   /**
