@@ -31,7 +31,32 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
-    * Error indicating an illegal effect of an entry point function.
+    * Error indicating the specified entry point is missing.
+    *
+    * @param sym the entry point function.
+    */
+  case class EntryPointNotFound(sym: Symbol.DefnSym) extends EntryPointError {
+    def code: ErrorCode = ErrorCode.E1625
+
+    def summary: String = s"Entry point '${sym.name}' not found."
+
+    // NB: We do not print the symbol source location as it is always Unknown.
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Entry point '${red(sym.toString)}' not found.
+         |
+         |${underline("Possible fixes:")}
+         |
+         |  (1) Change the specified entry point to an existing function.
+         |  (2) Add an entry point function '${magenta(sym.toString)}'.
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = SourceLocation.Unknown
+  }
+
+  /**
+    * Error indicating an unhandled effect in an entry point function.
     *
     * @param eff the effect.
     * @param loc the location where the error occurred.
@@ -39,13 +64,22 @@ object EntryPointError {
   case class IllegalEntryPointEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E0958
 
-    override def summary: String = s"Unexpected entry point effect: ${FormatType.formatType(eff)}."
+    def summary: String = s"Unhandled effect: '${FormatType.formatType(eff)}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unhandled effect: '${red(FormatType.formatType(eff))}'.
          |
          |${src(loc, "unhandled effect")}
+         |
+         |${underline("Explanation:")} Entry point functions (main, tests, exports) can only
+         |use primitive effects (like IO) or effects with default handlers. The effect
+         |'${magenta(FormatType.formatType(eff))}' has no default handler.
+         |
+         |To fix this, either:
+         |
+         |  (a) Handle the effect within the function using 'run-with', or
+         |  (b) Add a default handler for the effect.
          |""".stripMargin
     }
   }
@@ -59,81 +93,100 @@ object EntryPointError {
   case class IllegalEntryPointTypeVariables(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1069
 
-    def summary: String = s"An entry point function cannot have type variables"
+    def summary: String = s"Unexpected type variable in entry point."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> An entry point function cannot have type variables.
+      s""">> Unexpected type variable in entry point function.
          |
-         |${src(loc, "illegal entry point")}
+         |${src(loc, "type variable not allowed here")}
          |
+         |${underline("Explanation:")} Entry point functions (main, tests, exports) must have
+         |concrete types. Type variables like 'a' or 't' are not allowed because the runtime
+         |needs to know the exact types at the entry point.
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that an exported function has an invalid name.
+    * An error raised to indicate that an exported function has an unexpected name.
     *
     * @param loc the location of the defn.
     */
   case class IllegalExportName(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1172
 
-    def summary: String = s"Exported functions must have a Java valid name"
+    def summary: String = s"Unexpected name for exported function."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Exported functions must have a Java valid name.
+      s""">> Unexpected name for exported function.
          |
-         |${src(loc, "invalid Java name.")}
+         |${src(loc, "name not valid in Java")}
          |
+         |${underline("Explanation:")} Exported functions must have names that are valid Java
+         |identifiers. A valid name starts with a lowercase letter and contains only letters
+         |and digits (e.g., 'getValue', 'process123').
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that an exported function has an illegal namespace.
+    * An error raised to indicate that an exported function is in the root namespace.
     *
     * @param loc the location of the defn.
     */
   case class IllegalExportNamespace(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1285
 
-    def summary: String = s"An exported function must be in a module (not in the root namespace)"
+    def summary: String = s"Exported function in root namespace."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> An exported function must be in a module (not in the root namespace).
+      s""">> Exported function must be in a module.
          |
-         |${src(loc, "exported function.")}
+         |${src(loc, "function in root namespace")}
          |
+         |${underline("Explanation:")} Exported functions generate Java methods in a class
+         |named after the module. Functions in the root namespace have no module name,
+         |so there is no class to contain the exported method.
+         |
+         |To fix this, move the function into a module:
+         |
+         |  mod MyModule {
+         |      @Export
+         |      pub def myFunction(): Int32 = ...
+         |  }
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that an exported function uses an illegal type.
+    * An error raised to indicate that an exported function uses an unexpected type.
     *
     * @param t   the type that is not allowed.
     * @param loc the location of the type.
     */
-  case class IllegalExportType(t: Type, loc: SourceLocation) extends EntryPointError {
+  case class IllegalExportType(t: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1396
 
-    def summary: String = s"Exported functions must use primitive Java types or Object, not '$t'"
+    def summary: String = s"Unexpected type in exported function: '${FormatType.formatType(t)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Exported functions must use primitive Java types or Object, not '$t'.
+      s""">> Unexpected type '${red(FormatType.formatType(t))}' in exported function.
          |
-         |${src(loc, "unsupported type.")}
+         |${src(loc, "type not exportable")}
          |
+         |${underline("Explanation:")} Exported functions can only use primitive Java types:
+         |
+         |  Bool, Char, Int8, Int16, Int32, Int64, Float32, Float64, or java.lang.Object
          |""".stripMargin
     }
   }
 
   /**
-    * Error indicating an illegal result type to the main entry point function.
+    * Error indicating an unexpected result type for the main entry point function.
     *
     * @param tpe the result type.
     * @param loc the location where the error occurred.
@@ -141,73 +194,55 @@ object EntryPointError {
   case class IllegalMainEntryPointResult(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1403
 
-    override def summary: String = s"Unexpected result type for main: ${FormatType.formatType(tpe)}."
+    def summary: String = s"Unexpected result type for main: '${FormatType.formatType(tpe)}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The type: '${red(FormatType.formatType(tpe))}' is not a valid result type for the main function.
+      s""">> Unexpected result type '${red(FormatType.formatType(tpe))}' for main.
          |
-         |${src(loc, "Unexpected result type for main.")}
+         |${src(loc, "type has no ToString instance")}
          |
-         |${underline("Explanation:")}
-         |A ToString instance must be defined for the result type.
+         |${underline("Explanation:")} The main function must return Unit or a type with a
+         |ToString instance so the result can be printed.
          |
-         |To define a string representation of '${FormatType.formatType(tpe)}', either:
+         |To fix this, either:
          |
-         |  (a) define an instance of ToString for '${FormatType.formatType(tpe)}', or
-         |  (b) derive an instance of ToString for '${FormatType.formatType(tpe)}'.
-         |
-         |To automatically derive an instance, you can write:
-         |
-         |  enum Color with ToString {
-         |    case Red, Green, Blue
-         |  }
+         |  (a) Change the return type to Unit,
+         |  (b) Define an instance of ToString for '${magenta(FormatType.formatType(tpe))}', or
+         |  (c) Derive an instance of ToString for '${magenta(FormatType.formatType(tpe))}'.
          |""".stripMargin
     }
   }
 
   /**
-    * Error indicating one or more arguments to a runnable (test or main) entry point function.
+    * Error indicating unexpected arguments in a runnable (test or main) entry point function.
     *
     * @param loc the location where the error occurred.
     */
   case class IllegalRunnableEntryPointArgs(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1512
 
-    override def summary: String = s"Unexpected entry point argument(s)."
+    def summary: String = s"Unexpected arguments in entry point."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Arguments to the entry point function are not permitted.
+      s""">> Unexpected arguments in entry point function.
          |
-         |${src(loc, "unexpected entry point argument(s).")}
+         |${src(loc, "arguments not allowed")}
+         |
+         |${underline("Explanation:")} Entry point functions (main and tests) must have
+         |no arguments.
+         |
+         |Expected signature:
+         |
+         |  def main(): Unit = ...
+         |
+         |or for tests:
+         |
+         |  @Test
+         |  def testFoo(): Unit = ...
          |""".stripMargin
     }
-  }
-
-  /**
-    * Error indicating the specified main entry point is missing.
-    *
-    * @param sym the entry point function.
-    */
-  case class MainEntryPointNotFound(sym: Symbol.DefnSym) extends EntryPointError {
-    def code: ErrorCode = ErrorCode.E1625
-
-    override def summary: String = s"Entry point $sym not found."
-
-    // NB: We do not print the symbol source location as it is always Unknown.
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> The entry point $sym cannot be found.
-         |
-         |${underline("Possible fixes:")}
-         |
-         |  (1)  Change the specified entry point to an existing function.
-         |  (2)  Add an entry point function $sym.
-         |""".stripMargin
-    }
-
-    override def loc: SourceLocation = SourceLocation.Unknown
   }
 
   /**
@@ -218,14 +253,22 @@ object EntryPointError {
   case class NonPublicExport(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1849
 
-    def summary: String = s"Exported functions must be public"
+    def summary: String = s"Non-public exported function."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Exported functions must be public.
+      s""">> Exported function is not public.
          |
-         |${src(loc, "exported function.")}
+         |${src(loc, "missing 'pub' modifier")}
          |
+         |${underline("Explanation:")} Exported functions must be declared with the 'pub'
+         |modifier to be visible from Java code. Private functions cannot be exported
+         |because they are not accessible outside their module.
+         |
+         |To fix this, add the 'pub' modifier:
+         |
+         |  @Export
+         |  pub def myFunction(): Int32 = ...
          |""".stripMargin
     }
   }

@@ -101,7 +101,7 @@ object EntryPoints {
           (root, Nil)
         case None =>
           // A main is given and it does not exist - no main and give an error.
-          (root.copy(mainEntryPoint = None), List(EntryPointError.MainEntryPointNotFound(sym)))
+          (root.copy(mainEntryPoint = None), List(EntryPointError.EntryPointNotFound(sym)))
       }
     }
   }
@@ -433,7 +433,7 @@ object EntryPoints {
     }
 
     /** Returns an error for each type in `defn` that is not valid in Java. */
-    private def checkJavaTypes(defn: TypedAst.Def): List[EntryPointError] = {
+    private def checkJavaTypes(defn: TypedAst.Def)(implicit flix: Flix): List[EntryPointError] = {
       val types = defn.spec.retTpe :: defn.spec.fparams.map(_.tpe)
       types.flatMap(tpe => {
         isExportableType(tpe) match {
