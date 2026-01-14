@@ -27,14 +27,16 @@
 /// which has time/depth `k` then this facts has at most time/depth `k + 1`.
 ///
 /// This module removes `BoolExp.NotMemberOf` as the `ProvProject` introduced by `Lowering`
-/// must ensure this property.
+/// must ensure this property. Note that only this does not refers to the `NotMemberOf` relating
+/// to negative dependencies/the `not A(...)` constructs.
 ///
- mod Fixpoint3.Phase.ProvenanceAugment {
+ pub mod Fixpoint3.Phase.ProvenanceAugment {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{RamProgram, RamStmt, RelOp, RamTerm, RelSym, arityOf, RowVar, BoolExp}
     use Fixpoint3.Boxed
     use Fixpoint3.Boxed.BoxedInt64
     use Fixpoint3.Counter
+    use Fixpoint3.Options.usedArity
     use Fixpoint3.TypeInfo.{expandTypeToProv, expandTypeInfoToProv, provType}
 
     ///
@@ -43,7 +45,6 @@
     /// If `withProv` is `True`: Augment `program` to maintain proof depth of atoms and
     /// rule used to generate them. Further add extend facts to contain a depth and rule.
     ///
-    @Internal
     pub def augmentProgram(withProv: Bool, program: RamProgram): RamProgram =
         if (not withProv) program
         else augmentProgramInternal(program)
@@ -75,7 +76,7 @@
     /// `[42i64, "someString", Nil, 0, -1]`.
     ///
     def augmentFacts(oldTree: BPlusTree[Vector[Boxed], Boxed, Static]): BPlusTree[Vector[Boxed], Boxed, Static] \ IO = {
-        let newTree = BPlusTree.empty(Static);
+        let newTree = BPlusTree.emptyWithArity(Static, usedArity());
         BPlusTree.forEach(tuple -> v ->
             let annotatedVector = tuple ++ Vector#{BoxedInt64(0i64), BoxedInt64(-1i64)};
             BPlusTree.put(annotatedVector, v, newTree)
@@ -123,15 +124,19 @@
 
 
     ///
-    /// Returns the `BoolExp`'s in `boolExps` without `NotMemberOf`.
+    /// Returns the `BoolExp`'s in `boolExps` without `NotMemberOf`. The `NotMemberOf` introduced by
+    /// negative dependencies are kept (`not A(...)`).
     ///
     def removeNotMemberOf(boolExps: Vector[BoolExp]): Vector[BoolExp] = Vector.filterMap(notNotMemberOf, boolExps)
 
     ///
-    /// Returns `Some(boolExp)` if `boolExp` is not `NotMemberOf`. Otherwise returns `None`.
+    /// Returns `Some(boolExp)` if `boolExp` is not `NotMemberOf`.
+    ///
+    /// Otherwise if `boolExp` is `NotMemberOf` it returns `Some(boolExp)` if the expression was
+    /// introduced by a negative dependency (`not A(...)`).
     ///
     def notNotMemberOf(boolExp: BoolExp): Option[BoolExp] = match boolExp {
-        case BoolExp.NotMemberOf(_, _) => None
+        case BoolExp.NotMemberOf(_, _, false) => None
         case _ => Some(boolExp)
     }
 

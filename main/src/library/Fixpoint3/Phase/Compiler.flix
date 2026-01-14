@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Phase.Compiler {
+pub mod Fixpoint3.Phase.Compiler {
     use Fixpoint3.Ast.Ram.{arityOfNonLat, BoolExp, Facts, Predicates, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
     use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, Fixity, HeadTerm, Polarity, VarSym}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog}
@@ -30,10 +30,11 @@ mod Fixpoint3.Phase.Compiler {
     use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxed
     use Fixpoint3.Counter
-    use Fixpoint3.Util.getOrCrash
+    use Fixpoint3.Options.usedArity
     use Fixpoint3.Predicate
     use Fixpoint3.Predicate.PredType.{Full, Delta, New}
     use Fixpoint3.TypeInfo.{getType, getTypeOf, Type, typeDatalog, TypeInformation}
+    use Fixpoint3.Util.getOrCrash
 
     ///
     /// Compile the given Datalog program `d` to RAM.
@@ -42,7 +43,6 @@ mod Fixpoint3.Phase.Compiler {
     /// This means to compile all rules in stratum 0, then stratum 1 and so on.
     /// A rule belongs to the same stratum as its head predicate.
     ///
-    @Internal
     pub def compile(d: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]], strat: Map[PredSym, (Int32, Int32)], withProv: Bool): RamProgram = match d {
         case Datalog(facts, _) => region rc {
             let predicates = Predicate.initialize(d, db);
@@ -88,7 +88,6 @@ mod Fixpoint3.Phase.Compiler {
     ///
     /// Collect all rules in `d` and assign them a number, deterministically.
     ///
-    @Internal
     pub def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
         case Datalog(_, rules) => Vector.mapWithIndex(i -> r -> (i, r), rules)
         case _                 => unreachable!()
@@ -99,7 +98,6 @@ mod Fixpoint3.Phase.Compiler {
     /// by assigning them -1. `functionalRelSym` should only be placed in `RowLoads`. Only `Lowering.flix` uses
     /// the `RelSym` part and does not use the `PredSym`.
     ///
-    @Internal
     pub def functionalRelSym(arity: Int32): RelSym = RelSym.Symbol(PredSym.PredSym("", -1i64), arity, Relational)
 
     ///
@@ -113,7 +111,7 @@ mod Fixpoint3.Phase.Compiler {
             match den {
                 case Relational =>
                     let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
-                    let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                    let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.emptyWithArity(Static, usedArity()), newFacts);
                     BPlusTree.put(x, Boxed.NoValue, newFactsTree)
                 case Latticenal(bot, leq, lub, _) =>
                     // Remove p(;bot) from the facts
@@ -122,7 +120,7 @@ mod Fixpoint3.Phase.Compiler {
                         ()
                     } else {
                         let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
-                        let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                        let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.emptyWithArity(Static, usedArity()), newFacts);
                         BPlusTree.putWith(lub, Vector.dropRight(1, x), latVal, newFactsTree)
                     }
             }
@@ -345,7 +343,7 @@ mod Fixpoint3.Phase.Compiler {
                     case Some(join) =>
                         let relSym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
                         let loopBody = RelOp.If(
-                            Vector#{BoolExp.NotMemberOf(ramTerms, relSym)} ++ join,
+                            Vector#{BoolExp.NotMemberOf(ramTerms, relSym, false)} ++ join,
                             projection
                         );
                         let insert = (loopBody, augBody)
@@ -558,7 +556,7 @@ mod Fixpoint3.Phase.Compiler {
                             })
                     case BodyAtom(PredSym(_, id), _, Polarity.Negative, _, terms) =>
                         let ramTerms = Vector.mapWithIndex(compileBodyTerm(id), terms);
-                        Vector#{BoolExp.NotMemberOf(ramTerms, Predicate.bodyAtomToRelSym(atom, Full, predicates))}
+                        Vector#{BoolExp.NotMemberOf(ramTerms, Predicate.bodyAtomToRelSym(atom, Full, predicates), true)}
                     case Functional(_, _, _) => Vector.empty()
                     case Guard0(_) =>
                         Vector#{}

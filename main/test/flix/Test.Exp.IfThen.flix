@@ -1,36 +1,38 @@
 mod Test.Exp.IfThen {
 
-    @test
-    def testIfThen01(): Bool = region rc {
+    use Assert.assertTrue
+
+    @Test
+    def testIfThen01(): Unit \ Assert = region rc {
         let ref = Ref.fresh(rc, false);
         if (true) {
             Ref.put(true, ref)
         };
-        Ref.get(ref)
+        assertTrue(Ref.get(ref))
     }
 
-    @test
-    def testIfThen02(): Bool = region rc {
+    @Test
+    def testIfThen02(): Unit \ Assert = region rc {
         let ref = Ref.fresh(rc, true);
         if (false) {
             Ref.put(false, ref)
         };
-        Ref.get(ref)
+        assertTrue(Ref.get(ref))
     }
 
-    @test
-    def testIfThen03(): Bool = region rc {
+    @Test
+    def testIfThen03(): Unit \ Assert = region rc {
         let ref = Ref.fresh(rc, true);
         if (true) {
             if (false) {
                 Ref.put(false, ref)
             }
         };
-        Ref.get(ref)
+        assertTrue(Ref.get(ref))
     }
 
-    @test
-    def testIfThen04(): Bool = region rc {
+    @Test
+    def testIfThen04(): Unit \ Assert = region rc {
         let ref = Ref.fresh(rc, true);
         if (true) {
             if (false) {
@@ -39,11 +41,11 @@ mod Test.Exp.IfThen {
                 Ref.put(true, ref)
             }
         };
-        Ref.get(ref)
+        assertTrue(Ref.get(ref))
     }
 
-    @test
-    def testIfThen05(): Bool = region rc {
+    @Test
+    def testIfThen05(): Unit \ Assert = region rc {
         let ref = Ref.fresh(rc, true);
         if (true) {
             if (true) {
@@ -52,7 +54,7 @@ mod Test.Exp.IfThen {
                 Ref.put(false, ref)
             }
         };
-        Ref.get(ref)
+        assertTrue(Ref.get(ref))
     }
 
 }

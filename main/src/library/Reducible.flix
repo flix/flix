@@ -276,7 +276,7 @@ pub trait Reducible[t: Type -> Type] {
 
 }
 
-mod Reducible {
+pub mod Reducible {
 
     ///
     /// Returns the number of elements in `t`.

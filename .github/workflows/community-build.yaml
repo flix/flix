@@ -36,14 +36,16 @@ jobs:
     strategy:
       # collect all the failures
       fail-fast: false
-      # run them one at a time
-      max-parallel: 1
       matrix:
         repo:
           - "flix/datalog2"
+          - "flix/test-pkg-trust-plain"
+          - "flix/test-pkg-trust-unchecked-cast"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
           - "magnus-madsen/bibblitz"
+          - "jaschdoc/flix-test-pkg-trust-transitive-plain"
+          - "jaschdoc/flix-test-pkg-trust-transitive-java"
           - "mlutze/flix-json"
           - "mlutze/flixball"
           - "rywiese/scope-graphs"
@@ -68,4 +70,4 @@ jobs:
         timeout-minutes: 10
         run: |
           # Build the project.
-          java -jar flix.jar build --github-token ${{ github.token }}
+          java -jar flix.jar build --github-token ${{ secrets.GITHUB_TOKEN }}

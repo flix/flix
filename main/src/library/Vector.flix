@@ -150,7 +150,7 @@ instance ToFlix[Vector[a]] {
     }
 }
 
-mod Vector {
+pub mod Vector {
 
     ///
     /// Perform a binary search for `x` on the sorted vector `v` and returns the position of `x`.
@@ -392,7 +392,7 @@ mod Vector {
         reduceLeft(Order.maxBy(cmp), v)
 
     ///
-    /// Alias for `IndexOfLeft`
+    /// Alias for `indexOfLeft`
     ///
     pub def indexOf(x: a, v: Vector[a]): Option[Int32] with Eq[a] =
         indexOfLeft(x, v)
@@ -576,7 +576,7 @@ mod Vector {
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
-    /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
+    /// That is, the result is of the form: `[ f(0, a[0]), f(1, a[1]), ... ]`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
         init(i -> f(i, get(i, v)), length(v))
@@ -833,7 +833,7 @@ mod Vector {
             loop(0)
 
     ///
-    /// Returns `true` if and only if `a` is a infix of `b`.
+    /// Returns `true` if and only if `a` is an infix of `b`.
     ///
     pub def isInfixOf(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
         let len1 = length(a);
@@ -1036,7 +1036,7 @@ mod Vector {
         loop(0)
 
     ///
-    /// Returns an array of every element in `arr` that satisfies the predicate `f`.
+    /// Returns a vector of every element in `v` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
         let m = MutList.empty(rc);
@@ -1204,47 +1204,45 @@ mod Vector {
     /// A subvector is created by iterating through the remaining elements of `v` from left to right and adding an
     /// element to the subvector if and only if doing so creates no conflicts with the elements already in the subvector.
     ///
-    /// The function `f` must be pure.
+    /// The function `f` must be pure and define an equivalence relation.
     ///
-    pub def groupBy(f: (a, a) -> Bool, v: Vector[a]): Vector[Vector[a]] =
+    pub def groupWith(f: (a, a) -> Bool, v: Vector[a]): Vector[Vector[a]] =
         let xs = toList(v);
         groupByHelper(f, xs, Nil) |> List.toVector
 
     ///
-    /// Helper function for `groupBy`.
+    /// Partitions `v` into subvectors such that for any two elements `x` and `y` in a subvector,
+    /// if `f(x)` and `f(y)` are equal according to `Eq` on `b`.
+    ///
+    /// A subvector is created by iterating through the remaining elements of `v` from left to right and adding an
+    /// element to the subvector if and only if doing so creates no conflicts with the elements already in the subvector.
+    ///
+    pub def groupBy(f: a -> b, v: Vector[a]): Vector[Vector[a]] with Eq[b] =
+        groupWith(Eq.eq `on` f, v)
+
+    ///
+    /// Helper function for `groupWith`.
     ///
     def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Vector[a]]): List[Vector[a]] = match xs {
         case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
+            let (r1, r2) = extractHelper(f, rs, Nel.singleton(x), Nil);
             groupByHelper(f, r2, r1 :: ac)
     }
 
     ///
-    /// Helper function for `groupBy`.
+    /// Helper function for `groupWith`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Vector[a], List[a]) = match xs {
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Vector[a], List[a]) = match xs {
         case Nil => {
-            let a = List.reverse(ps);
-            (List.toVector(a), List.reverse(ns))
+            let a = Nel.reverse(ps);
+            (Nel.toVector(a), List.reverse(ns))
         }
         case x :: rs =>
-            if (agreeHelper(f, x, ps))
-                extractHelper(f, rs, x :: ps, ns)
+            if (f(x, Nel.head(ps)))
+                extractHelper(f, rs, Nel.cons(x, ps), ns)
             else
                 extractHelper(f, rs, ps, x :: ns)
-    }
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
-        case Nil => true
-        case x :: rs =>
-            if ((f(x, a) and f(a, x)) == false)
-                false
-            else
-                agreeHelper(f, a, rs)
     }
 
     ///
@@ -1430,7 +1428,7 @@ mod Vector {
     }
 
     ///
-    /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
+    /// Returns `true` if vectors `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     pub def equals(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
         let alen = length(a);

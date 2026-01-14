@@ -96,7 +96,7 @@ pub eff FileReadWithResult {
 
 }
 
-mod FileReadWithResult {
+pub mod FileReadWithResult {
 
     import java.io.File
     import java.io.IOException

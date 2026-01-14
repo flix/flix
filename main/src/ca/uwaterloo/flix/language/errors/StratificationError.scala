@@ -28,13 +28,15 @@ import ca.uwaterloo.flix.util.Formatter
 case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends CompilationMessage {
   def kind: CompilationMessageKind = CompilationMessageKind.StratificationError
 
+  def code: ErrorCode = ErrorCode.E5914
+
   def summary: String = "The expression is not stratified. A predicate depends strongly on itself."
 
   def message(formatter: Formatter): String = {
     import formatter.*
     s""">> The expression is not stratified. A predicate depends strongly on itself.
        |
-       |${code(loc, "the expression is not stratified.")}
+       |${src(loc, "the expression is not stratified.")}
        |
        |The type of the expression is:
        |

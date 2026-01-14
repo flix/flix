@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Ast.Datalog {
+pub mod Fixpoint3.Ast.Datalog {
     use Fixpoint3.Boxed;
 
     use Fixpoint3.PredSymsOf
@@ -45,7 +45,6 @@ mod Fixpoint3.Ast.Datalog {
     /// computed facts to annotations of the form `(depth, ruleUsed)` and `rules`
     /// are the rules used during the computation of `model`.
     ///
-    @Internal
     pub enum Datalog {
         case Datalog(Vector[Constraint], Vector[Constraint])
         case Model(Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]])
@@ -132,9 +131,9 @@ mod Fixpoint3.Ast.Datalog {
                     Map.joinWith(predSym -> facts -> {
                         let builder = StringBuilder.empty(rc);
                         foreach ((fact, annotation) <- facts) {
-                            StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
+                            StringBuilder.append("${indent}${fact} @ ${annotation},${String.lineSeparator()}${indent}", builder)
                         };
-                        let textOverflow = String.length("$,{String.lineSeparator()}${indent}");
+                        let textOverflow = String.length("$,${String.lineSeparator()}${indent}");
                         let rawFactString = StringBuilder.toString(builder);
                         let factsString = String.sliceLeft(end = String.length(rawFactString)- textOverflow, rawFactString);
                         "${predSym}:${String.lineSeparator()}${factsString}"
@@ -148,7 +147,6 @@ mod Fixpoint3.Ast.Datalog {
     // Constraint                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum Constraint {
         case Constraint(HeadPredicate, Vector[BodyPredicate])
     }
@@ -186,7 +184,6 @@ mod Fixpoint3.Ast.Datalog {
     // HeadPredicate                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum HeadPredicate {
         case HeadAtom(PredSym, Denotation, Vector[HeadTerm])
     }
@@ -222,7 +219,6 @@ mod Fixpoint3.Ast.Datalog {
     // BodyPredicate                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum BodyPredicate {
         case BodyAtom(PredSym, Denotation, Polarity, Fixity, Vector[BodyTerm])
         case Functional(Vector[VarSym], Vector[Boxed] -> Vector[Vector[Boxed]], Vector[VarSym])
@@ -284,7 +280,6 @@ mod Fixpoint3.Ast.Datalog {
     // HeadTerm                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum HeadTerm {
         case Var(VarSym)
         case Lit(Boxed)
@@ -311,7 +306,6 @@ mod Fixpoint3.Ast.Datalog {
     // BodyTerm                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum BodyTerm {
         case Wild
         case Var(VarSym)
@@ -330,7 +324,6 @@ mod Fixpoint3.Ast.Datalog {
     // VarSym                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum VarSym with Eq, Order, ToString {
         case VarSym(String)
     }
@@ -339,7 +332,6 @@ mod Fixpoint3.Ast.Datalog {
     // Fixity                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum Fixity {
         case Loose,
         case Fixed
@@ -349,7 +341,6 @@ mod Fixpoint3.Ast.Datalog {
     // Polarity                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum Polarity {
         case Positive,
         case Negative

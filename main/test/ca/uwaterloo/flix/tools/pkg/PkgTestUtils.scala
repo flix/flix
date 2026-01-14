@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 
 /**
   * Contains a test utilities for the package manager tests that rely heavily on I/O
@@ -26,7 +26,7 @@ object PkgTestUtils {
     * GitHub token of the CI runner if available.
     */
   val gitHubToken: Option[String] = {
-    val propValue = System.getProperty("GITHUB_CI_RUNNER_TOKEN")
+    val propValue = System.getenv("GITHUB_CI_RUNNER_TOKEN")
     if (propValue == null || propValue.isBlank || propValue.isEmpty)
       None
     else
@@ -38,6 +38,21 @@ object PkgTestUtils {
     */
   def mkFlix: Flix = {
     val flix = new Flix()
-    flix.setOptions(flix.options.copy(githubToken = gitHubToken))
+    flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
   }
+
+  def mkTomlWithDeps(deps: String): String = {
+    s"""
+       |[package]
+       |name = "test"
+       |description = "test"
+       |version = "0.1.0"
+       |flix = "${Version.CurrentVersion}"
+       |authors = ["flix"]
+       |
+       |[dependencies]
+       |$deps
+       |""".stripMargin
+  }
+
 }

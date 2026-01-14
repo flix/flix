@@ -37,13 +37,8 @@ object ConstraintSolverInterface {
     * Resolves constraints in the given definition using the given inference result.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = defn match {
-    case KindedAst.Def(sym, spec, _, _) =>
-      if (flix.options.xprinttyper.contains(sym.toString)) {
-        Debug.startRecording()
-      }
-      val result = visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, econstrs0, tenv0, eqEnv0, root)
-      Debug.stopRecording()
-      result
+    case KindedAst.Def(_, spec, _, _) =>
+      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, econstrs0, tenv0, eqEnv0, root)
   }
 
   /**
@@ -51,10 +46,7 @@ object ConstraintSolverInterface {
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
     case KindedAst.Sig(_, _, None, _) => (SubstitutionTree.empty, Nil)
-    case KindedAst.Sig(sym, spec, Some(_), _) =>
-      if (flix.options.xprinttyper.contains(sym.toString)) {
-        Debug.startRecording()
-      }
+    case KindedAst.Sig(_, spec, Some(_), _) =>
       visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, Nil, tenv0, eqEnv0, root)
   }
 

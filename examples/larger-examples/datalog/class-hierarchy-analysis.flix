@@ -147,173 +147,173 @@ mod ClassHierarchyAnalysis {
     mod Test {
 
         @Test
-        def testIsSubtype01(): Bool =
+        def testIsSubtype01(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.isSubtype(emptyFacts(), "java.lang.String", "java.lang.Object");
-            result == false
+            Assert.assertFalse(result)
 
         @Test
-        def testIsSubtype02(): Bool =
+        def testIsSubtype02(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.lang.String", "java.lang.Object");
-            result == true
+            Assert.assertTrue(result)
 
         @Test
-        def testIsSubtype03(): Bool =
+        def testIsSubtype03(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.lang.Object", "java.lang.Object");
-            result == true
+            Assert.assertTrue(result)
 
         @Test
-        def testIsSubtype04(): Bool =
+        def testIsSubtype04(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.lang.Object", "java.lang.String");
-            result == false
+            Assert.assertFalse(result)
 
         @Test
-        def testIsSubtype05(): Bool =
+        def testIsSubtype05(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.util.ArrayList", "java.util.Collection");
-            result == true
+            Assert.assertTrue(result)
 
         @Test
-        def testIsSubtype06(): Bool =
+        def testIsSubtype06(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.isSubtype(facts(), "au.content.SpecialArrayList", "java.util.Collection");
-            result == true
+            Assert.assertTrue(result)
 
         @Test
-        def testIsSubtype07(): Bool =
+        def testIsSubtype07(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.util.List", "java.util.List");
-            result == true
+            Assert.assertTrue(result)
 
         @Test
-        def testHasField01(): Bool =
+        def testHasField01(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.hasField(facts(), "elementData");
             let expected = Vector#{
                 "java.util.ArrayList",
                 "au.content.SpecialArrayList"
             } |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testHasField02(): Bool =
+        def testHasField02(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.hasField(facts(), "size");
             let expected = Vector#{
                 "java.util.ArrayList",
                 "au.content.SpecialArrayList"
             } |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testHasField03(): Bool =
+        def testHasField03(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.hasField(facts(), "specialField");
             let expected = Vector#{
                 "au.content.SpecialArrayList"
             } |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testHasField04(): Bool =
+        def testHasField04(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.hasField(facts(), "markerField");
             let expected = Vector#{
                 "au.content.Marker"
             } |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testHasMethod01(): Bool =
+        def testHasMethod01(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.hasMethod(facts(), "toString");
             let expected = facts()#classes |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testHasMethod02(): Bool =
+        def testHasMethod02(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.hasMethod(facts(), "add");
             let expected = Vector#{
                 "java.util.ArrayList",
                 "au.content.SpecialArrayList"
             } |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testHasMethod03(): Bool =
+        def testHasMethod03(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.hasMethod(facts(), "contains");
             let expected = Vector#{
                 "java.lang.String"
             } |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testMissingMethods01(): Bool =
+        def testMissingMethods01(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.missingMethods(facts());
             let expected = Vector#{
                 ("java.util.ArrayList", "isEmpty"),
                 ("au.content.SpecialArrayList", "isEmpty")
             } |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalFinalClassExtension01(): Bool =
+        def testIllegalFinalClassExtension01(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.lang.String"} | facts() });
             let expected = Vector#{} |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalFinalClassExtension02(): Bool =
+        def testIllegalFinalClassExtension02(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.util.ArrayList"} | facts() });
             let expected = Vector#{"au.content.SpecialArrayList"} |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalFinalClassExtension03(): Bool =
+        def testIllegalFinalClassExtension03(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.lang.Object"} | facts() });
             let expected = facts()#classes |> Vector.filter(x -> x != "java.lang.Object") |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalFinalClassExtension04(): Bool =
+        def testIllegalFinalClassExtension04(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.lang.Object", "java.util.ArrayList"} | facts() } );
             let expected = facts()#classes |> Vector.filter(x -> x != "java.lang.Object") |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalNonThrowable01(): Bool =
+        def testIllegalNonThrowable01(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalNonThrowable({ throws = Vector#{"java.lang.String"} | facts() });
             let expected = Vector#{"java.lang.String"} |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalNonThrowable02(): Bool =
+        def testIllegalNonThrowable02(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalNonThrowable03(): Bool =
+        def testIllegalNonThrowable03(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalNonThrowable04(): Bool =
+        def testIllegalNonThrowable04(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable", "java.lang.Exception"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
-            result == expected
+            Assert.assertEq(expected = expected, result)
 
         @Test
-        def testIllegalMultipleInheritance01(): Bool =
+        def testIllegalMultipleInheritance01(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.memberOf(("au.content.MultipleInheritance", "au.content.Super1", "au.content.Super2"));
-            result == true
+            Assert.assertTrue(result)
 
         @Test
-        def testIllegalMultipleInheritance02(): Bool =
+        def testIllegalMultipleInheritance02(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.memberOf(("au.content.MultipleInheritance", "au.content.Super2", "au.content.Super1"));
-            result == true
+            Assert.assertTrue(result)
 
         @Test
-        def testIllegalMultipleInheritance03(): Bool =
+        def testIllegalMultipleInheritance03(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.map(match (x, _, _) -> x) |> Vector.memberOf("java.util.ArrayList");
-            result == false
+            Assert.assertFalse(result)
 
         @Test
-        def testIllegalMultipleInheritance04(): Bool =
+        def testIllegalMultipleInheritance04(): Unit \ Assert =
             let result = ClassHierarchyAnalysis.illegalMultipleInheritance(facts()) |> Vector.map(match (x, _, _) -> x) |> Vector.memberOf("java.lang.Object");
-            result == false
+            Assert.assertFalse(result)
 
         def emptyFacts(): ClassHierarchyAnalysis.Program = {
             classes = Vector#{},

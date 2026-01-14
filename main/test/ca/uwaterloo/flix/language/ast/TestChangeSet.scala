@@ -5,12 +5,14 @@ import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input, Source}
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.nio.file.Path
+
 class TestChangeSet extends AnyFunSuite {
   case class MySourceable(input: Input) extends Sourceable {
-    override def src: Source = Source(input, Array.emptyCharArray)
+    override def src: Source = Source.empty(input)
   }
 
-  private def mkInput(name: String): Input = Input.Text(name, "", Unrestricted)
+  private def mkInput(name: String): Input = Input.VirtualFile(Path.of(name), "", Unrestricted)
 
   private val input1 = mkInput("input1")
   private val input2 = mkInput("input2")

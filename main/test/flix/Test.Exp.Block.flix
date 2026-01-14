@@ -1,35 +1,37 @@
 mod Test.Exp.Block {
 
-    @test
-    def testBlock01(): Int32 = {42}
+    use Assert.assertEq
 
-    @test
-    def testBlock02(): Int32 = {{42}}
+    @Test
+    def testBlock01(): Unit \ Assert = assertEq(expected = 42, {42})
 
-    @test
-    def testBlock03(): Int32 = {{{42}}}
+    @Test
+    def testBlock02(): Unit \ Assert = assertEq(expected = 42, {{42}})
 
-    @test
-    def testBlock04(): Int32 = {
+    @Test
+    def testBlock03(): Unit \ Assert = assertEq(expected = 42, {{{42}}})
+
+    @Test
+    def testBlock04(): Unit \ Assert = {
         let x = {
             let y = 42;
                 y
         };
-        x + 1
+        assertEq(expected = 43, x + 1)
     }
 
-    @test
-    def testBlock05(): Int32 = {
+    @Test
+    def testBlock05(): Unit \ Assert = {
         let x = {
             let y = 42;
             let z = 21;
                 y + z
         };
-        x + 1
+        assertEq(expected = 64, x + 1)
     }
 
-    @test
-    def testBlock06(): Int32 = {
+    @Test
+    def testBlock06(): Unit \ Assert = {
         let x = {
             let y = 42;
             let z = 21;
@@ -40,29 +42,29 @@ mod Test.Exp.Block {
             let z = 11;
             y + z
         };
-        x + w
+        assertEq(expected = 158, x + w)
     }
 
-    @test
-    def testBlock07(): Int32 = {
+    @Test
+    def testBlock07(): Unit \ Assert = {
         let x = {42};
         let y = {21};
-            x + y
+        assertEq(expected = 63, x + y)
     }
 
-    @test
-    def testBlock08(): Int32 = {
+    @Test
+    def testBlock08(): Unit \ Assert = {
         let x = {42};
         let y = {
             let z = 21;
             let w = {11};
                 z + w
         };
-            x + y
+        assertEq(expected = 74, x + y)
     }
 
-    @test
-    def testBlock09(): Int32 = {
+    @Test
+    def testBlock09(): Unit \ Assert = {
         let x = {42};
         let y = {
             let z = 21;
@@ -73,7 +75,7 @@ mod Test.Exp.Block {
             };
                 z + w
         };
-            x + y
+        assertEq(expected = 79, x + y)
     }
 
 }

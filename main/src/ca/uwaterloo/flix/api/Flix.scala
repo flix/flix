@@ -32,6 +32,7 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
+import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
@@ -105,229 +106,6 @@ class Flix {
   private var cachedErrors: List[CompilationMessage] = Nil
 
   /**
-    * A sequence of internal inputs to be parsed into Flix ASTs.
-    *
-    * The core library *must* be present for any program to compile.
-    */
-  private val coreLibrary = List(
-    // Prelude
-    "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
-
-    // Comparison
-    "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
-
-    // Coerce
-    "Coerce.flix" -> LocalResource.get("/src/library/Coerce.flix"),
-
-    // Operators
-    "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
-    "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
-    "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
-    "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
-    "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
-
-    // Built-in
-    "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
-    "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
-    "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
-
-    // Lattices
-    "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
-    "LowerBound.flix" -> LocalResource.get("/src/library/LowerBound.flix"),
-    "UpperBound.flix" -> LocalResource.get("/src/library/UpperBound.flix"),
-    "JoinLattice.flix" -> LocalResource.get("/src/library/JoinLattice.flix"),
-    "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
-
-    // String
-    "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
-
-    // Reflect
-    "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
-
-    // References
-    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
-  )
-
-  /**
-    * A sequence of internal inputs to be parsed into Flix ASTs.
-    *
-    * The standard library is not required to be present for at least some programs to compile.
-    */
-  private val standardLibrary = List(
-    "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
-    "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
-    "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
-    "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
-    "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
-    "BPlusTree.flix" -> LocalResource.get("/src/library/BPlusTree.flix"),
-    "BufReader.flix" -> LocalResource.get("/src/library/BufReader.flix"),
-    "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
-    "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
-    "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
-    "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
-    "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
-    "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
-    "Discrete.flix" -> LocalResource.get("/src/library/Discrete.flix"),
-    "Down.flix" -> LocalResource.get("/src/library/Down.flix"),
-    "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
-    "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
-    "Int8.flix" -> LocalResource.get("/src/library/Int8.flix"),
-    "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
-    "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
-    "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
-    "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
-    "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
-    "KeyNotFound.flix" -> LocalResource.get("/src/library/KeyNotFound.flix"),
-    "List.flix" -> LocalResource.get("/src/library/List.flix"),
-    "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
-    "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
-    "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
-    "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
-    "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
-    "OutOfBounds.flix" -> LocalResource.get("/src/library/OutOfBounds.flix"),
-    "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
-    "Range.flix" -> LocalResource.get("/src/library/Range.flix"),
-    "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
-    "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
-    "String.flix" -> LocalResource.get("/src/library/String.flix"),
-    "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
-
-    "MutPriorityQueue.flix" -> LocalResource.get("/src/library/MutPriorityQueue.flix"),
-    "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
-    "MutDisjointSets.flix" -> LocalResource.get("/src/library/MutDisjointSets.flix"),
-    "MutHashMap.flix" -> LocalResource.get("/src/library/MutHashMap.flix"),
-    "MutHashSet.flix" -> LocalResource.get("/src/library/MutHashSet.flix"),
-    "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
-    "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
-    "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
-
-    "CharacterSet.flix" -> LocalResource.get("/src/library/CharacterSet.flix"),
-    "EncodingWriter.flix" -> LocalResource.get("/src/library/EncodingWriter.flix"),
-    "DecodingReader.flix" -> LocalResource.get("/src/library/DecodingReader.flix"),
-    "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
-    "Peekable.flix" -> LocalResource.get("/src/library/Peekable.flix"),
-    "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
-    "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
-
-    "Env.flix" -> LocalResource.get("/src/library/Env.flix"),
-    "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
-
-    "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
-    "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),
-    "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
-    "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
-    "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
-    "ForEach.flix" -> LocalResource.get("/src/library/ForEach.flix"),
-    "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
-    "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
-    "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
-    "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
-    "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
-    "Indexable.flix" -> LocalResource.get("/src/library/Indexable.flix"),
-    "IndexableMut.flix" -> LocalResource.get("/src/library/IndexableMut.flix"),
-    "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
-    "MonadZero.flix" -> LocalResource.get("/src/library/MonadZero.flix"),
-    "MonadZip.flix" -> LocalResource.get("/src/library/MonadZip.flix"),
-    "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
-    "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
-    "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
-    "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
-    "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
-    "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
-    "Collectable.flix" -> LocalResource.get("/src/library/Collectable.flix"),
-
-    "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
-
-    "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
-    "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
-    "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
-
-    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
-    "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
-    "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
-    "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
-    "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
-
-    "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
-    "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
-    "Fixpoint3/Boxing.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxing.flix"),
-    "Fixpoint3/BoxingType.flix" -> LocalResource.get("/src/library/Fixpoint3/BoxingType.flix"),
-    "Fixpoint3/Counter.flix" -> LocalResource.get("/src/library/Fixpoint3/Counter.flix"),
-    "Fixpoint3/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint3/Debugging.flix"),
-    "Fixpoint3/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint3/Interpreter.flix"),
-    "Fixpoint3/Options.flix" -> LocalResource.get("/src/library/Fixpoint3/Options.flix"),
-    "Fixpoint3/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint3/PrecedenceGraph.flix"),
-    "Fixpoint3/Predicate.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicate.flix"),
-    "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
-    "Fixpoint3/ProvenanceReconstruct.flix" -> LocalResource.get("/src/library/Fixpoint3/ProvenanceReconstruct.flix"),
-    "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
-    "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
-    "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
-    "Fixpoint3/TypeInfo.flix" -> LocalResource.get("/src/library/Fixpoint3/TypeInfo.flix"),
-    "Fixpoint3/UniqueInts.flix" -> LocalResource.get("/src/library/Fixpoint3/UniqueInts.flix"),
-    "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
-
-    "Fixpoint3/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Datalog.flix"),
-    "Fixpoint3/Ast/ExecutableRam.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/ExecutableRam.flix"),
-    "Fixpoint3/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Ram.flix"),
-    "Fixpoint3/Ast/Shared.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Shared.flix"),
-
-    "Fixpoint3/Phase/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Compiler.flix"),
-    "Fixpoint3/Phase/Hoisting.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Hoisting.flix"),
-    "Fixpoint3/Phase/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/IndexSelection.flix"),
-    "Fixpoint3/Phase/Lowering.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Lowering.flix"),
-    "Fixpoint3/Phase/ProvenanceAugment.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/ProvenanceAugment.flix"),
-    "Fixpoint3/Phase/RenamePredSyms.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/RenamePredSyms.flix"),
-    "Fixpoint3/Phase/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Simplifier.flix"),
-    "Fixpoint3/Phase/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Stratifier.flix"),
-
-    "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
-    "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
-    "Dns.flix" -> LocalResource.get("/src/library/Dns.flix"),
-    "DnsWithResult.flix" -> LocalResource.get("/src/library/DnsWithResult.flix"),
-    "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
-    "HttpWithResult.flix" -> LocalResource.get("/src/library/HttpWithResult.flix"),
-    "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
-    "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
-    "FileRead.flix" -> LocalResource.get("/src/library/FileRead.flix"),
-    "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
-    "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
-    "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
-    "IpAddr.flix" -> LocalResource.get("/src/library/IpAddr.flix"),
-    "Ipv4Addr.flix" -> LocalResource.get("/src/library/Ipv4Addr.flix"),
-    "Ipv6Addr.flix" -> LocalResource.get("/src/library/Ipv6Addr.flix"),
-    "Ping.flix" -> LocalResource.get("/src/library/Ping.flix"),
-    "PingWithResult.flix" -> LocalResource.get("/src/library/PingWithResult.flix"),
-    "ProcessHandle.flix" -> LocalResource.get("/src/library/ProcessHandle.flix"),
-    "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
-    "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
-    "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
-    "Shuffle.flix" -> LocalResource.get("/src/library/Shuffle.flix"),
-    "SocketAddr.flix" -> LocalResource.get("/src/library/SocketAddr.flix"),
-    "SocketAddrV4.flix" -> LocalResource.get("/src/library/SocketAddrV4.flix"),
-    "SocketAddrV6.flix" -> LocalResource.get("/src/library/SocketAddrV6.flix"),
-    "TcpAccept.flix" -> LocalResource.get("/src/library/TcpAccept.flix"),
-    "TcpAcceptWithResult.flix" -> LocalResource.get("/src/library/TcpAcceptWithResult.flix"),
-    "TcpBind.flix" -> LocalResource.get("/src/library/TcpBind.flix"),
-    "TcpBindWithResult.flix" -> LocalResource.get("/src/library/TcpBindWithResult.flix"),
-    "TcpConnect.flix" -> LocalResource.get("/src/library/TcpConnect.flix"),
-    "TcpConnectWithResult.flix" -> LocalResource.get("/src/library/TcpConnectWithResult.flix"),
-    "TcpServer.flix" -> LocalResource.get("/src/library/TcpServer.flix"),
-    "TcpSocket.flix" -> LocalResource.get("/src/library/TcpSocket.flix"),
-    "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
-
-    "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
-    "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
-    "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
-    "RichString.flix" -> LocalResource.get("/src/library/RichString.flix"),
-    "Formattable.flix" -> LocalResource.get("/src/library/Formattable.flix"),
-    "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
-    "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
-    "ToFlix.flix" -> LocalResource.get("/src/library/ToFlix.flix"),
-  )
-
-  /**
     * A map to track the time spent in each phase and sub-phase.
     */
   var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
@@ -378,50 +156,128 @@ class Flix {
   val jarLoader = new ExternalJarLoader
 
   /**
-    * Adds the given string `text` with the given `name`.
+    * Adds Flix source code from a file on the filesystem.
+    *
+    * @param p    the path to the Flix source file. Must be a readable `.flix` file.
+    * @param sctx the security context for the input.
     */
-  def addSourceCode(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    if (text == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
-    if (sctx == null)
-      throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.Text(name, text, sctx))
-    this
+  def addFile(p: Path)(implicit sctx: SecurityContext): Flix = {
+    isValidFlixFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        addInput(p.normalize().toString, Input.RealFile(p, sctx))
+        this
+    }
   }
 
   /**
-    * Removes the source code with the given `name`.
+    * Checks that `p` is a valid `.flix` filepath.
+    * `p` is valid if all the following holds:
+    *   1. `p` must not be `null`.
+    *   1. `p` must exist in the file system.
+    *   1. `p` must be a regular file.
+    *   1. `p` must be readable.
+    *   1. `p` must end with `.flix`.
     */
-  def remSourceCode(name: String): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.Plain))
-    this
+  private def isValidFlixFile(p: Path): Result[Unit, IllegalArgumentException] = {
+    if (p == null) {
+      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    }
+    val pNorm = p.normalize()
+    if (!Files.exists(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
+    }
+    if (!Files.isRegularFile(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
+    }
+    if (!Files.isReadable(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
+    }
+    if (!FileOps.checkExt(pNorm, "flix")) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .flix file."))
+    }
+    Result.Ok(())
   }
 
   /**
-    * Adds the given path `p` as Flix source file.
+    * Removes Flix source code associated with a file on the filesystem.
+    *
+    * @param p    the path to the Flix source file. Must be a `.flix` file.
+    * @param sctx the security context for the input.
     */
-  def addFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+  def remFile(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    addInput(p.toString, Input.TxtFile(p, sctx))
+    remInput(p.toString, Input.RealFile(p, sctx))
     this
   }
 
   /**
-    * Adds the given path `p` as a Flix package file.
+    * Adds Flix source code from a string with an associated virtual path.
+    *
+    * @param path the virtual path to associate with the source code.
+    * @param src  the Flix source code.
+    * @param sctx the security context for the input.
+    */
+  def addVirtualPath(path: Path, src: String)(implicit sctx: SecurityContext): Flix = {
+    if (path == null)
+      throw new IllegalArgumentException("'path' must be non-null.")
+    if (src == null)
+      throw new IllegalArgumentException("'src' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    addInput(path.toString, Input.VirtualFile(path, src, sctx))
+    this
+  }
+
+  /**
+    * Removes Flix source code associated with a virtual path.
+    *
+    * @param path the virtual path of the source code to remove.
+    */
+  def remVirtualPath(path: Path): Flix = {
+    if (path == null)
+      throw new IllegalArgumentException("'path' must be non-null.")
+    remInput(path.toString, Input.VirtualFile(path, "", /* unused */ SecurityContext.Plain))
+    this
+  }
+
+  /**
+    * Adds Flix source code from a string with an associated virtual URI.
+    *
+    * @param uri  the virtual URI to associate with the source code.
+    * @param src  the Flix source code.
+    * @param sctx the security context for the input.
+    */
+  def addVirtualUri(uri: URI, src: String)(implicit sctx: SecurityContext): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'uri' must be non-null.")
+    if (src == null)
+      throw new IllegalArgumentException("'src' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    addInput(uri.toString, Input.VirtualUri(uri, src, sctx))
+    this
+  }
+
+  /**
+    * Removes Flix source code associated with a virtual URI.
+    *
+    * @param uri the virtual URI of the source code to remove.
+    */
+  def remVirtualUri(uri: URI): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'uri' must be non-null.")
+    remInput(uri.toString, Input.VirtualUri(uri, "", /* unused */ SecurityContext.Plain))
+    this
+  }
+
+  /**
+    * Adds Flix source code from a Flix package file (.fpkg).
+    *
+    * @param p    the path to the Flix package file. Must be a readable `.fpkg` zip archive.
+    * @param sctx the security context for the input.
     */
   def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
     isValidFpkgFile(p) match {
@@ -434,7 +290,7 @@ class Flix {
 
   /**
     * Checks that `p` is a valid `.fpkg` filepath.
-    * `p` is valid if the following holds:
+    * `p` is valid if all the following holds:
     *   1. `p` must not be `null`.
     *   1. `p` must exist in the file system.
     *   1. `p` must be a regular file.
@@ -456,7 +312,7 @@ class Flix {
     if (!Files.isReadable(pNorm)) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
     }
-    if (!pNorm.getFileName.toString.endsWith(".fpkg")) {
+    if (!FileOps.checkExt(pNorm, "fpkg")) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
     }
     if (!FileOps.isZipArchive(pNorm)) {
@@ -466,32 +322,52 @@ class Flix {
   }
 
   /**
-    * Removes the given path `p` as a Flix source file.
+    * Adds a JAR file to the class loader and extends the set of known Java classes and interfaces.
+    *
+    * @param p the path to the JAR file. Must be a readable `.jar` file.
     */
-  def remFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
-    if (!p.getFileName.toString.endsWith(".flix"))
-      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
-
-    remInput(p.toString, Input.TxtFile(p, sctx))
-    this
+  def addJar(p: Path): Flix = {
+    isValidJarFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        val p1 = p.normalize()
+        jarLoader.addURL(p1.toUri.toURL)
+        extendKnownJavaClassesAndInterfaces(p1)
+        this
+    }
   }
 
   /**
-    * Adds the JAR file at path `p` to the class loader.
+    * Checks that `p` is a valid `.jar` filepath.
+    * `p` is valid if all the following holds:
+    *   1. `p` must not be `null`.
+    *   1. `p` must exist in the file system.
+    *   1. `p` must be a regular file.
+    *   1. `p` must be readable.
+    *   1. `p` must end with `.jar`.
+    *   1. `p` must be a zip archive.
     */
-  def addJar(p: Path): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
-
-    jarLoader.addURL(p.toUri.toURL)
-    extendKnownJavaClassesAndInterfaces(p)
-    this
+  private def isValidJarFile(p: Path): Result[Unit, IllegalArgumentException] = {
+    if (p == null) {
+      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    }
+    val pNorm = p.normalize()
+    if (!Files.exists(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
+    }
+    if (!Files.isRegularFile(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
+    }
+    if (!Files.isReadable(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
+    }
+    if (!FileOps.checkExt(pNorm, "jar")) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .jar file."))
+    }
+    if (!FileOps.isZipArchive(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
+    }
+    Result.Ok(())
   }
 
   /**
@@ -514,7 +390,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.Plain)
+      inputs += name -> Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -553,13 +429,9 @@ class Flix {
 
   /**
     * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to append the explanation.
     */
   def mkMessages(errors: List[CompilationMessage]): List[String] = {
-    if (options.explain)
-      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse(""))
-    else
-      errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
+    errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
   }
 
   /**
@@ -899,13 +771,25 @@ class Flix {
   }
 
   /**
+    * Parses the given `name` into a Path.
+    * If `name` is a file:// URI, it is parsed as a URI; otherwise it is parsed directly.
+    */
+  private def parsePath(name: String): Path = {
+    if (name.startsWith("file://")) {
+      java.nio.file.Paths.get(new java.net.URI(name))
+    } else {
+      Path.of(name)
+    }
+  }
+
+  /**
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
   private def getInputs: List[Input] = {
     val lib = options.lib match {
       case LibLevel.Nix => Nil
-      case LibLevel.Min => getLibraryInputs(coreLibrary)
-      case LibLevel.All => getLibraryInputs(coreLibrary ++ standardLibrary)
+      case LibLevel.Min => getLibraryInputs(Library.CoreLibrary)
+      case LibLevel.All => getLibraryInputs(Library.CoreLibrary ++ Library.StandardLibrary)
     }
     inputs.values.toList ::: lib
   }
@@ -914,7 +798,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.Unrestricted) :: xs
+    case (xs, (virtualPath, text)) => Input.VirtualFile(Path.of(virtualPath), text, SecurityContext.Unrestricted) :: xs
   }
 
   /**

@@ -49,12 +49,11 @@ instance Formattable[MutPriorityQueue[a, r]] with Formattable[a], Order[a] {
         fromString("MutPriorityQueue#{") + joinWith(Formattable.format, fromString(", "), MutPriorityQueue.toList(x)) + fromString("}")
 }
 
-mod MutPriorityQueue {
+pub mod MutPriorityQueue {
 
     ///
     /// Constant which stores the minimum capacity of a MutPriorityQueue.
     ///
-    @Internal
     pub def minCapacity(): Int32 = 8
 
     ///

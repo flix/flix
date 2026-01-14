@@ -1,117 +1,119 @@
 mod Test.Eff.Polymorphism {
 
-    @test
-    def testEffPoly01(): Bool =
+    use Assert.assertTrue
+
+    @Test
+    def testEffPoly01(): Unit \ Assert =
         let f = flip((x, y) -> x and y);
-        f(true, true)
+        assertTrue(f(true, true))
 
-    @test
-    def testEffPoly02(): Bool \ IO =
+    @Test
+    def testEffPoly02(): Unit \ Assert + IO =
         let f = flip((x, y) -> {io(); x and y});
-        f(true, true)
+        assertTrue(f(true, true))
 
-    @test
-    def testEffPoly03(): Bool =
+    @Test
+    def testEffPoly03(): Unit \ Assert =
         let f = flip(flip((x, y) -> x and y));
-        f(true, true)
+        assertTrue(f(true, true))
 
-    @test
-    def testEffPoly04(): Bool \ IO =
+    @Test
+    def testEffPoly04(): Unit \ Assert + IO =
         let f = flip(flip((x, y) -> {discard Array#{1, 2, 3} @ Static; x and y}));
-        f(true, true)
+        assertTrue(f(true, true))
 
-    @test
-    def testEffPoly05(): Bool =
+    @Test
+    def testEffPoly05(): Unit \ Assert =
         let f = x -> y -> x and y;
         let g = f(true);
-        g(true)
+        assertTrue(g(true))
 
-    @test
-    def testEffPoly06(): Bool \ IO =
+    @Test
+    def testEffPoly06(): Unit \ Assert + IO =
         let f = x -> y -> {io(); x and y};
         let g = f(true);
-        g(true)
+        assertTrue(g(true))
 
-    @test
-    def testEffPoly07(): Bool =
+    @Test
+    def testEffPoly07(): Unit \ Assert =
         let f = x -> y -> {io(); x and y};
         let _ = f(true);
-        true
+        assertTrue(true)
 
-    @test
-    def testEffPoly08(): Bool \ IO =
+    @Test
+    def testEffPoly08(): Unit \ Assert + IO =
         let f = x -> {io(); y -> x and y};
         discard f(true);
-        true
+        assertTrue(true)
 
-    @test
-    def testEffPoly09(): Bool \ IO =
+    @Test
+    def testEffPoly09(): Unit \ Assert + IO =
         let f = x -> {io(); y -> x and y};
         let g = f(true);
-        g(true)
+        assertTrue(g(true))
 
-    @test
-    def testEffPoly10(): Bool =
+    @Test
+    def testEffPoly10(): Unit \ Assert =
         let f = x -> x;
         let g = y -> y;
-        (f >> g)(true)
+        assertTrue((f >> g)(true))
 
-    @test
-    def testEffPoly11(): Bool \ IO =
+    @Test
+    def testEffPoly11(): Unit \ Assert + IO =
         let f = x -> {io(); x};
         let g = y -> y;
-        (f >> g)(true)
+        assertTrue((f >> g)(true))
 
-    @test
-    def testEffPoly12(): Bool \ IO =
+    @Test
+    def testEffPoly12(): Unit \ Assert + IO =
         let f = x -> x;
         let g = y -> {io(); y};
-        (f >> g)(true)
+        assertTrue((f >> g)(true))
 
-    @test
-    def testEffPoly13(): Bool \ IO =
+    @Test
+    def testEffPoly13(): Unit \ Assert + IO =
         let f = x -> {io(); x};
         let g = y -> {io(); y};
-        (f >> g)(true)
+        assertTrue((f >> g)(true))
 
-    @test
-    def testEffPoly14(): Bool =
+    @Test
+    def testEffPoly14(): Unit \ Assert =
         let f = x -> {io(); x};
         let g = y -> {io(); y};
         let _ = f >> g;
-        true
+        assertTrue(true)
 
-    @test
-    def testEffPoly15(): Bool =
+    @Test
+    def testEffPoly15(): Unit \ Assert =
         let hof = f -> f(true);
-        hof(x -> x)
+        assertTrue(hof(x -> x))
 
-    @test
-    def testEffPoly16(): Bool \ IO =
+    @Test
+    def testEffPoly16(): Unit \ Assert + IO =
         let hof = f -> {io(); f(true)};
-        hof(x -> x)
+        assertTrue(hof(x -> x))
 
-    @test
+    @CompileTest
     def testEffPoly17(): Bool -> Bool =
         x -> not x
 
-    @test
+    @CompileTest
     def testEffPoly18(): Bool -> Bool \ IO =
         x -> {io(); not x}
 
-    @test
+    @CompileTest
     def testEffPoly19(): Bool -> Bool -> Bool =
         x -> y -> x and y
 
-    @test
+    @CompileTest
     def testEffPoly20(): Bool -> (Bool -> Bool \ IO) =
         x -> y -> {io(); x and y}
 
-    @test
+    @CompileTest
     def testEffPoly21(): Bool -> (Bool -> Bool) \ IO =
         x -> {io(); y -> x and y}
 
-    @test
+    @CompileTest
     def testEffPoly22(): Bool -> (Bool -> Bool \ IO) \ IO =
         x -> {io(); y -> {io(); x and y}}
 

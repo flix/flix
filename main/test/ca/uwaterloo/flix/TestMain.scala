@@ -121,18 +121,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.args == Seq("arg1", "arg2"))
   }
 
-  test("--explain foo") {
-    val args = Array("--explain", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.explain)
-  }
-
-  test("--entrypoint foo") {
-    val args = Array("--entrypoint", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.entryPoint.nonEmpty)
-  }
-
   test("--json") {
     val args = Array("--json")
     val opts = Main.parseCmdOpts(args).get
@@ -205,12 +193,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xlib == LibLevel.All)
   }
 
-  test("--explain") {
-    val args = Array("--explain")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.explain)
-  }
-
   test("--Xno-deprecated") {
     val args = Array("--Xno-deprecated")
     val opts = Main.parseCmdOpts(args).get
@@ -221,12 +203,6 @@ class TestMain extends AnyFunSuite {
     val args = Array("--Xsummary")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xsummary)
-  }
-
-  test("--Xchaos-monkey") {
-    val args = Array("--Xchaos-monkey")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xchaosMonkey)
   }
 
 }

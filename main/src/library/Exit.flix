@@ -26,7 +26,7 @@ eff Exit {
 
 }
 
-mod Exit {
+pub mod Exit {
 
     import java.lang.System
 

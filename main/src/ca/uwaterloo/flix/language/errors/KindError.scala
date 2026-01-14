@@ -37,16 +37,25 @@ object KindError {
     * @param loc the location where the error occurred.
     */
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError {
-    override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}'"
+    def code: ErrorCode = ErrorCode.E3407
+
+    override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
+      s""">> Mismatched kinds: '${red(formatKind(k1))}' and '${red(formatKind(k2))}'.
          |
-         |${code(loc, "mismatched kind.")}
+         |${src(loc, "mismatched kind usage")}
          |
-         |Kind One: ${cyan(formatKind(k1))}
-         |Kind Two: ${magenta(formatKind(k2))}
+         |First kind:  ${cyan(formatKind(k1))}
+         |Second kind: ${magenta(formatKind(k2))}
+         |
+         |${underline("Explanation:")} A type variable must have a consistent kind throughout
+         |its scope. For example:
+         |
+         |  def f(x: a): Int32 \\ a = ???
+         |
+         |Here 'a' is used as both a type (x: a) and an effect (\\ a), which is impossible.
          |""".stripMargin
     }
   }
@@ -59,16 +68,18 @@ object KindError {
     * @param loc          the location where the error occurred.
     */
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
-    override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
+    def code: ErrorCode = ErrorCode.E3512
+
+    override def summary: String = s"Unexpected kind: expected '${formatKind(expectedKind)}', found '${formatKind(actualKind)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
+      s""">> Unexpected kind: expected '${cyan(formatKind(expectedKind))}', found '${red(formatKind(actualKind))}'.
          |
-         |${code(loc, "unexpected kind.")}
+         |${src(loc, "has unexpected kind")}
          |
-         |Expected kind: ${cyan(formatKind(expectedKind))}
-         |Actual kind:   ${magenta(formatKind(actualKind))}
+         |Expected: ${cyan(formatKind(expectedKind))}
+         |Actual:   ${red(formatKind(actualKind))}
          |""".stripMargin
     }
   }
@@ -79,20 +90,19 @@ object KindError {
     * @param loc The location where the error occurred.
     */
   case class UninferrableKind(loc: SourceLocation) extends KindError {
-    override def summary: String = "Unable to infer kind."
+    def code: ErrorCode = ErrorCode.E3623
+
+    override def summary: String = "Uninferrable kind: cannot determine kind from context."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unable to infer kind.
+      s""">> Uninferrable kind: cannot determine kind from context.
          |
-         |${code(loc, "uninferred kind.")}
+         |${src(loc, "uninferrable kind")}
          |
+         |${underline("Explanation:")} The kind of this type cannot be determined from the
+         |surrounding context. Add a kind annotation to resolve the ambiguity.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip: ")} Add a kind annotation."
-    })
   }
 }

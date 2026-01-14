@@ -23,25 +23,16 @@ pub struct MutDisjointSets[t: Type, r: Region] {
     forest: MutMap[t, MutDisjointSets.Node[t, r], r]
 }
 
-mod MutDisjointSets {
+pub mod MutDisjointSets {
 
     ///
     /// Represents an element in the disjoint set forest.
     ///
-    @Internal
     pub struct Node[t: Type, r: Region]{
         rc: Region[r],
         value: t,
         mut parent: Option[Node[t, r]],
         mut rank: Int32
-    }
-
-    mod Node {
-        pub def parent(n: Node[t, r]): Option[Node[t, r]] \ r = n->parent
-        pub def rank(n: Node[t, r]): Int32 \ r = n->rank
-        pub def incrementRank(n: Node[t, r]): Unit \ r = n->rank = n->rank + 1
-        pub def setParent(newParent: Option[Node[t, r]], n: Node[t, r]): Unit \ r = n->parent = newParent
-        pub def value(n: Node[t, r]): t = n->value
     }
 
     ///
@@ -168,7 +159,7 @@ mod MutDisjointSets {
     ///
     /// Returns true if `x` and `y` have the same value.
     ///
-    def equal(x: Node[t, r], y: Node[t, r]): Bool with Eq[t] = 
+    def equal(x: Node[t, r], y: Node[t, r]): Bool with Eq[t] =
         Node.value(x) == Node.value(y)
 
     ///

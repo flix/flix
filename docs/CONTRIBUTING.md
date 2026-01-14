@@ -11,7 +11,7 @@ We suggest that you proceed by following these steps:
 
 2. Express interest in the issue on GitHub.
     - We try to ensure that multiple people are not working on the same issue.
- 
+
 3. We discuss the issue and how best to fix it.
     - The idea is to come up with an implementation plan and to hash out any design choices.
 

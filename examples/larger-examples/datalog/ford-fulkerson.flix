@@ -326,24 +326,24 @@ mod FordFulkerson {
             }
 
     @Test
-    def testAugmentingPath01(): Bool =
+    def testAugmentingPath01(): Unit \ Assert =
         let s = 1;
         let t = 5;
         let g = Set#{ (1, 1, 0, 2), (2, 1, 0, 3), (3, 1, 0, 4), (3, 1, 0, 8), (4, 1, 0, 5), (3, 1, 0, 5) };
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        p == Path(5 :: 3 :: 2 :: 1 :: Nil)
+        Assert.assertEq(expected = Path(5 :: 3 :: 2 :: 1 :: Nil), p)
 
     @Test
-    def testAugmentingPath02(): Bool =
+    def testAugmentingPath02(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> zeroFlow;
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
         let foundAShortestPath = Path(5 :: 4 :: 3 :: 0 :: Nil) == p or Path(5 :: 4 :: 1 :: 0 :: Nil) == p or Path(5 :: 2 :: 1 :: 0 :: Nil) == p;
-        foundAShortestPath // Shortest path in reverse order
+        Assert.assertTrue(foundAShortestPath) // Shortest path in reverse order
 
     @Test
-    def testAugmentingPath03(): Bool =
+    def testAugmentingPath03(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(x -> match x {
@@ -354,10 +354,10 @@ mod FordFulkerson {
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
         let foundShortestPath = p == Path(5 :: 4 :: 1 :: 0 :: Nil) or p == Path(5 :: 2 :: 1 :: 0 :: Nil);
-        foundShortestPath
+        Assert.assertTrue(foundShortestPath)
 
     @Test
-    def testAugmentingPath04(): Bool =
+    def testAugmentingPath04(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(x -> match x {
@@ -369,10 +369,10 @@ mod FordFulkerson {
             case (a, u, b)  => (a, u , 0 , b)
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        p == Path(5 :: 2 :: 1 :: 0 :: Nil)
+        Assert.assertEq(expected = Path(5 :: 2 :: 1 :: 0 :: Nil), p)
 
     @Test
-    def testAugmentingPath05(): Bool =
+    def testAugmentingPath05(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(x -> match x {
@@ -386,19 +386,19 @@ mod FordFulkerson {
             case (a, u , b) => (a, u , 0 , b)
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        p == Path(5 :: 2 :: 4 :: 1 :: 0 :: Nil)
+        Assert.assertEq(expected = Path(5 :: 2 :: 4 :: 1 :: 0 :: Nil), p)
 
     @Test
-    def testAugmentingPath06(): Bool =
+    def testAugmentingPath06(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = zeroFlow(exampleGraph02());
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
         let foundShortestPath = Path(5 :: 2 :: 1 :: 0 :: Nil) == p or Path(5 :: 4 :: 3 :: 0 :: Nil) == p;
-        foundShortestPath
+        Assert.assertTrue(foundShortestPath)
 
     @Test
-    def testAugmentingPath07(): Bool =
+    def testAugmentingPath07(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph02() |> zeroFlow |> Functor.map(x -> match x {
@@ -408,10 +408,10 @@ mod FordFulkerson {
             case _             => x
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        p == Path(5 :: 2 :: 1 :: 0 :: Nil)
+        Assert.assertEq(expected = Path(5 :: 2 :: 1 :: 0 :: Nil), p)
 
     @Test
-    def testAugmentingPath08(): Bool =
+    def testAugmentingPath08(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph02() |> zeroFlow |> Functor.map(x -> match x {
@@ -423,36 +423,36 @@ mod FordFulkerson {
             case (4, 10, 0, 5) => (4, 10, 10, 5)
             case _             => x
         });
-        augmentingPath(s, t, g) == None
+        Assert.assertEq(expected = None, augmentingPath(s, t, g))
 
     @Test
-    def testMinCapacity01(): Bool =
+    def testMinCapacity01(): Unit \ Assert =
         let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
         let g = Set#{(1, 3, 0, 2), (1, 4, 0, 3), (2, 1, 0, 3), (3, 5, 0, 4), (4, 10, 0, 5)};
-        minCapacity(p, g) == 1
+        Assert.assertEq(expected = 1, minCapacity(p, g))
 
     @Test
-    def testMinCapacity02(): Bool =
+    def testMinCapacity02(): Unit \ Assert =
         let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
         let g = Set#{(1, 3, 0, 2), (1, 4, 0, 3), (2, 3, 0, 3), (3, 5, 0, 4), (4, 10, 0, 5), (6, 1, 0, 7)};
-        minCapacity(p, g) == 3
+        Assert.assertEq(expected = 3, minCapacity(p, g))
 
     @Test
-    def testMinCapacity03(): Bool =
+    def testMinCapacity03(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> zeroFlow;
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
         if (p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
-            minCapacity(p, g) == 9 // The path is picked as in testAugmentingPath02
+            Assert.assertEq(expected = 9, minCapacity(p, g)) // The path is picked as in testAugmentingPath02
         } else if (p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
-            minCapacity(p, g) == 4 // The path is picked as in testAugmentingPath02
+            Assert.assertEq(expected = 4, minCapacity(p, g)) // The path is picked as in testAugmentingPath02
         } else {
-            minCapacity(p, g) == 8 // The path is picked as in testAugmentingPath02
+            Assert.assertEq(expected = 8, minCapacity(p, g)) // The path is picked as in testAugmentingPath02
         }
 
     @Test
-    def testMinCapacity04(): Bool =
+    def testMinCapacity04(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(x -> match x {
@@ -463,13 +463,13 @@ mod FordFulkerson {
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
         if (p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
-            minCapacity(p, g) == 1 // The path is picked as in testAugmentingPath03
+            Assert.assertEq(expected = 1, minCapacity(p, g)) // The path is picked as in testAugmentingPath03
         } else {
-            minCapacity(p, g) == 4 // The path is picked as in testAugmentingPath03
+            Assert.assertEq(expected = 4, minCapacity(p, g)) // The path is picked as in testAugmentingPath03
         }
 
     @Test
-    def testMinCapacity05(): Bool =
+    def testMinCapacity05(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(x -> match x {
@@ -481,10 +481,10 @@ mod FordFulkerson {
             case (a, u , b) => (a, u , 0 , b)
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        minCapacity(p, g) == 4 // The path is picked as in testAugmentingPath04
+        Assert.assertEq(expected = 4, minCapacity(p, g)) // The path is picked as in testAugmentingPath04
 
     @Test
-    def testMinCapacity06(): Bool =
+    def testMinCapacity06(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(x -> match x {
@@ -498,18 +498,18 @@ mod FordFulkerson {
             case (a, u , b) => (a, u , 0 , b)
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        minCapacity(p, g) == 5 // The path is picked as in testAugmentingPath05
+        Assert.assertEq(expected = 5, minCapacity(p, g)) // The path is picked as in testAugmentingPath05
 
     @Test
-    def testMinCapacity07(): Bool =
+    def testMinCapacity07(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = zeroFlow(exampleGraph02());
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        minCapacity(p, g) == 10 // The path is picked as in testAugmentingPath06
+        Assert.assertEq(expected = 10, minCapacity(p, g)) // The path is picked as in testAugmentingPath06
 
     @Test
-    def testMinCapacity08(): Bool =
+    def testMinCapacity08(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph02() |> zeroFlow |> Functor.map(x -> match x {
@@ -519,10 +519,10 @@ mod FordFulkerson {
             case _             => x
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        minCapacity(p, g) == 10 // The path is picked as in testAugmentingPath07
+        Assert.assertEq(expected = 10, minCapacity(p, g)) // The path is picked as in testAugmentingPath07
 
     @Test
-    def testIncreaseFlow01(): Bool =
+    def testIncreaseFlow01(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> zeroFlow;
@@ -538,15 +538,15 @@ mod FordFulkerson {
         let g2 = Vector#{(0, 10, 4, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 0, 5)};
         let g3 = Vector#{(0, 10, 8, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 0, 2), (1, 8, 8, 4), (2, 10, 0, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 8, 5)};
         if (p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
-            increaseFlow(p, incr, g) == g1
+            Assert.assertEq(expected = g1, increaseFlow(p, incr, g))
         } else if (p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
-            increaseFlow(p, incr, g) == g2
+            Assert.assertEq(expected = g2, increaseFlow(p, incr, g))
         } else {
-            increaseFlow(p, incr, g) == g3
+            Assert.assertEq(expected = g3, increaseFlow(p, incr, g))
         }
 
     @Test
-    def testIncreaseFlow02(): Bool =
+    def testIncreaseFlow02(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(x -> match x {
@@ -565,13 +565,13 @@ mod FordFulkerson {
         }) |> Foldable.toVector;
         let g2 = Vector#{(0, 10, 4, 1), (0, 10, 9, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 9, 4), (4, 6, 0, 2), (4, 10, 9, 5)};
         if (p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
-            increaseFlow(p, incr, g) == g1
+            Assert.assertEq(expected = g1, increaseFlow(p, incr, g))
         } else {
-            increaseFlow(p, incr, g) == g2
+            Assert.assertEq(expected = g2, increaseFlow(p, incr, g))
         }
 
     @Test
-    def testIncreaseFlow03(): Bool =
+    def testIncreaseFlow03(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(x -> match x {
@@ -590,10 +590,10 @@ mod FordFulkerson {
             case (2, 10, 0, 5) => (2, 10, 4, 5)
             case _             => x
         }) |> Foldable.toVector;
-        increaseFlow(p, incr, g) == g1
+        Assert.assertEq(expected = g1, increaseFlow(p, incr, g))
 
     @Test
-    def testIncreaseFlow04(): Bool =
+    def testIncreaseFlow04(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = zeroFlow(exampleGraph02());
@@ -607,13 +607,13 @@ mod FordFulkerson {
         }) |> Foldable.toVector;
         let g2 = Vector#{(0, 10, 10, 1), (0, 10, 0, 3), (1, 25, 10, 2), (2, 10, 10, 5), (3, 15, 0, 4), (4, 6, 0, 1), (4, 10, 0, 5)};
         if (p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
-            increaseFlow(p, incr, g) == g1
+            Assert.assertEq(expected = g1, increaseFlow(p, incr, g))
         } else {
-            increaseFlow(p, incr, g) == g2
+            Assert.assertEq(expected = g2, increaseFlow(p, incr, g))
         }
 
     @Test
-    def testIncreaseFlow05(): Bool =
+    def testIncreaseFlow05(): Unit \ Assert =
         let s = 0;
         let t = 5;
         let g = exampleGraph02() |> zeroFlow |> Functor.map(x -> match x {
@@ -630,10 +630,10 @@ mod FordFulkerson {
             case (2, 10, 0, 5) => (2, 10, 10, 5)
             case _             => x
         });
-        increaseFlow(p, incr, g) == g1
+        Assert.assertEq(expected = g1, increaseFlow(p, incr, g))
 
     @Test
-    def testGetMaxFlow01(): Bool =
+    def testGetMaxFlow01(): Unit \ Assert =
         let t = 5;
         let g = exampleGraph02() |> zeroFlow |> Functor.map(x -> match x {
             case (0, 10, 0, 1) => (0, 10, 10, 1)
@@ -644,22 +644,22 @@ mod FordFulkerson {
             case (4, 10, 0, 5) => (4, 10, 10, 5)
             case _             => x
         });
-        getMaxFlow(t, g) == 20
+        Assert.assertEq(expected = 20, getMaxFlow(t, g))
 
     @Test
-    def testExampleGraph01(): Bool =
-        maxFlow(0, 5, exampleGraph01()) == 19
+    def testExampleGraph01(): Unit \ Assert =
+        Assert.assertEq(expected = 19, maxFlow(0, 5, exampleGraph01()))
 
     @Test
-    def testExampleGraph02(): Bool =
-        maxFlow(0, 5, exampleGraph02()) == 20
+    def testExampleGraph02(): Unit \ Assert =
+        Assert.assertEq(expected = 20, maxFlow(0, 5, exampleGraph02()))
 
     @Test
-    def testExampleGraph03(): Bool =
-        maxFlow(0, 3, exampleGraph03()) == 2000
+    def testExampleGraph03(): Unit \ Assert =
+        Assert.assertEq(expected = 2000, maxFlow(0, 3, exampleGraph03()))
 
     @Test
-    def testExampleGraph04(): Bool =
-        maxFlow(0, 10, exampleGraph04()) == 20
+    def testExampleGraph04(): Unit \ Assert =
+        Assert.assertEq(expected = 20, maxFlow(0, 10, exampleGraph04()))
 
 }

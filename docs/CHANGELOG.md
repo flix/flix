@@ -1,5 +1,11 @@
 # Changelog
 
+Version 0.67.2:
+- Library: Minor fixes (thanks Casper, Daniel, Magnus, Matt, Patrick!)
+
+Version 0.67.1:
+- Compiler: Simplified command-line arguments (thanks Magnus!)
+
 Version 0.67.0:
 - Language: Added support for `@DefaultHandler`s (thanks Neo!)
 - Language: Added support for if-statements (thanks Casper!)

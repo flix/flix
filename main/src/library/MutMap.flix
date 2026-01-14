@@ -63,7 +63,7 @@ instance Formattable[MutMap[k, v, r]] with Formattable[k], Formattable[v] {
         fromString("MutMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
 }
 
-mod MutMap {
+pub mod MutMap {
 
     ///
     /// Returns a string representation of the given MutMap `m`.

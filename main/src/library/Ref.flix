@@ -18,7 +18,7 @@ struct Ref[a, r] {
     mut v: a
 }
 
-mod Ref {
+pub mod Ref {
 
     ///
     /// Returns a new reference to `x` in the region `rc`.

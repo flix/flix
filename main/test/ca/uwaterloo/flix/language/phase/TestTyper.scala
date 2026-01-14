@@ -2303,6 +2303,272 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedPredicateDenotation](result)
   }
 
+  test("Test.DefaultHandlerNotInModule.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |@DefaultHandler
+        |pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.DefaultHandlerNotInModule](result)
+  }
+  
+  test("Test.IllegalDefaultHandlerSignature.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.02") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef, u: a): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.03") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: a): a \ (ef - E) + IO =
+        |            checked_ecast(f)
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.04") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): Bool \ (ef - E) + IO =
+        |            run {
+        |                true
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.05") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ {}): a \ IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.06") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Bool -> a \ ef, u: a): a \ (ef - E) + IO =
+        |            run {
+        |                f(true)
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.07") {
+    val input =
+      """
+        |pub eff E1 {
+        |   def op(): Unit
+        |}
+        |
+        |pub eff E2 {
+        |   def op(): Unit
+        |}
+        |
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO + E2 =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.NonPublicDefaultHandler.01") {
+    val input =
+      """
+        |pub eff E1 {
+        |   def op(): Unit
+        |}
+        |
+        |mod E1 {
+        |    @DefaultHandler
+        |    def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.NonPublicDefaultHandler](result)
+  }
+
+  test("Test.DuplicateDefaultHandler.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |
+        |    @DefaultHandler
+        |    pub def runWithIO2(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.DuplicateDefaultHandler](result)
+  }
+
   test("TypeError.NonUnitStatement.01") {
     val input =
       """
@@ -2330,5 +2596,5 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
   }
-
+ 
 }

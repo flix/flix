@@ -61,7 +61,7 @@ instance Formattable[Array[a, r]] with Formattable[a] {
         fromString("Array#{") + joinWith(Formattable.format, fromString(", "), Array.toList(x)) + fromString("}")
 }
 
-mod Array {
+pub mod Array {
     import java.lang.Object
     import java.lang.System
     import java.util.Arrays
@@ -295,7 +295,7 @@ mod Array {
         reduceLeft(Order.maxBy(cmp), a)
 
     ///
-    /// Alias for `IndexOfLeft`
+    /// Alias for `indexOfLeft`
     ///
     pub def indexOf(x: a, a: Array[a, r]): Option[Int32] \ r with Eq[a] =
         indexOfLeft(x,a)
@@ -440,8 +440,6 @@ mod Array {
     ///
     /// Returns the result of applying `f` to every element in `a`.
     ///
-    /// The result is an empty array.
-    ///
     pub def map(rc1: Region[r1], f: a -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
         init(rc1, i -> f(get(i, a)), len)
@@ -464,7 +462,7 @@ mod Array {
     ///
     /// Returns the result of applying `f` to every element in `a` along with that element's index.
     ///
-    /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
+    /// That is, the result is of the form: `[ f(0, a[0]), f(1, a[1]), ... ]`.
     ///
     pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
@@ -638,7 +636,7 @@ mod Array {
     ///
     /// Return the new write position which is `pos + length(sub)`.
     ///
-    /// Helper function for `intercalate` which needs to do sucessive writing.
+    /// Helper function for `intercalate` which needs to do successive writing.
     ///
     def arrayWrites(pos: Int32, sub: Array[a, r1], out: Array[a, r2]): Int32 \ { r1, r2 } =
         updateSequence(pos, sub, out);
@@ -713,7 +711,7 @@ mod Array {
             loop(0)
 
     ///
-    /// Returns `true` if and only if `a1` is a infix of `a2`.
+    /// Returns `true` if and only if `a1` is an infix of `a2`.
     ///
     pub def isInfixOf(a1: Array[a, r1], a2: Array[a, r2]): Bool \ { r1, r2 } with Eq[a] =
         let len1 = length(a1);
@@ -1088,47 +1086,45 @@ mod Array {
     /// A subarray is created by iterating through the remaining elements of `a` from left to right and adding an
     /// element to the subarray if and only if doing so creates no conflicts with the elements already in the subarray.
     ///
-    /// The function `f` must be pure.
+    /// The function `f` must be pure and define an equivalence relation.
     ///
-    pub def groupBy(rc1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r1] \ { r2, r1 } =
+    pub def groupWith(rc1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r1] \ { r2, r1 } =
         let xs = toList(a);
         groupByHelper(rc1, f, xs, Nil) |> List.toArray(rc1)
 
     ///
-    /// Helper function for `groupBy`.
+    /// Partitions `a` into subarrays such that for any two elements `x` and `y` in a subarray,
+    /// if `f(x)` and `f(y)` are equal according to `Eq` on `b`.
+    ///
+    /// A subarray is created by iterating through the remaining elements of `a` from left to right and adding an
+    /// element to the subarray if and only if doing so creates no conflicts with the elements already in the subarray.
+    ///
+    pub def groupBy(rc1: Region[r2], f: a -> b, a: Array[a, r1]): Array[Array[a, r2], r2] \ { r1, r2 } with Eq[b] =
+        groupWith(rc1, Eq.eq `on` f, a)
+
+    ///
+    /// Helper function for `groupWith`.
     ///
     def groupByHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ r = match xs {
         case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (rc1, rc2) = extractHelper(rc, f, rs, x :: Nil, Nil);
+            let (rc1, rc2) = extractHelper(rc, f, rs, Nel.singleton(x), Nil);
             groupByHelper(rc, f, rc2, rc1 :: ac)
     }
 
     ///
-    /// Helper function for `groupBy`.
+    /// Helper function for `groupWith`.
     ///
-    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a, r], List[a]) \ r = match xs {
+    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Array[a, r], List[a]) \ r = match xs {
         case Nil => {
-            let a = List.reverse(ps);
-            (List.toArray(rc, a), List.reverse(ns))
+            let a = Nel.reverse(ps);
+            (Nel.toArray(rc, a), List.reverse(ns))
         }
         case x :: rs =>
-            if (agreeHelper(f, x, ps))
-                extractHelper(rc, f, rs, x :: ps, ns)
+            if (f(x, Nel.head(ps)))
+                extractHelper(rc, f, rs, Nel.cons(x, ps), ns)
             else
                 extractHelper(rc, f, rs, ps, x :: ns)
-    }
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
-        case Nil => true
-        case x :: rs =>
-            if ((f(x, a) and f(a, x)) == false)
-                false
-            else
-                agreeHelper(f, a, rs)
     }
 
     ///

@@ -22,7 +22,7 @@ instance UpperBound[Int32] {
     pub def maxValue(): Int32 = Int32.maxValue()
 }
 
-mod Int32 {
+pub mod Int32 {
 
     import java.lang.Integer
     import java.lang.NumberFormatException
@@ -141,14 +141,14 @@ mod Int32 {
     }
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` right by `dist` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int32): Int32 =
         bitwiseOr(logicalRightShift(dist = dist#dist, x), leftShift(x, -dist#dist))
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` left by `dist` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int32): Int32 =

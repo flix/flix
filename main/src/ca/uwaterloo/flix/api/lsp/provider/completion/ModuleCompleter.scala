@@ -52,7 +52,7 @@ object ModuleCompleter {
   private def inScope(module: Symbol.ModuleSym, scope: LocalScope): Boolean = {
     val thisName = module.toString
     val isResolved = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Namespace(thatName, _, _, _)) => thatName.toString == thisName
+      case Resolution.Declaration(Mod(_, _, thatName, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Trait(_, _, _, thatName, _, _, _, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Enum(_, _, _, thatName, _, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _)) => thatName.toString == thisName

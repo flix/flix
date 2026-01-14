@@ -41,7 +41,7 @@ instance Formattable[RichString] {
     pub def format(x: RichString): RichString = x
 }
 
-mod RichString {
+pub mod RichString {
 
     ///
     /// Represents a color with RGB components or the terminal's default color.
@@ -72,7 +72,7 @@ mod RichString {
     pub enum Span {
         case Span({text = String, fgColor = Color, bgColor = Color, styles = Set[Style]})
     }
-    
+
     ///
     /// A record type representing a palette of colors.
     ///

@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import java.net.URI
 import java.nio.file.Path
 
 /**
@@ -26,8 +27,9 @@ sealed trait Input {
     * Returns the security context associated with the input.
     */
   def security: SecurityContext = this match {
-    case Input.Text(_, _, sctx) => sctx
-    case Input.TxtFile(_, sctx) => sctx
+    case Input.RealFile(_, sctx) => sctx
+    case Input.VirtualFile(_, _, sctx) => sctx
+    case Input.VirtualUri(_, _, sctx) => sctx
     case Input.PkgFile(_, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
     case Input.Unknown => SecurityContext.Unrestricted
@@ -38,23 +40,37 @@ sealed trait Input {
 object Input {
 
   /**
-    * Represents an input that originates from a virtual path.
+    * Represents an input that points to the file system and which must exist.
     */
-  case class Text(name: String, text: String, sctx: SecurityContext) extends Input {
-    override def hashCode(): Int = name.hashCode
+  case class RealFile(realPath: Path, sctx: SecurityContext) extends Input
+
+  /**
+    * Represents an input with the source code text `src` located at `virtualPath` -- a path that may not actually exist.
+    */
+  case class VirtualFile(virtualPath: Path, src: String, sctx: SecurityContext) extends Input {
+    override def hashCode(): Int = virtualPath.hashCode
 
     override def equals(obj: Any): Boolean = obj match {
-      case that: Text => this.name == that.name
+      case that: VirtualFile => this.virtualPath == that.virtualPath
       case _ => false
     }
 
-    override def toString: String = name
+    override def toString: String = virtualPath.toString
   }
 
   /**
-    * Represents an input that originates from the filesystem.
+    * Represents an input with the source code text `src` located at `virtualUri` -- a URI that may not actually exist.
     */
-  case class TxtFile(path: Path, sctx: SecurityContext) extends Input
+  case class VirtualUri(virtualUri: URI, src: String, sctx: SecurityContext) extends Input {
+    override def hashCode(): Int = virtualUri.hashCode
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: VirtualUri => this.virtualUri == that.virtualUri
+      case _ => false
+    }
+
+    override def toString: String = virtualUri.toString
+  }
 
   /**
     * Represents an input, which is a package, on the filesystem.

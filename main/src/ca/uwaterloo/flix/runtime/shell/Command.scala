@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import org.jline.terminal.Terminal
-
 /**
   * A common super-type for commands.
   */

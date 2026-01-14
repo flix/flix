@@ -21,7 +21,7 @@ eff HttpWithResult {
     def request(method: String, url: String, headers: Map[String, List[String]], body: Option[String]): Result[IoError, Http.Response]
 }
 
-mod HttpWithResult {
+pub mod HttpWithResult {
 
     use IoError.ErrorKind
     use IoError.IoError

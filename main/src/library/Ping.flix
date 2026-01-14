@@ -21,7 +21,7 @@ eff Ping {
     def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Bool
 }
 
-mod Ping {
+pub mod Ping {
     use IoError.ErrorKind
     use IoError.IoError
 

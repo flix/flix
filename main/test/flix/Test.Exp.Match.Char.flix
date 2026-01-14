@@ -1,111 +1,113 @@
 mod Test.Exp.Match.Char {
 
-    @test
-    def testMatchChar01(): Bool = match 'a' {
-        case 'a' => true
-        case 'b' => false
-        case 'c' => false
-        case _   => false
+    use Assert.{assertEq, success, fail}
+
+    @Test
+    def matchChar01(): Unit \ Assert = match 'a' {
+        case 'a' => success("matched 'a'")
+        case 'b' => fail("unexpected match on 'b'")
+        case 'c' => fail("unexpected match on 'c'")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar02(): Bool = match 'b' {
-        case 'a' => false
-        case 'b' => true
-        case 'c' => false
-        case _   => false
+    @Test
+    def matchChar02(): Unit \ Assert = match 'b' {
+        case 'a' => fail("unexpected match on 'a'")
+        case 'b' => success("matched 'b'")
+        case 'c' => fail("unexpected match on 'c'")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar03(): Bool = match 'c' {
-        case 'a' => false
-        case 'b' => false
-        case 'c' => true
-        case _   => false
+    @Test
+    def matchChar03(): Unit \ Assert = match 'c' {
+        case 'a' => fail("unexpected match on 'a'")
+        case 'b' => fail("unexpected match on 'b'")
+        case 'c' => success("matched 'c'")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar04(): Bool = match 'd' {
-        case 'a' => false
-        case 'b' => false
-        case 'c' => false
-        case _   => true
+    @Test
+    def matchChar04(): Unit \ Assert = match 'd' {
+        case 'a' => fail("unexpected match on 'a'")
+        case 'b' => fail("unexpected match on 'b'")
+        case 'c' => fail("unexpected match on 'c'")
+        case _   => success("matched wildcard")
     }
 
-    @test
-    def testMatchChar05(): Bool = match '\n' {
-        case '\n' => true
-        case '\r' => false
-        case '\t' => false
-        case _    => false
+    @Test
+    def matchChar05(): Unit \ Assert = match '\n' {
+        case '\n' => success("matched newline")
+        case '\r' => fail("unexpected match on carriage return")
+        case '\t' => fail("unexpected match on tab")
+        case _    => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar06(): Bool = match '\r' {
-        case '\n' => false
-        case '\r' => true
-        case '\t' => false
-        case _    => false
+    @Test
+    def matchChar06(): Unit \ Assert = match '\r' {
+        case '\n' => fail("unexpected match on newline")
+        case '\r' => success("matched carriage return")
+        case '\t' => fail("unexpected match on tab")
+        case _    => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar07(): Bool = match '\t' {
-        case '\n' => false
-        case '\r' => false
-        case '\t' => true
-        case _    => false
+    @Test
+    def matchChar07(): Unit \ Assert = match '\t' {
+        case '\n' => fail("unexpected match on newline")
+        case '\r' => fail("unexpected match on carriage return")
+        case '\t' => success("matched tab")
+        case _    => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar08(): Bool = match '\u0040' {
-        case '\n' => false
-        case '\r' => false
-        case '\t' => false
-        case _    => true
+    @Test
+    def matchChar08(): Unit \ Assert = match '\u0040' {
+        case '\n' => fail("unexpected match on newline")
+        case '\r' => fail("unexpected match on carriage return")
+        case '\t' => fail("unexpected match on tab")
+        case _    => success("matched wildcard")
     }
 
-    @test
-    def testMatchChar09(): Bool = match '\u0040' {
-        case '\u0040' => true
-        case '\u0041' => true
-        case '\u0042' => true
-        case _        => false
+    @Test
+    def matchChar09(): Unit \ Assert = match '\u0040' {
+        case '\u0040' => success("matched unicode 0040")
+        case '\u0041' => success("matched unicode 0041")
+        case '\u0042' => success("matched unicode 0042")
+        case _        => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar10(): Bool = match '\u0041' {
-        case '\u0040' => false
-        case '\u0041' => true
-        case '\u0042' => false
-        case _        => false
+    @Test
+    def matchChar10(): Unit \ Assert = match '\u0041' {
+        case '\u0040' => fail("unexpected match on unicode 0040")
+        case '\u0041' => success("matched unicode 0041")
+        case '\u0042' => fail("unexpected match on unicode 0042")
+        case _        => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar11(): Bool = match '\u0042' {
-        case '\u0040' => false
-        case '\u0041' => false
-        case '\u0042' => true
-        case _        => false
+    @Test
+    def matchChar11(): Unit \ Assert = match '\u0042' {
+        case '\u0040' => fail("unexpected match on unicode 0040")
+        case '\u0041' => fail("unexpected match on unicode 0041")
+        case '\u0042' => success("matched unicode 0042")
+        case _        => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchChar12(): Bool = match '\u0043' {
-        case '\u0040' => false
-        case '\u0041' => false
-        case '\u0042' => false
-        case _        => true
+    @Test
+    def matchChar12(): Unit \ Assert = match '\u0043' {
+        case '\u0040' => fail("unexpected match on unicode 0040")
+        case '\u0041' => fail("unexpected match on unicode 0041")
+        case '\u0042' => fail("unexpected match on unicode 0042")
+        case _        => success("matched wildcard")
     }
 
-    @test
-    def testMatchCharVar01(): Bool = match 'a' {
-        case x => x == 'a'
+    @Test
+    def matchCharVar01(): Unit \ Assert = match 'a' {
+        case x => assertEq(expected = 'a', x)
     }
 
-    @test
-    def testMatchCharVar02(): Bool = match 'c' {
-        case 'a' => false
-        case 'b' => false
-        case x   => x == 'c'
+    @Test
+    def matchCharVar02(): Unit \ Assert = match 'c' {
+        case 'a' => fail("unexpected match on 'a'")
+        case 'b' => fail("unexpected match on 'b'")
+        case x   => assertEq(expected = 'c', x)
     }
 
 }

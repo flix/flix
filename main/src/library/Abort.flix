@@ -24,11 +24,11 @@ pub eff Abort {
     ///
     /// The computation cannot be resumed.
     ///
-    def abort(m: String): Void
+    def abort(m: RichString): Void
 
 }
 
-mod Abort {
+pub mod Abort {
 
     import java.lang.System
 
@@ -44,7 +44,7 @@ mod Abort {
             f(x)
         } with handler Abort {
             def abort(m, _k) = {
-                System.err.println(m);
+                System.err.println(RichString.toString(m));
                 unchecked_cast(System.exit(1) as b)
             }
         }
@@ -57,7 +57,7 @@ mod Abort {
     /// Returns `Ok(f())` if the computation completes successfully without aborting.
     /// Returns `Err(m)`  if the computation aborts with error message `m`.
     ///
-    pub def handleWithResult(f: a -> b \ ef): a -> Result[String, b] \ (ef - Abort) = x ->
+    pub def handleWithResult(f: a -> b \ ef): a -> Result[RichString, b] \ (ef - Abort) = x ->
         run {
             Ok(f(x))
         } with handler Abort {
@@ -81,6 +81,6 @@ mod Abort {
     /// Returns `Ok(f())` if the computation completes successfully without aborting.
     /// Returns `Err(m)`  if the computation aborts with error message `m`.
     ///
-    pub def runWithResult(f: Unit -> a \ ef): Result[String, a] \ (ef - Abort) = handleWithResult(f)()
+    pub def runWithResult(f: Unit -> a \ ef): Result[RichString, a] \ (ef - Abort) = handleWithResult(f)()
 
 }
