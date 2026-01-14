@@ -30,30 +30,33 @@ sealed trait DerivationError extends CompilationMessage {
 object DerivationError {
 
   /**
-    * An error raised to indicate an illegal derivation.
+    * An error raised to indicate an unsupported derivation.
     *
-    * @param sym       the trait symbol of the illegal derivation.
-    * @param legalSyms the list of trait symbols of legal derivations.
+    * @param sym       the trait symbol of the unsupported derivation.
+    * @param legalSyms the list of trait symbols of supported derivations.
     * @param loc       the location where the error occurred.
     */
   case class IllegalDerivation(sym: Symbol.TraitSym, legalSyms: List[Symbol.TraitSym], loc: SourceLocation) extends DerivationError {
     def code: ErrorCode = ErrorCode.E0147
 
-    override def summary: String = s"Illegal derivation: ${sym.name}"
+    def summary: String = s"Unsupported derivation: '${sym.name}'"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal derivation '${red(sym.name)}'.
+      s""">> Unsupported derivation '${red(sym.name)}'.
          |
-         |${src(loc, "Illegal derivation.")}
+         |${src(loc, "unsupported derivation")}
          |
-         |${underline("Tip:")} Only the following traits may be derived: ${legalSyms.map(_.name).mkString(", ")}.
+         |${underline("Explanation:")} The trait '${magenta(sym.name)}' does not support derivation.
+         |
+         |The following traits support automatic derivation:
+         |${legalSyms.map(s => s"  - ${magenta(s.name)}").mkString("\n")}
          |""".stripMargin
     }
   }
 
   /**
-    * Illegal trait derivation for an empty enum.
+    * Unsupported trait derivation for an empty enum.
     *
     * @param sym      the enum symbol.
     * @param traitSym the trait symbol of what is being derived.
@@ -68,9 +71,9 @@ object DerivationError {
       import formatter.*
       s""">> Cannot derive '${magenta(traitSym.name)}' for the empty enum '${red(sym.name)}'.
          |
-         |${src(loc, "illegal derivation")}
+         |${src(loc, "empty enum")}
          |
-         |Flix cannot derive any instances for an empty enumeration.
+         |${underline("Explanation:")} Automatic derivation requires at least one case in the enum.
          |""".stripMargin
     }
   }
@@ -90,9 +93,10 @@ object DerivationError {
       import formatter.*
       s""">> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
          |
-         |${src(loc, "illegal derivation")}
+         |${src(loc, "non-singleton enum")}
          |
-         |'Coerce' can only be derived for enums with exactly one case.
+         |${underline("Explanation:")} The '${magenta("Coerce")}' trait can only be derived for
+         |enums with exactly one case.
          |""".stripMargin
     }
   }
