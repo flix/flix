@@ -194,6 +194,22 @@ mod Test.Exp.Fixpoint.Solve {
         let r = query p select x from Last(x);
         assertEq(expected = Vector#{"fifteen"}, r)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Test that lowering doesn't influence specialization                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def solveSomething(x: #{B(a, b)}): Vector[b] with Order[a], Order[b], Add[a] = {
+        let program = #{
+            C(a1 + a2, b) :- B(a1, b), B(a2, b).
+        };
+        query x, program select s from C(_, s)
+    }
+
+    @Test
+    def testFixpointSolveFunctionCall01(): Unit \ Assert = {
+        let val1 = #{ B(1, 1). };
+        assertEq(expected = Vector#{1}, solveSomething(val1))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // Test that `solve` does not mutate the original program being solved     //
