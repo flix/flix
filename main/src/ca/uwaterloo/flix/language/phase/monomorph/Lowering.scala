@@ -1717,16 +1717,16 @@ object Lowering {
     * Returns the types constituting a `Type.Relation`.
     */
   private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
-    def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
+    def flattenApply(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
       case Type.Cst(TypeConstructor.Relation(_), _) => Nil
-      case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
-      // The type has not been assigned. This is either due to an error in the compiler, or because it is free.
-      // We assume the last and let its type correspond to a nullary relation.
+      case Type.Apply(rest, t, loc1) => t :: flattenApply(rest, loc1)
       case _ if rel0.typeConstructor.contains(TypeConstructor.AnyType) => Nil
+      // The type of the relation is undetermined, i.e. it is a free type variable that has been replaced by AnyType.
+      // Since we have an AnyType we are free to treat it however we want. Here we decide to treat the relation as being nullary.
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got $t", loc0)
     }
 
-    f(rel, loc).reverse
+    flattenApply(rel, loc).reverse
   }
 
   /**

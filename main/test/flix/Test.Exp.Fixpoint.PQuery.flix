@@ -1234,8 +1234,7 @@ mod Test.Exp.Fixpoint.PQuery {
         let p = #{
             A().
         };
-        let _f = pquery p select A() with {B};
-        // We mostly care about compiling
-        assertEq(expected = (), ())
+        let f = pquery p select A() with {B};
+        assertEq(expected = 0, Vector.length(f))
 
 }
