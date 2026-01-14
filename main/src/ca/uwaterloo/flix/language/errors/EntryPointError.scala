@@ -31,7 +31,7 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
-    * Error indicating an illegal effect of an entry point function.
+    * Error indicating an unhandled effect in an entry point function.
     *
     * @param eff the effect.
     * @param loc the location where the error occurred.
@@ -39,13 +39,22 @@ object EntryPointError {
   case class IllegalEntryPointEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E0958
 
-    override def summary: String = s"Unexpected entry point effect: ${FormatType.formatType(eff)}."
+    override def summary: String = s"Unhandled effect: '${FormatType.formatType(eff)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unhandled effect: '${red(FormatType.formatType(eff))}'.
          |
          |${src(loc, "unhandled effect")}
+         |
+         |${underline("Explanation:")} Entry point functions (main, tests, exports) can only
+         |use primitive effects (like IO) or effects with default handlers. The effect
+         |'${magenta(FormatType.formatType(eff))}' has no default handler.
+         |
+         |To fix this, either:
+         |
+         |  (a) Handle the effect within the function using 'run-with', or
+         |  (b) Add a default handler for the effect.
          |""".stripMargin
     }
   }
@@ -59,14 +68,17 @@ object EntryPointError {
   case class IllegalEntryPointTypeVariables(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1069
 
-    def summary: String = s"An entry point function cannot have type variables"
+    def summary: String = s"Unexpected type variable in entry point."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> An entry point function cannot have type variables.
+      s""">> Unexpected type variable in entry point function.
          |
-         |${src(loc, "illegal entry point")}
+         |${src(loc, "type variable not allowed here")}
          |
+         |${underline("Explanation:")} Entry point functions (main, tests, exports) must have
+         |concrete types. Type variables like 'a' or 't' are not allowed because the runtime
+         |needs to know the exact types at the entry point.
          |""".stripMargin
     }
   }
@@ -79,14 +91,17 @@ object EntryPointError {
   case class IllegalExportName(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1172
 
-    def summary: String = s"Exported functions must have a Java valid name"
+    def summary: String = s"Unexpected name for exported function."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Exported functions must have a Java valid name.
+      s""">> Unexpected name for exported function.
          |
-         |${src(loc, "invalid Java name.")}
+         |${src(loc, "name not valid in Java")}
          |
+         |${underline("Explanation:")} Exported functions must have names that are valid Java
+         |identifiers. A valid name starts with a lowercase letter and contains only letters
+         |and digits (e.g., 'getValue', 'process123').
          |""".stripMargin
     }
   }
@@ -99,14 +114,24 @@ object EntryPointError {
   case class IllegalExportNamespace(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1285
 
-    def summary: String = s"An exported function must be in a module (not in the root namespace)"
+    def summary: String = s"Exported function in root namespace."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> An exported function must be in a module (not in the root namespace).
+      s""">> Exported function must be in a module.
          |
-         |${src(loc, "exported function.")}
+         |${src(loc, "function in root namespace")}
          |
+         |${underline("Explanation:")} Exported functions generate Java methods in a class
+         |named after the module. Functions in the root namespace have no module name,
+         |so there is no class to contain the exported method.
+         |
+         |To fix this, move the function into a module:
+         |
+         |  mod MyModule {
+         |      @Export
+         |      pub def myFunction(): Int32 = ...
+         |  }
          |""".stripMargin
     }
   }
