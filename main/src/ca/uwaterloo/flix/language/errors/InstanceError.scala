@@ -108,15 +108,16 @@ object InstanceError {
   case class ExtraneousDef(defnSym: Symbol.DefnSym, traitSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2176
 
-    def summary: String = "Extraneous implementation."
+    def summary: String = s"Extraneous definition '${defnSym.name}' in instance declaration for trait '${traitSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The signature '${red(defnSym.name)}' is not present in the '${magenta(traitSym.name)}' trait.
+      s""">> Extraneous definition '${red(defnSym.name)}' in instance declaration for trait '${magenta(traitSym.name)}'.
          |
-         |${src(loc, s"extraneous def")}
+         |${src(loc, "not present in trait")}
          |
-         |${underline("Tip:")} Remove this definition from the instance.
+         |${underline("Explanation:")} An instance can only implement signatures declared in the trait.
+         |The definition '${defnSym.name}' does not exist in trait '${traitSym.name}'.
          |""".stripMargin
     }
   }
