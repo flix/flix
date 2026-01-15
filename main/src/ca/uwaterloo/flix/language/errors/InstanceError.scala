@@ -42,7 +42,7 @@ object InstanceError {
   case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E1952
 
-    override def summary: String = s"Complex type '${FormatType.formatType(tpe)}' in instance declaration for trait '${sym.name}'."
+    def summary: String = s"Complex type '${FormatType.formatType(tpe)}' in instance declaration for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -78,7 +78,7 @@ object InstanceError {
   case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2063
 
-    override def summary: String = s"Duplicate type variable '${FormatType.formatType(tvar)}' in instance declaration for trait '${sym.name}'."
+    def summary: String = s"Duplicate type variable '${FormatType.formatType(tvar)}' in instance declaration for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -132,7 +132,7 @@ object InstanceError {
   case class IllegalAssocTypeInstance(assoc: Symbol.AssocTypeSym, trtSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2289
 
-    override def summary: String = s"Unexpected associated type '${assoc.name}' in instance declaration for trait '${trtSym.name}'."
+    def summary: String = s"Unexpected associated type '${assoc.name}' in instance declaration for trait '${trtSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -154,7 +154,7 @@ object InstanceError {
   case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2394
 
-    override def summary: String = s"Unexpected redefinition of '${sym.name}'."
+    def summary: String = s"Unexpected redefinition of '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -178,7 +178,7 @@ object InstanceError {
   case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, trtSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2401
 
-    override def summary: String = s"Unexpected type alias '${alias.name}' in instance declaration for trait '${trtSym.name}'."
+    def summary: String = s"Unexpected type alias '${alias.name}' in instance declaration for trait '${trtSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -225,20 +225,19 @@ object InstanceError {
     * @param superTrait the supertrait that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingEqConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingEqualityConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2629
 
-    override def summary: String = s"Missing equality constraint: ${FormatEqualityConstraint.formatEqualityConstraint(econstr)}"
+    def summary: String = s"Missing equality constraint '${FormatEqualityConstraint.formatEqualityConstraint(econstr)}' required by super trait '${superTrait.name}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing equality constraint: ${FormatEqualityConstraint.formatEqualityConstraint(econstr)}
+      s""">> Missing equality constraint '${red(FormatEqualityConstraint.formatEqualityConstraint(econstr))}' required by super trait '${magenta(superTrait.name)}'.
          |
-         |The constraint ${FormatEqualityConstraint.formatEqualityConstraint(econstr)} is required because it is a constraint on super trait ${superTrait.name}.
+         |${src(loc, "missing constraint")}
          |
-         |${src(loc, s"missing equality constraint")}
-         |
-         |${underline("Tip:")} Add the missing equality constraint.
+         |${underline("Explanation:")} The super trait '${superTrait.name}' requires this equality constraint to be satisfied.
+         |Add the constraint to the instance declaration.
          |""".stripMargin
     }
   }
@@ -276,7 +275,7 @@ object InstanceError {
   case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2843
 
-    override def summary: String = s"Missing super trait instance '$superTrait'."
+    def summary: String = s"Missing super trait instance '$superTrait'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -303,9 +302,9 @@ object InstanceError {
   case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2956
 
-    override def summary: String = s"Missing type constraint: ${FormatTraitConstraint.formatTraitConstraint(tconstr)}"
+    def summary: String = s"Missing type constraint: ${FormatTraitConstraint.formatTraitConstraint(tconstr)}"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing type constraint: ${FormatTraitConstraint.formatTraitConstraint(tconstr)}
          |
@@ -328,7 +327,7 @@ object InstanceError {
   case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3067
 
-    override def summary: String = "Orphan instance."
+    def summary: String = "Orphan instance."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -377,7 +376,7 @@ object InstanceError {
   case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3281
 
-    override def summary: String = s"Unlawful signature '$sym'."
+    def summary: String = s"Unlawful signature '$sym'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -401,7 +400,7 @@ object InstanceError {
   case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3394
 
-    override def summary: String = s"Unmarked override '$sym'."
+    def summary: String = s"Unmarked override '$sym'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
