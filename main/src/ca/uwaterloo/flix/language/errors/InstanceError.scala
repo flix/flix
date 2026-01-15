@@ -154,16 +154,16 @@ object InstanceError {
   case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2394
 
-    override def summary: String = s"Illegal override of '$sym'."
+    override def summary: String = s"Unexpected redefinition of '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal override of '${red(sym.name)}'.
+      s""">> Unexpected redefinition of '${red(sym.name)}'.
          |
-         |${src(loc, s"illegal override")}
+         |${src(loc, "no default implementation to redefine")}
          |
-         |Only signatures with default implementations can be overridden.
-         |
+         |${underline("Explanation:")} The signature '${sym.name}' is defined in the trait,
+         |but there is no default implementation to be redefined.
          |""".stripMargin
     }
   }
