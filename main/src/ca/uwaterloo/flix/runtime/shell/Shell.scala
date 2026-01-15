@@ -408,7 +408,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def printErrors(errors: List[CompilationMessage])(implicit terminal: Terminal): Unit = {
     for (msg <- flix.mkMessages(errors)) {
-      terminal.writer().print(msg)
+      terminal.writer().println(msg)
     }
     terminal.writer().println()
   }

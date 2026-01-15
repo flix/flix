@@ -178,15 +178,15 @@ object InstanceError {
   case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, trtSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2401
 
-    override def summary: String = "Type alias in instance type."
+    override def summary: String = s"Unexpected type alias '${alias.name}' in instance declaration for trait '${trtSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${magenta(trtSym.name)}'.
+      s""">> Unexpected type alias '${red(alias.name)}' in instance declaration for trait '${magenta(trtSym.name)}'.
          |
-         |${src(loc, s"illegal use of type alias")}
+         |${src(loc, "type alias not allowed here")}
          |
-         |A trait instance cannot use a type alias. Use the full type.
+         |${underline("Explanation:")} Instances cannot be defined on type aliases.
          |""".stripMargin
     }
   }
