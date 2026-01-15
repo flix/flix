@@ -215,23 +215,23 @@ object EntryPointError {
   }
 
   /**
-    * Error indicating unexpected arguments in a runnable (test or main) entry point function.
+    * Error indicating an unexpected formal parameter in a runnable (test or main) entry point function.
     *
     * @param loc the location where the error occurred.
     */
   case class IllegalRunnableEntryPointArgs(loc: SourceLocation) extends EntryPointError {
     def code: ErrorCode = ErrorCode.E1512
 
-    def summary: String = s"Unexpected arguments in entry point."
+    def summary: String = s"Unexpected formal parameter in entry point."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected arguments in entry point function.
+      s""">> Unexpected formal parameter in entry point function.
          |
-         |${src(loc, "arguments not allowed")}
+         |${src(loc, "formal parameter not allowed")}
          |
          |${underline("Explanation:")} Entry point functions (main and tests) must have
-         |no arguments.
+         |no formal parameters.
          |
          |Expected signature:
          |

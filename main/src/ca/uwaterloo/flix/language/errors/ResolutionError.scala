@@ -478,11 +478,11 @@ object ResolutionError {
   }
 
   /**
-    * An error indicating the number of effect operation arguments does not match the expected number.
+    * An error indicating the number of effect operation parameters does not match the expected number.
     *
     * @param op       the effect operation symbol.
-    * @param expected the expected number of arguments.
-    * @param actual   the actual number of arguments.
+    * @param expected the expected number of parameters.
+    * @param actual   the actual number of parameters.
     * @param loc      the location where the error occurred.
     */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
