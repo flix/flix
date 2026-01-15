@@ -132,15 +132,15 @@ object InstanceError {
   case class IllegalAssocTypeInstance(assoc: Symbol.AssocTypeSym, trtSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2289
 
-    override def summary: String = "Associated type in instance type."
+    override def summary: String = s"Unexpected associated type '${assoc.name}' in instance declaration for trait '${trtSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal use of associated type '${red(assoc.name)}' in instance declaration for '${magenta(trtSym.name)}'.
+      s""">> Unexpected associated type '${red(assoc.name)}' in instance declaration for trait '${magenta(trtSym.name)}'.
          |
-         |${src(loc, s"illegal use of associated type")}
+         |${src(loc, "associated type not allowed here")}
          |
-         |A trait instance cannot use an associated type. Use the full type.
+         |${underline("Explanation:")} Instances cannot be defined on associated types.
          |""".stripMargin
     }
   }
