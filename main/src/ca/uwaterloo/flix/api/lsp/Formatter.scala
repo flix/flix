@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Expr.Binary
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.ParameterList
 import ca.uwaterloo.flix.language.ast.TokenKind.{Colon, Comma}
@@ -62,7 +63,7 @@ object Formatter {
     * @param root the syntax tree root
     * @param sourcePaths the list of source file paths
     */
-  def formatFiles(root: SyntaxTree.Root, sourcePaths: List[Path]): Unit = {
+  def formatFiles(root: SyntaxTree.Root, sourcePaths: List[Path])(implicit flix: Flix): Unit = {
     // TODO: Better error handling strategy
     val edits = format(root, sourcePaths)
     edits.foreach {
@@ -73,19 +74,19 @@ object Formatter {
   /**
     * Applies the given text edits to the file at the specified path.
     *
-    * @param file the file path
+    * @param path the file path
     * @param edits the list of text edits to apply
     */
-  private def applyTextEditsToFile(file: Path, edits: List[TextEdit]): Unit = {
+  private def applyTextEditsToFile(path: Path, edits: List[TextEdit])(implicit flix: Flix): Unit = {
     try {
-      val bytes = Files.readAllBytes(file)
-      val src = new String(bytes, StandardCharsets.UTF_8)
+      val bytes = Files.readAllBytes(path)
+      val src = new String(bytes, flix.defaultCharset)
       val updated = applyTextEditsToString(src, edits)
-      Files.write(file, updated.getBytes(StandardCharsets.UTF_8))
+      Files.write(path, updated.getBytes(StandardCharsets.UTF_8))
     }
     catch {
       case io: java.io.IOException =>
-        Console.err.println(s"Failed to apply text edits to file: ${file.toString}. Error: ${io.getMessage}")
+        Console.err.println(s"Failed to apply text edits to file: ${path.toString}. Error: ${io.getMessage}")
     }
   }
 
@@ -104,12 +105,10 @@ object Formatter {
 
     for (edit <- sortedEdits) {
       val start =
-        lineOffsets(edit.range.start.line - 1) +
-          (edit.range.start.character - 1)
+        lineOffsets(edit.range.start.line - 1) + (edit.range.start.character - 1)
 
       val end =
-        lineOffsets(edit.range.end.line - 1) +
-          (edit.range.end.character - 1)
+        lineOffsets(edit.range.end.line - 1) + (edit.range.end.character - 1)
 
       sb.replace(start, end, edit.newText)
     }
@@ -119,8 +118,6 @@ object Formatter {
 
   /**
     * Computes the starting offsets of each line in the source string.
-    * Returns an array where each element at index `i` represents the starting offset of line `i`.
-    * The last element represents the total length of the source string.
     *
     * @param src the source string
     * @return an array of line starting offsets

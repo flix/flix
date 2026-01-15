@@ -290,17 +290,19 @@ object Main {
 
         case Command.Format =>
           if (cmdOpts.files.isEmpty) {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
-              bootstrap.format(flix)
+            exitOnResult {
+              Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                bootstrap.format(flix)
+              }
             }
           }
           val flix = mkFlixWithFiles(cmdOpts.files, options)
           val (_, errors) = flix.check()
           if (errors.isEmpty) {
             val syntaxTree = flix.getParsedAst
-            LspFormatter.formatFiles(syntaxTree, cmdOpts.files.map(_.toPath).toList)
+            LspFormatter.formatFiles(syntaxTree, cmdOpts.files.map(_.toPath).toList)(flix)
             System.exit(0)
           }
           else exitWithErrors(flix, errors)
