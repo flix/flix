@@ -202,18 +202,18 @@ object InstanceError {
   case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2518
 
-    def summary: String = "Mismatched signature."
+    def summary: String = s"Mismatched signature '${sigSym.name}' in instance declaration for trait '${sigSym.trt.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Mismatched signature '${red(sigSym.name)}' required by '${magenta(sigSym.trt.name)}'.
+      s""">> Mismatched signature '${red(sigSym.name)}' in instance declaration for trait '${magenta(sigSym.trt.name)}'.
          |
-         |${src(loc, "mismatched signature.")}
+         |${src(loc, "signature mismatch")}
          |
-         |Expected scheme: ${FormatScheme.formatScheme(expected)}
-         |Actual scheme:   ${FormatScheme.formatScheme(actual)}
+         |${cyan("Expected")}: ${FormatScheme.formatScheme(expected)}
+         |${red("Actual")}:   ${FormatScheme.formatScheme(actual)}
          |
-         |${underline("Tip:")} Modify the definition to match the signature.
+         |${underline("Explanation:")} The implementation must match the signature declared in the trait.
          |""".stripMargin
     }
   }
