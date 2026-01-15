@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Expr.Binary
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.ParameterList
 import ca.uwaterloo.flix.language.ast.TokenKind.{Colon, Comma}
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token}
+import ca.uwaterloo.flix.util.Result
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -33,7 +34,7 @@ object Formatter {
     * Formats the given syntax tree.
     *
     * @param root the syntax tree root
-    * @param uri the file path of the syntax tree
+    * @param uri  the file path of the syntax tree
     * @return a formatted source code as a list of text edits
     */
   def format(root: SyntaxTree.Root, uri: String): List[TextEdit] =
@@ -43,7 +44,7 @@ object Formatter {
     * Formats the given syntax tree for multiple source paths.
     * Returns a list of text edits for all source paths.
     *
-    * @param root the syntax tree root
+    * @param root        the syntax tree root
     * @param sourcePaths the list of source file paths
     * @return a map of file paths to their corresponding list of text edits
     */
@@ -60,7 +61,7 @@ object Formatter {
     * Formats the files at the given source paths based on the syntax tree.
     * Applies the text edits directly to the files.
     *
-    * @param root the syntax tree root
+    * @param root        the syntax tree root
     * @param sourcePaths the list of source file paths
     */
   def formatFiles(root: SyntaxTree.Root, sourcePaths: List[Path])(implicit flix: Flix): Unit = {
@@ -74,19 +75,17 @@ object Formatter {
   /**
     * Applies the given text edits to the file at the specified path.
     *
-    * @param path the file path
+    * @param path  the file path
     * @param edits the list of text edits to apply
     */
   private def applyTextEditsToFile(path: Path, edits: List[TextEdit])(implicit flix: Flix): Unit = {
-    try {
-      val bytes = Files.readAllBytes(path)
-      val src = new String(bytes, flix.defaultCharset)
-      val updated = applyTextEditsToString(src, edits)
-      Files.write(path, updated.getBytes(StandardCharsets.UTF_8))
-    }
-    catch {
-      case io: java.io.IOException =>
-        Console.err.println(s"Failed to apply text edits to file: ${path.toString}. Error: ${io.getMessage}")
+    isValidPath(path) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        val bytes = Files.readAllBytes(path)
+        val src = new String(bytes, flix.defaultCharset)
+        val updated = applyTextEditsToString(src, edits)
+        Files.write(path, updated.getBytes(StandardCharsets.UTF_8))
     }
   }
 
@@ -94,7 +93,7 @@ object Formatter {
     * Applies the given text edits to the source string.
     * Edits are applied in reverse order to maintain correct positions.
     *
-    * @param src the source string
+    * @param src   the source string
     * @param edits the list of text edits to apply
     * @return the updated source string after applying the edits
     */
@@ -143,14 +142,14 @@ object Formatter {
     */
   private def traverseTree(tree: SyntaxTree.Tree): List[TextEdit] = {
     val editsHere = tree.kind match {
-      case Binary if tree.loc.isSingleLine        => formatBinaryExpression(tree)
+      case Binary if tree.loc.isSingleLine => formatBinaryExpression(tree)
       case ParameterList if tree.loc.isSingleLine => formatParameterList(tree)
-      case _                                      => Nil
+      case _ => Nil
     }
 
     val editsFromChildren = tree.children.flatMap {
       case childTree: SyntaxTree.Tree => traverseTree(childTree)
-      case _                          => Nil
+      case _ => Nil
     }
     editsHere ++ editsFromChildren
   }
@@ -160,10 +159,10 @@ object Formatter {
     * Adds a single space after commas in a parameter list on the same line.
     *
     * Example:
-    *  Original source code
-    *   def foo(a:Int,b:String,c:Bool): Unit = {}
-    *  Formatted source code
-    *   def foo(a: Int, b: String, c: Bool): Unit = {}
+    * Original source code
+    * def foo(a:Int,b:String,c:Bool): Unit = {}
+    * Formatted source code
+    * def foo(a: Int, b: String, c: Bool): Unit = {}
     *
     * @param tree the parameter list tree
     * @return a list of text edits to apply for formatting
@@ -171,25 +170,25 @@ object Formatter {
   private def formatParameterList(tree: SyntaxTree.Tree): List[TextEdit] = {
     val tokens = getTokensInOrder(tree)
 
-      val edits = tokens
-        .sliding(2)
-        .collect {
-          case List(prev, next) =>
-            if (prev.kind == Comma || prev.kind == Colon) createSeparatorTextEdit(prev, next, " ")
-            else createSeparatorTextEdit(prev, next, "")
-        }
-      edits.toList
-    }
+    val edits = tokens
+      .sliding(2)
+      .collect {
+        case List(prev, next) =>
+          if (prev.kind == Comma || prev.kind == Colon) createSeparatorTextEdit(prev, next, " ")
+          else createSeparatorTextEdit(prev, next, "")
+      }
+    edits.toList
+  }
 
   /**
     * Formats binary expression by adding spaces around operators.
     * Adds a single space between tokens and operators in binary expressions on the same line.
     *
     * Example:
-    *   Original source code
-    *     def main(): Int32 = 1+2*3*5+4-6/2
-    *   Formatted source code
-    *     def main(): Int32 = 1 + 2 * 3 * 5 + 4 - 6 / 2
+    * Original source code
+    * def main(): Int32 = 1+2*3*5+4-6/2
+    * Formatted source code
+    * def main(): Int32 = 1 + 2 * 3 * 5 + 4 - 6 / 2
     *
     * @param tree the binary expression tree
     * @return a list of text edits to apply for formatting
@@ -228,7 +227,7 @@ object Formatter {
   /**
     * Creates a [[TextEdit]] to replace the text between two tokens with the given separator.
     *
-    * @param prevLast the last token of the previous child
+    * @param prevLast  the last token of the previous child
     * @param nextFirst the first token of the next child
     * @param separator the separator string to insert between the tokens
     * @return a text edit to apply for formatting
@@ -286,7 +285,7 @@ object Formatter {
     * Finds the syntax tree corresponding to the given URI.
     *
     * @param root the syntax tree root
-    * @param uri the file path of the syntax tree
+    * @param uri  the file path of the syntax tree
     * @return an option containing the syntax tree if found
     */
   private def findTreeBasedOnUri(root: SyntaxTree.Root, uri: String): Option[SyntaxTree.Tree] = {
@@ -296,5 +295,28 @@ object Formatter {
     }.map {
       case (_, tree) => tree
     }
+  }
+
+  /**
+    * Validate that the given path can exists, is a regular file and is readable.
+    *
+    * @param path the file path
+    * @return a result indicating success or an illegal argument exception
+    */
+  private def isValidPath(path: Path): Result[Unit, IllegalArgumentException] = {
+    if (path == null) {
+      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    }
+    val pNorm = path.normalize()
+    if (!Files.exists(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
+    }
+    if (!Files.isRegularFile(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
+    }
+    if (!Files.isReadable(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
+    }
+    Result.Ok(())
   }
 }
