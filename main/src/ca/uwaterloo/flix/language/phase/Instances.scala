@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.errors.InstanceError.MissingEqConstraint
+import ca.uwaterloo.flix.language.errors.InstanceError.MissingEqualityConstraint
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, ConstraintSolverInterface, TypeConstraint}
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
@@ -120,7 +120,7 @@ object Instances {
           case (seen, tvar: Type.Var) =>
             // Case 1.1 We've seen it already. Error.
             if (seen.contains(tvar)) {
-              sctx.errors.add(InstanceError.DuplicateTypeVar(tvar, trt.sym, trt.loc))
+              sctx.errors.add(InstanceError.DuplicateTypeVar(tvar, trt.sym, tvar.loc))
               notFound = false
               seen
             }
@@ -259,7 +259,7 @@ object Instances {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.foreach {
                       case TypeConstraint.Equality(_, _, _) =>
-                        sctx.errors.add(MissingEqConstraint(substEconstr, superTrait, trt.loc))
+                        sctx.errors.add(MissingEqualityConstraint(substEconstr, superTrait, trt.loc))
                       case _ =>
                         throw InternalCompilerException("Unexpected type constraint", inst.loc)
                     }
