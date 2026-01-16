@@ -463,7 +463,7 @@ object SafetyError {
          |Expected: ${cyan(clazz.getName)}
          |Actual:   ${red(illegalThisType.toString)}
          |
-         |${underline("Explanation:")} The first argument to any method must be 'this' and must
+         |${underline("Explanation:")} The first formal parameter of any method must be 'this' and must
          |have the same type as the superclass. For example:
          |
          |  new ${clazz.getSimpleName} {
@@ -541,7 +541,7 @@ object SafetyError {
          |
          |${src(loc, "missing 'this' parameter")}
          |
-         |${underline("Explanation:")} The first argument to any method must be 'this' and must
+         |${underline("Explanation:")} The first formal parameter of any method must be 'this' and must
          |have the same type as the superclass. For example:
          |
          |  new ${clazz.getSimpleName} {

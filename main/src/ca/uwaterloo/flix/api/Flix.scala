@@ -589,14 +589,14 @@ class Flix {
     // Initialize fork-join thread pool.
     initForkJoinPool()
 
-    var loweringAst = Lowering.run(typedAst)
+    var treeShaker1Ast = TreeShaker1.run(typedAst)
     // Note: Do not null typedAst. It is used later.
 
-    var treeShaker1Ast = TreeShaker1.run(loweringAst)
-    loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var monomorpherAst = Specialization.run(treeShaker1Ast)
+    var loweringAst = Lowering.run(treeShaker1Ast)
     treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var monomorpherAst = Specialization.run(loweringAst)
+    loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     var lambdaDropAst = LambdaDrop.run(monomorpherAst)
     monomorpherAst = null // Explicitly null-out such that the memory becomes eligible for GC.
