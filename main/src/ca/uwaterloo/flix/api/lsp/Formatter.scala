@@ -52,7 +52,6 @@ object Formatter {
     sourcePaths.flatMap { path =>
       val uri = path.toString
       val edits = format(root, uri)
-      Console.println(s"Formatted ${edits.length} edits for file: $uri")
       if (edits.nonEmpty) Some(path -> edits) else None
     }.toMap
   }
@@ -298,7 +297,7 @@ object Formatter {
   }
 
   /**
-    * Validate that the given path can exists, is a regular file and is readable.
+    * Validate that the given path can exist, is a regular file and is readable.
     *
     * @param path the file path
     * @return a result indicating success or an illegal argument exception
