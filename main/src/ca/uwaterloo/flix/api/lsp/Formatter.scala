@@ -171,10 +171,14 @@ object Formatter {
 
     val edits = tokens
       .sliding(2)
-      .collect {
+      .flatMap {
         case List(prev, next) =>
-          if (prev.kind == Comma || prev.kind == Colon) createSeparatorTextEdit(prev, next, " ")
-          else createSeparatorTextEdit(prev, next, "")
+          if (prev.kind == Comma || prev.kind == Colon) {
+            Some(createSeparatorTextEdit(prev, next, " "))
+          } else if ((next.kind == Comma || next.kind == Colon) && prev.end != next.start) {
+            Some(createSeparatorTextEdit(prev, next, ""))
+          } else None
+        case _ => None
       }
     edits.toList
   }
