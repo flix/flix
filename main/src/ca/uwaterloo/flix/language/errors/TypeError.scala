@@ -736,18 +736,18 @@ object TypeError {
   }
 
   /**
-    * Returns a formatted string representation of a Java field.
-    */
-  private def formatField(f: java.lang.reflect.Field): String = {
-    s"${f.getName}: ${formatJavaType(f.getType)}"
-  }
-
-  /**
     * Returns a formatted string representation of a Java constructor.
     */
   private def formatConstructor(clazz: Class[?], c: java.lang.reflect.Constructor[?]): String = {
     val params = c.getParameterTypes.map(formatJavaType).mkString(", ")
     s"${clazz.getSimpleName}($params)"
+  }
+
+  /**
+    * Returns a formatted string representation of a Java field.
+    */
+  private def formatField(f: java.lang.reflect.Field): String = {
+    s"${f.getName}: ${formatJavaType(f.getType)}"
   }
 
 }
