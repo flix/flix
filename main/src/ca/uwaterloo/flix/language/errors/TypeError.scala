@@ -256,33 +256,6 @@ object TypeError {
   }
 
   /**
-    * Static Java method not found type error.
-    *
-    * @param clazz      the Java class expected to contain the static method.
-    * @param methodName the name of the method.
-    * @param tpes       the types of the arguments.
-    * @param renv       the rigidity environment.
-    * @param loc        the location where the error occurred.
-    */
-  case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E6358
-
-    def summary: String = s"Static method not found: '${methodName.name}' in class '${clazz.getName}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
-         |
-         |${src(loc, "cannot find static method")}
-         |
-         |${underline("Explanation:")} No static Java method matches the given name and argument types.
-         |Ensure that the argument types match exactly; Flix does not perform
-         |automatic boxing or unboxing of primitive types.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Mismatched Effect Formulas.
     *
     * @param baseType1 the first effect formula.
@@ -542,6 +515,86 @@ object TypeError {
   }
 
   /**
+    * Missing trait constraint.
+    *
+    * @param trt  the trait of the constraint.
+    * @param tpe  the type of the constraint.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
+    */
+  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8243
+
+    def summary: String = s"Missing trait constraint: '$trt' for type '${formatType(tpe, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${red(formatType(tpe, Some(renv)))}'.
+         |
+         |${src(loc, "missing trait constraint")}
+         |""".stripMargin
+    }
+  }
+
+
+  /**
+    * Non-unit type used in statement position.
+    *
+    * @param tpe the actual type.
+    * @param loc the location where the error occurred.
+    */
+  case class NonUnitStatement(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8354
+
+    def summary: String = s"Non-unit statement: has type '${formatType(tpe)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Non-unit statement: has type '${red(formatType(tpe))}'.
+         |
+         |${src(loc, "non-unit type")}
+         |
+         |${underline("Suggestion:")} Use 'discard' to ignore the result. Instead of:
+         |
+         |  expr;
+         |  ...
+         |
+         |use:
+         |
+         |  discard expr;
+         |  ...
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Static Java method not found type error.
+    *
+    * @param clazz      the Java class expected to contain the static method.
+    * @param methodName the name of the method.
+    * @param tpes       the types of the arguments.
+    * @param renv       the rigidity environment.
+    * @param loc        the location where the error occurred.
+    */
+  case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6358
+
+    def summary: String = s"Static method not found: '${methodName.name}' in class '${clazz.getName}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
+         |
+         |${src(loc, "cannot find static method")}
+         |
+         |${underline("Explanation:")} No static Java method matches the given name and argument types.
+         |Ensure that the argument types match exactly; Flix does not perform
+         |automatic boxing or unboxing of primitive types.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * A unification equation system was too complex to solve.
     *
     * @param loc the location where the error occurred.
@@ -692,68 +745,6 @@ object TypeError {
   }
 
   /**
-    * Missing trait constraint.
-    *
-    * @param trt  the trait of the constraint.
-    * @param tpe  the type of the constraint.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def code: ErrorCode = ErrorCode.E8243
-
-    def summary: String = s"Missing trait constraint: '$trt' for type '${formatType(tpe, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${red(formatType(tpe, Some(renv)))}'.
-         |
-         |${src(loc, "missing trait constraint")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Non-unit type used in statement position.
-    *
-    * @param tpe the actual type.
-    * @param loc the location where the error occurred.
-    */
-  case class NonUnitStatement(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def code: ErrorCode = ErrorCode.E8354
-
-    def summary: String = s"Non-unit statement: has type '${formatType(tpe)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Non-unit statement: has type '${red(formatType(tpe))}'.
-         |
-         |${src(loc, "non-unit type")}
-         |
-         |${underline("Suggestion:")} Use 'discard' to ignore the result. Instead of:
-         |
-         |  expr;
-         |  ...
-         |
-         |use:
-         |
-         |  discard expr;
-         |  ...
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Returns the Flix-style string representation of a Java type.
-    */
-  private def formatJavaType(tpe: Class[?]): String = {
-    if (tpe.isPrimitive || tpe.isArray)
-      Type.getFlixType(tpe).toString
-    else
-      tpe.getName
-  }
-
-  /**
     * Returns a formatted string representation of a Java constructor.
     */
   private def formatConstructor(clazz: Class[?], c: java.lang.reflect.Constructor[?]): String = {
@@ -766,6 +757,16 @@ object TypeError {
     */
   private def formatField(f: java.lang.reflect.Field): String = {
     s"${f.getName}: ${formatJavaType(f.getType)}"
+  }
+
+  /**
+    * Returns the Flix-style string representation of a Java type.
+    */
+  private def formatJavaType(tpe: Class[?]): String = {
+    if (tpe.isPrimitive || tpe.isArray)
+      Type.getFlixType(tpe).toString
+    else
+      tpe.getName
   }
 
 }
