@@ -119,6 +119,63 @@ object TypeError {
   }
 
   /**
+    * Extra label error.
+    *
+    * @param label      the name of the extra label.
+    * @param labelType  the type of the extra label.
+    * @param recordType the record type where the label is missing.
+    * @param renv       the rigidity environment.
+    * @param loc        the location where the error occurred.
+    */
+  case class ExtraLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E7574
+
+    def summary: String = s"Extra label '$label' of type '$labelType'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+         |
+         |${src(loc, "extra label.")}
+         |
+         |The record type:
+         |
+         |  ${formatType(recordType, Some(renv))}
+         |
+         |contains the extra label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Java field not found type error.
+    *
+    * @param base      the source location of the receiver expression.
+    * @param fieldName the name of the field.
+    * @param tpe       the type of the receiver object.
+    * @param loc       the location where the error occurred.
+    */
+  case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6247
+
+    def summary: String = s"Field not found: '${fieldName.name}' on type '${formatType(tpe)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      val availableFields = Type.classFromFlixType(tpe) match {
+        case Some(clazz) =>
+          val fields = clazz.getFields.map(f => s"  - ${formatField(f)}").sorted
+          if (fields.nonEmpty) s"\nAvailable fields:\n${fields.mkString("\n")}\n" else ""
+        case None => ""
+      }
+      s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
+         |
+         |${src(loc, "cannot find field")}
+         |$availableFields""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the signature of a default handler is illegal.
     *
     * @param effSym     the symbol of the effect.
@@ -195,34 +252,6 @@ object TypeError {
          |${src(loc, "non-public default handler.")}
          |
          |""".stripMargin
-    }
-  }
-
-  /**
-    * Java field not found type error.
-    *
-    * @param base      the source location of the receiver expression.
-    * @param fieldName the name of the field.
-    * @param tpe       the type of the receiver object.
-    * @param loc       the location where the error occurred.
-    */
-  case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def code: ErrorCode = ErrorCode.E6247
-
-    def summary: String = s"Field not found: '${fieldName.name}' on type '${formatType(tpe)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      val availableFields = Type.classFromFlixType(tpe) match {
-        case Some(clazz) =>
-          val fields = clazz.getFields.map(f => s"  - ${formatField(f)}").sorted
-          if (fields.nonEmpty) s"\nAvailable fields:\n${fields.mkString("\n")}\n" else ""
-        case None => ""
-      }
-      s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
-         |
-         |${src(loc, "cannot find field")}
-         |$availableFields""".stripMargin
     }
   }
 
@@ -558,35 +587,6 @@ object TypeError {
          |  ${formatType(recordType, Some(renv))}
          |
          |does not contain the label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Extra label error.
-    *
-    * @param label      the name of the extra label.
-    * @param labelType  the type of the extra label.
-    * @param recordType the record type where the label is missing.
-    * @param renv       the rigidity environment.
-    * @param loc        the location where the error occurred.
-    */
-  case class ExtraLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def code: ErrorCode = ErrorCode.E7574
-
-    def summary: String = s"Extra label '$label' of type '$labelType'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
-         |
-         |${src(loc, "extra label.")}
-         |
-         |The record type:
-         |
-         |  ${formatType(recordType, Some(renv))}
-         |
-         |contains the extra label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
          |""".stripMargin
     }
   }
