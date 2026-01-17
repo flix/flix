@@ -140,20 +140,25 @@ object TypeError {
   case class IllegalDefaultHandlerSignature(effSym: Symbol.EffSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E0847
 
-    def summary: String = s"Illegal signature for '$effSym's default handler."
+    def summary: String = s"Invalid signature for default handler of effect '${effSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal default effect handler signature for '${red(effSym.toString)}'.
+      s""">> Invalid signature for default handler of effect '${red(effSym.name)}'.
          |
-         |The default handler for '${red(effSym.toString)}' should have the exact signature:
+         |${src(loc, "invalid signature")}
          |
-         |  pub def ${handlerSym.name}(f: Unit -> a \\ ef) : a \\ (ef - ${effSym.name}) + IO
+         |Expected signature:
          |
-         |The default handler was declared here:
+         |  pub def ${handlerSym.name}(f: Unit -> a \\ ef): a \\ (ef - ${effSym.name}) + IO
          |
-         |${src(loc, "illegal signature.")}
+         |${underline("Explanation:")} A default handler must:
          |
+         |  (a) Take a single thunk argument of type 'Unit -> a \\ ef'.
+         |  (b) Return a value of type 'a' with effect '(ef - ${effSym.name}) + IO'.
+         |
+         |That is, a default handler must handle the effect (i.e. remove it from
+         |the effect set) and it may only introduce the 'IO' effect.
          |""".stripMargin
     }
   }
