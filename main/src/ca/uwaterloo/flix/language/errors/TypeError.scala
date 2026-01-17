@@ -197,11 +197,11 @@ object TypeError {
   case class NonPublicDefaultHandler(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E1738
 
-    def summary: String = s"The default handler '${handlerSym.name}' must be public (`pub`)"
+    def summary: String = s"Non-public default handler: '${handlerSym.name}' must be declared 'pub'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The default handler '${red(handlerSym.name)}' must be public (`${cyan("pub")}`).
+      s""">> Non-public default handler: '${red(handlerSym.name)}' must be declared '${cyan("pub")}'.
          |
          |${src(loc, "non-public default handler.")}
          |
