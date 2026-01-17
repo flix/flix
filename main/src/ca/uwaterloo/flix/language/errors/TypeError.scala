@@ -52,24 +52,12 @@ object TypeError {
          |${src(loc, "cannot find constructor")}
          |
          |Available constructors:
-         |${clazz.getConstructors.sortBy(_.getParameterTypes.length).map(formatConstructor).mkString("\n")}
+         |${clazz.getConstructors.sortBy(_.getParameterTypes.length).map(c => s"  - ${formatConstructor(clazz, c)}").mkString("\n")}
          |
          |${underline("Explanation:")} No Java constructor matches the given argument types.
          |Ensure that the argument types match exactly; Flix does not perform
          |automatic boxing or unboxing of primitive types.
          |""".stripMargin
-    }
-
-    private def formatConstructor(c: java.lang.reflect.Constructor[?]): String = {
-      val params = c.getParameterTypes.map(formatJavaType).mkString(", ")
-      s"  - ${clazz.getSimpleName}($params)"
-    }
-
-    private def formatJavaType(tpe: Class[?]): String = {
-      if (tpe.isPrimitive || tpe.isArray)
-        Type.getFlixType(tpe).toString
-      else
-        tpe.getName
     }
   }
 
@@ -219,14 +207,20 @@ object TypeError {
   case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6247
 
-    def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
+    def summary: String = s"Field not found: '${fieldName.name}' on type '${formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Java field '$fieldName' from type '${red(formatType(tpe, None))}' not found.
+      val availableFields = Type.classFromFlixType(tpe) match {
+        case Some(clazz) =>
+          val fields = clazz.getFields.map(f => s"  - ${formatField(f)}").sorted
+          if (fields.nonEmpty) s"\nAvailable fields:\n${fields.mkString("\n")}\n" else ""
+        case None => ""
+      }
+      s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
          |
-         |${src(loc, s"Java field '$fieldName' not found")}
-         |""".stripMargin
+         |${src(loc, "cannot find field")}
+         |$availableFields""".stripMargin
     }
   }
 
@@ -729,6 +723,31 @@ object TypeError {
          |
          |""".stripMargin
     }
+  }
+
+  /**
+    * Returns the Flix-style string representation of a Java type.
+    */
+  private def formatJavaType(tpe: Class[?]): String = {
+    if (tpe.isPrimitive || tpe.isArray)
+      Type.getFlixType(tpe).toString
+    else
+      tpe.getName
+  }
+
+  /**
+    * Returns a formatted string representation of a Java field.
+    */
+  private def formatField(f: java.lang.reflect.Field): String = {
+    s"${f.getName}: ${formatJavaType(f.getType)}"
+  }
+
+  /**
+    * Returns a formatted string representation of a Java constructor.
+    */
+  private def formatConstructor(clazz: Class[?], c: java.lang.reflect.Constructor[?]): String = {
+    val params = c.getParameterTypes.map(formatJavaType).mkString(", ")
+    s"${clazz.getSimpleName}($params)"
   }
 
 }
