@@ -43,14 +43,33 @@ object TypeError {
   case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6025
 
-    def summary: String = s"Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found."
+    def summary: String = s"Constructor not found: '${clazz.getName}' with arguments (${tpes.mkString(", ")})."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
+      s""">> Constructor not found: '${red(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
          |
-         |${src(loc, s"Java '${clazz.getName}' constructor not found")}
+         |${src(loc, "cannot find constructor")}
+         |
+         |Available constructors:
+         |${clazz.getConstructors.sortBy(_.getParameterTypes.length).map(formatConstructor).mkString("\n")}
+         |
+         |${underline("Explanation:")} No Java constructor matches the given argument types.
+         |Ensure that the argument types match exactly; Flix does not perform
+         |automatic boxing or unboxing of primitive types.
          |""".stripMargin
+    }
+
+    private def formatConstructor(c: java.lang.reflect.Constructor[?]): String = {
+      val params = c.getParameterTypes.map(formatJavaType).mkString(", ")
+      s"  - ${clazz.getSimpleName}($params)"
+    }
+
+    private def formatJavaType(tpe: Class[?]): String = {
+      if (tpe.isPrimitive || tpe.isArray)
+        Type.getFlixType(tpe).toString
+      else
+        tpe.getName
     }
   }
 
