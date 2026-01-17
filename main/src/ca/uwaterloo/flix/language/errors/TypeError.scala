@@ -373,14 +373,19 @@ object TypeError {
   case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6805
 
-    def summary: String = s"No instance of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'."
+    def summary: String = s"Missing instance: '${trt.name}' for type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> No instance of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> Missing instance: '${cyan(trt.name)}' for type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |${src(loc, s"missing instance")}
+         |${src(loc, "missing instance")}
          |
+         |${underline("Explanation:")} The type '${formatType(tpe, Some(renv))}' does not have an
+         |instance of the '${trt.name}' trait. To fix this, either:
+         |
+         |  (a) Define an instance of '${trt.name}' for '${formatType(tpe, Some(renv))}', or
+         |  (b) Use 'with' to derive an instance, if the trait supports derivation.
          |""".stripMargin
     }
   }
@@ -396,16 +401,15 @@ object TypeError {
   case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6916
 
-    def summary: String = s"No instance of the '$trt' trait for the function type '${formatType(tpe, Some(renv))}'."
+    def summary: String = s"Missing instance: '${trt.name}' for function type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> No instance of the '${cyan(trt.toString)}' trait for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> Missing instance: '${cyan(trt.name)}' for ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |>> Did you forget to apply the function to all of its arguments?
+         |${src(loc, "missing instance")}
          |
-         |${src(loc, s"missing instance")}
-         |
+         |${underline("Hint:")} Did you forget to apply the function to all of its arguments?
          |""".stripMargin
     }
   }
@@ -517,12 +521,11 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> ${red(s"Type inference failed due to too complex unification: $msg")}'.
+      s""">> Type inference too complex: ${red(msg)}.
          |
-         |Try to break your function into smaller functions.
+         |${src(loc, "complex type inference")}
          |
-         |${src(loc, "too complex constraints")}
-         |
+         |${underline("Suggestion:")} Break your function into smaller functions.
          |""".stripMargin
     }
   }
@@ -539,13 +542,13 @@ object TypeError {
   case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E7463
 
-    def summary: String = s"Missing label '$label' of type '$labelType'."
+    def summary: String = s"Missing label: '${label.name}' of type '${formatType(labelType, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+      s""">> Missing label: '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
          |
-         |${src(loc, "missing label.")}
+         |${src(loc, "missing label")}
          |
          |The record type:
          |
@@ -597,18 +600,18 @@ object TypeError {
   case class UnexpectedArg(sym: Symbol, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E7685
 
-    def summary: String = s"Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'."
+    def summary: String = s"Unexpected argument: expected '${formatType(expected, Some(renv))}', got '${formatType(actual, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'.
+      s""">> Unexpected argument: expected '${cyan(formatType(expected, Some(renv)))}', got '${red(formatType(actual, Some(renv)))}'.
          |
-         |${src(loc, s"expected: '${cyan(formatType(expected, Some(renv)))}'")}
+         |${src(loc, "unexpected argument type")}
          |
-         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${formatType(expected, Some(renv))}'.
+         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${cyan(formatType(expected, Some(renv)))}'.
          |
-         |Expected: ${formatType(expected, Some(renv))}
-         |  Actual: ${formatType(actual, Some(renv))}
+         |Expected: ${cyan(formatType(expected, Some(renv)))}
+         |  Actual: ${red(formatType(actual, Some(renv)))}
          |""".stripMargin
     }
   }
@@ -626,13 +629,13 @@ object TypeError {
 
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(expected), SymbolSet.symbolsOf(inferred))
 
-    def summary: String = s"Expected type '${formatType(expected, Some(renv), amb = amb)}' but found type: '${formatType(inferred, Some(renv), amb = amb)}'."
+    def summary: String = s"Unexpected type: expected '${formatType(expected, Some(renv), amb = amb)}', found '${formatType(inferred, Some(renv), amb = amb)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Expected type: '${red(formatType(expected, Some(renv), amb = amb))}' but found type: '${red(formatType(inferred, Some(renv), amb = amb))}'.
+      s""">> Unexpected type: expected '${cyan(formatType(expected, Some(renv), amb = amb))}', found '${red(formatType(inferred, Some(renv), amb = amb))}'.
          |
-         |${src(loc, "expression has unexpected type.")}
+         |${src(loc, "unexpected type")}
          |""".stripMargin
     }
   }
@@ -696,14 +699,13 @@ object TypeError {
   case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E8243
 
-    def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
+    def summary: String = s"Missing trait constraint: '$trt' for type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |${src(loc, s"missing constraint")}
-         |
+         |${src(loc, "missing trait constraint")}
          |""".stripMargin
     }
   }
