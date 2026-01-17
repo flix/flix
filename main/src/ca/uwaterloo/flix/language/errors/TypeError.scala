@@ -82,14 +82,25 @@ object TypeError {
   case class DefaultHandlerNotInModule(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E0621
 
-    def summary: String = s"The default handler '${handlerSym.name}' is not in the companion module of an effect."
+    def summary: String = s"Misplaced default handler: '${handlerSym.name}' must be in the companion module of its effect."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The default handler '${red(handlerSym.name)}' is not in the companion module of an effect.
+      s""">> Misplaced default handler: '${red(handlerSym.name)}' must be in the companion module of its effect.
          |
-         |${src(loc, "default handler.")}
+         |${src(loc, "must be in companion module")}
          |
+         |${underline("Explanation:")} A default handler must be defined inside the companion
+         |module of the effect it handles. For example:
+         |
+         |  pub eff E {
+         |      pub def op(): Unit
+         |  }
+         |
+         |  mod E {
+         |      @DefaultHandler
+         |      pub def runWithIO(f: Unit -> a \\ ef): a \\ (ef - E) + IO = ...
+         |  }
          |""".stripMargin
     }
   }
