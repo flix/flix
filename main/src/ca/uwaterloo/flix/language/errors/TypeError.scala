@@ -235,13 +235,17 @@ object TypeError {
   case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6358
 
-    def summary: String = s"Static Java method '$methodName' from class ${clazz.getName} with arguments types (${tpes.mkString(", ")}) not found."
+    def summary: String = s"Static method not found: '${methodName.name}' in class '${clazz.getName}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")}) not found.
+      s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
          |
-         |${src(loc, s"Static Java method '$methodName' not found")}
+         |${src(loc, "cannot find static method")}
+         |
+         |${underline("Explanation:")} No static Java method matches the given name and argument types.
+         |Ensure that the argument types match exactly; Flix does not perform
+         |automatic boxing or unboxing of primitive types.
          |""".stripMargin
     }
   }
