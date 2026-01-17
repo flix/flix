@@ -115,16 +115,15 @@ object TypeError {
   case class DuplicateDefaultHandler(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E0734
 
-    def summary: String = s"Duplicate default handler for '$sym'."
+    def summary: String = s"Duplicate default handler for effect '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Duplicate default handler for '${red(sym.toString)}'.
+      s""">> Duplicate default handler for effect '${red(sym.name)}'.
          |
-         |${src(loc1, "the first default handler was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${src(loc2, "the second default handler was here.")}
-         |
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
 
