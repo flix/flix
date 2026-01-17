@@ -115,7 +115,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    override def loc: SourceLocation = loc1
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -719,14 +719,23 @@ object TypeError {
   case class NonUnitStatement(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E8354
 
-    def summary: String = "Non-unit type used in statement position."
+    def summary: String = s"Non-unit statement: has type '${formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Statement has non-unit type: ${formatType(tpe)}.
+      s""">> Non-unit statement: has type '${red(formatType(tpe))}'.
          |
-         |${src(loc, s"non-unit type")}
+         |${src(loc, "non-unit type")}
          |
+         |${underline("Suggestion:")} Use 'discard' to ignore the result. Instead of:
+         |
+         |  expr;
+         |  ...
+         |
+         |use:
+         |
+         |  discard expr;
+         |  ...
          |""".stripMargin
     }
   }
