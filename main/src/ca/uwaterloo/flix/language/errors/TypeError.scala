@@ -173,13 +173,17 @@ object TypeError {
   case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6136
 
-    def summary: String = s"Java method '$methodName' in type '$tpe' with arguments types (${tpes.mkString(", ")}) not found."
+    def summary: String = s"Method not found: '${methodName.name}' on type '${formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Java method '$methodName' from type '${red(formatType(tpe, None))}' with arguments types (${tpes.mkString(", ")}) not found.
+      s""">> Method not found: '${red(methodName.name)}' on type '${magenta(formatType(tpe))}' with arguments (${cyan(tpes.mkString(", "))}).
          |
-         |${src(loc, s"Java method '$methodName' not found")}
+         |${src(loc, "cannot find method")}
+         |
+         |${underline("Explanation:")} No Java method matches the given name and argument types.
+         |Ensure that the argument types match exactly; Flix does not perform
+         |automatic boxing or unboxing of primitive types.
          |""".stripMargin
     }
   }
