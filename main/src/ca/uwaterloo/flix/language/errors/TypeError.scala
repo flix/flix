@@ -38,7 +38,7 @@ object TypeError {
     *
     * @param tpes the types of the arguments.
     * @param renv the rigidity environment.
-    * @param loc  the location where the error occured.
+    * @param loc  the location where the error occurred.
     */
   case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6025
@@ -154,9 +154,10 @@ object TypeError {
   /**
     * Java method not found type error.
     *
-    * @param tpe  the type of the receiver object.
-    * @param tpes the types of the arguments.
-    * @param loc  the location where the error occurred.
+    * @param methodName the name of the method.
+    * @param tpe        the type of the receiver object.
+    * @param tpes       the types of the arguments.
+    * @param loc        the location where the error occurred.
     */
   case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6136
@@ -200,9 +201,10 @@ object TypeError {
   /**
     * Java field not found type error.
     *
-    * @param base the source location of the receiver expression.
-    * @param tpe  the type of the receiver object.
-    * @param loc  the location where the error occurred.
+    * @param base      the source location of the receiver expression.
+    * @param fieldName the name of the field.
+    * @param tpe       the type of the receiver object.
+    * @param loc       the location where the error occurred.
     */
   case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def code: ErrorCode = ErrorCode.E6247
@@ -227,10 +229,11 @@ object TypeError {
   /**
     * Static Java method not found type error.
     *
-    * @param clazz the Java class expected to contain the static method
-    * @param tpes  the types of the arguments.
-    * @param renv  the rigidity environment.
-    * @param loc   the location where the error occurred.
+    * @param clazz      the Java class expected to contain the static method.
+    * @param methodName the name of the method.
+    * @param tpes       the types of the arguments.
+    * @param renv       the rigidity environment.
+    * @param loc        the location where the error occurred.
     */
   case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6358
