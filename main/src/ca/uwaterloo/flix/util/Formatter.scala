@@ -338,44 +338,26 @@ object Formatter {
   def getDefault: Formatter = if (hasColorSupport) AnsiTerminalFormatter else NoFormatter
 
   /**
-    * Returns `true` if the terminal appears to support at least 256 colors.
+    * Returns `true` if the terminal appears to support colors.
+    *
+    * Assumes color support by default, only disabling for explicitly unsupported terminals.
     */
-  def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal || isIdeaTerminal
+  def hasColorSupport: Boolean = !isDumbTerminal && !hasNoColorEnv
 
   /**
-    * Returns `true` if the terminal appears to be an ANSI terminal.
+    * Returns `true` if the terminal is explicitly a dumb terminal with no capabilities.
     */
-  private def isAnsiTerminal: Boolean = {
+  private def isDumbTerminal: Boolean = {
     val term = System.getenv("TERM")
-    term != null && (
-      term.contains("256") ||
-        term.contains("ansi") ||
-        term.contains("xterm") ||
-        term.contains("screen"))
+    term != null && term.equalsIgnoreCase("dumb")
   }
 
   /**
-    * Returns `true` if the terminal appears to support 24bit colors.
+    * Returns `true` if the NO_COLOR environment variable is set.
+    * See https://no-color.org/
     */
-  private def isTrueColorTerminal: Boolean = {
-    val colorTerm = System.getenv("COLORTERM")
-    colorTerm != null && colorTerm.contains("truecolor")
-  }
-
-  /**
-    * Returns `true` if the terminal appears to be a Windows Terminal.
-    */
-  private def isWindowsTerminal: Boolean = {
-    val wtSession = System.getenv("WT_SESSION")
-    wtSession != null
-  }
-
-  /**
-    * Returns `true` if the terminal appears to be an IDEA emulator.
-    */
-  private def isIdeaTerminal: Boolean = {
-    val emulator = System.getenv("TERMINAL_EMULATOR")
-    emulator != null && emulator.contains("JetBrains")
+  private def hasNoColorEnv: Boolean = {
+    System.getenv("NO_COLOR") != null
   }
 
 }
