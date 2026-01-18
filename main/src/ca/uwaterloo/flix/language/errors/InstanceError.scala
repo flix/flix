@@ -19,7 +19,8 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint}
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -42,11 +43,11 @@ object InstanceError {
   case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E1952
 
-    def summary: String = s"Complex type '${FormatType.formatType(tpe)}' in instance declaration for trait '${sym.name}'."
+    def summary: String = s"Complex type '${formatType(tpe)}' in instance declaration for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Complex type '${red(FormatType.formatType(tpe))}' in instance declaration for trait '${magenta(sym.name)}'.
+      s""">> Complex type '${red(formatType(tpe))}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${src(loc, "expected a type constructor applied to distinct type variables")}
          |
@@ -78,11 +79,11 @@ object InstanceError {
   case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2063
 
-    def summary: String = s"Duplicate type variable '${FormatType.formatType(tvar)}' in instance declaration for trait '${sym.name}'."
+    def summary: String = s"Duplicate type variable '${formatType(tvar)}' in instance declaration for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Duplicate type variable '${red(FormatType.formatType(tvar))}' in instance declaration for trait '${magenta(sym.name)}'.
+      s""">> Duplicate type variable '${red(formatType(tvar))}' in instance declaration for trait '${magenta(sym.name)}'.
          |
          |${src(loc, "duplicate occurrence")}
          |
@@ -287,11 +288,11 @@ object InstanceError {
   case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2843
 
-    def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${FormatType.formatType(tpe)}'."
+    def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(FormatType.formatType(tpe))}'.
+      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(formatType(tpe))}'.
          |
          |${src(loc, "missing super trait instance")}
          |
@@ -349,7 +350,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+      s""">> Orphan instance for type '${red(formatType(tpe))}' in '${magenta(sym.name)}'.
          |
          |${src(loc, s"orphan instance")}
          |
