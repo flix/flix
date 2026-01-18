@@ -360,7 +360,11 @@ object WeederError {
          |
          |${src(loc, "unexpected pattern")}
          |
-         |${underline("Tip:")} Only a default pattern or tags with wild or variable patterns are allowed, e.g., '_' or 'A(x, _, z)', respectively.
+         |${underline("Explanation:")} Only wildcards and variables are allowed in extensible patterns.
+         |
+         |    case A(x, _, z) => ...  // allowed
+         |    case A(1, 2, 3) => ...  // not allowed
+         |
          |""".stripMargin
     }
   }
