@@ -39,17 +39,15 @@ object WeederError {
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E8465
 
-    def summary: String = s"Multiple occurrences of the annotation '$name'."
+    def summary: String = s"Duplicate annotation '@$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Multiple occurrences of the annotation '${red("@" + name)}'.
+      s""">> Duplicate annotation '${red("@" + name)}'.
          |
-         |${src(loc1, "the first occurrence was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${src(loc2, "the second occurrence was here.")}
-         |
-         |${underline("Tip:")} Remove one of the two annotations.
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
 
@@ -67,17 +65,15 @@ object WeederError {
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E8576
 
-    def summary: String = s"Multiple declarations of the formal parameter '$name'."
+    def summary: String = s"Duplicate formal parameter: '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Multiple declarations of the formal parameter '${red(name)}'.
+      s""">> Duplicate formal parameter '${red(name)}'.
          |
-         |${src(loc1, "the first declaration was here.")}
+         |${src(loc1, "first declaration")}
          |
-         |${src(loc2, "the second declaration was here.")}
-         |
-         |${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash.
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
 
@@ -99,11 +95,11 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Multiple occurrences of the modifier '${red(name)}'.
+      s""">> Duplicate modifier '${red(name)}'.
          |
-         |${src(loc1, "the first occurrence was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${src(loc2, "the second occurrence was here.")}
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
 
@@ -122,19 +118,15 @@ object WeederError {
   case class DuplicateStructField(structName: String, fieldName: String, field1Loc: SourceLocation, field2Loc: SourceLocation, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E8798
 
-    def summary: String = s"struct has duplicate fields"
+    def summary: String = s"Duplicate struct field: '$fieldName'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Struct has duplicate fields
+      s""">> Duplicate struct field '${red(fieldName)}' in '${magenta(structName)}'.
          |
-         |${src(loc, "struct declaration has duplicate fields")}
+         |${src(field1Loc, "first occurrence")}
          |
-         |${src(field1Loc, "the first occurrence was here")}
-         |
-         |${src(field2Loc, "the second occurrence was here")}
-         |
-         |${underline("Tip:")} Remove one of the two fields.
+         |${src(field2Loc, "duplicate")}
          |""".stripMargin
     }
   }
@@ -147,17 +139,15 @@ object WeederError {
   case class EmptyForFragment(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E8809
 
-    def summary: String = "A loop must iterate over some collection."
+    def summary: String = "Empty loop: missing collection comprehension."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Loop does not iterate over any collection.
+      s""">> Empty loop: missing collection comprehension.
          |
-         |${src(loc, "Loop does not iterate over any collection.")}
+         |${src(loc, "empty loop")}
          |
-         |${underline("Explanation:")}
-         |A loop must contain a collection comprehension.
-         |
+         |${underline("Explanation:")} A loop must contain a collection comprehension.
          |A minimal loop is written as follows:
          |
          |    foreach (x <- xs) yield x
@@ -180,9 +170,9 @@ object WeederError {
       import formatter.*
       s""">> Empty interpolated expression.
          |
-         |${src(loc, "empty interpolated expression")}
+         |${src(loc, "missing expression")}
          |
-         |${underline("Tip:")} Add an expression to the interpolation or remove the interpolation.
+         |${underline("Explanation:")} Add an expression or remove the interpolation.
          |""".stripMargin
     }
 
