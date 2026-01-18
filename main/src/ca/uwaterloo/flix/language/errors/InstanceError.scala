@@ -91,8 +91,8 @@ object InstanceError {
          |
          |${underline("Example:")}
          |
-         |  ${red("instance C[(a, a)] { ... }")}        // Not allowed: 'a' appears twice
-         |  ${green("instance C[(a, b)] { ... }")}        // OK: 'a' and 'b' are distinct
+         |  instance C[(a, a)]        // Not allowed: 'a' appears twice
+         |  instance C[(a, b)]        // OK: 'a' and 'b' are distinct
          |""".stripMargin
     }
 
@@ -251,15 +251,27 @@ object InstanceError {
   case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2736
 
-    def summary: String = "Missing implementation."
+    def summary: String = s"Missing implementation of '${sig.name}' in instance declaration for trait '${sig.trt.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing implementation of '${red(sig.name)}' required by '${magenta(sig.trt.name)}'.
+      s""">> Missing implementation of '${red(sig.name)}' in instance declaration for trait '${magenta(sig.trt.name)}'.
          |
-         |${src(loc, s"missing implementation")}
+         |${src(loc, "required by trait")}
          |
-         |${underline("Tip:")} Add an implementation of the signature to the instance.
+         |${underline("Explanation:")} The trait declares the signature '${sig.name}', but this instance
+         |does not provide an implementation for it.
+         |
+         |${underline("Hint:")} Did you misspell the signature name?
+         |
+         |${underline("Example:")}
+         |
+         |  trait T[a] {
+         |      pub def f(): a
+         |  }
+         |
+         |  instance T[Int32] { }                            // Missing 'f'
+         |  instance T[Int32] { pub def f(): Int32 = 123 }   // OK
          |""".stripMargin
     }
   }
@@ -275,19 +287,25 @@ object InstanceError {
   case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2843
 
-    def summary: String = s"Missing super trait instance '$superTrait'."
+    def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${FormatType.formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing super trait instance '${red(superTrait.name)}' for type '${red(FormatType.formatType(tpe))}'.
+      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(FormatType.formatType(tpe))}'.
          |
-         |${src(loc, s"missing super trait instance")}
+         |${src(loc, "missing super trait instance")}
          |
-         |The trait '${red(subTrait.name)}' extends the trait '${red(superTrait.name)}'.
+         |${underline("Explanation:")} The trait '${subTrait.name}' extends '${superTrait.name}'.
+         |An instance of '${subTrait.name}' requires a corresponding instance of '${superTrait.name}'.
          |
-         |If you provide an instance for '${red(subTrait.name)}' you must also provide an instance for '${red(superTrait.name)}'.
+         |${underline("Example:")}
          |
-         |${underline("Tip:")} Add an instance of '${superTrait.name}' for '${FormatType.formatType(tpe)}'.
+         |  trait A[t]
+         |  trait B[t] with A[t]
+         |
+         |  instance B[Bool]               // Missing instance of A[Bool]
+         |  instance A[Int32]
+         |  instance B[Int32]              // OK: super trait instance provided
          |""".stripMargin
     }
   }
