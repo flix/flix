@@ -184,9 +184,9 @@ object WeederError {
   case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9023
 
-    override def summary: String = "Empty record pattern: missing field."
+    def summary: String = "Empty record pattern: missing field."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Empty record pattern: missing field.
          |
@@ -204,9 +204,9 @@ object WeederError {
   case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9134
 
-    override def summary: String = s"Unexpected annotation '$name'."
+    def summary: String = s"Unexpected annotation '$name'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected annotation '${red(name)}'.
          |
@@ -295,9 +295,9 @@ object WeederError {
   case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9578
 
-    override def summary: String = "Malformed equality constraint."
+    def summary: String = "Malformed equality constraint."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Malformed equality constraint.
          |
@@ -352,9 +352,9 @@ object WeederError {
   case class IllegalExtPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9792
 
-    override def summary: String = "Unexpected extensible variant pattern."
+    def summary: String = "Unexpected extensible variant pattern."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected extensible variant pattern.
          |
@@ -465,14 +465,15 @@ object WeederError {
   case class IllegalLatticeProvenance(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0347
 
-    override def summary: String = "Illegal lattice relation in provenance query."
+    def summary: String = "Unexpected lattice in provenance query."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal lattice relation in provenance query. Provenance on lattice relations is not supported.
+      s""">> Unexpected lattice in provenance query.
          |
-         |${src(loc, "illegal lattice relation")}
+         |${src(loc, "lattice")}
          |
+         |${underline("Explanation:")} Provenance on lattices is not supported.
          |""".stripMargin
     }
   }
@@ -523,9 +524,9 @@ object WeederError {
   case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0672
 
-    override def summary: String = "Illegal predicate arity."
+    def summary: String = "Illegal predicate arity."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal predicate arity. Arity must be an integer larger than zero.
          |
@@ -566,9 +567,9 @@ object WeederError {
 
     override val loc: SourceLocation = qname.loc
 
-    override def summary: String = "Unexpected qualified extensible variant pattern."
+    def summary: String = "Unexpected qualified extensible variant pattern."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected qualified extensible variant pattern.
          |
@@ -587,9 +588,9 @@ object WeederError {
   case class IllegalRecordExtensionPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0905
 
-    override def summary: String = "A record extension must be either a variable or wildcard."
+    def summary: String = "A record extension must be either a variable or wildcard."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected record extension pattern.
          |
@@ -607,9 +608,9 @@ object WeederError {
   case class IllegalRecordOperation(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1016
 
-    override def summary: String = "Illegal record extension in record literal"
+    def summary: String = "Illegal record extension in record literal"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal record extension in record literal.
          |
@@ -648,9 +649,9 @@ object WeederError {
   case class IllegalNumberOfTraitParameters(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1238
 
-    override def summary: String = "Illegal number of trait parameters."
+    def summary: String = "Illegal number of trait parameters."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Illegal number of trait parameters. Exactly one trait parameter must be declared.
          |
@@ -774,9 +775,9 @@ object WeederError {
   case class IllegalQualifiedName(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1896
 
-    override def summary: String = "Unexpected qualified name"
+    def summary: String = "Unexpected qualified name"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected qualified name. Java names must be imported, e.g., `import java.lang.Object`.
          |
@@ -795,9 +796,9 @@ object WeederError {
   case class InlineAndDontInline(inlineLoc: SourceLocation, dontInlineLoc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1907
 
-    override def summary: String = "A def cannot be marked both `@Inline` and `@DontInline`"
+    def summary: String = "A def cannot be marked both `@Inline` and `@DontInline`"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> A def cannot be marked both `@Inline` and `@DontInline`.
          |
@@ -808,7 +809,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def loc: SourceLocation = inlineLoc.min(dontInlineLoc)
+    def loc: SourceLocation = inlineLoc.min(dontInlineLoc)
   }
 
   /**
@@ -1095,7 +1096,7 @@ object WeederError {
   case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3236
 
-    override def summary: String = "Non-unary associated type signature."
+    def summary: String = "Non-unary associated type signature."
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -1155,9 +1156,9 @@ object WeederError {
   case class UnexpectedBinaryTypeOperator(op: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3561
 
-    override def summary: String = s"Unexpected binary type operator '$op'."
+    def summary: String = s"Unexpected binary type operator '$op'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected binary type operator.
          |
@@ -1178,9 +1179,9 @@ object WeederError {
 
     val loc: SourceLocation = qname.loc
 
-    override def summary: String = s"Unexpected channel function '$qname'."
+    def summary: String = s"Unexpected channel function '$qname'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected channel function.
          |
@@ -1240,7 +1241,7 @@ object WeederError {
   case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3236
 
-    override def summary: String = "Unexpected unary '+'"
+    def summary: String = "Unexpected unary '+'"
 
     def message(formatter: Formatter): String = {
       import formatter.*
