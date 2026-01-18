@@ -377,13 +377,15 @@ object WeederError {
   case class IllegalFixedAtom(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9803
 
-    def summary: String = "Illegal fixed atom"
+    def summary: String = "Unexpected 'fix' on negative atom."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal fixed atom. A negative atom is implicitly fixed.
+      s""">> Unexpected 'fix' on negative atom.
          |
-         |${src(loc, "Illegal fixed atom.")}
+         |${src(loc, "unexpected 'fix'")}
+         |
+         |${underline("Explanation:")} Negative atoms are implicitly fixed.
          |""".stripMargin
     }
   }
@@ -396,19 +398,16 @@ object WeederError {
   case class IllegalForFragment(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9914
 
-    def summary: String = s"A foreach expression must start with a collection comprehension."
+    def summary: String = "Unexpected for-fragment: loop must start with a generator."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Loop does not start with collection comprehension.
+      s""">> Unexpected for-fragment: loop must start with a generator.
          |
-         |${src(loc, "Loop does not start with collection comprehension.")}
+         |${src(loc, "unexpected for-fragment")}
          |
-         |${underline("Explanation:")}
-         |A loop must start with collection comprehension where the collection
-         |has an instance of the Iterable trait on it.
-         |
-         |A minimal loop is written as follows:
+         |${underline("Explanation:")} A loop must start with a generator (x <- xs).
+         |For example:
          |
          |    foreach (x <- xs) yield x
          |
@@ -424,14 +423,15 @@ object WeederError {
   case class IllegalForAFragment(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0125
 
-    def summary: String = s"A forA loop may only contain comprehensions of the form `x <- xs`."
+    def summary: String = "Unexpected forA fragment: only generators allowed."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Loop contains bad for-comprehension.
+      s""">> Unexpected forA fragment: only generators allowed.
          |
-         |${src(loc, "Loop contains bad for-comprehension.")}
+         |${src(loc, "unexpected fragment")}
          |
+         |${underline("Explanation:")} A forA loop may only contain generators (x <- xs).
          |""".stripMargin
     }
   }
