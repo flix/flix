@@ -1182,10 +1182,11 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected channel function.
+      s""">> Unexpected channel function '${red(qname.toString)}'.
          |
-         |${src(loc, "select-rules must apply `Channel.recv` to the channel.")}
+         |${src(loc, "unexpected function")}
          |
+         |${underline("Explanation:")} Select rules must use 'Channel.recv' or 'recv' to receive from a channel.
          |""".stripMargin
     }
   }
@@ -1205,9 +1206,9 @@ object WeederError {
       import formatter.*
       s""">> Unqualified use.
          |
-         |${src(loc, "unqualified use.")}
+         |${src(loc, "must be qualified")}
          |
-         |${underline("Tip:")} A use must be qualified: It should have the form `use Foo.bar`
+         |${underline("Explanation:")} A use must be qualified, e.g. 'use Foo.bar'.
          |""".stripMargin
     }
   }
@@ -1223,13 +1224,15 @@ object WeederError {
 
     private val operationName: String = if (star) "choose*" else "choose"
 
-    def summary: String = s"Unsupported $operationName pattern, only enums with variables are allowed."
+    def summary: String = s"Unsupported $operationName pattern."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> $summary
+      s""">> Unsupported ${red(operationName)} pattern.
          |
-         |${src(loc, "Unsupported pattern.")}
+         |${src(loc, "unsupported pattern")}
+         |
+         |${underline("Explanation:")} Only enum patterns with variables are allowed in $operationName.
          |""".stripMargin
     }
   }
@@ -1240,14 +1243,13 @@ object WeederError {
   case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3236
 
-    def summary: String = "Unexpected unary '+'"
+    def summary: String = "Unexpected unary '+'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected unary '+'.
+      s""">> Unexpected unary '${red("+")}'.
          |
-         |${src(loc, s"Unary '+'")}
-         |
+         |${src(loc, "unary '+' not supported")}
          |""".stripMargin
     }
   }
