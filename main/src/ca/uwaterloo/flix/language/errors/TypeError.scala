@@ -743,6 +743,20 @@ object TypeError {
   }
 
   /**
+    * Returns the constructors of the given class sorted by parameter count.
+    */
+  private def getConstructorsByArgs(clazz: Class[?]): List[java.lang.reflect.Constructor[?]] = {
+    clazz.getConstructors.sortBy(_.getParameterTypes.length).toList
+  }
+
+  /**
+    * Returns the fields of the given class sorted by name.
+    */
+  private def getFieldsByName(clazz: Class[?]): List[java.lang.reflect.Field] = {
+    clazz.getFields.sortBy(_.getName).toList
+  }
+
+  /**
     * Returns a formatted string representation of a Java constructor.
     */
   private def formatConstructor(clazz: Class[?], c: java.lang.reflect.Constructor[?]): String = {
@@ -765,20 +779,6 @@ object TypeError {
       Type.getFlixType(tpe).toString
     else
       tpe.getName
-  }
-
-  /**
-    * Returns the constructors of the given class sorted by parameter count.
-    */
-  private def getConstructorsByArgs(clazz: Class[?]): List[java.lang.reflect.Constructor[?]] = {
-    clazz.getConstructors.sortBy(_.getParameterTypes.length).toList
-  }
-
-  /**
-    * Returns the fields of the given class sorted by name.
-    */
-  private def getFieldsByName(clazz: Class[?]): List[java.lang.reflect.Field] = {
-    clazz.getFields.sortBy(_.getName).toList
   }
 
 }
