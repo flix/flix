@@ -216,6 +216,48 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal BigDecimal pattern.
+    *
+    * @param loc the location where the illegal BigDecimal pattern occurs.
+    */
+  case class IllegalBigDecimalPattern(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1349
+
+    def summary: String = "Unexpected BigDecimal pattern."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected BigDecimal pattern.
+         |
+         |${src(loc, "BigDecimal not allowed here")}
+         |
+         |${underline("Explanation:")} BigDecimal values cannot be used in pattern matching.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal constant pattern.
+    *
+    * @param loc the location where the constant pattern occurs.
+    */
+  case class IllegalConstantPattern(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1452
+
+    def summary: String = "Unexpected constant pattern."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected constant pattern.
+         |
+         |${src(loc, "constant not allowed here")}
+         |
+         |${underline("Explanation:")} Constants are not allowed in let-bindings or lambda parameters.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that type parameters are present on an effect or operation.
     *
     * @param loc the location where the error occurred.
@@ -251,6 +293,27 @@ object WeederError {
          |${src(loc, "unexpected effect")}
          |
          |${underline("Explanation:")} Effect operations may not themselves have effects.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate illegal syntax: empty tuple type.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalEmptyTupleType(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1563
+
+    def summary: String = "Unexpected empty tuple type."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected empty tuple type.
+         |
+         |${src(loc, "empty tuple type")}
+         |
+         |${underline("Explanation:")} Use '${cyan("Unit")}' instead of an empty tuple type '${red("()")}'.
          |""".stripMargin
     }
   }
@@ -517,25 +580,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal predicate arity.
-    *
-    * @param loc the location where the error occurs.
-    */
-  case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E0672
-
-    def summary: String = "Malformed predicate arity."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Malformed predicate arity.
-         |
-         |${src(loc, "arity must be a positive integer")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate a non-public signature in a trait.
     *
     * @param ident the name of the signature.
@@ -553,6 +597,25 @@ object WeederError {
          |${src(loc, "non-public signature")}
          |
          |${underline("Explanation:")} All signatures in a trait must be public.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal predicate arity.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0672
+
+    def summary: String = "Malformed predicate arity."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Malformed predicate arity.
+         |
+         |${src(loc, "arity must be a positive integer")}
          |""".stripMargin
     }
   }
@@ -667,64 +730,41 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal BigDecimal pattern.
+    * An error raised to indicate an illegal unary plus operator.
     *
-    * @param loc the location where the illegal BigDecimal pattern occurs.
+    * @param loc the location where the error occurred.
     */
-  case class IllegalBigDecimalPattern(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E1349
+  case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3236
 
-    def summary: String = "Unexpected BigDecimal pattern."
+    def summary: String = "Unexpected unary '+'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected BigDecimal pattern.
+      s""">> Unexpected unary '${red("+")}'.
          |
-         |${src(loc, "BigDecimal not allowed here")}
-         |
-         |${underline("Explanation:")} BigDecimal values cannot be used in pattern matching.
+         |${src(loc, "unary '+' not supported")}
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate an illegal constant pattern.
+    * An error raised to indicate an illegal qualified name.
     *
-    * @param loc the location where the constant pattern occurs.
+    * @param loc the location of the illegal qualified name.
     */
-  case class IllegalConstantPattern(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E1452
+  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1896
 
-    def summary: String = "Unexpected constant pattern."
+    def summary: String = "Unexpected qualified name."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected constant pattern.
+      s""">> Unexpected qualified name.
          |
-         |${src(loc, "constant not allowed here")}
+         |${src(loc, "qualified name not allowed here")}
          |
-         |${underline("Explanation:")} Constants are not allowed in let-bindings or lambda parameters.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate illegal syntax: empty tuple type.
-    *
-    * @param loc the location where the error occurs.
-    */
-  case class IllegalEmptyTupleType(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E1563
-
-    def summary: String = "Unexpected empty tuple type."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected empty tuple type.
-         |
-         |${src(loc, "empty tuple type")}
-         |
-         |${underline("Explanation:")} Use '${cyan("Unit")}' instead of an empty tuple type '${red("()")}'.
+         |${underline("Explanation:")} Java names must be imported, e.g. 'import java.lang.Object'.
          |""".stripMargin
     }
   }
@@ -776,27 +816,6 @@ object WeederError {
          |    use List.{Nil => Empty}       // OK: both uppercase
          |    use List.{isEmpty => empty}   // OK: both lowercase
          |    use List.{Nil => empty}       // not OK: mismatched casing
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate an illegal qualified name.
-    *
-    * @param loc the location of the illegal qualified name.
-    */
-  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E1896
-
-    def summary: String = "Unexpected qualified name."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected qualified name.
-         |
-         |${src(loc, "qualified name not allowed here")}
-         |
-         |${underline("Explanation:")} Java names must be imported, e.g. 'import java.lang.Object'.
          |""".stripMargin
     }
   }
@@ -998,6 +1017,25 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a type parameter is missing a kind.
+    *
+    * @param loc the location of the type parameter.
+    */
+  case class MissingKindAscription(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2903
+
+    def summary: String = "Missing kind ascription."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Missing kind ascription.
+         |
+         |${src(loc, "kind required")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the formal parameter lacks a type declaration.
     *
     * @param name the name of the parameter.
@@ -1013,25 +1051,6 @@ object WeederError {
       s""">> Missing type ascription on '${red(name)}'.
          |
          |${src(loc, "type required")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a type parameter is missing a kind.
-    *
-    * @param loc the location of the type parameter.
-    */
-  case class MissingKindAscription(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E2903
-
-    def summary: String = "Missing kind ascription."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Missing kind ascription.
-         |
-         |${src(loc, "kind required")}
          |""".stripMargin
     }
   }
@@ -1175,9 +1194,9 @@ object WeederError {
     * @param qname the name of the function being called
     */
   case class UnexpectedSelectChannelRuleFunction(qname: Name.QName) extends WeederError {
-    def code: ErrorCode = ErrorCode.E3672
-
     val loc: SourceLocation = qname.loc
+
+    def code: ErrorCode = ErrorCode.E3672
 
     def summary: String = s"Unexpected channel function '$qname'."
 
@@ -1221,9 +1240,9 @@ object WeederError {
     * @param loc  the location where the error occurs.
     */
   case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E3894
-
     private val operationName: String = if (star) "choose*" else "choose"
+
+    def code: ErrorCode = ErrorCode.E3894
 
     def summary: String = s"Unsupported $operationName pattern."
 
@@ -1234,25 +1253,6 @@ object WeederError {
          |${src(loc, "unsupported pattern")}
          |
          |${underline("Explanation:")} Only enum patterns with variables are allowed in $operationName.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate an illegal unary plus operator.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E3236
-
-    def summary: String = "Unexpected unary '+'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected unary '${red("+")}'.
-         |
-         |${src(loc, "unary '+' not supported")}
          |""".stripMargin
     }
   }
