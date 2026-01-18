@@ -127,7 +127,7 @@ object InstanceError {
   /**
     * Error indicating an associated type in an instance type.
     *
-    * @param assoc  the type alias.
+    * @param assoc  the associated type.
     * @param trtSym the trait symbol.
     * @param loc    the location where the error occurred.
     */
@@ -148,12 +148,12 @@ object InstanceError {
   }
 
   /**
-    * Error indicating the illegal placement of an override modifier.
+    * Error indicating an unexpected use of redef where there is no default implementation.
     *
-    * @param sym the def that the modifier was applied to.
+    * @param sym the def that was marked as redef.
     * @param loc the location where the error occurred.
     */
-  case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+  case class IllegalRedef(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2394
 
     def summary: String = s"Unexpected redefinition of '${sym.name}'."
@@ -438,9 +438,9 @@ object InstanceError {
   }
 
   /**
-    * Error indicating a missing redefinition.
+    * Error indicating an unmarked redefinition (def used instead of redef).
     *
-    * @param sym the def that is missing the redef.
+    * @param sym the def that should use redef.
     * @param loc the location where the error occurred.
     */
   case class UnmarkedRedef(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
