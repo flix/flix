@@ -1064,31 +1064,25 @@ object WeederError {
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3125
 
-    def summary: String = s"Multiple occurrences of '$name' in pattern."
+    def summary: String = s"Non-linear pattern: '$name' occurs multiple times."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Multiple occurrences of '${red(name)}' in pattern.
+      s""">> Non-linear pattern: '${red(name)}' occurs multiple times.
          |
-         |${src(loc1, "the first occurrence was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${src(loc2, "the second occurrence was here.")}
+         |${src(loc2, "second occurrence")}
          |
-         |A variable may only occur once in a pattern.
+         |${underline("Explanation:")} A variable may only occur once in a pattern.
+         |Use a guard instead:
          |
-         |${underline("Explanation:")}
-         |Tip: You can replace
-         |
-         |  case (x, x) => ...
-         |
-         |with a guard:
-         |
-         |  case (x, y) if x == y => ...
+         |    case (x, x) => ...             // not allowed
+         |    case (x, y) if x == y => ...   // allowed
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1 min loc2
-
   }
 
   /**
