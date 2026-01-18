@@ -1294,7 +1294,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedRegex](result)
   }
 
-  test("MismatchedTypeParameters.01") {
+  test("MismatchedKindAnnotations.01") {
     val input =
       """
         |enum E[a, b: Bool] {
@@ -1302,25 +1302,25 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedTypeParameters](result)
+    expectError[WeederError.MismatchedKindAnnotations](result)
   }
 
-  test("MismatchedTypeParameters.02") {
+  test("MismatchedKindAnnotations.02") {
     val input =
       """
         |type alias T[a, b: Bool] = Int32
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedTypeParameters](result)
+    expectError[WeederError.MismatchedKindAnnotations](result)
   }
 
-  test("MismatchedTypeParameters.03") {
+  test("MismatchedKindAnnotations.03") {
     val input =
       """
         |enum T[a, b: Bool](Int32)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedTypeParameters](result)
+    expectError[WeederError.MismatchedKindAnnotations](result)
   }
 
   test("MissingArgumentList.01") {

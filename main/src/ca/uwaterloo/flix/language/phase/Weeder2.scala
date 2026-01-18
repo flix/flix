@@ -3281,7 +3281,7 @@ object Weeder2 {
                 case (_ :: _, Nil) => tparams
                 // Some kinded and some unkinded type parameters. Give an error and keep going.
                 case (_ :: _, _ :: _) =>
-                  val error = MismatchedTypeParameters(tparamsTree.loc)
+                  val error = MismatchedKindAnnotations(tparamsTree.loc)
                   sctx.errors.add(error)
                   tparams
                 // No type parameters. Issue an error and return an empty list.

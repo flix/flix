@@ -957,21 +957,24 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class MismatchedTypeParameters(loc: SourceLocation) extends WeederError {
+  case class MismatchedKindAnnotations(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2678
 
-    def summary: String = "Either all or none of the type parameters must be annotated with a kind."
+    def summary: String = "Mismatched kind annotations."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Inconsistent type parameters.
+      s""">> Mismatched kind annotations.
          |
-         |${src(loc, "inconsistent type parameters")}
+         |${src(loc, "inconsistent annotations")}
          |
-         |${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind.
+         |${underline("Explanation:")} Either all or none of the type parameters must have kind annotations.
+         |
+         |    enum E[a, b]              // allowed
+         |    enum E[a: Type, b: Type]  // allowed
+         |    enum E[a, b: Type]        // not allowed
          |""".stripMargin
     }
-
   }
 
   /**
