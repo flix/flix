@@ -855,18 +855,17 @@ object WeederError {
   case class MalformedFloat(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2129
 
-    def summary: String = "Malformed float."
+    def summary: String = "Malformed float literal."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Malformed float.
+      s""">> Malformed float literal.
          |
-         |${src(loc, "malformed float.")}
+         |${src(loc, "value out of bounds")}
          |
-         |${underline("Tip:")} Ensure that the literal is within bounds.
+         |${underline("Explanation:")} The literal is outside the representable range.
          |""".stripMargin
     }
-
   }
 
   /**
@@ -877,18 +876,17 @@ object WeederError {
   case class MalformedInt(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2232
 
-    def summary: String = "Malformed int."
+    def summary: String = "Malformed int literal."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Malformed int.
+      s""">> Malformed int literal.
          |
-         |${src(loc, "malformed int.")}
+         |${src(loc, "value out of bounds")}
          |
-         |${underline("Tip:")} Ensure that the literal is within bounds.
+         |${underline("Explanation:")} The literal is outside the representable range.
          |""".stripMargin
     }
-
   }
 
   /**
@@ -906,13 +904,7 @@ object WeederError {
       import formatter.*
       s""">> Malformed regular expression.
          |
-         |${src(loc, "malformed regex.")}
-         |
-         |Pattern compilation error:
-         |$err
-         |
-         |${underline("Explanation:")}
-         |A pattern literal must be a valid regular expression.
+         |${src(loc, err)}
          |""".stripMargin
     }
   }
