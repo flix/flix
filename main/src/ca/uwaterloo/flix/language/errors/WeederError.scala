@@ -985,14 +985,13 @@ object WeederError {
   case class MissingArgumentList(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2781
 
-    def summary: String = "An argument list is required here"
+    def summary: String = "Missing argument list."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing argument list. An argument list is required here.
+      s""">> Missing argument list.
          |
-         |${src(loc, "missing argument list.")}
-         |
+         |${src(loc, "argument list required")}
          |""".stripMargin
     }
   }
@@ -1003,16 +1002,16 @@ object WeederError {
     * @param name the name of the parameter.
     * @param loc  the location of the formal parameter.
     */
-  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
+  case class MissingTypeAscription(name: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2892
 
-    def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
+    def summary: String = s"Missing type ascription on '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The formal parameter '${red(name)}' must have a declared type.
+      s""">> Missing type ascription on '${red(name)}'.
          |
-         |${src(loc, "has no declared type.")}
+         |${src(loc, "type required")}
          |""".stripMargin
     }
   }
@@ -1022,17 +1021,16 @@ object WeederError {
     *
     * @param loc the location of the type parameter.
     */
-  case class MissingTypeParamKind(loc: SourceLocation) extends WeederError {
+  case class MissingKindAscription(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2903
 
-    def summary: String = "Type parameter must be annotated with its kind."
+    def summary: String = "Missing kind ascription."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing kind annotation. The type parameter must be annotated with its kind.
+      s""">> Missing kind ascription.
          |
-         |${src(loc, "missing kind.")}
-         |
+         |${src(loc, "kind required")}
          |""".stripMargin
     }
   }
@@ -1051,8 +1049,7 @@ object WeederError {
       import formatter.*
       s""">> Empty type parameter list.
          |
-         |${src(loc, "empty list.")}
-         |
+         |${src(loc, "empty list")}
          |""".stripMargin
     }
   }

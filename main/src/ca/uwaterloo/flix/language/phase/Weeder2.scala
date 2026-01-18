@@ -829,7 +829,7 @@ object Weeder2 {
           // Check for missing or illegal type ascription
           (maybeType, presence) match {
             case (None, Presence.Required) =>
-              val error = MissingFormalParamAscription(ident.name, tree.loc)
+              val error = MissingTypeAscription(ident.name, tree.loc)
               sctx.errors.add(error)
               Validation.Success(FormalParam(ident, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
             case (Some(_), Presence.Forbidden) =>
@@ -3308,7 +3308,7 @@ object Weeder2 {
                 case (_ :: _, Nil) => tparams
                 // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
                 case (_, _ :: _) =>
-                  unkinded.foreach(t => sctx.errors.add(MissingTypeParamKind(t.ident.loc)))
+                  unkinded.foreach(t => sctx.errors.add(MissingKindAscription(t.ident.loc)))
                   tparams
                 // Empty list. Syntax error, but recover with an empty list.
                 case (Nil, Nil) =>

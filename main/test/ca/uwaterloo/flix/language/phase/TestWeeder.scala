@@ -1357,7 +1357,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(x): String = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingFormalParamAscription](result)
+    expectError[WeederError.MissingTypeAscription](result)
   }
 
   test("MissingFormalParamAscription.02") {
@@ -1366,7 +1366,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(x: Int32, y): Int32 = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingFormalParamAscription](result)
+    expectError[WeederError.MissingTypeAscription](result)
   }
 
   test("MissingFormalParamAscription.03") {
@@ -1377,7 +1377,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingFormalParamAscription](result)
+    expectError[WeederError.MissingTypeAscription](result)
   }
 
   test("MissingTypeParamKind.01") {
@@ -1386,7 +1386,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f[a](x: a): a = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingTypeParamKind](result)
+    expectError[WeederError.MissingKindAscription](result)
   }
 
   test("MissingTypeParamKind.02") {
@@ -1397,7 +1397,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingTypeParamKind](result)
+    expectError[WeederError.MissingKindAscription](result)
   }
 
   test("MissingTypeParamKind.03") {
@@ -1408,7 +1408,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingTypeParamKind](result)
+    expectError[WeederError.MissingKindAscription](result)
   }
 
   test("NonLinearPattern.01") {
