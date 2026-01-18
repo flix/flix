@@ -810,16 +810,15 @@ object WeederError {
   case class InlineAndDontInline(inlineLoc: SourceLocation, dontInlineLoc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1907
 
-    def summary: String = "A def cannot be marked both `@Inline` and `@DontInline`"
+    def summary: String = "Mismatched annotations: '@Inline' and '@DontInline'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> A def cannot be marked both `@Inline` and `@DontInline`.
+      s""">> Mismatched annotations: '${red("@Inline")}' and '${red("@DontInline")}'.
          |
-         |${src(inlineLoc, "the `@Inline` occurs here")}
+         |${src(inlineLoc, "@Inline")}
          |
-         |${src(dontInlineLoc, "the `@DontInline` occurs here")}
-         |
+         |${src(dontInlineLoc, "@DontInline")}
          |""".stripMargin
     }
 
@@ -835,18 +834,17 @@ object WeederError {
   case class MalformedChar(chars: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2018
 
-    def summary: String = "Malformed, non-single-character literal."
+    def summary: String = "Malformed character literal."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Malformed, non-single-character literal.
+      s""">> Malformed character literal.
          |
-         |${src(loc, "non-single-character literal")}
+         |${src(loc, "expected single character")}
          |
-         |${underline("Tip:")} A character literal must consist of a single character.
+         |${underline("Explanation:")} A character literal must contain exactly one character.
          |""".stripMargin
     }
-
   }
 
   /**
