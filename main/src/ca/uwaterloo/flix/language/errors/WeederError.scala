@@ -941,13 +941,13 @@ object WeederError {
   case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2565
 
-    def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
+    def summary: String = s"Mismatched arity: expected $expected, actual $actual."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Mismatched arity: expected: $expected, actual: $actual.
+      s""">> Mismatched arity: expected ${cyan(expected.toString)}, actual ${red(actual.toString)}.
          |
-         |${src(loc, "mismatched arity.")}
+         |${src(loc, "mismatched arity")}
          |""".stripMargin
     }
   }
