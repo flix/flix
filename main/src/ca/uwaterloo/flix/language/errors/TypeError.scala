@@ -248,7 +248,6 @@ object TypeError {
       s""">> Non-public default handler: '${red(handlerSym.name)}' must be declared '${cyan("pub")}'.
          |
          |${src(loc, "non-public default handler.")}
-         |
          |""".stripMargin
     }
   }
@@ -297,7 +296,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Mismatched predicate arity: '${cyan(pred.name)}/$arity1' and '${cyan(pred.name)}/$arity2'.
+      s""">> Mismatched predicate arity: '${cyan(pred.name)}/${red(arity1.toString)}' and '${cyan(pred.name)}/${red(arity2.toString)}'.
          |
          |${src(loc1, s"here '${pred.name}' has arity $arity1.")}
          |
