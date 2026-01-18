@@ -565,19 +565,19 @@ object WeederError {
   case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
     def code: ErrorCode = ErrorCode.E0894
 
-    override val loc: SourceLocation = qname.loc
-
     def summary: String = "Unexpected qualified extensible variant pattern."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected qualified extensible variant pattern.
          |
-         |${src(loc, "unexpected qualified pattern")}
+         |${src(loc, "qualified pattern not allowed")}
          |
-         |${underline("Tip:")} Extensible variants can never be qualified, i.e., A.B is not allowed. Consider using just B instead.
+         |${underline("Explanation:")} Extensible variants cannot be qualified. Use '${cyan("B")}' instead of '${red("A.B")}'.
          |""".stripMargin
     }
+
+    def loc: SourceLocation = qname.loc
   }
 
   /**
@@ -588,14 +588,15 @@ object WeederError {
   case class IllegalRecordExtensionPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0905
 
-    def summary: String = "A record extension must be either a variable or wildcard."
+    def summary: String = "Unexpected record extension pattern."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected record extension pattern.
          |
-         |${src(loc, "A record extension must be either a variable or wildcard.")}
+         |${src(loc, "unexpected extension")}
          |
+         |${underline("Explanation:")} A record extension must be either a variable or wildcard.
          |""".stripMargin
     }
   }
@@ -608,14 +609,15 @@ object WeederError {
   case class IllegalRecordOperation(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1016
 
-    def summary: String = "Illegal record extension in record literal"
+    def summary: String = "Unexpected record operation in record literal."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal record extension in record literal.
+      s""">> Unexpected record operation in record literal.
          |
-         |${src(loc, "A record literal may not contain record extensions or restrictions.")}
+         |${src(loc, "unexpected operation")}
          |
+         |${underline("Explanation:")} Record literals may not contain record extensions or restrictions.
          |""".stripMargin
     }
   }
