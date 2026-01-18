@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstrain
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.fmt.FormatTypeConstructor.formatTypeConstructor
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -391,11 +392,11 @@ object InstanceError {
   case class OverlappingInstances(sym: Symbol.TraitSym, tc: TypeConstructor, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3178
 
-    def summary: String = s"Overlapping instances of '${sym.name}' for type '$tc'."
+    def summary: String = s"Overlapping instances of '${sym.name}' for type '${formatTypeConstructor(tc)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(tc.toString)}'.
+      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(formatTypeConstructor(tc))}'.
          |
          |${src(loc1, "first instance")}
          |
