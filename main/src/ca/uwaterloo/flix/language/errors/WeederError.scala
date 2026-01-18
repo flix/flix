@@ -196,6 +196,25 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an empty type parameter list.
+    *
+    * @param loc the location of the list.
+    */
+  case class EmptyTypeParamList(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3014
+
+    def summary: String = "Empty type parameter list."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Empty type parameter list.
+         |
+         |${src(loc, "empty list")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an unexpected annotation.
     *
     * @param name the name of the annotation.
@@ -454,6 +473,27 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a ForA-loop contains other ForFragments than Generators.
+    *
+    * @param loc the location of the for-loop in which the for-fragment appears.
+    */
+  case class IllegalForAFragment(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0125
+
+    def summary: String = "Unexpected forA fragment: only generators allowed."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected forA fragment: only generators allowed.
+         |
+         |${src(loc, "unexpected fragment")}
+         |
+         |${underline("Explanation:")} A forA loop may only contain generators (x <- xs).
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a loop does not iterate over any collection.
     *
     * @param loc the location of the for-loop in which the for-fragment appears.
@@ -474,27 +514,6 @@ object WeederError {
          |
          |    foreach (x <- xs) yield x
          |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a ForA-loop contains other ForFragments than Generators.
-    *
-    * @param loc the location of the for-loop in which the for-fragment appears.
-    */
-  case class IllegalForAFragment(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E0125
-
-    def summary: String = "Unexpected forA fragment: only generators allowed."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected forA fragment: only generators allowed.
-         |
-         |${src(loc, "unexpected fragment")}
-         |
-         |${underline("Explanation:")} A forA loop may only contain generators (x <- xs).
          |""".stripMargin
     }
   }
@@ -561,6 +580,28 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate a non-public signature in a trait.
+    *
+    * @param ident the name of the signature.
+    * @param loc   the location where the error occurred.
+    */
+  case class IllegalNonPublicSignature(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0783
+
+    def summary: String = s"Missing 'pub' modifier on '${ident.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Missing 'pub' modifier on '${red(ident.name)}'.
+         |
+         |${src(loc, "non-public signature")}
+         |
+         |${underline("Explanation:")} All signatures in a trait must be public.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal null pattern.
     *
     * @param loc the location where the illegal pattern occurs.
@@ -580,23 +621,22 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a non-public signature in a trait.
+    * An error raised to indicate more than one trait parameter was declared.
     *
-    * @param ident the name of the signature.
-    * @param loc   the location where the error occurred.
+    * @param loc the location where the error occurs.
     */
-  case class IllegalNonPublicSignature(ident: Name.Ident, loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E0783
+  case class IllegalNumberOfTraitParameters(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1238
 
-    def summary: String = s"Missing 'pub' modifier on '${ident.name}'."
+    def summary: String = "Mismatched number of trait parameters."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing 'pub' modifier on '${red(ident.name)}'.
+      s""">> Mismatched number of trait parameters.
          |
-         |${src(loc, "non-public signature")}
+         |${src(loc, "exactly one parameter required")}
          |
-         |${underline("Explanation:")} All signatures in a trait must be public.
+         |${underline("Explanation:")} A trait must have exactly one type parameter.
          |""".stripMargin
     }
   }
@@ -709,46 +749,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate more than one trait parameter was declared.
-    *
-    * @param loc the location where the error occurs.
-    */
-  case class IllegalNumberOfTraitParameters(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E1238
-
-    def summary: String = "Mismatched number of trait parameters."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Mismatched number of trait parameters.
-         |
-         |${src(loc, "exactly one parameter required")}
-         |
-         |${underline("Explanation:")} A trait must have exactly one type parameter.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate an illegal unary plus operator.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E3236
-
-    def summary: String = "Unexpected unary '+'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected unary '${red("+")}'.
-         |
-         |${src(loc, "unary '+' not supported")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal qualified name.
     *
     * @param loc the location of the illegal qualified name.
@@ -789,6 +789,25 @@ object WeederError {
          |
          |    def foo(x: a): ... with ToString[a]         // allowed
          |    def foo(x: a): ... with ToString[Int32]     // not allowed
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal unary plus operator.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3236
+
+    def summary: String = "Unexpected unary '+'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected unary '${red("+")}'.
+         |
+         |${src(loc, "unary '+' not supported")}
          |""".stripMargin
     }
   }
@@ -1051,25 +1070,6 @@ object WeederError {
       s""">> Missing type ascription on '${red(name)}'.
          |
          |${src(loc, "type required")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate an empty type parameter list.
-    *
-    * @param loc the location of the list.
-    */
-  case class EmptyTypeParamList(loc: SourceLocation) extends WeederError {
-    def code: ErrorCode = ErrorCode.E3014
-
-    def summary: String = "Empty type parameter list."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Empty type parameter list.
-         |
-         |${src(loc, "empty list")}
          |""".stripMargin
     }
   }
