@@ -177,7 +177,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a record pattern has shape the illegal shape `{ | r }`.
+    * An error raised to indicate that a record pattern has the illegal shape `{ | r }`.
     *
     * @param loc the location where the error occurred.
     */
@@ -460,7 +460,7 @@ object WeederError {
   /**
     * An error raised to indicate that a provenance query was executed on a lattice relation, which is not supported.
     *
-    * @param loc the location of the illegal latticenal atom.
+    * @param loc the location of the illegal lattice atom.
     */
   case class IllegalLatticeProvenance(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0347
@@ -646,7 +646,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate more than one trait parameters was declared.
+    * An error raised to indicate more than one trait parameter was declared.
     *
     * @param loc the location where the error occurs.
     */
@@ -724,7 +724,7 @@ object WeederError {
          |
          |${src(loc, "empty tuple type")}
          |
-         |${underline("Explanation:")} Use '${cyan("Unit")}' instead of an empty tuple type '${red("()")}' .
+         |${underline("Explanation:")} Use '${cyan("Unit")}' instead of an empty tuple type '${red("()")}'.
          |""".stripMargin
     }
   }
@@ -890,10 +890,11 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    * An error raised to indicate a malformed regular expression.
     *
-    * @param pat the invalid regular expression
-    * @param loc the location where the error occurred
+    * @param pat the invalid regular expression.
+    * @param err the error message.
+    * @param loc the location where the error occurred.
     */
   case class MalformedRegex(pat: String, err: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2343
@@ -1192,10 +1193,10 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal intrinsic.
+    * An error raised to indicate an unqualified use.
     *
-    * @param qn  the qualified name of the illegal intrinsic.
-    * @param loc the location where the illegal intrinsic occurs.
+    * @param qn  the qualified name.
+    * @param loc the location where the unqualified use occurs.
     */
   case class UnqualifiedUse(qn: Name.QName, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3783
@@ -1238,7 +1239,9 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a non-unary associated type.
+    * An error raised to indicate an illegal unary plus operator.
+    *
+    * @param loc the location where the error occurred.
     */
   case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3236
