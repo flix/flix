@@ -326,11 +326,20 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Invalid escape sequence.
+      s""">> Invalid escape sequence '${red("\\" + char)}'.
          |
          |${src(loc, "invalid escape sequence")}
          |
-         |${underline("Tip:")} The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\$$', '\\n', and '\\r'.
+         |${underline("Explanation:")} The valid escape sequences are:
+         |
+         |    \\n    newline
+         |    \\r    carriage return
+         |    \\t    tab
+         |    \\\\    backslash
+         |    \\'    single quote
+         |    \\"    double quote
+         |    \\$$    dollar sign
+         |
          |""".stripMargin
     }
   }
@@ -893,8 +902,8 @@ object WeederError {
   /**
     * An error raised to indicate a malformed unicode escape sequence.
     *
-    * @param code the escape sequence
-    * @param loc  the location where the error occurred.
+    * @param escapeCode the escape sequence
+    * @param loc        the location where the error occurred.
     */
   case class MalformedUnicodeEscapeSequence(escapeCode: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E2454
