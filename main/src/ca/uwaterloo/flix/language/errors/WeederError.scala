@@ -695,13 +695,15 @@ object WeederError {
   case class IllegalConstantPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1452
 
-    def summary: String = "Unexpected constant pattern"
+    def summary: String = "Unexpected constant pattern."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected constant pattern.
          |
-         |${src(loc, "Constants are not allowed in let or lambda matches.")}
+         |${src(loc, "constant not allowed here")}
+         |
+         |${underline("Explanation:")} Constants are not allowed in let-bindings or lambda parameters.
          |""".stripMargin
     }
   }
@@ -714,14 +716,15 @@ object WeederError {
   case class IllegalEmptyTupleType(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1563
 
-    def summary: String = "Illegal syntax: empty tuple type."
+    def summary: String = "Unexpected empty tuple type."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal syntax: empty tuple type.
+      s""">> Unexpected empty tuple type.
          |
          |${src(loc, "empty tuple type")}
          |
+         |${underline("Explanation:")} Use '${cyan("Unit")}' instead of an empty tuple type '${red("()")}' .
          |""".stripMargin
     }
   }
@@ -734,18 +737,20 @@ object WeederError {
   case class IllegalTraitConstraintParameter(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1674
 
-    def summary: String = s"Illegal type constraint parameter."
+    def summary: String = s"Unexpected type constraint parameter."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal type constraint parameter.
+      s""">> Unexpected type constraint parameter.
          |
-         |${src(loc, "illegal type constraint parameter")}
+         |${src(loc, "unexpected parameter")}
          |
-         |${underline("Tip:")} Type constraint parameters must be composed only of type variables.
+         |${underline("Explanation:")} Type constraint parameters must only contain type variables.
+         |
+         |    def foo(x: a): ... with ToString[a]         // allowed
+         |    def foo(x: a): ... with ToString[Int32]     // not allowed
          |""".stripMargin
     }
-
   }
 
   /**
