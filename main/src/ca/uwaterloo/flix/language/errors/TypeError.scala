@@ -52,7 +52,7 @@ object TypeError {
          |${src(loc, "cannot find constructor")}
          |
          |Available constructors:
-         |${clazz.getConstructors.sortBy(_.getParameterTypes.length).map(c => s"  - ${formatConstructor(clazz, c)}").mkString("\n")}
+         |${getConstructorsByArgs(clazz).map(c => s"  - ${formatConstructor(clazz, c)}").mkString("\n")}
          |
          |${underline("Explanation:")} No Java constructor matches the given argument types.
          |Ensure that the argument types match exactly; Flix does not perform
@@ -142,7 +142,7 @@ object TypeError {
          |
          |  ${formatType(recordType, Some(renv))}
          |
-         |contains the extra label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
+         |contains the extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
          |""".stripMargin
     }
   }
@@ -162,16 +162,14 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      val availableFields = Type.classFromFlixType(tpe) match {
-        case Some(clazz) =>
-          val fields = clazz.getFields.map(f => s"  - ${formatField(f)}").sorted
-          if (fields.nonEmpty) s"\nAvailable fields:\n${fields.mkString("\n")}\n" else ""
-        case None => ""
-      }
+      val availableFields = Type.classFromFlixType(tpe).map(getFieldsByName).getOrElse(Nil)
       s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
          |
          |${src(loc, "cannot find field")}
-         |$availableFields""".stripMargin
+         |
+         |Available fields:
+         |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
+         |""".stripMargin
     }
   }
 
@@ -767,6 +765,20 @@ object TypeError {
       Type.getFlixType(tpe).toString
     else
       tpe.getName
+  }
+
+  /**
+    * Returns the constructors of the given class sorted by parameter count.
+    */
+  private def getConstructorsByArgs(clazz: Class[?]): List[java.lang.reflect.Constructor[?]] = {
+    clazz.getConstructors.sortBy(_.getParameterTypes.length).toList
+  }
+
+  /**
+    * Returns the fields of the given class sorted by name.
+    */
+  private def getFieldsByName(clazz: Class[?]): List[java.lang.reflect.Field] = {
+    clazz.getFields.sortBy(_.getName).toList
   }
 
 }
