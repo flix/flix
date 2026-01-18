@@ -171,8 +171,6 @@ object WeederError {
       s""">> Empty interpolated expression.
          |
          |${src(loc, "missing expression")}
-         |
-         |${underline("Explanation:")} Add an expression or remove the interpolation.
          |""".stripMargin
     }
 
