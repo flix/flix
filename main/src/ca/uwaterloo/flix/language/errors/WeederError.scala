@@ -1094,14 +1094,15 @@ object WeederError {
   case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3236
 
-    def summary: String = "Non-unary associated type signature."
+    def summary: String = s"Non-unary associated type: expected 1 parameter, found $n."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Associated types must have exactly one parameter, but $n are given here.
+      s""">> Non-unary associated type: expected ${cyan("1")} parameter, found ${red(n.toString)}.
          |
-         |${src(loc, s"too many parameters")}
+         |${src(loc, "too many parameters")}
          |
+         |${underline("Explanation:")} Associated types must have exactly one type parameter.
          |""".stripMargin
     }
   }
@@ -1115,13 +1116,13 @@ object WeederError {
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3347
 
-    def summary: String = s"Undefined annotation '$name'.'"
+    def summary: String = s"Undefined annotation '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Undefined annotation '${red(name)}'.
          |
-         |${src(loc, "undefined annotation.")}
+         |${src(loc, "undefined annotation")}
          |""".stripMargin
     }
   }
@@ -1134,7 +1135,7 @@ object WeederError {
   case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3458
 
-    def summary: String = "Undefined or misapplied intrinsic"
+    def summary: String = "Undefined or misapplied intrinsic."
 
     def message(formatter: Formatter): String = {
       import formatter.*
