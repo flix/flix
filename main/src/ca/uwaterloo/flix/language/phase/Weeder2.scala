@@ -235,7 +235,7 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Module)
       val annotations = pickAnnotations(tree)
       for (ann <- annotations.annotations) {
-        sctx.errors.add(WeederError.IllegalAnnotation(ann.loc))
+        sctx.errors.add(WeederError.IllegalAnnotation(ann.toString, ann.loc))
       }
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       mapN(
@@ -1381,7 +1381,7 @@ object Weeder2 {
         case Annotations(as) =>
           // Check for annotations
           for (a <- as) {
-            sctx.errors.add(IllegalAnnotation(a.loc))
+            sctx.errors.add(IllegalAnnotation(a.toString, a.loc))
           }
       }
 

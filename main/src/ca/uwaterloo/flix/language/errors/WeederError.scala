@@ -184,14 +184,13 @@ object WeederError {
   case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9023
 
-    override def summary: String = "A record pattern must specify at least one field."
+    override def summary: String = "Empty record pattern: missing field."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected record pattern.
+      s""">> Empty record pattern: missing field.
          |
-         |${src(loc, "A record pattern must specify at least one field.")}
-         |
+         |${src(loc, "record pattern must specify at least one field")}
          |""".stripMargin
     }
   }
@@ -199,19 +198,19 @@ object WeederError {
   /**
     * An error raised to indicate that a specific annotation is not allowed here.
     *
-    * @param loc the location of the illegal annotation.
+    * @param name the name of the annotation.
+    * @param loc  the location of the annotation.
     */
-  case class IllegalAnnotation(loc: SourceLocation) extends WeederError {
+  case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9134
 
-    override def summary: String = "Unexpected annotation."
+    override def summary: String = s"Unexpected annotation '$name'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected annotation not allowed here.
+      s""">> Unexpected annotation '${red(name)}'.
          |
-         |${src(loc, "unexpected annotation")}
-         |
+         |${src(loc, "annotation not allowed here")}
          |""".stripMargin
     }
   }
