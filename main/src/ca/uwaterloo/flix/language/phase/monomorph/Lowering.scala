@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Predicate
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.LoweredAstOps
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Denotation, Fixity, Polarity, PredicateAndArity, Scope, SolveMode, SymUse}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, MonoAst, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -167,17 +167,19 @@ object Lowering {
     case LoweredAst.Expr.Var(sym, tpe, loc) => MonoAst.Expr.Var(sym, lowerType(tpe), loc)
 
     case LoweredAst.Expr.Hole(sym, _, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)
 
     case LoweredAst.Expr.HoleWithExp(_, _, tpe, _, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val sym = Symbol.freshHoleSym(loc)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
 
-    case LoweredAst.Expr.OpenAs(_, exp, _, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+    case LoweredAst.Expr.OpenAs(_, exp, _, _) =>
+      lowerExp(exp) // TODO RESTR-VARS maybe add to loweredAST
 
-    case LoweredAst.Expr.Use(_, _, exp, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
-
+    case LoweredAst.Expr.Use(_, _, exp, _) =>
+      lowerExp(exp)
 
     case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val p = lowerFormalParam(fparam)
@@ -226,10 +228,15 @@ object Lowering {
       MonoAst.Expr.ApplyOp(sym, es, t, eff, loc)
 
     case LoweredAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
 
     case LoweredAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
 
     case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
@@ -282,49 +289,90 @@ object Lowering {
       MonoAst.Expr.ExtMatch(e, rs, t, eff, loc)
 
     case LoweredAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(symUse.sym), es, t, eff, loc)
 
     case LoweredAst.Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
       throw InternalCompilerException(s"Not implemented", loc)
 
     case LoweredAst.Expr.ExtTag(label, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ExtTag(label), es, t, eff, loc)
 
     case LoweredAst.Expr.Tuple(exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Tuple, es, t, eff, loc)
 
     case LoweredAst.Expr.RecordSelect(exp, label, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(e), t, eff, loc)
 
     case LoweredAst.Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.RecordExtend(label), List(e1, e2), t, eff, loc)
 
     case LoweredAst.Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(e), t, eff, loc)
 
     case LoweredAst.Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(lowerExp)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, e :: es, t, eff, loc)
 
     case LoweredAst.Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val e3 = lowerExp(exp3)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayNew, List(e1, e2, e3), t, eff, loc)
 
     case LoweredAst.Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, eff, loc)
 
     case LoweredAst.Expr.ArrayLength(exp, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, eff, loc)
 
     case LoweredAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val e3 = lowerExp(exp3)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
     case LoweredAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val fields = fields0.map { case (k, v) => (k, lowerExp(v)) }
+      val (names0, es) = fields.unzip
+      val names = names0.map(_.sym)
+      val t = lowerType(tpe)
+      region0.map(lowerExp) match {
+        case Some(region) =>
+          MonoAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Mutable, names), region :: es, t, eff, loc)
+        case None =>
+          MonoAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Immutable, names), es, t, eff, loc)
+      }
 
     case LoweredAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.StructGet(field.sym), List(e), t, eff, loc)
 
     case LoweredAst.Expr.StructPut(exp, field, exp1, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val struct = lowerExp(exp)
+      val rhs = lowerExp(exp1)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.StructPut(field.sym), List(struct, rhs), t, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
@@ -343,29 +391,46 @@ object Lowering {
     case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
       lowerExp(exp)
 
+    case LoweredAst.Expr.InstanceOf(exp, clazz, loc) =>
+      val e = lowerExp(exp)
+      if (isPrimType(e.tpe)) {
+        // If it's a primitive type, evaluate the expression but return false
+        MonoAst.Expr.Stm(e, MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
+      } else {
+        // If it's a reference type, then do the instanceof check
+        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
+      }
+
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       mkCast(e, t, eff, loc)
 
-    case LoweredAst.Expr.InstanceOf(exp, clazz, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
-
     case LoweredAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      // Note: We do *NOT* erase checked (i.e. safe) casts.
+      // In Java, `String` is a subtype of `Object`, but the Flix IR makes this upcast _explicit_.
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      mkCast(e, t, eff, loc)
 
     case LoweredAst.Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      mkCast(e, t, eff, loc)
 
     case LoweredAst.Expr.Unsafe(exp, _, _, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      mkCast(e, t, eff, loc)
 
-    case LoweredAst.Expr.Without(exp, _, _, _, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+    case LoweredAst.Expr.Without(exp, _, _, _, _) =>
+      lowerExp(exp)
 
     case LoweredAst.Expr.Throw(exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -383,25 +448,40 @@ object Lowering {
       throw InternalCompilerException(s"Not implemented", loc)
 
     case LoweredAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
 
     case LoweredAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, t, eff, loc)
 
     case LoweredAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, t, eff, loc)
 
     case LoweredAst.Expr.GetField(field, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.GetField(field), List(e), t, eff, loc)
 
     case LoweredAst.Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), t, eff, loc)
 
     case LoweredAst.Expr.GetStaticField(field, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, t, eff, loc)
 
     case LoweredAst.Expr.PutStaticField(field, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val ms = methods.map(lowerJvmMethod)
@@ -432,7 +512,10 @@ object Lowering {
       Lowering.mkSelectChannel(rules, default, t, eff, loc)
 
     case LoweredAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), t, eff, loc)
 
     case LoweredAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val fs = frags.map {
@@ -445,10 +528,14 @@ object Lowering {
       Lowering.mkParYield(fs, e, t, eff, loc)
 
     case LoweredAst.Expr.Lazy(exp, tpe, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
 
     case LoweredAst.Expr.Force(exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = lowerExp(exp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
 
     case LoweredAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       lowerConstraintSet(cs, loc)
