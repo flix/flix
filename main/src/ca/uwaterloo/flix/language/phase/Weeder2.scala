@@ -757,7 +757,7 @@ object Weeder2 {
           // Check if pub is missing
           if (mustBePublic && !tokens.exists(_.kind == TokenKind.KeywordPub)) {
             mapN(pickNameIdent(tree)) {
-              ident => errors :+= IllegalPrivateDeclaration(ident, ident.loc)
+              ident => errors :+= IllegalNonPublicSignature(ident, ident.loc)
             }
           }
           // Check for duplicate modifiers

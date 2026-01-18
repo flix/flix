@@ -524,35 +524,35 @@ object WeederError {
   case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0672
 
-    def summary: String = "Illegal predicate arity."
+    def summary: String = "Malformed predicate arity."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal predicate arity. Arity must be an integer larger than zero.
+      s""">> Malformed predicate arity.
          |
-         |${src(loc, "illegal arity.")}
+         |${src(loc, "arity must be a positive integer")}
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate an illegal private declaration.
+    * An error raised to indicate a non-public signature in a trait.
     *
-    * @param ident the name of the declaration.
+    * @param ident the name of the signature.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+  case class IllegalNonPublicSignature(ident: Name.Ident, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0783
 
-    def summary: String = s"Declaration must be public: '${ident.name}'."
+    def summary: String = s"Missing 'pub' modifier on '${ident.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Declaration must be public: '${red(ident.name)}'.
+      s""">> Missing 'pub' modifier on '${red(ident.name)}'.
          |
-         |${src(loc, "illegal private declaration")}
+         |${src(loc, "non-public signature")}
          |
-         |Mark the declaration as public with `pub'.
+         |${underline("Explanation:")} All signatures in a trait must be public.
          |""".stripMargin
     }
   }

@@ -882,7 +882,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalBigDecimalPattern](result)
   }
 
-  test("IllegalPrivateDeclaration.01") {
+  test("IllegalNonPublicSignature.01") {
     val input =
       """
         |trait C[a] {
@@ -890,10 +890,10 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
+    expectError[WeederError.IllegalNonPublicSignature](result)
   }
 
-  test("IllegalPrivateDeclaration.02") {
+  test("IllegalNonPublicSignature.02") {
     val input =
       """
         |instance C[Int32] {
@@ -901,10 +901,10 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
+    expectError[WeederError.IllegalNonPublicSignature](result)
   }
 
-  test("IllegalPrivateDeclaration.03") {
+  test("IllegalNonPublicSignature.03") {
     val input =
       """
         |instance C[Int32] {
@@ -913,7 +913,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
+    expectError[WeederError.IllegalNonPublicSignature](result)
   }
 
   test("IllegalQualifiedExtPattern.01") {
