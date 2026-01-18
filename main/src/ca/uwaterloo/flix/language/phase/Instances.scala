@@ -163,8 +163,8 @@ object Instances {
           ()
         // Case 2: An instance matching this type exists. Error.
         case Some(inst2) =>
-          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, inst1.trt.loc, inst2.trt.loc))
-          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, inst2.trt.loc, inst1.trt.loc))
+          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, tc, inst1.trt.loc, inst2.trt.loc))
+          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, tc, inst2.trt.loc, inst1.trt.loc))
       }
     }
   }

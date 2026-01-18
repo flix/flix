@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
@@ -384,17 +384,18 @@ object InstanceError {
     * Error indicating that the types of two instances overlap.
     *
     * @param sym  the trait symbol.
+    * @param tc   the type constructor that overlaps.
     * @param loc1 the location of the first instance.
     * @param loc2 the location of the second instance.
     */
-  case class OverlappingInstances(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
+  case class OverlappingInstances(sym: Symbol.TraitSym, tc: TypeConstructor, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3178
 
-    def summary: String = s"Overlapping instances for trait '${sym.name}'."
+    def summary: String = s"Overlapping instances of '${sym.name}' for type '$tc'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Overlapping instances for trait '${magenta(sym.name)}'.
+      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(tc.toString)}'.
          |
          |${src(loc1, "first instance")}
          |
@@ -406,8 +407,8 @@ object InstanceError {
          |${underline("Example:")} Overlapping instances:
          |
          |  trait T[a]
-         |  instance T[(a, b)]
-         |  instance T[(x, y)]    // Overlaps: (a, b) and (x, y) unify
+         |  instance T[List[a]]
+         |  instance T[List[b]]    // Overlaps: List[a] and List[b] unify
          |""".stripMargin
     }
 
