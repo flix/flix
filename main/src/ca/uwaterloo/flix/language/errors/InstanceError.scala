@@ -390,17 +390,24 @@ object InstanceError {
   case class OverlappingInstances(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3178
 
-    def summary: String = "Overlapping instances."
+    def summary: String = s"Overlapping instances for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Overlapping instances for '${magenta(sym.name)}'.
+      s""">> Overlapping instances for trait '${magenta(sym.name)}'.
          |
-         |${src(loc1, "the first instance was declared here.")}
+         |${src(loc1, "first instance")}
          |
-         |${src(loc2, "the second instance was declared here.")}
+         |${src(loc2, "second instance")}
          |
-         |${underline("Tip:")} Remove or change the type of one of the instances.
+         |${underline("Explanation:")} Two instances overlap if their types unify.
+         |Each type can have at most one instance of a trait.
+         |
+         |${underline("Example:")} Overlapping instances:
+         |
+         |  trait T[a]
+         |  instance T[(a, b)]
+         |  instance T[(x, y)]    // Overlaps: (a, b) and (x, y) unify
          |""".stripMargin
     }
 
