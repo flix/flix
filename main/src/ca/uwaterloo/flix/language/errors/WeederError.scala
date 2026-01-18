@@ -924,9 +924,9 @@ object WeederError {
       import formatter.*
       s""">> Malformed unicode escape sequence.
          |
-         |${src(loc, "malformed unicode escape sequence")}
+         |${src(loc, "malformed sequence")}
          |
-         |${underline("Tip:")} A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal.
+         |${underline("Explanation:")} Unicode escapes must be of the form '\\uXXXX' where X is hexadecimal.
          |""".stripMargin
     }
   }
