@@ -444,14 +444,15 @@ object WeederError {
   case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0236
 
-    def summary: String = "Unexpected type ascription. Type ascriptions are not permitted on effect handler cases."
+    def summary: String = "Unexpected type ascription on effect handler parameter."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected type ascription. Type ascriptions are not permitted on effect handler cases.
+      s""">> Unexpected type ascription on effect handler parameter.
          |
          |${src(loc, "unexpected type ascription")}
          |
+         |${underline("Explanation:")} Type ascriptions are not permitted on effect handler parameters.
          |""".stripMargin
     }
   }
