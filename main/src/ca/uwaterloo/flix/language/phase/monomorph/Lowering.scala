@@ -170,6 +170,19 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.Lambda(p, e, t, loc)
 
+    case LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), exps, tpe, eff, loc) =>
+      // In bytecode, instanceof can only be called on reference types
+      val es = exps.map(lowerExp)
+      val List(e) = es
+      if (isPrimType(e.tpe)) {
+        // If it's a primitive type, evaluate the expression but return false
+        MonoAst.Expr.Stm(e, MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
+      } else {
+        // If it's a reference type, then do the instanceof check
+        val t = lowerType(tpe)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, t, eff, loc)
+      }
+
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
@@ -257,11 +270,14 @@ object Lowering {
 
     case LoweredAst.Expr.VectorLength(exp, loc) => MonoAst.Expr.VectorLength(lowerExp(exp), loc)
 
+    case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
+      lowerExp(exp)
+
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
       val e = lowerExp(exp)
       val t = lowerType(tpe)
-      MonoAst.Expr.Cast(e, t, eff, loc)
+      mkCast(e, t, eff, loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -343,9 +359,6 @@ object Lowering {
 
     case LoweredAst.Expr.ApplySig(_, _, _, _, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected ApplySig", exp0.loc)
-
-    case LoweredAst.Expr.Ascribe(_, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected Ascribe", exp0.loc)
 
     case LoweredAst.Expr.TypeMatch(_, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected TypeMatch", exp0.loc)
@@ -476,6 +489,80 @@ object Lowering {
     */
   private def lookup(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym =
     Specialization.specializeDefnSym(sym, tpe)
+
+
+  /**
+    * Returns the cast of `e` to `tpe` and `eff`.
+    *
+    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
+    * bytecode verifier.
+    */
+  private def mkCast(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    (exp.tpe, tpe) match {
+      case (Type.Char, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Char, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int16, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Bool, Type.Bool) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int8, Type.Int8) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int16, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int32, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) =>
+        val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
+        MonoAst.Expr.Stm(exp, crash, tpe, eff, loc)
+    }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a primitive type.
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def isPrimType(tpe: Type): Boolean = tpe match {
+    case Type.Char => true
+    case Type.Bool => true
+    case Type.Int8 => true
+    case Type.Int16 => true
+    case Type.Int32 => true
+    case Type.Int64 => true
+    case Type.Float32 => true
+    case Type.Float64 => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the erased string representation of `tpe`
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def erasedString(tpe: Type): String = tpe match {
+    case Type.Char => "Char"
+    case Type.Bool => "Bool"
+    case Type.Int8 => "Int8"
+    case Type.Int16 => "Int16"
+    case Type.Int32 => "Int32"
+    case Type.Int64 => "Int64"
+    case Type.Float32 => "Float32"
+    case Type.Float64 => "Float64"
+    case Type.Cst(_, _) => "Object"
+    case Type.Apply(_, _, _) => "Object"
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
 
   /**
     * Make a new channel tuple (sender, receiver) expression
