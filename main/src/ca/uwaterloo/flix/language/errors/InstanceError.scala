@@ -262,9 +262,7 @@ object InstanceError {
          |${src(loc, "required by trait")}
          |
          |${underline("Explanation:")} The trait declares the signature '${sig.name}', but this instance
-         |does not provide an implementation for it.
-         |
-         |${underline("Hint:")} Did you misspell the signature name?
+         |does not provide an implementation for it. Did you misspell the signature name?
          |
          |${underline("Example:")}
          |
