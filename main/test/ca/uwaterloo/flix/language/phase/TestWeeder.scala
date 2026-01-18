@@ -977,6 +977,48 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalQualifiedExtPattern](result)
   }
 
+  test("IllegalQualifiedName.TryCatch.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    try 1 catch {
+        |        case ex: java.lang.Exception => 0
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedName](result)
+  }
+
+  test("IllegalQualifiedName.TryCatch.02") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    try 1 catch {
+        |        case ex: java.io.IOException => 0
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedName](result)
+  }
+
+  test("IllegalQualifiedName.InvokeConstructor.01") {
+    val input =
+      """
+        |def f(): Unit \ IO = discard new java.lang.Object()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedName](result)
+  }
+
+  test("IllegalQualifiedName.InvokeConstructor.02") {
+    val input =
+      """
+        |def f(): Unit \ IO = discard new java.lang.String("hello")
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedName](result)
+  }
+
   test("IllegalRecordExtensionPattern.01") {
     val input =
       """
