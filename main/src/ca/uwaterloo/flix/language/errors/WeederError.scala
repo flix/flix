@@ -486,13 +486,13 @@ object WeederError {
   case class IllegalModifier(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0458
 
-    def summary: String = "Illegal modifier."
+    def summary: String = "Unexpected modifier."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal modifier.
+      s""">> Unexpected modifier.
          |
-         |${src(loc, "illegal modifier.")}
+         |${src(loc, "modifier not allowed here")}
          |""".stripMargin
     }
   }
@@ -505,13 +505,13 @@ object WeederError {
   case class IllegalNullPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E0569
 
-    def summary: String = "Illegal null pattern"
+    def summary: String = "Unexpected null pattern."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal null pattern.
+      s""">> Unexpected null pattern.
          |
-         |${src(loc, "illegal null pattern.")}
+         |${src(loc, "null cannot be used as a pattern")}
          |""".stripMargin
     }
   }
