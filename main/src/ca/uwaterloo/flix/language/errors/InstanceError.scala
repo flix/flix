@@ -425,17 +425,16 @@ object InstanceError {
   case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3281
 
-    def summary: String = s"Unlawful signature '$sym'."
+    def summary: String = s"Unlawful signature '${sym.name}' in lawful trait '${sym.trt.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unlawful signature '${red(sym.name)}'.
+      s""">> Unlawful signature '${red(sym.name)}' in lawful trait '${magenta(sym.trt.name)}'.
          |
-         |>> Each signature of a lawful trait must appear in at least one law.
+         |${src(loc, "signature not covered by any law")}
          |
-         |${src(loc, s"unlawful signature")}
-         |
-         |Create a law for '$sym' or remove the 'lawful' modifier from the trait.
+         |${underline("Explanation:")} Each signature in a lawful trait must appear in at least one law.
+         |Add a law that uses '${sym.name}' or remove the 'lawful' modifier from the trait.
          |""".stripMargin
     }
   }
