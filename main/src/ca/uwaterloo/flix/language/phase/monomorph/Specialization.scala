@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Instance}
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -466,70 +466,58 @@ object Specialization {
     *
     * Replaces every local variable symbol with a fresh local variable symbol.
     */
-  private def specializeExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Expr = exp0 match {
-    case LoweredAst.Expr.Var(sym, tpe, loc) =>
-      LoweredAst.Expr.Var(env0(sym), subst(tpe), loc)
+  private def specializeExp(exp0: Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Expr = exp0 match {
+    case Expr.Var(sym, tpe, loc) =>
+      Expr.Var(env0(sym), subst(tpe), loc)
 
-    case LoweredAst.Expr.Cst(cst, tpe, loc) =>
-      LoweredAst.Expr.Cst(cst, subst(tpe), loc)
+    case Expr.Cst(cst, tpe, loc) =>
+      Expr.Cst(cst, subst(tpe), loc)
 
-    case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
       val e = specializeExp(exp, env0 ++ env1, subst)
-      LoweredAst.Expr.Lambda(p, e, subst(tpe), loc)
+      Expr.Lambda(p, e, subst(tpe), loc)
 
-    case LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), exps, tpe, eff, loc) =>
-      // In bytecode, instanceof can only be called on reference types
+    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      val List(e) = es
-      if (isPrimType(e.tpe)) {
-        // If it's a primitive type, evaluate the expression but return false
-        LoweredAst.Expr.Stm(e, LoweredAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
-      } else {
-        // If it's a reference type, then do the instanceof check
-        LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, subst(tpe), subst(eff), loc)
-      }
+      Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
-
-    case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(sym, exps, targs, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeDefnSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
+      Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+    case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
       val es = exps.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
       val ef = subst(eff)
-      LoweredAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
+      Expr.ApplyLocalDef(newSym, es, t, ef, loc)
 
-    case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
+      Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, _, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplySig(sym, exps, _, targs, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeSigSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
+      Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      LoweredAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
+      Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val (fps, env2) = specializeFormalParams(fparams, subst)
@@ -537,29 +525,29 @@ object Specialization {
       val e2 = specializeExp(exp2, env1, subst)
       val t = subst(tpe)
       val ef = subst(eff)
-      LoweredAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
+      Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
 
-    case LoweredAst.Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      LoweredAst.Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
+      Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
       val e3 = specializeExp(exp3, env0, subst)
-      LoweredAst.Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
+      Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Discard(exp, eff, loc) =>
+    case Expr.Discard(exp, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
-      LoweredAst.Expr.Discard(e, subst(eff), loc)
+      Expr.Discard(e, subst(eff), loc)
 
-    case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+    case Expr.Match(exp, rules, tpe, eff, loc) =>
       val rs = rules map {
         case LoweredAst.MatchRule(pat, guard, body) =>
           val (p, env1) = specializePat(pat, Map(), subst)
@@ -568,9 +556,9 @@ object Specialization {
           val b = specializeExp(body, extendedEnv, subst)
           LoweredAst.MatchRule(p, g, b)
       }
-      LoweredAst.Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
+      Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules.map {
         case LoweredAst.ExtMatchRule(pat, exp1, loc1) =>
@@ -579,9 +567,9 @@ object Specialization {
           val e1 = specializeExp(exp1, extendedEnv, subst)
           LoweredAst.ExtMatchRule(p, e1, loc1)
       }
-      LoweredAst.Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
+      Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.TypeMatch(exp, rules, tpe, _, loc) =>
+    case Expr.TypeMatch(exp, rules, tpe, _, loc) =>
       // Use the non-strict substitution to allow free type variables to match with anything.
       val expTpe = subst.nonStrict(exp.tpe)
       // Make the tvars in `exp`'s type rigid so that `Nil: List[x%123]` can only match `List[_]`
@@ -604,31 +592,36 @@ object Specialization {
               // Visit the body under the extended environment.
               val body = specializeExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(LoweredAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
+              Some(Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
           }
       }.get // This is safe since the last case can always match.
 
-    case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
+    case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.VectorLit(es, subst(tpe), subst(eff), loc)
+      Expr.VectorLit(es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.VectorLength(exp, loc) =>
+    case Expr.VectorLength(exp, loc) =>
       val e = specializeExp(exp, env0, subst)
-      LoweredAst.Expr.VectorLength(e, loc)
+      Expr.VectorLength(e, loc)
 
-    case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
-      specializeExp(exp, env0, subst)
-
-    case LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
-      mkCast(e, declaredType.map(subst.apply), declaredEff.map(subst.apply), subst(tpe), subst(eff), loc)
+      val t = subst(tpe)
+      Expr.Ascribe(e, t, subst(eff), loc)
 
-    case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val dType = declaredType.map(subst.apply)
+      val dEff = declaredEff.map(subst.apply)
+      val t = subst(tpe)
+      Expr.Cast(e, dType, dEff, t, subst(eff), loc)
+
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.CatchRule(sym, clazz, body) =>
@@ -637,9 +630,9 @@ object Specialization {
           val b = specializeExp(body, env1, subst)
           LoweredAst.CatchRule(freshSym, clazz, b)
       }
-      LoweredAst.Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
+      Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
+    case Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.HandlerRule(opSymUse, fparams0, body0) =>
@@ -648,26 +641,26 @@ object Specialization {
           val body = specializeExp(body0, env1, subst)
           LoweredAst.HandlerRule(opSymUse, fparams, body)
       }
-      LoweredAst.Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
+      Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      LoweredAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+      Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
-    case LoweredAst.Expr.NewChannel(innerExp, tpe, eff, loc) =>
+    case Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
-      LoweredAst.Expr.NewChannel(e, subst(tpe), subst(eff), loc)
+      Expr.NewChannel(e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
+    case Expr.GetChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
-      LoweredAst.Expr.GetChannel(e, subst(tpe), subst(eff), loc)
+      Expr.GetChannel(e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.PutChannel(innerExp1, innerExp2, tpe, eff, loc) =>
+    case Expr.PutChannel(innerExp1, innerExp2, tpe, eff, loc) =>
       val e1 = specializeExp(innerExp1, env0, subst)
       val e2 = specializeExp(innerExp2, env0, subst)
-      LoweredAst.Expr.PutChannel(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.PutChannel(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc0) =>
+    case Expr.SelectChannel(rules0, default0, tpe, eff, loc0) =>
       val rules = rules0.map {
         case LoweredAst.SelectChannelRule(sym, chan0, exp, loc) =>
           val freshSym = Symbol.freshVarSym(sym)
@@ -677,9 +670,9 @@ object Specialization {
           LoweredAst.SelectChannelRule(freshSym, chan, e, loc)
       }
       val default = default0.map { d => specializeExp(d, env0, subst) }
-      LoweredAst.Expr.SelectChannel(rules, default, subst(tpe), subst(eff), loc0)
+      Expr.SelectChannel(rules, default, subst(tpe), subst(eff), loc0)
 
-    case LoweredAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
+    case Expr.ParYield(frags, exp, tpe, eff, loc) =>
       var curEnv = env0
       val fs = frags.map {
         case LoweredAst.ParYieldFragment(pat, fragExp, fragLoc) =>
@@ -688,75 +681,50 @@ object Specialization {
           LoweredAst.ParYieldFragment(p, specializeExp(fragExp, curEnv, subst), fragLoc)
       }
       val e = specializeExp(exp, curEnv, subst)
-      LoweredAst.Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
+      Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointConstraintSet(cs0, tpe, loc) =>
+    case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       val cs = cs0.map(specializeConstraint(_, env0, subst))
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointConstraintSet(cs, t, loc)
+      Expr.FixpointConstraintSet(cs, t, loc)
 
-    case LoweredAst.Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
+    case Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
       val pparams = pparams0.map {
         case LoweredAst.PredicateParam(pred, tpe0, loc0) => LoweredAst.PredicateParam(pred, subst(tpe0), loc0)
       }
       val e = specializeExp(exp, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointLambda(pparams, e, t, subst(eff), loc)
+      Expr.FixpointLambda(pparams, e, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointMerge(e1, e2, t, subst(eff), loc)
+      Expr.FixpointMerge(e1, e2, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val select = specializeHeadPred(select0, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, t, subst(eff), loc)
+      Expr.FixpointQueryWithProvenance(exps, select, withh, t, subst(eff), loc)
 
     // We do not care about `selects`, `from`, or `where`. I'm unsure why they're not just dropped after desugaring.
-    case LoweredAst.Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val queryExp = specializeExp(queryExp0, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects0, from0, where0, pred, t, subst(eff), loc)
+      Expr.FixpointQueryWithSelect(exps, queryExp, selects0, from0, where0, pred, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
+    case Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, t, subst(eff), loc)
+      Expr.FixpointSolveWithProject(exps, optPreds, mode, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
+    case Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, t, subst(eff), loc)
+      Expr.FixpointInjectInto(exps, predsAndArities, t, subst(eff), loc)
 
-  }
-
-  /**
-    * Returns the cast of `e` to `tpe` and `eff`.
-    *
-    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
-    * bytecode verifier.
-    */
-  private def mkCast(exp: LoweredAst.Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    (exp.tpe, tpe) match {
-      case (Type.Char, Type.Char) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Char, Type.Int16) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int16, Type.Char) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Bool, Type.Bool) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int8, Type.Int8) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int16, Type.Int16) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int32, Type.Int32) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int64, Type.Int64) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Float32, Type.Float32) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Float64, Type.Float64) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (x, y) if !isPrimType(x) && !isPrimType(y) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (x, y) =>
-        val crash = LoweredAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
-        LoweredAst.Expr.Stm(exp, crash, tpe, eff, loc)
-    }
   }
 
   /**
@@ -824,54 +792,6 @@ object Specialization {
       val (body, env2) = specializeBodies(body0, env, subst)
       val head = specializeHeadPred(head0, env2, subst)
       LoweredAst.Constraint(cparams, head, body, loc0)
-  }
-
-  /**
-    * Returns `true` if `tpe` is a primitive type.
-    *
-    * N.B.: `tpe` must be normalized.
-    */
-  private def isPrimType(tpe: Type): Boolean = tpe match {
-    case Type.Char => true
-    case Type.Bool => true
-    case Type.Int8 => true
-    case Type.Int16 => true
-    case Type.Int32 => true
-    case Type.Int64 => true
-    case Type.Float32 => true
-    case Type.Float64 => true
-    case Type.Cst(_, _) => false
-    case Type.Apply(_, _, _) => false
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-  }
-
-  /**
-    * Returns the erased string representation of `tpe`
-    *
-    * N.B.: `tpe` must be normalized.
-    */
-  private def erasedString(tpe: Type): String = tpe match {
-    case Type.Char => "Char"
-    case Type.Bool => "Bool"
-    case Type.Int8 => "Int8"
-    case Type.Int16 => "Int16"
-    case Type.Int32 => "Int32"
-    case Type.Int64 => "Int64"
-    case Type.Float32 => "Float32"
-    case Type.Float64 => "Float64"
-    case Type.Cst(_, _) => "Object"
-    case Type.Apply(_, _, _) => "Object"
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
   }
 
   /**
