@@ -1234,6 +1234,30 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedInt](result)
   }
 
+  test("MalformedFloat.Float32.01") {
+    val input = "def f(): Float32 = 1e9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999f32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedFloat](result)
+  }
+
+  test("MalformedFloat.Float32.02") {
+    val input = "def f(): Float32 = -1e9999999999999999999f32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedFloat](result)
+  }
+
+  test("MalformedFloat.Float64.01") {
+    val input = "def f(): Float64 = 1e9999999999999999999f64"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedFloat](result)
+  }
+
+  test("MalformedFloat.Float64.02") {
+    val input = "def f(): Float64 = -1e9999999999999999999f64"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedFloat](result)
+  }
+
   test("MalformedRegex.01") {
     val input =
       """

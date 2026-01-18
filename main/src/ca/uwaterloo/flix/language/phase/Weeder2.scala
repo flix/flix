@@ -2698,17 +2698,25 @@ object Weeder2 {
       * Attempts to parse the given tree to a float32.
       */
     def toFloat32(token: Token)(implicit sctx: SharedContext): Expr =
-      tryParseFloat(token,
-        (text, loc) => Expr.Cst(Constant.Float32(text.stripSuffix("f32").toFloat), loc)
-      )
+      tryParseFloat(token, (text, loc) => {
+        val value = java.lang.Float.parseFloat(text.stripSuffix("f32"))
+        if (java.lang.Float.isInfinite(value)) {
+          throw new NumberFormatException()
+        }
+        Expr.Cst(Constant.Float32(value), loc)
+      })
 
     /**
-      * Attempts to parse the given tree to a float32.
+      * Attempts to parse the given tree to a float64.
       */
     def toFloat64(token: Token)(implicit sctx: SharedContext): Expr =
-      tryParseFloat(token,
-        (text, loc) => Expr.Cst(Constant.Float64(text.stripSuffix("f64").toDouble), loc)
-      )
+      tryParseFloat(token, (text, loc) => {
+        val value = java.lang.Double.parseDouble(text.stripSuffix("f64"))
+        if (java.lang.Double.isInfinite(value)) {
+          throw new NumberFormatException()
+        }
+        Expr.Cst(Constant.Float64(value), loc)
+      })
 
     /**
       * Attempts to parse the given tree to a big decimal.
