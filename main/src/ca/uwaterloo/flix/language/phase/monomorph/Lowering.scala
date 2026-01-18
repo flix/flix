@@ -163,7 +163,22 @@ object Lowering {
     */
   private def lowerExp(exp0: LoweredAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case LoweredAst.Expr.Cst(cst, tpe, loc) => MonoAst.Expr.Cst(cst, lowerType(tpe), loc)
+
     case LoweredAst.Expr.Var(sym, tpe, loc) => MonoAst.Expr.Var(sym, lowerType(tpe), loc)
+
+    case LoweredAst.Expr.Hole(sym, _, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.HoleWithExp(_, _, tpe, _, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.OpenAs(_, exp, _, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.Use(_, _, exp, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+
     case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val p = lowerFormalParam(fparam)
       val e = lowerExp(exp)
@@ -210,6 +225,12 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyOp(sym, es, t, eff, loc)
 
+    case LoweredAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
     case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
@@ -251,11 +272,59 @@ object Lowering {
       val rs = rules.map(visitMatchRule)
       MonoAst.Expr.Match(e, rs, t, eff, loc)
 
+    case LoweredAst.Expr.RestrictableChoose(_, exp, rules, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
     case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val rs = rules.map(lowerExtMatch)
       val t = lowerType(tpe)
       MonoAst.Expr.ExtMatch(e, rs, t, eff, loc)
+
+    case LoweredAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.ExtTag(label, exps, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.Tuple(exps, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.ArrayLength(exp, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.StructPut(exp, field, exp1, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
@@ -268,7 +337,8 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.VectorLoad(e1, e2, t, eff, loc)
 
-    case LoweredAst.Expr.VectorLength(exp, loc) => MonoAst.Expr.VectorLength(lowerExp(exp), loc)
+    case LoweredAst.Expr.VectorLength(exp, loc) =>
+      MonoAst.Expr.VectorLength(lowerExp(exp), loc)
 
     case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
       lowerExp(exp)
@@ -278,6 +348,24 @@ object Lowering {
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       mkCast(e, t, eff, loc)
+
+    case LoweredAst.Expr.InstanceOf(exp, clazz, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.Unsafe(exp, _, _, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.Without(exp, _, _, _, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.Throw(exp, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -290,6 +378,30 @@ object Lowering {
       val t = lowerType(tpe)
       val rs = rules.map(lowerHandlerRule)
       MonoAst.Expr.RunWith(e, effUse, rs, t, eff, loc)
+
+    case LoweredAst.Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.GetField(field, exp, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.GetStaticField(field, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.PutStaticField(field, exp, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val ms = methods.map(lowerJvmMethod)
@@ -319,6 +431,9 @@ object Lowering {
       val t = lowerType(tpe)
       Lowering.mkSelectChannel(rules, default, t, eff, loc)
 
+    case LoweredAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
     case LoweredAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val fs = frags.map {
         case LoweredAst.ParYieldFragment(pat, fragExp, fragLoc) =>
@@ -328,6 +443,12 @@ object Lowering {
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       Lowering.mkParYield(fs, e, t, eff, loc)
+
+    case LoweredAst.Expr.Lazy(exp, tpe, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
+
+    case LoweredAst.Expr.Force(exp, tpe, eff, loc) =>
+      throw InternalCompilerException(s"Not implemented", loc)
 
     case LoweredAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       lowerConstraintSet(cs, loc)
@@ -362,6 +483,9 @@ object Lowering {
 
     case LoweredAst.Expr.TypeMatch(_, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected TypeMatch", exp0.loc)
+
+    case LoweredAst.Expr.Error(m, _, _) =>
+      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
   }
 
@@ -1003,24 +1127,24 @@ object Lowering {
     * }}}
     */
   private def lowerSolveWithProject(exps0: List[LoweredAst.Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
-      val defn = mode match {
-        case SolveMode.Default => lookup(Defs.Solve, Types.Datalog)
-        case SolveMode.WithProvenance => lookup(Defs.SolveWithProvenance, Types.Datalog)
-      }
-      val exps = exps0.map(lowerExp)
-      val mergedExp = mergeExps(exps, loc)
-      val argExps = mergedExp :: Nil
-      val solvedExp = MonoAst.Expr.ApplyDef(defn, argExps, Types.SolveType, Types.Datalog, eff, loc)
-      val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)(Scope.Top, flix)
-      val letBodyExp = optPreds match {
-        case Some(preds) =>
-          mergeExps(preds.map(pred => {
-            val varExp = MonoAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
-            projectSym(mkPredSym(pred), varExp, loc)
-          }), loc)
-        case None => MonoAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
-      }
-      MonoAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, Occur.Unknown, loc)
+    val defn = mode match {
+      case SolveMode.Default => lookup(Defs.Solve, Types.Datalog)
+      case SolveMode.WithProvenance => lookup(Defs.SolveWithProvenance, Types.Datalog)
+    }
+    val exps = exps0.map(lowerExp)
+    val mergedExp = mergeExps(exps, loc)
+    val argExps = mergedExp :: Nil
+    val solvedExp = MonoAst.Expr.ApplyDef(defn, argExps, Types.SolveType, Types.Datalog, eff, loc)
+    val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)(Scope.Top, flix)
+    val letBodyExp = optPreds match {
+      case Some(preds) =>
+        mergeExps(preds.map(pred => {
+          val varExp = MonoAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
+          projectSym(mkPredSym(pred), varExp, loc)
+        }), loc)
+      case None => MonoAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
+    }
+    MonoAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, Occur.Unknown, loc)
 
   }
 

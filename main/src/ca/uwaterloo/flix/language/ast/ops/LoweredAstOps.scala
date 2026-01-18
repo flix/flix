@@ -2,7 +2,8 @@ package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.LoweredAst.*
 import ca.uwaterloo.flix.language.ast.LoweredAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, LoweredAst}
+import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol, Type}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object LoweredAstOps {
 
@@ -156,6 +157,9 @@ object LoweredAstOps {
 
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
       freeVars(exps)
+
+    case _ =>
+      throw InternalCompilerException(s"Will not be implemented", exp0.loc)
 
   }
 
