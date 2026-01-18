@@ -354,15 +354,28 @@ object InstanceError {
   case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3067
 
-    def summary: String = "Orphan instance."
+    def summary: String = s"Orphan instance of '${sym.name}' for type '${formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Orphan instance for type '${red(formatType(tpe))}' in '${magenta(sym.name)}'.
+      s""">> Orphan instance of '${magenta(sym.name)}' for type '${red(formatType(tpe))}'.
          |
-         |${src(loc, s"orphan instance")}
+         |${src(loc, "orphan instance")}
          |
-         |An instance must be declared in the trait's namespace or in the type's namespace.
+         |${underline("Explanation:")} An instance must be declared in the trait's namespace or in the type's namespace.
+         |
+         |${underline("Example:")} Correct instance declarations:
+         |
+         |  mod A {
+         |      pub trait T[a]
+         |      instance T[Int32]          // OK: in the trait's namespace
+         |  }
+         |
+         |  mod B {
+         |      use A.T
+         |      pub enum Box[a] { case Box(a) }
+         |      instance T[Box[a]]         // OK: in the type's namespace
+         |  }
          |""".stripMargin
     }
   }
