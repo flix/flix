@@ -196,7 +196,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a specific annotation is not allowed here.
+    * An error raised to indicate an unexpected annotation.
     *
     * @param name the name of the annotation.
     * @param loc  the location of the annotation.
@@ -1129,9 +1129,9 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal intrinsic.
+    * An error raised to indicate an undefined or misapplied intrinsic.
     *
-    * @param loc the location where the illegal intrinsic occurs.
+    * @param loc the location where the error occurs.
     */
   case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E3458
@@ -1160,9 +1160,9 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected binary type operator.
+      s""">> Unexpected binary type operator '${red(op)}'.
          |
-         |${src(loc, "unknown binary type operator.")}
+         |${src(loc, "unknown binary type operator")}
          |
          |""".stripMargin
     }
