@@ -321,17 +321,25 @@ object InstanceError {
   case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2956
 
-    def summary: String = s"Missing type constraint: ${FormatTraitConstraint.formatTraitConstraint(tconstr)}"
+    def summary: String = s"Missing trait constraint '${FormatTraitConstraint.formatTraitConstraint(tconstr)}' required by super trait '${superTrait.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing type constraint: ${FormatTraitConstraint.formatTraitConstraint(tconstr)}
+      s""">> Missing trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(tconstr))}' required by super trait '${magenta(superTrait.name)}'.
          |
-         |The constraint ${FormatTraitConstraint.formatTraitConstraint(tconstr)} is required because it is a constraint on super trait ${superTrait.name}.
+         |${src(loc, "missing constraint")}
          |
-         |${src(loc, s"missing type constraint")}
+         |${underline("Explanation:")} The super trait '${superTrait.name}' requires this trait constraint to be satisfied.
+         |Add the constraint to the instance declaration.
          |
-         |${underline("Tip:")} Add the missing type constraint.
+         |${underline("Example:")}
+         |
+         |  trait C[a]
+         |  trait D[a] with C[a]
+         |
+         |  instance D[(a, b)]                       // Missing C[a], C[b]
+         |  instance C[Map[a, b]]
+         |  instance D[Map[a, b]] with C[a], C[b]    // OK
          |""".stripMargin
     }
   }
