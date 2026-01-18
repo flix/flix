@@ -78,6 +78,7 @@ sourceSets {
 jar {
     manifest {
         attributes 'Main-Class': 'ca.uwaterloo.flix.Main'
+        attributes 'Enable-Native-Access': 'ALL-UNNAMED'
     }
 
     from {
