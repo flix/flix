@@ -763,19 +763,19 @@ object WeederError {
   case class IllegalUse(fromName: String, toName: String, loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1785
 
-    def summary: String = s"The case of '$fromName' does not match the case of '$toName'."
+    def summary: String = s"Mismatched alias casing: '$fromName' and '$toName'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Mismatched alias case.
+      s""">> Mismatched alias casing: '${red(fromName)}' and '${red(toName)}'.
          |
-         |${src(loc, s"The case of '$fromName' does not match the case of '$toName'.")}
+         |${src(loc, "mismatched casing")}
          |
-         |${underline("Explanation:")}
-         |An alias must match the case of the name it replaces.
+         |${underline("Explanation:")} An alias must match the casing of the name it replaces.
          |
-         |If a name is lowercase, the alias must be lowercase.
-         |If a name is uppercase, the alias must be uppercase.
+         |    use List.{Nil => Empty}       // OK: both uppercase
+         |    use List.{isEmpty => empty}   // OK: both lowercase
+         |    use List.{Nil => empty}       // not OK: mismatched casing
          |""".stripMargin
     }
   }
