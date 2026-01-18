@@ -229,9 +229,7 @@ object WeederError {
       import formatter.*
       s""">> Unexpected effect type parameters.
          |
-         |${src(loc, "unexpected effect type parameters")}
-         |
-         |${underline("Tip:")} Type parameters are not allowed on effects.
+         |${src(loc, "type parameters on effects are not yet supported")}
          |""".stripMargin
     }
   }
