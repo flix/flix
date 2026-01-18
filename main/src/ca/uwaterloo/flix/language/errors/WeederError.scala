@@ -788,14 +788,15 @@ object WeederError {
   case class IllegalQualifiedName(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1896
 
-    def summary: String = "Unexpected qualified name"
+    def summary: String = "Unexpected qualified name."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected qualified name. Java names must be imported, e.g., `import java.lang.Object`.
+      s""">> Unexpected qualified name.
          |
-         |${src(loc, "illegal qualified name")}
+         |${src(loc, "qualified name not allowed here")}
          |
+         |${underline("Explanation:")} Java names must be imported, e.g. 'import java.lang.Object'.
          |""".stripMargin
     }
   }
