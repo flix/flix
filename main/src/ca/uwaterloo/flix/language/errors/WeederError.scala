@@ -269,13 +269,10 @@ object WeederError {
       import formatter.*
       s""">> Unexpected enum format.
          |
-         |${src(loc, "unexpected enum format")}
+         |${src(loc, "mixed singleton and case syntax")}
          |
-         |${underline("Explanation:")}
-         |This enum uses both the singleton syntax and the case syntax.
-         |
-         |Only one of the enum forms may be used.
-         |If you only need one case for the enum, use the singleton syntax:
+         |${underline("Explanation:")} Only one enum form may be used.
+         |If you only need one case, use the singleton syntax:
          |
          |    enum E(Int32)
          |
@@ -298,13 +295,19 @@ object WeederError {
   case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9578
 
-    override def summary: String = "Illegal equality constraint."
+    override def summary: String = "Malformed equality constraint."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal equality constraint.
+      s""">> Malformed equality constraint.
          |
-         |${src(loc, s"Equality constraints must have the form: `Assoc[var] ~ Type`.")}
+         |${src(loc, "malformed constraint")}
+         |
+         |${underline("Explanation:")} Equality constraints must have the form: Trait.Assoc[var] ~ Type.
+         |For example:
+         |
+         |    Readable.Elm[t] ~ Int8
+         |    Foldable.Aef[t] ~ Pure
          |
          |""".stripMargin
     }
