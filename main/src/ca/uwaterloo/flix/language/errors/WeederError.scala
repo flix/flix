@@ -630,15 +630,17 @@ object WeederError {
   case class IllegalRegexPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1127
 
-    def summary: String = "Illegal regex pattern"
+    def summary: String = "Unexpected regex pattern."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal regex pattern.
+      s""">> Unexpected regex pattern.
          |
-         |${src(loc, "regex not allowed here.")}
+         |${src(loc, "regex not allowed here")}
          |
-         |${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`.
+         |${underline("Explanation:")} Regex cannot be used as a pattern. Use an 'if' guard instead:
+         |
+         |    case s if Regex.isMatch(regex"...", s) => ...
          |""".stripMargin
     }
   }
@@ -651,13 +653,15 @@ object WeederError {
   case class IllegalNumberOfTraitParameters(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1238
 
-    def summary: String = "Illegal number of trait parameters."
+    def summary: String = "Mismatched number of trait parameters."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal number of trait parameters. Exactly one trait parameter must be declared.
+      s""">> Mismatched number of trait parameters.
          |
-         |${src(loc, "exactly one trait parameter required.")}
+         |${src(loc, "exactly one parameter required")}
+         |
+         |${underline("Explanation:")} A trait must have exactly one type parameter.
          |""".stripMargin
     }
   }
@@ -670,13 +674,15 @@ object WeederError {
   case class IllegalBigDecimalPattern(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E1349
 
-    def summary: String = "Illegal BigDecimal pattern"
+    def summary: String = "Unexpected BigDecimal pattern."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal BigDecimal pattern.
+      s""">> Unexpected BigDecimal pattern.
          |
-         |${src(loc, "BigDecimal not allowed here.")}
+         |${src(loc, "BigDecimal not allowed here")}
+         |
+         |${underline("Explanation:")} BigDecimal values cannot be used in pattern matching.
          |""".stripMargin
     }
   }
