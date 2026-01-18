@@ -186,7 +186,7 @@ object Instances {
           // Case 3: there is an implementation marked override, but no default implementation
           case (Some(defn), None) if defn.spec.mod.isOverride => sctx.errors.add(InstanceError.IllegalOverride(defn.sym, defn.sym.loc))
           // Case 4: there is an overriding implementation, but no override modifier
-          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc))
+          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)

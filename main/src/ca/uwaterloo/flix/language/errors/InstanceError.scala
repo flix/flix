@@ -440,23 +440,35 @@ object InstanceError {
   }
 
   /**
-    * Error indicating a missing override modifier.
+    * Error indicating a missing redefinition.
     *
-    * @param sym the def that is missing the modifier.
+    * @param sym the def that is missing the redef.
     * @param loc the location where the error occurred.
     */
-  case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+  case class UnmarkedRedef(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3394
 
-    def summary: String = s"Unmarked override '$sym'."
+    def summary: String = s"Unmarked redefinition of '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
+      s""">> Unmarked redefinition of '${red(sym.name)}'.
          |
-         |${src(loc, s"unmarked override")}
+         |${src(loc, "redefines a default implementation")}
          |
-         |Either add the `override` modifier or remove the definition.
+         |${underline("Explanation:")} This definition redefines a default implementation in the trait.
+         |Use 'redef' instead of 'def' to make the intent explicit.
+         |
+         |${underline("Example:")}
+         |
+         |  trait T[a] {
+         |      pub def f(x: a): Bool = true    // default implementation
+         |  }
+         |
+         |  instance T[Int32] {
+         |      pub def f(x: Int32): Bool = false      // Unmarked redefinition
+         |      redef f(x: Int32): Bool = false        // OK: uses 'redef'
+         |  }
          |""".stripMargin
     }
   }
