@@ -242,14 +242,15 @@ object WeederError {
   case class IllegalEffectfulOperation(loc: SourceLocation) extends WeederError {
     def code: ErrorCode = ErrorCode.E9356
 
-    def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
+    def summary: String = "Unexpected effect on operation."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected effect. Effect operations may not themselves have effects.
+      s""">> Unexpected effect on operation.
          |
          |${src(loc, "unexpected effect")}
          |
+         |${underline("Explanation:")} Effect operations may not themselves have effects.
          |""".stripMargin
     }
   }
