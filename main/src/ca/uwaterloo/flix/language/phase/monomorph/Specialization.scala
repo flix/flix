@@ -474,16 +474,22 @@ object Specialization {
       Expr.Cst(cst, subst(tpe), loc)
 
     case Expr.Hole(sym, scp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val t = subst(tpe)
+      Expr.Hole(sym, scp, t, subst(eff), loc)
 
     case Expr.HoleWithExp(exp, scp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.HoleWithExp(e, scp, t, subst(eff), loc)
 
     case Expr.OpenAs(symUse, exp, tpe, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.OpenAs(symUse, e, t, loc)
 
     case Expr.Use(symbol, alias, exp, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      Expr.Use(symbol, alias, e, loc)
 
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
@@ -523,10 +529,15 @@ object Specialization {
       Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Unary(sop, e, t, subst(eff), loc)
 
     case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.Binary(sop, e1, e2, t, subst(eff), loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -618,49 +629,86 @@ object Specialization {
       throw InternalCompilerException(s"Not implemented", loc)
 
     case Expr.Tag(symUse, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.Tag(symUse, es, t, subst(eff), loc)
 
     case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.RestrictableTag(symUse, es, t, subst(eff), loc)
 
     case Expr.ExtTag(label, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.ExtTag(label, es, t, subst(eff), loc)
 
     case Expr.Tuple(exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.Tuple(es, t, subst(eff), loc)
 
     case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.RecordSelect(e, label, t, subst(eff), loc)
 
     case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.RecordExtend(label, e1, e2, t, subst(eff), loc)
 
     case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.RecordRestrict(label, e, t, subst(eff), loc)
 
     case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.ArrayLit(es, e, t, subst(eff), loc)
 
     case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val e3 = specializeExp(exp3, env0, subst)
+      val t = subst(tpe)
+      Expr.ArrayNew(e1, e2, e3, t, subst(eff), loc)
 
     case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.ArrayLoad(e1, e2, t, subst(eff), loc)
 
     case Expr.ArrayLength(exp, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      Expr.ArrayLength(e, subst(eff), loc)
 
     case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val e3 = specializeExp(exp3, env0, subst)
+      Expr.ArrayStore(e1, e2, e3, subst(eff), loc)
 
     case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val fields = fields0.map { case (k, v) => (k, specializeExp(v, env0, subst)) }
+      val region = region0.map(r => specializeExp(r, env0, subst))
+      val t = subst(tpe)
+      Expr.StructNew(sym, fields, region, t, subst(eff), loc)
 
     case Expr.StructGet(exp, field, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.StructGet(e, field, t, subst(eff), loc)
 
     case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.StructPut(e1, field, e2, t, subst(eff), loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
@@ -688,19 +736,31 @@ object Specialization {
       Expr.Cast(e, dType, dEff, t, subst(eff), loc)
 
     case Expr.InstanceOf(exp, clazz, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      Expr.InstanceOf(e, clazz, loc)
 
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val dType = declaredType.map(subst.apply)
+      val dEff = declaredEff.map(subst.apply)
+      val t = subst(tpe)
+      Expr.UncheckedCast(e, dType, dEff, t, subst(eff), loc)
 
     case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.CheckedCast(cast, e, t, subst(eff), loc)
 
     case Expr.Unsafe(exp, runEff, asEff0, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      val asEff = asEff0.map(subst.apply)
+      Expr.Unsafe(e, subst(runEff), asEff, t, subst(eff), loc)
 
     case Expr.Without(exp, symUse, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Without(e, symUse, t, subst(eff), loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -714,7 +774,9 @@ object Specialization {
       Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
 
     case Expr.Throw(exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Throw(e, t, subst(eff), loc)
 
     case Expr.Handler(symUse0, rules0, bodyTpe, bodyEff, handledEff, tpe, loc0) =>
       throw InternalCompilerException(s"Not implemented", loc0)
@@ -731,25 +793,40 @@ object Specialization {
       Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
 
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeConstructor(constructor, es, t, subst(eff), loc)
 
     case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeMethod(method, e, es, t, subst(eff), loc)
 
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeStaticMethod(method, es, t, subst(eff), loc)
 
     case Expr.GetField(field, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.GetField(field, e, t, subst(eff), loc)
 
     case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.PutField(field, e1, e2, t, subst(eff), loc)
 
     case Expr.GetStaticField(field, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val t = subst(tpe)
+      Expr.GetStaticField(field, t, subst(eff), loc)
 
     case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.PutStaticField(field, e, t, subst(eff), loc)
 
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
@@ -781,7 +858,10 @@ object Specialization {
       Expr.SelectChannel(rules, default, subst(tpe), subst(eff), loc0)
 
     case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.Spawn(e1, e2, t, subst(eff), loc)
 
     case Expr.ParYield(frags, exp, tpe, eff, loc) =>
       var curEnv = env0
@@ -795,10 +875,14 @@ object Specialization {
       Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
 
     case Expr.Lazy(exp, tpe, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Lazy(e, t, loc)
 
     case Expr.Force(exp, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Force(e, t, subst(eff), loc)
 
     case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       val cs = cs0.map(specializeConstraint(_, env0, subst))
@@ -842,7 +926,7 @@ object Specialization {
       val t = subst(tpe)
       Expr.FixpointInjectInto(exps, predsAndArities, t, subst(eff), loc)
 
-    case LoweredAst.Expr.Error(m, _, _) =>
+    case Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
   }
