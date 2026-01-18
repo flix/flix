@@ -661,29 +661,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a qualified extensible variant pattern.
-    *
-    * @param qname the offending qualified name.
-    */
-  case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
-    def code: ErrorCode = ErrorCode.E0894
-
-    def summary: String = "Unexpected qualified extensible variant pattern."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected qualified extensible variant pattern.
-         |
-         |${src(loc, "qualified pattern not allowed")}
-         |
-         |${underline("Explanation:")} Extensible variants cannot be qualified. Use '${cyan("B")}' instead of '${red("A.B")}'.
-         |""".stripMargin
-    }
-
-    def loc: SourceLocation = qname.loc
-  }
-
-  /**
     * An error raised to indicate that the extension of a record pattern is malformed.
     *
     * @param loc the location where the error occurred.
@@ -746,6 +723,29 @@ object WeederError {
          |    case s if Regex.isMatch(regex"...", s) => ...
          |""".stripMargin
     }
+  }
+
+  /**
+    * An error raised to indicate a qualified extensible variant pattern.
+    *
+    * @param qname the offending qualified name.
+    */
+  case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0894
+
+    def summary: String = "Unexpected qualified extensible variant pattern."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected qualified extensible variant pattern.
+         |
+         |${src(loc, "qualified pattern not allowed")}
+         |
+         |${underline("Explanation:")} Extensible variants cannot be qualified. Use '${cyan("B")}' instead of '${red("A.B")}'.
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = qname.loc
   }
 
   /**
