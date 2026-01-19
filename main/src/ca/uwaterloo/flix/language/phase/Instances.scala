@@ -163,8 +163,8 @@ object Instances {
           ()
         // Case 2: An instance matching this type exists. Error.
         case Some(inst2) =>
-          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, inst1.trt.loc, inst2.trt.loc))
-          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, inst2.trt.loc, inst1.trt.loc))
+          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, tc, inst1.trt.loc, inst2.trt.loc))
+          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, tc, inst2.trt.loc, inst1.trt.loc))
       }
     }
   }
@@ -184,9 +184,9 @@ object Instances {
           // Case 2: there is no definition with the same name, but there is a default implementation
           case (None, Some(_)) => ()
           // Case 3: there is an implementation marked override, but no default implementation
-          case (Some(defn), None) if defn.spec.mod.isOverride => sctx.errors.add(InstanceError.IllegalOverride(defn.sym, defn.sym.loc))
+          case (Some(defn), None) if defn.spec.mod.isOverride => sctx.errors.add(InstanceError.IllegalRedef(defn.sym, defn.sym.loc))
           // Case 4: there is an overriding implementation, but no override modifier
-          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc))
+          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
