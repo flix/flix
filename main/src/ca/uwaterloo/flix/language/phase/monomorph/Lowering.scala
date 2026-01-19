@@ -280,7 +280,11 @@ object Lowering {
       MonoAst.Expr.Match(e, rs, t, eff, loc)
 
     case LoweredAst.Expr.RestrictableChoose(_, exp, rules, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      // lower into an ordinary match
+      val e = lowerExp(exp)
+      val rs = rules.map(lowerRestrictableChooseRule)
+      val t = lowerType(tpe)
+      MonoAst.Expr.Match(e, rs, t, eff, loc)
 
     case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -294,7 +298,11 @@ object Lowering {
       MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(symUse.sym), es, t, eff, loc)
 
     case LoweredAst.Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      // Lower a restrictable tag into a normal tag.
+      val caseSym = lowerRestrictableCaseSym(symUse.sym)
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), es, t, eff, loc)
 
     case LoweredAst.Expr.ExtTag(label, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
@@ -438,14 +446,37 @@ object Lowering {
       val rs = rules.map(lowerCatchRule)
       MonoAst.Expr.TryCatch(e, rs, t, eff, loc)
 
-    case LoweredAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
+    case LoweredAst.Expr.OldRunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       val rs = rules.map(lowerHandlerRule)
       MonoAst.Expr.RunWith(e, effUse, rs, t, eff, loc)
 
     case LoweredAst.Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      // handler sym { rules }
+      // is lowered to
+      // handlerBody -> try handlerBody() with sym { rules }
+      val bodySym = Symbol.freshVarSym("handlerBody", BoundBy.FormalParam, loc.asSynthetic)(Scope.Top, flix)
+      val rs = rules.map(lowerHandlerRule)
+      val bt = lowerType(bodyTpe)
+      val t = lowerType(tpe)
+      val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
+      val bodyVar = MonoAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
+      val body = MonoAst.Expr.ApplyClo(bodyVar, MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
+      val RunWith = MonoAst.Expr.RunWith(body, symUse, rs, bt, handledEff, loc)
+      val param = MonoAst.FormalParam(bodySym, bodyThunkType, Occur.Unknown, loc.asSynthetic)
+      MonoAst.Expr.Lambda(param, RunWith, t, loc)
+
+    case LoweredAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      // run exp1 with exp2
+      // is lowered to
+      // exp2(_runWith -> exp1)
+      val e1 = lowerExp(exp1)
+      val unitParam = MonoAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic)(Scope.Top, flix), Type.Unit, Occur.Unknown, loc.asSynthetic)
+      val thunkType = Type.mkArrowWithEffect(Type.Unit, e1.eff, e1.tpe, loc.asSynthetic)
+      val thunk = MonoAst.Expr.Lambda(unitParam, e1, thunkType, loc.asSynthetic)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyClo(lowerExp(exp2), thunk, t, eff, loc)
 
     case LoweredAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
@@ -655,6 +686,47 @@ object Lowering {
       MonoAst.Pattern.Record(patsVal, patVal, t, loc)
   }
 
+  /**
+    * Lowers the given restrictable choice rule `rule0` to a match rule.
+    */
+  private def lowerRestrictableChooseRule(rule0: LoweredAst.RestrictableChooseRule)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.MatchRule = rule0 match {
+    case LoweredAst.RestrictableChooseRule(pat, exp) =>
+      val e = lowerExp(exp)
+      pat match {
+        case LoweredAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
+          val termPatterns = pat0.map {
+            case LoweredAst.RestrictableChoosePattern.Var(varSym, varTpe, varLoc) => MonoAst.Pattern.Var(varSym, lowerType(varTpe), Occur.Unknown, varLoc)
+            case LoweredAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) => MonoAst.Pattern.Wild(lowerType(wildTpe), wildLoc)
+            case LoweredAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val tagSymUse = lowerRestrictableCaseSymUse(symUse)
+          val p = MonoAst.Pattern.Tag(tagSymUse, termPatterns, lowerType(tpe), loc)
+          MonoAst.MatchRule(p, None, e)
+        case LoweredAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
+      }
+  }
+
+  /**
+    * Lowers `sym` from a restrictable case sym use into a regular case sym use.
+    */
+  private def lowerRestrictableCaseSymUse(symUse: SymUse.RestrictableCaseSymUse): SymUse.CaseSymUse = {
+    SymUse.CaseSymUse(lowerRestrictableCaseSym(symUse.sym), symUse.sym.loc)
+  }
+
+  /**
+    * Lowers `sym` from a restrictable case sym into a regular case sym.
+    */
+  private def lowerRestrictableCaseSym(sym: Symbol.RestrictableCaseSym): Symbol.CaseSym = {
+    val enumSym = lowerRestrictableEnumSym(sym.enumSym)
+    new Symbol.CaseSym(enumSym, sym.name, sym.loc)
+  }
+
+  /**
+    * Lowers `sym` from a restrictable enum sym into a regular enum sym.
+    */
+  private def lowerRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
+    new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
+
   private def lowerExtPat(pat0: LoweredAst.ExtPattern): MonoAst.ExtPattern = pat0 match {
     case LoweredAst.ExtPattern.Default(loc) =>
       MonoAst.ExtPattern.Default(loc)
@@ -700,7 +772,6 @@ object Lowering {
     */
   private def lookup(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym =
     Specialization.specializeDefnSym(sym, tpe)
-
 
   /**
     * Returns the cast of `e` to `tpe` and `eff`.
@@ -860,7 +931,6 @@ object Lowering {
       case ((sym, c), e) => MonoAst.Expr.Let(sym, c, e, t, eff, Occur.Unknown, loc)
     }
   }
-
 
   /**
     * Make the list of MpmcAdmin objects which will be passed to `selectFrom`.
@@ -1455,7 +1525,6 @@ object Lowering {
     MonoAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
   }
 
-
   /**
     * Lifts the given lambda expression `exp0` with the given argument types `argTypes` and `resultType`.
     */
@@ -1970,7 +2039,6 @@ object Lowering {
     case MonoAst.ExtTagPattern.Unit(tpe, loc) =>
       MonoAst.ExtTagPattern.Unit(tpe, loc)
   }
-
 
   /*
    * Methods for lowering provenance datalog expressions.
