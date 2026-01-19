@@ -130,8 +130,47 @@ The `src(loc, hint)` annotation should:
 - Add *contextual* information
 - Highlight the relevant code region
 - Avoid restating the summary or message lead
+- Omit the trailing period (e.g., `src(loc, "missing label")` not `src(loc, "missing label.")`)
 
 A good source hint helps the user understand *why this location matters*.
+
+---
+
+### Numbered Lists
+
+Use **(a)**, **(b)**, **(c)**, ... for numbered items within explanations:
+
+```
+Explanation: To fix this, either:
+
+  (a) Define an instance of 'Eq' for 'Color', or
+  (b) Use 'with' to derive an instance.
+```
+
+This style is consistent and visually distinct from markdown-style numbered lists.
+
+---
+
+### Trailing Whitespace
+
+Do not end messages with an extra blank line. The message should end cleanly:
+
+**Good:**
+```scala
+s""">> Error message.
+   |
+   |${src(loc, "hint")}
+   |""".stripMargin
+```
+
+**Bad:**
+```scala
+s""">> Error message.
+   |
+   |${src(loc, "hint")}
+   |
+   |""".stripMargin  // Extra blank line before closing
+```
 
 ---
 
