@@ -102,7 +102,7 @@ object LoweredAstOps {
         case (acc, CatchRule(sym, _, body)) => acc ++ freeVars(body) - sym
       }
 
-    case Expr.RunWith(exp1, _, _, _, _, _) =>
+    case Expr.OldRunWith(exp1, _, _, _, _, _) =>
       freeVars(exp1)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>

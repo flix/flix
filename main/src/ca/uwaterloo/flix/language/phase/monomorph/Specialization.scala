@@ -626,7 +626,10 @@ object Specialization {
       }.get // This is safe since the last case can always match.
 
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
-      throw InternalCompilerException(s"Not implemented", loc)
+      val e = specializeExp(exp, env0, subst)
+      val rs = rules.map(r => specializeRestrictableChooseRule(r, env0, subst))
+      val t = subst(tpe)
+      Expr.RestrictableChoose(star, e, rs, t, subst(eff), loc)
 
     case Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
@@ -779,9 +782,25 @@ object Specialization {
       Expr.Throw(e, t, subst(eff), loc)
 
     case Expr.Handler(symUse0, rules0, bodyTpe, bodyEff, handledEff, tpe, loc0) =>
-      throw InternalCompilerException(s"Not implemented", loc0)
+      val rules = rules0.map {
+        case LoweredAst.HandlerRule(symUse, fparams0, exp) =>
+          val (fparams, env1) = specializeFormalParams(fparams0, subst)
+          val e = specializeExp(exp, env0 ++ env1, subst)
+          LoweredAst.HandlerRule(symUse, fparams, e)
+      }
+      val bodyT = subst(bodyTpe)
+      val bodyE = subst(bodyEff)
+      val handledE = subst(handledEff)
+      val t = subst(tpe)
+      Expr.Handler(symUse0, rules, bodyT, bodyE, handledE, t, loc0)
 
-    case Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.RunWith(e1, e2, t, subst(eff), loc)
+
+    case Expr.OldRunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.HandlerRule(opSymUse, fparams0, body0) =>
@@ -790,7 +809,7 @@ object Specialization {
           val body = specializeExp(body0, env1, subst)
           LoweredAst.HandlerRule(opSymUse, fparams, body)
       }
-      Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
+      Expr.OldRunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
 
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
@@ -975,7 +994,7 @@ object Specialization {
   }
 
   /**
-    * Lowers the given constraint `c0`.
+    * Specializes the given constraint `c0`.
     */
   private def specializeConstraint(c0: LoweredAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Constraint = c0 match {
     case LoweredAst.Constraint(cparams0, head0, body0, loc0) =>
@@ -996,6 +1015,36 @@ object Specialization {
       val (body, env2) = specializeBodies(body0, env, subst)
       val head = specializeHeadPred(head0, env2, subst)
       LoweredAst.Constraint(cparams, head, body, loc0)
+  }
+
+  /**
+    * Specializes the given restrictable choice rule `rule0` to a match rule.
+    */
+  private def specializeRestrictableChooseRule(rule0: LoweredAst.RestrictableChooseRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.RestrictableChooseRule = rule0 match {
+    case LoweredAst.RestrictableChooseRule(pat, exp) =>
+      pat match {
+        case LoweredAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
+          val env = pat0.foldLeft(env0) {
+            case (env1, LoweredAst.RestrictableChoosePattern.Var(sym, _, _)) =>
+              val freshSym = Symbol.freshVarSym(sym)
+              val env = env1 + (sym -> freshSym)
+              env
+            case (env1, LoweredAst.RestrictableChoosePattern.Wild(_, _)) =>
+              env1
+            case (_, LoweredAst.RestrictableChoosePattern.Error(_, errLoc)) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val pats = pat0.map {
+            case LoweredAst.RestrictableChoosePattern.Var(sym, varTpe, varLoc) =>
+              LoweredAst.RestrictableChoosePattern.Var(sym, subst(varTpe), varLoc)
+            case LoweredAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) =>
+              LoweredAst.RestrictableChoosePattern.Wild(subst(wildTpe), wildLoc)
+            case LoweredAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val e = specializeExp(exp, env, subst)
+          val p = LoweredAst.RestrictableChoosePattern.Tag(symUse, pats, subst(tpe), loc)
+          LoweredAst.RestrictableChooseRule(p, e)
+        case LoweredAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
+      }
   }
 
   /**
