@@ -274,7 +274,10 @@ object EntryPointError {
   }
 
   /**
-    * An error raised to indicate a @Test function that as a non-`Unit` return type.
+    * An error raised to indicate a @Test function that has a non-Unit return type.
+    *
+    * A @Test function must have no formal parameters, return Unit, and use only
+    * the Assert effect, effects with default handlers, and/or the IO effect.
     *
     * @param loc the location of the return type.
     */
@@ -289,7 +292,9 @@ object EntryPointError {
          |
          |${src(loc, "expected Unit")}
          |
-         |${underline("Explanation:")} A @Test function must have return type Unit.
+         |${underline("Explanation:")} A @Test function must have no formal parameters,
+         |return Unit, and use only the Assert effect, effects with default handlers,
+         |and/or the IO effect.
          |
          |Valid signatures:
          |
