@@ -204,18 +204,19 @@ object ResolutionError {
   case class IllegalSignature(sym: Symbol.SigSym, tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9736
 
-    def summary: String = s"Unexpected signature which does not mention the type variable '${tvar}'."
+    def summary: String = s"Unexpected signature which does not mention the type variable '${tvar.toString}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable '${cyan(tvar.toString)}'.
+      val a = tvar.toString
+      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable '${cyan(a)}'.
          |
          |${src(loc, "unexpected signature")}
          |
          |${underline("Explanation:")} Every signature in a trait must mention the type variable of the trait.
          |
-         |  trait T[$tvar] {
-         |      pub def f(x: $tvar): $tvar  // allowed
+         |  trait T[$a] {
+         |      pub def f(x: $a): $a  // allowed
          |      pub def g(): Int32    // not allowed
          |  }
          |""".stripMargin
