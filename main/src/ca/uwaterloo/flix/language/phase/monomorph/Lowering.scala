@@ -18,15 +18,15 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst.Predicate
+import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
-import ca.uwaterloo.flix.language.ast.ops.LoweredAstOps
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, MonoAst, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -95,21 +95,35 @@ object Lowering {
   /**
     * Lowers the given def `defn`.
     */
-  protected[monomorph] def lowerDef(defn: LoweredAst.Def)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Def = defn match {
-    case LoweredAst.Def(sym, spec0, exp, loc) =>
-      val spec = lowerSpec(spec0)
-      val e = lowerExp(exp)
-      MonoAst.Def(sym, spec, e, loc)
+  protected[monomorph] def lowerDef(defn0: TypedAst.Def)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Def = {
+    /*
+     If the definition is an entry point it is wrapped with the required default handlers before the rest of lowering.
+       For example:
+          {{{ def myEntryPoint(): Unit \ Assert = e }}}
+       Will be transformed into:
+          {{{ def myEntryPoint(): Unit \ IO = Assert.runWithIO(_ -> e) }}}
+     */
+    val defn = if (TypedAstOps.isEntryPoint(defn0)) {
+      wrapDefWithDefaultHandlers(defn0)
+    } else {
+      defn0
+    }
+    defn match {
+      case TypedAst.Def(sym, spec0, exp, loc) =>
+        val spec = lowerSpec(spec0)
+        val e = lowerExp(exp)
+        MonoAst.Def(sym, spec, e, loc)
+    }
   }
 
   /**
     * Lowers the given enum `enum0`.
     */
-  protected[monomorph] def lowerEnum(enum0: LoweredAst.Enum): MonoAst.Enum = enum0 match {
-    case LoweredAst.Enum(doc, ann, mod, sym, tparams0, _, cases0, loc) =>
+  protected[monomorph] def lowerEnum(enum0: TypedAst.Enum): MonoAst.Enum = enum0 match {
+    case TypedAst.Enum(doc, ann, mod, sym, tparams0, _, cases0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val cases = cases0.map {
-        case (_, LoweredAst.Case(caseSym, tpes0, _, caseLoc)) =>
+        case (_, TypedAst.Case(caseSym, tpes0, _, caseLoc)) =>
           val tpes = tpes0.map(lowerType)
           (caseSym, MonoAst.Case(caseSym, tpes, caseLoc))
       }
@@ -117,10 +131,29 @@ object Lowering {
   }
 
   /**
+    * Lowers the given enum `enum0` from a restrictable enum into a regular enum.
+    */
+  protected[monomorph] def lowerRestrictableEnum(enum0: TypedAst.RestrictableEnum): MonoAst.Enum = enum0 match {
+    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, index0, tparams0, _, cases0, loc) =>
+      // index is erased since related checking has concluded.
+      // Restrictable tag is lowered into a regular tag
+      val index = lowerTypeParam(index0)
+      val tparams = tparams0.map(lowerTypeParam)
+      val cases = cases0.map {
+        case (_, TypedAst.RestrictableCase(caseSym0, tpes0, _, caseLoc)) =>
+          val tpes = tpes0.map(lowerType)
+          val caseSym = lowerRestrictableCaseSym(caseSym0)
+          (caseSym, MonoAst.Case(caseSym, tpes, caseLoc))
+      }
+      val sym = lowerRestrictableEnumSym(sym0)
+      MonoAst.Enum(doc, ann, mod, sym, index :: tparams, cases, loc)
+  }
+
+  /**
     * Lowers the given `effect`.
     */
-  protected[monomorph] def lowerEffect(effect: LoweredAst.Effect): MonoAst.Effect = effect match {
-    case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
+  protected[monomorph] def lowerEffect(effect: TypedAst.Effect): MonoAst.Effect = effect match {
+    case TypedAst.Effect(doc, ann, mod, sym, _, ops0, loc) =>
       // TODO EFFECT-TPARAMS use tparams
       val ops = ops0.map(lowerOp)
       MonoAst.Effect(doc, ann, mod, sym, ops, loc)
@@ -129,20 +162,20 @@ object Lowering {
   /**
     * Lowers the given struct `struct0`.
     */
-  protected[monomorph] def lowerStruct(struct0: LoweredAst.Struct): MonoAst.Struct = struct0 match {
-    case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc0) =>
+  protected[monomorph] def lowerStruct(struct0: TypedAst.Struct): MonoAst.Struct = struct0 match {
+    case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
       val tparams = tparams0.map(lowerTypeParam)
       val fields = fields0.map {
-        case LoweredAst.StructField(fieldSym, tpe, loc) => MonoAst.StructField(fieldSym, lowerType(tpe), loc)
+        case (fieldSym, field) => MonoAst.StructField(fieldSym, lowerType(field.tpe), loc)
       }
-      MonoAst.Struct(doc, ann, mod, sym, tparams, fields, loc0)
+      MonoAst.Struct(doc, ann, mod, sym, tparams, fields.toList, loc)
   }
 
   /**
     * Lowers the given `op`.
     */
-  private def lowerOp(op: LoweredAst.Op): MonoAst.Op = op match {
-    case LoweredAst.Op(sym, spec0, loc) =>
+  private def lowerOp(op: TypedAst.Op): MonoAst.Op = op match {
+    case TypedAst.Op(sym, spec0, loc) =>
       val spec = lowerSpec(spec0)
       MonoAst.Op(sym, spec, loc)
   }
@@ -150,8 +183,8 @@ object Lowering {
   /**
     * Lowers the given `spec0`.
     */
-  private def lowerSpec(spec0: LoweredAst.Spec): MonoAst.Spec = spec0 match {
-    case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _) =>
+  private def lowerSpec(spec0: TypedAst.Spec): MonoAst.Spec = spec0 match {
+    case TypedAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _, _) =>
       val fs = fparams0.map(lowerFormalParam)
       val fType = lowerType(declaredScheme.base)
       val rType = lowerType(retTpe)
@@ -161,205 +194,187 @@ object Lowering {
   /**
     * Lowers `exp0` replacing all types with the lowered types and lowering channels and fixpoint to the primitives.
     */
-  private def lowerExp(exp0: LoweredAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
-    case LoweredAst.Expr.Cst(cst, tpe, loc) => MonoAst.Expr.Cst(cst, lowerType(tpe), loc)
+  private def lowerExp(exp0: TypedAst.Expr)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
+    case TypedAst.Expr.Cst(cst, tpe, loc) => MonoAst.Expr.Cst(cst, lowerType(tpe), loc)
 
-    case LoweredAst.Expr.Var(sym, tpe, loc) => MonoAst.Expr.Var(sym, lowerType(tpe), loc)
+    case TypedAst.Expr.Var(sym, tpe, loc) => MonoAst.Expr.Var(sym, lowerType(tpe), loc)
 
-    case LoweredAst.Expr.Hole(sym, _, tpe, eff, loc) =>
+    case TypedAst.Expr.Hole(sym, _, tpe, eff, loc) =>
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)
 
-    case LoweredAst.Expr.HoleWithExp(_, _, tpe, _, loc) =>
+    case TypedAst.Expr.HoleWithExp(_, _, tpe, _, loc) =>
       val sym = Symbol.freshHoleSym(loc)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
 
-    case LoweredAst.Expr.OpenAs(_, exp, _, _) =>
-      lowerExp(exp) // TODO RESTR-VARS maybe add to loweredAST
+    case TypedAst.Expr.OpenAs(_, exp, _, _) =>
+      lowerExp(exp) // TODO RESTR-VARS maybe add to monoAST
 
-    case LoweredAst.Expr.Use(_, _, exp, _) =>
+    case TypedAst.Expr.Use(_, _, exp, _) =>
       lowerExp(exp)
 
-    case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+    case TypedAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val p = lowerFormalParam(fparam)
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.Lambda(p, e, t, loc)
 
-    case LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), exps, tpe, eff, loc) =>
-      // In bytecode, instanceof can only be called on reference types
-      val es = exps.map(lowerExp)
-      val List(e) = es
-      if (isPrimType(e.tpe)) {
-        // If it's a primitive type, evaluate the expression but return false
-        MonoAst.Expr.Stm(e, MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
-      } else {
-        // If it's a reference type, then do the instanceof check
-        val t = lowerType(tpe)
-        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, t, eff, loc)
-      }
-
-    case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps.map(lowerExp)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(op, es, t, eff, loc)
-
-    case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyClo(e1, e2, t, eff, loc)
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val it = lowerType(itpe)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyDef(sym, es, it, t, eff, loc)
+      MonoAst.Expr.ApplyDef(sym.sym, es, it, t, eff, loc)
 
-    case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyLocalDef(bnd, exps, _, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyLocalDef(sym, es, t, eff, loc)
+      MonoAst.Expr.ApplyLocalDef(bnd.sym, es, t, eff, loc)
 
-    case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyOp(bnd, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyOp(sym, es, t, eff, loc)
+      MonoAst.Expr.ApplyOp(bnd.sym, es, t, eff, loc)
 
-    case LoweredAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
 
-    case LoweredAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
 
-    case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
-      MonoAst.Expr.Let(sym, e1, e2, t, eff, Occur.Unknown, loc)
+      MonoAst.Expr.Let(bnd.sym, e1, e2, t, eff, Occur.Unknown, loc)
 
-    case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(lowerFormalParam)
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
-      MonoAst.Expr.LocalDef(sym, fps, e1, e2, t, eff, Occur.Unknown, loc)
+      MonoAst.Expr.LocalDef(bnd.sym, fps, e1, e2, t, eff, Occur.Unknown, loc)
 
-    case LoweredAst.Expr.Region(sym, regSym, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.Region(bnd, regSym, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
-      MonoAst.Expr.Region(sym, regSym, e, t, eff, loc)
+      MonoAst.Expr.Region(bnd.sym, regSym, e, t, eff, loc)
 
-    case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case TypedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val e3 = lowerExp(exp3)
       val t = lowerType(tpe)
       MonoAst.Expr.IfThenElse(e1, e2, e3, t, eff, loc)
 
-    case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.Stm(e1, e2, t, eff, loc)
 
-    case LoweredAst.Expr.Discard(exp, eff, loc) =>
+    case TypedAst.Expr.Discard(exp, eff, loc) =>
       val e = lowerExp(exp)
       MonoAst.Expr.Discard(e, eff, loc)
 
-    case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+    case TypedAst.Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       val rs = rules.map(visitMatchRule)
       MonoAst.Expr.Match(e, rs, t, eff, loc)
 
-    case LoweredAst.Expr.RestrictableChoose(_, exp, rules, tpe, eff, loc) =>
+    case TypedAst.Expr.RestrictableChoose(_, exp, rules, tpe, eff, loc) =>
       // lower into an ordinary match
       val e = lowerExp(exp)
       val rs = rules.map(lowerRestrictableChooseRule)
       val t = lowerType(tpe)
       MonoAst.Expr.Match(e, rs, t, eff, loc)
 
-    case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+    case TypedAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val rs = rules.map(lowerExtMatch)
       val t = lowerType(tpe)
       MonoAst.Expr.ExtMatch(e, rs, t, eff, loc)
 
-    case LoweredAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(symUse.sym), es, t, eff, loc)
 
-    case LoweredAst.Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
       // Lower a restrictable tag into a normal tag.
       val caseSym = lowerRestrictableCaseSym(symUse.sym)
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), es, t, eff, loc)
 
-    case LoweredAst.Expr.ExtTag(label, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.ExtTag(label, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.ExtTag(label), es, t, eff, loc)
 
-    case LoweredAst.Expr.Tuple(exps, tpe, eff, loc) =>
+    case TypedAst.Expr.Tuple(exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Tuple, es, t, eff, loc)
 
-    case LoweredAst.Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(e), t, eff, loc)
 
-    case LoweredAst.Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.RecordExtend(label), List(e1, e2), t, eff, loc)
 
-    case LoweredAst.Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(e), t, eff, loc)
 
-    case LoweredAst.Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, e :: es, t, eff, loc)
 
-    case LoweredAst.Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+    case TypedAst.Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val e3 = lowerExp(exp3)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayNew, List(e1, e2, e3), t, eff, loc)
 
-    case LoweredAst.Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, eff, loc)
 
-    case LoweredAst.Expr.ArrayLength(exp, eff, loc) =>
+    case TypedAst.Expr.ArrayLength(exp, eff, loc) =>
       val e = lowerExp(exp)
       MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, eff, loc)
 
-    case LoweredAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+    case TypedAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val e3 = lowerExp(exp3)
       MonoAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
-    case LoweredAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+    case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = fields0.map { case (k, v) => (k, lowerExp(v)) }
       val (names0, es) = fields.unzip
       val names = names0.map(_.sym)
@@ -371,35 +386,35 @@ object Lowering {
           MonoAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Immutable, names), es, t, eff, loc)
       }
 
-    case LoweredAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
+    case TypedAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.StructGet(field.sym), List(e), t, eff, loc)
 
-    case LoweredAst.Expr.StructPut(exp, field, exp1, tpe, eff, loc) =>
+    case TypedAst.Expr.StructPut(exp, field, exp1, tpe, eff, loc) =>
       val struct = lowerExp(exp)
       val rhs = lowerExp(exp1)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.StructPut(field.sym), List(struct, rhs), t, eff, loc)
 
-    case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
+    case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.VectorLit(es, t, eff, loc)
 
-    case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.VectorLoad(e1, e2, t, eff, loc)
 
-    case LoweredAst.Expr.VectorLength(exp, loc) =>
+    case TypedAst.Expr.VectorLength(exp, loc) =>
       MonoAst.Expr.VectorLength(lowerExp(exp), loc)
 
-    case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
+    case TypedAst.Expr.Ascribe(exp, _, _, _, _, _) =>
       lowerExp(exp)
 
-    case LoweredAst.Expr.InstanceOf(exp, clazz, loc) =>
+    case TypedAst.Expr.InstanceOf(exp, clazz, loc) =>
       val e = lowerExp(exp)
       if (isPrimType(e.tpe)) {
         // If it's a primitive type, evaluate the expression but return false
@@ -409,50 +424,38 @@ object Lowering {
         MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
       }
 
-    case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
-      // Drop the declaredType and declaredEff.
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      mkCast(e, t, eff, loc)
-
-    case LoweredAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
       // Note: We do *NOT* erase checked (i.e. safe) casts.
       // In Java, `String` is a subtype of `Object`, but the Flix IR makes this upcast _explicit_.
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       mkCast(e, t, eff, loc)
 
-    case LoweredAst.Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
+    case TypedAst.Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       mkCast(e, t, eff, loc)
 
-    case LoweredAst.Expr.Unsafe(exp, _, _, tpe, eff, loc) =>
+    case TypedAst.Expr.Unsafe(exp, _, _, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       mkCast(e, t, eff, loc)
 
-    case LoweredAst.Expr.Without(exp, _, _, _, _) =>
+    case TypedAst.Expr.Without(exp, _, _, _, _) =>
       lowerExp(exp)
 
-    case LoweredAst.Expr.Throw(exp, tpe, eff, loc) =>
+    case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
 
-    case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case TypedAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       val rs = rules.map(lowerCatchRule)
       MonoAst.Expr.TryCatch(e, rs, t, eff, loc)
 
-    case LoweredAst.Expr.OldRunWith(exp, effUse, rules, tpe, eff, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      val rs = rules.map(lowerHandlerRule)
-      MonoAst.Expr.RunWith(e, effUse, rs, t, eff, loc)
-
-    case LoweredAst.Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+    case TypedAst.Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       // handler sym { rules }
       // is lowered to
       // handlerBody -> try handlerBody() with sym { rules }
@@ -467,7 +470,7 @@ object Lowering {
       val param = MonoAst.FormalParam(bodySym, bodyThunkType, Occur.Unknown, loc.asSynthetic)
       MonoAst.Expr.Lambda(param, RunWith, t, loc)
 
-    case LoweredAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
       // run exp1 with exp2
       // is lowered to
       // exp2(_runWith -> exp1)
@@ -478,79 +481,79 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyClo(lowerExp(exp2), thunk, t, eff, loc)
 
-    case LoweredAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
 
-    case LoweredAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, t, eff, loc)
 
-    case LoweredAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, t, eff, loc)
 
-    case LoweredAst.Expr.GetField(field, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.GetField(field), List(e), t, eff, loc)
 
-    case LoweredAst.Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), t, eff, loc)
 
-    case LoweredAst.Expr.GetStaticField(field, tpe, eff, loc) =>
+    case TypedAst.Expr.GetStaticField(field, tpe, eff, loc) =>
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, t, eff, loc)
 
-    case LoweredAst.Expr.PutStaticField(field, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
-    case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val ms = methods.map(lowerJvmMethod)
       val t = lowerType(tpe)
       MonoAst.Expr.NewObject(name, clazz, t, eff, ms, loc)
 
-    case LoweredAst.Expr.NewChannel(exp, tpe, eff, loc) =>
+    case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       lowerNewChannel(e, tpe, eff, loc)
 
-    case LoweredAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
+    case TypedAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
       val e = lowerExp(innerExp)
       val t = lowerType(tpe)
       mkGetChannel(e, t, eff, loc)
 
-    case LoweredAst.Expr.PutChannel(innerExp1, innerExp2, _, eff, loc) =>
+    case TypedAst.Expr.PutChannel(innerExp1, innerExp2, _, eff, loc) =>
       val exp1 = lowerExp(innerExp1)
       val exp2 = lowerExp(innerExp2)
       Lowering.mkPutChannel(exp1, exp2, eff, loc)
 
-    case LoweredAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc) =>
+    case TypedAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc) =>
       val rules = rules0.map {
-        case LoweredAst.SelectChannelRule(sym, chan, exp, _) =>
-          (sym, lowerExp(chan), lowerExp(exp))
+        case TypedAst.SelectChannelRule(bnd, chan, exp, _) =>
+          (bnd.sym, lowerExp(chan), lowerExp(exp))
       }
       val default = default0.map(lowerExp)
       val t = lowerType(tpe)
       Lowering.mkSelectChannel(rules, default, t, eff, loc)
 
-    case LoweredAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), t, eff, loc)
 
-    case LoweredAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val fs = frags.map {
-        case LoweredAst.ParYieldFragment(pat, fragExp, fragLoc) =>
+        case TypedAst.ParYieldFragment(pat, fragExp, fragLoc) =>
           val p = lowerPat(pat)
           (p, lowerExp(fragExp), fragLoc)
       }
@@ -558,51 +561,51 @@ object Lowering {
       val t = lowerType(tpe)
       Lowering.mkParYield(fs, e, t, eff, loc)
 
-    case LoweredAst.Expr.Lazy(exp, tpe, loc) =>
+    case TypedAst.Expr.Lazy(exp, tpe, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
 
-    case LoweredAst.Expr.Force(exp, tpe, eff, loc) =>
+    case TypedAst.Expr.Force(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
 
-    case LoweredAst.Expr.FixpointConstraintSet(cs, _, loc) =>
+    case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       lowerConstraintSet(cs, loc)
 
-    case LoweredAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
+    case TypedAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
       val resultType = Types.Datalog
       val defn = lookup(Defs.Rename, resultType)
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
       val argExps = predExps :: lowerExp(exp) :: Nil
       MonoAst.Expr.ApplyDef(defn, argExps, Types.RenameType, resultType, eff, loc)
 
-    case LoweredAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
+    case TypedAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
       val resultType = Types.Datalog
       val defn = lookup(Defs.Merge, resultType)
       val argExps = lowerExp(exp1) :: lowerExp(exp2) :: Nil
       MonoAst.Expr.ApplyDef(defn, argExps, Types.MergeType, resultType, eff, loc)
 
-    case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe0, eff, loc) =>
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe0, eff, loc) =>
       lowerQueryWithProvenance(exps, select, withh, tpe0, eff, loc)
 
-    case LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tpe, eff, loc) =>
+    case TypedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tpe, eff, loc) =>
       lowerQueryWithSelect(exps, queryExp, selects, pred, tpe, eff, loc)
 
-    case LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, _, eff, loc) =>
+    case TypedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, _, eff, loc) =>
       lowerSolveWithProject(exps, optPreds, mode, eff, loc)
 
-    case LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
+    case TypedAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
       lowerInjectInto(exps, predsAndArities, loc)
 
-    case LoweredAst.Expr.ApplySig(_, _, _, _, _, _, _, _) =>
+    case TypedAst.Expr.ApplySig(_, _, _, _, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected ApplySig", exp0.loc)
 
-    case LoweredAst.Expr.TypeMatch(_, _, _, _, _) =>
+    case TypedAst.Expr.TypeMatch(_, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected TypeMatch", exp0.loc)
 
-    case LoweredAst.Expr.Error(m, _, _) =>
+    case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
   }
@@ -610,8 +613,8 @@ object Lowering {
   /**
     * Lowers the given JvmMethod `method`.
     */
-  private def lowerJvmMethod(method: LoweredAst.JvmMethod)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case LoweredAst.JvmMethod(ident, fparams, exp, retTyp, eff, loc) =>
+  private def lowerJvmMethod(method: TypedAst.JvmMethod)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+    case TypedAst.JvmMethod(ident, fparams, exp, retTyp, eff, loc) =>
       val fs = fparams.map(lowerFormalParam)
       val e = lowerExp(exp)
       val t = lowerType(retTyp)
@@ -621,17 +624,17 @@ object Lowering {
   /**
     * Lowers the given catch rule `rule0`.
     */
-  private def lowerCatchRule(rule: LoweredAst.CatchRule)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
-    case LoweredAst.CatchRule(sym, clazz, exp) =>
+  private def lowerCatchRule(rule: TypedAst.CatchRule)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
+    case TypedAst.CatchRule(bnd, clazz, exp, _) =>
       val e = lowerExp(exp)
-      MonoAst.CatchRule(sym, clazz, e)
+      MonoAst.CatchRule(bnd.sym, clazz, e)
   }
 
   /**
     * Lowers the given handler rule `rule0`.
     */
-  private def lowerHandlerRule(rule0: LoweredAst.HandlerRule)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.HandlerRule = rule0 match {
-    case LoweredAst.HandlerRule(opSymUse, fparams0, body0) =>
+  private def lowerHandlerRule(rule0: TypedAst.HandlerRule)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.HandlerRule = rule0 match {
+    case TypedAst.HandlerRule(opSymUse, fparams0, body0, _) =>
       val fparams = fparams0.map(lowerFormalParam)
       val body = lowerExp(body0)
       MonoAst.HandlerRule(opSymUse, fparams, body)
@@ -640,8 +643,8 @@ object Lowering {
   /**
     * Lowers the given match rule `rule0`.
     */
-  private def visitMatchRule(rule0: LoweredAst.MatchRule)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.MatchRule = rule0 match {
-    case LoweredAst.MatchRule(pat, guard, body) =>
+  private def visitMatchRule(rule0: TypedAst.MatchRule)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.MatchRule = rule0 match {
+    case TypedAst.MatchRule(pat, guard, body, _) =>
       val p = lowerPat(pat)
       val g = guard.map(lowerExp)
       val b = lowerExp(body)
@@ -651,32 +654,32 @@ object Lowering {
   /**
     * Lowers the given pattern `pat0`.
     */
-  private def lowerPat(pat0: LoweredAst.Pattern): MonoAst.Pattern = pat0 match {
-    case LoweredAst.Pattern.Wild(tpe, loc) =>
+  private def lowerPat(pat0: TypedAst.Pattern): MonoAst.Pattern = pat0 match {
+    case TypedAst.Pattern.Wild(tpe, loc) =>
       val t = lowerType(tpe)
       MonoAst.Pattern.Wild(t, loc)
 
-    case LoweredAst.Pattern.Var(sym, tpe, loc) =>
+    case TypedAst.Pattern.Var(bnd, tpe, loc) =>
       val t = lowerType(tpe)
-      MonoAst.Pattern.Var(sym, t, Occur.Unknown, loc)
+      MonoAst.Pattern.Var(bnd.sym, t, Occur.Unknown, loc)
 
-    case LoweredAst.Pattern.Cst(cst, tpe, loc) =>
+    case TypedAst.Pattern.Cst(cst, tpe, loc) =>
       val t = lowerType(tpe)
       MonoAst.Pattern.Cst(cst, t, loc)
 
-    case LoweredAst.Pattern.Tag(symUse, pats, tpe, loc) =>
+    case TypedAst.Pattern.Tag(symUse, pats, tpe, loc) =>
       val ps = pats.map(lowerPat)
       val t = lowerType(tpe)
       MonoAst.Pattern.Tag(symUse, ps, t, loc)
 
-    case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
+    case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(lowerPat)
       val t = lowerType(tpe)
       MonoAst.Pattern.Tuple(es, t, loc)
 
-    case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
+    case TypedAst.Pattern.Record(pats, pat, tpe, loc) =>
       val patsVal = pats.map {
-        case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
+        case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
           val p1 = lowerPat(pat1)
           val t1 = lowerType(tpe1)
           MonoAst.Pattern.Record.RecordLabelPattern(label, p1, t1, loc1)
@@ -684,25 +687,28 @@ object Lowering {
       val patVal = lowerPat(pat)
       val t = lowerType(tpe)
       MonoAst.Pattern.Record(patsVal, patVal, t, loc)
+
+    case TypedAst.Pattern.Error(_, loc) =>
+      throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
   }
 
   /**
     * Lowers the given restrictable choice rule `rule0` to a match rule.
     */
-  private def lowerRestrictableChooseRule(rule0: LoweredAst.RestrictableChooseRule)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.MatchRule = rule0 match {
-    case LoweredAst.RestrictableChooseRule(pat, exp) =>
+  private def lowerRestrictableChooseRule(rule0: TypedAst.RestrictableChooseRule)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.MatchRule = rule0 match {
+    case TypedAst.RestrictableChooseRule(pat, exp) =>
       val e = lowerExp(exp)
       pat match {
-        case LoweredAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
+        case TypedAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
           val termPatterns = pat0.map {
-            case LoweredAst.RestrictableChoosePattern.Var(varSym, varTpe, varLoc) => MonoAst.Pattern.Var(varSym, lowerType(varTpe), Occur.Unknown, varLoc)
-            case LoweredAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) => MonoAst.Pattern.Wild(lowerType(wildTpe), wildLoc)
-            case LoweredAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+            case TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(varSym, _), varTpe, varLoc) => MonoAst.Pattern.Var(varSym, varTpe, Occur.Unknown, varLoc)
+            case TypedAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) => MonoAst.Pattern.Wild(wildTpe, wildLoc)
+            case TypedAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
           }
           val tagSymUse = lowerRestrictableCaseSymUse(symUse)
           val p = MonoAst.Pattern.Tag(tagSymUse, termPatterns, lowerType(tpe), loc)
           MonoAst.MatchRule(p, None, e)
-        case LoweredAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
+        case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
       }
   }
 
@@ -713,12 +719,156 @@ object Lowering {
     SymUse.CaseSymUse(lowerRestrictableCaseSym(symUse.sym), symUse.sym.loc)
   }
 
+  private def lowerExtPat(pat0: TypedAst.ExtPattern): MonoAst.ExtPattern = pat0 match {
+    case TypedAst.ExtPattern.Default(loc) =>
+      MonoAst.ExtPattern.Default(loc)
+
+    case TypedAst.ExtPattern.Tag(label, pats, loc) =>
+      val ps = pats.map(lowerExtTagPat)
+      MonoAst.ExtPattern.Tag(label, ps, loc)
+
+    case TypedAst.ExtPattern.Error(loc) =>
+      throw InternalCompilerException("unexpected error ext pattern", loc)
+  }
+
+  private def lowerExtTagPat(pat0: TypedAst.ExtTagPattern): MonoAst.ExtTagPattern = pat0 match {
+    case TypedAst.ExtTagPattern.Wild(tpe, loc) =>
+      val t = lowerType(tpe)
+      MonoAst.ExtTagPattern.Wild(t, loc)
+
+    case TypedAst.ExtTagPattern.Var(bnd, tpe, loc) =>
+      val t = lowerType(tpe)
+      MonoAst.ExtTagPattern.Var(bnd.sym, t, Occur.Unknown, loc)
+
+    case TypedAst.ExtTagPattern.Unit(tpe, loc) =>
+      val t = lowerType(tpe)
+      MonoAst.ExtTagPattern.Unit(t, loc)
+
+    case TypedAst.ExtTagPattern.Error(_, loc) =>
+      throw InternalCompilerException("unexpected error ext pattern", loc)
+  }
+
+  private def lowerExtMatch(rule0: TypedAst.ExtMatchRule)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.ExtMatchRule = rule0 match {
+    case TypedAst.ExtMatchRule(pat, exp, loc) =>
+      val p = lowerExtPat(pat)
+      val e = lowerExp(exp)
+      MonoAst.ExtMatchRule(p, e, loc)
+  }
+
+  private def lowerFormalParam(fparam: TypedAst.FormalParam): MonoAst.FormalParam = fparam match {
+    case TypedAst.FormalParam(bnd, tpe, _, loc0) => MonoAst.FormalParam(bnd.sym, lowerType(tpe), Occur.Unknown, loc0)
+  }
+
+  private def lowerTypeParam(tparam: TypedAst.TypeParam): MonoAst.TypeParam = tparam match {
+    case TypedAst.TypeParam(name, sym, loc) =>
+      MonoAst.TypeParam(name, sym, loc)
+  }
+
   /**
-    * Lowers `sym` from a restrictable case sym into a regular case sym.
+    * Wraps an entry point function with calls to the default handlers of each of the effects appearing in
+    * its signature. The order in which the handlers are applied is not defined and should not be relied upon.
+    *
+    * For example, if we had default handlers for some effects A, B and C:
+    *
+    * Transforms a function:
+    * {{{
+    *     def f(arg1: tpe1, ...): tpe \ A + B = exp
+    * }}}
+    * Into:
+    * {{{
+    *     def f(arg1: tpe1, ...): tpe \ (((ef - A) + IO) - B) + IO =
+    *         handlerB(_ -> handlerA(_ ->exp))
+    * }}}
+    *
+    * Each of the wrappers:
+    *   - Removes the handled effect from the function's effect set and adds IO
+    *   - Creates a lambda (_ -> originalBody) and passes it to each handler
+    *   - Updates the function's type signature accordingly
+    *
+    * @param currentDef The entry point function definition to wrap
+    * @param root       The typed AST root
+    * @return The wrapped function definition with all necessary default effect handlers
     */
-  private def lowerRestrictableCaseSym(sym: Symbol.RestrictableCaseSym): Symbol.CaseSym = {
-    val enumSym = lowerRestrictableEnumSym(sym.enumSym)
-    new Symbol.CaseSym(enumSym, sym.name, sym.loc)
+  private def wrapDefWithDefaultHandlers(currentDef: TypedAst.Def)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+    // Obtain the concrete effect set of the definition that is going to be wrapped.
+    // We are expecting entry points, and all entry points should have a concrete effect set
+    // Obtain the concrete effect set of the definition that is going to be wrapped.
+    // We are expecting entry points, and all entry points should have a concrete effect set
+    val defEffects: CofiniteSet[Symbol.EffSym] = Type.eval(currentDef.spec.eff) match {
+      case Result.Ok(s) => s
+      // This means eff is either not well-formed or it has type variables.
+      // Either way, in this case we will wrap with all default handlers
+      // to make sure that the effects present in the signature that have default handlers are handled
+      case Result.Err(_) => throw InternalCompilerException("Unexpected illegal effect set on entry point", currentDef.spec.eff.loc)
+    }
+    // Gather only the default handlers for the effects appearing in the signature of the definition.
+    val requiredHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+    // Wrap the expression in each of the required default handlers.
+    // Right now, the order depends on the order of defaultHandlers.
+    requiredHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler))
+  }
+
+  /**
+    * Wraps an entry point function with a default effect handler.
+    *
+    * Transforms a function:
+    * {{{
+    *     def f(arg1: tpe1, ...): tpe \ ef = exp
+    * }}}
+    *
+    * Into:
+    * {{{
+    *     def f(arg1: tpe1, ...): tpe \ (ef - handledEffect) + IO =
+    *         handler(_ -> exp)
+    * }}}
+    *
+    * The wrapper:
+    *   - Removes the handled effect from the function's effect set and adds IO
+    *   - Creates a lambda (_ -> originalBody) and passes it to each handler
+    *   - Updates the function's type signature accordingly
+    *
+    * @param defn           The entry point function definition to wrap
+    * @param defaultHandler Information about the default handler to apply
+    * @param root           The typed AST root
+    * @return The wrapped function definition with updated effect signature
+    */
+  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+    // Create synthetic locations
+    val effLoc = defn.spec.eff.loc.asSynthetic
+    val baseTypeLoc = defn.spec.declaredScheme.base.loc.asSynthetic
+    val expLoc = defn.exp.loc.asSynthetic
+    // The new type is the same as the wrapped def with an effect set of
+    // `(ef - handledEffect) + IO` where `ef` is the effect set of the previous definition.
+    val effDif = Type.mkDifference(defn.spec.eff, defaultHandler.handledEff, effLoc)
+    // Technically we could perform this outside at the wrapInHandlers level
+    // by just checking the length of the handlers and if it is greater than 0
+    // just adding IO. However, that would only work while default handlers can only generate IO.
+    val eff = Type.mkUnion(effDif, Type.IO, effLoc)
+    val tpe = Type.mkCurriedArrowWithEffect(defn.spec.fparams.map(_.tpe), eff, defn.spec.retTpe, baseTypeLoc)
+    val spec = defn.spec.copy(
+      declaredScheme = defn.spec.declaredScheme.copy(base = tpe),
+      eff = eff,
+    )
+    // Create _ -> exp
+    val innerLambda =
+      TypedAst.Expr.Lambda(
+        TypedAst.FormalParam(
+          TypedAst.Binder(Symbol.freshVarSym("_", BoundBy.FormalParam, expLoc)(Scope.Top, flix), Type.Unit),
+          Type.Unit,
+          TypeSource.Inferred,
+          expLoc
+        ),
+        defn.exp,
+        Type.mkArrowWithEffect(Type.Unit, defn.spec.eff, defn.spec.retTpe, expLoc),
+        expLoc
+      )
+    // Create the instantiated type of the handler
+    val handlerArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, defn.spec.retTpe, expLoc)
+    // Create HandledEff.handle(_ -> exp)
+    val defnSym = lookup(defaultHandler.handlerSym, handlerArrowType)
+    val handlerDefSymUse = SymUse.DefSymUse(defnSym, expLoc)
+    val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, expLoc)
+    defn.copy(spec = spec, exp = handlerCall)
   }
 
   /**
@@ -727,50 +877,12 @@ object Lowering {
   private def lowerRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
     new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
 
-  private def lowerExtPat(pat0: LoweredAst.ExtPattern): MonoAst.ExtPattern = pat0 match {
-    case LoweredAst.ExtPattern.Default(loc) =>
-      MonoAst.ExtPattern.Default(loc)
-
-    case LoweredAst.ExtPattern.Tag(label, pats, loc) =>
-      val ps = pats.map(lowerExtTagPat)
-      MonoAst.ExtPattern.Tag(label, ps, loc)
-
-  }
-
-  private def lowerExtTagPat(pat0: LoweredAst.ExtTagPattern): MonoAst.ExtTagPattern = pat0 match {
-    case LoweredAst.ExtTagPattern.Wild(tpe, loc) =>
-      val t = lowerType(tpe)
-      MonoAst.ExtTagPattern.Wild(t, loc)
-    case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
-      val t = lowerType(tpe)
-      MonoAst.ExtTagPattern.Var(sym, t, Occur.Unknown, loc)
-    case LoweredAst.ExtTagPattern.Unit(tpe, loc) =>
-      val t = lowerType(tpe)
-      MonoAst.ExtTagPattern.Unit(t, loc)
-  }
-
-  private def lowerExtMatch(rule0: LoweredAst.ExtMatchRule)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.ExtMatchRule = rule0 match {
-    case LoweredAst.ExtMatchRule(pat, exp, loc) =>
-      val p = lowerExtPat(pat)
-      val e = lowerExp(exp)
-      MonoAst.ExtMatchRule(p, e, loc)
-  }
-
-  private def lowerFormalParam(fparam: LoweredAst.FormalParam): MonoAst.FormalParam = fparam match {
-    case LoweredAst.FormalParam(sym0, tpe, loc0) => MonoAst.FormalParam(sym0, lowerType(tpe), Occur.Unknown, loc0)
-  }
-
-  private def lowerTypeParam(tparam: LoweredAst.TypeParam): MonoAst.TypeParam = tparam match {
-    case LoweredAst.TypeParam(name, sym, loc) =>
-      MonoAst.TypeParam(name, sym, loc)
-  }
-
   /**
     * Returns the definition associated with the given symbol `sym`.
     *
     * @param tpe must be specialized. Can be visited, if the underlying function can handle that
     */
-  private def lookup(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym =
+  private def lookup(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): Symbol.DefnSym =
     Specialization.specializeDefnSym(sym, tpe)
 
   /**
@@ -847,6 +959,14 @@ object Lowering {
   }
 
   /**
+    * Lowers `sym` from a restrictable case sym into a regular case sym.
+    */
+  private def lowerRestrictableCaseSym(sym: Symbol.RestrictableCaseSym): Symbol.CaseSym = {
+    val enumSym = lowerRestrictableEnumSym(sym.enumSym)
+    new Symbol.CaseSym(enumSym, sym.name, sym.loc)
+  }
+
+  /**
     * Make a new channel tuple (sender, receiver) expression
     *
     * New channel expressions are rewritten as follows:
@@ -856,7 +976,7 @@ object Lowering {
     *
     * @param tpe The specialized type of the result
     */
-  private def lowerNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def lowerNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
     val defnSym = lookup(Defs.ChannelNewTuple, itpe)
     MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, lowerType(tpe), eff, loc)
@@ -870,7 +990,7 @@ object Lowering {
     * becomes a call to the standard library function:
     * {{{ Concurrent/Channel.get(c) }}}
     */
-  private def mkGetChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkGetChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
     val defnSym = lookup(Defs.ChannelGet, itpe)
     MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, lowerType(tpe), eff, loc)
@@ -884,7 +1004,7 @@ object Lowering {
     * becomes a call to the standard library function:
     * {{{ Concurrent/Channel.put(42, c) }}}
     */
-  private def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = lowerType(Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc))
     val defnSym = lookup(Defs.ChannelPut, itpe)
     MonoAst.Expr.ApplyDef(defnSym, List(exp2, exp1), itpe, Type.Unit, eff, loc)
@@ -917,7 +1037,7 @@ object Lowering {
     * }}}
     * Note: match is not exhaustive: we're relying on the simplifier to handle this for us
     */
-  private def mkSelectChannel(rules: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], default: Option[MonoAst.Expr], tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkSelectChannel(rules: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], default: Option[MonoAst.Expr], tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val t = lowerType(tpe)
 
     val channels = rules.map { case (_, c, _) => (mkLetSym("chan", loc), c) }
@@ -940,7 +1060,7 @@ object Lowering {
     * we generate
     * {{{ mpmcAdmin(x) }}}
     */
-  private def mkChannelAdminList(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkChannelAdminList(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val admins = ListOps.zip(rs, channels) map {
       case ((_, c, _), (chanSym, _)) =>
         val itpe = lowerType(Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc))
@@ -960,7 +1080,7 @@ object Lowering {
     *
     * When `default` is `Some` the second parameter will be `true`.
     */
-  private def mkChannelSelect(admins: MonoAst.Expr, default: Option[MonoAst.Expr], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkChannelSelect(admins: MonoAst.Expr, default: Option[MonoAst.Expr], loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
@@ -985,7 +1105,7 @@ object Lowering {
     *   ?handlech1
     * }}}
     */
-  private def mkChannelCases(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): List[MonoAst.MatchRule] = {
+  private def mkChannelCases(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): List[MonoAst.MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     ListOps.zip(rs, channels).zipWithIndex map {
@@ -1022,9 +1142,9 @@ object Lowering {
   }
 
   /**
-    * Returns a desugared [[LoweredAst.Expr.ParYield]] expression as a nested match-expression.
+    * Returns a desugared [[TypedAst.Expr.ParYield]] expression as a nested match-expression.
     */
-  private def mkParYield(frags: List[(MonoAst.Pattern, MonoAst.Expr, SourceLocation)], exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix, ctx: Context, root: LoweredAst.Root): MonoAst.Expr = {
+  private def mkParYield(frags: List[(MonoAst.Pattern, MonoAst.Expr, SourceLocation)], exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix, ctx: Context, root: TypedAst.Root): MonoAst.Expr = {
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
     val fs = frags.init
     val last = frags.last
@@ -1049,7 +1169,7 @@ object Lowering {
   /**
     * Returns a full `par yield` expression.
     */
-  private def mkParChannels(exp: MonoAst.Expr, chanSymsWithExps: List[(Symbol.VarSym, MonoAst.Expr)])(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkParChannels(exp: MonoAst.Expr, chanSymsWithExps: List[(Symbol.VarSym, MonoAst.Expr)])(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     // Make spawn expressions `spawn ch <- exp`.
     val spawns = chanSymsWithExps.foldRight(exp: MonoAst.Expr) {
       case ((sym, e), acc) =>
@@ -1073,7 +1193,7 @@ object Lowering {
   /**
     * Make a new channel expression
     */
-  private def mkNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
     val defnSym = lookup(Defs.ChannelNew, itpe)
     MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, tpe, eff, loc)
@@ -1081,7 +1201,7 @@ object Lowering {
 
   /**
     * Returns an expression where the pattern variables used in `exp` are
-    * bound to [[LoweredAst.Expr.GetChannel]] expressions,
+    * bound to [[TypedAst.Expr.GetChannel]] expressions,
     * i.e.
     * {{{
     *   let pat1 = <- ch1;
@@ -1092,7 +1212,7 @@ object Lowering {
     *   exp
     * }}}
     */
-  private def mkBoundParWaits(patSymExps: List[(MonoAst.Pattern, Symbol.VarSym, MonoAst.Expr)], exp: MonoAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr =
+  private def mkBoundParWaits(patSymExps: List[(MonoAst.Pattern, Symbol.VarSym, MonoAst.Expr)], exp: MonoAst.Expr)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr =
     patSymExps.map {
       case (p, sym, e) =>
         val loc = e.loc.asSynthetic
@@ -1217,7 +1337,7 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Datalog.Datalog` value from the given list of Datalog constraints `cs`.
     */
-  private def lowerConstraintSet(cs: List[LoweredAst.Constraint], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def lowerConstraintSet(cs: List[TypedAst.Constraint], loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val factExps = cs.filter(c => c.body.isEmpty).map(lowerConstraint)
     val ruleExps = cs.filter(c => c.body.nonEmpty).map(lowerConstraint)
 
@@ -1233,11 +1353,11 @@ object Lowering {
     * Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
     * PredSym and terms to an extensible variant.
     */
-  private def lowerQueryWithProvenance(exps: List[LoweredAst.Expr], select: Predicate.Head, withh: List[Name.Pred], tpe0: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def lowerQueryWithProvenance(exps: List[TypedAst.Expr], select: Predicate.Head, withh: List[Name.Pred], tpe0: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val tpe = lowerType(tpe0)
     val mergedExp = mergeExps(exps.map(lowerExp), loc)
     val (goalPredSym, goalTerms) = select match {
-      case LoweredAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
+      case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
         val boxedTerms = terms.map(t => box(lowerExp(t)))
         (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
     }
@@ -1251,7 +1371,7 @@ object Lowering {
     MonoAst.Expr.ApplyDef(defn, argExps, itpe, tpe, eff, loc)
   }
 
-  private def lowerQueryWithSelect(exps: List[LoweredAst.Expr], queryExp: LoweredAst.Expr, selects: List[LoweredAst.Expr], pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def lowerQueryWithSelect(exps: List[TypedAst.Expr], queryExp: TypedAst.Expr, selects: List[TypedAst.Expr], pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val loweredExps = exps.map(lowerExp)
     val loweredQueryExp = lowerExp(queryExp)
 
@@ -1283,7 +1403,7 @@ object Lowering {
     *     merge (project P₁ tmp%, project P₂ tmp%, project P₃ tmp%)
     * }}}
     */
-  private def lowerSolveWithProject(exps0: List[LoweredAst.Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def lowerSolveWithProject(exps0: List[TypedAst.Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val defn = mode match {
       case SolveMode.Default => lookup(Defs.Solve, Types.Datalog)
       case SolveMode.WithProvenance => lookup(Defs.SolveWithProvenance, Types.Datalog)
@@ -1305,7 +1425,7 @@ object Lowering {
 
   }
 
-  private def lowerInjectInto(exps: List[LoweredAst.Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def lowerInjectInto(exps: List[TypedAst.Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val loweredExps = exps.zip(predsAndArities).map {
       case (exp, PredicateAndArity(pred, _)) =>
         // Compute the types arguments of the functor F[(a, b, c)] or F[a].
@@ -1335,8 +1455,8 @@ object Lowering {
   /**
     * Lowers the given constraint `c0`.
     */
-  private def lowerConstraint(c0: LoweredAst.Constraint)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = c0 match {
-    case LoweredAst.Constraint(cparams, head, body, loc) =>
+  private def lowerConstraint(c0: TypedAst.Constraint)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = c0 match {
+    case TypedAst.Constraint(cparams, head, body, loc) =>
       val headExp = lowerHeadPred(cparams, head)
       val bodyExp = mkVector(body.map(lowerBodyPred(cparams, _)), Types.BodyPredicate, loc)
       val innerExp = List(headExp, bodyExp)
@@ -1346,8 +1466,8 @@ object Lowering {
   /**
     * Lowers the given head predicate `p0`.
     */
-  private def lowerHeadPred(cparams0: List[LoweredAst.ConstraintParam], p0: LoweredAst.Predicate.Head)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = p0 match {
-    case LoweredAst.Predicate.Head.Atom(pred, den, terms, _, loc) =>
+  private def lowerHeadPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Head)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = p0 match {
+    case TypedAst.Predicate.Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val termsExp = mkVector(terms.map(lowerHeadTerm(cparams0, _)), Types.HeadTerm, loc)
@@ -1358,8 +1478,8 @@ object Lowering {
   /**
     * Lowers the given body predicate `p0`.
     */
-  private def lowerBodyPred(cparams0: List[LoweredAst.ConstraintParam], p0: LoweredAst.Predicate.Body)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = p0 match {
-    case LoweredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
+  private def lowerBodyPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Body)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = p0 match {
+    case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
@@ -1368,13 +1488,14 @@ object Lowering {
       val innerExp = List(predSymExp, denotationExp, polarityExp, fixityExp, termsExp)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case LoweredAst.Predicate.Body.Functional(outVars, exp0, loc) =>
+    case TypedAst.Predicate.Body.Functional(outVars0, exp0, loc) =>
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val inVars = quantifiedVars(cparams0, exp0)
       val exp = lowerExp(exp0)
+      val outVars = outVars0.map(_.sym)
       mkFunctional(outVars, inVars, exp, loc)
 
-    case LoweredAst.Predicate.Body.Guard(exp0, loc) =>
+    case TypedAst.Predicate.Body.Guard(exp0, loc) =>
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
       val exp = lowerExp(exp0)
@@ -1385,7 +1506,7 @@ object Lowering {
   /**
     * Lowers the given head term `exp0`.
     */
-  private def lowerHeadTerm(cparams0: List[LoweredAst.ConstraintParam], exp0: LoweredAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def lowerHeadTerm(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     //
     // We need to consider four cases:
     //
@@ -1395,7 +1516,7 @@ object Lowering {
     // Case 3: The expression contains quantified variables. We translate it to an application term.
     //
     exp0 match {
-      case LoweredAst.Expr.Var(sym, _, _) =>
+      case TypedAst.Expr.Var(sym, _, _) =>
         // Case 1: Variable term.
         if (isQuantifiedVar(sym, cparams0)) {
           // Case 1.1: Quantified variable.
@@ -1422,34 +1543,37 @@ object Lowering {
   /**
     * Lowers the given body term `pat0`.
     */
-  private def lowerBodyTerm(cparams0: List[LoweredAst.ConstraintParam], pat0: LoweredAst.Pattern)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = pat0 match {
-    case LoweredAst.Pattern.Wild(_, loc) =>
+  private def lowerBodyTerm(cparams0: List[TypedAst.ConstraintParam], pat0: TypedAst.Pattern)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = pat0 match {
+    case TypedAst.Pattern.Wild(_, loc) =>
       mkBodyTermWild(loc)
 
-    case LoweredAst.Pattern.Var(sym, tpe, loc) =>
-      if (isQuantifiedVar(sym, cparams0)) {
+    case TypedAst.Pattern.Var(bnd, tpe, loc) =>
+      if (isQuantifiedVar(bnd.sym, cparams0)) {
         // Case 1: Quantified variable.
-        mkBodyTermVar(sym)
+        mkBodyTermVar(bnd.sym)
       } else {
         // Case 2: Lexically bound variable *expression*.
-        mkBodyTermLit(box(MonoAst.Expr.Var(sym, tpe, loc)))
+        mkBodyTermLit(box(MonoAst.Expr.Var(bnd.sym, tpe, loc)))
       }
 
-    case LoweredAst.Pattern.Cst(cst, tpe, loc) =>
+    case TypedAst.Pattern.Cst(cst, tpe, loc) =>
       mkBodyTermLit(box(MonoAst.Expr.Cst(cst, tpe, loc)))
 
-    case LoweredAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+    case TypedAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case LoweredAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+    case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case LoweredAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+    case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.Error(_, loc) =>
+      throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
   }
 
   /**
     * Returns an expression merging `exps` using `Defs.Merge`.
     */
-  private def mergeExps(exps: List[MonoAst.Expr], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr =
+  private def mergeExps(exps: List[MonoAst.Expr], loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr =
     exps.reduceRight {
       (exp, acc) =>
         val resultType = Types.Datalog
@@ -1463,7 +1587,7 @@ object Lowering {
     * Returns a new `Datalog` from `datalogExp` containing only facts from the predicate given by the `PredSym` `predSymExp`
     * using `Defs.Filter`.
     */
-  private def projectSym(predSymExp: MonoAst.Expr, datalogExp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def projectSym(predSymExp: MonoAst.Expr, datalogExp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val resultType = Types.Datalog
     val defn = lookup(Defs.Filter, resultType)
     val argExps = predSymExp :: datalogExp :: Nil
@@ -1476,7 +1600,7 @@ object Lowering {
     *
     * Note: liftX and liftXb are similar and should probably be maintained together.
     */
-  private def liftX(exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def liftX(exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Boxed`.
@@ -1502,7 +1626,7 @@ object Lowering {
   /**
     * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
     */
-  private def liftXb(exp0: MonoAst.Expr, argTypes: List[Type])(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def liftXb(exp0: MonoAst.Expr, argTypes: List[Type])(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     //
     // The liftX family of functions are of the form: a -> b -> c -> Bool and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
@@ -1528,7 +1652,7 @@ object Lowering {
   /**
     * Lifts the given lambda expression `exp0` with the given argument types `argTypes` and `resultType`.
     */
-  private def liftXY(outVars: List[Symbol.VarSym], exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def liftXY(outVars: List[Symbol.VarSym], exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     //
     // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
     // returns a function of the form Vector[Boxed] -> Vector[Vector[Boxed]].
@@ -1606,7 +1730,7 @@ object Lowering {
     * Constructs a `Fixpoint/Ast/Shared.Denotation` from the given denotation `d` and type `tpeOpt`
     * (which must be the optional type of the last term).
     */
-  private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = d match {
+  private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = d match {
     case Denotation.Relational =>
       mkTag(Enums.Denotation, "Relational", Nil, Types.Denotation, loc)
 
@@ -1657,7 +1781,7 @@ object Lowering {
   /**
     * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.GuardX`.
     */
-  private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     // Compute the number of free variables.
     val arity = fvs.length
 
@@ -1705,7 +1829,7 @@ object Lowering {
   /**
     * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.Functional`.
     */
-  private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     // Compute the number of in and out variables.
     val numberOfInVars = inVars.length
     val numberOfOutVars = outVars.length
@@ -1750,7 +1874,7 @@ object Lowering {
   /**
     * Returns a `Fixpoint/Ast/Datalog.HeadTerm.AppX`.
     */
-  private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     // Compute the number of free variables.
     val arity = fvs.length
 
@@ -1799,7 +1923,7 @@ object Lowering {
   /**
     * Returns the given expression `exp` in a box.
     */
-  private def box(exp: MonoAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def box(exp: MonoAst.Expr)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
     MonoAst.Expr.ApplyDef(lookup(Defs.Box, tpe), List(exp), tpe, Types.Boxed, Type.Pure, loc)
@@ -1818,8 +1942,8 @@ object Lowering {
     * A variable is quantified (i.e. *NOT* lexically bound) if it occurs in the expression `exp0`
     * but not in the constraint params `cparams0` of the constraint.
     */
-  private def quantifiedVars(cparams0: List[LoweredAst.ConstraintParam], exp0: LoweredAst.Expr): List[(Symbol.VarSym, Type)] = {
-    LoweredAstOps.freeVars(exp0).toList.filter {
+  private def quantifiedVars(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr): List[(Symbol.VarSym, Type)] = {
+    TypedAstOps.freeVars(exp0).toList.filter {
       case (sym, _) => isQuantifiedVar(sym, cparams0)
     }
   }
@@ -1829,8 +1953,8 @@ object Lowering {
     *
     * That is, the variable symbol is *NOT* lexically bound.
     */
-  private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[LoweredAst.ConstraintParam]): Boolean =
-    cparams0.exists(p => p.sym == sym)
+  private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
+    cparams0.exists(p => p.bnd.sym == sym)
 
   /*
    * Methods for substitution
@@ -2108,7 +2232,7 @@ object Lowering {
     * }}}
     * where `P1, P2, ...` are in `preds` with their respective term types.
     */
-  private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)(Scope.Top, flix)
     val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)(Scope.Top, flix)
     mkLambdaExp(predSymVar, Types.PredSym,
@@ -2149,7 +2273,7 @@ object Lowering {
     * where `P1, P2, ...` are in `preds` with their respective term types, `"predSym" == predSymVar.text`
     * and `"terms" == termsVar.text`.
     */
-  private def mkExtVarBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkExtVarBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val nameVar = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)(Scope.Top, flix)
     MonoAst.Expr.Match(
       exp = MonoAst.Expr.Var(predSymVar, Types.PredSym, loc),
@@ -2184,7 +2308,7 @@ object Lowering {
     * }}}
     * where `"P" == p.name`
     */
-  private def mkProvenanceMatchRule(termsVar: Symbol.VarSym, tpe: Type, p: Name.Pred, types: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.MatchRule = {
+  private def mkProvenanceMatchRule(termsVar: Symbol.VarSym, tpe: Type, p: Name.Pred, types: List[Type], loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.MatchRule = {
     val termsExps = types.zipWithIndex.map {
       case (tpe1, i) => mkUnboxedTerm(termsVar, tpe1, i, loc)
     }
@@ -2206,7 +2330,7 @@ object Lowering {
     * }}}
     * where `"terms" == termsVar.text`.
     */
-  private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
     val outerItpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc)
     val innerItpe = Type.mkPureUncurriedArrow(List(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc)
     MonoAst.Expr.ApplyDef(
