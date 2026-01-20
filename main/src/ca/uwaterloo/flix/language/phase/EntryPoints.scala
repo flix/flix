@@ -236,11 +236,10 @@ object EntryPoints {
       val errs = checkNoTypeVariables(defn) match {
         case Some(err) => List(err)
         case None =>
-          // Only run these on functions without type variables.
           // A test function should have:
           //  - A single Unit argument
           //  - An effect set containing only primitive effects or effects that have default handlers
-          checkUnitArg(defn) ++ checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym))
+          checkUnitArg(defn) ++ checkUnitReturnType(defn) ++ checkEffects(defn, Symbol.PrimitiveEffs ++ root.defaultHandlers.map(_.handledSym))
       }
       if (errs.isEmpty) {
         defn
@@ -344,6 +343,15 @@ object EntryPoints {
         // Zero parameters.
         case Nil => throw InternalCompilerException(s"Unexpected main with zero parameters ('${defn.sym}'", defn.sym.loc)
       }
+    }
+
+    /** Returns `None` if `defn` has a Unit return type. Returns an error otherwise. */
+    private def checkUnitReturnType(defn: TypedAst.Def): Option[EntryPointError] = {
+      val returnType = defn.spec.retTpe
+      if (returnType == Type.Unit)
+        None
+      else
+        Some(EntryPointError.TestNonUnitReturnType(returnType.loc))
     }
 
     /**

@@ -119,6 +119,36 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
+  test("Test.TestNonUnitReturnType.01") {
+    val input =
+      """
+        |@Test
+        |def testFoo(): Bool = true
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.TestNonUnitReturnType](result)
+  }
+
+  test("Test.TestNonUnitReturnType.02") {
+    val input =
+      """
+        |@Test
+        |def testBar(): Int32 = 42
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.TestNonUnitReturnType](result)
+  }
+
+  test("Test.TestNonUnitReturnType.03") {
+    val input =
+      """
+        |@Test
+        |def testBaz(): String = "hello"
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.TestNonUnitReturnType](result)
+  }
+
   test("Test.IllegalEntryPointEffect.Main.01") {
     val input =
       """
