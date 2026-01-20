@@ -165,7 +165,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |trait C[a]
         |
         |@Test
-        |def testFoo(): Unit with C[a] = ()
+        |def testFoo(x: a): Unit with C[a] = ()
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
