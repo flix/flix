@@ -61,28 +61,16 @@ object ResolutionError {
   case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9178
 
-    private val fullCycle = path.last :: path
-
-    def summary: String = {
-      val pathString = fullCycle.map(alias => s"'${alias.name}'").mkString(" references ")
-      "Cyclic type aliases: " + pathString
-    }
+    def summary: String = s"Cyclic type aliases: ${path.map(_.name).mkString(", ")}."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s"""${src(loc, "Cyclic type aliases.")}
+      s""">> Cyclic type aliases: ${red(path.map(_.name).mkString(", "))}.
          |
-         |The following type aliases are in the cycle:
-         |$appendCycles
+         |${src(loc, "cyclic type aliases")}
+         |
+         |${underline("Explanation:")} A type alias cannot directly or indirectly reference itself.
          |""".stripMargin
-    }
-
-    private def appendCycles: String = {
-      var res = ""
-      for (case List(referrer, referee) <- fullCycle.sliding(2)) {
-        res += s"$referrer references $referee" + System.lineSeparator()
-      }
-      res
     }
   }
 
