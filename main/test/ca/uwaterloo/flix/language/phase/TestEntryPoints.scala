@@ -149,6 +149,38 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.TestNonUnitReturnType](result)
   }
 
+  test("Test.IllegalEntryPointTypeVariables.Test.01") {
+    val input =
+      """
+        |@Test
+        |def testFoo[a](): Unit = ()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
+  }
+
+  test("Test.IllegalEntryPointTypeVariables.Test.02") {
+    val input =
+      """
+        |trait C[a]
+        |
+        |@Test
+        |def testFoo(x: a): Unit with C[a] = ()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
+  }
+
+  test("Test.IllegalEntryPointTypeVariables.Test.03") {
+    val input =
+      """
+        |@Test
+        |def testFoo[a, b](): Unit = ()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
+  }
+
   test("Test.IllegalEntryPointEffect.Main.01") {
     val input =
       """
@@ -194,6 +226,58 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |    println("Hello, World!")
         |
         |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalEntryPointEffect](result)
+  }
+
+  test("Test.IllegalEntryPointEffect.Test.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |@Test
+        |def testFoo(): Unit \ E = E.op()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointEffect](result)
+  }
+
+  test("Test.IllegalEntryPointEffect.Test.02") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |eff F {
+        |    pub def op(): Unit
+        |}
+        |
+        |@Test
+        |def testFoo(): Unit \ E + F = {
+        |    E.op();
+        |    F.op()
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointEffect](result)
+  }
+
+  test("Test.IllegalEntryPointEffect.Test.03") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |@Test
+        |def testFoo(): Unit \ E + IO = {
+        |    E.op();
+        |    checked_ecast(())
+        |}
+      """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
