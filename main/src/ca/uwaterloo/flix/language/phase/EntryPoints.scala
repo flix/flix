@@ -486,14 +486,6 @@ object EntryPoints {
     }
   }
 
-  private object SharedContext {
-    /** Returns a fresh shared context. */
-    def mk(): SharedContext = new SharedContext(
-      new ConcurrentLinkedQueue(),
-      new AtomicBoolean(false)
-    )
-  }
-
   /**
     * WrapMain takes the main function (if it exists) and creates a new main function that prints
     * the value of the existing main function (unless it returns unit).
@@ -598,6 +590,14 @@ object EntryPoints {
     }
     val entryPoints = s.toSet
     root.copy(entryPoints = entryPoints)
+  }
+
+  private object SharedContext {
+    /** Returns a fresh shared context. */
+    def mk(): SharedContext = new SharedContext(
+      new ConcurrentLinkedQueue(),
+      new AtomicBoolean(false)
+    )
   }
 
   /**
