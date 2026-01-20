@@ -279,13 +279,25 @@ object EntryPointError {
     * @param loc the location of the return type.
     */
   case class TestNonUnitReturnType(loc: SourceLocation) extends EntryPointError {
-    override def summary: String = s"A @Test function must return Unit."
+    def code: ErrorCode = ErrorCode.E1960
 
-    override def message(formatter: Formatter): String = {
+    def summary: String = s"Unexpected return type: @Test function must return Unit."
+
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> A @Test function must return Unit.
+      s""">> Unexpected return type: @Test function must return Unit.
          |
-         |${code(loc, "unexpected return type")}
+         |${src(loc, "expected Unit")}
+         |
+         |${underline("Explanation:")} A @Test function must have return type Unit.
+         |
+         |Valid signatures:
+         |
+         |  @Test
+         |  def testFoo(): Unit \\ Assert = ...
+         |
+         |  @Test
+         |  def testBar(): Unit \\ {Assert, IO} = ...
          |""".stripMargin
     }
   }
