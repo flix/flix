@@ -90,7 +90,9 @@ object ResolutionError {
       import formatter.*
       s""">> Duplicate associated type definition: ${red(sym.name)}.
          |
-         |${src(loc2, "duplicate associated type definition.")}
+         |${src(loc1, "first occurrence")}
+         |
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
 
@@ -113,11 +115,9 @@ object ResolutionError {
       import formatter.*
       s""">> Duplicate derivation '${red(sym.name)}'.
          |
-         |${src(loc1, "the first occurrence was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${src(loc2, "the second occurrence was here.")}
-         |
-         |${underline("Tip:")} Remove one of the occurrences.
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
 
@@ -156,16 +156,18 @@ object ResolutionError {
   case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9512
 
-    def summary: String = "Illegal associated type application."
+    def summary: String = "Unexpected associated type application."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal associated type application.
+      s""">> Unexpected associated type application.
          |
-         |${src(loc, "illegal associated type application.")}
+         |${src(loc, "unexpected application")}
          |
-         |${underline("Explanation:")}
-         |An associated type may only be applied to a variable.
+         |${underline("Explanation:")} An associated type may only be applied to a type variable.
+         |
+         |  Elm[a]     // allowed
+         |  Elm[Int32] // not allowed
          |""".stripMargin
     }
   }
