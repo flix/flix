@@ -39,29 +39,16 @@ object ResolutionError {
   case class CyclicTraitHierarchy(path: List[Symbol.TraitSym], loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9067
 
-    private val fullCycle = path.last :: path
-
-    override def summary: String = {
-      val pathString = fullCycle.map(clazz => s"'${clazz.name}'").mkString(" extends ")
-      "Cyclic inheritance: " + pathString
-    }
+    def summary: String = s"Cyclic trait hierarchy: ${path.map(_.name).mkString(", ")}."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s"""${src(loc, "cyclic inheritance.")}
+      s""">> Cyclic trait hierarchy: ${red(path.map(_.name).mkString(", "))}.
          |
-         |The following traits are in the cycle:
+         |${src(loc, "cyclic inheritance")}
          |
-         |$cyclicTraits
+         |${underline("Explanation:")} A trait cannot directly or indirectly extend itself.
          |""".stripMargin
-    }
-
-    private def cyclicTraits: String = {
-      var res = ""
-      for (case List(subTrait, superTrait) <- fullCycle.sliding(2)) {
-        res += s"$subTrait extends $superTrait" + System.lineSeparator()
-      }
-      res
     }
   }
 
@@ -109,9 +96,9 @@ object ResolutionError {
   case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9281
 
-    override def summary: String = s"Duplicate associated type definition: $sym."
+    def summary: String = s"Duplicate associated type definition: $sym."
 
-    override def message(formatter: Formatter): String = messageWithLink {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Duplicate associated type definition: ${red(sym.name)}.
          |
@@ -132,7 +119,7 @@ object ResolutionError {
   case class DuplicateDerivation(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9394
 
-    override def summary: String = s"Duplicate derivation: ${sym.name}"
+    def summary: String = s"Duplicate derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -146,7 +133,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def loc: SourceLocation = loc1
+    def loc: SourceLocation = loc1
 
   }
 
@@ -160,7 +147,7 @@ object ResolutionError {
   case class ExtraStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9407
 
-    override def summary: String = s"Unexpected field '$field' in new struct expression"
+    def summary: String = s"Unexpected field '$field' in new struct expression"
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -181,9 +168,9 @@ object ResolutionError {
   case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9512
 
-    override def summary: String = "Illegal associated type application."
+    def summary: String = "Illegal associated type application."
 
-    override def message(formatter: Formatter): String = messageWithLink {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Illegal associated type application.
          |
@@ -273,7 +260,7 @@ object ResolutionError {
   case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9956
 
-    override def summary: String = s"Modification of immutable field `${field.name}`."
+    def summary: String = s"Modification of immutable field `${field.name}`."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -488,9 +475,9 @@ object ResolutionError {
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0912
 
-    override def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
+    def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
 
-    override def message(formatter: Formatter): String = messageWithLink {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Mismatched arity.
          |
@@ -513,9 +500,9 @@ object ResolutionError {
   case class MismatchedTagPatternArity(caze: Symbol.CaseSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1023
 
-    override def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found ${Grammar.n_things(actual, "argument")}."
+    def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found ${Grammar.n_things(actual, "argument")}."
 
-    override def message(formatter: Formatter): String = messageWithLink {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""" Expected ${Grammar.n_things(expected, "argument")} for ${cyan(caze.toString)} but found ${Grammar.n_things(actual, "argument")}.
          |
@@ -533,9 +520,9 @@ object ResolutionError {
   case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1134
 
-    override def summary: String = s"Missing associated type definition: $name."
+    def summary: String = s"Missing associated type definition: $name."
 
-    override def message(formatter: Formatter): String = messageWithLink {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Missing associated type definition: $name.
          |
@@ -553,9 +540,9 @@ object ResolutionError {
   case class MissingHandlerDef(sym: Symbol.OpSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1245
 
-    override def summary: String = s"Missing handler definition: ${sym.name}"
+    def summary: String = s"Missing handler definition: ${sym.name}"
 
-    override def message(formatter: Formatter): String = messageWithLink {
+    def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
       s""">> Missing handler definition '${red(sym.name)}' for effect ${cyan(sym.eff.name)}'.
          |
@@ -576,7 +563,7 @@ object ResolutionError {
   case class MissingStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1356
 
-    override def summary: String = s"Missing struct field '$field' in new struct expression"
+    def summary: String = s"Missing struct field '$field' in new struct expression"
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -662,10 +649,10 @@ object ResolutionError {
   /**
     * An error raised to indicate that a class name was not found.
     *
-    * @param name  the class name.
-    * @param ap    the anchor position.
-    * @param msg   the Java error message.
-    * @param loc   the location of the class name.
+    * @param name the class name.
+    * @param ap   the anchor position.
+    * @param msg  the Java error message.
+    * @param loc  the location of the class name.
     */
   case class UndefinedJvmClass(name: Name.Ident, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1792
@@ -765,10 +752,10 @@ object ResolutionError {
   /**
     * Undefined Name Error.
     *
-    * @param qn    the unresolved name.
-    * @param ap    the anchor position.
-    * @param scp   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ap  the anchor position.
+    * @param scp the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedName(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E2136
@@ -790,10 +777,10 @@ object ResolutionError {
   /**
     * Undefined Name Error (unrecoverable).
     *
-    * @param qn    the unresolved name.
-    * @param ns    the current namespace.
-    * @param scp   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ns  the current namespace.
+    * @param scp the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E2247
@@ -840,8 +827,8 @@ object ResolutionError {
   /**
     * Undefined Op Error.
     *
-    * @param qn    the qualified name of the operation.
-    * @param loc   the location where the error occurred.
+    * @param qn  the qualified name of the operation.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedOp(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E2469
@@ -910,7 +897,7 @@ object ResolutionError {
   /**
     * Undefined Tag Error.
     *
-    * @param qn the tag.
+    * @param qn  the tag.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
@@ -961,10 +948,10 @@ object ResolutionError {
   /**
     * Undefined Type Error.
     *
-    * @param qn       the name.
-    * @param kindOpt  the kind of the type.
-    * @param ap       the enclosing module.
-    * @param loc      the location where the error occurred.
+    * @param qn      the name.
+    * @param kindOpt the kind of the type.
+    * @param ap      the enclosing module.
+    * @param loc     the location where the error occurred.
     */
   case class UndefinedType(qn: Name.QName, kindOpt: Option[Kind], ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E2916
@@ -1010,10 +997,10 @@ object ResolutionError {
   /**
     * Undefined Use Error (unrecoverable).
     *
-    * @param qn    the unresolved name.
-    * @param ns    the current namespace.
-    * @param env   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ns  the current namespace.
+    * @param env the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedUse(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3138
@@ -1039,7 +1026,7 @@ object ResolutionError {
   case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3249
 
-    override def summary: String = s"Under-applied associated type: ${sym.name}"
+    def summary: String = s"Under-applied associated type: ${sym.name}"
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -1062,7 +1049,7 @@ object ResolutionError {
   case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3352
 
-    override def summary: String = s"Under-applied type alias: ${sym.name}"
+    def summary: String = s"Under-applied type alias: ${sym.name}"
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -1085,7 +1072,7 @@ object ResolutionError {
   case class UndefinedStruct(name: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3463
 
-    override def summary: String = s"Undefined struct"
+    def summary: String = s"Undefined struct"
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -1106,7 +1093,7 @@ object ResolutionError {
   case class UndefinedStructField(struct: Option[Symbol.StructSym], field: Name.Label, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3574
 
-    override def summary: String = s"Undefined struct field '$field'$structMessage"
+    def summary: String = s"Undefined struct field '$field'$structMessage"
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
