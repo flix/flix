@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Instance}
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -466,70 +466,87 @@ object Specialization {
     *
     * Replaces every local variable symbol with a fresh local variable symbol.
     */
-  private def specializeExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Expr = exp0 match {
-    case LoweredAst.Expr.Var(sym, tpe, loc) =>
-      LoweredAst.Expr.Var(env0(sym), subst(tpe), loc)
+  private def specializeExp(exp0: Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Expr = exp0 match {
+    case Expr.Var(sym, tpe, loc) =>
+      Expr.Var(env0(sym), subst(tpe), loc)
 
-    case LoweredAst.Expr.Cst(cst, tpe, loc) =>
-      LoweredAst.Expr.Cst(cst, subst(tpe), loc)
+    case Expr.Cst(cst, tpe, loc) =>
+      Expr.Cst(cst, subst(tpe), loc)
 
-    case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+    case Expr.Hole(sym, scp, tpe, eff, loc) =>
+      val t = subst(tpe)
+      Expr.Hole(sym, scp, t, subst(eff), loc)
+
+    case Expr.HoleWithExp(exp, scp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.HoleWithExp(e, scp, t, subst(eff), loc)
+
+    case Expr.OpenAs(symUse, exp, tpe, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.OpenAs(symUse, e, t, loc)
+
+    case Expr.Use(symbol, alias, exp, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      Expr.Use(symbol, alias, e, loc)
+
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
       val e = specializeExp(exp, env0 ++ env1, subst)
-      LoweredAst.Expr.Lambda(p, e, subst(tpe), loc)
+      Expr.Lambda(p, e, subst(tpe), loc)
 
-    case LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), exps, tpe, eff, loc) =>
-      // In bytecode, instanceof can only be called on reference types
+    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      val List(e) = es
-      if (isPrimType(e.tpe)) {
-        // If it's a primitive type, evaluate the expression but return false
-        LoweredAst.Expr.Stm(e, LoweredAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
-      } else {
-        // If it's a reference type, then do the instanceof check
-        LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, subst(tpe), subst(eff), loc)
-      }
+      Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
-
-    case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(sym, exps, targs, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeDefnSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
+      Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+    case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
       val es = exps.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
       val ef = subst(eff)
-      LoweredAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
+      Expr.ApplyLocalDef(newSym, es, t, ef, loc)
 
-    case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
+      Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, _, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplySig(sym, exps, _, targs, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeSigSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
+      Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Unary(sop, exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Unary(sop, e, t, subst(eff), loc)
+
+    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.Binary(sop, e1, e2, t, subst(eff), loc)
+
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      LoweredAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
+      Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val (fps, env2) = specializeFormalParams(fparams, subst)
@@ -537,29 +554,29 @@ object Specialization {
       val e2 = specializeExp(exp2, env1, subst)
       val t = subst(tpe)
       val ef = subst(eff)
-      LoweredAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
+      Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
 
-    case LoweredAst.Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      LoweredAst.Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
+      Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
       val e3 = specializeExp(exp3, env0, subst)
-      LoweredAst.Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
+      Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Discard(exp, eff, loc) =>
+    case Expr.Discard(exp, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
-      LoweredAst.Expr.Discard(e, subst(eff), loc)
+      Expr.Discard(e, subst(eff), loc)
 
-    case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+    case Expr.Match(exp, rules, tpe, eff, loc) =>
       val rs = rules map {
         case LoweredAst.MatchRule(pat, guard, body) =>
           val (p, env1) = specializePat(pat, Map(), subst)
@@ -568,9 +585,9 @@ object Specialization {
           val b = specializeExp(body, extendedEnv, subst)
           LoweredAst.MatchRule(p, g, b)
       }
-      LoweredAst.Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
+      Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules.map {
         case LoweredAst.ExtMatchRule(pat, exp1, loc1) =>
@@ -579,9 +596,9 @@ object Specialization {
           val e1 = specializeExp(exp1, extendedEnv, subst)
           LoweredAst.ExtMatchRule(p, e1, loc1)
       }
-      LoweredAst.Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
+      Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.TypeMatch(exp, rules, tpe, _, loc) =>
+    case Expr.TypeMatch(exp, rules, tpe, _, loc) =>
       // Use the non-strict substitution to allow free type variables to match with anything.
       val expTpe = subst.nonStrict(exp.tpe)
       // Make the tvars in `exp`'s type rigid so that `Nil: List[x%123]` can only match `List[_]`
@@ -604,31 +621,151 @@ object Specialization {
               // Visit the body under the extended environment.
               val body = specializeExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(LoweredAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
+              Some(Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
           }
       }.get // This is safe since the last case can always match.
 
-    case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.VectorLit(es, subst(tpe), subst(eff), loc)
+    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val rs = rules.map(r => specializeRestrictableChooseRule(r, env0, subst))
+      val t = subst(tpe)
+      Expr.RestrictableChoose(star, e, rs, t, subst(eff), loc)
 
-    case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Tag(symUse, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.Tag(symUse, es, t, subst(eff), loc)
+
+    case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.RestrictableTag(symUse, es, t, subst(eff), loc)
+
+    case Expr.ExtTag(label, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.ExtTag(label, es, t, subst(eff), loc)
+
+    case Expr.Tuple(exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.Tuple(es, t, subst(eff), loc)
+
+    case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.RecordSelect(e, label, t, subst(eff), loc)
+
+    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
+      val t = subst(tpe)
+      Expr.RecordExtend(label, e1, e2, t, subst(eff), loc)
 
-    case LoweredAst.Expr.VectorLength(exp, loc) =>
+    case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
-      LoweredAst.Expr.VectorLength(e, loc)
+      val t = subst(tpe)
+      Expr.RecordRestrict(label, e, t, subst(eff), loc)
 
-    case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
-      specializeExp(exp, env0, subst)
-
-    case LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
       val e = specializeExp(exp, env0, subst)
-      mkCast(e, declaredType.map(subst.apply), declaredEff.map(subst.apply), subst(tpe), subst(eff), loc)
+      val t = subst(tpe)
+      Expr.ArrayLit(es, e, t, subst(eff), loc)
 
-    case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val e3 = specializeExp(exp3, env0, subst)
+      val t = subst(tpe)
+      Expr.ArrayNew(e1, e2, e3, t, subst(eff), loc)
+
+    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.ArrayLoad(e1, e2, t, subst(eff), loc)
+
+    case Expr.ArrayLength(exp, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      Expr.ArrayLength(e, subst(eff), loc)
+
+    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val e3 = specializeExp(exp3, env0, subst)
+      Expr.ArrayStore(e1, e2, e3, subst(eff), loc)
+
+    case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val fields = fields0.map { case (k, v) => (k, specializeExp(v, env0, subst)) }
+      val region = region0.map(r => specializeExp(r, env0, subst))
+      val t = subst(tpe)
+      Expr.StructNew(sym, fields, region, t, subst(eff), loc)
+
+    case Expr.StructGet(exp, field, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.StructGet(e, field, t, subst(eff), loc)
+
+    case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.StructPut(e1, field, e2, t, subst(eff), loc)
+
+    case Expr.VectorLit(exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      Expr.VectorLit(es, subst(tpe), subst(eff), loc)
+
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
+
+    case Expr.VectorLength(exp, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      Expr.VectorLength(e, loc)
+
+    case Expr.Ascribe(exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Ascribe(e, t, subst(eff), loc)
+
+    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val dType = declaredType.map(subst.apply)
+      val dEff = declaredEff.map(subst.apply)
+      val t = subst(tpe)
+      Expr.Cast(e, dType, dEff, t, subst(eff), loc)
+
+    case Expr.InstanceOf(exp, clazz, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      Expr.InstanceOf(e, clazz, loc)
+
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val dType = declaredType.map(subst.apply)
+      val dEff = declaredEff.map(subst.apply)
+      val t = subst(tpe)
+      Expr.UncheckedCast(e, dType, dEff, t, subst(eff), loc)
+
+    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.CheckedCast(cast, e, t, subst(eff), loc)
+
+    case Expr.Unsafe(exp, runEff, asEff0, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      val asEff = asEff0.map(subst.apply)
+      Expr.Unsafe(e, subst(runEff), asEff, t, subst(eff), loc)
+
+    case Expr.Without(exp, symUse, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Without(e, symUse, t, subst(eff), loc)
+
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.CatchRule(sym, clazz, body) =>
@@ -637,9 +774,33 @@ object Specialization {
           val b = specializeExp(body, env1, subst)
           LoweredAst.CatchRule(freshSym, clazz, b)
       }
-      LoweredAst.Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
+      Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
+    case Expr.Throw(exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Throw(e, t, subst(eff), loc)
+
+    case Expr.Handler(symUse0, rules0, bodyTpe, bodyEff, handledEff, tpe, loc0) =>
+      val rules = rules0.map {
+        case LoweredAst.HandlerRule(symUse, fparams0, exp) =>
+          val (fparams, env1) = specializeFormalParams(fparams0, subst)
+          val e = specializeExp(exp, env0 ++ env1, subst)
+          LoweredAst.HandlerRule(symUse, fparams, e)
+      }
+      val bodyT = subst(bodyTpe)
+      val bodyE = subst(bodyEff)
+      val handledE = subst(handledEff)
+      val t = subst(tpe)
+      Expr.Handler(symUse0, rules, bodyT, bodyE, handledE, t, loc0)
+
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.RunWith(e1, e2, t, subst(eff), loc)
+
+    case Expr.OldRunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.HandlerRule(opSymUse, fparams0, body0) =>
@@ -648,26 +809,62 @@ object Specialization {
           val body = specializeExp(body0, env1, subst)
           LoweredAst.HandlerRule(opSymUse, fparams, body)
       }
-      LoweredAst.Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
+      Expr.OldRunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeConstructor(constructor, es, t, subst(eff), loc)
+
+    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeMethod(method, e, es, t, subst(eff), loc)
+
+    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeStaticMethod(method, es, t, subst(eff), loc)
+
+    case Expr.GetField(field, exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.GetField(field, e, t, subst(eff), loc)
+
+    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.PutField(field, e1, e2, t, subst(eff), loc)
+
+    case Expr.GetStaticField(field, tpe, eff, loc) =>
+      val t = subst(tpe)
+      Expr.GetStaticField(field, t, subst(eff), loc)
+
+    case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.PutStaticField(field, e, t, subst(eff), loc)
+
+    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      LoweredAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+      Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
-    case LoweredAst.Expr.NewChannel(innerExp, tpe, eff, loc) =>
+    case Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
-      LoweredAst.Expr.NewChannel(e, subst(tpe), subst(eff), loc)
+      Expr.NewChannel(e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
+    case Expr.GetChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
-      LoweredAst.Expr.GetChannel(e, subst(tpe), subst(eff), loc)
+      Expr.GetChannel(e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.PutChannel(innerExp1, innerExp2, tpe, eff, loc) =>
+    case Expr.PutChannel(innerExp1, innerExp2, tpe, eff, loc) =>
       val e1 = specializeExp(innerExp1, env0, subst)
       val e2 = specializeExp(innerExp2, env0, subst)
-      LoweredAst.Expr.PutChannel(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.PutChannel(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc0) =>
+    case Expr.SelectChannel(rules0, default0, tpe, eff, loc0) =>
       val rules = rules0.map {
         case LoweredAst.SelectChannelRule(sym, chan0, exp, loc) =>
           val freshSym = Symbol.freshVarSym(sym)
@@ -677,9 +874,15 @@ object Specialization {
           LoweredAst.SelectChannelRule(freshSym, chan, e, loc)
       }
       val default = default0.map { d => specializeExp(d, env0, subst) }
-      LoweredAst.Expr.SelectChannel(rules, default, subst(tpe), subst(eff), loc0)
+      Expr.SelectChannel(rules, default, subst(tpe), subst(eff), loc0)
 
-    case LoweredAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
+    case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.Spawn(e1, e2, t, subst(eff), loc)
+
+    case Expr.ParYield(frags, exp, tpe, eff, loc) =>
       var curEnv = env0
       val fs = frags.map {
         case LoweredAst.ParYieldFragment(pat, fragExp, fragLoc) =>
@@ -688,75 +891,63 @@ object Specialization {
           LoweredAst.ParYieldFragment(p, specializeExp(fragExp, curEnv, subst), fragLoc)
       }
       val e = specializeExp(exp, curEnv, subst)
-      LoweredAst.Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
+      Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointConstraintSet(cs0, tpe, loc) =>
+    case Expr.Lazy(exp, tpe, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Lazy(e, t, loc)
+
+    case Expr.Force(exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Force(e, t, subst(eff), loc)
+
+    case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       val cs = cs0.map(specializeConstraint(_, env0, subst))
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointConstraintSet(cs, t, loc)
+      Expr.FixpointConstraintSet(cs, t, loc)
 
-    case LoweredAst.Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
+    case Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
       val pparams = pparams0.map {
         case LoweredAst.PredicateParam(pred, tpe0, loc0) => LoweredAst.PredicateParam(pred, subst(tpe0), loc0)
       }
       val e = specializeExp(exp, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointLambda(pparams, e, t, subst(eff), loc)
+      Expr.FixpointLambda(pparams, e, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointMerge(e1, e2, t, subst(eff), loc)
+      Expr.FixpointMerge(e1, e2, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val select = specializeHeadPred(select0, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, t, subst(eff), loc)
+      Expr.FixpointQueryWithProvenance(exps, select, withh, t, subst(eff), loc)
 
     // We do not care about `selects`, `from`, or `where`. I'm unsure why they're not just dropped after desugaring.
-    case LoweredAst.Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val queryExp = specializeExp(queryExp0, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects0, from0, where0, pred, t, subst(eff), loc)
+      Expr.FixpointQueryWithSelect(exps, queryExp, selects0, from0, where0, pred, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
+    case Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, t, subst(eff), loc)
+      Expr.FixpointSolveWithProject(exps, optPreds, mode, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
+    case Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, t, subst(eff), loc)
+      Expr.FixpointInjectInto(exps, predsAndArities, t, subst(eff), loc)
 
-  }
+    case Expr.Error(m, _, _) =>
+      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
-  /**
-    * Returns the cast of `e` to `tpe` and `eff`.
-    *
-    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
-    * bytecode verifier.
-    */
-  private def mkCast(exp: LoweredAst.Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    (exp.tpe, tpe) match {
-      case (Type.Char, Type.Char) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Char, Type.Int16) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int16, Type.Char) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Bool, Type.Bool) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int8, Type.Int8) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int16, Type.Int16) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int32, Type.Int32) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int64, Type.Int64) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Float32, Type.Float32) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Float64, Type.Float64) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (x, y) if !isPrimType(x) && !isPrimType(y) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (x, y) =>
-        val crash = LoweredAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
-        LoweredAst.Expr.Stm(exp, crash, tpe, eff, loc)
-    }
   }
 
   /**
@@ -803,7 +994,7 @@ object Specialization {
   }
 
   /**
-    * Lowers the given constraint `c0`.
+    * Specializes the given constraint `c0`.
     */
   private def specializeConstraint(c0: LoweredAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Constraint = c0 match {
     case LoweredAst.Constraint(cparams0, head0, body0, loc0) =>
@@ -827,51 +1018,33 @@ object Specialization {
   }
 
   /**
-    * Returns `true` if `tpe` is a primitive type.
-    *
-    * N.B.: `tpe` must be normalized.
+    * Specializes the given restrictable choice rule `rule0` to a match rule.
     */
-  private def isPrimType(tpe: Type): Boolean = tpe match {
-    case Type.Char => true
-    case Type.Bool => true
-    case Type.Int8 => true
-    case Type.Int16 => true
-    case Type.Int32 => true
-    case Type.Int64 => true
-    case Type.Float32 => true
-    case Type.Float64 => true
-    case Type.Cst(_, _) => false
-    case Type.Apply(_, _, _) => false
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-  }
-
-  /**
-    * Returns the erased string representation of `tpe`
-    *
-    * N.B.: `tpe` must be normalized.
-    */
-  private def erasedString(tpe: Type): String = tpe match {
-    case Type.Char => "Char"
-    case Type.Bool => "Bool"
-    case Type.Int8 => "Int8"
-    case Type.Int16 => "Int16"
-    case Type.Int32 => "Int32"
-    case Type.Int64 => "Int64"
-    case Type.Float32 => "Float32"
-    case Type.Float64 => "Float64"
-    case Type.Cst(_, _) => "Object"
-    case Type.Apply(_, _, _) => "Object"
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  private def specializeRestrictableChooseRule(rule0: LoweredAst.RestrictableChooseRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.RestrictableChooseRule = rule0 match {
+    case LoweredAst.RestrictableChooseRule(pat, exp) =>
+      pat match {
+        case LoweredAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
+          val env = pat0.foldLeft(env0) {
+            case (env1, LoweredAst.RestrictableChoosePattern.Var(sym, _, _)) =>
+              val freshSym = Symbol.freshVarSym(sym)
+              val env = env1 + (sym -> freshSym)
+              env
+            case (env1, LoweredAst.RestrictableChoosePattern.Wild(_, _)) =>
+              env1
+            case (_, LoweredAst.RestrictableChoosePattern.Error(_, errLoc)) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val pats = pat0.map {
+            case LoweredAst.RestrictableChoosePattern.Var(sym, varTpe, varLoc) =>
+              LoweredAst.RestrictableChoosePattern.Var(sym, subst(varTpe), varLoc)
+            case LoweredAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) =>
+              LoweredAst.RestrictableChoosePattern.Wild(subst(wildTpe), wildLoc)
+            case LoweredAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val e = specializeExp(exp, env, subst)
+          val p = LoweredAst.RestrictableChoosePattern.Tag(symUse, pats, subst(tpe), loc)
+          LoweredAst.RestrictableChooseRule(p, e)
+        case LoweredAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
+      }
   }
 
   /**

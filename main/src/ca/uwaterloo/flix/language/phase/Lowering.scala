@@ -663,7 +663,7 @@ object Lowering {
       val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
       val bodyVar = LoweredAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
       val body = LoweredAst.Expr.ApplyClo(bodyVar, LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
-      val RunWith = LoweredAst.Expr.RunWith(body, symUse, rs, bt, handledEff, loc)
+      val RunWith = LoweredAst.Expr.OldRunWith(body, symUse, rs, bt, handledEff, loc)
       val param = LoweredAst.FormalParam(bodySym, bodyThunkType, loc.asSynthetic)
       LoweredAst.Expr.Lambda(param, RunWith, t, loc)
 

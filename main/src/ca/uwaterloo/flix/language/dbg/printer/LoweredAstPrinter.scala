@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol}
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object LoweredAstPrinter {
 
@@ -102,7 +103,7 @@ object LoweredAstPrinter {
         case LoweredAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
       }
       DocAst.Expr.TryCatch(expD, rulesD)
-    case Expr.RunWith(exp, effSymUse, rules, _, _, _) =>
+    case Expr.OldRunWith(exp, effSymUse, rules, _, _, _) =>
       val expD = print(exp)
       val effD = effSymUse.sym
       val rulesD = rules.map {
@@ -138,6 +139,9 @@ object LoweredAstPrinter {
     case LoweredAst.Expr.FixpointSolveWithProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
 
     case LoweredAst.Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
+
+    case _ =>
+      throw InternalCompilerException(s"Will not be implemented", e.loc)
 
   }
 

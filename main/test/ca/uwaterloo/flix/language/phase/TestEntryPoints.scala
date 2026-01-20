@@ -218,7 +218,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def notF(): String = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
-    expectError[EntryPointError.MainEntryPointNotFound](result, allowUnknown = true)
+    expectError[EntryPointError.EntryPointNotFound](result, allowUnknown = true)
   }
 
   test("Test.MainEntryPointNotFound.02") {
@@ -227,7 +227,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): String = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
-    expectError[EntryPointError.MainEntryPointNotFound](result, allowUnknown = true)
+    expectError[EntryPointError.EntryPointNotFound](result, allowUnknown = true)
   }
 
   test("Test.ValidEntryPoint.Main.01") {
