@@ -208,15 +208,14 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      val a = tvar.toString
-      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable '${cyan(a)}'.
+      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable '${cyan(tvar.toString)}'.
          |
          |${src(loc, "unexpected signature")}
          |
          |${underline("Explanation:")} Every signature in a trait must mention the type variable of the trait.
          |
-         |  trait T[$a] {
-         |      pub def f(x: $a): $a  // allowed
+         |  trait T[a] {
+         |      pub def f(x: a): a    // allowed
          |      pub def g(): Int32    // not allowed
          |  }
          |""".stripMargin
