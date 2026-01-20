@@ -181,15 +181,15 @@ object ResolutionError {
   case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9623
 
-    def summary: String = "Illegal non-Java type. Expected class or interface type."
+    def summary: String = "Unexpected non-Java type. Expected class or interface type."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Unexpected non-Java type: '${red(tpe.toString)}'.
          |
-         |${src(loc, "unexpected type.")}
+         |${src(loc, "unexpected type")}
          |
-         |Expected a Java class or interface.
+         |${underline("Explanation:")} Expected a Java class or interface.
          |""".stripMargin
     }
   }
