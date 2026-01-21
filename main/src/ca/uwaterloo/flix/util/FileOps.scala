@@ -63,26 +63,32 @@ object FileOps {
     *
     * @param append if set to true, the content will be appended to the file
     */
-  def writeString(p: Path, s: String, append: Boolean = false): Unit = {
-    Files.createDirectories(p.getParent)
+  def writeString(p: Path, s: String, append: Boolean = false): Result[Unit, Exception] = {
+    try {
+      Files.createDirectories(p.getParent)
 
-    // Check if the file already exists.
-    if (Files.exists(p)) {
-      // Check that the file is a regular file.
-      if (!Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS)) {
-        throw InternalCompilerException(s"Unable to write to non-regular file: '$p'.", SourceLocation.Unknown)
+      // Check if the file already exists.
+      if (Files.exists(p)) {
+        // Check that the file is a regular file.
+        if (!Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS)) {
+          throw InternalCompilerException(s"Unable to write to non-regular file: '$p'.", SourceLocation.Unknown)
+        }
+
+        // Check if the file is writable.
+        if (!Files.isWritable(p)) {
+          throw InternalCompilerException(s"Unable to write to read-only file: '$p'.", SourceLocation.Unknown)
+        }
       }
 
-      // Check if the file is writable.
-      if (!Files.isWritable(p)) {
-        throw InternalCompilerException(s"Unable to write to read-only file: '$p'.", SourceLocation.Unknown)
+      if (append) {
+        Files.write(p, s.getBytes, StandardOpenOption.APPEND)
+        Result.Ok(())
+      } else {
+        Files.write(p, s.getBytes)
+        Result.Ok(())
       }
-    }
-
-    if (append) {
-      Files.write(p, s.getBytes, StandardOpenOption.APPEND)
-    } else {
-      Files.write(p, s.getBytes)
+    } catch {
+      case e: Exception => Result.Err(e)
     }
   }
 
@@ -92,7 +98,7 @@ object FileOps {
     * Creates the parent directory of `p` if needed.
     */
   def writeJSON(p: Path, j: JValue): Unit = {
-    FileOps.writeString(p, JsonMethods.pretty(JsonMethods.render(j)))
+    FileOps.writeString(p, JsonMethods.pretty(JsonMethods.render(j))).unsafeGet
   }
 
   /**

@@ -375,7 +375,7 @@ object CompilerPerf {
     //
     // Python Plot
     //
-    FileOps.writeString(o.outputPath.resolve("perf/").resolve("plots.py"), Python)
+    FileOps.writeString(o.outputPath.resolve("perf/").resolve("plots.py"), Python).unsafeGet
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
