@@ -211,6 +211,8 @@ object ConstraintSolverInterface {
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
+    case TypeConstraint.EffConflicted(_,_,_) => List() // TODO eff errors
+
     case TypeConstraint.Trait(sym, tpe, loc) =>
       tpe.typeConstructor match {
         case Some(TypeConstructor.Arrow(_)) => List(TypeError.MissingInstanceArrow(sym, subst(tpe), renv, loc))
