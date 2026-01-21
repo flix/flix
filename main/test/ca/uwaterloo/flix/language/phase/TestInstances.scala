@@ -580,7 +580,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance B[Wrapper[t]] with A[t]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingEqConstraint](result)
+    expectError[InstanceError.MissingEqualityConstraint](result)
   }
 
   test("Test.MissingEqConstraint.02") {
@@ -601,7 +601,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance B[Wrapper[sadf]] with A[sadf] where A.Aty[sadf] ~ Char
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingEqConstraint](result)
+    expectError[InstanceError.MissingEqualityConstraint](result)
   }
 
   test("Test.MissingSuperTraitInstance.01") {
@@ -701,7 +701,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.IllegalOverride](result)
+    expectError[InstanceError.IllegalRedef](result)
   }
 
   test("Test.UnmarkedOverride.01") {
@@ -716,7 +716,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.UnmarkedOverride](result)
+    expectError[InstanceError.UnmarkedRedef](result)
   }
 
   test("Test.ComplexErrorSuppressesOtherErrors.01") {

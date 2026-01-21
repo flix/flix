@@ -372,27 +372,18 @@ pub mod RichString {
     }
 
     ///
-    /// Returns `true` if the terminal supports ANSI colors.
+    /// Returns `true` unless color output is explicitly disabled.
     ///
-    /// Checks for color support by examining environment variables:
-    /// - COLORTERM=truecolor indicates 24-bit color support
-    /// - WT_SESSION indicates Windows Terminal
-    /// - TERM containing "256", "ansi", "xterm", or "screen" indicates ANSI support
-    /// - XPC_SERVICE_NAME containing "intellij" indicates IntelliJ IDEA
+    /// Returns `false` when:
+    /// - NO_COLOR environment variable is set (following the no-color.org standard)
+    /// - TERM=dumb (indicates a terminal with no capabilities)
     ///
     def isColorTerm(): Bool = unsafe IO {
         run {
-            let isTrueColor = Env.getVar("COLORTERM") |> Option.exists(p -> p == "truecolor");
-            let isWindowsTerminal = not (Env.getVar("WT_SESSION") |> Option.isEmpty);
-            let isAnsiTerminal = Env.getVar("TERM") |>
-                Option.exists(p ->
-                    let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
-                    List.exists(s -> String.contains({substr = s}, p), keywords)
-                );
-            let isIntelliJ = Env.getVar("XPC_SERVICE_NAME") |>
-                Option.exists(p -> String.contains({substr = "intellij"}, String.toLowerCase(p)));
-            isTrueColor or isWindowsTerminal or isAnsiTerminal or isIntelliJ
-            } with Env.runWithIO
-        }
+            let noColor = Env.getVar("NO_COLOR") |> Option.nonEmpty;
+            let isDumbTerm = Env.getVar("TERM") |> Option.exists(t -> t == "dumb");
+            not (noColor or isDumbTerm)
+        } with Env.runWithIO
+    }
 
 }

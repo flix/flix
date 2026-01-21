@@ -18,8 +18,10 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint, FormatType}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint}
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.fmt.FormatTypeConstructor.formatTypeConstructor
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -42,15 +44,28 @@ object InstanceError {
   case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E1952
 
-    override def summary: String = "Complex instance type."
+    def summary: String = s"Complex type '${formatType(tpe)}' in instance declaration for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Complex instance type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+      s""">> Complex type '${red(formatType(tpe))}' in instance declaration for trait '${magenta(sym.name)}'.
          |
-         |${src(loc, s"complex instance type")}
+         |${src(loc, "expected a type constructor applied to distinct type variables")}
          |
-         |An instance type must be a type constructor applied to zero or more distinct type variables.
+         |${underline("Explanation:")} An instance type must be either:
+         |  - A concrete type (e.g., Bool, Int32, String), or
+         |  - A type constructor applied to zero or more distinct type variables.
+         |
+         |${underline("Examples")} of ${green("simple")} (allowed) instance types:
+         |  - Bool, Int32, String
+         |  - Option[a], List[a], Map[k, v]
+         |  - (a, b), (a, b, c)
+         |
+         |${underline("Examples")} of ${red("complex")} (not allowed) instance types:
+         |  - Option[Int32]       (type argument is not a variable)
+         |  - List[Option[a]]     (type argument is not a variable)
+         |  - (a, a)              (type variable 'a' appears twice)
+         |  - Map[k, k]           (type variable 'k' appears twice)
          |""".stripMargin
     }
   }
@@ -65,15 +80,21 @@ object InstanceError {
   case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2063
 
-    override def summary: String = "Duplicate type variable."
+    def summary: String = s"Duplicate type variable '${formatType(tvar)}' in instance declaration for trait '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${magenta(sym.name)}'.
+      s""">> Duplicate type variable '${red(formatType(tvar))}' in instance declaration for trait '${magenta(sym.name)}'.
          |
-         |${src(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
+         |${src(loc, "duplicate occurrence")}
          |
-         |${underline("Tip:")} Rename one of the instances of the type variable.
+         |${underline("Explanation:")} Each type variable in an instance type must be distinct.
+         |Rename one of the occurrences to make them unique.
+         |
+         |${underline("Example:")}
+         |
+         |  instance C[(a, a)]        // Not allowed: 'a' appears twice
+         |  instance C[(a, b)]        // OK: 'a' and 'b' are distinct
          |""".stripMargin
     }
 
@@ -89,15 +110,16 @@ object InstanceError {
   case class ExtraneousDef(defnSym: Symbol.DefnSym, traitSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2176
 
-    def summary: String = "Extraneous implementation."
+    def summary: String = s"Extraneous definition '${defnSym.name}' in instance declaration for trait '${traitSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The signature '${red(defnSym.name)}' is not present in the '${magenta(traitSym.name)}' trait.
+      s""">> Extraneous definition '${red(defnSym.name)}' in instance declaration for trait '${magenta(traitSym.name)}'.
          |
-         |${src(loc, s"extraneous def")}
+         |${src(loc, "not present in trait")}
          |
-         |${underline("Tip:")} Remove this definition from the instance.
+         |${underline("Explanation:")} An instance can only implement signatures declared in the trait.
+         |The definition '${defnSym.name}' does not exist in trait '${traitSym.name}'.
          |""".stripMargin
     }
   }
@@ -105,45 +127,45 @@ object InstanceError {
   /**
     * Error indicating an associated type in an instance type.
     *
-    * @param assoc  the type alias.
+    * @param assoc  the associated type.
     * @param trtSym the trait symbol.
     * @param loc    the location where the error occurred.
     */
   case class IllegalAssocTypeInstance(assoc: Symbol.AssocTypeSym, trtSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2289
 
-    override def summary: String = "Associated type in instance type."
+    def summary: String = s"Unexpected associated type '${assoc.name}' in instance declaration for trait '${trtSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal use of associated type '${red(assoc.name)}' in instance declaration for '${magenta(trtSym.name)}'.
+      s""">> Unexpected associated type '${red(assoc.name)}' in instance declaration for trait '${magenta(trtSym.name)}'.
          |
-         |${src(loc, s"illegal use of associated type")}
+         |${src(loc, "associated type not allowed here")}
          |
-         |A trait instance cannot use an associated type. Use the full type.
+         |${underline("Explanation:")} Instances cannot be defined on associated types.
          |""".stripMargin
     }
   }
 
   /**
-    * Error indicating the illegal placement of an override modifier.
+    * Error indicating an unexpected use of redef where there is no default implementation.
     *
-    * @param sym the def that the modifier was applied to.
+    * @param sym the def that was marked as redef.
     * @param loc the location where the error occurred.
     */
-  case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+  case class IllegalRedef(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2394
 
-    override def summary: String = s"Illegal override of '$sym'."
+    def summary: String = s"Unexpected redefinition of '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal override of '${red(sym.name)}'.
+      s""">> Unexpected redefinition of '${red(sym.name)}'.
          |
-         |${src(loc, s"illegal override")}
+         |${src(loc, "no default implementation to redefine")}
          |
-         |Only signatures with default implementations can be overridden.
-         |
+         |${underline("Explanation:")} The signature '${sym.name}' is defined in the trait,
+         |but there is no default implementation to be redefined.
          |""".stripMargin
     }
   }
@@ -158,15 +180,15 @@ object InstanceError {
   case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, trtSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2401
 
-    override def summary: String = "Type alias in instance type."
+    def summary: String = s"Unexpected type alias '${alias.name}' in instance declaration for trait '${trtSym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${magenta(trtSym.name)}'.
+      s""">> Unexpected type alias '${red(alias.name)}' in instance declaration for trait '${magenta(trtSym.name)}'.
          |
-         |${src(loc, s"illegal use of type alias")}
+         |${src(loc, "type alias not allowed here")}
          |
-         |A trait instance cannot use a type alias. Use the full type.
+         |${underline("Explanation:")} Instances cannot be defined on type aliases.
          |""".stripMargin
     }
   }
@@ -182,18 +204,18 @@ object InstanceError {
   case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2518
 
-    def summary: String = "Mismatched signature."
+    def summary: String = s"Mismatched signature '${sigSym.name}' in instance declaration for trait '${sigSym.trt.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Mismatched signature '${red(sigSym.name)}' required by '${magenta(sigSym.trt.name)}'.
+      s""">> Mismatched signature '${red(sigSym.name)}' in instance declaration for trait '${magenta(sigSym.trt.name)}'.
          |
-         |${src(loc, "mismatched signature.")}
+         |${src(loc, "signature mismatch")}
          |
-         |Expected scheme: ${FormatScheme.formatScheme(expected)}
-         |Actual scheme:   ${FormatScheme.formatScheme(actual)}
+         |${cyan("Expected")}: ${FormatScheme.formatScheme(expected)}
+         |${red("Actual")}:   ${FormatScheme.formatScheme(actual)}
          |
-         |${underline("Tip:")} Modify the definition to match the signature.
+         |${underline("Explanation:")} The implementation must match the signature declared in the trait.
          |""".stripMargin
     }
   }
@@ -205,20 +227,19 @@ object InstanceError {
     * @param superTrait the supertrait that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingEqConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingEqualityConstraint(econstr: EqualityConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2629
 
-    override def summary: String = s"Missing equality constraint: ${FormatEqualityConstraint.formatEqualityConstraint(econstr)}"
+    def summary: String = s"Missing equality constraint '${FormatEqualityConstraint.formatEqualityConstraint(econstr)}' required by super trait '${superTrait.name}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing equality constraint: ${FormatEqualityConstraint.formatEqualityConstraint(econstr)}
+      s""">> Missing equality constraint '${red(FormatEqualityConstraint.formatEqualityConstraint(econstr))}' required by super trait '${magenta(superTrait.name)}'.
          |
-         |The constraint ${FormatEqualityConstraint.formatEqualityConstraint(econstr)} is required because it is a constraint on super trait ${superTrait.name}.
+         |${src(loc, "missing constraint")}
          |
-         |${src(loc, s"missing equality constraint")}
-         |
-         |${underline("Tip:")} Add the missing equality constraint.
+         |${underline("Explanation:")} The super trait '${superTrait.name}' requires this equality constraint to be satisfied.
+         |Add the constraint to the instance declaration.
          |""".stripMargin
     }
   }
@@ -232,15 +253,25 @@ object InstanceError {
   case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2736
 
-    def summary: String = "Missing implementation."
+    def summary: String = s"Missing implementation of '${sig.name}' in instance declaration for trait '${sig.trt.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing implementation of '${red(sig.name)}' required by '${magenta(sig.trt.name)}'.
+      s""">> Missing implementation of '${red(sig.name)}' in instance declaration for trait '${magenta(sig.trt.name)}'.
          |
-         |${src(loc, s"missing implementation")}
+         |${src(loc, "required by trait")}
          |
-         |${underline("Tip:")} Add an implementation of the signature to the instance.
+         |${underline("Explanation:")} The trait declares the signature '${sig.name}', but this instance
+         |does not provide an implementation for it. Did you misspell the signature name?
+         |
+         |${underline("Example:")}
+         |
+         |  trait T[a] {
+         |      pub def f(): a
+         |  }
+         |
+         |  instance T[Int32] { }                            // Missing 'f'
+         |  instance T[Int32] { pub def f(): Int32 = 123 }   // OK
          |""".stripMargin
     }
   }
@@ -256,19 +287,25 @@ object InstanceError {
   case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2843
 
-    override def summary: String = s"Missing super trait instance '$superTrait'."
+    def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing super trait instance '${red(superTrait.name)}' for type '${red(FormatType.formatType(tpe))}'.
+      s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(formatType(tpe))}'.
          |
-         |${src(loc, s"missing super trait instance")}
+         |${src(loc, "missing super trait instance")}
          |
-         |The trait '${red(subTrait.name)}' extends the trait '${red(superTrait.name)}'.
+         |${underline("Explanation:")} The trait '${subTrait.name}' extends '${superTrait.name}'.
+         |An instance of '${subTrait.name}' requires a corresponding instance of '${superTrait.name}'.
          |
-         |If you provide an instance for '${red(subTrait.name)}' you must also provide an instance for '${red(superTrait.name)}'.
+         |${underline("Example:")}
          |
-         |${underline("Tip:")} Add an instance of '${superTrait.name}' for '${FormatType.formatType(tpe)}'.
+         |  trait A[t]
+         |  trait B[t] with A[t]
+         |
+         |  instance B[Bool]               // Missing instance of A[Bool]
+         |  instance A[Int32]
+         |  instance B[Int32]              // OK: super trait instance provided
          |""".stripMargin
     }
   }
@@ -283,17 +320,25 @@ object InstanceError {
   case class MissingTraitConstraint(tconstr: TraitConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E2956
 
-    override def summary: String = s"Missing type constraint: ${FormatTraitConstraint.formatTraitConstraint(tconstr)}"
+    def summary: String = s"Missing trait constraint '${FormatTraitConstraint.formatTraitConstraint(tconstr)}' required by super trait '${superTrait.name}'."
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing type constraint: ${FormatTraitConstraint.formatTraitConstraint(tconstr)}
+      s""">> Missing trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(tconstr))}' required by super trait '${magenta(superTrait.name)}'.
          |
-         |The constraint ${FormatTraitConstraint.formatTraitConstraint(tconstr)} is required because it is a constraint on super trait ${superTrait.name}.
+         |${src(loc, "missing constraint")}
          |
-         |${src(loc, s"missing type constraint")}
+         |${underline("Explanation:")} The super trait '${superTrait.name}' requires this trait constraint to be satisfied.
+         |Add the constraint to the instance declaration.
          |
-         |${underline("Tip:")} Add the missing type constraint.
+         |${underline("Example:")}
+         |
+         |  trait C[a]
+         |  trait D[a] with C[a]
+         |
+         |  instance D[(a, b)]                       // Missing C[a], C[b]
+         |  instance C[Map[a, b]]
+         |  instance D[Map[a, b]] with C[a], C[b]    // OK
          |""".stripMargin
     }
   }
@@ -308,15 +353,28 @@ object InstanceError {
   case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3067
 
-    override def summary: String = "Orphan instance."
+    def summary: String = s"Orphan instance of '${sym.name}' for type '${formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+      s""">> Orphan instance of '${magenta(sym.name)}' for type '${red(formatType(tpe))}'.
          |
-         |${src(loc, s"orphan instance")}
+         |${src(loc, "orphan instance")}
          |
-         |An instance must be declared in the trait's namespace or in the type's namespace.
+         |${underline("Explanation:")} An instance must be declared in the trait's namespace or in the type's namespace.
+         |
+         |${underline("Example:")} Correct instance declarations:
+         |
+         |  mod A {
+         |      pub trait T[a]
+         |      instance T[Int32]          // OK: in the trait's namespace
+         |  }
+         |
+         |  mod B {
+         |      use A.T
+         |      pub enum Box[a] { case Box(a) }
+         |      instance T[Box[a]]         // OK: in the type's namespace
+         |  }
          |""".stripMargin
     }
   }
@@ -325,23 +383,31 @@ object InstanceError {
     * Error indicating that the types of two instances overlap.
     *
     * @param sym  the trait symbol.
+    * @param tc   the type constructor that overlaps.
     * @param loc1 the location of the first instance.
     * @param loc2 the location of the second instance.
     */
-  case class OverlappingInstances(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
+  case class OverlappingInstances(sym: Symbol.TraitSym, tc: TypeConstructor, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3178
 
-    def summary: String = "Overlapping instances."
+    def summary: String = s"Overlapping instances of '${sym.name}' for type '${formatTypeConstructor(tc)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Overlapping instances for '${magenta(sym.name)}'.
+      s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(formatTypeConstructor(tc))}'.
          |
-         |${src(loc1, "the first instance was declared here.")}
+         |${src(loc1, "first instance")}
          |
-         |${src(loc2, "the second instance was declared here.")}
+         |${src(loc2, "second instance")}
          |
-         |${underline("Tip:")} Remove or change the type of one of the instances.
+         |${underline("Explanation:")} Two instances overlap if their types unify.
+         |Each type can have at most one instance of a trait.
+         |
+         |${underline("Example:")} Overlapping instances:
+         |
+         |  trait T[a]
+         |  instance T[List[a]]
+         |  instance T[List[b]]    // Overlaps: List[a] and List[b] unify
          |""".stripMargin
     }
 
@@ -357,39 +423,50 @@ object InstanceError {
   case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3281
 
-    override def summary: String = s"Unlawful signature '$sym'."
+    def summary: String = s"Unlawful signature '${sym.name}' in lawful trait '${sym.trt.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unlawful signature '${red(sym.name)}'.
+      s""">> Unlawful signature '${red(sym.name)}' in lawful trait '${magenta(sym.trt.name)}'.
          |
-         |>> Each signature of a lawful trait must appear in at least one law.
+         |${src(loc, "signature not covered by any law")}
          |
-         |${src(loc, s"unlawful signature")}
-         |
-         |Create a law for '$sym' or remove the 'lawful' modifier from the trait.
+         |${underline("Explanation:")} Each signature in a lawful trait must appear in at least one law.
+         |Add a law that uses '${sym.name}' or remove the 'lawful' modifier from the trait.
          |""".stripMargin
     }
   }
 
   /**
-    * Error indicating a missing override modifier.
+    * Error indicating an unmarked redefinition (def used instead of redef).
     *
-    * @param sym the def that is missing the modifier.
+    * @param sym the def that should use redef.
     * @param loc the location where the error occurred.
     */
-  case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+  case class UnmarkedRedef(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def code: ErrorCode = ErrorCode.E3394
 
-    override def summary: String = s"Unmarked override '$sym'."
+    def summary: String = s"Unmarked redefinition of '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
+      s""">> Unmarked redefinition of '${red(sym.name)}'.
          |
-         |${src(loc, s"unmarked override")}
+         |${src(loc, "redefines a default implementation")}
          |
-         |Either add the `override` modifier or remove the definition.
+         |${underline("Explanation:")} This definition redefines a default implementation in the trait.
+         |Use 'redef' instead of 'def' to make the intent explicit.
+         |
+         |${underline("Example:")}
+         |
+         |  trait T[a] {
+         |      pub def f(x: a): Bool = true    // default implementation
+         |  }
+         |
+         |  instance T[Int32] {
+         |      pub def f(x: Int32): Bool = false      // Unmarked redefinition
+         |      redef f(x: Int32): Bool = false        // OK: uses 'redef'
+         |  }
          |""".stripMargin
     }
   }
