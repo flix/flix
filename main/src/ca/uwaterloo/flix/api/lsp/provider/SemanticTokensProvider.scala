@@ -1058,10 +1058,12 @@ object SemanticTokensProvider {
         splitTokens += token
       // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        for (line <- loc.start.lineOneIndexed to loc.end.lineOneIndexed) {
-          val begin = if (line == loc.start.lineOneIndexed) loc.start.colOneIndexed else 1.toShort
-          val end = if (line == loc.end.lineOneIndexed) loc.end.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
-          val newLoc = SourceLocation(isReal = true, loc.source, SourcePosition.mkFromOneIndexed(line, begin), SourcePosition.mkFromOneIndexed(line, end))
+        val start = loc.start
+        val end = loc.end
+        for (line <- start.lineOneIndexed to end.lineOneIndexed) {
+          val startIndex = if (line == start.lineOneIndexed) start.colOneIndexed else 1.toShort
+          val endIndex = if (line == end.lineOneIndexed) end.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
+          val newLoc = SourceLocation(isReal = true, loc.source, SourcePosition.mkFromOneIndexed(line, startIndex), SourcePosition.mkFromOneIndexed(line, endIndex))
           splitTokens += SemanticToken(tpe, modifiers, newLoc)
         }
     }
@@ -1080,8 +1082,10 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      var relLine = token.loc.startLine - 1
-      var relCol = token.loc.startCol - 1
+      val start = token.loc.start
+      val end = token.loc.end
+      var relLine = start.lineOneIndexed - 1
+      var relCol = start.colOneIndexed - 1
 
       if (encoding.nonEmpty) {
         relLine -= prevLine
@@ -1092,12 +1096,12 @@ object SemanticTokensProvider {
 
       encoding += relLine
       encoding += relCol
-      encoding += token.loc.endCol - token.loc.startCol
+      encoding += end.colOneIndexed - start.colOneIndexed
       encoding += token.tpe.toInt
       encoding += encodeModifiers(token.mod)
 
-      prevLine = token.loc.startLine - 1
-      prevCol = token.loc.startCol - 1
+      prevLine = start.lineOneIndexed - 1
+      prevCol = start.colOneIndexed - 1
     }
 
     encoding.toList
