@@ -130,13 +130,11 @@ mod Test.Exp.Binary.Arithmetic {
 
     @Test
     def testBinaryPlus32(): Unit \ Assert =
-        assertEq(expected = 1234567890000000000000000000000000000000000000223.209654321f32,
-                 1234567890000000000000000000000000000000000000000.987654321f32 + 222.222f32)
+        assertEq(expected = 1.23456706e30f32, 1.234567e30f32 + 1.0e23f32)
 
     @Test
     def testBinaryPlus33(): Unit \ Assert =
-        assertEq(expected = -1234567890000000000000000000000000000000000000000.987654321f32,
-                 -1234567890000000000000000000000000000000000000000.987654321f32 + 0.0f32)
+        assertEq(expected = -1.234567e30f32, -1.234567e30f32 + 0.0f32)
 
     @Test
     def testBinaryPlus34(): Unit \ Assert =
@@ -504,13 +502,11 @@ mod Test.Exp.Binary.Arithmetic {
 
     @Test
     def testBinaryTimes32(): Unit \ Assert =
-        assertEq(expected = 274348145651580030000000000000000000000000000000000.0f32,
-                 1234567890000000000000000000000000000000000000000.987654321f32 * 222.222f32)
+        assertEq(expected = 2.7434794e32f32, 1.234567e30f32 * 222.222f32)
 
     @Test
     def testBinaryTimes33(): Unit \ Assert =
-        assertEq(expected = -274348145651580030000000000000000000000000000000000.0f32,
-                 -1234567890000000000000000000000000000000000000000.987654321f32 * 222.222f32)
+        assertEq(expected = -2.7434794e32f32, -1.234567e30f32 * 222.222f32)
 
     @Test
     def testBinaryTimes34(): Unit \ Assert =

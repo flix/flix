@@ -53,12 +53,6 @@ object Symbol {
   ))
 
   /**
-    * The set of effects allowed in tests.
-    */
-  val TestEffs: SortedSet[EffSym] =  PrimitiveEffs + Assert
-
-
-  /**
     * Returns `true` if the given effect symbol is a primitive effect.
     */
   def isPrimitiveEff(sym: EffSym): Boolean = sym match {

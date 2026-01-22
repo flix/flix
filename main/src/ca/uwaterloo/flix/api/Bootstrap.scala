@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
+import ca.uwaterloo.flix.api.lsp.Formatter as LspFormatter
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -657,6 +658,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def doc(flix: Flix): Result[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
     Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules)(flix))
+  }
+
+  /**
+    * Formats all source files in the project.
+    */
+  def format(flix: Flix): Result[Unit, BootstrapError] = {
+    Steps.updateStaleSources(flix)
+    val (_, errors) = flix.check()
+    if (errors.nonEmpty) {
+      return Result.Err(BootstrapError.GeneralError(errors.map(_.message(flix.getFormatter))))
+    }
+    val syntaxTree = flix.getParsedAst
+    LspFormatter.formatFiles(syntaxTree, sourcePaths)(flix)
+    Result.Ok(())
   }
 
   /**

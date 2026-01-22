@@ -17,9 +17,10 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Instance, StructField}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse}
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -108,7 +109,7 @@ object Specialization {
       *
       * The smart constructor ensures that all types in the substitution are grounded.
       */
-    def mk(s: Substitution)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
+    def mk(s: Substitution)(implicit root: TypedAst.Root, flix: Flix): StrictSubstitution = {
       val m = s.m.map {
         case (sym, tpe) => sym -> simplify(tpe.map(default), isGround = true)
       }
@@ -135,7 +136,7 @@ object Specialization {
       *
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
-    def apply(tpe0: Type)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe0 match {
+    def apply(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0 match {
       case v@Type.Var(sym, _) => s.m.get(sym) match {
         case None =>
           // Variable unbound. Use the default type.
@@ -200,7 +201,7 @@ object Specialization {
       * Note: [[ConcurrentLinkedQueue]] is non-blocking so threads can enqueue items without
       * contention.
       */
-    private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] =
+    private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)] =
       new ConcurrentLinkedQueue
 
     /** Returns `true` if the queue is non-empty. */
@@ -215,15 +216,15 @@ object Specialization {
       * This should be used in combination with [[getSpecializedName]] and [[addSpecializedName]] to
       * avoid enqueuing duplicate specializations.
       */
-    def enqueueSpecialization(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit =
+    def enqueueSpecialization(sym: Symbol.DefnSym, defn: TypedAst.Def, subst: StrictSubstitution): Unit =
       synchronized {
         defQueue.add((sym, defn, subst))
       }
 
     /** Dequeues all elements from the queue and clears it. */
-    def dequeueAllSpecializations: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] =
+    def dequeueAllSpecializations: Array[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)] =
       synchronized {
-        val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)])
+        val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)])
         defQueue.clear()
         r
       }
@@ -317,8 +318,8 @@ object Specialization {
   }
 
   /** Performs monomorphization of the given AST `root`. */
-  def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
-    implicit val r: LoweredAst.Root = root
+  def run(root: TypedAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
+    implicit val r: TypedAst.Root = root
     implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkInstanceMap(root.instances)
     implicit val ctx: Context = new Context()
 
@@ -354,31 +355,43 @@ object Specialization {
     }
 
     val effects = ParOps.parMapValues(root.effects) {
-      case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
+      case TypedAst.Effect(doc, ann, mod, sym, targs, ops0, loc) =>
         val ops = ops0.map(visitEffectOp)
-        val specializedEffect = LoweredAst.Effect(doc, ann, mod, sym, ops, loc)
+        val specializedEffect = TypedAst.Effect(doc, ann, mod, sym, targs, ops, loc)
         Lowering.lowerEffect(specializedEffect)
     }
 
     val enums = ParOps.parMapValues(root.enums) {
-      case LoweredAst.Enum(doc, ann, mod, sym, tparams0, derives, cases, loc) =>
+      case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases, loc) =>
         val newCases = MapOps.mapValues(cases)(visitEnumCase)
         val tparams = tparams0.map(visitTypeParam)
-        val specializedEnum = LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, newCases, loc)
+        val specializedEnum = TypedAst.Enum(doc, ann, mod, sym, tparams, derives, newCases, loc)
         Lowering.lowerEnum(specializedEnum)
     }
 
-    val structs = ParOps.parMapValues(root.structs) {
-      case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
-        val newFields = fields.map(visitStructField)
+    val restrictableEnums = ParOps.parMapValues(root.restrictableEnums) {
+      case TypedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams0, derives, cases, loc) =>
+        val newCases = MapOps.mapValues(cases)(visitRestrictableEnumCase)
         val tparams = tparams0.map(visitTypeParam)
-        val specializedStruct = LoweredAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
+        val specializedEnum = TypedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, newCases, loc)
+        Lowering.lowerRestrictableEnum(specializedEnum)
+    }
+
+    val structs = ParOps.parMapValues(root.structs) {
+      case TypedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields, loc) =>
+        val newFields = MapOps.mapValues(fields)(visitStructField)
+        val tparams = tparams0.map(visitTypeParam)
+        val specializedStruct = TypedAst.Struct(doc, ann, mod, sym, tparams, sc, newFields, loc)
         Lowering.lowerStruct(specializedStruct)
+    }
+
+    val newEnums = enums ++ restrictableEnums.map {
+      case (_, v) => v.sym -> v
     }
 
     MonoAst.Root(
       ctx.getSpecializedDefs,
-      enums,
+      newEnums,
       structs,
       effects,
       root.mainEntryPoint,
@@ -395,45 +408,53 @@ object Specialization {
   }
 
   /** Converts `field`, simplifying its polymorphic type. */
-  def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): LoweredAst.StructField = {
+  def visitStructField(field: StructField)(implicit root: TypedAst.Root, flix: Flix): TypedAst.StructField = {
     field match {
-      case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        LoweredAst.StructField(fieldSym, simplify(tpe, isGround = false), loc)
+      case TypedAst.StructField(fieldSym, tpe, loc) =>
+        TypedAst.StructField(fieldSym, simplify(tpe, isGround = false), loc)
     }
   }
 
   /** Converts `caze`, simplifying its polymorphic type. */
-  def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): LoweredAst.Case = {
+  def visitEnumCase(caze: TypedAst.Case)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Case = {
     caze match {
-      case LoweredAst.Case(sym, tpes, sc, loc) =>
-        LoweredAst.Case(sym, tpes.map(simplify(_, isGround = false)), sc, loc)
+      case TypedAst.Case(sym, tpes, sc, loc) =>
+        TypedAst.Case(sym, tpes.map(simplify(_, isGround = false)), sc, loc)
+    }
+  }
+
+  /** Converts `caze`, simplifying its polymorphic type. */
+  def visitRestrictableEnumCase(caze: TypedAst.RestrictableCase)(implicit root: TypedAst.Root, flix: Flix): TypedAst.RestrictableCase = {
+    caze match {
+      case TypedAst.RestrictableCase(caseSym0, tpes, sc, loc) =>
+        TypedAst.RestrictableCase(caseSym0, tpes.map(simplify(_, isGround = false)), sc, loc)
     }
   }
 
   /** Converts `tparam` directly. */
-  private def visitTypeParam(tparam: LoweredAst.TypeParam): LoweredAst.TypeParam = tparam match {
-    case LoweredAst.TypeParam(name, sym, loc) => LoweredAst.TypeParam(name, sym, loc)
+  private def visitTypeParam(tparam: TypedAst.TypeParam): TypedAst.TypeParam = tparam match {
+    case TypedAst.TypeParam(name, sym, loc) => TypedAst.TypeParam(name, sym, loc)
   }
 
   /** Converts `op`, simplifying its type. */
-  private def visitEffectOp(op: LoweredAst.Op)(implicit root: LoweredAst.Root, flix: Flix): LoweredAst.Op =
+  private def visitEffectOp(op: TypedAst.Op)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Op =
     op match {
-      case LoweredAst.Op(sym, LoweredAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme, retTpe, eff, tconstrs), loc) =>
+      case TypedAst.Op(sym, TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme, retTpe, eff, tconstrs, econstrs), loc) =>
         // Effect operations are monomorphic - they have no variables.
         // The substitution can be left empty.
         val fparams = fparams0.map {
-          case LoweredAst.FormalParam(varSym, tpe, fpLoc) =>
-            LoweredAst.FormalParam(varSym, StrictSubstitution.empty(tpe), fpLoc)
+          case TypedAst.FormalParam(varSym, tpe, src, fpLoc) =>
+            TypedAst.FormalParam(varSym, StrictSubstitution.empty(tpe), src, fpLoc)
         }
         // `tparams` and `tconstrs` are ignored by `monomorph.Lowering`.
-        // They are solely passed to adhere to the `LoweredAst.spec`.
+        // They are solely passed to adhere to the `TypedAst.spec`.
         // For `declaredScheme` we are only interested in the `base` attribute.
-        val spec = LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), tconstrs)
-        LoweredAst.Op(sym, spec, loc)
+        val spec = TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), tconstrs, econstrs)
+        TypedAst.Op(sym, spec, loc)
     }
 
   /** Returns a specialization of `defn` with the name `freshSym` according to `subst`. */
-  private def specializeDef(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Def = {
+  private def specializeDef(freshSym: Symbol.DefnSym, defn: TypedAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Def = {
     val (specializedFparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
     val specializedExp = specializeExp(defn.exp, env0, subst)
@@ -441,9 +462,9 @@ object Specialization {
     val spec0 = defn.spec
     val declaredScheme = spec0.declaredScheme.copy(base = subst(spec0.declaredScheme.base))
     // `tparams` and `tconstrs` are ignored by `monomorph.Lowering`.
-    // They are solely passed to adhere to the `LoweredAst.spec`.
+    // They are solely passed to adhere to the `TypedAst.spec`.
     // For `declaredScheme` we are only interested in the `base` attribute.
-    val spec = LoweredAst.Spec(
+    val spec = TypedAst.Spec(
       spec0.doc,
       spec0.ann,
       spec0.mod,
@@ -452,9 +473,10 @@ object Specialization {
       declaredScheme,
       subst(spec0.retTpe),
       subst(spec0.eff),
-      spec0.tconstrs
+      spec0.tconstrs,
+      spec0.econstrs
     )
-    LoweredAst.Def(freshSym, spec, specializedExp, defn.loc)
+    TypedAst.Def(freshSym, spec, specializedExp, defn.loc)
   }
 
   /**
@@ -466,122 +488,136 @@ object Specialization {
     *
     * Replaces every local variable symbol with a fresh local variable symbol.
     */
-  private def specializeExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Expr = exp0 match {
-    case LoweredAst.Expr.Var(sym, tpe, loc) =>
-      LoweredAst.Expr.Var(env0(sym), subst(tpe), loc)
+  private def specializeExp(exp0: TypedAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Expr = exp0 match {
+    case Expr.Var(sym, tpe, loc) =>
+      Expr.Var(env0(sym), subst(tpe), loc)
 
-    case LoweredAst.Expr.Cst(cst, tpe, loc) =>
-      LoweredAst.Expr.Cst(cst, subst(tpe), loc)
+    case Expr.Cst(cst, tpe, loc) =>
+      Expr.Cst(cst, subst(tpe), loc)
 
-    case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+    case Expr.Hole(sym, scp, tpe, eff, loc) =>
+      val t = subst(tpe)
+      Expr.Hole(sym, scp, t, subst(eff), loc)
+
+    case Expr.HoleWithExp(exp, scp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.HoleWithExp(e, scp, t, subst(eff), loc)
+
+    case Expr.OpenAs(symUse, exp, tpe, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.OpenAs(symUse, e, t, loc)
+
+    case Expr.Use(symbol, alias, exp, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      Expr.Use(symbol, alias, e, loc)
+
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
       val e = specializeExp(exp, env0 ++ env1, subst)
-      LoweredAst.Expr.Lambda(p, e, subst(tpe), loc)
+      Expr.Lambda(p, e, subst(tpe), loc)
 
-    case LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), exps, tpe, eff, loc) =>
-      // In bytecode, instanceof can only be called on reference types
-      val es = exps.map(specializeExp(_, env0, subst))
-      val List(e) = es
-      if (isPrimType(e.tpe)) {
-        // If it's a primitive type, evaluate the expression but return false
-        LoweredAst.Expr.Stm(e, LoweredAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
-      } else {
-        // If it's a reference type, then do the instanceof check
-        LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, subst(tpe), subst(eff), loc)
-      }
-
-    case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
-
-    case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
-      val newSym = specializeDefnSym(sym, it)
+      val newSym = specializeDefnSym(symUse.sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
+      Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
-      val newSym = env0(sym)
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
+      val newSym = env0(symUse.sym)
       val es = exps.map(specializeExp(_, env0, subst))
+      val arrowT = subst(arrowTpe)
       val t = subst(tpe)
       val ef = subst(eff)
-      LoweredAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
+      Expr.ApplyLocalDef(LocalDefSymUse(newSym, symUse.loc), es, arrowT, t, ef, loc)
 
-    case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
+      Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, _, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplySig(symUse, exps, _, targs, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
-      val newSym = specializeSigSym(sym, it)
+      val newSym = specializeSigSym(symUse.sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.ApplyDef(newSym, es, targs, it, subst(tpe), subst(eff), loc)
+      Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      val freshSym = Symbol.freshVarSym(sym)
-      val env1 = env0 + (sym -> freshSym)
+    case Expr.Unary(sop, exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Unary(sop, e, t, subst(eff), loc)
+
+    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.Binary(sop, e1, e2, t, subst(eff), loc)
+
+    case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      val env1 = env0 + (bnd.sym -> freshSym)
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      LoweredAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
+      Expr.Let(Binder(freshSym, subst(bnd.tpe)), e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
-      val freshSym = Symbol.freshVarSym(sym)
-      val env1 = env0 + (sym -> freshSym)
+    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      val env1 = env0 + (bnd.sym -> freshSym)
       val (fps, env2) = specializeFormalParams(fparams, subst)
       val e1 = specializeExp(exp1, env1 ++ env2, subst)
       val e2 = specializeExp(exp2, env1, subst)
       val t = subst(tpe)
       val ef = subst(eff)
-      LoweredAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
+      Expr.LocalDef(Binder(freshSym, subst(bnd.tpe)), fps, e1, e2, t, ef, loc)
 
-    case LoweredAst.Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
-      val freshSym = Symbol.freshVarSym(sym)
-      val env1 = env0 + (sym -> freshSym)
-      LoweredAst.Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
+    case Expr.Region(bnd, regionVar, exp, tpe, eff, loc) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      val env1 = env0 + (bnd.sym -> freshSym)
+      Expr.Region(Binder(freshSym, subst(bnd.tpe)), regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
       val e3 = specializeExp(exp3, env0, subst)
-      LoweredAst.Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
+      Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Discard(exp, eff, loc) =>
+    case Expr.Discard(exp, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
-      LoweredAst.Expr.Discard(e, subst(eff), loc)
+      Expr.Discard(e, subst(eff), loc)
 
-    case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+    case Expr.Match(exp, rules, tpe, eff, loc0) =>
       val rs = rules map {
-        case LoweredAst.MatchRule(pat, guard, body) =>
+        case TypedAst.MatchRule(pat, guard, body, loc) =>
           val (p, env1) = specializePat(pat, Map(), subst)
           val extendedEnv = env0 ++ env1
           val g = guard.map(specializeExp(_, extendedEnv, subst))
           val b = specializeExp(body, extendedEnv, subst)
-          LoweredAst.MatchRule(p, g, b)
+          TypedAst.MatchRule(p, g, b, loc)
       }
-      LoweredAst.Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
+      Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc0)
 
-    case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules.map {
-        case LoweredAst.ExtMatchRule(pat, exp1, loc1) =>
+        case TypedAst.ExtMatchRule(pat, exp1, loc1) =>
           val (p, env1) = specializeExtPat(pat, subst)
           val extendedEnv = env0 ++ env1
           val e1 = specializeExp(exp1, extendedEnv, subst)
-          LoweredAst.ExtMatchRule(p, e1, loc1)
+          TypedAst.ExtMatchRule(p, e1, loc1)
       }
-      LoweredAst.Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
+      Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.TypeMatch(exp, rules, tpe, _, loc) =>
+    case Expr.TypeMatch(exp, rules, tpe, _, loc0) =>
       // Use the non-strict substitution to allow free type variables to match with anything.
       val expTpe = subst.nonStrict(exp.tpe)
       // Make the tvars in `exp`'s type rigid so that `Nil: List[x%123]` can only match `List[_]`
@@ -589,7 +625,7 @@ object Specialization {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
       ListOps.findMap(rules) {
-        case LoweredAst.TypeMatchRule(sym, t, body0) =>
+        case TypedAst.TypeMatchRule(bnd, t, body0, _) =>
           // Try to unify.
           ConstraintSolver2.fullyUnify(expTpe, subst.nonStrict(t), Scope.Top, renv)(root.eqEnv, flix) match {
             // Types don't unify; just continue.
@@ -598,204 +634,362 @@ object Specialization {
             case Some(caseSubst) =>
               // Visit the base expression under the initial environment.
               val e = specializeExp(exp, env0, subst)
-              val freshSym = Symbol.freshVarSym(sym)
-              val env1 = env0 + (sym -> freshSym)
+              val freshSym = Symbol.freshVarSym(bnd.sym)
+              val env1 = env0 + (bnd.sym -> freshSym)
               val subst1 = StrictSubstitution.mk(caseSubst @@ subst.nonStrict)
               // Visit the body under the extended environment.
               val body = specializeExp(body0, env1, subst1)
-              val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(LoweredAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
+              val eff = Type.mkUnion(e.eff, body.eff, loc0.asSynthetic)
+              Some(Expr.Let(Binder(freshSym, subst(bnd.tpe)), e, body, subst1(tpe), subst1(eff), loc0))
           }
       }.get // This is safe since the last case can always match.
 
-    case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(specializeExp(_, env0, subst))
-      LoweredAst.Expr.VectorLit(es, subst(tpe), subst(eff), loc)
+    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val rs = rules.map(r => specializeRestrictableChooseRule(r, env0, subst))
+      val t = subst(tpe)
+      Expr.RestrictableChoose(star, e, rs, t, subst(eff), loc)
 
-    case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Tag(symUse, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.Tag(symUse, es, t, subst(eff), loc)
+
+    case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.RestrictableTag(symUse, es, t, subst(eff), loc)
+
+    case Expr.ExtTag(label, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.ExtTag(label, es, t, subst(eff), loc)
+
+    case Expr.Tuple(exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.Tuple(es, t, subst(eff), loc)
+
+    case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.RecordSelect(e, label, t, subst(eff), loc)
+
+    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      LoweredAst.Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
+      val t = subst(tpe)
+      Expr.RecordExtend(label, e1, e2, t, subst(eff), loc)
 
-    case LoweredAst.Expr.VectorLength(exp, loc) =>
+    case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
-      LoweredAst.Expr.VectorLength(e, loc)
+      val t = subst(tpe)
+      Expr.RecordRestrict(label, e, t, subst(eff), loc)
 
-    case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
-      specializeExp(exp, env0, subst)
-
-    case LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
       val e = specializeExp(exp, env0, subst)
-      mkCast(e, declaredType.map(subst.apply), declaredEff.map(subst.apply), subst(tpe), subst(eff), loc)
+      val t = subst(tpe)
+      Expr.ArrayLit(es, e, t, subst(eff), loc)
 
-    case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val e3 = specializeExp(exp3, env0, subst)
+      val t = subst(tpe)
+      Expr.ArrayNew(e1, e2, e3, t, subst(eff), loc)
+
+    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.ArrayLoad(e1, e2, t, subst(eff), loc)
+
+    case Expr.ArrayLength(exp, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      Expr.ArrayLength(e, subst(eff), loc)
+
+    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val e3 = specializeExp(exp3, env0, subst)
+      Expr.ArrayStore(e1, e2, e3, subst(eff), loc)
+
+    case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val fields = fields0.map { case (k, v) => (k, specializeExp(v, env0, subst)) }
+      val region = region0.map(r => specializeExp(r, env0, subst))
+      val t = subst(tpe)
+      Expr.StructNew(sym, fields, region, t, subst(eff), loc)
+
+    case Expr.StructGet(exp, field, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.StructGet(e, field, t, subst(eff), loc)
+
+    case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.StructPut(e1, field, e2, t, subst(eff), loc)
+
+    case Expr.VectorLit(exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      Expr.VectorLit(es, subst(tpe), subst(eff), loc)
+
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
+
+    case Expr.VectorLength(exp, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      Expr.VectorLength(e, loc)
+
+    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val eType = expectedType.map(subst.apply)
+      val eEff = expectedEff.map(subst.apply)
+      val t = subst(tpe)
+      Expr.Ascribe(e, eType, eEff, t, subst(eff), loc)
+
+    case Expr.InstanceOf(exp, clazz, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      Expr.InstanceOf(e, clazz, loc)
+
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val dType = declaredType.map(subst.apply)
+      val dEff = declaredEff.map(subst.apply)
+      val t = subst(tpe)
+      Expr.UncheckedCast(e, dType, dEff, t, subst(eff), loc)
+
+    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.CheckedCast(cast, e, t, subst(eff), loc)
+
+    case Expr.Unsafe(exp, runEff, asEff0, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      val asEff = asEff0.map(subst.apply)
+      Expr.Unsafe(e, subst(runEff), asEff, t, subst(eff), loc)
+
+    case Expr.Without(exp, symUse, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Without(e, symUse, t, subst(eff), loc)
+
+    case Expr.TryCatch(exp, rules, tpe, eff, loc0) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
-        case LoweredAst.CatchRule(sym, clazz, body) =>
-          val freshSym = Symbol.freshVarSym(sym)
-          val env1 = env0 + (sym -> freshSym)
+        case TypedAst.CatchRule(bnd, clazz, body, loc) =>
+          val freshSym = Symbol.freshVarSym(bnd.sym)
+          val env1 = env0 + (bnd.sym -> freshSym)
           val b = specializeExp(body, env1, subst)
-          LoweredAst.CatchRule(freshSym, clazz, b)
+          TypedAst.CatchRule(Binder(freshSym, subst(bnd.tpe)), clazz, b, loc)
       }
-      LoweredAst.Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
+      Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc0)
 
-    case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
+    case Expr.Throw(exp, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
-      val rs = rules map {
-        case LoweredAst.HandlerRule(opSymUse, fparams0, body0) =>
-          val (fparams, fparamEnv) = specializeFormalParams(fparams0, subst)
-          val env1 = env0 ++ fparamEnv
-          val body = specializeExp(body0, env1, subst)
-          LoweredAst.HandlerRule(opSymUse, fparams, body)
+      val t = subst(tpe)
+      Expr.Throw(e, t, subst(eff), loc)
+
+    case Expr.Handler(symUse0, rules0, bodyTpe, bodyEff, handledEff, tpe, loc0) =>
+      val rules = rules0.map {
+        case TypedAst.HandlerRule(symUse, fparams0, exp, loc) =>
+          val (fparams, env1) = specializeFormalParams(fparams0, subst)
+          val e = specializeExp(exp, env0 ++ env1, subst)
+          TypedAst.HandlerRule(symUse, fparams, e, loc)
       }
-      LoweredAst.Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
+      val bodyT = subst(bodyTpe)
+      val bodyE = subst(bodyEff)
+      val handledE = subst(handledEff)
+      val t = subst(tpe)
+      Expr.Handler(symUse0, rules, bodyT, bodyE, handledE, t, loc0)
 
-    case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.RunWith(e1, e2, t, subst(eff), loc)
+
+    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeConstructor(constructor, es, t, subst(eff), loc)
+
+    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeMethod(method, e, es, t, subst(eff), loc)
+
+    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeStaticMethod(method, es, t, subst(eff), loc)
+
+    case Expr.GetField(field, exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.GetField(field, e, t, subst(eff), loc)
+
+    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.PutField(field, e1, e2, t, subst(eff), loc)
+
+    case Expr.GetStaticField(field, tpe, eff, loc) =>
+      val t = subst(tpe)
+      Expr.GetStaticField(field, t, subst(eff), loc)
+
+    case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.PutStaticField(field, e, t, subst(eff), loc)
+
+    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      LoweredAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+      Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
-    case LoweredAst.Expr.NewChannel(innerExp, tpe, eff, loc) =>
+    case Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
-      LoweredAst.Expr.NewChannel(e, subst(tpe), subst(eff), loc)
+      Expr.NewChannel(e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
+    case Expr.GetChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
-      LoweredAst.Expr.GetChannel(e, subst(tpe), subst(eff), loc)
+      Expr.GetChannel(e, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.PutChannel(innerExp1, innerExp2, tpe, eff, loc) =>
+    case Expr.PutChannel(innerExp1, innerExp2, tpe, eff, loc) =>
       val e1 = specializeExp(innerExp1, env0, subst)
       val e2 = specializeExp(innerExp2, env0, subst)
-      LoweredAst.Expr.PutChannel(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.PutChannel(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc0) =>
+    case Expr.SelectChannel(rules0, default0, tpe, eff, loc0) =>
       val rules = rules0.map {
-        case LoweredAst.SelectChannelRule(sym, chan0, exp, loc) =>
-          val freshSym = Symbol.freshVarSym(sym)
-          val env1 = env0 + (sym -> freshSym)
+        case TypedAst.SelectChannelRule(bnd, chan0, exp, loc) =>
+          val freshSym = Symbol.freshVarSym(bnd.sym)
+          val env1 = env0 + (bnd.sym -> freshSym)
           val chan = specializeExp(chan0, env1, subst)
           val e = specializeExp(exp, env1, subst)
-          LoweredAst.SelectChannelRule(freshSym, chan, e, loc)
+          TypedAst.SelectChannelRule(Binder(freshSym, subst(bnd.tpe)), chan, e, loc)
       }
       val default = default0.map { d => specializeExp(d, env0, subst) }
-      LoweredAst.Expr.SelectChannel(rules, default, subst(tpe), subst(eff), loc0)
+      Expr.SelectChannel(rules, default, subst(tpe), subst(eff), loc0)
 
-    case LoweredAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
-      var curEnv = env0
-      val fs = frags.map {
-        case LoweredAst.ParYieldFragment(pat, fragExp, fragLoc) =>
-          val (p, env1) = specializePat(pat, Map(), subst)
-          curEnv ++= env1
-          LoweredAst.ParYieldFragment(p, specializeExp(fragExp, curEnv, subst), fragLoc)
-      }
-      val e = specializeExp(exp, curEnv, subst)
-      LoweredAst.Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
-
-    case LoweredAst.Expr.FixpointConstraintSet(cs0, tpe, loc) =>
-      val cs = cs0.map(specializeConstraint(_, env0, subst))
-      val t = subst(tpe)
-      LoweredAst.Expr.FixpointConstraintSet(cs, t, loc)
-
-    case LoweredAst.Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
-      val pparams = pparams0.map {
-        case LoweredAst.PredicateParam(pred, tpe0, loc0) => LoweredAst.PredicateParam(pred, subst(tpe0), loc0)
-      }
-      val e = specializeExp(exp, env0, subst)
-      val t = subst(tpe)
-      LoweredAst.Expr.FixpointLambda(pparams, e, t, subst(eff), loc)
-
-    case LoweredAst.Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointMerge(e1, e2, t, subst(eff), loc)
+      Expr.Spawn(e1, e2, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
+    case Expr.ParYield(frags, exp, tpe, eff, loc) =>
+      var curEnv = env0
+      val fs = frags.map {
+        case TypedAst.ParYieldFragment(pat, fragExp, fragLoc) =>
+          val (p, env1) = specializePat(pat, Map(), subst)
+          curEnv ++= env1
+          TypedAst.ParYieldFragment(p, specializeExp(fragExp, curEnv, subst), fragLoc)
+      }
+      val e = specializeExp(exp, curEnv, subst)
+      Expr.ParYield(fs, e, subst(tpe), subst(eff), loc)
+
+    case Expr.Lazy(exp, tpe, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Lazy(e, t, loc)
+
+    case Expr.Force(exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.Force(e, t, subst(eff), loc)
+
+    case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
+      val cs = cs0.map(specializeConstraint(_, env0, subst))
+      val t = subst(tpe)
+      Expr.FixpointConstraintSet(cs, t, loc)
+
+    case Expr.FixpointLambda(pparams0, exp, tpe, eff, loc) =>
+      val pparams = pparams0.map {
+        case TypedAst.PredicateParam(pred, tpe0, loc0) => TypedAst.PredicateParam(pred, subst(tpe0), loc0)
+      }
+      val e = specializeExp(exp, env0, subst)
+      val t = subst(tpe)
+      Expr.FixpointLambda(pparams, e, t, subst(eff), loc)
+
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val t = subst(tpe)
+      Expr.FixpointMerge(e1, e2, t, subst(eff), loc)
+
+    case Expr.FixpointQueryWithProvenance(exps0, select0, withh, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val select = specializeHeadPred(select0, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, t, subst(eff), loc)
+      Expr.FixpointQueryWithProvenance(exps, select, withh, t, subst(eff), loc)
 
-    // We do not care about `selects`, `from`, or `where`. I'm unsure why they're not just dropped after desugaring.
-    case LoweredAst.Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
+    // We do not care about `selects`, `from`, or `where`.
+    case Expr.FixpointQueryWithSelect(exps0, queryExp0, selects0, from0, where0, pred, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val queryExp = specializeExp(queryExp0, env0, subst)
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects0, from0, where0, pred, t, subst(eff), loc)
+      Expr.FixpointQueryWithSelect(exps, queryExp, selects0, from0, where0, pred, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
+    case Expr.FixpointSolveWithProject(exps0, optPreds, mode, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, t, subst(eff), loc)
+      Expr.FixpointSolveWithProject(exps, optPreds, mode, t, subst(eff), loc)
 
-    case LoweredAst.Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
+    case Expr.FixpointInjectInto(exps0, predsAndArities, tpe, eff, loc) =>
       val exps = exps0.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
-      LoweredAst.Expr.FixpointInjectInto(exps, predsAndArities, t, subst(eff), loc)
+      Expr.FixpointInjectInto(exps, predsAndArities, t, subst(eff), loc)
 
-  }
+    case Expr.Error(m, _, _) =>
+      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
-  /**
-    * Returns the cast of `e` to `tpe` and `eff`.
-    *
-    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
-    * bytecode verifier.
-    */
-  private def mkCast(exp: LoweredAst.Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    (exp.tpe, tpe) match {
-      case (Type.Char, Type.Char) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Char, Type.Int16) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int16, Type.Char) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Bool, Type.Bool) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int8, Type.Int8) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int16, Type.Int16) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int32, Type.Int32) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Int64, Type.Int64) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Float32, Type.Float32) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (Type.Float64, Type.Float64) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (x, y) if !isPrimType(x) && !isPrimType(y) => LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc)
-      case (x, y) =>
-        val crash = LoweredAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
-        LoweredAst.Expr.Stm(exp, crash, tpe, eff, loc)
-    }
   }
 
   /**
     * Specializes `p`.
     */
-  private def specializeHeadPred(p: LoweredAst.Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Predicate.Head = p match {
-    case LoweredAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
+  private def specializeHeadPred(p: TypedAst.Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Predicate.Head = p match {
+    case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
       val t = subst(tpe)
       val visitedTerms = terms.map(specializeExp(_, env0, subst))
-      LoweredAst.Predicate.Head.Atom(pred, den, visitedTerms, t, loc)
+      TypedAst.Predicate.Head.Atom(pred, den, visitedTerms, t, loc)
   }
 
   /**
     * Specializes the given body predicate `p0`.
     */
-  private def specializeBodyPred(b0: LoweredAst.Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): (LoweredAst.Predicate.Body, Map[Symbol.VarSym, Symbol.VarSym]) = b0 match {
-    case LoweredAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms0, tpe, loc) =>
+  private def specializeBodyPred(b0: TypedAst.Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): (TypedAst.Predicate.Body, Map[Symbol.VarSym, Symbol.VarSym]) = b0 match {
+    case TypedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms0, tpe, loc) =>
       val (terms, env) = specializePats(terms0, env0, subst)
       val t = subst(tpe)
-      (LoweredAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, t, loc), env)
-    case LoweredAst.Predicate.Body.Functional(outSyms0, exp, loc) =>
+      (TypedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, t, loc), env)
+    case TypedAst.Predicate.Body.Functional(outSyms0, exp, loc) =>
       val e = specializeExp(exp, env0, subst)
-      val outSyms = outSyms0.map(env0.apply)
-      (LoweredAst.Predicate.Body.Functional(outSyms, e, loc), env0)
-    case LoweredAst.Predicate.Body.Guard(exp, loc) =>
-      (LoweredAst.Predicate.Body.Guard(specializeExp(exp, env0, subst), loc), env0)
+      val outSyms = outSyms0.map(bnd => Binder(env0(bnd.sym), subst(bnd.tpe)))
+      (TypedAst.Predicate.Body.Functional(outSyms, e, loc), env0)
+    case TypedAst.Predicate.Body.Guard(exp, loc) =>
+      (TypedAst.Predicate.Body.Guard(specializeExp(exp, env0, subst), loc), env0)
 
   }
 
-  private def specializePats(ps: List[LoweredAst.Pattern], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (List[LoweredAst.Pattern], Map[Symbol.VarSym, Symbol.VarSym]) = {
-    ps.foldRight((Nil: List[LoweredAst.Pattern], env0)) {
+  private def specializePats(ps: List[TypedAst.Pattern], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (List[TypedAst.Pattern], Map[Symbol.VarSym, Symbol.VarSym]) = {
+    ps.foldRight((Nil: List[TypedAst.Pattern], env0)) {
       case (pat0, (res, env1)) =>
         val (pat, env) = specializePat(pat0, env1, subst)
         (pat :: res, env)
     }
   }
 
-  private def specializeBodies(bodies: List[LoweredAst.Predicate.Body], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): (List[LoweredAst.Predicate.Body], Map[Symbol.VarSym, Symbol.VarSym]) = {
-    bodies.foldRight((Nil: List[LoweredAst.Predicate.Body], env0)) {
+  private def specializeBodies(bodies: List[TypedAst.Predicate.Body], env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): (List[TypedAst.Predicate.Body], Map[Symbol.VarSym, Symbol.VarSym]) = {
+    bodies.foldRight((Nil: List[TypedAst.Predicate.Body], env0)) {
       case (body, (res, env1)) =>
         val (pat, env) = specializeBodyPred(body, env1, subst)
         (pat :: res, env)
@@ -803,146 +997,140 @@ object Specialization {
   }
 
   /**
-    * Lowers the given constraint `c0`.
+    * Specializes the given constraint `c0`.
     */
-  private def specializeConstraint(c0: LoweredAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Constraint = c0 match {
-    case LoweredAst.Constraint(cparams0, head0, body0, loc0) =>
+  private def specializeConstraint(c0: TypedAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Constraint = c0 match {
+    case TypedAst.Constraint(cparams0, head0, body0, loc0) =>
       // For every parameter of the constraint add it to `env0` with a new mapping if it has not been encountered before.
       val env = cparams0.foldLeft(env0) {
-        case (env1, LoweredAst.ConstraintParam(sym, _, _)) =>
-          if (env1.contains(sym)) {
+        case (env1, TypedAst.ConstraintParam(bnd, _, _)) =>
+          if (env1.contains(bnd.sym)) {
             env1
           } else {
-            val freshSym = Symbol.freshVarSym(sym)
-            env1 + (sym -> freshSym)
+            val freshSym = Symbol.freshVarSym(bnd.sym)
+            env1 + (bnd.sym -> freshSym)
           }
       }
       val cparams = cparams0.map {
-        case LoweredAst.ConstraintParam(sym, tpe, loc) =>
-          LoweredAst.ConstraintParam(env(sym), subst(tpe), loc)
+        case TypedAst.ConstraintParam(bnd, tpe, loc) =>
+          TypedAst.ConstraintParam(Binder(env(bnd.sym), subst(bnd.tpe)), subst(tpe), loc)
       }
       val (body, env2) = specializeBodies(body0, env, subst)
       val head = specializeHeadPred(head0, env2, subst)
-      LoweredAst.Constraint(cparams, head, body, loc0)
+      TypedAst.Constraint(cparams, head, body, loc0)
   }
 
   /**
-    * Returns `true` if `tpe` is a primitive type.
-    *
-    * N.B.: `tpe` must be normalized.
+    * Specializes the given restrictable choice rule `rule0` to a match rule.
     */
-  private def isPrimType(tpe: Type): Boolean = tpe match {
-    case Type.Char => true
-    case Type.Bool => true
-    case Type.Int8 => true
-    case Type.Int16 => true
-    case Type.Int32 => true
-    case Type.Int64 => true
-    case Type.Float32 => true
-    case Type.Float64 => true
-    case Type.Cst(_, _) => false
-    case Type.Apply(_, _, _) => false
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-  }
-
-  /**
-    * Returns the erased string representation of `tpe`
-    *
-    * N.B.: `tpe` must be normalized.
-    */
-  private def erasedString(tpe: Type): String = tpe match {
-    case Type.Char => "Char"
-    case Type.Bool => "Bool"
-    case Type.Int8 => "Int8"
-    case Type.Int16 => "Int16"
-    case Type.Int32 => "Int32"
-    case Type.Int64 => "Int64"
-    case Type.Float32 => "Float32"
-    case Type.Float64 => "Float64"
-    case Type.Cst(_, _) => "Object"
-    case Type.Apply(_, _, _) => "Object"
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  private def specializeRestrictableChooseRule(rule0: TypedAst.RestrictableChooseRule, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.RestrictableChooseRule = rule0 match {
+    case TypedAst.RestrictableChooseRule(pat, exp) =>
+      pat match {
+        case TypedAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
+          val env = pat0.foldLeft(env0) {
+            case (env1, TypedAst.RestrictableChoosePattern.Var(bnd, _, _)) =>
+              val freshSym = Symbol.freshVarSym(bnd.sym)
+              val env = env1 + (bnd.sym -> freshSym)
+              env
+            case (env1, TypedAst.RestrictableChoosePattern.Wild(_, _)) =>
+              env1
+            case (_, TypedAst.RestrictableChoosePattern.Error(_, errLoc)) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val pats = pat0.map {
+            case TypedAst.RestrictableChoosePattern.Var(bnd, varTpe, varLoc) =>
+              TypedAst.RestrictableChoosePattern.Var(Binder(env(bnd.sym), subst(bnd.tpe)), subst(varTpe), varLoc)
+            case TypedAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) =>
+              TypedAst.RestrictableChoosePattern.Wild(subst(wildTpe), wildLoc)
+            case TypedAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
+          }
+          val e = specializeExp(exp, env, subst)
+          val p = TypedAst.RestrictableChoosePattern.Tag(symUse, pats, subst(tpe), loc)
+          TypedAst.RestrictableChooseRule(p, e)
+        case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
+      }
   }
 
   /**
     * Specializes `p0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
     * symbols.
     */
-  private def specializePat(p0: LoweredAst.Pattern, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (LoweredAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
-    case LoweredAst.Pattern.Wild(tpe, loc) =>
-      (LoweredAst.Pattern.Wild(subst(tpe), loc), env0)
-    case LoweredAst.Pattern.Var(sym, tpe, loc) =>
-      val env = if (env0.contains(sym)) {
+  private def specializePat(p0: TypedAst.Pattern, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (TypedAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
+    case TypedAst.Pattern.Wild(tpe, loc) =>
+      (TypedAst.Pattern.Wild(subst(tpe), loc), env0)
+
+    case TypedAst.Pattern.Var(bnd, tpe, loc) =>
+      val env = if (env0.contains(bnd.sym)) {
         env0
       } else {
-        val freshSym = Symbol.freshVarSym(sym)
-        env0 + (sym -> freshSym)
+        val freshSym = Symbol.freshVarSym(bnd.sym)
+        env0 + (bnd.sym -> freshSym)
       }
-      (LoweredAst.Pattern.Var(env(sym), subst(tpe), loc), env)
-    case LoweredAst.Pattern.Cst(cst, tpe, loc) => (LoweredAst.Pattern.Cst(cst, subst(tpe), loc), env0)
-    case LoweredAst.Pattern.Tag(symUse, pats, tpe, loc) =>
+      (TypedAst.Pattern.Var(Binder(env(bnd.sym), subst(bnd.tpe)), subst(tpe), loc), env)
+
+    case TypedAst.Pattern.Cst(cst, tpe, loc) => (TypedAst.Pattern.Cst(cst, subst(tpe), loc), env0)
+
+    case TypedAst.Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, env) = specializePats(pats, env0, subst)
-      (LoweredAst.Pattern.Tag(symUse, ps, subst(tpe), loc), env)
-    case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
+      (TypedAst.Pattern.Tag(symUse, ps, subst(tpe), loc), env)
+
+    case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       val (ps, env) = specializePats(elms.toList, env0, subst)
-      (LoweredAst.Pattern.Tuple(Nel(ps.head, ps.tail), subst(tpe), loc), env)
-    case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
+      (TypedAst.Pattern.Tuple(Nel(ps.head, ps.tail), subst(tpe), loc), env)
+
+    case TypedAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, envs) = pats.map {
-        case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
+        case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
           val (p1, env1) = specializePat(pat1, env0, subst)
-          (LoweredAst.Pattern.Record.RecordLabelPattern(label, p1, subst(tpe1), loc1), env1)
+          (TypedAst.Pattern.Record.RecordLabelPattern(label, p1, subst(tpe1), loc1), env1)
       }.unzip
       val (p, env1) = specializePat(pat, env0, subst)
       val finalEnv = env1 :: envs
-      (LoweredAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
+      (TypedAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
+
+    case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$p0'.", loc)
   }
 
   /**
     * Specializes `pat0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
     * symbols.
     */
-  private def specializeExtPat(pat0: LoweredAst.ExtPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (LoweredAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
-    case LoweredAst.ExtPattern.Default(loc) =>
-      (LoweredAst.ExtPattern.Default(loc), Map.empty)
+  private def specializeExtPat(pat0: TypedAst.ExtPattern, subst: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (TypedAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case TypedAst.ExtPattern.Default(loc) =>
+      (TypedAst.ExtPattern.Default(loc), Map.empty)
 
-    case LoweredAst.ExtPattern.Tag(label, pats, loc) =>
+    case TypedAst.ExtPattern.Tag(label, pats, loc) =>
       val (ps, symMaps) = pats.map(specializeExtTagPat(_, subst)).unzip
       val env = symMaps.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
-      (LoweredAst.ExtPattern.Tag(label, ps, loc), env)
+      (TypedAst.ExtPattern.Tag(label, ps, loc), env)
+
+    case TypedAst.ExtPattern.Error(loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
   }
 
   /**
     * Specializes `pat0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
     * symbols.
     */
-  private def specializeExtTagPat(pat0: LoweredAst.ExtTagPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (LoweredAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
-    case LoweredAst.ExtTagPattern.Wild(tpe, loc) =>
-      (LoweredAst.ExtTagPattern.Wild(subst(tpe), loc), Map.empty)
+  private def specializeExtTagPat(pat0: TypedAst.ExtTagPattern, subst: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (TypedAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case TypedAst.ExtTagPattern.Wild(tpe, loc) =>
+      (TypedAst.ExtTagPattern.Wild(subst(tpe), loc), Map.empty)
 
-    case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
-      val freshSym = Symbol.freshVarSym(sym)
-      (LoweredAst.ExtTagPattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
+    case TypedAst.ExtTagPattern.Var(bnd, tpe, loc) =>
+      val freshSym = Symbol.freshVarSym(bnd.sym)
+      (TypedAst.ExtTagPattern.Var(Binder(freshSym, subst(bnd.tpe)), subst(tpe), loc), Map(bnd.sym -> freshSym))
 
-    case LoweredAst.ExtTagPattern.Unit(tpe, loc) =>
-      (LoweredAst.ExtTagPattern.Unit(subst(tpe), loc), Map.empty)
+    case TypedAst.ExtTagPattern.Unit(tpe, loc) =>
+      (TypedAst.ExtTagPattern.Unit(subst(tpe), loc), Map.empty)
+
+    case TypedAst.ExtTagPattern.Error(_, loc) =>
+      throw InternalCompilerException("unexpected error ext pattern", loc)
   }
 
   /** Specializes `method` w.r.t. `subst`. */
-  private def specializeJvmMethod(method: LoweredAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.JvmMethod = method match {
-    case LoweredAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
+  private def specializeJvmMethod(method: TypedAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.JvmMethod = method match {
+    case TypedAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
       val (fparams, env1) = specializeFormalParams(fparams0, subst)
       val exp = specializeExp(exp0, env0 ++ env1, subst)
-      LoweredAst.JvmMethod(ident, fparams, exp, subst(tpe), subst(eff), loc)
+      TypedAst.JvmMethod(ident, fparams, exp, subst(tpe), subst(eff), loc)
   }
 
   /**
@@ -950,7 +1138,7 @@ object Specialization {
     *
     * N.B.: `tpe` must be normalized.
     */
-  protected[monomorph] def specializeDefnSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  protected[monomorph] def specializeDefnSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
     val defn = root.defs(sym)
 
     if (defn.spec.tparams.isEmpty) {
@@ -965,7 +1153,7 @@ object Specialization {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
     val defn = resolveSigSym(sym, tpe)
     specializeDefCallsite(defn, tpe)
   }
@@ -975,7 +1163,7 @@ object Specialization {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def resolveSigSym(sym: Symbol.SigSym, tpe: Type)(implicit instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Def = {
+  private def resolveSigSym(sym: Symbol.SigSym, tpe: Type)(implicit instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.Def = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
 
@@ -994,7 +1182,7 @@ object Specialization {
       case (Some(impl), Nil) =>
         val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
         val defnSym = new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
-        LoweredAst.Def(defnSym, sig.spec, impl, sig.loc)
+        TypedAst.Def(defnSym, sig.spec, impl, sig.loc)
       // Multiple matching defs. Should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
       // No matching defs and no default. Should have been caught previously.
@@ -1007,7 +1195,7 @@ object Specialization {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def specializeDefCallsite(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeDefCallsite(defn: TypedAst.Def, tpe: Type)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
 
@@ -1048,7 +1236,7 @@ object Specialization {
     * Specializes `fparams0` w.r.t. `subst0` and returns a mapping from variable symbols to fresh
     * variable symbols.
     */
-  private def specializeFormalParams(fparams0: List[LoweredAst.FormalParam], subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (List[LoweredAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     // Specialize each formal parameter and recombine the results.
     val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
     (params, combineEnvs(envs))
@@ -1058,14 +1246,14 @@ object Specialization {
     * Specializes `fparam0` w.r.t. `subst0` and returns an environment mapping the variable symbol
     * to a fresh variable symbol.
     */
-  private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (LoweredAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
-    val LoweredAst.FormalParam(sym, tpe, loc) = fparam0
-    val freshSym = Symbol.freshVarSym(sym)
-    (LoweredAst.FormalParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
+  private def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (TypedAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
+    val TypedAst.FormalParam(bnd, tpe, src, loc) = fparam0
+    val freshSym = Symbol.freshVarSym(bnd.sym)
+    (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, loc), Map(bnd.sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */
-  private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
+  private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: TypedAst.Root, flix: Flix): StrictSubstitution = {
     ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
       case Some(subst) =>
         StrictSubstitution.mk(subst)
@@ -1075,7 +1263,7 @@ object Specialization {
   }
 
   /** Reduces the given associated into its definition, will crash if not able to. */
-  private def reduceAssocType(assoc: Type.AssocType)(implicit root: LoweredAst.Root, flix: Flix): Type = {
+  private def reduceAssocType(assoc: Type.AssocType)(implicit root: TypedAst.Root, flix: Flix): Type = {
     // Since assoc is ground, `scope` will be unused.
     val scope = Scope.Top
     // Since assoc is ground, `renv` will be unused.
@@ -1094,7 +1282,7 @@ object Specialization {
     *
     * @param isGround If true, then `tpe` will be normalized.
     */
-  private def simplify(tpe: Type, isGround: Boolean)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe match {
+  private def simplify(tpe: Type, isGround: Boolean)(implicit root: TypedAst.Root, flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, isGround), app, isGround)

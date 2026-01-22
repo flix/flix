@@ -235,7 +235,7 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Module)
       val annotations = pickAnnotations(tree)
       for (ann <- annotations.annotations) {
-        sctx.errors.add(WeederError.IllegalAnnotation(ann.loc))
+        sctx.errors.add(WeederError.IllegalAnnotation(ann.toString, ann.loc))
       }
       val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       mapN(
@@ -705,7 +705,7 @@ object Weeder2 {
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
         case "@Skip" => Skip(loc)
-        case "@Test" | "@test" => Test(loc)
+        case "@Test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)
         case other =>
           val name = other.stripPrefix("@")
@@ -757,7 +757,7 @@ object Weeder2 {
           // Check if pub is missing
           if (mustBePublic && !tokens.exists(_.kind == TokenKind.KeywordPub)) {
             mapN(pickNameIdent(tree)) {
-              ident => errors :+= IllegalPrivateDeclaration(ident, ident.loc)
+              ident => errors :+= IllegalNonPublicSignature(ident, ident.loc)
             }
           }
           // Check for duplicate modifiers
@@ -829,7 +829,7 @@ object Weeder2 {
           // Check for missing or illegal type ascription
           (maybeType, presence) match {
             case (None, Presence.Required) =>
-              val error = MissingFormalParamAscription(ident.name, tree.loc)
+              val error = MissingTypeAscription(ident.name, tree.loc)
               sctx.errors.add(error)
               Validation.Success(FormalParam(ident, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
             case (Some(_), Presence.Forbidden) =>
@@ -1381,7 +1381,7 @@ object Weeder2 {
         case Annotations(as) =>
           // Check for annotations
           for (a <- as) {
-            sctx.errors.add(IllegalAnnotation(a.loc))
+            sctx.errors.add(IllegalAnnotation(a.toString, a.loc))
           }
       }
 
@@ -2698,17 +2698,25 @@ object Weeder2 {
       * Attempts to parse the given tree to a float32.
       */
     def toFloat32(token: Token)(implicit sctx: SharedContext): Expr =
-      tryParseFloat(token,
-        (text, loc) => Expr.Cst(Constant.Float32(text.stripSuffix("f32").toFloat), loc)
-      )
+      tryParseFloat(token, (text, loc) => {
+        val value = java.lang.Float.parseFloat(text.stripSuffix("f32"))
+        if (java.lang.Float.isInfinite(value)) {
+          throw new NumberFormatException()
+        }
+        Expr.Cst(Constant.Float32(value), loc)
+      })
 
     /**
-      * Attempts to parse the given tree to a float32.
+      * Attempts to parse the given tree to a float64.
       */
     def toFloat64(token: Token)(implicit sctx: SharedContext): Expr =
-      tryParseFloat(token,
-        (text, loc) => Expr.Cst(Constant.Float64(text.stripSuffix("f64").toDouble), loc)
-      )
+      tryParseFloat(token, (text, loc) => {
+        val value = java.lang.Double.parseDouble(text.stripSuffix("f64"))
+        if (java.lang.Double.isInfinite(value)) {
+          throw new NumberFormatException()
+        }
+        Expr.Cst(Constant.Float64(value), loc)
+      })
 
     /**
       * Attempts to parse the given tree to a big decimal.
@@ -3273,7 +3281,7 @@ object Weeder2 {
                 case (_ :: _, Nil) => tparams
                 // Some kinded and some unkinded type parameters. Give an error and keep going.
                 case (_ :: _, _ :: _) =>
-                  val error = MismatchedTypeParameters(tparamsTree.loc)
+                  val error = MismatchedKindAnnotations(tparamsTree.loc)
                   sctx.errors.add(error)
                   tparams
                 // No type parameters. Issue an error and return an empty list.
@@ -3300,7 +3308,7 @@ object Weeder2 {
                 case (_ :: _, Nil) => tparams
                 // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
                 case (_, _ :: _) =>
-                  unkinded.foreach(t => sctx.errors.add(MissingTypeParamKind(t.ident.loc)))
+                  unkinded.foreach(t => sctx.errors.add(MissingKindAscription(t.ident.loc)))
                   tparams
                 // Empty list. Syntax error, but recover with an empty list.
                 case (Nil, Nil) =>

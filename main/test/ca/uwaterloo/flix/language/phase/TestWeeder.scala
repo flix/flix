@@ -882,7 +882,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalBigDecimalPattern](result)
   }
 
-  test("IllegalPrivateDeclaration.01") {
+  test("IllegalNonPublicSignature.01") {
     val input =
       """
         |trait C[a] {
@@ -890,10 +890,10 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
+    expectError[WeederError.IllegalNonPublicSignature](result)
   }
 
-  test("IllegalPrivateDeclaration.02") {
+  test("IllegalNonPublicSignature.02") {
     val input =
       """
         |instance C[Int32] {
@@ -901,10 +901,10 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
+    expectError[WeederError.IllegalNonPublicSignature](result)
   }
 
-  test("IllegalPrivateDeclaration.03") {
+  test("IllegalNonPublicSignature.03") {
     val input =
       """
         |instance C[Int32] {
@@ -913,7 +913,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
+    expectError[WeederError.IllegalNonPublicSignature](result)
   }
 
   test("IllegalQualifiedExtPattern.01") {
@@ -975,6 +975,48 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalQualifiedExtPattern](result)
+  }
+
+  test("IllegalQualifiedName.TryCatch.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    try 1 catch {
+        |        case ex: java.lang.Exception => 0
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedName](result)
+  }
+
+  test("IllegalQualifiedName.TryCatch.02") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    try 1 catch {
+        |        case ex: java.io.IOException => 0
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedName](result)
+  }
+
+  test("IllegalQualifiedName.InvokeConstructor.01") {
+    val input =
+      """
+        |def f(): Unit \ IO = discard new java.lang.Object()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedName](result)
+  }
+
+  test("IllegalQualifiedName.InvokeConstructor.02") {
+    val input =
+      """
+        |def f(): Unit \ IO = discard new java.lang.String("hello")
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedName](result)
   }
 
   test("IllegalRecordExtensionPattern.01") {
@@ -1192,6 +1234,30 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedInt](result)
   }
 
+  test("MalformedFloat.Float32.01") {
+    val input = "def f(): Float32 = 1e9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999f32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedFloat](result)
+  }
+
+  test("MalformedFloat.Float32.02") {
+    val input = "def f(): Float32 = -1e9999999999999999999f32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedFloat](result)
+  }
+
+  test("MalformedFloat.Float64.01") {
+    val input = "def f(): Float64 = 1e9999999999999999999f64"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedFloat](result)
+  }
+
+  test("MalformedFloat.Float64.02") {
+    val input = "def f(): Float64 = -1e9999999999999999999f64"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedFloat](result)
+  }
+
   test("MalformedRegex.01") {
     val input =
       """
@@ -1228,7 +1294,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedRegex](result)
   }
 
-  test("MismatchedTypeParameters.01") {
+  test("MismatchedKindAnnotations.01") {
     val input =
       """
         |enum E[a, b: Bool] {
@@ -1236,25 +1302,25 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedTypeParameters](result)
+    expectError[WeederError.MismatchedKindAnnotations](result)
   }
 
-  test("MismatchedTypeParameters.02") {
+  test("MismatchedKindAnnotations.02") {
     val input =
       """
         |type alias T[a, b: Bool] = Int32
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedTypeParameters](result)
+    expectError[WeederError.MismatchedKindAnnotations](result)
   }
 
-  test("MismatchedTypeParameters.03") {
+  test("MismatchedKindAnnotations.03") {
     val input =
       """
         |enum T[a, b: Bool](Int32)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedTypeParameters](result)
+    expectError[WeederError.MismatchedKindAnnotations](result)
   }
 
   test("MissingArgumentList.01") {
@@ -1291,7 +1357,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(x): String = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingFormalParamAscription](result)
+    expectError[WeederError.MissingTypeAscription](result)
   }
 
   test("MissingFormalParamAscription.02") {
@@ -1300,7 +1366,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(x: Int32, y): Int32 = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingFormalParamAscription](result)
+    expectError[WeederError.MissingTypeAscription](result)
   }
 
   test("MissingFormalParamAscription.03") {
@@ -1311,7 +1377,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingFormalParamAscription](result)
+    expectError[WeederError.MissingTypeAscription](result)
   }
 
   test("MissingTypeParamKind.01") {
@@ -1320,7 +1386,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f[a](x: a): a = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingTypeParamKind](result)
+    expectError[WeederError.MissingKindAscription](result)
   }
 
   test("MissingTypeParamKind.02") {
@@ -1331,7 +1397,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingTypeParamKind](result)
+    expectError[WeederError.MissingKindAscription](result)
   }
 
   test("MissingTypeParamKind.03") {
@@ -1342,7 +1408,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MissingTypeParamKind](result)
+    expectError[WeederError.MissingKindAscription](result)
   }
 
   test("NonLinearPattern.01") {

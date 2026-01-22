@@ -273,4 +273,38 @@ object EntryPointError {
     }
   }
 
+  /**
+    * An error raised to indicate a @Test function that has a non-Unit return type.
+    *
+    * A @Test function must have no formal parameters, return Unit, and use only
+    * the Assert effect, effects with default handlers, and/or the IO effect.
+    *
+    * @param loc the location of the return type.
+    */
+  case class TestNonUnitReturnType(loc: SourceLocation) extends EntryPointError {
+    def code: ErrorCode = ErrorCode.E1960
+
+    def summary: String = s"Unexpected return type: @Test function must return Unit."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected return type: @Test function must return Unit.
+         |
+         |${src(loc, "expected Unit")}
+         |
+         |${underline("Explanation:")} A @Test function must have no formal parameters,
+         |return Unit, and use only the Assert effect, effects with default handlers,
+         |and/or the IO effect.
+         |
+         |Valid signatures:
+         |
+         |  @Test
+         |  def testFoo(): Unit \\ Assert = ...
+         |
+         |  @Test
+         |  def testBar(): Unit \\ {Assert, IO} = ...
+         |""".stripMargin
+    }
+  }
+
 }
