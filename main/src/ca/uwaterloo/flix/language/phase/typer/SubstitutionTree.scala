@@ -74,7 +74,7 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
         else
           TypeConstraint.Conflicted(t1, t2, prov)
 
-      case TypeConstraint.EffConflicted(_,_,_) => constr // TODO eff errors
+      case TypeConstraint.EffConflicted(_) => constr
     }
 
   }

@@ -15,12 +15,14 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
+import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.TypeConstructor
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
+
 import scala.collection.immutable.SortedSet
 
 sealed trait SourceEffect {
@@ -40,6 +42,7 @@ object SourceEffect {
 }
 
 object EffectProvenance {
+
 
   /**
     * Whether to enable effect provenance debugging.
@@ -224,5 +227,10 @@ object EffectProvenance {
       case TypeConstraint.Equality(eff1, eff2, prov) => println(s"$eff1 ~ $eff2 at ${prov.loc} with provenance $prov")
       case _ => ()
     }
+  }
+
+  def getError(constrs0: List[TypeConstraint]): List[TypeConstraint] = {
+    println(constrs0)
+    List(TypeConstraint.EffConflicted(TypeError.PureFunctionUsesIO(constrs0.head.loc)))
   }
 }

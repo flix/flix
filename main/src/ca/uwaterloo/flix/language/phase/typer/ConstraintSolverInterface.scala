@@ -82,7 +82,7 @@ object ConstraintSolverInterface {
 
       // We add extra constraints for the declared type and effect
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
-      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
+      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, eff.loc))
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
       // Apply the initial substitution to all the constraints
@@ -211,7 +211,7 @@ object ConstraintSolverInterface {
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
-    case TypeConstraint.EffConflicted(_,_,_) => List() // TODO eff errors
+    case TypeConstraint.EffConflicted(err) => List(err)
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
       tpe.typeConstructor match {

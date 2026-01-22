@@ -694,4 +694,18 @@ object TypeError {
     }
   }
 
+  // case class PureFunctionUsesIO(signatureLoc: SourceLocation, effLoc: SourceLocation, sym: EffSym) extends TypeError {
+  // message = function declared as pure but has $sym effect
+  // ${src(signatureLoc, "effect declared as Pure here")}
+  // ${src(effLoc, "effect $sym used here")}
+  case class PureFunctionUsesIO(loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8354
+
+    def summary: String = "TODO"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      "TODO"
+    }
+  }
 }

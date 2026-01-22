@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.errors.TypeError
 
 
 /**
@@ -31,7 +32,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Trait(_, tpe, _) => tpe.size
     case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
-    case TypeConstraint.EffConflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size // TODO eff errors
+    case TypeConstraint.EffConflicted(_) => 0
   }
 
   override def toString: String = this match {
@@ -39,7 +40,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
-    case TypeConstraint.EffConflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2" // TODO eff errors
+    case TypeConstraint.EffConflicted(err) => err.toString
   }
 
   def loc: SourceLocation
@@ -89,8 +90,8 @@ object TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
-  case class EffConflicted(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
-    def loc: SourceLocation = prov.loc
+  case class EffConflicted(error: TypeError) extends TypeConstraint {
+    def loc: SourceLocation = error.loc
   }
 
   sealed trait Provenance {

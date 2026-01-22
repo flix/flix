@@ -24,6 +24,17 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
 
+  test("TestEffError01") {
+    val input =
+      """
+       |def f () : Unit \ {} = {
+       |    println("42")
+       |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.PureFunctionUsesIO](result)
+  }
+
   test("TestLeq01") {
     val input =
       """
@@ -2326,7 +2337,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.DefaultHandlerNotInModule](result)
   }
-  
+
   test("Test.IllegalDefaultHandlerSignature.01") {
     val input =
       """
@@ -2596,5 +2607,5 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
   }
- 
+
 }

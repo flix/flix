@@ -473,8 +473,10 @@ object ConstraintSolver2 {
         (Nil, subst)
       case Result.Err(unsolved) =>
         EffectProvenance.debug(eqConstrs)
+        val errors = EffectProvenance.getError(constrs0)
+        val c = if (errors.nonEmpty) errors else unsolved
         // Otherwise we failed. Return the evidence of failure.
-        (unsolved, Substitution.empty)
+        (c, Substitution.empty)
     }
 
     val tree0 = SubstitutionTree.shallow(subst1)
@@ -555,8 +557,7 @@ object ConstraintSolver2 {
       TypeConstraint.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), prov, nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)))
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       TypeConstraint.Conflicted(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
-    case TypeConstraint.EffConflicted(tpe1, tpe2, prov) => // TODO!!! just a copy of Conflicted
-      TypeConstraint.EffConflicted(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
+    case TypeConstraint.EffConflicted(_) => constr
   }
 
   /**
