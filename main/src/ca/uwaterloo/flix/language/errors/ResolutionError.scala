@@ -678,8 +678,6 @@ object ResolutionError {
       s""">> Undefined effect '${red(qn.toString)}'.
          |
          |${src(loc, "effect not found")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent effect?
          |""".stripMargin
     }
 
@@ -702,7 +700,7 @@ object ResolutionError {
       import formatter.*
       s""">> Undefined Java class '${red(name.name)}'.
          |
-         |${src(loc, "undefined class.")}
+         |${src(loc, "undefined class")}
          |
          |$msg
          |""".stripMargin
@@ -720,13 +718,13 @@ object ResolutionError {
   case class UndefinedJvmImport(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1803
 
-    def summary: String = s"Undefined class in Java Import: '$name'."
+    def summary: String = s"Undefined Java class: '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Undefined class in Java Import '${red(name)}'.
+      s""">> Undefined Java class '${red(name)}'.
          |
-         |${src(loc, "undefined class.")}
+         |${src(loc, "unknown import")}
          |
          |$msg
          |$nestedClassHint
@@ -754,13 +752,13 @@ object ResolutionError {
   case class UndefinedJvmStaticField(clazz: Class[?], field: Name.Ident, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1914
 
-    def summary: String = s"Undefined static field."
+    def summary: String = s"Undefined static field: '${field.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
          |
-         |${src(loc, "undefined static field.")}
+         |${src(loc, "field not found")}
          |""".stripMargin
     }
   }
@@ -781,9 +779,7 @@ object ResolutionError {
       import formatter.*
       s""">> Undefined kind '${red(qn.toString)}'.
          |
-         |${src(loc, "undefined kind.")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent kind?
+         |${src(loc, "kind not found")}
          |""".stripMargin
     }
   }
