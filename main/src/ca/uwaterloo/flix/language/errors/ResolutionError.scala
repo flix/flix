@@ -493,13 +493,15 @@ object ResolutionError {
   case class MismatchedTagPatternArity(caze: Symbol.CaseSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1023
 
-    def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found ${Grammar.n_things(actual, "argument")}."
+    def summary: String = s"Mismatched arity for tag '${caze.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""" Expected ${Grammar.n_things(expected, "argument")} for ${cyan(caze.toString)} but found ${Grammar.n_things(actual, "argument")}.
+      s""">> Mismatched arity for tag '${red(caze.name)}'.
          |
-         |${src(loc, s"mismatched arguments")}
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
+         |
+         |${src(loc, s"expected $expected arguments")}
          |""".stripMargin
     }
   }
