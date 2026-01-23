@@ -547,15 +547,24 @@ object ResolutionError {
   case class MissingHandlerDef(sym: Symbol.OpSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1245
 
-    def summary: String = s"Missing handler definition: ${sym.name}"
+    def summary: String = s"Missing handler definition: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing handler definition '${red(sym.name)}' for effect ${cyan(sym.eff.name)}'.
+      s""">> Missing handler definition '${red(sym.name)}' for effect '${cyan(sym.eff.name)}'.
          |
          |${src(loc, "missing handler definition")}
          |
-         |Add a handler definition for ${sym.name}
+         |${underline("Explanation:")} When handling an effect, you must provide definitions
+         |for all its operations.
+         |
+         |  eff E {
+         |      pub def op(): Unit
+         |  }
+         |
+         |  run { ... } with handler E {
+         |      def op() = ...  // required
+         |  }
          |""".stripMargin
     }
   }
