@@ -902,12 +902,9 @@ object ResolutionError {
       import formatter.*
       s""">> Undefined restrictable tag '${red(tag)}'.
          |
-         |${src(loc, "tag not found.")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent tag?
+         |${src(loc, "tag not found")}
          |""".stripMargin
     }
-
   }
 
   /**
@@ -926,12 +923,9 @@ object ResolutionError {
       import formatter.*
       s""">> Undefined restrictable type '${red(qn.toString)}'.
          |
-         |${src(loc, "type not found.")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent type?
+         |${src(loc, "type not found")}
          |""".stripMargin
     }
-
   }
 
   /**
