@@ -635,23 +635,24 @@ object ResolutionError {
   /**
     * Undefined associated type error.
     *
-    * @param qn     the associated type.
+    * @param trt    the trait symbol.
+    * @param assoc  the associated type.
     * @param assocs the available associated types on the trait.
     * @param loc    the location where the error occurred.
     */
-  case class UndefinedAssocType(qn: Name.QName, assocs: List[Symbol.AssocTypeSym], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedAssocType(trt: Symbol.TraitSym, assoc: Name.QName, assocs: List[Symbol.AssocTypeSym], loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1578
 
-    def summary: String = s"Undefined associated type: '$qn'."
+    def summary: String = s"Undefined associated type: '$assoc'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Undefined associated type '${red(qn.toString)}'.
+      s""">> Undefined associated type '${red(assoc.toString)}' in trait '${cyan(trt.name)}'.
          |
          |${src(loc, "associated type not found")}
          |
          |${underline("Explanation:")} The trait does not declare an associated type with this name.
-         |The trait defines the following associated types:
+         |The trait '${cyan(trt.name)}' defines the following associated types:
          |${assocs.map(s => s"  - '${cyan(s.name)}'").mkString("\n")}
          |""".stripMargin
     }
