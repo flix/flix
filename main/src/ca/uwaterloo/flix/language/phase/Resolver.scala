@@ -2374,7 +2374,7 @@ object Resolver {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
         val qname = Name.mkQName(nname, ident.name, ident.loc)
-        Validation.Failure(ResolutionError.UndefinedOp(qname, AnchorPosition.mkImportOrUseAnchor(ns), scp0, ident.loc))
+        Validation.Failure(ResolutionError.UndefinedOp(eff.sym, qname, AnchorPosition.mkImportOrUseAnchor(ns), scp0, ident.loc))
       case Some(op) =>
         Validation.Success(op)
     }

@@ -861,21 +861,20 @@ object ResolutionError {
   /**
     * Undefined Op Error.
     *
-    * @param qn  the qualified name of the operation.
+    * @param eff the effect symbol.
+    * @param op  the qualified name of the operation.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedOp(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedOp(eff: Symbol.EffSym, op: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E2469
 
-    def summary: String = s"Undefined operation '${qn.toString}'."
+    def summary: String = s"Undefined operation '${op.ident.name}' in effect '${eff.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Undefined operation '${red(qn.toString)}'.
+      s""">> Undefined operation '${red(op.ident.name)}' in effect '${cyan(eff.name)}'.
          |
          |${src(loc, "operation not found")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent operation?
          |""".stripMargin
     }
   }
