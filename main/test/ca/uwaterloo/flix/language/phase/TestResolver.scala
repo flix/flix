@@ -1152,6 +1152,38 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedAssocType](result)
   }
 
+  test("UndefinedAssocType.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |    type U = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
+  test("UndefinedAssocType.03") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    type U: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T = Int32
+        |    type V = Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
   test("IllegalNonJavaType.01") {
     val input =
       """
