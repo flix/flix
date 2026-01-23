@@ -944,12 +944,9 @@ object ResolutionError {
       import formatter.*
       s""">> Undefined tag '${red(qn.toString)}'.
          |
-         |${src(loc, "tag not found.")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent tag?
+         |${src(loc, "tag not found")}
          |""".stripMargin
     }
-
   }
 
   /**
@@ -972,8 +969,6 @@ object ResolutionError {
       s""">> Undefined trait '${red(qn.toString)}'.
          |
          |${src(loc, "trait not found")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent trait?
          |""".stripMargin
     }
 
@@ -996,12 +991,9 @@ object ResolutionError {
       import formatter.*
       s""">> Undefined type '${red(qn.toString)}'.
          |
-         |${src(loc, "type not found.")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent type?
+         |${src(loc, "type not found")}
          |""".stripMargin
     }
-
   }
 
   /**
@@ -1019,12 +1011,8 @@ object ResolutionError {
       import formatter.*
       s""">> Undefined type variable '${red(name)}'.
          |
-         |${src(loc, "undefined type variable.")}
-         |
-         |${underline("Explanation:")}
-         |Flix cannot find the type variable. Maybe there is a typo?
+         |${src(loc, "undefined type variable")}
          |""".stripMargin
-
     }
   }
 
@@ -1039,14 +1027,13 @@ object ResolutionError {
   case class UndefinedUse(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3138
 
-    def summary: String = s"Undefined '${qn.toString}' use."
+    def summary: String = s"Undefined use: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Undefined '${red(qn.toString)}' use.
+      s""">> Undefined use '${red(qn.toString)}'.
          |
          |${src(loc, "name not found")}
-         |
          |""".stripMargin
     }
   }
