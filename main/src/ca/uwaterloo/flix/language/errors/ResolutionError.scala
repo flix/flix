@@ -376,15 +376,15 @@ object ResolutionError {
   case class InaccessibleStruct(sym: Symbol.StructSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0562
 
-    def summary: String = "Inaccessible."
+    def summary: String = s"Inaccessible struct: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Struct '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "inaccessible struct.")}
+         |${src(loc, "inaccessible struct")}
          |
-         |${underline("Tip:")} Mark the definition as public.
+         |${underline("Tip:")} Mark the struct as 'pub'.
          |""".stripMargin
     }
   }
@@ -399,18 +399,17 @@ object ResolutionError {
   case class InaccessibleRestrictableEnum(sym: Symbol.RestrictableEnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0673
 
-    def summary: String = "Inaccessible."
+    def summary: String = s"Inaccessible enum: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "inaccessible enum.")}
+         |${src(loc, "inaccessible enum")}
          |
-         |${underline("Tip:")} Mark the definition as public.
+         |${underline("Tip:")} Mark the enum as 'pub'.
          |""".stripMargin
     }
-
   }
 
   /**
@@ -423,18 +422,17 @@ object ResolutionError {
   case class InaccessibleSig(sym: Symbol.SigSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0784
 
-    def summary: String = "Inaccessible."
+    def summary: String = s"Inaccessible signature: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Definition '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
+      s""">> Signature '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "inaccessible definition.")}
+         |${src(loc, "inaccessible signature")}
          |
-         |${underline("Tip:")} Mark the definition as public.
+         |${underline("Tip:")} Mark the signature as 'pub'.
          |""".stripMargin
     }
-
   }
 
   /**
@@ -447,18 +445,17 @@ object ResolutionError {
   case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0895
 
-    def summary: String = s"Inaccessible type alias ${sym.name}"
+    def summary: String = s"Inaccessible type alias: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Type alias '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "inaccessible type alias.")}
+         |${src(loc, "inaccessible type alias")}
          |
-         |${underline("Tip:")} Mark the type alias as public.
+         |${underline("Tip:")} Mark the type alias as 'pub'.
          |""".stripMargin
     }
-
   }
 
   /**
@@ -517,13 +514,26 @@ object ResolutionError {
   case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1134
 
-    def summary: String = s"Missing associated type definition: $name."
+    def summary: String = s"Missing associated type definition: '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing associated type definition: $name.
+      s""">> Missing associated type definition: '${red(name)}'.
          |
-         |${src(loc, s"missing associated type definition: $name.")}
+         |${src(loc, "missing definition")}
+         |
+         |${underline("Explanation:")} Every instance must define all associated types declared
+         |by the trait, unless the trait provides a default.
+         |
+         |  trait T[a] {
+         |      type U: Type            // no default
+         |      type V: Type = String   // has default
+         |  }
+         |
+         |  instance T[Int32] {
+         |      type U = String         // required
+         |      // type V uses the default
+         |  }
          |""".stripMargin
     }
   }
