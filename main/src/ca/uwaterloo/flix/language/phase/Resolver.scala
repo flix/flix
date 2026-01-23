@@ -1340,7 +1340,7 @@ object Resolver {
             case List(Resolution.JavaClass(clazz)) =>
               Validation.Success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
             case _ =>
-              val error = ResolutionError.UndefinedNewJvmClassOrStruct(className, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, "", loc)
+              val error = ResolutionError.UndefinedNew(className, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, loc)
               sctx.errors.add(error)
               Validation.Success(ResolvedAst.Expr.Error(error))
           }

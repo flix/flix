@@ -802,8 +802,6 @@ object ResolutionError {
       s""">> Undefined name '${red(qn.toString)}'.
          |
          |${src(loc, "name not found")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent definition?
          |""".stripMargin
     }
 
@@ -827,8 +825,6 @@ object ResolutionError {
       s""">> Undefined name '${red(qn.toString)}'.
          |
          |${src(loc, "name not found")}
-         |
-         |${underline("Tip:")} Possible typo or non-existent definition?
          |""".stripMargin
     }
 
@@ -837,24 +833,27 @@ object ResolutionError {
   /**
     * An error raised to indicate that class/struct name was not found in a new expression.
     *
-    * @param name the jvm class/struct name
+    * @param name the class/struct name.
     * @param ap   the anchor position.
     * @param scp  the local scope.
-    * @param msg  the error message.
     * @param loc  the location of the class/struct name.
     */
-  case class UndefinedNewJvmClassOrStruct(name: Name.Ident, ap: AnchorPosition, scp: LocalScope, msg: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedNew(name: Name.Ident, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E2358
 
-    def summary: String = s"Undefined New: '$name'."
+    def summary: String = s"Undefined class or struct: '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Undefined New '${red(name.name)}'.
+      s""">> Undefined class or struct '${red(name.name)}'.
          |
-         |${src(loc, "undefined new.")}
+         |${src(loc, "not found")}
          |
-         |$msg
+         |${underline("Explanation:")} The 'new' expression requires a Java class or Flix struct.
+         |
+         |  import java.io.File
+         |  new File("path")            // Java class (must be imported)
+         |  new S @ r { x = 1 }         // Flix struct
          |""".stripMargin
     }
   }
