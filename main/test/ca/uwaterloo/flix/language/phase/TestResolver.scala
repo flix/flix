@@ -1648,7 +1648,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
-  test("Test.InvalidOpParamCount.Handler.01") {
+  test("Test.MismatchedOpArity.Handler.01") {
     val input =
       """
         |eff E {
@@ -1665,7 +1665,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedOpArity](result)
   }
 
-  test("Test.InvalidOpParamCount.Handler.02") {
+  test("Test.MismatchedOpArity.Handler.02") {
     val input =
       """
         |eff E {

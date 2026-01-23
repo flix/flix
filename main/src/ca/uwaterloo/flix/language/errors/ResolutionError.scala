@@ -652,6 +652,7 @@ object ResolutionError {
          |${src(loc, "associated type not found")}
          |
          |${underline("Explanation:")} The trait does not declare an associated type with this name.
+         |
          |The trait '${cyan(trt.name)}' defines the following associated types:
          |${assocs.map(s => s"  - '${cyan(s.name)}'").mkString("\n")}
          |""".stripMargin
