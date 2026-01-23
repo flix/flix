@@ -689,6 +689,29 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
+  test("UndefinedNew.01") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    let _ = new NotImported();
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedNew](result)
+  }
+
+  test("UndefinedNew.02") {
+    val input =
+      raw"""
+           |import java.io.File
+           |def foo(): Unit =
+           |    let _ = new Filr("path");
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedNew](result)
+  }
+
   test("UndefinedJvmMethod.01") {
     val input =
       raw"""
