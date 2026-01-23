@@ -232,16 +232,16 @@ object ResolutionError {
   case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9843
 
-    def summary: String = s"Illegal wildcard type: '$ident'."
+    def summary: String = s"Unexpected wildcard type: '$ident'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal wildcard type: '$ident'.
+      s""">> Unexpected wildcard type: '${red(ident.toString)}'.
          |
-         |${src(loc, "illegal wildcard type.")}
+         |${src(loc, "unexpected wildcard type")}
          |
-         |${underline("Explanation:")}
-         |Wildcard types (types starting with an underscore) are not allowed in this position.
+         |${underline("Explanation:")} Wildcard types (types starting with an underscore) are
+         |not allowed in this position.
          |""".stripMargin
     }
   }
@@ -255,15 +255,21 @@ object ResolutionError {
   case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E9956
 
-    def summary: String = s"Modification of immutable field `${field.name}`."
+    def summary: String = s"Modification of immutable field '${field.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Modification of immutable field '${red(field.name)}' on ${cyan(field.structSym.toString)}'.
+      s""">> Modification of immutable field '${red(field.name)}' on '${cyan(field.structSym.toString)}'.
          |
          |${src(loc, "immutable field")}
          |
-         |Mark the field as 'mut' in the declaration of the struct.
+         |${underline("Explanation:")} Struct fields are immutable by default.
+         |To allow modification, mark the field as mutable:
+         |
+         |  struct S[r] {
+         |      x: Int32,         // immutable
+         |      mut y: Int32      // mutable
+         |  }
          |""".stripMargin
     }
   }
