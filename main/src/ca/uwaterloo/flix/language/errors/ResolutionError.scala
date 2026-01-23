@@ -1075,18 +1075,21 @@ object ResolutionError {
   case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3352
 
-    def summary: String = s"Under-applied type alias: ${sym.name}"
+    def summary: String = s"Under-applied type alias: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Under-applied type alias '${red(sym.name)}'.
          |
-         |${src(loc, "Under-applied type alias.")}
+         |${src(loc, "under-applied type alias")}
          |
-         |${underline("Tip:")} Type aliases must be fully applied.
+         |${underline("Explanation:")} Type aliases must be fully applied.
+         |
+         |  type alias T[a] = ...
+         |  def f(x: T): Unit = ...          // error: T is under-applied
+         |  def f(x: T[Int32]): Unit = ...   // ok
          |""".stripMargin
     }
-
   }
 
   /**
