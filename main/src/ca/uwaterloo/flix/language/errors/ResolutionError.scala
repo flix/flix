@@ -284,17 +284,16 @@ object ResolutionError {
   case class InaccessibleTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0124
 
-    def summary: String = "Inaccessible."
+    def summary: String = s"Inaccessible trait: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Trait '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Trait '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "inaccessible trait.")}
+         |${src(loc, "inaccessible trait")}
          |
-         |${underline("Tip:")} Mark the trait as public.
+         |${underline("Tip:")} Mark the trait as 'pub'.
          |""".stripMargin
-
     }
   }
 
@@ -308,18 +307,17 @@ object ResolutionError {
   case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0237
 
-    def summary: String = "Inaccessible."
+    def summary: String = s"Inaccessible definition: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Definition '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "inaccessible definition.")}
+         |${src(loc, "inaccessible definition")}
          |
-         |${underline("Tip:")} Mark the definition as public.
+         |${underline("Tip:")} Mark the definition as 'pub'.
          |""".stripMargin
     }
-
   }
 
   /**
@@ -332,18 +330,17 @@ object ResolutionError {
   case class InaccessibleEffect(sym: Symbol.EffSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0348
 
-    def summary: String = s"Inaccessible alias ${sym.name}"
+    def summary: String = s"Inaccessible effect: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Effect '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Effect '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "inaccessible effect.")}
+         |${src(loc, "inaccessible effect")}
          |
-         |${underline("Tip:")} Mark the effect as public.
+         |${underline("Tip:")} Mark the effect as 'pub'.
          |""".stripMargin
     }
-
   }
 
   /**
@@ -356,18 +353,17 @@ object ResolutionError {
   case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0459
 
-    def summary: String = "Inaccessible."
+    def summary: String = s"Inaccessible enum: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "inaccessible enum.")}
+         |${src(loc, "inaccessible enum")}
          |
-         |${underline("Tip:")} Mark the definition as public.
+         |${underline("Tip:")} Mark the enum as 'pub'.
          |""".stripMargin
     }
-
   }
 
   /**
@@ -384,7 +380,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Struct '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Struct '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
          |${src(loc, "inaccessible struct.")}
          |
@@ -407,7 +403,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
          |${src(loc, "inaccessible enum.")}
          |
@@ -431,7 +427,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Definition '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
          |${src(loc, "inaccessible definition.")}
          |
@@ -455,7 +451,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Type alias '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
          |${src(loc, "inaccessible type alias.")}
          |
