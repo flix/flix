@@ -574,7 +574,7 @@ object ResolutionError {
     * An error raised to indicate a `new` struct expression is missing a field.
     *
     * @param sym   the symbol of the struct.
-    * @param field the name of the missing fields.
+    * @param field the name of the missing field.
     * @param loc   the location where the error occurred.
     */
   case class MissingStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
@@ -633,7 +633,7 @@ object ResolutionError {
   }
 
   /**
-    * Undefined associated type error.
+    * Undefined Associated Type Error.
     *
     * @param trt    the trait symbol.
     * @param assoc  the associated type.
@@ -663,7 +663,7 @@ object ResolutionError {
     * Undefined Effect Error.
     *
     * @param qn  the unresolved effect.
-    * @param ap  then anchor position.
+    * @param ap  the anchor position.
     * @param ns  the current namespace.
     * @param scp the local scope.
     * @param loc the location where the error occurred.
@@ -708,7 +708,7 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that the class name in an importing was not found.
+    * An error raised to indicate that the class name in an import was not found.
     *
     * @param name the class name.
     * @param ap   the anchor position.
@@ -831,7 +831,7 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that class/struct name was not found in a new expression.
+    * An error raised to indicate that a class/struct name was not found in a new expression.
     *
     * @param name the class/struct name.
     * @param ap   the anchor position.
@@ -1039,7 +1039,7 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate an under-applied type alias.
+    * An error raised to indicate an under-applied associated type.
     *
     * @param sym the associated type.
     * @param loc the location where the error occurred.
