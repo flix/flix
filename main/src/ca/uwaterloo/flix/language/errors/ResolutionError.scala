@@ -609,15 +609,24 @@ object ResolutionError {
   case class SealedTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1467
 
-    def summary: String = "Sealed trait."
+    def summary: String = s"Sealed trait: '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Trait '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
          |
-         |${src(loc, "sealed trait.")}
+         |${src(loc, "sealed trait")}
          |
-         |${underline("Tip:")} Move the instance or subtrait to the trait's module.
+         |${underline("Explanation:")} A sealed trait can only be implemented within its declaring module.
+         |
+         |  mod M {
+         |      pub sealed trait T[a]
+         |      instance T[Int32]       // ok: same module
+         |  }
+         |  mod N {
+         |      use M.T
+         |      instance T[String]      // error: different module
+         |  }
          |""".stripMargin
     }
 
