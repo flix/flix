@@ -863,9 +863,10 @@ object ResolutionError {
     *
     * @param eff the effect symbol.
     * @param op  the qualified name of the operation.
+    * @param ops the available operations in the effect.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedOp(eff: Symbol.EffSym, op: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedOp(eff: Symbol.EffSym, op: Name.QName, ops: List[Symbol.OpSym], ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E2469
 
     def summary: String = s"Undefined operation '${op.ident.name}' in effect '${eff.name}'."
@@ -875,6 +876,12 @@ object ResolutionError {
       s""">> Undefined operation '${red(op.ident.name)}' in effect '${cyan(eff.name)}'.
          |
          |${src(loc, "operation not found")}
+         |
+         |${underline("Explanation:")} The effect does not declare an operation with this name.
+         |
+         |The effect '${cyan(eff.name)}' defines the following operations:
+         |
+         |${ops.map(o => s"  - '${cyan(o.name)}'").mkString("\n")}
          |""".stripMargin
     }
   }
