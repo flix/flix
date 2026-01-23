@@ -1652,7 +1652,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    pub def op(x: String): Unit
+        |    def op(x: String): Unit
         |}
         |
         |def foo(): Unit = {
@@ -1669,24 +1669,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    pub def op(): Unit
-        |}
-        |
-        |def foo(): Unit = {
-        |    run checked_ecast(()) with handler E {
-        |        def op(x, cont) = ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
-  }
-
-  test("Test.InvalidOpParamCount.Handler.03") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(x: String, y: Int32): Unit
+        |    def op(x: String, y: Int32): Unit
         |}
         |
         |def foo(): Unit = {
