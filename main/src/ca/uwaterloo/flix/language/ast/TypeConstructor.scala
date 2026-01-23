@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Simplifier}
+import ca.uwaterloo.flix.language.phase.{Kinder, monomorph, Simplifier}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
@@ -216,7 +216,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of channel senders.
     */
-  @EliminatedBy(Lowering.getClass)
+  @EliminatedBy(monomorph.Lowering.getClass)
   case object Sender extends TypeConstructor {
     /**
       * The shape of a sender is Sender[t].
@@ -227,7 +227,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of channel receivers.
     */
-  @EliminatedBy(Lowering.getClass)
+  @EliminatedBy(monomorph.Lowering.getClass)
   case object Receiver extends TypeConstructor {
     /**
       * The shape of a sender is Receiver[t].
