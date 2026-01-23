@@ -469,16 +469,15 @@ object ResolutionError {
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E0912
 
-    def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
+    def summary: String = s"Mismatched arity for operation '${op.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Mismatched arity.
+      s""">> Mismatched arity for operation '${red(op.name)}'.
          |
-         |The operation $op expects ${Grammar.n_things(expected, "parameter")},
-         |but ${Grammar.n_are(actual)} provided here.
+         |Expected ${Grammar.n_things(expected, "parameter")} but found $actual.
          |
-         |${src(loc, s"expected ${Grammar.n_things(expected, "parameter")} but found $actual")}
+         |${src(loc, s"expected $expected parameters")}
          |""".stripMargin
     }
   }
