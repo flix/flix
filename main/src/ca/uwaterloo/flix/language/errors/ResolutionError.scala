@@ -1047,18 +1047,23 @@ object ResolutionError {
   case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3249
 
-    def summary: String = s"Under-applied associated type: ${sym.name}"
+    def summary: String = s"Under-applied associated type '${sym.name}' in trait '${sym.trt.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Under-applied associated type '${red(sym.name)}'.
+      s""">> Under-applied associated type '${red(sym.name)}' in trait '${cyan(sym.trt.name)}'.
          |
-         |${src(loc, "Under-applied associated type.")}
+         |${src(loc, "under-applied associated type")}
          |
-         |${underline("Tip:")} Associated types must be fully applied.
+         |${underline("Explanation:")} Associated types must be fully applied.
+         |
+         |  trait T[a] {
+         |      type S[a]: Type
+         |  }
+         |  def f(x: T.S): Unit = ...      // error: T.S is under-applied
+         |  def f(x: T.S[a]): Unit = ...   // ok
          |""".stripMargin
     }
-
   }
 
   /**
