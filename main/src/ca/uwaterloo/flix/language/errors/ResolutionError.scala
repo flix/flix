@@ -580,13 +580,21 @@ object ResolutionError {
   case class MissingStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E1356
 
-    def summary: String = s"Missing struct field '$field' in new struct expression"
+    def summary: String = s"Missing struct field '$field' in new struct expression."
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Missing struct field '${red(field.toString)}' in new struct expression for struct '${cyan(sym.toString)}'.
          |
          |${src(loc, "missing field")}
+         |
+         |${underline("Explanation:")} When creating a new struct, all fields must be initialized.
+         |For example:
+         |
+         |  struct S[r] { x: Int32, y: Int32 }
+         |
+         |  new S @ r { x = 1 }           // error: missing 'y'
+         |  new S @ r { x = 1, y = 2 }    // ok
          |""".stripMargin
     }
   }
