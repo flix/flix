@@ -689,6 +689,29 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
+  test("UndefinedNew.01") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    let _ = new NotImported();
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedNew](result)
+  }
+
+  test("UndefinedNew.02") {
+    val input =
+      raw"""
+           |import java.io.File
+           |def foo(): Unit =
+           |    let _ = new Filr("path");
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedNew](result)
+  }
+
   test("UndefinedJvmMethod.01") {
     val input =
       raw"""
@@ -1146,6 +1169,38 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |instance C[String] {
         |    type T[String] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
+  test("UndefinedAssocType.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |    type U = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
+  test("UndefinedAssocType.03") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    type U: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T = Int32
+        |    type V = Bool
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1616,16 +1671,33 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
-  test("Test.InvalidOpParamCount.Handler.01") {
+  test("Test.MismatchedOpArity.Handler.01") {
     val input =
       """
         |eff E {
-        |    pub def op(x: String): Unit
+        |    def op(x: String): Unit
         |}
         |
         |def foo(): Unit = {
         |    run checked_ecast(()) with handler E {
         |        def op(x, y, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
+  test("Test.MismatchedOpArity.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String, y: Int32): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run checked_ecast(()) with handler E {
+        |        def op(cont) = ()
         |    }
         |}
         |""".stripMargin

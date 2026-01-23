@@ -136,6 +136,20 @@ A good source hint helps the user understand *why this location matters*.
 
 ---
 
+### Naming Conventions in Examples
+
+Prefer short, symbolic names over traditional placeholders like `foo` and `bar`:
+
+- `T` for traits
+- `E` for effects or enums
+- `f`, `g` for functions or operations
+- `x`, `y` for local variables
+- `a`, `b` for type variables
+
+These names are concise and immediately recognizable as placeholders.
+
+---
+
 ### Numbered Lists
 
 Use **(a)**, **(b)**, **(c)**, ... for numbered items within explanations:
