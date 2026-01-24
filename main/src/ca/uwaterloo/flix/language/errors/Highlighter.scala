@@ -117,8 +117,8 @@ object Highlighter {
   /**
     * Returns syntax-highlighted source code with a message displayed under the given location.
     */
-  def highlight(loc: SourceLocation, msg: String)(implicit fmt: Formatter, root: TypedAst.Root): String = {
-    highlightWithMessage(msg, loc, Some(root))
+  def highlight(loc: SourceLocation, msg: String, fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    highlightWithMessage(msg, loc, root)(fmt)
   }
 
   /**

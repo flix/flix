@@ -37,7 +37,7 @@ object RedundancyError {
     *
     * @param loc the location of the expression.
     */
-  case class DiscardedPureExpression(loc: SourceLocation)(implicit root: TypedAst.Root) extends RedundancyError {
+  case class DiscardedPureExpression(loc: SourceLocation) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E6736
 
     def summary: String = "Discarded pure expression."
@@ -46,7 +46,7 @@ object RedundancyError {
       import formatter.*
       s""">> Discarded pure expression.
          |
-         |${Highlighter.highlight(loc, "discarded pure expression.")(formatter, root)}
+         |${Highlighter.highlight(loc, "discarded pure expression.", formatter)}
          |
          |${underline("Explanation:")} The result of this pure expression is explicitly discarded.
          |It means the expression itself might as well be removed.
