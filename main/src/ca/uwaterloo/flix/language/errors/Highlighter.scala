@@ -111,11 +111,12 @@ object Highlighter {
     val (allTokens, _) = Lexer.lex(source)
     val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)
     val sourceStr = new String(source.data)
+    val coloring = Coloring.Highlighted(allTokens, semanticTokens)
 
     if (loc.startLine == loc.endLine)
-      highlightSingleLine(sourceStr, allTokens, semanticTokens, loc, msg)
+      highlightSingleLine(sourceStr, coloring, loc, msg)
     else
-      highlightMultiLine(sourceStr, allTokens, semanticTokens, loc, msg)
+      highlightMultiLine(sourceStr, coloring, loc, msg)
   }
 
   /**
@@ -128,11 +129,13 @@ object Highlighter {
     *              The variable 's' is unused
     * }}}
     */
-  private def highlightSingleLine(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken],
-                                  loc: SourceLocation, msg: String)(implicit formatter: Formatter): String = {
+  private def highlightSingleLine(source: String, coloring: Coloring, loc: SourceLocation, msg: String)(implicit formatter: Formatter): String = {
     val lineNo = loc.startLine
     val lineNoStr = lineNo.toString + " | "
-    val highlightedLine = applyColors(source, tokens, semanticTokens, formatter, lineNo, lineNo + 1).stripLineEnd
+    val highlightedLine = coloring match {
+      case Coloring.Plain => extractLine(source, lineNo)
+      case Coloring.Highlighted(toks, stoks) => applyColors(source, toks, stoks, formatter, lineNo, lineNo + 1).stripLineEnd
+    }
 
     val sb = new StringBuilder
     sb.append(formatter.fgColor(140, 140, 140, lineNoStr))
@@ -158,13 +161,15 @@ object Highlighter {
     * This function has unreachable code
     * }}}
     */
-  private def highlightMultiLine(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken],
-                                 loc: SourceLocation, msg: String)(implicit formatter: Formatter): String = {
+  private def highlightMultiLine(source: String, coloring: Coloring, loc: SourceLocation, msg: String)(implicit formatter: Formatter): String = {
     val numWidth = loc.endLine.toString.length
     val sb = new StringBuilder
 
     for (lineNo <- loc.startLine to loc.endLine) {
-      val highlightedLine = applyColors(source, tokens, semanticTokens, formatter, lineNo, lineNo + 1).stripLineEnd
+      val highlightedLine = coloring match {
+        case Coloring.Plain => extractLine(source, lineNo)
+        case Coloring.Highlighted(toks, stoks) => applyColors(source, toks, stoks, formatter, lineNo, lineNo + 1).stripLineEnd
+      }
       val prefix = padLeft(numWidth, lineNo.toString) + " | "
       sb.append(formatter.fgColor(140, 140, 140, prefix))
         .append(highlightedLine)
@@ -243,6 +248,16 @@ object Highlighter {
   }
 
   /**
+    * Extracts a single line from the source string (1-indexed), without the trailing newline.
+    */
+  private def extractLine(source: String, line: Int): String = {
+    val start = lineOffset(source, line)
+    val end = lineOffset(source, line + 1)
+    val lineContent = source.substring(start, end)
+    lineContent.stripLineEnd
+  }
+
+  /**
     * Returns the text wrapped in ANSI escape codes for the given semantic token type.
     */
   private def colorize(text: String, tpe: SemanticTokenType, formatter: Formatter): String = {
@@ -276,5 +291,22 @@ object Highlighter {
     case SemanticTokenType.TypeParameter => Some((248, 248, 242))
     case SemanticTokenType.EnumMember => Some((248, 248, 242))
     case _ => None
+  }
+
+  /**
+    * Represents whether syntax highlighting should be applied.
+    */
+  private sealed trait Coloring
+
+  private object Coloring {
+    /**
+      * No syntax highlighting - render plain text.
+      */
+    case object Plain extends Coloring
+
+    /**
+      * Apply syntax highlighting using the provided tokens.
+      */
+    case class Highlighted(tokens: Array[Token], semanticTokens: List[SemanticToken]) extends Coloring
   }
 }
