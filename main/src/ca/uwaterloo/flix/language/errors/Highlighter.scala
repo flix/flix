@@ -68,30 +68,43 @@ object Highlighter {
         implicit val f: Formatter = formatter
         val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
 
-        // Demo 2: Single-line location with message (line 12: "def area(s: Shape)...")
         val singleLineLoc = SourceLocation(
           isReal = true,
           source = source,
           start = SourcePosition(lineOneIndexed = 12, colOneIndexed = 10),
           end = SourcePosition(lineOneIndexed = 12, colOneIndexed = 15)
         )
-        val demo2 = highlightWithMessage("The variable 's' is unused", singleLineLoc, Some(root))
-
-        // Demo 3: Multi-line location with message (lines 12-15: the whole function)
         val multiLineLoc = SourceLocation(
           isReal = true,
           source = source,
           start = SourcePosition(lineOneIndexed = 4, colOneIndexed = 1),
           end = SourcePosition(lineOneIndexed = 16, colOneIndexed = 2)
         )
-        val demo3 = highlightWithMessage("This function has unreachable code", multiLineLoc, Some(root))
+
+        // Demo 1: Single-line without syntax highlighting (root = None)
+        val demo1 = highlightWithMessage("The variable 's' is unused", singleLineLoc, None)
+
+        // Demo 2: Multi-line without syntax highlighting (root = None)
+        val demo2 = highlightWithMessage("This function has unreachable code", multiLineLoc, None)
+
+        // Demo 3: Single-line with syntax highlighting
+        val demo3 = highlightWithMessage("The variable 's' is unused", singleLineLoc, Some(root))
+
+        // Demo 4: Multi-line with syntax highlighting
+        val demo4 = highlightWithMessage("This function has unreachable code", multiLineLoc, Some(root))
 
         s"""
-           |=== Single-line with message ===
+           |=== Single-line (no highlighting) ===
+           |$demo1
+           |
+           |=== Multi-line (no highlighting) ===
            |$demo2
            |
-           |=== Multi-line with message ===
+           |=== Single-line (with highlighting) ===
            |$demo3
+           |
+           |=== Multi-line (with highlighting) ===
+           |$demo4
            |""".stripMargin
 
       case None =>
