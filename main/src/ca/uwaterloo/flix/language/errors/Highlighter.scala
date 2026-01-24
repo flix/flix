@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.util.Formatter
 
 import java.nio.file.Paths
 
+import scala.collection.mutable
+
 object Highlighter {
 
   def main(args: Array[String]): Unit = {
@@ -248,22 +250,25 @@ object Highlighter {
   /**
     * Builds a map from (line, column) positions to semantic token types for tokens within the given line range.
     */
-  private def buildTokenMap(semanticTokens: List[SemanticToken], startLine: Int, endLine: Int): Map[(Int, Int), SemanticTokenType] = {
-    semanticTokens
-      .filter(t => t.loc.startLine >= startLine && t.loc.startLine < endLine)
-      .map { t => ((t.loc.startLine, t.loc.startCol), t.tpe) }
-      .toMap
+  private def buildTokenMap(tokens: List[SemanticToken], startLine: Int, endLine: Int): Map[(Int, Int), SemanticTokenType] = {
+    val m = mutable.Map.empty[(Int, Int), SemanticTokenType]
+    for (t <- tokens) {
+      if (startLine <= t.loc.startLine && t.loc.startLine < endLine) {
+        m((t.loc.startLine, t.loc.startCol)) = t.tpe
+      }
+    }
+    m.toMap
   }
 
   /**
     * Returns the character offset where the given 1-indexed line starts.
     * Returns source.length if line is beyond the source.
     */
-  private def lineOffset(source: String, line: Int): Int = {
+  private def lineOffset(s: String, line: Int): Int = {
     var offset = 0
     var currentLine = 1
-    while (currentLine < line && offset < source.length) {
-      if (source.charAt(offset) == '\n') currentLine += 1
+    while (currentLine < line && offset < s.length) {
+      if (s.charAt(offset) == '\n') currentLine += 1
       offset += 1
     }
     offset
@@ -272,20 +277,20 @@ object Highlighter {
   /**
     * Extracts a single line from the source string (1-indexed), without the trailing newline.
     */
-  private def extractLine(source: String, line: Int): String = {
-    val start = lineOffset(source, line)
-    val end = lineOffset(source, line + 1)
-    val lineContent = source.substring(start, end)
+  private def extractLine(s: String, line: Int): String = {
+    val start = lineOffset(s, line)
+    val end = lineOffset(s, line + 1)
+    val lineContent = s.substring(start, end)
     lineContent.stripLineEnd
   }
 
   /**
     * Returns the text wrapped in ANSI escape codes for the given semantic token type.
     */
-  private def colorize(text: String, tpe: SemanticTokenType, formatter: Formatter): String = {
+  private def colorize(s: String, tpe: SemanticTokenType, formatter: Formatter): String = {
     tokenColor(tpe) match {
-      case Some((r, g, b)) => formatter.fgColor(r, g, b, text)
-      case None => text
+      case None => s
+      case Some((r, g, b)) => formatter.fgColor(r, g, b, s)
     }
   }
 
