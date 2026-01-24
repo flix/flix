@@ -65,7 +65,6 @@ object Highlighter {
 
     optRoot match {
       case Some(root) =>
-        implicit val r: TypedAst.Root = root
         implicit val f: Formatter = formatter
         val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
 
@@ -76,7 +75,7 @@ object Highlighter {
           start = SourcePosition(lineOneIndexed = 12, colOneIndexed = 10),
           end = SourcePosition(lineOneIndexed = 12, colOneIndexed = 15)
         )
-        val demo2 = highlightWithMessage(singleLineLoc, "The variable 's' is unused")
+        val demo2 = highlightWithMessage("The variable 's' is unused", singleLineLoc, root)
 
         // Demo 3: Multi-line location with message (lines 12-15: the whole function)
         val multiLineLoc = SourceLocation(
@@ -85,7 +84,7 @@ object Highlighter {
           start = SourcePosition(lineOneIndexed = 4, colOneIndexed = 1),
           end = SourcePosition(lineOneIndexed = 16, colOneIndexed = 2)
         )
-        val demo3 = highlightWithMessage(multiLineLoc, "This function has unreachable code")
+        val demo3 = highlightWithMessage("This function has unreachable code", multiLineLoc, root)
 
         s"""
            |=== Single-line with message ===
@@ -106,17 +105,17 @@ object Highlighter {
     * For single-line locations, shows an arrow underline with the message below.
     * For multi-line locations, shows a left-line indicator with the message at the end.
     */
-  def highlightWithMessage(loc: SourceLocation, msg: String)(implicit root: TypedAst.Root, formatter: Formatter): String = {
+  def highlightWithMessage(msg: String, loc: SourceLocation, root: TypedAst.Root)(implicit formatter: Formatter): String = {
     val source = loc.source
     val (allTokens, _) = Lexer.lex(source)
-    val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)
+    val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)(root)
     val sourceStr = new String(source.data)
     val coloring = Coloring.Highlighted(allTokens, semanticTokens)
 
     if (loc.startLine == loc.endLine)
-      highlightSingleLine(sourceStr, coloring, loc, msg)
+      highlightSingleLine(msg, sourceStr, coloring, loc)
     else
-      highlightMultiLine(sourceStr, coloring, loc, msg)
+      highlightMultiLine(msg, sourceStr, coloring, loc)
   }
 
   /**
@@ -129,7 +128,7 @@ object Highlighter {
     *              The variable 's' is unused
     * }}}
     */
-  private def highlightSingleLine(source: String, coloring: Coloring, loc: SourceLocation, msg: String)(implicit formatter: Formatter): String = {
+  private def highlightSingleLine(msg: String, source: String, coloring: Coloring, loc: SourceLocation)(implicit formatter: Formatter): String = {
     val lineNo = loc.startLine
     val lineNoStr = lineNo.toString + " | "
     val highlightedLine = coloring match {
@@ -161,7 +160,7 @@ object Highlighter {
     * This function has unreachable code
     * }}}
     */
-  private def highlightMultiLine(source: String, coloring: Coloring, loc: SourceLocation, msg: String)(implicit formatter: Formatter): String = {
+  private def highlightMultiLine(msg: String, source: String, coloring: Coloring, loc: SourceLocation)(implicit formatter: Formatter): String = {
     val numWidth = loc.endLine.toString.length
     val sb = new StringBuilder
 
