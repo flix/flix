@@ -665,13 +665,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def format(flix: Flix): Result[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
-    val (_, errors) = flix.check()
-    if (errors.nonEmpty) {
-      return Result.Err(BootstrapError.GeneralError(errors.map(_.message(flix.getFormatter))))
+    Steps.check(flix).map {
+      case _ =>
+        val syntaxTree = flix.getParsedAst
+        LspFormatter.formatFiles(syntaxTree, sourcePaths)(flix)
     }
-    val syntaxTree = flix.getParsedAst
-    LspFormatter.formatFiles(syntaxTree, sourcePaths)(flix)
-    Result.Ok(())
   }
 
   /**

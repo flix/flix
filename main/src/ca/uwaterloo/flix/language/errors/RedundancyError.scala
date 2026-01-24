@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -42,7 +42,7 @@ object RedundancyError {
 
     def summary: String = "Discarded pure expression."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Discarded pure expression.
          |
@@ -72,7 +72,7 @@ object RedundancyError {
 
     def summary: String = s"Duplicate extensible pattern '${label.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate extensible pattern '${red(label.name)}'.
          |
@@ -96,7 +96,7 @@ object RedundancyError {
 
     def summary: String = s"Hidden variable symbol '${sym.text}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Hidden variable symbol '${red(sym.text)}'.
          |
@@ -118,7 +118,7 @@ object RedundancyError {
 
     def summary: String = "Redundant effect cast."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Redundant effect cast.
          |
@@ -140,7 +140,7 @@ object RedundancyError {
 
     def summary: String = "Redundant type cast."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Redundant type cast.
          |
@@ -161,7 +161,7 @@ object RedundancyError {
 
     def summary: String = "Redundant discard of unit value."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Redundant discard of unit value.
          |
@@ -185,7 +185,7 @@ object RedundancyError {
 
     def summary: String = "Redundant trait constraint."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Redundant trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
          |
@@ -213,7 +213,7 @@ object RedundancyError {
 
     def summary: String = "Redundant effect cast. The expression is already pure."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Redundant effect cast. The expression is already pure.
          |
@@ -233,7 +233,7 @@ object RedundancyError {
 
     def summary: String = "Redundant unsafe block, the expression is pure."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Redundant unsafe block, the expression is pure.
          |
@@ -256,7 +256,7 @@ object RedundancyError {
 
     def summary: String = s"Shadowed name '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Shadowed name '${red(name)}'.
          |
@@ -282,7 +282,7 @@ object RedundancyError {
 
     def summary: String = s"Shadowing name '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Shadowing name '${red(name)}'.
          |
@@ -307,7 +307,7 @@ object RedundancyError {
 
     def summary: String = s"Unused definition '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused definition '${red(sym.name)}'. The definition is never referenced.
          |
@@ -328,7 +328,7 @@ object RedundancyError {
 
     def summary: String = s"Unused effect '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused effect '${red(sym.name)}'. The effect is never referenced.
          |
@@ -349,7 +349,7 @@ object RedundancyError {
 
     def summary: String = s"Unused enum '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
@@ -371,7 +371,7 @@ object RedundancyError {
 
     def summary: String = s"Unused case '${tag.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
          |
@@ -392,7 +392,7 @@ object RedundancyError {
 
     def summary: String = s"Unused struct '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused struct '${red(sym.name)}'.
          |
@@ -413,7 +413,7 @@ object RedundancyError {
 
     def summary: String = s"Unused formal parameter '${sym.text}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
          |
@@ -438,7 +438,7 @@ object RedundancyError {
 
     def summary: String = s"Unused type parameter '${ident.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
          |
@@ -457,7 +457,7 @@ object RedundancyError {
 
     def summary: String = s"Unused type parameter '${ident.name}' in function signature."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced in the signature.
          |
@@ -476,7 +476,7 @@ object RedundancyError {
 
     def summary: String = s"Unused local variable '${sym.text}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
          |
@@ -504,7 +504,7 @@ object RedundancyError {
 
     override def summary: String = "Unreachable case."
 
-    override def message(formatter: Formatter): String = {
+    override def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unreachable case. It is covered by a '_' pattern.
          |
@@ -527,7 +527,7 @@ object RedundancyError {
 
     def summary: String = "Useless expression."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Useless expression: It is pure and its result is discarded.
          |
@@ -549,7 +549,7 @@ object RedundancyError {
 
     def summary: String = "Useless unsafe block."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Useless unsafe block.
          |

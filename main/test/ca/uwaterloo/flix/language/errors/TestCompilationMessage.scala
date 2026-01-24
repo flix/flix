@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import org.scalatest.funsuite.AnyFunSuite
@@ -19,7 +19,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
          |
          |""".stripMargin
 
-    val actual = TestCompilationMessage.messageWithLoc(NoFormatter)
+    val actual = TestCompilationMessage.messageWithLoc(NoFormatter)(None)
 
     assert(actual.replace("\r\n", "\n") == expected.replace("\r\n", "\n"))
   }
@@ -34,7 +34,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
     override def summary: String = "This is the summary."
 
-    override def message(formatter: Formatter): String = {
+    override def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> $summary
          |

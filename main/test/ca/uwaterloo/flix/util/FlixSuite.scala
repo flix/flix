@@ -120,7 +120,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
         case Result.Ok(compilationResult) =>
           runTests(compilationResult)
         case Result.Err(errors) =>
-          val es = errors.map(_.messageWithLoc(Flix.getFormatter)).mkString("\n")
+          val es = errors.map(_.messageWithLoc(Flix.getFormatter)(None)).mkString("\n")
           fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
       }
     } finally {

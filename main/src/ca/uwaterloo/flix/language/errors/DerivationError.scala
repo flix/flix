@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -41,7 +42,7 @@ object DerivationError {
 
     def summary: String = s"Unsupported derivation: '${sym.name}'"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unsupported derivation '${red(sym.name)}'.
          |
@@ -67,7 +68,7 @@ object DerivationError {
 
     def summary: String = s"Cannot derive '${traitSym.name}' for the empty enum '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Cannot derive '${magenta(traitSym.name)}' for the empty enum '${red(sym.name)}'.
          |
@@ -89,7 +90,7 @@ object DerivationError {
 
     def summary: String = s"Cannot derive 'Coerce' for the non-singleton enum '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
          |

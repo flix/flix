@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.errors.ErrorCode
 import ca.uwaterloo.flix.util.Formatter
@@ -63,12 +63,12 @@ trait CompilationMessage {
     *
     * You probably want to use [[messageWithLoc]] instead.
     */
-  def message(formatter: Formatter): String
+  def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String
 
   /**
     * Returns the error message formatted with source location.
     */
-  def messageWithLoc(formatter: Formatter): String = {
+  def messageWithLoc(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
     formatter.line(kind, code, source) + System.lineSeparator() + message(formatter)
   }
 

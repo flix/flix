@@ -34,7 +34,7 @@ object Diagnostic {
     val severity = Some(DiagnosticSeverity.Error)
     val code = m.kind.toString
     val summary = m.summary
-    val fullMessage = m.messageWithLoc(formatter)
+    val fullMessage = m.messageWithLoc(formatter)(None)
     val relatedInformation = m.locs.map(l => DiagnosticRelatedInformation(Location.from(l), m.summary))
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil, relatedInformation)
   }

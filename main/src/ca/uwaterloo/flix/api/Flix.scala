@@ -431,7 +431,7 @@ class Flix {
     * Converts a list of compiler error messages to a list of printable messages.
     */
   def mkMessages(errors: List[CompilationMessage]): List[String] = {
-    errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
+    errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter)(None))
   }
 
   /**

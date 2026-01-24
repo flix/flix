@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
@@ -41,7 +41,7 @@ object EntryPointError {
     def summary: String = s"Entry point '${sym.name}' not found."
 
     // NB: We do not print the symbol source location as it is always Unknown.
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Entry point '${red(sym.toString)}' not found.
          |
@@ -66,7 +66,7 @@ object EntryPointError {
 
     def summary: String = s"Unhandled effect: '${FormatType.formatType(eff)}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unhandled effect: '${red(FormatType.formatType(eff))}'.
          |
@@ -95,7 +95,7 @@ object EntryPointError {
 
     def summary: String = s"Unexpected type variable in entry point."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected type variable in entry point function.
          |
@@ -118,7 +118,7 @@ object EntryPointError {
 
     def summary: String = s"Unexpected name for exported function."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected name for exported function.
          |
@@ -141,7 +141,7 @@ object EntryPointError {
 
     def summary: String = s"Exported function in root namespace."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Exported function must be in a module.
          |
@@ -172,7 +172,7 @@ object EntryPointError {
 
     def summary: String = s"Unexpected type in exported function: '${FormatType.formatType(t)}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected type '${red(FormatType.formatType(t))}' in exported function.
          |
@@ -196,7 +196,7 @@ object EntryPointError {
 
     def summary: String = s"Unexpected result type for main: '${FormatType.formatType(tpe)}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected result type '${red(FormatType.formatType(tpe))}' for main.
          |
@@ -224,7 +224,7 @@ object EntryPointError {
 
     def summary: String = s"Unexpected formal parameter in entry point."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected formal parameter in entry point function.
          |
@@ -255,7 +255,7 @@ object EntryPointError {
 
     def summary: String = s"Non-public exported function."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Exported function is not public.
          |
@@ -286,7 +286,7 @@ object EntryPointError {
 
     def summary: String = s"Unexpected return type: @Test function must return Unit."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected return type: @Test function must return Unit.
          |
