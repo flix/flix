@@ -28,6 +28,10 @@ import java.nio.file.Paths
 object Highlighter {
 
   def main(args: Array[String]): Unit = {
+    println(test01(Formatter.getDefault))
+  }
+
+  def test01(formatter: Formatter): String = {
     val p =
       """
         |/// An algebraic data type for shapes.
@@ -52,10 +56,6 @@ object Highlighter {
         |
         |""".stripMargin
 
-    println(compileAndHighlight(p, Formatter.getDefault))
-  }
-
-  def compileAndHighlight(p: String, formatter: Formatter): String = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     val VirtualPath = Paths.get("__highlight__.flix")
 
