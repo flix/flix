@@ -196,16 +196,18 @@ object Highlighter {
       .toString()
   }
 
+  /**
+    * Applies syntax highlighting colors to source code within the specified line range.
+    *
+    * Iterates through lexer tokens and applies colors based on semantic token information.
+    * Returns the colorized source substring for the given line range.
+    */
   private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], formatter: Formatter, startLine: Int, endLine: Int): String = {
     // Compute substring boundaries
     val startOffset = lineOffset(source, startLine)
     val endOffset = lineOffset(source, endLine)
 
-    // Build map for semantic tokens in range
-    val tokenMap: Map[(Int, Int), SemanticTokenType] = semanticTokens
-      .filter(t => t.loc.startLine >= startLine && t.loc.startLine < endLine)
-      .map { t => ((t.loc.startLine, t.loc.startCol), t.tpe) }
-      .toMap
+    val tokenMap = buildTokenMap(semanticTokens, startLine, endLine)
 
     val sb = new StringBuilder
     var i = startOffset
@@ -241,6 +243,16 @@ object Highlighter {
     // Append any remaining text up to endOffset
     if (i < endOffset) sb.append(source.substring(i, endOffset))
     sb.toString()
+  }
+
+  /**
+    * Builds a map from (line, column) positions to semantic token types for tokens within the given line range.
+    */
+  private def buildTokenMap(semanticTokens: List[SemanticToken], startLine: Int, endLine: Int): Map[(Int, Int), SemanticTokenType] = {
+    semanticTokens
+      .filter(t => t.loc.startLine >= startLine && t.loc.startLine < endLine)
+      .map { t => ((t.loc.startLine, t.loc.startCol), t.tpe) }
+      .toMap
   }
 
   /**
