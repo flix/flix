@@ -55,10 +55,10 @@ object Highlighter {
         |
         |""".stripMargin
 
-    println(highlight(p, Formatter.getDefault))
+    println(compileAndHighlight(p, Formatter.getDefault))
   }
 
-  def highlight(p: String, formatter: Formatter): String = {
+  def compileAndHighlight(p: String, formatter: Formatter): String = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
 
     val flix = new Flix().addVirtualPath(VirtualPath, p)
@@ -66,17 +66,18 @@ object Highlighter {
 
     optRoot match {
       case Some(root) =>
+        implicit val r: TypedAst.Root = root
+        implicit val f: Formatter = formatter
         val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
-        highlight(source, root, formatter)
+        highlight(source)
 
       case None =>
         p // Compilation failed - return unchanged
     }
   }
 
-  def highlight(source: Source, root: TypedAst.Root, formatter: Formatter): String = {
+  def highlight(source: Source)(implicit root: TypedAst.Root, formatter: Formatter): String = {
     val (allTokens, _) = Lexer.lex(source)
-    implicit val r: TypedAst.Root = root
     val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)
     applyColors(new String(source.data), allTokens, semanticTokens, formatter)
   }
