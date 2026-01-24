@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -42,11 +43,11 @@ object RedundancyError {
 
     def summary: String = "Discarded pure expression."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Discarded pure expression.
          |
-         |${Highlighter.highlight(loc, "discarded pure expression.", formatter)}
+         |${highlight(loc, "discarded pure expression.", fmt)}
          |
          |${underline("Explanation:")} The result of this pure expression is explicitly discarded.
          |It means the expression itself might as well be removed.
@@ -72,8 +73,8 @@ object RedundancyError {
 
     def summary: String = s"Duplicate extensible pattern '${label.name}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Duplicate extensible pattern '${red(label.name)}'.
          |
          |${src(loc1, "first occurrence.")}
@@ -96,8 +97,8 @@ object RedundancyError {
 
     def summary: String = s"Hidden variable symbol '${sym.text}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Hidden variable symbol '${red(sym.text)}'.
          |
          |${src(loc, "hidden symbol.")}
@@ -118,8 +119,8 @@ object RedundancyError {
 
     def summary: String = "Redundant effect cast."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Redundant effect cast.
          |
          |${src(loc, "redundant cast.")}
@@ -140,8 +141,8 @@ object RedundancyError {
 
     def summary: String = "Redundant type cast."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Redundant type cast.
          |
          |${src(loc, "redundant cast.")}
@@ -161,8 +162,8 @@ object RedundancyError {
 
     def summary: String = "Redundant discard of unit value."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Redundant discard of unit value.
          |
          |${src(loc, "discarded unit value.")}
@@ -185,8 +186,8 @@ object RedundancyError {
 
     def summary: String = "Redundant trait constraint."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Redundant trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
          |
          |${src(loc, "redundant trait constraint.")}
@@ -213,8 +214,8 @@ object RedundancyError {
 
     def summary: String = "Redundant effect cast. The expression is already pure."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Redundant effect cast. The expression is already pure.
          |
          |${src(loc, "redundant cast.")}
@@ -233,8 +234,8 @@ object RedundancyError {
 
     def summary: String = "Redundant unsafe block, the expression is pure."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Redundant unsafe block, the expression is pure.
          |
          |${src(loc, "redundant unsafe block.")}
@@ -256,8 +257,8 @@ object RedundancyError {
 
     def summary: String = s"Shadowed name '$name'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Shadowed name '${red(name)}'.
          |
          |${src(shadowed, "shadowed name.")}
@@ -282,8 +283,8 @@ object RedundancyError {
 
     def summary: String = s"Shadowing name '$name'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Shadowing name '${red(name)}'.
          |
          |${src(shadowing, "shadowing name.")}
@@ -307,8 +308,8 @@ object RedundancyError {
 
     def summary: String = s"Unused definition '${sym.name}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused definition '${red(sym.name)}'. The definition is never referenced.
          |
          |${src(sym.loc, "unused definition.")}
@@ -328,8 +329,8 @@ object RedundancyError {
 
     def summary: String = s"Unused effect '${sym.name}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused effect '${red(sym.name)}'. The effect is never referenced.
          |
          |${src(sym.loc, "unused effect.")}
@@ -349,8 +350,8 @@ object RedundancyError {
 
     def summary: String = s"Unused enum '${sym.name}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
          |${src(sym.loc, "unused enum.")}
@@ -371,8 +372,8 @@ object RedundancyError {
 
     def summary: String = s"Unused case '${tag.name}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
          |
          |${src(tag.loc, "unused tag.")}
@@ -392,8 +393,8 @@ object RedundancyError {
 
     def summary: String = s"Unused struct '${sym.name}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused struct '${red(sym.name)}'.
          |
          |${src(sym.loc, "unused struct.")}
@@ -413,8 +414,8 @@ object RedundancyError {
 
     def summary: String = s"Unused formal parameter '${sym.text}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
          |
          |${src(sym.loc, "unused formal parameter.")}
@@ -438,8 +439,8 @@ object RedundancyError {
 
     def summary: String = s"Unused type parameter '${ident.name}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
          |
          |${src(ident.loc, "unused type parameter.")}
@@ -457,8 +458,8 @@ object RedundancyError {
 
     def summary: String = s"Unused type parameter '${ident.name}' in function signature."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced in the signature.
          |
          |${src(ident.loc, "type parameter unused in function signature.")}
@@ -476,8 +477,8 @@ object RedundancyError {
 
     def summary: String = s"Unused local variable '${sym.text}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
          |
          |${src(sym.loc, "unused local variable.")}
@@ -504,8 +505,8 @@ object RedundancyError {
 
     override def summary: String = "Unreachable case."
 
-    override def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    override def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unreachable case. It is covered by a '_' pattern.
          |
          |${src(loc, "unreachable case.")}
@@ -527,8 +528,8 @@ object RedundancyError {
 
     def summary: String = "Useless expression."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Useless expression: It is pure and its result is discarded.
          |
          |${src(loc, "useless expression.")}
@@ -549,8 +550,8 @@ object RedundancyError {
 
     def summary: String = "Useless unsafe block."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Useless unsafe block.
          |
          |${src(loc, "useless unsafe block.")}
