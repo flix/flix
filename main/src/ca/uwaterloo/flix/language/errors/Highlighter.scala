@@ -75,7 +75,7 @@ object Highlighter {
           start = SourcePosition(lineOneIndexed = 12, colOneIndexed = 10),
           end = SourcePosition(lineOneIndexed = 12, colOneIndexed = 15)
         )
-        val demo2 = highlightWithMessage("The variable 's' is unused", singleLineLoc, root)
+        val demo2 = highlightWithMessage("The variable 's' is unused", singleLineLoc, Some(root))
 
         // Demo 3: Multi-line location with message (lines 12-15: the whole function)
         val multiLineLoc = SourceLocation(
@@ -84,7 +84,7 @@ object Highlighter {
           start = SourcePosition(lineOneIndexed = 4, colOneIndexed = 1),
           end = SourcePosition(lineOneIndexed = 16, colOneIndexed = 2)
         )
-        val demo3 = highlightWithMessage("This function has unreachable code", multiLineLoc, root)
+        val demo3 = highlightWithMessage("This function has unreachable code", multiLineLoc, Some(root))
 
         s"""
            |=== Single-line with message ===
@@ -105,12 +105,16 @@ object Highlighter {
     * For single-line locations, shows an arrow underline with the message below.
     * For multi-line locations, shows a left-line indicator with the message at the end.
     */
-  def highlightWithMessage(msg: String, loc: SourceLocation, root: TypedAst.Root)(implicit formatter: Formatter): String = {
+  def highlightWithMessage(msg: String, loc: SourceLocation, root: Option[TypedAst.Root])(implicit formatter: Formatter): String = {
     val source = loc.source
-    val (allTokens, _) = Lexer.lex(source)
-    val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)(root)
     val sourceStr = new String(source.data)
-    val coloring = Coloring.Highlighted(allTokens, semanticTokens)
+    val coloring = root match {
+      case None => Coloring.Plain
+      case Some(r) =>
+        val (allTokens, _) = Lexer.lex(source)
+        val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)(r)
+        Coloring.Highlighted(allTokens, semanticTokens)
+    }
 
     if (loc.startLine == loc.endLine)
       highlightSingleLine(msg, sourceStr, coloring, loc)
