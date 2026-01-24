@@ -76,7 +76,7 @@ object Highlighter {
           start = SourcePosition(lineOneIndexed = 12, colOneIndexed = 10),
           end = SourcePosition(lineOneIndexed = 12, colOneIndexed = 15)
         )
-        val demo2 = highlightWithMessage(source, singleLineLoc, "The variable 's' is unused")
+        val demo2 = highlightWithMessage(singleLineLoc, "The variable 's' is unused")
 
         // Demo 3: Multi-line location with message (lines 12-15: the whole function)
         val multiLineLoc = SourceLocation(
@@ -85,7 +85,7 @@ object Highlighter {
           start = SourcePosition(lineOneIndexed = 4, colOneIndexed = 1),
           end = SourcePosition(lineOneIndexed = 16, colOneIndexed = 2)
         )
-        val demo3 = highlightWithMessage(source, multiLineLoc, "This function has unreachable code")
+        val demo3 = highlightWithMessage(multiLineLoc, "This function has unreachable code")
 
         s"""
            |=== Single-line with message ===
@@ -106,7 +106,8 @@ object Highlighter {
     * For single-line locations, shows an arrow underline with the message below.
     * For multi-line locations, shows a left-line indicator with the message at the end.
     */
-  private def highlightWithMessage(source: Source, loc: SourceLocation, msg: String)(implicit root: TypedAst.Root, formatter: Formatter): String = {
+  private def highlightWithMessage(loc: SourceLocation, msg: String)(implicit root: TypedAst.Root, formatter: Formatter): String = {
+    val source = loc.source
     val (allTokens, _) = Lexer.lex(source)
     val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)
     val sourceStr = new String(source.data)
