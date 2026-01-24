@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
@@ -32,7 +33,7 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
 
   def summary: String = "The expression is not stratified. A predicate depends strongly on itself."
 
-  def message(formatter: Formatter): String = {
+  def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
     import formatter.*
     s""">> The expression is not stratified. A predicate depends strongly on itself.
        |

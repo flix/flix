@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -152,7 +152,7 @@ object ParseError {
 
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter): String = {
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
       s""">> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
          |
@@ -174,7 +174,7 @@ object ParseError {
 
     def summary: String = s"Misplaced comment(s)."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Misplaced comment(s).
          |
@@ -197,7 +197,7 @@ object ParseError {
 
     def summary: String = s"Misplaced doc-comment(s)."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Misplaced doc-comment(s).
          |
@@ -221,7 +221,7 @@ object ParseError {
 
     def summary: String = s"Expected region on ${token.display}."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Expected ${red("region")} on ${cyan(token.display)}.
          |
@@ -246,7 +246,7 @@ object ParseError {
 
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter): String = {
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
       s""">> Expected at least one ${expected.display(fmt)}.
          |
@@ -269,7 +269,7 @@ object ParseError {
 
     def summary: String = s"Trailing ${separator.display}."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Trailing ${red(separator.display)}.
          |
@@ -298,7 +298,7 @@ object ParseError {
       s"$expectedStr$actualStr."
     }
 
-    def message(fmt: Formatter): String = {
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
       val expectedStr = s"Expected ${expected.display(fmt)}"
       val actualStr = actual.map(a => s" before ${fmt.red(a.display)}").getOrElse("")

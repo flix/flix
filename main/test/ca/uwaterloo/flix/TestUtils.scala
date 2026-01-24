@@ -48,7 +48,7 @@ trait TestUtils {
   }
 
   private def errorString(errors: Seq[CompilationMessage]): String = {
-    errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString("\n\n")
+    errors.map(_.messageWithLoc(Formatter.NoFormatter)(None)).mkString("\n\n")
   }
 
   /**

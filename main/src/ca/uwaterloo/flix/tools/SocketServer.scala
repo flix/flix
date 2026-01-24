@@ -211,7 +211,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Result.Err(errors) =>
           // Compilation failed. Retrieve, sort, format and concatenate all the errors.
-          Err(errors.toList.sortBy(_.loc).map(err => err.messageWithLoc(flix.getFormatter)).mkString("\n"))
+          Err(errors.toList.sortBy(_.loc).map(err => err.messageWithLoc(flix.getFormatter)(None)).mkString("\n"))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)

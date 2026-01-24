@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 import ca.uwaterloo.flix.util.Formatter
 
@@ -41,7 +41,7 @@ object KindError {
 
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched kinds: '${red(formatKind(k1))}' and '${red(formatKind(k2))}'.
          |
@@ -72,7 +72,7 @@ object KindError {
 
     override def summary: String = s"Unexpected kind: expected '${formatKind(expectedKind)}', found '${formatKind(actualKind)}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected kind: expected '${cyan(formatKind(expectedKind))}', found '${red(formatKind(actualKind))}'.
          |
@@ -94,7 +94,7 @@ object KindError {
 
     override def summary: String = "Uninferrable kind: cannot determine kind from context."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Uninferrable kind: cannot determine kind from context.
          |

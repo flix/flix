@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -41,7 +41,7 @@ object NameError {
 
     def summary: String = "Deprecated feature."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Deprecated feature.
          |
@@ -64,7 +64,7 @@ object NameError {
 
     def summary: String = s"Duplicate definition: '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate definition: '${red(name)}'.
          |
@@ -96,7 +96,7 @@ object NameError {
 
     def summary: String = s"Duplicate definition: '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate definition: '${red(name)}'.
          |
@@ -121,7 +121,7 @@ object NameError {
 
     def summary: String = s"Orphaned module: '$sym' (missing parent '$parentSym')."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Orphaned module: '${magenta(sym.toString)}' (missing parent '${red(parentSym.toString)}').
          |
@@ -151,7 +151,7 @@ object NameError {
 
     def summary: String = s"Mismatched module and file: '$qname' in '$path'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched module and file: '${magenta(qname.toString)}' in '${red(path.toString)}'.
          |
@@ -179,7 +179,7 @@ object NameError {
 
     def summary: String = s"Reserved name: '${name.name}' cannot be redefined."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Reserved name: '${red(name.name)}' cannot be redefined.
          |
@@ -204,7 +204,7 @@ object NameError {
 
     def summary: String = s"Suspicious type variable: '$name'. Did you mean '${name.capitalize}'?"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Suspicious type variable: '${red(name)}'. Did you mean '${cyan(name.capitalize)}'?
          |

@@ -686,7 +686,7 @@ class TestCompletionProvider extends AnyFunSuite {
       case (Some(root), Nil) => root
       case (_, errors) =>
         for (error <- errors) {
-          val msg = error.message(NoFormatter)
+          val msg = error.message(NoFormatter)(None)
           println(msg)
         }
         fail("Compilation failed.")

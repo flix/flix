@@ -667,7 +667,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     val (_, errors) = flix.check()
     if (errors.nonEmpty) {
-      return Result.Err(BootstrapError.GeneralError(errors.map(_.message(flix.getFormatter))))
+      return Result.Err(BootstrapError.GeneralError(errors.map(_.message(flix.getFormatter)(None))))
     }
     val syntaxTree = flix.getParsedAst
     LspFormatter.formatFiles(syntaxTree, sourcePaths)(flix)

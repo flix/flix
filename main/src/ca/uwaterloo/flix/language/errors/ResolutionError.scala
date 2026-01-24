@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst, UnkindedType}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -41,7 +41,7 @@ object ResolutionError {
 
     def summary: String = s"Cyclic trait hierarchy: ${path.map(_.name).mkString(", ")}."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Cyclic trait hierarchy: ${red(path.map(_.name).mkString(", "))}.
          |
@@ -63,7 +63,7 @@ object ResolutionError {
 
     def summary: String = s"Cyclic type aliases: ${path.map(_.name).mkString(", ")}."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Cyclic type aliases: ${red(path.map(_.name).mkString(", "))}.
          |
@@ -86,7 +86,7 @@ object ResolutionError {
 
     def summary: String = s"Duplicate associated type definition: $sym."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate associated type definition: ${red(sym.name)}.
          |
@@ -111,7 +111,7 @@ object ResolutionError {
 
     def summary: String = s"Duplicate derivation: ${sym.name}"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate derivation '${red(sym.name)}'.
          |
@@ -137,7 +137,7 @@ object ResolutionError {
 
     def summary: String = s"Unexpected field '$field' in new struct expression"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected field '${red(field.toString)}' in new struct expression.
          |
@@ -158,7 +158,7 @@ object ResolutionError {
 
     def summary: String = "Unexpected associated type application."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected associated type application.
          |
@@ -183,7 +183,7 @@ object ResolutionError {
 
     def summary: String = "Unexpected non-Java type. Expected class or interface type."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected non-Java type: '${red(tpe.toString)}'.
          |
@@ -206,7 +206,7 @@ object ResolutionError {
 
     def summary: String = s"Unexpected signature which does not mention the type variable '${tvar.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable '${cyan(tvar.toString)}'.
          |
@@ -234,7 +234,7 @@ object ResolutionError {
 
     def summary: String = s"Unexpected wildcard type: '$ident'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected wildcard type: '${red(ident.toString)}'.
          |
@@ -257,7 +257,7 @@ object ResolutionError {
 
     def summary: String = s"Modification of immutable field '${field.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Modification of immutable field '${red(field.name)}' on '${cyan(field.structSym.toString)}'.
          |
@@ -286,7 +286,7 @@ object ResolutionError {
 
     def summary: String = s"Inaccessible trait: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Trait '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
@@ -309,7 +309,7 @@ object ResolutionError {
 
     def summary: String = s"Inaccessible definition: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Definition '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
@@ -332,7 +332,7 @@ object ResolutionError {
 
     def summary: String = s"Inaccessible effect: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Effect '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
@@ -355,7 +355,7 @@ object ResolutionError {
 
     def summary: String = s"Inaccessible enum: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
@@ -378,7 +378,7 @@ object ResolutionError {
 
     def summary: String = s"Inaccessible struct: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Struct '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
@@ -401,7 +401,7 @@ object ResolutionError {
 
     def summary: String = s"Inaccessible enum: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
@@ -424,7 +424,7 @@ object ResolutionError {
 
     def summary: String = s"Inaccessible signature: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Signature '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
@@ -447,7 +447,7 @@ object ResolutionError {
 
     def summary: String = s"Inaccessible type alias: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Type alias '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
@@ -471,7 +471,7 @@ object ResolutionError {
 
     def summary: String = s"Mismatched arity for operation '${op.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched arity for operation '${red(op.name)}'.
          |
@@ -495,7 +495,7 @@ object ResolutionError {
 
     def summary: String = s"Mismatched arity for tag '${caze.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched arity for tag '${red(caze.name)}'.
          |
@@ -517,7 +517,7 @@ object ResolutionError {
 
     def summary: String = s"Missing associated type definition: '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Missing associated type definition: '${red(name)}'.
          |
@@ -550,7 +550,7 @@ object ResolutionError {
 
     def summary: String = s"Missing handler definition: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Missing handler definition '${red(sym.name)}' for effect '${cyan(sym.eff.name)}'.
          |
@@ -582,7 +582,7 @@ object ResolutionError {
 
     def summary: String = s"Missing struct field '$field' in new struct expression."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Missing struct field '${red(field.toString)}' in new struct expression for struct '${cyan(sym.toString)}'.
          |
@@ -611,7 +611,7 @@ object ResolutionError {
 
     def summary: String = s"Sealed trait: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Trait '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
          |
@@ -645,7 +645,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined associated type: '$assoc'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined associated type '${red(assoc.toString)}' in trait '${cyan(trt.name)}'.
          |
@@ -673,7 +673,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined effect '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined effect '${red(qn.toString)}'.
          |
@@ -696,7 +696,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined Java class: '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined Java class '${red(name.name)}'.
          |
@@ -720,7 +720,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined Java class: '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined Java class '${red(name)}'.
          |
@@ -754,7 +754,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined static field: '${field.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
          |
@@ -775,7 +775,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined kind: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined kind '${red(qn.toString)}'.
          |
@@ -797,7 +797,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined name: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined name '${red(qn.toString)}'.
          |
@@ -820,7 +820,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined name: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined name '${red(qn.toString)}'.
          |
@@ -843,7 +843,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined class or struct: '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined class or struct '${red(name.name)}'.
          |
@@ -871,7 +871,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined operation '${op.ident.name}' in effect '${eff.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined operation '${red(op.ident.name)}' in effect '${cyan(eff.name)}'.
          |
@@ -898,7 +898,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined restrictable tag: '$tag'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined restrictable tag '${red(tag)}'.
          |
@@ -919,7 +919,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined restrictable type: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined restrictable type '${red(qn.toString)}'.
          |
@@ -940,7 +940,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined tag: '$qn'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined tag '${red(qn.toString)}'.
          |
@@ -964,7 +964,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined trait: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined trait '${red(qn.toString)}'.
          |
@@ -987,7 +987,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined type: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined type '${red(qn.toString)}'.
          |
@@ -1007,7 +1007,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined type variable '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined type variable '${red(name)}'.
          |
@@ -1029,7 +1029,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined use: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined use '${red(qn.toString)}'.
          |
@@ -1049,7 +1049,7 @@ object ResolutionError {
 
     def summary: String = s"Under-applied associated type '${sym.name}' in trait '${sym.trt.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Under-applied associated type '${red(sym.name)}' in trait '${cyan(sym.trt.name)}'.
          |
@@ -1077,7 +1077,7 @@ object ResolutionError {
 
     def summary: String = s"Under-applied type alias: '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Under-applied type alias '${red(sym.name)}'.
          |
@@ -1103,7 +1103,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined struct"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined struct '${red(name.toString)}'.
          |
@@ -1124,7 +1124,7 @@ object ResolutionError {
 
     def summary: String = s"Undefined struct field '$field'$structMessage"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined struct field '${red(field.toString)}'$structMessage.
          |
