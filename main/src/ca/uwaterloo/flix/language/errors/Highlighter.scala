@@ -196,12 +196,6 @@ object Highlighter {
       .toString()
   }
 
-  /**
-    * Returns the string `s` left-padded with spaces to the given `width`.
-    */
-  private def padLeft(width: Int, s: String): String =
-    String.format("%" + width + "s", s)
-
   private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], formatter: Formatter, startLine: Int, endLine: Int): String = {
     // Compute substring boundaries
     val startOffset = lineOffset(source, startLine)
@@ -282,6 +276,12 @@ object Highlighter {
       case None => text
     }
   }
+
+  /**
+    * Returns the string `s` left-padded with spaces to the given `width`.
+    */
+  private def padLeft(width: Int, s: String): String =
+    String.format("%" + width + "s", s)
 
   /**
     * Returns the RGB color for the given semantic token type, if any.
