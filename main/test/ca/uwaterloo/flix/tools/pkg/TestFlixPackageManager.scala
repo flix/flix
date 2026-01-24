@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
@@ -700,7 +701,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case _ => false
     }
 
-    (forbidden, flix.mkMessages(errors).mkString(System.lineSeparator()))
+    (forbidden, CompilationMessage.formatAll(errors).mkString(System.lineSeparator()))
   }
 
 }

@@ -41,7 +41,7 @@ class TestBootstrap extends AnyFunSuite {
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix = PkgTestUtils.mkFlix
     b.build(flix)
-    b.buildJar(flix)(Formatter.getDefault)
+    b.buildJar(flix)
 
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
@@ -55,7 +55,7 @@ class TestBootstrap extends AnyFunSuite {
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix = PkgTestUtils.mkFlix
     b.build(flix)
-    b.buildJar(flix)(Formatter.getDefault)
+    b.buildJar(flix)
 
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
@@ -78,14 +78,14 @@ class TestBootstrap extends AnyFunSuite {
     flix1.setOptions(flix1.options.copy(threads = 1))
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildJar(flix1)(Formatter.getDefault)
+    b.buildJar(flix1)
     val hash1 = calcHash(jarPath)
 
     // Use new flix instance to reset symbol generation
     val flix2 = PkgTestUtils.mkFlix
     // Use 1 thread for deterministic symbols
     flix2.setOptions(flix2.options.copy(threads = 1))
-    b.buildJar(flix2)(Formatter.getDefault)
+    b.buildJar(flix2)
     val hash2 = calcHash(jarPath)
 
     assert(
