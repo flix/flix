@@ -61,27 +61,27 @@ object Highlighter {
   def highlight(p: String, formatter: Formatter): String = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
 
-    // Lex source to get ALL tokens (root.tokens only has keywords/modifiers/comments)
-    val source = Source.fromString(Input.Unknown, p)
-    val (allTokens, _) = Lexer.lex(source)
-
     val flix = new Flix().addVirtualPath(VirtualPath, p)
     val (optRoot, _) = flix.check()
 
     optRoot match {
       case Some(root) =>
-        implicit val r: TypedAst.Root = root
-        val semanticTokens = SemanticTokensProvider.getSemanticTokens(VirtualPath.toString)
-        applyColors(p, allTokens, semanticTokens, formatter)
+        val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
+        highlight(source, root, formatter)
 
       case None =>
         p // Compilation failed - return unchanged
     }
   }
 
-  private def applyColors(source: String, tokens: Array[Token],
-    semanticTokens: List[SemanticToken],
-    formatter: Formatter): String = {
+  def highlight(source: Source, root: TypedAst.Root, formatter: Formatter): String = {
+    val (allTokens, _) = Lexer.lex(source)
+    implicit val r: TypedAst.Root = root
+    val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)
+    applyColors(new String(source.data), allTokens, semanticTokens, formatter)
+  }
+
+  private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], formatter: Formatter): String = {
     // Build map: (line, col) -> SemanticTokenType using SemanticToken.loc directly
     val tokenMap: Map[(Int, Int), SemanticTokenType] = semanticTokens.map { t =>
       ((t.loc.startLine, t.loc.startCol), t.tpe)
@@ -94,7 +94,7 @@ object Highlighter {
         sb.append(source.substring(i, token.startIndex))
       }
       val text = token.text
-      val key = (token.start.lineOneIndexed.toInt, token.start.colOneIndexed.toInt)
+      val key = (token.start.lineOneIndexed, token.start.colOneIndexed.toInt)
       tokenMap.get(key) match {
         case Some(tpe) => sb.append(colorize(text, tpe, formatter))
         case None => sb.append(text)
