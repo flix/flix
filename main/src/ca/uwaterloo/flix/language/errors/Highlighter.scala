@@ -96,7 +96,7 @@ object Highlighter {
       val text = token.text
       val key = (token.start.lineOneIndexed.toInt, token.start.colOneIndexed.toInt)
       tokenMap.get(key) match {
-        case Some(tpe) => sb.append(colorize(text, tpe))
+        case Some(tpe) => sb.append(colorize(text, tpe, formatter))
         case None => sb.append(text)
       }
       i = token.endIndex
@@ -109,9 +109,9 @@ object Highlighter {
   /**
     * Returns the text wrapped in ANSI escape codes for the given semantic token type.
     */
-  private def colorize(text: String, tpe: SemanticTokenType): String = {
+  private def colorize(text: String, tpe: SemanticTokenType, formatter: Formatter): String = {
     tokenColor(tpe) match {
-      case Some((r, g, b)) => s"\u001b[38;2;$r;$g;${b}m$text\u001b[0m"
+      case Some((r, g, b)) => formatter.fgColor(r, g, b, text)
       case None => text
     }
   }

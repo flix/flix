@@ -131,6 +131,8 @@ trait Formatter {
 
   def underline(s: String): String
 
+  def fgColor(r: Int, g: Int, b: Int, s: String): String
+
   private def padLeft(width: Int, s: String): String = String.format("%" + width + "s", s)
 
   /**
@@ -185,6 +187,8 @@ object Formatter {
 
     override def underline(s: String): String = s
 
+    override def fgColor(r: Int, g: Int, b: Int, s: String): String = s
+
   }
 
   /**
@@ -228,7 +232,7 @@ object Formatter {
 
     override def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
 
-    private def fgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[38;2;$r;$g;${b}m" + s + escape() + "[0m"
+    override def fgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[38;2;$r;$g;${b}m" + s + escape() + "[0m"
 
     private def bgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[48;2;$r;$g;${b}m" + s + escape() + "[0m"
 
