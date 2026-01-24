@@ -27,23 +27,6 @@ import java.nio.file.Paths
 
 object Highlighter {
 
-  // Virtual file path for the source
-  private val VirtualPath = Paths.get("__highlight__.flix")
-
-  /**
-    * Returns the character offset where the given 1-indexed line starts.
-    * Returns source.length if line is beyond the source.
-    */
-  private def lineOffset(source: String, line: Int): Int = {
-    var offset = 0
-    var currentLine = 1
-    while (currentLine < line && offset < source.length) {
-      if (source.charAt(offset) == '\n') currentLine += 1
-      offset += 1
-    }
-    offset
-  }
-
   def main(args: Array[String]): Unit = {
     val p =
       """
@@ -74,6 +57,8 @@ object Highlighter {
 
   def compileAndHighlight(p: String, formatter: Formatter): String = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    val VirtualPath = Paths.get("__highlight__.flix")
+
 
     val flix = new Flix().addVirtualPath(VirtualPath, p)
     val (optRoot, _) = flix.check()
@@ -83,7 +68,7 @@ object Highlighter {
         implicit val r: TypedAst.Root = root
         implicit val f: Formatter = formatter
         val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
-        highlight(source, 4, 9)
+        highlight(source, 4, 13)
 
       case None =>
         p // Compilation failed - return unchanged
@@ -143,6 +128,19 @@ object Highlighter {
     sb.toString()
   }
 
+  /**
+    * Returns the character offset where the given 1-indexed line starts.
+    * Returns source.length if line is beyond the source.
+    */
+  private def lineOffset(source: String, line: Int): Int = {
+    var offset = 0
+    var currentLine = 1
+    while (currentLine < line && offset < source.length) {
+      if (source.charAt(offset) == '\n') currentLine += 1
+      offset += 1
+    }
+    offset
+  }
 
   /**
     * Returns the text wrapped in ANSI escape codes for the given semantic token type.
