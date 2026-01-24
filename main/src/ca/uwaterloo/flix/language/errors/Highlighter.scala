@@ -30,6 +30,20 @@ object Highlighter {
   // Virtual file path for the source
   private val VirtualPath = Paths.get("__highlight__.flix")
 
+  /**
+    * Returns the character offset where the given 1-indexed line starts.
+    * Returns source.length if line is beyond the source.
+    */
+  private def lineOffset(source: String, line: Int): Int = {
+    var offset = 0
+    var currentLine = 1
+    while (currentLine < line && offset < source.length) {
+      if (source.charAt(offset) == '\n') currentLine += 1
+      offset += 1
+    }
+    offset
+  }
+
   def main(args: Array[String]): Unit = {
     val p =
       """
@@ -69,40 +83,63 @@ object Highlighter {
         implicit val r: TypedAst.Root = root
         implicit val f: Formatter = formatter
         val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
-        highlight(source)
+        highlight(source, 4, 9)
 
       case None =>
         p // Compilation failed - return unchanged
     }
   }
 
-  def highlight(source: Source)(implicit root: TypedAst.Root, formatter: Formatter): String = {
+  def highlight(source: Source, startLine: Int, endLine: Int)(implicit root: TypedAst.Root, formatter: Formatter): String = {
     val (allTokens, _) = Lexer.lex(source)
     val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)
-    applyColors(new String(source.data), allTokens, semanticTokens, formatter)
+    applyColors(new String(source.data), allTokens, semanticTokens, formatter, startLine, endLine)
   }
 
-  private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], formatter: Formatter): String = {
-    // Build map: (line, col) -> SemanticTokenType using SemanticToken.loc directly
-    val tokenMap: Map[(Int, Int), SemanticTokenType] = semanticTokens.map { t =>
-      ((t.loc.startLine, t.loc.startCol), t.tpe)
-    }.toMap
+  private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], formatter: Formatter, startLine: Int, endLine: Int): String = {
+    // Compute substring boundaries
+    val startOffset = lineOffset(source, startLine)
+    val endOffset = lineOffset(source, endLine)
+
+    // Build map for semantic tokens in range
+    val tokenMap: Map[(Int, Int), SemanticTokenType] = semanticTokens
+      .filter(t => t.loc.startLine >= startLine && t.loc.startLine < endLine)
+      .map { t => ((t.loc.startLine, t.loc.startCol), t.tpe) }
+      .toMap
 
     val sb = new StringBuilder
-    var i = 0
-    for (token <- tokens.sortBy(_.startIndex) if token.kind != TokenKind.Eof) {
-      if (token.startIndex > i) {
-        sb.append(source.substring(i, token.startIndex))
+    var i = startOffset
+
+    // Tokens are already sorted by position from the lexer - use index loop for early exit
+    var idx = 0
+    while (idx < tokens.length) {
+      val token = tokens(idx)
+      val tokenLine = token.start.lineOneIndexed
+
+      if (tokenLine < startLine) {
+        // Skip tokens before the range
+        idx += 1
+      } else if (tokenLine >= endLine || token.kind == TokenKind.Eof) {
+        // Past the range or EOF - done
+        idx = tokens.length
+      } else {
+        // Token is in range
+        if (token.startIndex > i) {
+          sb.append(source.substring(i, token.startIndex))
+        }
+        val text = token.text
+        val key = (tokenLine, token.start.colOneIndexed.toInt)
+        tokenMap.get(key) match {
+          case Some(tpe) => sb.append(colorize(text, tpe, formatter))
+          case None => sb.append(text)
+        }
+        i = token.endIndex
+        idx += 1
       }
-      val text = token.text
-      val key = (token.start.lineOneIndexed, token.start.colOneIndexed.toInt)
-      tokenMap.get(key) match {
-        case Some(tpe) => sb.append(colorize(text, tpe, formatter))
-        case None => sb.append(text)
-      }
-      i = token.endIndex
     }
-    if (i < source.length) sb.append(source.substring(i))
+
+    // Append any remaining text up to endOffset
+    if (i < endOffset) sb.append(source.substring(i, endOffset))
     sb.toString()
   }
 
