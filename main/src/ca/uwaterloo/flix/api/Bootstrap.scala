@@ -451,7 +451,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
       EffectLock.lock(root) match {
-        case Err(e) => return Err(BootstrapError.GeneralError(List(s"Unexpected serialization error: $e")))
+        case Err(e) => return Err(BootstrapError.GeneralError(s"Unexpected serialization error: $e"))
         case Ok(json) =>
           val path = Bootstrap.getEffectLockFile(projectPath)
           // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
@@ -693,7 +693,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def test(flix: Flix): Result[Unit, BootstrapError] = {
     for {
       compilationResult <- build(flix)
-      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError(List("Tester Error")))
+      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError("Tester Error"))
     } yield {
       res
     }
@@ -1099,7 +1099,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter))))
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter)).mkString(System.lineSeparator())))
           }
       }
     }

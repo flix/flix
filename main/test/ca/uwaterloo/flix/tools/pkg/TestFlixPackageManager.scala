@@ -701,7 +701,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case _ => false
     }
 
-    (forbidden, CompilationMessage.formatAll(errors).mkString(System.lineSeparator()))
+    (forbidden, CompilationMessage.formatAll(errors))
   }
 
 }
