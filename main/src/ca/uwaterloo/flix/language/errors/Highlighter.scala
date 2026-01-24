@@ -303,7 +303,7 @@ object Highlighter {
   /**
     * Returns the RGB color for the given semantic token type, if any.
     *
-    * Uses Flixify Dark theme colors: https://github.com/flix/vscode-flix/blob/master/themes/flixify-dark.json
+    * Uses Flixify Dark theme colors: https://github.com/flix/flixify-dark/blob/master/themes/flixify-dark.json
     */
   private def tokenColor(tpe: SemanticTokenType): Option[(Int, Int, Int)] = tpe match {
     case SemanticTokenType.Keyword => Some((250, 62, 131))
@@ -317,7 +317,7 @@ object Highlighter {
     case SemanticTokenType.Type => Some((102, 217, 239))
     case SemanticTokenType.Enum => Some((102, 217, 239))
     case SemanticTokenType.Interface => Some((102, 217, 239))
-    case SemanticTokenType.Class => Some((102, 217, 239))
+    case SemanticTokenType.Class => Some((248, 248, 242))
     case SemanticTokenType.Variable => Some((200, 200, 194))
     case SemanticTokenType.Parameter => Some((200, 200, 194))
     case SemanticTokenType.Property => Some((200, 200, 194))
