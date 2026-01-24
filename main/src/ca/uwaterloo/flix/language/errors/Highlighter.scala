@@ -106,7 +106,7 @@ object Highlighter {
     * For single-line locations, shows an arrow underline with the message below.
     * For multi-line locations, shows a left-line indicator with the message at the end.
     */
-  private def highlightWithMessage(loc: SourceLocation, msg: String)(implicit root: TypedAst.Root, formatter: Formatter): String = {
+  def highlightWithMessage(loc: SourceLocation, msg: String)(implicit root: TypedAst.Root, formatter: Formatter): String = {
     val source = loc.source
     val (allTokens, _) = Lexer.lex(source)
     val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)
