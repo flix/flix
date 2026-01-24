@@ -33,7 +33,7 @@ object Highlighter {
     println(test01(Formatter.getDefault))
   }
 
-  def test01(formatter: Formatter): String = {
+  def test01(fmt: Formatter): String = {
     val p =
       """
         |/// An algebraic data type for shapes.
@@ -67,7 +67,7 @@ object Highlighter {
 
     optRoot match {
       case Some(root) =>
-        implicit val f: Formatter = formatter
+        implicit val f: Formatter = fmt
         val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
 
         val singleLineLoc = SourceLocation(
@@ -117,7 +117,7 @@ object Highlighter {
   /**
     * Returns syntax-highlighted source code with a message displayed under the given location.
     */
-  def highlight(loc: SourceLocation, msg: String)(implicit formatter: Formatter, root: TypedAst.Root): String = {
+  def highlight(loc: SourceLocation, msg: String)(implicit fmt: Formatter, root: TypedAst.Root): String = {
     highlightWithMessage(msg, loc, Some(root))
   }
 
@@ -127,7 +127,7 @@ object Highlighter {
     * For single-line locations, shows an arrow underline with the message below.
     * For multi-line locations, shows a left-line indicator with the message at the end.
     */
-  private def highlightWithMessage(msg: String, loc: SourceLocation, root: Option[TypedAst.Root])(implicit formatter: Formatter): String = {
+  private def highlightWithMessage(msg: String, loc: SourceLocation, root: Option[TypedAst.Root])(implicit fmt: Formatter): String = {
     val source = loc.source
     val sourceStr = new String(source.data)
     val coloring = root match {
@@ -154,20 +154,20 @@ object Highlighter {
     *              The variable 's' is unused
     * }}}
     */
-  private def highlightSingleLine(msg: String, source: String, coloring: Coloring, loc: SourceLocation)(implicit formatter: Formatter): String = {
+  private def highlightSingleLine(msg: String, source: String, coloring: Coloring, loc: SourceLocation)(implicit fmt: Formatter): String = {
     val lineNo = loc.startLine
     val lineNoStr = lineNo.toString + " | "
     val highlightedLine = coloring match {
       case Coloring.Plain => extractLine(source, lineNo)
-      case Coloring.Highlighted(toks, stoks) => applyColors(source, toks, stoks, formatter, lineNo, lineNo + 1).stripLineEnd
+      case Coloring.Highlighted(toks, stoks) => applyColors(source, toks, stoks, lineNo, lineNo + 1).stripLineEnd
     }
 
     val sb = new StringBuilder
-    sb.append(formatter.fgColor(140, 140, 140, lineNoStr))
+    sb.append(fmt.fgColor(140, 140, 140, lineNoStr))
       .append(highlightedLine)
       .append(System.lineSeparator())
       .append(" " * (loc.startCol + lineNoStr.length - 1))
-      .append(formatter.red("^" * (loc.endCol - loc.startCol)))
+      .append(fmt.red("^" * (loc.endCol - loc.startCol)))
       .append(System.lineSeparator())
       .append(" " * (loc.startCol + lineNoStr.length - 1))
       .append(msg)
@@ -186,17 +186,17 @@ object Highlighter {
     * This function has unreachable code
     * }}}
     */
-  private def highlightMultiLine(msg: String, source: String, coloring: Coloring, loc: SourceLocation)(implicit formatter: Formatter): String = {
+  private def highlightMultiLine(msg: String, source: String, coloring: Coloring, loc: SourceLocation)(implicit fmt: Formatter): String = {
     val numWidth = loc.endLine.toString.length
     val sb = new StringBuilder
 
     for (lineNo <- loc.startLine to loc.endLine) {
       val highlightedLine = coloring match {
         case Coloring.Plain => extractLine(source, lineNo)
-        case Coloring.Highlighted(toks, stoks) => applyColors(source, toks, stoks, formatter, lineNo, lineNo + 1).stripLineEnd
+        case Coloring.Highlighted(toks, stoks) => applyColors(source, toks, stoks, lineNo, lineNo + 1).stripLineEnd
       }
       val prefix = padLeft(numWidth, lineNo.toString) + " | "
-      sb.append(formatter.fgColor(140, 140, 140, prefix))
+      sb.append(fmt.fgColor(140, 140, 140, prefix))
         .append(highlightedLine)
         .append(System.lineSeparator())
     }
@@ -211,7 +211,7 @@ object Highlighter {
     * Iterates through lexer tokens and applies colors based on semantic token information.
     * Returns the colorized source substring for the given line range.
     */
-  private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], formatter: Formatter, startLine: Int, endLine: Int): String = {
+  private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], startLine: Int, endLine: Int)(implicit fmt: Formatter): String = {
     // Compute substring boundaries
     val startOffset = lineOffset(source, startLine)
     val endOffset = lineOffset(source, endLine)
@@ -241,7 +241,7 @@ object Highlighter {
         val text = token.text
         val key = (tokenLine, token.start.colOneIndexed.toInt)
         tokenMap.get(key) match {
-          case Some(tpe) => sb.append(colorize(text, tpe, formatter))
+          case Some(tpe) => sb.append(colorize(text, tpe, fmt))
           case None => sb.append(text)
         }
         i = token.endIndex
@@ -294,10 +294,10 @@ object Highlighter {
   /**
     * Returns the text wrapped in ANSI escape codes for the given semantic token type.
     */
-  private def colorize(s: String, tpe: SemanticTokenType, formatter: Formatter): String = {
+  private def colorize(s: String, tpe: SemanticTokenType, fmt: Formatter): String = {
     tokenColor(tpe) match {
       case None => s
-      case Some((r, g, b)) => formatter.fgColor(r, g, b, s)
+      case Some((r, g, b)) => fmt.fgColor(r, g, b, s)
     }
   }
 
