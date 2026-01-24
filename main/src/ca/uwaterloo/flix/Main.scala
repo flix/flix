@@ -180,7 +180,7 @@ object Main {
               System.exit(0)
 
             case Result.Err(errors) =>
-              flix.mkMessages(errors.toList.sortBy(_.source.name)).foreach(println)
+              CompilationMessage.formatAll(errors.toList.sortBy(_.source.name)).foreach(println)
               println()
               println(s"Compilation failed with ${errors.length} error(s).")
               System.exit(1)
@@ -727,7 +727,7 @@ object Main {
     * Prints compilation errors and exits with code 1.
     */
   private def exitWithErrors(flix: Flix, errors: List[CompilationMessage]): Unit = {
-    flix.mkMessages(errors.sortBy(_.source.name)).foreach(println)
+    CompilationMessage.formatAll(errors.sortBy(_.source.name))(flix.getFormatter).foreach(println)
     println()
     println(s"Found ${errors.size} error(s).")
     System.exit(1)

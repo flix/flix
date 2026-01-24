@@ -409,7 +409,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Prints the list of errors using the `flix` instance to the implicit terminal.
     */
   private def printErrors(errors: List[CompilationMessage])(implicit terminal: Terminal): Unit = {
-    for (msg <- flix.mkMessages(errors)) {
+    for (msg <- CompilationMessage.formatAll(errors)(flix.getFormatter)) {
       terminal.writer().println(msg)
     }
     terminal.writer().println()

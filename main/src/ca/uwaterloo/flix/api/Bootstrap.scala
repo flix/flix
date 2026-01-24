@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 import ca.uwaterloo.flix.api.lsp.Formatter as LspFormatter
+import ca.uwaterloo.flix.language.CompilationMessage
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -353,7 +354,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(flix: Flix)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def buildJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     Steps.updateStaleSources(flix)
     for {
@@ -373,7 +374,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a fatjar package for the project.
     */
-  def buildFatJar(flix: Flix)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def buildFatJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     val libDir = Bootstrap.getLibraryDirectory(projectPath)
     Steps.updateStaleSources(flix)
@@ -947,7 +948,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (errors.isEmpty) {
         Ok(optRoot.get)
       } else {
-        Err(BootstrapError.GeneralError(flix.mkMessages(errors)))
+        Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter)))
       }
     }
 
@@ -959,7 +960,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
       flix.compile() match {
         case Validation.Success(result: CompilationResult) => Ok(result)
-        case Validation.Failure(errors) => Err(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
+        case Validation.Failure(errors) => Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors.toList)(flix.getFormatter)))
       }
     }
 

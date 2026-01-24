@@ -77,6 +77,13 @@ trait CompilationMessage {
 object CompilationMessage {
 
   /**
+    * Returns the given list of `errors` as a human-readable pretty printed string.
+    */
+  def formatAll(errors: List[CompilationMessage])(implicit fmt: Formatter): List[String] = {
+    errors.sortBy(_.loc).map(cm => cm.messageWithLoc(fmt)(None))
+  }
+
+  /**
     * Filters compilation messages to prevent cascading errors.
     *
     * When an error occurs in an early phase (e.g., lexer), it often causes spurious errors
