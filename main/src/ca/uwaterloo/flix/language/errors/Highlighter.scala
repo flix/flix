@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{SemanticToken, SemanticTokenType}
 import ca.uwaterloo.flix.api.lsp.provider.SemanticTokensProvider
-import ca.uwaterloo.flix.language.ast.{Token, TokenKind, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter
@@ -68,18 +68,117 @@ object Highlighter {
         implicit val r: TypedAst.Root = root
         implicit val f: Formatter = formatter
         val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
-        highlight(source, 4, 13)
+
+        // Demo 2: Single-line location with message (line 12: "def area(s: Shape)...")
+        val singleLineLoc = SourceLocation(
+          isReal = true,
+          source = source,
+          start = SourcePosition(lineOneIndexed = 12, colOneIndexed = 10),
+          end = SourcePosition(lineOneIndexed = 12, colOneIndexed = 15)
+        )
+        val demo2 = highlightWithMessage(source, singleLineLoc, "The variable 's' is unused")
+
+        // Demo 3: Multi-line location with message (lines 12-15: the whole function)
+        val multiLineLoc = SourceLocation(
+          isReal = true,
+          source = source,
+          start = SourcePosition(lineOneIndexed = 4, colOneIndexed = 1),
+          end = SourcePosition(lineOneIndexed = 16, colOneIndexed = 2)
+        )
+        val demo3 = highlightWithMessage(source, multiLineLoc, "This function has unreachable code")
+
+        s"""
+           |=== Single-line with message ===
+           |$demo2
+           |
+           |=== Multi-line with message ===
+           |$demo3
+           |""".stripMargin
 
       case None =>
         p // Compilation failed - return unchanged
     }
   }
 
-  def highlight(source: Source, startLine: Int, endLine: Int)(implicit root: TypedAst.Root, formatter: Formatter): String = {
+  /**
+    * Returns syntax-highlighted source code with a message displayed under the given location.
+    *
+    * For single-line locations, shows an arrow underline with the message below.
+    * For multi-line locations, shows a left-line indicator with the message at the end.
+    */
+  private def highlightWithMessage(source: Source, loc: SourceLocation, msg: String)(implicit root: TypedAst.Root, formatter: Formatter): String = {
     val (allTokens, _) = Lexer.lex(source)
     val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)
-    applyColors(new String(source.data), allTokens, semanticTokens, formatter, startLine, endLine)
+    val sourceStr = new String(source.data)
+
+    if (loc.startLine == loc.endLine)
+      highlightSingleLine(sourceStr, allTokens, semanticTokens, loc, msg)
+    else
+      highlightMultiLine(sourceStr, allTokens, semanticTokens, loc, msg)
   }
+
+  /**
+    * Returns syntax-highlighted code for a single-line location with an arrow underline and message.
+    *
+    * Example output:
+    * {{{
+    * 10 | def area(s: Shape): Int32 = match s {
+    *              ^^^^^
+    *              The variable 's' is unused
+    * }}}
+    */
+  private def highlightSingleLine(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken],
+                                  loc: SourceLocation, msg: String)(implicit formatter: Formatter): String = {
+    val lineNo = loc.startLine
+    val lineNoStr = lineNo.toString + " | "
+    val highlightedLine = applyColors(source, tokens, semanticTokens, formatter, lineNo, lineNo + 1).stripLineEnd
+
+    val sb = new StringBuilder
+    sb.append(formatter.fgColor(140, 140, 140, lineNoStr))
+      .append(highlightedLine)
+      .append(System.lineSeparator())
+      .append(" " * (loc.startCol + lineNoStr.length - 1))
+      .append(formatter.red("^" * (loc.endCol - loc.startCol)))
+      .append(System.lineSeparator())
+      .append(" " * (loc.startCol + lineNoStr.length - 1))
+      .append(msg)
+      .toString()
+  }
+
+  /**
+    * Returns syntax-highlighted code for a multi-line location with gray line prefixes and message.
+    *
+    * Example output:
+    * {{{
+    * 10 | def area(s: Shape): Int32 = match s {
+    * 11 |     case Shape.Circle(r) => 3 * (r * r)
+    * 12 | }
+    *
+    * This function has unreachable code
+    * }}}
+    */
+  private def highlightMultiLine(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken],
+                                 loc: SourceLocation, msg: String)(implicit formatter: Formatter): String = {
+    val numWidth = loc.endLine.toString.length
+    val sb = new StringBuilder
+
+    for (lineNo <- loc.startLine to loc.endLine) {
+      val highlightedLine = applyColors(source, tokens, semanticTokens, formatter, lineNo, lineNo + 1).stripLineEnd
+      val prefix = padLeft(numWidth, lineNo.toString) + " | "
+      sb.append(formatter.fgColor(140, 140, 140, prefix))
+        .append(highlightedLine)
+        .append(System.lineSeparator())
+    }
+    sb.append(System.lineSeparator())
+      .append(msg)
+      .toString()
+  }
+
+  /**
+    * Returns the string `s` left-padded with spaces to the given `width`.
+    */
+  private def padLeft(width: Int, s: String): String =
+    String.format("%" + width + "s", s)
 
   private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], formatter: Formatter, startLine: Int, endLine: Int): String = {
     // Compute substring boundaries
