@@ -116,11 +116,18 @@ object Highlighter {
 
   /**
     * Returns syntax-highlighted source code with a message displayed under the given location.
+    */
+  def highlight(loc: SourceLocation, msg: String)(implicit formatter: Formatter, root: TypedAst.Root): String = {
+    highlightWithMessage(msg, loc, Some(root))
+  }
+
+  /**
+    * Returns syntax-highlighted source code with a message displayed under the given location.
     *
     * For single-line locations, shows an arrow underline with the message below.
     * For multi-line locations, shows a left-line indicator with the message at the end.
     */
-  def highlightWithMessage(msg: String, loc: SourceLocation, root: Option[TypedAst.Root])(implicit formatter: Formatter): String = {
+  private def highlightWithMessage(msg: String, loc: SourceLocation, root: Option[TypedAst.Root])(implicit formatter: Formatter): String = {
     val source = loc.source
     val sourceStr = new String(source.data)
     val coloring = root match {

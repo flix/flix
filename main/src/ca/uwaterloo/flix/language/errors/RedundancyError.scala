@@ -37,7 +37,7 @@ object RedundancyError {
     *
     * @param loc the location of the expression.
     */
-  case class DiscardedPureExpression(loc: SourceLocation) extends RedundancyError {
+  case class DiscardedPureExpression(loc: SourceLocation)(implicit root: TypedAst.Root) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E6736
 
     def summary: String = "Discarded pure expression."
@@ -46,7 +46,7 @@ object RedundancyError {
       import formatter.*
       s""">> Discarded pure expression.
          |
-         |${src(loc, "discarded pure expression.")}
+         |${Highlighter.highlight(loc, "discarded pure expression.")(formatter, root)}
          |
          |${underline("Explanation:")} The result of this pure expression is explicitly discarded.
          |It means the expression itself might as well be removed.
@@ -420,7 +420,7 @@ object RedundancyError {
          |${src(sym.loc, "unused formal parameter.")}
          |
          |${underline("Explanation:")} Flix does not allow unused formal parameters.
-         |An unused formal parameter can be prefixed with an underscore to suppress 
+         |An unused formal parameter can be prefixed with an underscore to suppress
          |this error.
          |""".stripMargin
     }
@@ -482,8 +482,8 @@ object RedundancyError {
          |
          |${src(sym.loc, "unused local variable.")}
          |
-         |${underline("Explanation:")} Flix does not allow unused local variables. 
-         |An unused local variable can be prefixed with an underscore to suppress 
+         |${underline("Explanation:")} Flix does not allow unused local variables.
+         |An unused local variable can be prefixed with an underscore to suppress
          |this error. For example:
          |
          |    let _${sym.text} = <exp>
