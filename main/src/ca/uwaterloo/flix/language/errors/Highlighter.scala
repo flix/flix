@@ -80,8 +80,8 @@ object Highlighter {
   }
 
   private def applyColors(source: String, tokens: Array[Token],
-                          semanticTokens: List[SemanticToken],
-                          formatter: Formatter): String = {
+    semanticTokens: List[SemanticToken],
+    formatter: Formatter): String = {
     // Build map: (line, col) -> SemanticTokenType using SemanticToken.loc directly
     val tokenMap: Map[(Int, Int), SemanticTokenType] = semanticTokens.map { t =>
       ((t.loc.startLine, t.loc.startCol), t.tpe)
@@ -105,21 +105,40 @@ object Highlighter {
     sb.toString()
   }
 
-  // Flixify Dark theme colors
+
+  /**
+    * Returns the text wrapped in ANSI escape codes for the given semantic token type.
+    */
   private def colorize(text: String, tpe: SemanticTokenType): String = {
-    val color = tpe match {
-      case SemanticTokenType.Keyword | SemanticTokenType.Modifier => (0fa, 0x3e, 0x83)
-      case SemanticTokenType.Comment => (0x8c, 0x8c, 0x8c)
-      case SemanticTokenType.String => (0xff, 0xee, 0x99)
-      case SemanticTokenType.Number => (0xff, 0x8c, 0xf5)
-      case SemanticTokenType.Regexp => (0xff, 0xee, 0x99)
-      case SemanticTokenType.Function | SemanticTokenType.Method => (0xac, 0xe3, 0x40)
-      case SemanticTokenType.Type | SemanticTokenType.Enum | SemanticTokenType.Interface | SemanticTokenType.Class => (0x66, 0xd9, 0xef)
-      case SemanticTokenType.Variable | SemanticTokenType.Parameter | SemanticTokenType.Property => (0xc8, 0xc8, 0xc2)
-      case SemanticTokenType.TypeParameter | SemanticTokenType.EnumMember => (0xf8, 0xf8, 0xf2)
-      case _ => return text // no coloring
+    tokenColor(tpe) match {
+      case Some((r, g, b)) => s"\u001b[38;2;$r;$g;${b}m$text\u001b[0m"
+      case None => text
     }
-    val (r, g, b) = color
-    s"\u001b[38;2;$r;$g;${b}m$text\u001b[0m"
+  }
+
+  /**
+    * Returns the RGB color for the given semantic token type, if any.
+    *
+    * Uses Flixify Dark theme colors: https://github.com/flix/vscode-flix/blob/master/themes/flixify-dark.json
+    */
+  private def tokenColor(tpe: SemanticTokenType): Option[(Int, Int, Int)] = tpe match {
+    case SemanticTokenType.Keyword => Some((250, 62, 131))
+    case SemanticTokenType.Modifier => Some((250, 62, 131))
+    case SemanticTokenType.Comment => Some((140, 140, 140))
+    case SemanticTokenType.String => Some((255, 238, 153))
+    case SemanticTokenType.Number => Some((255, 140, 245))
+    case SemanticTokenType.Regexp => Some((255, 238, 153))
+    case SemanticTokenType.Function => Some((172, 227, 64))
+    case SemanticTokenType.Method => Some((172, 227, 64))
+    case SemanticTokenType.Type => Some((102, 217, 239))
+    case SemanticTokenType.Enum => Some((102, 217, 239))
+    case SemanticTokenType.Interface => Some((102, 217, 239))
+    case SemanticTokenType.Class => Some((102, 217, 239))
+    case SemanticTokenType.Variable => Some((200, 200, 194))
+    case SemanticTokenType.Parameter => Some((200, 200, 194))
+    case SemanticTokenType.Property => Some((200, 200, 194))
+    case SemanticTokenType.TypeParameter => Some((248, 248, 242))
+    case SemanticTokenType.EnumMember => Some((248, 248, 242))
+    case _ => None
   }
 }
