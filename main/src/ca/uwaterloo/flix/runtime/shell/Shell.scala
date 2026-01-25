@@ -393,8 +393,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case (Some(r), Nil) =>
         this.root = Some(r)
         Validation.Success(flix.codeGen(r))
-      case (_, errors) =>
-        printErrors(errors, None)
+      case (rootOpt, errors) =>
+        printErrors(errors, rootOpt)
         Validation.Failure(Chain.from(errors))
     }
   }
