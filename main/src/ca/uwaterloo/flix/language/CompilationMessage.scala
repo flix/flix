@@ -77,6 +77,26 @@ trait CompilationMessage {
 object CompilationMessage {
 
   /**
+    * Returns the given list of `errors` as a human-readable pretty printed string.
+    */
+  def formatAll(errors: List[CompilationMessage])(implicit fmt: Formatter, root: Option[TypedAst.Root] = None): String = {
+    val sb = new StringBuilder()
+    val sorted = errors.sortBy(_.loc)
+    for ((cm, i) <- sorted.zipWithIndex) {
+      sb.append(cm.messageWithLoc(fmt))
+      if (i < sorted.size - 1) {
+        sb.append(System.lineSeparator())
+      }
+    }
+    if (errors.size > 1) {
+      sb.append(System.lineSeparator())
+      sb.append(System.lineSeparator())
+      sb.append(s"Compilation failed with ${errors.size} error(s).")
+    }
+    sb.toString()
+  }
+
+  /**
     * Filters compilation messages to prevent cascading errors.
     *
     * When an error occurs in an early phase (e.g., lexer), it often causes spurious errors

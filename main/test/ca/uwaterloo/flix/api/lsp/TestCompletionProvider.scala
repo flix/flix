@@ -27,8 +27,8 @@ import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, Sy
 import java.nio.file.Path
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
+import ca.uwaterloo.flix.util.{Formatter, Options}
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
@@ -684,12 +684,8 @@ class TestCompletionProvider extends AnyFunSuite {
     Flix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
     Flix.check() match {
       case (Some(root), Nil) => root
-      case (_, errors) =>
-        for (error <- errors) {
-          val msg = error.message(NoFormatter)(None)
-          println(msg)
-        }
-        fail("Compilation failed.")
+      case (optRoot, errors) =>
+        fail(CompilationMessage.formatAll(errors)(NoFormatter, optRoot))
     }
   }
 

@@ -16,6 +16,8 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.util.StatUtils.{minimum, average, median}
@@ -447,7 +449,8 @@ object CompilerPerf {
       if (frontendOnly) {
         val (optRoot, errors) = flix.check()
         if (errors.nonEmpty) {
-          throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
+          println(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
+          System.exit(1)
         }
         optRoot.get.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
