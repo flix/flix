@@ -80,7 +80,20 @@ object CompilationMessage {
     * Returns the given list of `errors` as a human-readable pretty printed string.
     */
   def formatAll(errors: List[CompilationMessage])(implicit fmt: Formatter): String = {
-    errors.sortBy(_.loc).map(cm => cm.messageWithLoc(fmt)(None)).mkString(System.lineSeparator())
+    val sb = new StringBuilder()
+    val sorted = errors.sortBy(_.loc)
+    for ((cm, i) <- sorted.zipWithIndex) {
+      sb.append(cm.messageWithLoc(fmt)(None))
+      if (i < sorted.size - 1) {
+        sb.append(System.lineSeparator())
+      }
+    }
+    if (errors.size > 1) {
+      sb.append(System.lineSeparator())
+      sb.append(System.lineSeparator())
+      sb.append(s"Compilation failed with ${errors.size} error(s).")
+    }
+    sb.toString()
   }
 
   /**

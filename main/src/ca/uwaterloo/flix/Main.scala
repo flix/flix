@@ -181,8 +181,6 @@ object Main {
 
             case Result.Err(errors) =>
               println(CompilationMessage.formatAll(errors.toList.sortBy(_.source.name)))
-              println()
-              println(s"Compilation failed with ${errors.length} error(s).")
               System.exit(1)
           }
 
@@ -727,9 +725,7 @@ object Main {
     * Prints compilation errors and exits with code 1.
     */
   private def exitWithErrors(flix: Flix, errors: List[CompilationMessage]): Unit = {
-    println(CompilationMessage.formatAll(errors.sortBy(_.source.name))(flix.getFormatter))
-    println()
-    println(s"Found ${errors.size} error(s).")
+    println(CompilationMessage.formatAll(errors)(flix.getFormatter))
     System.exit(1)
   }
 
