@@ -79,11 +79,11 @@ object CompilationMessage {
   /**
     * Returns the given list of `errors` as a human-readable pretty printed string.
     */
-  def formatAll(errors: List[CompilationMessage])(implicit fmt: Formatter): String = {
+  def formatAll(errors: List[CompilationMessage])(implicit fmt: Formatter, root: Option[TypedAst.Root] = None): String = {
     val sb = new StringBuilder()
     val sorted = errors.sortBy(_.loc)
     for ((cm, i) <- sorted.zipWithIndex) {
-      sb.append(cm.messageWithLoc(fmt)(None))
+      sb.append(cm.messageWithLoc(fmt))
       if (i < sorted.size - 1) {
         sb.append(System.lineSeparator())
       }

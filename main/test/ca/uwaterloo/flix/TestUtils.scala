@@ -91,7 +91,7 @@ trait TestUtils {
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toResult match {
     case Result.Ok(_) => ()
     case Result.Err(errors) =>
-      fail(CompilationMessage.formatAll(errors.toList)(Formatter.NoFormatter))
+      fail(CompilationMessage.formatAll(errors.toList)(Formatter.NoFormatter, None))
   }
 
   /**

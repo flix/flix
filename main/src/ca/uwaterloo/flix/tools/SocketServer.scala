@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -212,7 +213,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Result.Err(errors) =>
           // Compilation failed. Format and return all the errors.
-          Err(CompilationMessage.formatAll(errors.toList)(flix.getFormatter))
+          Err(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)

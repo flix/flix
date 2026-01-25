@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.Phase
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetUnification}
@@ -320,7 +321,7 @@ object ZhegalkinPerf {
     // Run the Flix compiler
     val (root, errors) = flix.check()
     if (errors.nonEmpty) {
-      println(CompilationMessage.formatAll(errors)(flix.getFormatter))
+      println(CompilationMessage.formatAll(errors)(flix.getFormatter, root))
       System.exit(1)
     }
     val totalLines = root.get.sources.foldLeft(0) {

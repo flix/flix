@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -157,7 +158,7 @@ object BenchmarkCompilerOld {
       if (frontend) {
         val (optRoot, errors) = flix.check()
         if (errors.nonEmpty) {
-          println(CompilationMessage.formatAll(errors)(flix.getFormatter))
+          println(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
           System.exit(1)
         }
         val root = optRoot.get

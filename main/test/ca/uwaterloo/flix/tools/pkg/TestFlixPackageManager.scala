@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
@@ -695,13 +696,12 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       flix.addPkg(path)(sctx)
     }
 
-    val (_, errors) = flix.check()
+    val (optRoot, errors) = flix.check()
     val forbidden = errors.exists {
       case _: SafetyError.Forbidden => true
       case _ => false
     }
-
-    (forbidden, CompilationMessage.formatAll(errors))
+    (forbidden, CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
   }
 
 }

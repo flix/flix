@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
@@ -121,7 +122,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
         case Result.Ok(compilationResult) =>
           runTests(compilationResult)
         case Result.Err(errors) =>
-          fail(CompilationMessage.formatAll(errors.toList)(Flix.getFormatter))
+          fail(CompilationMessage.formatAll(errors.toList)(Flix.getFormatter, None))
       }
     } finally {
       // Remove the source path.

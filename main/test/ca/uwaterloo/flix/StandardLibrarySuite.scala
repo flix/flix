@@ -18,6 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.{FileOps, Options, Result}
@@ -50,7 +51,7 @@ class StandardLibrarySuite extends AnyFunSuite {
       case Result.Ok(compilationResult) =>
         runTests(compilationResult)
       case Result.Err(errors) =>
-        fail(CompilationMessage.formatAll(errors.toList)(flix.getFormatter))
+        fail(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
     }
   } catch {
     case ex: Throwable =>

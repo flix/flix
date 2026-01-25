@@ -948,7 +948,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (errors.isEmpty) {
         Ok(optRoot.get)
       } else {
-        Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter)))
+        Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot)))
       }
     }
 
@@ -960,7 +960,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
       flix.compile() match {
         case Validation.Success(result: CompilationResult) => Ok(result)
-        case Validation.Failure(errors) => Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors.toList)(flix.getFormatter)))
+        case Validation.Failure(errors) =>
+          Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None)))
       }
     }
 
