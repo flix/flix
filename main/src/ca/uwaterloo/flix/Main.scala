@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, Formatter as LspFormatter}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -169,18 +169,17 @@ object Main {
           flix.setFormatter(formatter)
 
           // evaluate main.
-          flix.compile().toResult match {
-            case Result.Ok(compilationResult) =>
-              compilationResult.getMain match {
+          flix.check() match {
+            case (Some(root), Nil) =>
+              flix.codeGen(root).getMain match {
                 case None => // nop
                 case Some(m) =>
                   // Invoke main with the supplied arguments.
                   m(cmdOpts.args.toArray)
               }
               System.exit(0)
-
-            case Result.Err(errors) =>
-              println(CompilationMessage.formatAll(errors.toList.sortBy(_.source.name))(formatter, None))
+            case (optRoot, errors) =>
+              println(CompilationMessage.formatAll(errors)(formatter, optRoot))
               System.exit(1)
           }
 
@@ -448,28 +447,28 @@ object Main {
     * A case class representing the parsed command line options.
     */
   case class CmdOpts(command: Command = Command.None,
-                     args: List[String] = Nil,
-                     entryPoint: Option[String] = None,
-                     installDeps: Boolean = true,
-                     githubToken: Option[String] = None,
-                     json: Boolean = false,
-                     listen: Option[Int] = None,
-                     threads: Option[Int] = None,
-                     assumeYes: Boolean = false,
-                     xbenchmarkCodeSize: Boolean = false,
-                     xbenchmarkIncremental: Boolean = false,
-                     xbenchmarkPhases: Boolean = false,
-                     xbenchmarkFrontend: Boolean = false,
-                     xbenchmarkThroughput: Boolean = false,
-                     xnodeprecated: Boolean = false,
-                     xlib: LibLevel = LibLevel.All,
-                     xprintphases: Boolean = false,
-                     xsummary: Boolean = false,
-                     xsubeffecting: Set[Subeffecting] = Set.empty,
-                     XPerfN: Option[Int] = None,
-                     XPerfFrontend: Boolean = false,
-                     XPerfPar: Boolean = false,
-                     files: Seq[File] = Seq())
+    args: List[String] = Nil,
+    entryPoint: Option[String] = None,
+    installDeps: Boolean = true,
+    githubToken: Option[String] = None,
+    json: Boolean = false,
+    listen: Option[Int] = None,
+    threads: Option[Int] = None,
+    assumeYes: Boolean = false,
+    xbenchmarkCodeSize: Boolean = false,
+    xbenchmarkIncremental: Boolean = false,
+    xbenchmarkPhases: Boolean = false,
+    xbenchmarkFrontend: Boolean = false,
+    xbenchmarkThroughput: Boolean = false,
+    xnodeprecated: Boolean = false,
+    xlib: LibLevel = LibLevel.All,
+    xprintphases: Boolean = false,
+    xsummary: Boolean = false,
+    xsubeffecting: Set[Subeffecting] = Set.empty,
+    XPerfN: Option[Int] = None,
+    XPerfFrontend: Boolean = false,
+    XPerfPar: Boolean = false,
+    files: Seq[File] = Seq())
 
   /**
     * A case class representing possible commands.
