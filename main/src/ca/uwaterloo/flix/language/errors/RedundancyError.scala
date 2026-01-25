@@ -77,9 +77,9 @@ object RedundancyError {
       import fmt.*
       s""">> Duplicate extensible pattern '${red(label.name)}'.
          |
-         |${src(loc1, "first occurrence.")}
+         |${highlight(loc1, "first occurrence.", fmt)}
          |
-         |${src(loc2, "duplicate occurrence.")}
+         |${highlight(loc2, "duplicate occurrence.", fmt)}
          |""".stripMargin
     }
 
@@ -101,7 +101,7 @@ object RedundancyError {
       import fmt.*
       s""">> Hidden variable symbol '${red(sym.text)}'.
          |
-         |${src(loc, "hidden symbol.")}
+         |${highlight(loc, "hidden symbol.", fmt)}
          |
          |${underline("Explanation:")} A hidden variable symbol cannot be accessed.
          |""".stripMargin
@@ -123,7 +123,7 @@ object RedundancyError {
       import fmt.*
       s""">> Redundant effect cast.
          |
-         |${src(loc, "redundant cast.")}
+         |${highlight(loc, "redundant cast.", fmt)}
          |
          |The expression already has the '${cyan(FormatType.formatType(eff))}' effect.
          |""".stripMargin
@@ -145,7 +145,7 @@ object RedundancyError {
       import fmt.*
       s""">> Redundant type cast.
          |
-         |${src(loc, "redundant cast.")}
+         |${highlight(loc, "redundant cast.", fmt)}
          |
          |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
          |""".stripMargin
@@ -166,7 +166,7 @@ object RedundancyError {
       import fmt.*
       s""">> Redundant discard of unit value.
          |
-         |${src(loc, "discarded unit value.")}
+         |${highlight(loc, "discarded unit value.", fmt)}
          |
          |${underline("Explanation:")} Discarding a unit value is redundant since unit
          |has no meaningful value to discard.
@@ -190,7 +190,7 @@ object RedundancyError {
       import fmt.*
       s""">> Redundant trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
          |
-         |${src(loc, "redundant trait constraint.")}
+         |${highlight(loc, "redundant trait constraint.", fmt)}
          |
          |The constraint is implied by '${cyan(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
          |
@@ -215,10 +215,9 @@ object RedundancyError {
     def summary: String = "Redundant effect cast. The expression is already pure."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
       s""">> Redundant effect cast. The expression is already pure.
          |
-         |${src(loc, "redundant cast.")}
+         |${highlight(loc, "redundant cast.", fmt)}
          |""".stripMargin
     }
   }
@@ -238,7 +237,7 @@ object RedundancyError {
       import fmt.*
       s""">> Redundant unsafe block, the expression is pure.
          |
-         |${src(loc, "redundant unsafe block.")}
+         |${highlight(loc, "redundant unsafe block.", fmt)}
          |
          |${underline("Explanation:")} The block unsafely removes the '${cyan(FormatType.formatType(eff))}' effect,
          |but the body expression is pure.
@@ -261,11 +260,11 @@ object RedundancyError {
       import fmt.*
       s""">> Shadowed name '${red(name)}'.
          |
-         |${src(shadowed, "shadowed name.")}
+         |${highlight(shadowed, "shadowed name.", fmt)}
          |
          |The shadowing name was declared here:
          |
-         |${src(shadowing, "shadowing name.")}
+         |${highlight(shadowing, "shadowing name.", fmt)}
          |""".stripMargin
     }
 
@@ -287,11 +286,11 @@ object RedundancyError {
       import fmt.*
       s""">> Shadowing name '${red(name)}'.
          |
-         |${src(shadowing, "shadowing name.")}
+         |${highlight(shadowing, "shadowing name.", fmt)}
          |
          |The shadowed name was declared here:
          |
-         |${src(shadowed, "shadowed name.")}
+         |${highlight(shadowed, "shadowed name.", fmt)}
          |""".stripMargin
     }
 
@@ -312,7 +311,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused definition '${red(sym.name)}'. The definition is never referenced.
          |
-         |${src(sym.loc, "unused definition.")}
+         |${highlight(sym.loc, "unused definition.", fmt)}
          |""".stripMargin
     }
 
@@ -333,7 +332,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused effect '${red(sym.name)}'. The effect is never referenced.
          |
-         |${src(sym.loc, "unused effect.")}
+         |${highlight(sym.loc, "unused effect.", fmt)}
          |""".stripMargin
     }
 
@@ -354,7 +353,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
-         |${src(sym.loc, "unused enum.")}
+         |${highlight(sym.loc, "unused enum.", fmt)}
          |""".stripMargin
     }
 
@@ -376,7 +375,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
          |
-         |${src(tag.loc, "unused tag.")}
+         |${highlight(tag.loc, "unused tag.", fmt)}
          |""".stripMargin
     }
 
@@ -397,7 +396,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused struct '${red(sym.name)}'.
          |
-         |${src(sym.loc, "unused struct.")}
+         |${highlight(sym.loc, "unused struct.", fmt)}
          |""".stripMargin
     }
 
@@ -418,7 +417,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
          |
-         |${src(sym.loc, "unused formal parameter.")}
+         |${highlight(sym.loc, "unused formal parameter.", fmt)}
          |
          |${underline("Explanation:")} Flix does not allow unused formal parameters.
          |An unused formal parameter can be prefixed with an underscore to suppress
@@ -443,7 +442,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
          |
-         |${src(ident.loc, "unused type parameter.")}
+         |${highlight(ident.loc, "unused type parameter.", fmt)}
          |""".stripMargin
     }
   }
@@ -462,7 +461,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced in the signature.
          |
-         |${src(ident.loc, "type parameter unused in function signature.")}
+         |${highlight(ident.loc, "type parameter unused in function signature.", fmt)}
          |""".stripMargin
     }
   }
@@ -481,7 +480,7 @@ object RedundancyError {
       import fmt.*
       s""">> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
          |
-         |${src(sym.loc, "unused local variable.")}
+         |${highlight(sym.loc, "unused local variable.", fmt)}
          |
          |${underline("Explanation:")} Flix does not allow unused local variables.
          |An unused local variable can be prefixed with an underscore to suppress
@@ -506,14 +505,13 @@ object RedundancyError {
     override def summary: String = "Unreachable case."
 
     override def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
       s""">> Unreachable case. It is covered by a '_' pattern.
          |
-         |${src(loc, "unreachable case.")}
+         |${highlight(loc, "unreachable case.", fmt)}
          |
          |Covered by the following pattern:
          |
-         |${src(defaultLoc, "covering pattern.")}
+         |${highlight(defaultLoc, "covering pattern.", fmt)}
          |""".stripMargin
     }
   }
@@ -532,7 +530,7 @@ object RedundancyError {
       import fmt.*
       s""">> Useless expression: It is pure and its result is discarded.
          |
-         |${src(loc, "useless expression.")}
+         |${highlight(loc, "useless expression.", fmt)}
          |
          |${underline("Explanation:")} A useless expression is pure and its result is not used.
          |Either use the result or remove the expression.
@@ -554,7 +552,7 @@ object RedundancyError {
       import fmt.*
       s""">> Useless unsafe block.
          |
-         |${src(loc, "useless unsafe block.")}
+         |${highlight(loc, "useless unsafe block.", fmt)}
          |
          |${underline("Explanation:")} An unsafe block that runs the 'Pure' effect is useless
          |since 'Pure' means no effects.
