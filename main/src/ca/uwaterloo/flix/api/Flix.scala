@@ -575,7 +575,7 @@ class Flix {
     * we explicitly set certain local variables to `null` once they are no longer needed.
     * This manual cleanup has been verified as effective in the profiler.
     */
-  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
+  def codeGen(typedAst: TypedAst.Root): CompilationResult = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -641,7 +641,7 @@ class Flix {
     progressBar.complete()
 
     // Return the result.
-    Validation.Success(result)
+    result
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -657,7 +657,7 @@ class Flix {
   def compile(): Validation[CompilationResult, CompilationMessage] = {
     val (result, errors) = check()
     if (errors.isEmpty) {
-      codeGen(result.get)
+      Validation.Success(codeGen(result.get))
     } else {
       Validation.Failure(Chain.from(errors))
     }
