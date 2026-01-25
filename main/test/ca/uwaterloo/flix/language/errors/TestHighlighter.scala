@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.util.{Formatter, Options}
-import ca.uwaterloo.flix.util.Formatter.{AnsiTerminalFormatter, NoFormatter}
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestHighlighter extends AnyFunSuite with TestUtils {
@@ -17,7 +17,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
     val input = """def foo(): Int32 = "hello""""
     val (root, errors) = getErrorsWithRoot(input)
     assert(errors.nonEmpty)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
   }
 
@@ -27,7 +27,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |def foo(): String = 123
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
     assert(output.contains("123") || output.contains("String"))
   }
@@ -39,7 +39,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |def over(): String = f("hello", 123)
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
   }
 
@@ -50,7 +50,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
   test("Highlighter.LexerError.ExpectedDigit.01") {
     val input = "12..3"
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assert(output.contains("|"))
   }
 
@@ -60,7 +60,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |def foo(): String = "hello
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assert(output.nonEmpty)
   }
 
@@ -75,7 +75,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = 2
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assert(output.contains("Duplicate") || output.contains("duplicate"))
     assert(output.contains("|"))
   }
@@ -92,7 +92,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |    x
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assert(output.contains("|"))
   }
 
@@ -104,7 +104,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |    _x
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
   }
 
@@ -115,7 +115,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
   test("Highlighter.EdgeCase.ShortSpan.01") {
     val input = """def foo(): Int32 = x"""
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assert(output.contains("^"))
   }
 
@@ -123,20 +123,13 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
     val input =
       """def veryLongFunctionName(): Int32 = "this is definitely not an integer value""""
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
   }
 
   //
   // Category 6: Formatter Tests
   //
-
-  test("Highlighter.Formatter.NoFormatter.01") {
-    val input = """def foo(): Int32 = "string""""
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
-    assert(!output.contains("\u001b"), "NoFormatter should not produce ANSI codes")
-  }
 
   test("Highlighter.Formatter.AnsiTerminalFormatter.01") {
     val input = """def foo(): Int32 = "string""""
@@ -159,7 +152,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assertMultiLineFormat(output)
   }
 
@@ -172,7 +165,7 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
+    val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assertMultiLineFormat(output)
   }
 
@@ -186,22 +179,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |        "not an int"
         |""".stripMargin
     val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, NoFormatter, root)
-    assertMultiLineFormat(output)
-  }
-
-  test("Highlighter.MultiLine.WithAnsiFormatter.01") {
-    val input =
-      """
-        |def qux(x: Int32): String = match x {
-        |    case 1 => "one"
-        |    case _ => 123
-        |}
-        |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
     val output = formatErrors(errors, AnsiTerminalFormatter, root)
     assertMultiLineFormat(output)
-    assert(output.contains("\u001b"), "AnsiTerminalFormatter should produce ANSI codes")
   }
 
   //
