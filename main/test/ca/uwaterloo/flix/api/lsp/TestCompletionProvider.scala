@@ -685,11 +685,7 @@ class TestCompletionProvider extends AnyFunSuite {
     Flix.check() match {
       case (Some(root), Nil) => root
       case (_, errors) =>
-        for (error <- errors) {
-          val msg = error.message(NoFormatter)(None)
-          println(msg)
-        }
-        fail("Compilation failed.")
+        fail(CompilationMessage.formatAll(errors)(NoFormatter))
     }
   }
 
