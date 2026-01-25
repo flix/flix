@@ -2,9 +2,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.util.{Formatter, Options}
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestHighlighter extends AnyFunSuite with TestUtils {
@@ -15,9 +14,9 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
 
   test("Highlighter.TypeError.MismatchedTypes.01") {
     val input = """def foo(): Int32 = "hello""""
-    val (root, errors) = getErrorsWithRoot(input)
+    val (root, errors) = check(input, Options.TestWithLibNix)
     assert(errors.nonEmpty)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
   }
 
@@ -26,8 +25,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
       """
         |def foo(): String = 123
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
     assert(output.contains("123") || output.contains("String"))
   }
@@ -38,8 +37,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |def f(s: String): String = s
         |def over(): String = f("hello", 123)
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
   }
 
@@ -49,8 +48,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
 
   test("Highlighter.LexerError.ExpectedDigit.01") {
     val input = "12..3"
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assert(output.contains("|"))
   }
 
@@ -59,8 +58,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
       """
         |def foo(): String = "hello
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assert(output.nonEmpty)
   }
 
@@ -74,8 +73,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |def foo(): Int32 = 1
         |def foo(): Int32 = 2
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assert(output.contains("Duplicate") || output.contains("duplicate"))
     assert(output.contains("|"))
   }
@@ -91,8 +90,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |    let x = 123;
         |    x
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assert(output.contains("|"))
   }
 
@@ -103,8 +102,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |    let _x = 123;
         |    _x
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
   }
 
@@ -114,16 +113,16 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
 
   test("Highlighter.EdgeCase.ShortSpan.01") {
     val input = """def foo(): Int32 = x"""
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assert(output.contains("^"))
   }
 
   test("Highlighter.EdgeCase.LongSpan.01") {
     val input =
       """def veryLongFunctionName(): Int32 = "this is definitely not an integer value""""
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assertSingleLineFormat(output)
   }
 
@@ -133,8 +132,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
 
   test("Highlighter.Formatter.AnsiTerminalFormatter.01") {
     val input = """def foo(): Int32 = "string""""
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assert(output.contains("\u001b"), "AnsiTerminalFormatter should produce ANSI codes")
   }
 
@@ -151,8 +150,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |    case _ => 999
         |}
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assertMultiLineFormat(output)
   }
 
@@ -164,8 +163,8 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |    case false => "not a number"
         |}
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assertMultiLineFormat(output)
   }
 
@@ -178,22 +177,14 @@ class TestHighlighter extends AnyFunSuite with TestUtils {
         |    else
         |        "not an int"
         |""".stripMargin
-    val (root, errors) = getErrorsWithRoot(input)
-    val output = formatErrors(errors, AnsiTerminalFormatter, root)
+    val (root, errors) = check(input, Options.TestWithLibNix)
+    val output = CompilationMessage.formatAll(errors)(AnsiTerminalFormatter, root)
     assertMultiLineFormat(output)
   }
 
   //
   // Helper Functions
   //
-
-  private def formatErrors(errors: List[CompilationMessage], fmt: Formatter, root: Option[TypedAst.Root]): String = {
-    CompilationMessage.formatAll(errors)(fmt, root)
-  }
-
-  private def getErrorsWithRoot(input: String, options: Options = Options.TestWithLibNix): (Option[TypedAst.Root], List[CompilationMessage]) = {
-    check(input, options)
-  }
 
   private def assertSingleLineFormat(output: String): Unit = {
     assert(output.contains(" | "), "Expected ' | ' separator")
