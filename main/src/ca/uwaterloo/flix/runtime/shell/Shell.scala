@@ -392,13 +392,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     flix.check() match {
       case (Some(r), Nil) =>
         this.root = Some(r)
-        val result = flix.codeGen(r)
-        result.toResult match {
-          case Result.Ok(_) => result
-          case Result.Err(errors) =>
-            printErrors(errors.toList, Some(r))
-            result
-        }
+        Validation.Success(flix.codeGen(r))
       case (_, errors) =>
         printErrors(errors, None)
         Validation.Failure(Chain.from(errors))
