@@ -15,104 +15,15 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{SemanticToken, SemanticTokenType}
 import ca.uwaterloo.flix.api.lsp.provider.SemanticTokensProvider
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Token, TokenKind, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.api.lsp.{SemanticToken, SemanticTokenType}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter
-
-import java.nio.file.Paths
 
 import scala.collection.mutable
 
 object Highlighter {
-
-  def main(args: Array[String]): Unit = {
-    println(test01(Formatter.getDefault))
-  }
-
-  def test01(fmt: Formatter): String = {
-    val p =
-      """
-        |/// An algebraic data type for shapes.
-        |enum Shape {
-        |    case Circle(Int32),          // circle radius
-        |    case Square(Int32),          // side length
-        |    case Rectangle(Int32, Int32) // height and width
-        |}
-        |
-        |/// Computes the area of the given shape using
-        |/// pattern matching and basic arithmetic.
-        |def area(s: Shape): Int32 = match s {
-        |    case Shape.Circle(r)       => 3 * (r * r)
-        |    case Shape.Square(w)       => w * w
-        |    case Shape.Rectangle(h, w) => h * w
-        |}
-        |
-        |// Computes the area of a 2 by 4.
-        |def main(): Unit \ IO =
-        |    println(area(Shape.Rectangle(2, 4)))
-        |
-        |
-        |""".stripMargin
-
-    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    val VirtualPath = Paths.get("__highlight__.flix")
-
-
-    val flix = new Flix().addVirtualPath(VirtualPath, p)
-    val (optRoot, _) = flix.check()
-
-    optRoot match {
-      case Some(root) =>
-        implicit val f: Formatter = fmt
-        val source = Source(Input.VirtualFile(VirtualPath, p, sctx), p.toCharArray)
-
-        val singleLineLoc = SourceLocation(
-          isReal = true,
-          source = source,
-          start = SourcePosition(lineOneIndexed = 12, colOneIndexed = 10),
-          end = SourcePosition(lineOneIndexed = 12, colOneIndexed = 15)
-        )
-        val multiLineLoc = SourceLocation(
-          isReal = true,
-          source = source,
-          start = SourcePosition(lineOneIndexed = 4, colOneIndexed = 1),
-          end = SourcePosition(lineOneIndexed = 16, colOneIndexed = 2)
-        )
-
-        // Demo 1: Single-line without syntax highlighting (root = None)
-        val demo1 = highlightWithMessage("The variable 's' is unused", singleLineLoc, None)
-
-        // Demo 2: Multi-line without syntax highlighting (root = None)
-        val demo2 = highlightWithMessage("This function has unreachable code", multiLineLoc, None)
-
-        // Demo 3: Single-line with syntax highlighting
-        val demo3 = highlightWithMessage("The variable 's' is unused", singleLineLoc, Some(root))
-
-        // Demo 4: Multi-line with syntax highlighting
-        val demo4 = highlightWithMessage("This function has unreachable code", multiLineLoc, Some(root))
-
-        s"""
-           |=== Single-line (no highlighting) ===
-           |$demo1
-           |
-           |=== Multi-line (no highlighting) ===
-           |$demo2
-           |
-           |=== Single-line (with highlighting) ===
-           |$demo3
-           |
-           |=== Multi-line (with highlighting) ===
-           |$demo4
-           |""".stripMargin
-
-      case None =>
-        p // Compilation failed - return unchanged
-    }
-  }
 
   /**
     * Returns syntax-highlighted source code with a message displayed under the given location.
