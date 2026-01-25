@@ -47,10 +47,6 @@ trait TestUtils {
     new Flix().setOptions(o).addVirtualPath(CompilerConstants.VirtualTestFile, s).compile()
   }
 
-  private def errorString(errors: Seq[CompilationMessage]): String = {
-    errors.map(_.messageWithLoc(Formatter.NoFormatter)(None)).mkString("\n\n")
-  }
-
   /**
     * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
     */
@@ -95,7 +91,7 @@ trait TestUtils {
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toResult match {
     case Result.Ok(_) => ()
     case Result.Err(errors) =>
-      fail(s"Expected success, but found errors:\n\n${errorString(errors.toSeq)}.")
+      fail(CompilationMessage.formatAll(errors.toList)(Formatter.NoFormatter))
   }
 
   /**
