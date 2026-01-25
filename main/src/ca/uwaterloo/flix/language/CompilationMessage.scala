@@ -81,7 +81,7 @@ object CompilationMessage {
     */
   def formatAll(errors: List[CompilationMessage])(implicit fmt: Formatter, root: Option[TypedAst.Root] = None): String = {
     val sb = new StringBuilder()
-    val sorted = errors.sortBy(_.loc)
+    val sorted = filterShadowedMessages(errors).sortBy(_.loc)
     for ((cm, i) <- sorted.zipWithIndex) {
       sb.append(cm.messageWithLoc(fmt))
       if (i < sorted.size - 1) {
@@ -114,7 +114,7 @@ object CompilationMessage {
     * @param l the list of compilation messages to filter
     * @return the filtered list containing only the earliest relevant error for each location
     */
-  def filterShadowedMessages(l: List[CompilationMessage]): List[CompilationMessage] = {
+  private def filterShadowedMessages(l: List[CompilationMessage]): List[CompilationMessage] = {
     // Accumulator for messages that pass the filter
     val result = mutable.ArrayBuffer.empty[CompilationMessage]
 
