@@ -184,6 +184,16 @@ object Highlighter {
   }
 
   /**
+    * Extracts a single line from the source string (1-indexed), without the trailing newline.
+    */
+  private def extractLine(s: String, line: Int): String = {
+    val start = lineOffset(s, line)
+    val end = lineOffset(s, line + 1)
+    val lineContent = s.substring(start, end)
+    lineContent.stripLineEnd
+  }
+
+  /**
     * Returns the character offset where the given 1-indexed line starts.
     * Returns source.length if line is beyond the source.
     */
@@ -195,16 +205,6 @@ object Highlighter {
       offset += 1
     }
     offset
-  }
-
-  /**
-    * Extracts a single line from the source string (1-indexed), without the trailing newline.
-    */
-  private def extractLine(s: String, line: Int): String = {
-    val start = lineOffset(s, line)
-    val end = lineOffset(s, line + 1)
-    val lineContent = s.substring(start, end)
-    lineContent.stripLineEnd
   }
 
   /**
