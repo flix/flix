@@ -1388,7 +1388,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |    ?foo
          |
        """.stripMargin
-    compile(input, Options.TestWithLibNix).unsafeGet
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
   test("UnusedVarSym.Hole.02") {
@@ -1399,7 +1400,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |    ?foo
          |
        """.stripMargin
-    compile(input, Options.TestWithLibNix).unsafeGet
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
   test("UnusedVarSym.PreviousError.01") {
