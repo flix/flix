@@ -958,10 +958,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * It is often the case that `outputJvm` and `loadClassFiles` must be toggled on or off.
       */
     def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
-      flix.compile() match {
-        case Validation.Success(result: CompilationResult) => Ok(result)
-        case Validation.Failure(errors) =>
-          Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None)))
+      val (optRoot, errors) = flix.check()
+      if (errors.isEmpty) {
+        Ok(flix.codeGen(optRoot.get))
+      } else {
+        Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot)))
       }
     }
 

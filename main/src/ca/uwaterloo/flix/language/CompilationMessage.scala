@@ -60,10 +60,8 @@ trait CompilationMessage {
 
   /**
     * Returns the error message.
-    *
-    * You probably want to use [[messageWithLoc]] instead.
     */
-  def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String
+  protected def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String
 
   /**
     * Returns the error message formatted with source location.

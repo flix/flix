@@ -238,13 +238,13 @@ object LspServer {
             this.currentErrors = errors
             // We provide diagnostics for errors and code hints.
             val codeHints = CodeHinter.run(sources.keysIterator.map(_.toString).toSet)(root1)
-            PublishDiagnosticsParams.fromMessages(currentErrors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+            PublishDiagnosticsParams.fromMessages(currentErrors, Some(this.root)) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
 
           // Case 2: Compilation failed so that we have only errors.
           case (None, errors) =>
             this.currentErrors = errors
             // We provide diagnostics only for errors.
-            PublishDiagnosticsParams.fromMessages(currentErrors)
+            PublishDiagnosticsParams.fromMessages(currentErrors, None)
         }
         publishDiagnostics(diagnostics)
       } catch {

@@ -51,14 +51,15 @@ trait TestUtils {
     * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
     */
   def expectErrorOnCheck[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
-    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root))
-    case (_, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)))
+    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root), Some(root))
+    case (optRoot, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)), optRoot)
   }
 
   /**
     * Asserts that the compilation result is a failure with a value of the parametric type `T`.
     */
-  def expectError[T](result: Validation[CompilationResult, CompilationMessage], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = expectErrorGen[CompilationResult, T](result, allowUnknown)
+  def expectError[T](result: Validation[CompilationResult, CompilationMessage], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit =
+    expectErrorGen[CompilationResult, T](result, None, allowUnknown)
 
   /**
     * Asserts that validation contains a defined entry point.
@@ -98,10 +99,22 @@ trait TestUtils {
     * Private generic version of expectError.
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
-  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result.toResult match {
+  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage], rootOpt: Option[TypedAst.Root], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result.toResult match {
     case Result.Ok(_) => fail(s"Expected Failure, but got Success.")
 
     case Result.Err(errors) =>
+      // Check that all error messages can be formatted.
+      for (error <- errors) {
+        // Format without TypedAst.Root
+        val msgNoRoot = error.messageWithLoc(Formatter.AnsiTerminalFormatter)(None)
+        assert(msgNoRoot.nonEmpty)
+
+        // Format with TypedAst.Root -- if available.
+        val msgWithRoot = error.messageWithLoc(Formatter.AnsiTerminalFormatter)(rootOpt)
+        assert(msgWithRoot.nonEmpty)
+      }
+
+      // Retrieve the expected error.
       val expected = classTag.runtimeClass
 
       // Get the expected error line from the first error
