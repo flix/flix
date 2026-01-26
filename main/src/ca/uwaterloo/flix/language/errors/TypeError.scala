@@ -785,14 +785,16 @@ object TypeError {
   // message = function declared as pure but has $sym effect
   // ${src(signatureLoc, "effect declared as Pure here")}
   // ${src(effLoc, "effect $sym used here")}
-  case class PureFunctionUsesIO(loc: SourceLocation) extends TypeError {
+  case class ExplicitPureFunctionUsesIO(loc: SourceLocation, loc2: SourceLocation, sym: Symbol.EffSym) extends TypeError {
     def code: ErrorCode = ErrorCode.E8354
 
     def summary: String = "TODO"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      "TODO"
+      s"""${src(loc, "Function declared with Pure")}
+         |${src(loc2, s"but uses ${sym.toString} here")}
+         |""".stripMargin
     }
   }
 }

@@ -16,9 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.ast.TypeConstructor
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -229,8 +227,74 @@ object EffectProvenance {
     }
   }
 
+
+  type Edge = (Type, Type, SourceLocation)
+  type Graph = (List[Type], List[Edge])
+
+  def solve(graph: Graph): List[TypeConstraint] = {
+    def findStart(): Type = {
+      val (_, es) = graph
+      es.find {
+        case (tpe1, _, _) => tpe1.toString == "Pure"
+      }.get._1
+    }
+
+    def flowsInto(start: Type, acc: Option[(Type, SourceLocation)]) : List[TypeConstraint]= {
+      val (_, es) = graph
+      val (_, tpe2, loc) = es.find {
+          case (tpe1, _, _) => tpe1 == start
+        }.get
+      (start, tpe2) match {
+        case (Type.Cst(_,_), Type.Var(_,_)) => acc match {
+          case None => flowsInto(tpe2, Some((start, loc)))
+          case Some((t, l)) => TypeConstraint.EffConflicted(TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym(t.toString))) :: Nil
+        }
+        case _ => Nil
+
+      }
+
+    }
+    val s = findStart()
+    flowsInto(s, None)
+  }
+
   def getError(constrs0: List[TypeConstraint]): List[TypeConstraint] = {
-    println(constrs0)
-    List(TypeConstraint.EffConflicted(TypeError.PureFunctionUsesIO(constrs0.head.loc)))
+
+    def reachability(vertices: List[(Type, SourceLocation)], flow: List[Edge]): List[List[(Type, SourceLocation)]] = {
+      def helper(v: Type, acc: List[(Type, SourceLocation)], l: List[Edge]): List[(Type, SourceLocation)] = l match {
+        case Nil => acc
+        case (tpe1, tpe2, loc)::t => if (v == tpe1 && !acc.contains(tpe2)) {helper (tpe2, (tpe2,loc)::acc, flow)} else {helper(v, acc, t)}
+      }
+      vertices.map{case (a, loc) => helper(a, List((a, loc)), flow)}
+    }
+
+    var flow: List[Edge] = Nil
+    var v: Set[(Type, SourceLocation)] = Set.empty
+    constrs0.foreach {
+      case TypeConstraint.Equality(tpe1, tpe2, prov) =>
+        val t = (tpe1, prov.loc)
+        val t2 = (tpe2, prov.loc)
+        prov match {
+          case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
+            v = v + t + t2
+            flow = (tpe2, tpe1, prov.loc) :: flow
+          }
+          case TypeConstraint.Provenance.Source(_, _, _) => {
+            v = v + t + t2
+            flow = (tpe2, tpe1, prov.loc) :: flow
+          }
+          case TypeConstraint.Provenance.Match(_,_,_) => {
+            v = v + t + t2
+            flow = (tpe2, tpe1, prov.loc) :: flow
+          }
+          case _ => {} // TODO
+        }
+      case _ => {} // TODO
+    }
+    println(flow)
+    val tmp = reachability(v.toList, flow).last
+    val res = (tmp.head, tmp.last)
+    println(res)
+    List(TypeConstraint.EffConflicted(TypeError.ExplicitPureFunctionUsesIO(res._1._2, res._2._2, Symbol.mkEffSym(res._2._1.toString))))
   }
 }

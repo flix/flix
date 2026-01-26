@@ -32,7 +32,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
        |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.PureFunctionUsesIO](result)
+    expectError[TypeError.ExplicitPureFunctionUsesIO](result)
   }
 
   test("TestLeq01") {
