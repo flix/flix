@@ -41,13 +41,6 @@ trait TestUtils {
   }
 
   /**
-    * Compiles the given input string `s` with the given compilation options `o`.
-    */
-  def compile(s: String, o: Options)(implicit sctx: SecurityContext): Validation[CompilationResult, CompilationMessage] = {
-    new Flix().setOptions(o).addVirtualPath(CompilerConstants.VirtualTestFile, s).compile()
-  }
-
-  /**
     * Asserts that the check result is successful.
     */
   def expectSuccess(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {

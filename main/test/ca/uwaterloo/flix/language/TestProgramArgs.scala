@@ -16,11 +16,14 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.{Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestProgramArgs extends AnyFunSuite with TestUtils {
+class TestProgramArgs extends AnyFunSuite {
+
+  private implicit val sctx: SecurityContext = SecurityContext.Unrestricted
 
   test("ProgramArgs.01") {
     val arg = "Correct"
@@ -33,9 +36,12 @@ class TestProgramArgs extends AnyFunSuite with TestUtils {
          |}
       """.stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = new Flix()
+      .setOptions(Options.TestWithLibAll)
+      .addVirtualPath(CompilerConstants.VirtualTestFile, input)
+      .compile()
     result.toResult match {
-      case Result.Ok(result) => result.getMain match {
+      case Result.Ok(r) => r.getMain match {
         case Some(main) => try {
           main.apply(Array(arg))
         } catch {
