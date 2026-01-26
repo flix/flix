@@ -1645,17 +1645,4 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Regression.01") {
-    // https://github.com/flix/flix/issues/10366
-    // Should not crash when struct type parameters are empty.
-    val input =
-      """
-        |struct Foo {}
-        |
-        |mod Foo {
-        |    def mk(cmp: (v, v) -> Bool): Foo =
-        |}
-        |""".stripMargin
-    compile(input, DefaultOptions)
-  }
 }

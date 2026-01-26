@@ -41,13 +41,6 @@ trait TestUtils {
   }
 
   /**
-    * Compiles the given input string `s` with the given compilation options `o`.
-    */
-  def compile(s: String, o: Options)(implicit sctx: SecurityContext): Validation[CompilationResult, CompilationMessage] = {
-    new Flix().setOptions(o).addVirtualPath(CompilerConstants.VirtualTestFile, s).compile()
-  }
-
-  /**
     * Asserts that the check result is successful.
     */
   def expectSuccess(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
@@ -78,16 +71,8 @@ trait TestUtils {
   }
 
   /**
-    * Asserts that the validation is successful.
-    */
-  def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toResult match {
-    case Result.Ok(_) => ()
-    case Result.Err(errors) =>
-      fail(CompilationMessage.formatAll(errors.toList)(Formatter.NoFormatter, None))
-  }
-
-  /**
     * Private generic version of expectError.
+    *
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
   private def expectErrorGen[R, T](result: Validation[R, CompilationMessage], rootOpt: Option[TypedAst.Root], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result.toResult match {

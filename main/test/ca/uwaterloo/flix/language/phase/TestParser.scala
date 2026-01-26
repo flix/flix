@@ -26,9 +26,6 @@ class TestParser extends Suites(
   *   - Patterns
   *   - Map, Set, List, Vector and Array literals.
   *   - "Niche" expressions (OpenAs, JVMops, Fixpoint expressions).
-  *
-  * Note that these tests use [[check]] rather than [[compile]].
-  * That's because a compile converts any check failure into a [[ca.uwaterloo.flix.util.Validation.Failure]] before running, codegen so the result we would like to expect is lost.
   */
 class TestParserRecovery extends AnyFunSuite with TestUtils {
 
