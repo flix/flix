@@ -210,12 +210,11 @@ object Highlighter {
   /**
     * Returns the text wrapped in ANSI escape codes for the given semantic token type.
     */
-  private def colorize(s: String, tpe: SemanticTokenType, fmt: Formatter): String = {
+  private def colorize(s: String, tpe: SemanticTokenType, fmt: Formatter): String =
     tokenColor(tpe) match {
       case None => s
       case Some((r, g, b)) => fmt.fgColor(r, g, b, s)
     }
-  }
 
   /**
     * Returns the string `s` left-padded with spaces to the given `width`.
