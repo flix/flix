@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -153,11 +152,12 @@ object ParseError {
 
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
+      s""">> Malformed ${red(namedTokenSet.display(formatter))}.
          |
-         |${highlight(loc, s"Here", fmt)}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -175,11 +175,11 @@ object ParseError {
 
     def summary: String = s"Misplaced comment(s)."
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       s""">> Misplaced comment(s).
          |
-         |${highlight(loc, s"Here", fmt)}
+         |${src(loc, s"Here")}
          |Hint: Place comments on their own line.
          |""".stripMargin
     }
@@ -198,11 +198,11 @@ object ParseError {
 
     def summary: String = s"Misplaced doc-comment(s)."
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       s""">> Misplaced doc-comment(s).
          |
-         |${highlight(loc, s"Here", fmt)}
+         |${src(loc, s"Here")}
          |Hint: doc-comments must annotate declarations.
          |""".stripMargin
     }
@@ -222,11 +222,11 @@ object ParseError {
 
     def summary: String = s"Expected region on ${token.display}."
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       s""">> Expected ${red("region")} on ${cyan(token.display)}.
          |
-         |${highlight(loc, s"Here", fmt)}
+         |${src(loc, s"Here")}
          |Hint: Add a region using `@ <region>`
          |""".stripMargin
     }
@@ -247,11 +247,12 @@ object ParseError {
 
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Expected at least one ${expected.display(fmt)}.
+      s""">> Expected at least one ${expected.display(formatter)}.
          |
-         |${highlight(loc, s"Here", fmt)}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -270,11 +271,11 @@ object ParseError {
 
     def summary: String = s"Trailing ${separator.display}."
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       s""">> Trailing ${red(separator.display)}.
          |
-         |${highlight(loc, s"Here", fmt)}
+         |${src(loc, s"Here")}
          |""".stripMargin
     }
   }
@@ -299,13 +300,14 @@ object ParseError {
       s"$expectedStr$actualStr."
     }
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      val expectedStr = s"Expected ${expected.display(fmt)}"
-      val actualStr = actual.map(a => s" before ${fmt.red(a.display)}").getOrElse("")
+      val expectedStr = s"Expected ${expected.display(formatter)}"
+      val actualStr = actual.map(a => s" before ${red(a.display)}").getOrElse("")
       s""">> $expectedStr$actualStr.
          |
-         |${highlight(loc, s"Here", fmt)}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
