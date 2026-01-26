@@ -152,11 +152,12 @@ object ParseError {
 
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
+      s""">> Malformed ${red(namedTokenSet.display(formatter))}.
          |
-         |${fmt.src(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -246,11 +247,12 @@ object ParseError {
 
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Expected at least one ${expected.display(fmt)}.
+      s""">> Expected at least one ${expected.display(formatter)}.
          |
-         |${fmt.src(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -298,13 +300,14 @@ object ParseError {
       s"$expectedStr$actualStr."
     }
 
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      val expectedStr = s"Expected ${expected.display(fmt)}"
-      val actualStr = actual.map(a => s" before ${fmt.red(a.display)}").getOrElse("")
+      val expectedStr = s"Expected ${expected.display(formatter)}"
+      val actualStr = actual.map(a => s" before ${red(a.display)}").getOrElse("")
       s""">> $expectedStr$actualStr.
          |
-         |${fmt.src(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
