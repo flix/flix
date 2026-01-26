@@ -27,6 +27,8 @@ object Highlighter {
 
   /**
     * Returns syntax-highlighted source code with a message displayed under the given location.
+    *
+    * If `root` is `None` then returns the source code without highlighting.
     */
   def highlight(loc: SourceLocation, msg: String, fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
     highlightWithMessage(msg, loc, root)(fmt)
@@ -37,6 +39,8 @@ object Highlighter {
     *
     * For single-line locations, shows an arrow underline with the message below.
     * For multi-line locations, shows a left-line indicator with the message at the end.
+    *
+    * If `root` is `None` then returns the source code without highlighting.
     */
   private def highlightWithMessage(msg: String, loc: SourceLocation, root: Option[TypedAst.Root])(implicit fmt: Formatter): String = {
     val source = loc.source
@@ -61,7 +65,7 @@ object Highlighter {
     * Example output:
     * {{{
     * 10 | def area(s: Shape): Int32 = match s {
-    *              ^^^^^
+    *               ^
     *              The variable 's' is unused
     * }}}
     */
@@ -120,9 +124,10 @@ object Highlighter {
     * Applies syntax highlighting colors to source code within the specified line range.
     *
     * Iterates through lexer tokens and applies colors based on semantic token information.
+    *
     * Returns the colorized source substring for the given line range.
     */
-  private def applyColors(source: String, tokens: Array[Token], semanticTokens: List[SemanticToken], startLine: Int, endLine: Int)(implicit fmt: Formatter): String = {
+  private def applyColors(source: String, lexerTokens: Array[Token], semanticTokens: List[SemanticToken], startLine: Int, endLine: Int)(implicit fmt: Formatter): String = {
     // Compute substring boundaries
     val startOffset = lineOffset(source, startLine)
     val endOffset = lineOffset(source, endLine)
@@ -134,8 +139,8 @@ object Highlighter {
 
     // Tokens are already sorted by position from the lexer - use index loop for early exit
     var idx = 0
-    while (idx < tokens.length) {
-      val token = tokens(idx)
+    while (idx < lexerTokens.length) {
+      val token = lexerTokens(idx)
       val tokenLine = token.start.lineOneIndexed
 
       if (tokenLine < startLine) {
@@ -143,7 +148,7 @@ object Highlighter {
         idx += 1
       } else if (tokenLine >= endLine || token.kind == TokenKind.Eof) {
         // Past the range or EOF - done
-        idx = tokens.length
+        idx = lexerTokens.length
       } else {
         // Token is in range
         if (token.startIndex > i) {
@@ -258,6 +263,6 @@ object Highlighter {
     /**
       * Apply syntax highlighting using the provided tokens.
       */
-    case class Highlighted(tokens: Array[Token], semanticTokens: List[SemanticToken]) extends Coloring
+    case class Highlighted(lexerTokens: Array[Token], semanticTokens: List[SemanticToken]) extends Coloring
   }
 }
