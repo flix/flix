@@ -34,7 +34,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def g(): Int32 = A.f()
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
@@ -49,7 +49,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
@@ -67,7 +67,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def g(): A.Color = A.Color.Red
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -85,7 +85,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -103,7 +103,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def g(): A.Color[a] = A.Color[a].Red
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleRestrictableEnum](result)
   }
 
@@ -121,7 +121,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleRestrictableEnum](result)
   }
 
@@ -138,7 +138,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def g(): A.Color[a] = A.Color[a].Red
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleRestrictableEnum](result)
   }
 
@@ -155,7 +155,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    def g(): A.S = ???
          |}
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
@@ -170,7 +170,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
@@ -194,7 +194,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    }
          |}
          """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
@@ -212,7 +212,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    def g(): A.Color = ???
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -230,7 +230,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
@@ -246,7 +246,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
@@ -261,7 +261,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def g(): A.Color = 123
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
@@ -276,7 +276,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
@@ -293,7 +293,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def g(x: a): Int32 with A.Show[a] = ???
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
@@ -310,7 +310,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
@@ -325,7 +325,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    instance N.C[Int32]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
@@ -340,7 +340,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    trait D[a] with N.C[a]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
@@ -355,7 +355,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    instance N.C[Int32]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.SealedTrait](result)
   }
 
@@ -370,7 +370,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.SealedTrait](result)
   }
 
@@ -385,7 +385,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.SealedTrait](result)
   }
 
@@ -397,7 +397,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -410,7 +410,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -424,7 +424,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -441,7 +441,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -459,7 +459,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
@@ -476,13 +476,13 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): Foo = 123
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -493,7 +493,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(x: Int32, y: Int32): Int32 = x + y + z
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -505,7 +505,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |pub def check(): Bool \ IO = Objects.isNull((x: Object))
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -523,7 +523,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    def g(): Int32 = f(1)
          |}
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedUse](result)
   }
 
@@ -534,7 +534,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    def op() = ()
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedEffect](result)
   }
 
@@ -543,7 +543,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
      """
        |def f(): Unit = run () with handler Ef
        |""".stripMargin
-   val result = compile(input, Options.TestWithLibNix)
+   val result = check(input, Options.TestWithLibNix)
    expectError[ResolutionError.UndefinedEffect](result)
  }
 
@@ -556,7 +556,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    def op() = ()
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedOp](result)
   }
 
@@ -565,7 +565,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |instance C[Int32]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -574,7 +574,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f(x: a): a with C[a] = x
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -585,7 +585,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: a): a with K[a], U[a] = x
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -596,7 +596,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |instance K[a] with U[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -609,7 +609,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new File();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -622,7 +622,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new File(0);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -635,7 +635,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new String(true);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -648,7 +648,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new String(true, 'a', "test");
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.ConstructorNotFound](result)
   }
 
@@ -660,7 +660,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = unsafe new Baz();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
@@ -673,7 +673,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = unsafe obj.f();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
@@ -685,7 +685,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = unsafe Baz.f();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
@@ -696,7 +696,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new NotImported();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedNew](result)
   }
 
@@ -708,7 +708,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = new Filr("path");
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedNew](result)
   }
 
@@ -722,7 +722,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.getFoo();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -736,7 +736,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.charAt();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -750,7 +750,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.charAt(0, 1);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -764,7 +764,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.isEmpty(true);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -777,7 +777,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = String.isEmpty();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.StaticMethodNotFound](result)
   }
 
@@ -791,7 +791,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ = o.valueOf(false);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MethodNotFound](result)
   }
 
@@ -803,7 +803,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    Arrays.deepToString(Array#{} @ Static)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -815,7 +815,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    obj.stringField
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.FieldNotFound](result)
   }
 
@@ -827,7 +827,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    obj.coolField.stringField
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.FieldNotFound](result)
   }
 
@@ -839,7 +839,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    (obj.coolField).stringField
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.FieldNotFound](result)
   }
 
@@ -853,7 +853,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ : Unit = o.hashCode();
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -868,7 +868,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ : Iterator = o.subSequence(4, -1);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -885,7 +885,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    let _ : AliasedReturnType = o.subSequence(-1, 18);
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -897,7 +897,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def isThisThingNull(x: a): Bool =
         |    Objects.isNull(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -908,7 +908,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |
            |def foo(): Unit = Math.Foo
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
@@ -919,7 +919,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |
            |def foo(): Unit = Math.Abs
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
@@ -931,7 +931,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |
            |def foo(): Unit = File.PI
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
@@ -945,7 +945,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |def f(): A = A.Qux
          |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -961,7 +961,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(): B = B.Qux(1 + 2)
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -979,13 +979,13 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UndefinedType.01") {
     val input = "def x(): Foo = 42"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -995,7 +995,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def foo(bar: Baz, baz: Baz): Qux = bar
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1006,7 +1006,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(): Int32 = Foo.Bar
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -1017,7 +1017,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(): Int32 = Foo/Bar.Qux(true)
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -1026,7 +1026,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f(): Unit \ E = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1035,14 +1035,14 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f(x: a -> b \ E): Unit = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
 
   test("CyclicTraitHierarchy.01") {
     val input = "trait A[a] with A[a]"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -1052,7 +1052,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait A[a] with B[a]
         |trait B[a] with A[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -1063,7 +1063,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait B[a] with C[a]
         |trait C[a] with A[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -1073,7 +1073,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait A[a] with A[a], B[a]
         |trait B[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -1084,7 +1084,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait B[a] with A[a], C[a]
         |trait C[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
@@ -1093,7 +1093,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |enum E with Eq, Eq
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.DuplicateDerivation](result)
   }
 
@@ -1102,7 +1102,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |enum E with ToString, Order, ToString
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.DuplicateDerivation](result)
   }
 
@@ -1112,7 +1112,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |type alias T[a] = a
         |type alias S = T
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -1122,7 +1122,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |type alias T[a, b] = (a, b)
         |type alias S = T[Int32]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -1133,7 +1133,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: T): Int32 = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -1145,7 +1145,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: E[T]): Int32 = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
@@ -1158,7 +1158,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def f(x: C.T): String = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UnderAppliedAssocType](result)
   }
 
@@ -1171,7 +1171,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    type T[String] = Int32
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedAssocType](result)
   }
 
@@ -1186,7 +1186,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    type U = Int32
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedAssocType](result)
   }
 
@@ -1203,7 +1203,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    type V = Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedAssocType](result)
   }
 
@@ -1213,7 +1213,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    new Int32 {}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
@@ -1223,7 +1223,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    new String {}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
@@ -1235,7 +1235,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    new T {}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
@@ -1249,7 +1249,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1263,7 +1263,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1278,7 +1278,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
@@ -1292,7 +1292,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
@@ -1307,7 +1307,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  def foo(): X = ???
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1324,7 +1324,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1336,7 +1336,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  def foo(): StringBuffer = ???
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1350,7 +1350,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
 
@@ -1360,43 +1360,43 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(): Int32 =
         |    par (_ <- let b = 5; b) yield b
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedTypeVar.Def.01") {
     val input = "def f[a: Type](): b = 123"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Def.02") {
     val input = "def f[a: Type](x: b): Int = 123"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Def.03") {
     val input = "def f[a: Type, b: Type, c: Type](x: Option[d]): Int = 123"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.01") {
     val input = "instance C[a] with C[b]"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.02") {
     val input = "instance C[(a, b)] with D[c]"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
   test("UndefinedTypeVar.Instance.03") {
     val input = "instance C[(a, b)] with D[a], D[b], D[c]"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
@@ -1406,7 +1406,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait A[a]
         |trait B[a] with A[b]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
@@ -1417,7 +1417,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait B[a]
         |trait C[a] with A[a], B[b]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
@@ -1432,7 +1432,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def foo(): Unit where Trait.Tpe[a] ~ Int32 =
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
@@ -1444,7 +1444,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    case _: _ => false
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
@@ -1456,7 +1456,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def f(): Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1469,7 +1469,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def g(): Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1482,7 +1482,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def g(x: {y = Bool}): Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1497,7 +1497,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def h(): a
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1512,7 +1512,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def h(): a
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1525,7 +1525,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    pub def f(x: C.T[a]): String
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSignature](result)
   }
 
@@ -1534,7 +1534,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |type alias T = _
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
   }
 
@@ -1543,7 +1543,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |type alias T = _ -> _
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
   }
 
@@ -1554,7 +1554,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    case C(_)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
   }
 
@@ -1564,7 +1564,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |enum E[_]
         |def foo(): String = unchecked_cast(123 as E[_])
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
   }
 
@@ -1573,7 +1573,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |trait C[a: Blah]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
   }
 
@@ -1582,7 +1582,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |enum E[a: Blah]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
   }
 
@@ -1591,7 +1591,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f[a: Blah](x: a): String = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
   }
 
@@ -1607,7 +1607,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    type T = Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.DuplicateAssocTypeDef](result)
   }
 
@@ -1621,7 +1621,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |instance C[String] {
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
@@ -1639,7 +1639,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
@@ -1652,7 +1652,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |
         |def foo(): C.T[String] = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
@@ -1667,7 +1667,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    type T[String] = C.T[String]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
@@ -1684,7 +1684,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
   }
 
@@ -1701,7 +1701,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
   }
 
@@ -1720,7 +1720,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedTagPatternArity](result)
   }
 
@@ -1739,7 +1739,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedTagPatternArity](result)
   }
 
@@ -1753,7 +1753,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
@@ -1770,7 +1770,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
@@ -1788,7 +1788,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
@@ -1805,7 +1805,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedStructField](result)
   }
 
@@ -1820,7 +1820,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedStructField](result)
   }
 
@@ -1835,7 +1835,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedStructField](result)
   }
 
@@ -1849,7 +1849,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    new S @ rc { }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
@@ -1864,7 +1864,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    new S @ rc { }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
@@ -1880,7 +1880,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    new S @ rc { a = 4, c = 2 }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
@@ -1894,7 +1894,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    new S @ rc { a = 4, b = "hello" }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
@@ -1910,7 +1910,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    new S @ rc {b = 4, c = 3, a = 2, extra = 5}
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
@@ -1922,7 +1922,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    new S @ rc {a = 3}
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
@@ -1938,7 +1938,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.ImmutableField](result)
   }
 
@@ -1955,7 +1955,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.ImmutableField](result)
   }
 
@@ -1971,7 +1971,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.ImmutableField](result)
   }
 
@@ -1989,7 +1989,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingHandlerDef](result)
   }
 
@@ -2009,7 +2009,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingHandlerDef](result)
   }
 
@@ -2028,7 +2028,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectErrorOnCheck[ResolutionError.MissingHandlerDef](result)
+    expectError[ResolutionError.MissingHandlerDef](result)
   }
 
 
@@ -2043,7 +2043,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    )
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
 }

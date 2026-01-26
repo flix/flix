@@ -48,37 +48,28 @@ trait TestUtils {
   }
 
   /**
+    * Asserts that the check result is successful.
+    */
+  def expectSuccess(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
+    case (_, Nil) => ()
+    case (_, errors) =>
+      fail(CompilationMessage.formatAll(errors)(Formatter.NoFormatter, None))
+  }
+
+  /**
     * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
     */
-  def expectErrorOnCheck[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
-    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root), Some(root))
-    case (optRoot, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)), optRoot)
+  def expectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]), allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result match {
+    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root), Some(root), allowUnknown)
+    case (optRoot, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)), optRoot, allowUnknown)
   }
 
   /**
-    * Asserts that the compilation result is a failure with a value of the parametric type `T`.
+    * Asserts that the check result does not contain a value of the parametric type `T`.
     */
-  def expectError[T](result: Validation[CompilationResult, CompilationMessage], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit =
-    expectErrorGen[CompilationResult, T](result, None, allowUnknown)
-
-  /**
-    * Asserts that validation contains a defined entry point.
-    */
-  def expectMain(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
-    case (Some(root), _) =>
-      if (root.mainEntryPoint.isEmpty) {
-        fail("Expected 'main' to be defined.")
-      }
-    case _ => fail("Expected 'main' to be defined.")
-  }
-
-  /**
-    * Asserts that the validation does not contain a value of the parametric type `T`.
-    */
-  def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toResult match {
-    case Result.Ok(_) => ()
-
-    case Result.Err(errors) =>
+  def rejectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
+    case (_, Nil) => ()
+    case (_, errors) =>
       val rejected = classTag.runtimeClass
       val actuals = errors.map(_.getClass)
 
