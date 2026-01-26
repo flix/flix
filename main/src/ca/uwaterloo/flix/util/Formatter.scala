@@ -133,6 +133,8 @@ trait Formatter {
 
   def fgColor(r: Int, g: Int, b: Int, s: String): String
 
+  def bgColor(r: Int, g: Int, b: Int, s: String): String
+
   private def padLeft(width: Int, s: String): String = String.format("%" + width + "s", s)
 
   /**
@@ -189,6 +191,8 @@ object Formatter {
 
     override def fgColor(r: Int, g: Int, b: Int, s: String): String = s
 
+    override def bgColor(r: Int, g: Int, b: Int, s: String): String = s
+
   }
 
   /**
@@ -234,7 +238,7 @@ object Formatter {
 
     override def fgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[38;2;$r;$g;${b}m" + s + escape() + "[0m"
 
-    private def bgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[48;2;$r;$g;${b}m" + s + escape() + "[0m"
+    override def bgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[48;2;$r;$g;${b}m" + s + escape() + "[0m"
 
     private def escape(): String = "\u001b"
 

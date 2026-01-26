@@ -446,7 +446,8 @@ object Main {
   /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(command: Command = Command.None,
+  case class CmdOpts(
+    command: Command = Command.None,
     args: List[String] = Nil,
     entryPoint: Option[String] = None,
     installDeps: Boolean = true,
@@ -468,7 +469,8 @@ object Main {
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
     XPerfPar: Boolean = false,
-    files: Seq[File] = Seq())
+    files: Seq[File] = Seq()
+  )
 
   /**
     * A case class representing possible commands.
