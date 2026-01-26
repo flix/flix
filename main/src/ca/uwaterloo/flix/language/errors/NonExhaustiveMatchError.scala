@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -30,11 +31,11 @@ case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends Com
 
   def summary: String = s"Non-exhaustive match: missing case '$pat'."
 
-  def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-    import formatter.*
+  def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    import fmt.*
     s""">> Non-exhaustive match: missing case '${red(pat)}'.
        |
-       |${src(loc, "incomplete match.")}
+       |${highlight(loc, "incomplete match.", fmt)}
        |
        |${underline("Explanation:")} Every match expression must be exhaustive, i.e. cover all
        |possible cases. A wildcard pattern can be used to handle remaining cases. For example:

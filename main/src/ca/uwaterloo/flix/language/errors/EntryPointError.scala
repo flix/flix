@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
@@ -41,8 +42,8 @@ object EntryPointError {
     def summary: String = s"Entry point '${sym.name}' not found."
 
     // NB: We do not print the symbol source location as it is always Unknown.
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Entry point '${red(sym.toString)}' not found.
          |
          |${underline("Possible fixes:")}
@@ -66,11 +67,11 @@ object EntryPointError {
 
     def summary: String = s"Unhandled effect: '${FormatType.formatType(eff)}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unhandled effect: '${red(FormatType.formatType(eff))}'.
          |
-         |${src(loc, "unhandled effect")}
+         |${highlight(loc, "unhandled effect", fmt)}
          |
          |${underline("Explanation:")} Entry point functions (main, tests, exports) can only
          |use primitive effects (like IO) or effects with default handlers. The effect
@@ -95,11 +96,11 @@ object EntryPointError {
 
     def summary: String = s"Unexpected type variable in entry point."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected type variable in entry point function.
          |
-         |${src(loc, "type variable not allowed here")}
+         |${highlight(loc, "type variable not allowed here", fmt)}
          |
          |${underline("Explanation:")} Entry point functions (main, tests, exports) must have
          |concrete types. Type variables like 'a' or 't' are not allowed because the runtime
@@ -118,11 +119,11 @@ object EntryPointError {
 
     def summary: String = s"Unexpected name for exported function."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected name for exported function.
          |
-         |${src(loc, "name not valid in Java")}
+         |${highlight(loc, "name not valid in Java", fmt)}
          |
          |${underline("Explanation:")} Exported functions must have names that are valid Java
          |identifiers. A valid name starts with a lowercase letter and contains only letters
@@ -141,11 +142,11 @@ object EntryPointError {
 
     def summary: String = s"Exported function in root namespace."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Exported function must be in a module.
          |
-         |${src(loc, "function in root namespace")}
+         |${highlight(loc, "function in root namespace", fmt)}
          |
          |${underline("Explanation:")} Exported functions generate Java methods in a class
          |named after the module. Functions in the root namespace have no module name,
@@ -172,11 +173,11 @@ object EntryPointError {
 
     def summary: String = s"Unexpected type in exported function: '${FormatType.formatType(t)}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected type '${red(FormatType.formatType(t))}' in exported function.
          |
-         |${src(loc, "type not exportable")}
+         |${highlight(loc, "type not exportable", fmt)}
          |
          |${underline("Explanation:")} Exported functions can only use primitive Java types:
          |
@@ -196,11 +197,11 @@ object EntryPointError {
 
     def summary: String = s"Unexpected result type for main: '${FormatType.formatType(tpe)}'."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected result type '${red(FormatType.formatType(tpe))}' for main.
          |
-         |${src(loc, "type has no ToString instance")}
+         |${highlight(loc, "type has no ToString instance", fmt)}
          |
          |${underline("Explanation:")} The main function must return Unit or a type with a
          |ToString instance so the result can be printed.
@@ -224,11 +225,11 @@ object EntryPointError {
 
     def summary: String = s"Unexpected formal parameter in entry point."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected formal parameter in entry point function.
          |
-         |${src(loc, "formal parameter not allowed")}
+         |${highlight(loc, "formal parameter not allowed", fmt)}
          |
          |${underline("Explanation:")} Entry point functions (main and tests) must have
          |no formal parameters.
@@ -255,11 +256,11 @@ object EntryPointError {
 
     def summary: String = s"Non-public exported function."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Exported function is not public.
          |
-         |${src(loc, "missing 'pub' modifier")}
+         |${highlight(loc, "missing 'pub' modifier", fmt)}
          |
          |${underline("Explanation:")} Exported functions must be declared with the 'pub'
          |modifier to be visible from Java code. Private functions cannot be exported
@@ -286,11 +287,11 @@ object EntryPointError {
 
     def summary: String = s"Unexpected return type: @Test function must return Unit."
 
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected return type: @Test function must return Unit.
          |
-         |${src(loc, "expected Unit")}
+         |${highlight(loc, "expected Unit", fmt)}
          |
          |${underline("Explanation:")} A @Test function must have no formal parameters,
          |return Unit, and use only the Assert effect, effects with default handlers,

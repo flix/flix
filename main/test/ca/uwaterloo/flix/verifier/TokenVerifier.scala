@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.verifier
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Token, TokenKind}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
 
 /**
@@ -138,7 +139,7 @@ object TokenVerifier {
     val msg =
       s""">> Found non-eof last token: ${found.kind}.
          |
-         |${Formatter.NoFormatter.src(loc, "here")}
+         |${highlight(loc, "here", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -149,7 +150,7 @@ object TokenVerifier {
     val msg =
       s""">> Found ${TokenKind.Eof} with tokens following it.
          |
-         |${Formatter.NoFormatter.src(loc, "here")}
+         |${highlight(loc, "here", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -160,7 +161,7 @@ object TokenVerifier {
     val msg =
       s""">> Found token with source ${found.src.name} in the tokens of ${src.name}.
          |
-         |${Formatter.NoFormatter.src(loc, s"here (${found.kind})")}
+         |${highlight(loc, s"here (${found.kind})", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -171,7 +172,7 @@ object TokenVerifier {
     val msg =
       s""">> Invalid offset range: ${found.startIndex} - ${found.endIndex}.
          |
-         |${Formatter.NoFormatter.src(loc, s"here (${found.kind})")}
+         |${highlight(loc, s"here (${found.kind})", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -183,7 +184,7 @@ object TokenVerifier {
     val msg =
       s""">> Invalid position range: $positionRangeString.
          |
-         |${Formatter.NoFormatter.src(loc, s"here (${found.kind})")}
+         |${highlight(loc, s"here (${found.kind})", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -194,7 +195,7 @@ object TokenVerifier {
     val msg =
       s""">> Token with out-of-bound offsets: ${found.startIndex} - ${found.endIndex}.
          |
-         |${Formatter.NoFormatter.src(loc, s"here (${found.kind})")}
+         |${highlight(loc, s"here (${found.kind})", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -207,9 +208,9 @@ object TokenVerifier {
     val msg =
       s""">> Overlapping tokens (position): $leftPos and $rightPos.
          |
-         |${Formatter.NoFormatter.src(left.mkSourceLocation(), s"left token here (${left.kind})")}
+         |${highlight(left.mkSourceLocation(), s"left token here (${left.kind})", Formatter.NoFormatter)(None)}
          |
-         |${Formatter.NoFormatter.src(right.mkSourceLocation(), s"right token here (${right.kind})")}
+         |${highlight(right.mkSourceLocation(), s"right token here (${right.kind})", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -220,9 +221,9 @@ object TokenVerifier {
     val msg =
       s""">> Overlapping tokens: ${left.startIndex} - ${right.endIndex} and ${right.startIndex} - ${right.endIndex}.
          |
-         |${Formatter.NoFormatter.src(left.mkSourceLocation(), s"left token here (${left.kind})")}
+         |${highlight(left.mkSourceLocation(), s"left token here (${left.kind})", Formatter.NoFormatter)(None)}
          |
-         |${Formatter.NoFormatter.src(right.mkSourceLocation(), s"right token here (${right.kind})")}
+         |${highlight(right.mkSourceLocation(), s"right token here (${right.kind})", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
@@ -233,7 +234,7 @@ object TokenVerifier {
     val msg =
       s""">> End column is the first column of next line instead of last column of the existing line.
          |
-         |${Formatter.NoFormatter.src(found.mkSourceLocation(), s"here (${found.kind})")}
+         |${highlight(found.mkSourceLocation(), s"here (${found.kind})", Formatter.NoFormatter)(None)}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
