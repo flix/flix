@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Token, TokenKind, TypedAs
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 object Highlighter {
@@ -50,7 +51,7 @@ object Highlighter {
       case Some(r) =>
         val (allTokens, _) = Lexer.lex(source)
         val semanticTokens = SemanticTokensProvider.getSemanticTokens(source.name)(r)
-        Coloring.Highlighted(allTokens, semanticTokens)
+        Coloring.Highlighted(allTokens.to(ArraySeq), semanticTokens.to(ArraySeq))
     }
 
     if (loc.startLine == loc.endLine)
@@ -127,7 +128,7 @@ object Highlighter {
     *
     * Returns the colorized source substring for the given line range.
     */
-  private def applyColors(source: String, lexerTokens: Array[Token], semanticTokens: List[SemanticToken], startLine: Int, endLine: Int)(implicit fmt: Formatter): String = {
+  private def applyColors(source: String, lexerTokens: ArraySeq[Token], semanticTokens: ArraySeq[SemanticToken], startLine: Int, endLine: Int)(implicit fmt: Formatter): String = {
     // Compute substring boundaries
     val startOffset = lineOffset(source, startLine)
     val endOffset = lineOffset(source, endLine)
@@ -183,7 +184,7 @@ object Highlighter {
     *   buildTokenMap(List(SemanticToken(...)), 5, 6) = Map((5, 10) -> Variable)
     * }}}
     */
-  private def buildSemanticTokenIndex(tokens: List[SemanticToken], startLine: Int, endLine: Int): Map[(Int, Int), SemanticTokenType] = {
+  private def buildSemanticTokenIndex(tokens: ArraySeq[SemanticToken], startLine: Int, endLine: Int): Map[(Int, Int), SemanticTokenType] = {
     val m = mutable.Map.empty[(Int, Int), SemanticTokenType]
     for (t <- tokens) {
       if (startLine <= t.loc.startLine && t.loc.startLine < endLine) {
@@ -287,6 +288,6 @@ object Highlighter {
     /**
       * Apply syntax highlighting using the provided tokens.
       */
-    case class Highlighted(lexerTokens: Array[Token], semanticTokens: List[SemanticToken]) extends Coloring
+    case class Highlighted(lexerTokens: ArraySeq[Token], semanticTokens: ArraySeq[SemanticToken]) extends Coloring
   }
 }
