@@ -24,8 +24,19 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestFlixErrors extends AnyFunSuite with TestUtils {
 
+  test("HoleError.01") {
+    val input = "def main(): Unit = ???"
+    val result = compile(input, Options.TestWithLibMin)
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
+  }
+
+  test("HoleError.02") {
+    val input = "def main(): Unit = ?namedHole"
+    val result = compile(input, Options.TestWithLibMin)
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
+  }
+
   def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
-    expectSuccess(v)
     v.toResult match {
       case Result.Ok(t) => t.getMain match {
         case Some(main) => try {
@@ -40,18 +51,6 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
       }
       case Result.Err(_) => fail("Impossible")
     }
-  }
-
-  test("HoleError.01") {
-    val input = "def main(): Unit = ???"
-    val result = compile(input, Options.TestWithLibMin)
-    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
-  }
-
-  test("HoleError.02") {
-    val input = "def main(): Unit = ?namedHole"
-    val result = compile(input, Options.TestWithLibMin)
-    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
 }

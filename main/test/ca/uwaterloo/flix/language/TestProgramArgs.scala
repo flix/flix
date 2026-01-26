@@ -32,6 +32,7 @@ class TestProgramArgs extends AnyFunSuite with TestUtils {
          |    case _ => ?incorrectNumberOfArgs
          |}
       """.stripMargin
+
     val result = compile(input, Options.TestWithLibAll)
     result.toResult match {
       case Result.Ok(result) => result.getMain match {
@@ -46,6 +47,7 @@ class TestProgramArgs extends AnyFunSuite with TestUtils {
         val actuals = errors.map(_.getClass)
         fail(s"Expected success, but found errors ${actuals.mkString(", ")}.")
     }
+
   }
 
 }
