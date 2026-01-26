@@ -29,7 +29,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |def f(): Int = 42
          |def f(): Int = 21
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -40,7 +40,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |def f(): Int = 21
          |def f(): Int = 11
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -51,7 +51,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |def f(x: Int): Int = 21
          |def f(x: Int): Int = 11
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -62,7 +62,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |def f(x: Int): Int = 21
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -77,7 +77,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  def f(): Int = 21
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -96,7 +96,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -108,7 +108,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    pub def f(x: a): Bool
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -121,7 +121,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    pub def f(x: Int): a
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -136,7 +136,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  pub def f(): Int = 21
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -155,7 +155,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -172,7 +172,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -187,7 +187,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    pub def f(): Unit
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -199,7 +199,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    pub def f(): Unit
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
   }
 
@@ -209,7 +209,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -220,7 +220,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -235,7 +235,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  type alias USD = Int
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -247,7 +247,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  case A
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -260,7 +260,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  case A
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -277,7 +277,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -291,7 +291,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  case B
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -308,7 +308,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  case C
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -327,7 +327,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  }
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -337,7 +337,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |type alias USD = Int
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -348,7 +348,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |type alias USD = Int
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -363,7 +363,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  trait USD[a]
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -375,7 +375,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |}
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -390,7 +390,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |}
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -407,7 +407,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  trait USD[a]
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -417,7 +417,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |trait USD[a]
          |trait USD[a]
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -428,7 +428,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |trait USD[a]
          |trait USD[a]
          """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -443,7 +443,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |  trait USD[a]
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -453,7 +453,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |enum E
         |eff E
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -463,7 +463,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |trait C[a]
         |eff C
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -473,7 +473,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |enum Statement
         |type alias Statement = Int
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -483,7 +483,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |struct S[r] {}
         |enum S {}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -496,7 +496,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    discard S.S
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -509,7 +509,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |    discard S.S
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -520,7 +520,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |  case Red
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -532,7 +532,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |  case Red
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -545,7 +545,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |  case Blu
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -558,7 +558,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |  case Ylw
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
 
@@ -568,7 +568,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |  case Value,
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.IllegalReservedName](result)
   }
 
@@ -576,7 +576,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     val input =
       """type alias Float32[k] = (k,k)
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.IllegalReservedName](result)
   }
 
@@ -584,7 +584,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     val input =
       """struct Float64 {}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.IllegalReservedName](result)
   }
 
@@ -592,7 +592,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     val input =
       """trait String[s] { def f(x: s): s }
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.IllegalReservedName](result)
   }
 
@@ -601,7 +601,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |def f(_x: List[unit]): Unit = ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -610,7 +610,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |def f(_x: List[Result[Unit, bool]]): Unit = ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -619,7 +619,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
       s"""
          |def f(): List[char] = ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -630,7 +630,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
          |    case X(string)
          |}
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
@@ -643,8 +643,8 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |def foo(): Unit = ()
         |def foo(): Unit = ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibAll)
     expectError[NameError.DuplicateLowerName](result)
-    rejectError[ResolutionError.UndefinedUse](result)
+    rejectErrorOnCheck[ResolutionError.UndefinedUse](result)
   }
 }

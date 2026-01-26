@@ -33,7 +33,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Int32]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
@@ -46,7 +46,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[(x, y)]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
@@ -59,7 +59,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[x -> y \ ef2]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
@@ -76,7 +76,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Box[b]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
@@ -97,7 +97,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |def g(x: String): Bool = C.f(x, x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
@@ -114,7 +114,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[S[b, r]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
@@ -125,7 +125,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[(a, Int32)]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -136,7 +136,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Unit -> a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -151,7 +151,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Box[Int32]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -166,7 +166,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Box[Int32, r]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -177,7 +177,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Int32 -> b \ e]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -192,7 +192,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Box[a] -> b \ e]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -203,7 +203,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[a]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -214,7 +214,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[m[a]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -229,7 +229,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Box[a, r] -> b \ e]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
   }
 
@@ -240,7 +240,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[(a, a)]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.DuplicateTypeVar](result)
   }
 
@@ -251,7 +251,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[a -> a \ ef]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.DuplicateTypeVar](result)
   }
 
@@ -266,7 +266,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[DoubleBox[a, a]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.DuplicateTypeVar](result)
   }
 
@@ -281,7 +281,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[DoubleBox[a, a, r]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.DuplicateTypeVar](result)
   }
 
@@ -295,7 +295,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[Bool] {
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingImplementation](result)
   }
 
@@ -310,7 +310,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def get(_i: Int32): Bool = false
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -329,7 +329,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(_x: Box[a]): Bool with C[a] = false
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -354,7 +354,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[CompilationMessage](result) // TODO should be MismatchedSignature
   }
 
@@ -371,7 +371,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(x: b): Bool = false
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -386,7 +386,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(x: Bool, y: Int32): Int32 \ IO = checked_ecast(123)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -401,7 +401,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(x: Bool, y: Int32): Int32 \ IO = checked_ecast(123)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -431,7 +431,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(x: Int64): Set[String] = ???
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[InstanceError.MismatchedSignatures](result)
 
   }
@@ -451,7 +451,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(_x: Box[a, r]): Bool with C[a] = false
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -476,7 +476,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[CompilationMessage](result) // TODO should be MismatchedSignature
   }
 
@@ -489,7 +489,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def get(): Bool = false
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ExtraneousDef](result)
   }
 
@@ -502,7 +502,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    redef get(): Bool = false
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ExtraneousDef](result)
   }
 
@@ -515,7 +515,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    instance C[Int32]
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OrphanInstance](result)
   }
 
@@ -528,7 +528,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance N.C[Int32]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OrphanInstance](result)
   }
 
@@ -543,7 +543,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OrphanInstance](result)
   }
 
@@ -558,7 +558,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.OrphanInstance](result)
   }
 
@@ -579,7 +579,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance B[Wrapper[t]] with A[t]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingEqualityConstraint](result)
   }
 
@@ -600,7 +600,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance B[Wrapper[sadf]] with A[sadf] where A.Aty[sadf] ~ Char
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingEqualityConstraint](result)
   }
 
@@ -612,7 +612,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance A[Int32]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
@@ -626,7 +626,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance A[Int32]
         |instance B[Int32]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
@@ -639,7 +639,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance A[Int32]
         |instance B[Bool]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
@@ -650,7 +650,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def f(): a
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.UnlawfulSignature](result)
   }
 
@@ -669,7 +669,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |  law l: forall (x: a) C.f(x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.UnlawfulSignature](result)
   }
 
@@ -684,7 +684,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def qux(): Int32 = 2
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingImplementation](result)
     expectError[InstanceError.ExtraneousDef](result)
   }
@@ -700,7 +700,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |  override pub def f(x: Int32): Bool = true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.IllegalRedef](result)
   }
 
@@ -715,7 +715,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |  pub def f(x: Int32): Bool = false
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.UnmarkedRedef](result)
   }
 
@@ -734,9 +734,9 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    case Box(a)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
-    rejectError[InstanceError.ExtraneousDef](result)
+    rejectErrorOnCheck[InstanceError.ExtraneousDef](result)
   }
 
   test("Test.TypeAliasInstance.01") {
@@ -746,7 +746,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |type alias T = Int32
         |instance C[T]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.IllegalTypeAliasInstance](result)
   }
 
@@ -757,7 +757,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |type alias T[a] = Int32
         |instance C[T[a]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.IllegalTypeAliasInstance](result)
   }
 
@@ -770,7 +770,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[(a, b)] with C[a], C[b]
         |instance D[(a, b)]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingTraitConstraint](result)
   }
 
@@ -787,7 +787,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance D[(a, b)] with C[a], C[b], F[a], F[b]
         |instance E[(a, b)] with C[a], C[b]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingTraitConstraint](result)
   }
 
@@ -800,7 +800,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[(a, b)] with C[a], C[b]
         |instance D[(a, b)] with D[a], D[b]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    rejectError[InstanceError.MissingTraitConstraint](result)
+    val result = check(input, Options.TestWithLibNix)
+    rejectErrorOnCheck[InstanceError.MissingTraitConstraint](result)
   }
 }

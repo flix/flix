@@ -48,28 +48,33 @@ trait TestUtils {
   }
 
   /**
-    * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
+    * Asserts that the check result is successful.
     */
-  def expectErrorOnCheck[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
-    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root), Some(root))
-    case (optRoot, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)), optRoot)
+  def expectSuccessOnCheck(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
+    case (_, Nil) => ()
+    case (_, errors) =>
+      fail(CompilationMessage.formatAll(errors)(Formatter.NoFormatter, None))
   }
 
   /**
-    * Asserts that the compilation result is a failure with a value of the parametric type `T`.
+    * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
     */
-  def expectError[T](result: Validation[CompilationResult, CompilationMessage], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit =
-    expectErrorGen[CompilationResult, T](result, None, allowUnknown)
+  def expectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]), allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result match {
+    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root), Some(root), allowUnknown)
+    case (optRoot, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)), optRoot, allowUnknown)
+  }
 
   /**
-    * Asserts that validation contains a defined entry point.
+    * Asserts that the check result does not contain a value of the parametric type `T`.
     */
-  def expectMain(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
-    case (Some(root), _) =>
-      if (root.mainEntryPoint.isEmpty) {
-        fail("Expected 'main' to be defined.")
-      }
-    case _ => fail("Expected 'main' to be defined.")
+  def rejectErrorOnCheck[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
+    case (_, Nil) => ()
+    case (_, errors) =>
+      val rejected = classTag.runtimeClass
+      val actuals = errors.map(_.getClass)
+
+      if (actuals.exists(rejected.isAssignableFrom(_)))
+        fail(s"Unexpected an error of type ${rejected.getSimpleName}.")
   }
 
   /**

@@ -169,7 +169,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |pub def f(x: Int32): Bool = x == 0
          |
          |""".stripMargin)
-    expectError[UnexpectedArg](flix.compile())
+    expectError[UnexpectedArg](flix.check())
   }
 
   test("Incremental.05") {
