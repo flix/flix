@@ -73,7 +73,7 @@ object Highlighter {
     val lineNo = loc.startLine
     val lineNoStr = lineNo.toString + " | "
     val highlightedLine = coloring match {
-      case Coloring.Plain => extractLine(source, lineNo)
+      case Coloring.Plain => extractSingleLine(source, lineNo)
       case Coloring.Highlighted(toks, stoks) => applyColors(source, toks, stoks, lineNo, lineNo + 1).stripLineEnd
     }
 
@@ -107,7 +107,7 @@ object Highlighter {
 
     for (lineNo <- loc.startLine to loc.endLine) {
       val highlightedLine = coloring match {
-        case Coloring.Plain => extractLine(source, lineNo)
+        case Coloring.Plain => extractSingleLine(source, lineNo)
         case Coloring.Highlighted(toks, stoks) => applyColors(source, toks, stoks, lineNo, lineNo + 1).stripLineEnd
       }
       val prefix = padLeft(numWidth, lineNo.toString) + " | "
@@ -185,8 +185,14 @@ object Highlighter {
 
   /**
     * Extracts a single line from the source string (1-indexed), without the trailing newline.
+    *
+    * Example:
+    *
+    * {{{
+    *   extractLine("foo\nbar\nbaz", 2) = "bar"
+    * }}}
     */
-  private def extractLine(s: String, line: Int): String = {
+  private def extractSingleLine(s: String, line: Int): String = {
     val start = lineOffset(s, line)
     val end = lineOffset(s, line + 1)
     val lineContent = s.substring(start, end)
@@ -195,7 +201,16 @@ object Highlighter {
 
   /**
     * Returns the character offset where the given 1-indexed line starts.
+    *
     * Returns source.length if line is beyond the source.
+    *
+    * Example:
+    *
+    * {{{
+    *   lineOffset("foo\nbar\nbaz", 1) = 0
+    *   lineOffset("foo\nbar\nbaz", 2) = 4
+    *   lineOffset("foo\nbar\nbaz", 3) = 8
+    * }}}
     */
   private def lineOffset(s: String, line: Int): Int = {
     var offset = 0
