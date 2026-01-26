@@ -132,7 +132,7 @@ object Highlighter {
     val startOffset = lineOffset(source, startLine)
     val endOffset = lineOffset(source, endLine)
 
-    val tokenMap = buildTokenMap(semanticTokens, startLine, endLine)
+    val tokenMap = buildSemanticTokenIndex(semanticTokens, startLine, endLine)
 
     val sb = new StringBuilder
     var i = startOffset
@@ -172,12 +172,22 @@ object Highlighter {
 
   /**
     * Builds a map from (line, column) positions to semantic token types for tokens within the given line range.
+    *
+    * This enables O(1) lookup of semantic token types during colorization, rather than searching the token list
+    * for each lexer token. Only tokens whose start line falls within [startLine, endLine) are included.
+    *
+    * Example:
+    *
+    * {{{
+    *   // Given a semantic token for "foo" at line 5, column 10 with type Variable:
+    *   buildTokenMap(List(SemanticToken(...)), 5, 6) = Map((5, 10) -> Variable)
+    * }}}
     */
-  private def buildTokenMap(tokens: List[SemanticToken], startLine: Int, endLine: Int): Map[(Int, Int), SemanticTokenType] = {
+  private def buildSemanticTokenIndex(tokens: List[SemanticToken], startLine: Int, endLine: Int): Map[(Int, Int), SemanticTokenType] = {
     val m = mutable.Map.empty[(Int, Int), SemanticTokenType]
     for (t <- tokens) {
       if (startLine <= t.loc.startLine && t.loc.startLine < endLine) {
-        m((t.loc.startLine, t.loc.startCol)) = t.tpe
+        m += (t.loc.startLine, t.loc.startCol) -> t.tpe
       }
     }
     m.toMap
