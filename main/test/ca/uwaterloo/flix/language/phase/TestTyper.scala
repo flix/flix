@@ -1746,7 +1746,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs)))
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Subeffecting.Def.02") {
@@ -1766,7 +1766,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  mustBeIO(() -> ())
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Subeffecting.Lambda.02") {
@@ -1789,7 +1789,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Subeffecting.Instance.02") {
@@ -1811,7 +1811,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): Abc = "hello"
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    rejectErrorOnCheck[TypeError](result)
+    rejectError[TypeError](result)
   }
 
   test("ErrorType.02") {
@@ -1822,7 +1822,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): Abc = ???
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    rejectErrorOnCheck[TypeError](result)
+    rejectError[TypeError](result)
   }
 
   test("UndefinedLabel.01") {
@@ -2584,7 +2584,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): String \ IO = "".toString(); ""
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    rejectErrorOnCheck[TypeError](result)
+    rejectError[TypeError](result)
   }
 
   test("TypeError.NonUnitStatement.Jvm.02") {
@@ -2594,7 +2594,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): String \ IO = Objects.toString(""); ""
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    rejectErrorOnCheck[TypeError](result)
+    rejectError[TypeError](result)
   }
 
 }

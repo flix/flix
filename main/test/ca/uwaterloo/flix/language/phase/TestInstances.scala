@@ -736,7 +736,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
-    rejectErrorOnCheck[InstanceError.ExtraneousDef](result)
+    rejectError[InstanceError.ExtraneousDef](result)
   }
 
   test("Test.TypeAliasInstance.01") {
@@ -801,6 +801,6 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance D[(a, b)] with D[a], D[b]
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    rejectErrorOnCheck[InstanceError.MissingTraitConstraint](result)
+    rejectError[InstanceError.MissingTraitConstraint](result)
   }
 }

@@ -1136,7 +1136,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("ExtensibleType.01") {
@@ -1145,7 +1145,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |pub def foo(): #| A(Int32) |# = ???
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 }
 

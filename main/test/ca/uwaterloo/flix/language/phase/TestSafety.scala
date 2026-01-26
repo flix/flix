@@ -1019,7 +1019,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Def.02") {
@@ -1028,7 +1028,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(_: Unit -> Unit \ IO): Unit = ()
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Def.03") {
@@ -1037,7 +1037,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(g: Unit -> Unit \ IO): Unit \ IO = g()
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Def.04") {
@@ -1046,7 +1046,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(): (Unit -> Unit \ IO) = _ -> println("hello")
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Sig.01") {
@@ -1057,7 +1057,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Sig.02") {
@@ -1068,7 +1068,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Sig.03") {
@@ -1080,7 +1080,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Sig.04") {
@@ -1092,7 +1092,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Sig.05") {
@@ -1113,7 +1113,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Sig.06") {
@@ -1135,7 +1135,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Sig.07") {
@@ -1157,7 +1157,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.Sig.08") {
@@ -1180,7 +1180,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Plain.UncheckedCast.01") {
@@ -1249,7 +1249,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Def.02") {
@@ -1258,7 +1258,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(_: Unit -> Unit \ IO): Unit = ()
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Def.03") {
@@ -1267,7 +1267,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(g: Unit -> Unit \ IO): Unit \ IO = g()
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Def.04") {
@@ -1276,7 +1276,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(): (Unit -> Unit \ IO) = _ -> println("hello")
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Sig.01") {
@@ -1287,7 +1287,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Sig.02") {
@@ -1298,7 +1298,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Sig.03") {
@@ -1310,7 +1310,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Sig.04") {
@@ -1322,7 +1322,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Sig.05") {
@@ -1343,7 +1343,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Sig.06") {
@@ -1365,7 +1365,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Sig.07") {
@@ -1387,7 +1387,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Sig.08") {
@@ -1410,7 +1410,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.UncheckedCast.01") {
@@ -1419,7 +1419,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |pub def f(): Unit = unchecked_cast(println(42) as _ \ {})
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Java.01") {
@@ -1431,7 +1431,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Java.02") {
@@ -1443,7 +1443,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Java.03") {
@@ -1456,7 +1456,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("SecurityContext.Unrestricted.Java.04") {
@@ -1471,6 +1471,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 }

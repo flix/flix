@@ -350,7 +350,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ???
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.Main.02") {
@@ -359,7 +359,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Int64 \ IO = checked_ecast(42i64)
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.Main.03") {
@@ -368,7 +368,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Int64 \ NonDet = checked_ecast(42i64)
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.Main.04") {
@@ -377,7 +377,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Int64 \ {NonDet, IO} = checked_ecast(42i64)
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.Other.01") {
@@ -386,7 +386,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def f(): Unit = ???
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.LibNix.01") {
@@ -395,7 +395,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.DefaultHandler.01") {
@@ -421,7 +421,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.DefaultHandler.02") {
@@ -447,7 +447,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit \ E = E.op()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.DefaultHandler.03") {
@@ -490,7 +490,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit \ E1 + E2 = E1.op();E2.op()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.DefaultHandler.04") {
@@ -533,7 +533,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit \ E2 + E1 = E2.op();E1.op()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.DefaultHandler.05") {
@@ -593,7 +593,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit \ E1 + E2 + E3 = E1.op1();E2.op2();E3.op3()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.DefaultHandler.06") {
@@ -653,7 +653,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit \ E1 + E3 = E1.op1();E3.op3()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("Test.ValidEntryPoint.DefaultHandler.07") {
@@ -712,6 +712,6 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit \ E1 + E2 + E3 + IO = E1.op1();E2.op2();E3.op3();println("Hello World")
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 }

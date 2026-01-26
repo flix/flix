@@ -645,6 +645,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibAll)
     expectError[NameError.DuplicateLowerName](result)
-    rejectErrorOnCheck[ResolutionError.UndefinedUse](result)
+    rejectError[ResolutionError.UndefinedUse](result)
   }
 }

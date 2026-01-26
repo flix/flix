@@ -641,7 +641,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
     // is not a false positive
     val input = """ def f(): String = "This is terminated" """
     val result = check(input, Options.TestWithLibNix)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("LexerError.UnterminatedString.06") {

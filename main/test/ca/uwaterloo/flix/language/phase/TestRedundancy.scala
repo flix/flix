@@ -811,7 +811,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |
        """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("PrefixedEnumSym.01") {
@@ -827,7 +827,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |
        """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("PrefixedEnumSym.02") {
@@ -838,7 +838,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |}
        """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 
   test("UnusedFormalParam.Def.01") {
@@ -2024,6 +2024,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibAll)
-    expectSuccessOnCheck(result)
+    expectSuccess(result)
   }
 }

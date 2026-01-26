@@ -50,7 +50,7 @@ trait TestUtils {
   /**
     * Asserts that the check result is successful.
     */
-  def expectSuccessOnCheck(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
+  def expectSuccess(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
     case (_, Nil) => ()
     case (_, errors) =>
       fail(CompilationMessage.formatAll(errors)(Formatter.NoFormatter, None))
@@ -67,23 +67,9 @@ trait TestUtils {
   /**
     * Asserts that the check result does not contain a value of the parametric type `T`.
     */
-  def rejectErrorOnCheck[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
+  def rejectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
     case (_, Nil) => ()
     case (_, errors) =>
-      val rejected = classTag.runtimeClass
-      val actuals = errors.map(_.getClass)
-
-      if (actuals.exists(rejected.isAssignableFrom(_)))
-        fail(s"Unexpected an error of type ${rejected.getSimpleName}.")
-  }
-
-  /**
-    * Asserts that the validation does not contain a value of the parametric type `T`.
-    */
-  def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toResult match {
-    case Result.Ok(_) => ()
-
-    case Result.Err(errors) =>
       val rejected = classTag.runtimeClass
       val actuals = errors.map(_.getClass)
 
