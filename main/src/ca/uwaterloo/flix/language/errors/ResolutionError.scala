@@ -167,8 +167,8 @@ object ResolutionError {
          |
          |${underline("Explanation:")} An associated type may only be applied to a type variable.
          |
-         |  Elm[a]     // allowed
-         |  Elm[Int32] // not allowed
+         |  Elm[a]     // OK
+         |  Elm[Int32] // not OK
          |""".stripMargin
     }
   }
@@ -216,8 +216,8 @@ object ResolutionError {
          |${underline("Explanation:")} Every signature in a trait must mention the type variable of the trait.
          |
          |  trait T[a] {
-         |      pub def f(x: a): a    // allowed
-         |      pub def g(): Int32    // not allowed
+         |      pub def f(x: a): a    // OK
+         |      pub def g(): Int32    // not OK
          |  }
          |""".stripMargin
     }

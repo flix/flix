@@ -444,8 +444,8 @@ object WeederError {
          |
          |${underline("Explanation:")} Only wildcards and variables are allowed in extensible patterns.
          |
-         |    case A(x, _, z) => ...  // allowed
-         |    case A(1, 2, 3) => ...  // not allowed
+         |    case A(x, _, z) => ...  // OK
+         |    case A(1, 2, 3) => ...  // not OK
          |
          |""".stripMargin
     }
@@ -787,8 +787,8 @@ object WeederError {
          |
          |${underline("Explanation:")} Type constraint parameters must only contain type variables.
          |
-         |    def foo(x: a): ... with ToString[a]         // allowed
-         |    def foo(x: a): ... with ToString[Int32]     // not allowed
+         |    def foo(x: a): ... with ToString[a]         // OK
+         |    def foo(x: a): ... with ToString[Int32]     // not OK
          |""".stripMargin
     }
   }
@@ -1009,9 +1009,9 @@ object WeederError {
          |
          |${underline("Explanation:")} Either all or none of the type parameters must have kind annotations.
          |
-         |    enum E[a, b]              // allowed
-         |    enum E[a: Type, b: Type]  // allowed
-         |    enum E[a, b: Type]        // not allowed
+         |    enum E[a, b]              // OK
+         |    enum E[a: Type, b: Type]  // OK
+         |    enum E[a, b: Type]        // not OK
          |""".stripMargin
     }
   }
@@ -1097,8 +1097,8 @@ object WeederError {
          |${underline("Explanation:")} A variable may only occur once in a pattern.
          |Use a guard instead:
          |
-         |    case (x, x) => ...             // not allowed
-         |    case (x, y) if x == y => ...   // allowed
+         |    case (x, x) => ...             // not OK
+         |    case (x, y) if x == y => ...   // OK
          |""".stripMargin
     }
 
