@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -41,7 +41,7 @@ object WeederError {
 
     def summary: String = s"Duplicate annotation '@$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate annotation '${red("@" + name)}'.
          |
@@ -67,7 +67,7 @@ object WeederError {
 
     def summary: String = s"Duplicate formal parameter: '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate formal parameter '${red(name)}'.
          |
@@ -93,7 +93,7 @@ object WeederError {
 
     def summary: String = s"Duplicate modifier '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate modifier '${red(name)}'.
          |
@@ -120,7 +120,7 @@ object WeederError {
 
     def summary: String = s"Duplicate struct field: '$fieldName'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Duplicate struct field '${red(fieldName)}' in '${magenta(structName)}'.
          |
@@ -141,7 +141,7 @@ object WeederError {
 
     def summary: String = "Empty loop: missing collection comprehension."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Empty loop: missing collection comprehension.
          |
@@ -166,7 +166,7 @@ object WeederError {
 
     def summary: String = "Empty interpolated expression."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Empty interpolated expression.
          |
@@ -186,7 +186,7 @@ object WeederError {
 
     def summary: String = "Empty record pattern: missing field."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Empty record pattern: missing field.
          |
@@ -205,7 +205,7 @@ object WeederError {
 
     def summary: String = "Empty type parameter list."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Empty type parameter list.
          |
@@ -225,7 +225,7 @@ object WeederError {
 
     def summary: String = s"Unexpected annotation '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected annotation '${red(name)}'.
          |
@@ -244,7 +244,7 @@ object WeederError {
 
     def summary: String = "Unexpected BigDecimal pattern."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected BigDecimal pattern.
          |
@@ -265,7 +265,7 @@ object WeederError {
 
     def summary: String = "Unexpected constant pattern."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected constant pattern.
          |
@@ -286,7 +286,7 @@ object WeederError {
 
     def summary: String = "Unexpected effect type parameters."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected effect type parameters.
          |
@@ -305,7 +305,7 @@ object WeederError {
 
     def summary: String = "Unexpected effect on operation."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected effect on operation.
          |
@@ -326,7 +326,7 @@ object WeederError {
 
     def summary: String = "Unexpected empty tuple type."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected empty tuple type.
          |
@@ -347,7 +347,7 @@ object WeederError {
 
     def summary: String = "Unexpected enum format."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected enum format.
          |
@@ -379,7 +379,7 @@ object WeederError {
 
     def summary: String = "Malformed equality constraint."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed equality constraint.
          |
@@ -406,7 +406,7 @@ object WeederError {
 
     def summary: String = s"Invalid escape sequence '\\$char'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Invalid escape sequence '${red("\\" + char)}'.
          |
@@ -436,7 +436,7 @@ object WeederError {
 
     def summary: String = "Unexpected extensible variant pattern."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected extensible variant pattern.
          |
@@ -461,7 +461,7 @@ object WeederError {
 
     def summary: String = "Unexpected 'fix' on negative atom."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected 'fix' on negative atom.
          |
@@ -482,7 +482,7 @@ object WeederError {
 
     def summary: String = "Unexpected forA fragment: only generators allowed."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected forA fragment: only generators allowed.
          |
@@ -503,7 +503,7 @@ object WeederError {
 
     def summary: String = "Unexpected for-fragment: loop must start with a generator."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected for-fragment: loop must start with a generator.
          |
@@ -528,7 +528,7 @@ object WeederError {
 
     def summary: String = "Unexpected type ascription on effect handler parameter."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected type ascription on effect handler parameter.
          |
@@ -549,7 +549,7 @@ object WeederError {
 
     def summary: String = "Unexpected lattice in provenance query."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected lattice in provenance query.
          |
@@ -570,7 +570,7 @@ object WeederError {
 
     def summary: String = "Unexpected modifier."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected modifier.
          |
@@ -590,7 +590,7 @@ object WeederError {
 
     def summary: String = s"Missing 'pub' modifier on '${ident.name}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Missing 'pub' modifier on '${red(ident.name)}'.
          |
@@ -611,7 +611,7 @@ object WeederError {
 
     def summary: String = "Unexpected null pattern."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected null pattern.
          |
@@ -630,7 +630,7 @@ object WeederError {
 
     def summary: String = "Mismatched number of trait parameters."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched number of trait parameters.
          |
@@ -651,7 +651,7 @@ object WeederError {
 
     def summary: String = "Malformed predicate arity."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed predicate arity.
          |
@@ -670,7 +670,7 @@ object WeederError {
 
     def summary: String = "Unexpected record extension pattern."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected record extension pattern.
          |
@@ -691,7 +691,7 @@ object WeederError {
 
     def summary: String = "Unexpected record operation in record literal."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected record operation in record literal.
          |
@@ -712,7 +712,7 @@ object WeederError {
 
     def summary: String = "Unexpected regex pattern."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected regex pattern.
          |
@@ -735,7 +735,7 @@ object WeederError {
 
     def summary: String = "Unexpected qualified extensible variant pattern."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected qualified extensible variant pattern.
          |
@@ -758,7 +758,7 @@ object WeederError {
 
     def summary: String = "Unexpected qualified name."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected qualified name.
          |
@@ -779,7 +779,7 @@ object WeederError {
 
     def summary: String = s"Unexpected type constraint parameter."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected type constraint parameter.
          |
@@ -803,7 +803,7 @@ object WeederError {
 
     def summary: String = "Unexpected unary '+'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected unary '${red("+")}'.
          |
@@ -824,7 +824,7 @@ object WeederError {
 
     def summary: String = s"Mismatched alias casing: '$fromName' and '$toName'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched alias casing: '${red(fromName)}' and '${red(toName)}'.
          |
@@ -850,7 +850,7 @@ object WeederError {
 
     def summary: String = "Mismatched annotations: '@Inline' and '@DontInline'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched annotations: '${red("@Inline")}' and '${red("@DontInline")}'.
          |
@@ -874,7 +874,7 @@ object WeederError {
 
     def summary: String = "Malformed character literal."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed character literal.
          |
@@ -895,7 +895,7 @@ object WeederError {
 
     def summary: String = "Malformed float literal."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed float literal.
          |
@@ -916,7 +916,7 @@ object WeederError {
 
     def summary: String = "Malformed int literal."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed int literal.
          |
@@ -939,7 +939,7 @@ object WeederError {
 
     def summary: String = s"Malformed regular expression."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed regular expression.
          |
@@ -959,7 +959,7 @@ object WeederError {
 
     def summary: String = s"Malformed unicode escape sequence."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed unicode escape sequence.
          |
@@ -982,7 +982,7 @@ object WeederError {
 
     def summary: String = s"Mismatched arity: expected $expected, actual $actual."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched arity: expected ${cyan(expected.toString)}, actual ${red(actual.toString)}.
          |
@@ -1001,7 +1001,7 @@ object WeederError {
 
     def summary: String = "Mismatched kind annotations."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Mismatched kind annotations.
          |
@@ -1026,7 +1026,7 @@ object WeederError {
 
     def summary: String = "Missing argument list."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Missing argument list.
          |
@@ -1045,7 +1045,7 @@ object WeederError {
 
     def summary: String = "Missing kind ascription."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Missing kind ascription.
          |
@@ -1065,7 +1065,7 @@ object WeederError {
 
     def summary: String = s"Missing type ascription on '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Missing type ascription on '${red(name)}'.
          |
@@ -1086,7 +1086,7 @@ object WeederError {
 
     def summary: String = s"Non-linear pattern: '$name' occurs multiple times."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Non-linear pattern: '${red(name)}' occurs multiple times.
          |
@@ -1116,7 +1116,7 @@ object WeederError {
 
     def summary: String = s"Non-unary associated type: expected 1 parameter, found $n."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Non-unary associated type: expected ${cyan("1")} parameter, found ${red(n.toString)}.
          |
@@ -1138,7 +1138,7 @@ object WeederError {
 
     def summary: String = s"Undefined annotation '$name'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined annotation '${red(name)}'.
          |
@@ -1157,7 +1157,7 @@ object WeederError {
 
     def summary: String = "Undefined or misapplied intrinsic."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Undefined or misapplied intrinsic.
          |
@@ -1177,7 +1177,7 @@ object WeederError {
 
     def summary: String = s"Unexpected binary type operator '$op'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected binary type operator '${red(op)}'.
          |
@@ -1200,7 +1200,7 @@ object WeederError {
 
     def summary: String = s"Unexpected channel function '$qname'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected channel function '${red(qname.toString)}'.
          |
@@ -1222,7 +1222,7 @@ object WeederError {
 
     def summary: String = "Unqualified use."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unqualified use.
          |
@@ -1246,7 +1246,7 @@ object WeederError {
 
     def summary: String = s"Unsupported $operationName pattern."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unsupported ${red(operationName)} pattern.
          |

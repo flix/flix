@@ -125,14 +125,28 @@ Labels must be formatted with the `underline()` function. Use at most one label 
 
 ### Source Hints
 
-The `src(loc, hint)` annotation should:
+The `highlight(loc, hint, fmt)` function should:
 
 - Add *contextual* information
 - Highlight the relevant code region
 - Avoid restating the summary or message lead
-- Omit the trailing period (e.g., `src(loc, "missing label")` not `src(loc, "missing label.")`)
+- Omit the trailing period (e.g., `highlight(loc, "missing label", fmt)` not `highlight(loc, "missing label.", fmt)`)
 
 A good source hint helps the user understand *why this location matters*.
+
+---
+
+### Naming Conventions in Examples
+
+Prefer short, symbolic names over traditional placeholders like `foo` and `bar`:
+
+- `T` for traits
+- `E` for effects or enums
+- `f`, `g` for functions or operations
+- `x`, `y` for local variables
+- `a`, `b` for type variables
+
+These names are concise and immediately recognizable as placeholders.
 
 ---
 
@@ -159,7 +173,7 @@ Do not end messages with an extra blank line. The message should end cleanly:
 ```scala
 s""">> Error message.
    |
-   |${src(loc, "hint")}
+   |${highlight(loc, "hint", fmt)}
    |""".stripMargin
 ```
 
@@ -167,7 +181,7 @@ s""">> Error message.
 ```scala
 s""">> Error message.
    |
-   |${src(loc, "hint")}
+   |${highlight(loc, "hint", fmt)}
    |
    |""".stripMargin  // Extra blank line before closing
 ```

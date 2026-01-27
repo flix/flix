@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 import ca.uwaterloo.flix.util.Formatter
 
@@ -41,11 +42,11 @@ object KindError {
 
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Mismatched kinds: '${red(formatKind(k1))}' and '${red(formatKind(k2))}'.
          |
-         |${src(loc, "mismatched kind usage")}
+         |${highlight(loc, "mismatched kind usage", fmt)}
          |
          |First kind:  ${cyan(formatKind(k1))}
          |Second kind: ${magenta(formatKind(k2))}
@@ -72,11 +73,11 @@ object KindError {
 
     override def summary: String = s"Unexpected kind: expected '${formatKind(expectedKind)}', found '${formatKind(actualKind)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected kind: expected '${cyan(formatKind(expectedKind))}', found '${red(formatKind(actualKind))}'.
          |
-         |${src(loc, "has unexpected kind")}
+         |${highlight(loc, "has unexpected kind", fmt)}
          |
          |Expected: ${cyan(formatKind(expectedKind))}
          |Actual:   ${red(formatKind(actualKind))}
@@ -94,11 +95,11 @@ object KindError {
 
     override def summary: String = "Uninferrable kind: cannot determine kind from context."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Uninferrable kind: cannot determine kind from context.
          |
-         |${src(loc, "uninferrable kind")}
+         |${highlight(loc, "uninferrable kind", fmt)}
          |
          |${underline("Explanation:")} The kind of this type cannot be determined from the
          |surrounding context. Add a kind annotation to resolve the ambiguity.

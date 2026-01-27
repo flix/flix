@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 import ca.uwaterloo.flix.api.lsp.Formatter as LspFormatter
+import ca.uwaterloo.flix.language.CompilationMessage
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -353,7 +354,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(flix: Flix)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def buildJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     Steps.updateStaleSources(flix)
     for {
@@ -373,7 +374,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a fatjar package for the project.
     */
-  def buildFatJar(flix: Flix)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def buildFatJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     val libDir = Bootstrap.getLibraryDirectory(projectPath)
     Steps.updateStaleSources(flix)
@@ -450,7 +451,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
       EffectLock.lock(root) match {
-        case Err(e) => return Err(BootstrapError.GeneralError(List(s"Unexpected serialization error: $e")))
+        case Err(e) => return Err(BootstrapError.GeneralError(s"Unexpected serialization error: $e"))
         case Ok(json) =>
           val path = Bootstrap.getEffectLockFile(projectPath)
           // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
@@ -665,13 +666,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def format(flix: Flix): Result[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
-    val (_, errors) = flix.check()
-    if (errors.nonEmpty) {
-      return Result.Err(BootstrapError.GeneralError(errors.map(_.message(flix.getFormatter))))
+    Steps.check(flix).map {
+      case _ =>
+        val syntaxTree = flix.getParsedAst
+        LspFormatter.formatFiles(syntaxTree, sourcePaths)(flix)
     }
-    val syntaxTree = flix.getParsedAst
-    LspFormatter.formatFiles(syntaxTree, sourcePaths)(flix)
-    Result.Ok(())
   }
 
   /**
@@ -694,7 +693,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def test(flix: Flix): Result[Unit, BootstrapError] = {
     for {
       compilationResult <- build(flix)
-      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError(List("Tester Error")))
+      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError("Tester Error"))
     } yield {
       res
     }
@@ -949,7 +948,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (errors.isEmpty) {
         Ok(optRoot.get)
       } else {
-        Err(BootstrapError.GeneralError(flix.mkMessages(errors)))
+        Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot)))
       }
     }
 
@@ -959,9 +958,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * It is often the case that `outputJvm` and `loadClassFiles` must be toggled on or off.
       */
     def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
-      flix.compile() match {
-        case Validation.Success(result: CompilationResult) => Ok(result)
-        case Validation.Failure(errors) => Err(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
+      val (optRoot, errors) = flix.check()
+      if (errors.isEmpty) {
+        Ok(flix.codeGen(optRoot.get))
+      } else {
+        Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot)))
       }
     }
 
@@ -1100,7 +1101,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter))))
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter)).mkString(System.lineSeparator())))
           }
       }
     }

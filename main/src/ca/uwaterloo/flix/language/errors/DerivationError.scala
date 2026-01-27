@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -41,11 +43,11 @@ object DerivationError {
 
     def summary: String = s"Unsupported derivation: '${sym.name}'"
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unsupported derivation '${red(sym.name)}'.
          |
-         |${src(loc, "unsupported derivation")}
+         |${highlight(loc, "unsupported derivation", fmt)}
          |
          |${underline("Explanation:")} The trait '${magenta(sym.name)}' does not support derivation.
          |
@@ -67,11 +69,11 @@ object DerivationError {
 
     def summary: String = s"Cannot derive '${traitSym.name}' for the empty enum '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Cannot derive '${magenta(traitSym.name)}' for the empty enum '${red(sym.name)}'.
          |
-         |${src(loc, "empty enum")}
+         |${highlight(loc, "empty enum", fmt)}
          |
          |${underline("Explanation:")} Automatic derivation requires at least one case in the enum.
          |""".stripMargin
@@ -89,11 +91,11 @@ object DerivationError {
 
     def summary: String = s"Cannot derive 'Coerce' for the non-singleton enum '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
          |
-         |${src(loc, "non-singleton enum")}
+         |${highlight(loc, "non-singleton enum", fmt)}
          |
          |${underline("Explanation:")} The '${magenta("Coerce")}' trait can only be derived for
          |enums with exactly one case.

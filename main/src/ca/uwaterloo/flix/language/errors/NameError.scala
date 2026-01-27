@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.Formatter
 
 import java.nio.file.Path
@@ -41,11 +42,11 @@ object NameError {
 
     def summary: String = "Deprecated feature."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Deprecated feature.
          |
-         |${src(loc, "deprecated feature")}
+         |${highlight(loc, "deprecated feature", fmt)}
          |
          |${underline("Tip:")} Enable with the '${cyan("--Xdeprecated")}' compiler flag.
          |""".stripMargin
@@ -64,13 +65,13 @@ object NameError {
 
     def summary: String = s"Duplicate definition: '$name'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Duplicate definition: '${red(name)}'.
          |
-         |${src(loc1, "first occurrence")}
+         |${highlight(loc1, "first occurrence", fmt)}
          |
-         |${src(loc2, "duplicate")}
+         |${highlight(loc2, "duplicate", fmt)}
          |
          |${underline("Explanation:")} Flix does not support overloading. You cannot define
          |two functions with the same name, even if their parameters differ.
@@ -96,13 +97,13 @@ object NameError {
 
     def summary: String = s"Duplicate definition: '$name'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Duplicate definition: '${red(name)}'.
          |
-         |${src(loc1, "first occurrence")}
+         |${highlight(loc1, "first occurrence", fmt)}
          |
-         |${src(loc2, "duplicate")}
+         |${highlight(loc2, "duplicate", fmt)}
          |""".stripMargin
     }
 
@@ -121,11 +122,11 @@ object NameError {
 
     def summary: String = s"Orphaned module: '$sym' (missing parent '$parentSym')."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Orphaned module: '${magenta(sym.toString)}' (missing parent '${red(parentSym.toString)}').
          |
-         |${src(loc, "orphaned module")}
+         |${highlight(loc, "orphaned module", fmt)}
          |
          |${underline("Explanation:")} A module cannot be declared without its parent module.
          |Declare the parent module first. For example:
@@ -151,11 +152,11 @@ object NameError {
 
     def summary: String = s"Mismatched module and file: '$qname' in '$path'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Mismatched module and file: '${magenta(qname.toString)}' in '${red(path.toString)}'.
          |
-         |${src(loc, "unexpected location")}
+         |${highlight(loc, "unexpected location", fmt)}
          |
          |${underline("Explanation:")} A module must be declared in a file that matches its name.
          |For example:
@@ -179,11 +180,11 @@ object NameError {
 
     def summary: String = s"Reserved name: '${name.name}' cannot be redefined."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Reserved name: '${red(name.name)}' cannot be redefined.
          |
-         |${src(name.loc, "reserved identifier")}
+         |${highlight(name.loc, "reserved identifier", fmt)}
          |
          |${underline("Explanation:")} Certain names are reserved for internal use and cannot
          |be used as identifiers. Choose a different name.
@@ -204,11 +205,11 @@ object NameError {
 
     def summary: String = s"Suspicious type variable: '$name'. Did you mean '${name.capitalize}'?"
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Suspicious type variable: '${red(name)}'. Did you mean '${cyan(name.capitalize)}'?
          |
-         |${src(loc, "possible typo")}
+         |${highlight(loc, "possible typo", fmt)}
          |
          |${underline("Explanation:")} Type variables in Flix are lowercase, but '${red(name)}'
          |looks like the built-in type '${cyan(name.capitalize)}'.

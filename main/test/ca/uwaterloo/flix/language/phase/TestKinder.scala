@@ -26,31 +26,31 @@ class TestKinder extends AnyFunSuite with TestUtils {
 
   test("MismatchedTypeParamKind.Implicit.01") {
     val input = raw"def f(g: Int32 -> o \ o): Int32 = 123"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.02") {
     val input = raw"def f(g: Int32 -> Int32 \ e): e = g(123)"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.03") {
     val input = "def f(s: #{| a}, r: {| a}): Int32 = 123"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.04") {
     val input = "def f(s: #{X(Int32) | a}, r: {x = Int32 | a}): Int32 = 123"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.05") {
     val input = raw"def f(a: e): Int32 \ ~e = 123"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -63,7 +63,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(g: E[a -> b \ e]): Int32 \ ~(a & b) = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -76,7 +76,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(g: E[a -> b \ e, r]): Int32 \ ~(a & b) = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -87,7 +87,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case A(Int32 -> o \ o)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -98,7 +98,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case A((Int32 -> Int32 \ e) -> e)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -109,7 +109,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case A(#{| a}, {| a})
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -120,7 +120,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case A(#{X(Int32) | a}, {x = Int32 | a})
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -131,7 +131,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case A(e -> Int32 \ ~e)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -145,7 +145,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case A(D[a -> b \ e] -> Int32 \ ~(a & b))
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -156,7 +156,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    a: Int32 -> o \ o
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -167,7 +167,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    a: (Int32 -> Int32 \ e) -> e
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -178,7 +178,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    a: #{| a}, {| a}
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -189,7 +189,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    a: #{X(Int32) | a}, {x = Int32 | a}
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -200,7 +200,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    a: e -> Int32 \ ~e
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -214,7 +214,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    a: D[a -> b \ e, r] -> Int32 \ ~(a & b)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -225,7 +225,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    d1: r
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -235,7 +235,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |struct D[r] { }
         |def f(d: D[Int32]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -245,37 +245,37 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |struct D[a, r] { }
         |def f(d: D[Int32, Int32]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.TypeAlias.01") {
     val input = raw"type alias T[o] = Int32 -> o \ o"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.TypeAlias.02") {
     val input = raw"type alias T[e] = (Int32 -> Int32 \ e) -> e"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.TypeAlias.03") {
     val input = "type alias T[a] = (#{| a}, {| a})"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.TypeAlias.04") {
     val input = "type alias T[a] = (#{X(Int32) | a}, {x = Int32 | a})"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.TypeAlias.05") {
     val input = raw"type alias T[e] = e -> Int32 \ ~e"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -289,7 +289,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |type alias T[a, b, e] = Option[a -> b \ e] -> Int32 \ ~(a & b)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -303,7 +303,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |type alias T[a, b, e, r] = S[a -> b \ e, r] -> Int32 \ ~(a & b)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -316,7 +316,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(p: P[Int32]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -331,7 +331,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case A(P[Int32])
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -345,7 +345,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(p: P): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -360,7 +360,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case A(P)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -373,7 +373,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(p: P[Int32, Int32]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -388,19 +388,19 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case A(P[Int32, Int32])
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalUninhabitedType.07") {
     val input = """def f(x: true): Int32 = 123"""
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalUninhabitedType.08") {
     val input = "def f(): Int32 = unchecked_cast(1 as {})"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -412,13 +412,13 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(): Int32 = unchecked_cast(1 as E[Int32])""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalUninhabitedType.10") {
     val input = "def f(): Int32 = (1: {})"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -430,7 +430,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(): Int32 = (1: E[Int32])""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -441,31 +441,31 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(p: P[Int32]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.01") {
     val input = raw"def f(): Int32 = unchecked_cast(1 as _ \ Int32)"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.02") {
     val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ Int32)"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.03") {
     val input = raw"def f(): Int32 = (1: _ \ Int32)"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.04") {
     val input = raw"def f(): Int32 = (1: Int32 \ Int32)"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -478,7 +478,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(p: P[Int32, String, String]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -489,7 +489,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(p: R[Int32]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -500,37 +500,37 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(p: S[Int32]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.04") {
     val input = "def f(p: String[Int32]): Int32 = 123"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.05") {
     val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ Int32 + true)"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.06") {
     val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ true & Int32)"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.07") {
     val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ ~Int32)"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.08") {
     val input = "def f(a: (Int32, true)): Int32 = 1"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -541,7 +541,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(p: P[Int32, String, String, Region]): Int32 = 123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError](result)
   }
 
@@ -550,7 +550,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(): Unit \ Unit = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -559,7 +559,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f[a: Type](): Unit \ a = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -568,7 +568,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = (1: {})
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -577,7 +577,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = (1: _ \ Unit)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -588,7 +588,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  let _x: ef = ???;
         |  123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -599,7 +599,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  let _x: a = ???;
         |  123
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -610,7 +610,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let x : Int32 : (Type -> Type) = 123;
         |    x
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -623,7 +623,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let x: E[Int32] = ???; 0
         |
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -635,7 +635,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |pub def foo(): Int32 =
         |    let x: E[Int32] = ???; 0
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -647,7 +647,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |pub def foo(): Int32 =
         |    let x: S[Int32] = ???; 0
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -656,7 +656,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = unchecked_cast(1 as {})
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -665,7 +665,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = unchecked_cast(1 as _ \ Unit)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -676,7 +676,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |pub def foo(): Int32 = unchecked_cast(0 as E[Int32])
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -687,7 +687,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |pub def foo(): Int32 = unchecked_cast(0 as E[Int32])
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -698,7 +698,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |pub def foo(): Int32 = unchecked_cast(0 as S[Int32, Region])
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -709,7 +709,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(): Unit \ Unit = ???;
         |    f()
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -720,7 +720,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(x: Int32[Int32]): Int32 = ???;
         |    f(???)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -731,7 +731,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(x: Int32 -> Int32 \ Int32): Int32 = ???;
         |    f(x -> x)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -742,7 +742,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(x: {} -> Int32 \ Int32): Int32 = ???;
         |    f(_ -> 1)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -755,7 +755,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(x: E[Int32, Int32]): Int32 = ???;
         |    f(???)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -768,7 +768,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(x: S[Int32, Int32, Region]): Int32 = ???;
         |    f(???)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -779,7 +779,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(x: {}): Int32 = ???;
         |    f({})
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -792,7 +792,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(x: E): Int32 = ???;
         |    f(???)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -805,7 +805,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    def f(x: S): Int32 = ???;
         |    f(???)
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -817,7 +817,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let _ = f();
         |    1
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -831,7 +831,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let _ = f();
         |    1
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -843,7 +843,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let _ = f();
         |    1
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -855,7 +855,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let _ = f();
         |    1
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -869,7 +869,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let _ = f();
         |    1
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -878,7 +878,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(x: Int32[Int32]): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -887,7 +887,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(x: Int32 -> Int32 \ Int32): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -896,7 +896,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(x: {} -> Int32 \ Int32): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -905,7 +905,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f[r: Type](x: {name = Int32 | r} ): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -914,7 +914,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f[r: Type](x: #{| r} ): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -925,7 +925,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: E[Int32, Int32]): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -936,7 +936,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: S[Int32, Int32, Region]): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -945,7 +945,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(x: {}): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -956,7 +956,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: E): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -967,7 +967,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: S): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -976,7 +976,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(): {} = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -987,7 +987,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(): E = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -996,7 +996,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32[Int32] = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1005,7 +1005,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(): () = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1016,7 +1016,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(): S = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1027,7 +1027,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
 
         |def f[a: Type](): a with C[a] = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1036,7 +1036,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(x: a): Int32 \ a = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -1047,7 +1047,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: a): Int32 with C[a] = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -1056,7 +1056,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |def f(x: a -> a \ a): Int32 = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -1067,7 +1067,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case C({})
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1080,7 +1080,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case C(F)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1091,7 +1091,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case C(a)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1102,7 +1102,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case C({i = Int32 | a})
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1113,7 +1113,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case C(Int32 -> Int32 \ Int32)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1124,7 +1124,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case C(Int32 -> Int32 \ a)
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1135,7 +1135,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case C(Int32[Int32])
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1146,7 +1146,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    c: { }
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1159,7 +1159,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    c: F
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1171,7 +1171,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    c: a
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -1182,7 +1182,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    c: {i = Int32 | a}
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1193,7 +1193,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    c: Int32 -> Int32 \ Int32
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1204,7 +1204,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    c: Int32-> Int32 \ a
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1215,7 +1215,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    c: Int32[Int32
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1232,7 +1232,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  pub def f(x: E): E = ???
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1247,7 +1247,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |instance C[E[a]] with D[a]
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1260,7 +1260,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |instance C[E]
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1269,7 +1269,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |type alias T = {} -> Int32
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1278,13 +1278,13 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |type alias T[a] = Int32 -> Int32 \ a
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
   test("KindError.TypeAlias.Type.03") {
     val input = "type alias Z[r] = #{ A(Int32) | r }"
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1295,7 +1295,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  law l: forall (x: a) ???
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1306,7 +1306,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  pub def f(x: a): Int32 = ???
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1317,7 +1317,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  pub def f(x: {l =  Int32 | a}): Int32 = ???
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1328,7 +1328,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |trait D[a: Type -> Type] with C[a]
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1340,7 +1340,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case _: _ => ()
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1355,7 +1355,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case _: _ => ()
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1369,7 +1369,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f[a: E](x: a): String = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1383,7 +1383,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: a[< >]): String = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UninferrableKind](result)
   }
 
@@ -1401,7 +1401,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |def f(x: a[<E.C1, F.D1>]): String = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -1420,7 +1420,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: F[<E.C1>]): String = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1439,7 +1439,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: F[s], y: E[s]): String = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -1458,7 +1458,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |def f(x: F[s rvadd d], y: E[rvnot d]): String = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -1473,7 +1473,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    type T = {}
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1488,7 +1488,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    type T[{}] = String
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1513,7 +1513,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1531,7 +1531,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1545,7 +1545,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1564,7 +1564,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    pub def f(x: Int32): Int32 = x
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1583,7 +1583,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    pub def f(x: a): C.T[a][B.Q[a][C.T[a]]]
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1602,7 +1602,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    pub def f(x: a): C.T[a][B.Q[a][C.T[a][C.S[a][B.R[a]]]]]
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1615,7 +1615,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    pub def f(x: a): A.A[a][A.A[a][A.A[a][A.A[a]]]]
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1628,7 +1628,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    pub def f(x: a): a \ C.T[a][C.S[a]]
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
@@ -1641,21 +1641,8 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    pub def f(x: C.T[a][a]): a
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Regression.01") {
-    // https://github.com/flix/flix/issues/10366
-    // Should not crash when struct type parameters are empty.
-    val input =
-      """
-        |struct Foo {}
-        |
-        |mod Foo {
-        |    def mk(cmp: (v, v) -> Bool): Foo =
-        |}
-        |""".stripMargin
-    compile(input, DefaultOptions)
-  }
 }

@@ -364,7 +364,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
           this.currentErrors = errors
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(currentErrors)
+          val results = PublishDiagnosticsParams.fromMessages(currentErrors, None)
           ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
@@ -394,7 +394,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     val codeHints = CodeHinter.run(sources.keysIterator.map(_.toString).toSet)(root)
 
     // Determine the status based on whether there are errors.
-    val results = PublishDiagnosticsParams.fromMessages(currentErrors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    val results = PublishDiagnosticsParams.fromMessages(currentErrors, Some(root)) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 

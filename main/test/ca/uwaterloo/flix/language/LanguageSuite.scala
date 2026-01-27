@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.errors.TestCompilationMessage
+import ca.uwaterloo.flix.language.errors.{TestCompilationMessage, TestHighlighter}
 import ca.uwaterloo.flix.language.ast.AstSuite
 import ca.uwaterloo.flix.language.fmt.TestFormatType
 import ca.uwaterloo.flix.language.phase.PhaseSuite
@@ -27,6 +27,7 @@ class LanguageSuite extends Suites(
   new TestFlixErrors,
   new TestFormatType,
   new TestCompilationMessage,
+  new TestHighlighter,
   new TestTypeSimplifier,
   new AstSuite
 )

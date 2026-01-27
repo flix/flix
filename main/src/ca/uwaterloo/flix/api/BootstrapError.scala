@@ -51,7 +51,7 @@ object BootstrapError {
     override def message(f: Formatter): String = e
   }
 
-  case class GeneralError(e: List[String]) extends BootstrapError {
-    override def message(f: Formatter): String = e.mkString(System.lineSeparator())
+  case class GeneralError(e: String) extends BootstrapError {
+    override def message(f: Formatter): String = e
   }
 }

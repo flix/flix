@@ -716,7 +716,9 @@ object Resolver {
       val symVal = trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
-        case None => Validation.Failure(ResolutionError.UndefinedAssocType(Name.QName(Name.RootNS, ident, ident.loc), ident.loc))
+        case None =>
+          val assocs = trt.assocs.map { case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym }
+          Validation.Failure(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
         case Some(sym) => Validation.Success(sym)
       }
       mapN(symVal, argVal, tpeVal) {
@@ -736,7 +738,7 @@ object Resolver {
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (!tvars.contains(tvar)) {
-        val error = ResolutionError.IllegalSignature(sym, sym.loc)
+        val error = ResolutionError.IllegalSignature(sym, tvar, sym.loc)
         sctx.errors.add(error)
       }
   }
@@ -1338,7 +1340,7 @@ object Resolver {
             case List(Resolution.JavaClass(clazz)) =>
               Validation.Success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
             case _ =>
-              val error = ResolutionError.UndefinedNewJvmClassOrStruct(className, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, "", loc)
+              val error = ResolutionError.UndefinedNew(className, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, loc)
               sctx.errors.add(error)
               Validation.Success(ResolvedAst.Expr.Error(error))
           }
@@ -2372,7 +2374,7 @@ object Resolver {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
         val qname = Name.mkQName(nname, ident.name, ident.loc)
-        Validation.Failure(ResolutionError.UndefinedOp(qname, AnchorPosition.mkImportOrUseAnchor(ns), scp0, ident.loc))
+        Validation.Failure(ResolutionError.UndefinedOp(eff.sym, qname, eff.ops.map(_.sym), AnchorPosition.mkImportOrUseAnchor(ns), scp0, ident.loc))
       case Some(op) =>
         Validation.Success(op)
     }

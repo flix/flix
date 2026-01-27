@@ -428,13 +428,6 @@ class Flix {
   }
 
   /**
-    * Converts a list of compiler error messages to a list of printable messages.
-    */
-  def mkMessages(errors: List[CompilationMessage]): List[String] = {
-    errors.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter))
-  }
-
-  /**
     * Compiles the Flix program and returns a typed ast.
     * If the list of [[CompilationMessage]]s is empty, then the root is always `Some(root)`.
     */
@@ -582,7 +575,7 @@ class Flix {
     * we explicitly set certain local variables to `null` once they are no longer needed.
     * This manual cleanup has been verified as effective in the profiler.
     */
-  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
+  def codeGen(typedAst: TypedAst.Root): CompilationResult = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -648,7 +641,7 @@ class Flix {
     progressBar.complete()
 
     // Return the result.
-    Validation.Success(result)
+    result
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -662,12 +655,11 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
-    val (result, allErrors) = check()
-    if (allErrors.isEmpty) {
-      codeGen(result.get)
+    val (result, errors) = check()
+    if (errors.isEmpty) {
+      Validation.Success(codeGen(result.get))
     } else {
-      val nonShadowedErrors = CompilationMessage.filterShadowedMessages(allErrors)
-      Validation.Failure(Chain.from(nonShadowedErrors))
+      Validation.Failure(Chain.from(errors))
     }
   }
 

@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, Formatter as LspFormatter}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -169,20 +169,17 @@ object Main {
           flix.setFormatter(formatter)
 
           // evaluate main.
-          flix.compile().toResult match {
-            case Result.Ok(compilationResult) =>
-              compilationResult.getMain match {
+          flix.check() match {
+            case (Some(root), Nil) =>
+              flix.codeGen(root).getMain match {
                 case None => // nop
                 case Some(m) =>
                   // Invoke main with the supplied arguments.
                   m(cmdOpts.args.toArray)
               }
               System.exit(0)
-
-            case Result.Err(errors) =>
-              flix.mkMessages(errors.toList.sortBy(_.source.name)).foreach(println)
-              println()
-              println(s"Compilation failed with ${errors.length} error(s).")
+            case (optRoot, errors) =>
+              println(CompilationMessage.formatAll(errors)(formatter, optRoot))
               System.exit(1)
           }
 
@@ -204,9 +201,9 @@ object Main {
             }
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
-            val (_, errors) = flix.check()
+            val (optRoot, errors) = flix.check()
             if (errors.isEmpty) System.exit(0)
-            else exitWithErrors(flix, errors)
+            else exitWithErrors(flix, errors, optRoot)
           }
 
         case Command.Build =>
@@ -285,7 +282,7 @@ object Main {
             if (errors.isEmpty) {
               HtmlDocumentor.run(optRoot.get, PackageModules.All)(flix)
               System.exit(0)
-            } else exitWithErrors(flix, errors)
+            } else exitWithErrors(flix, errors, optRoot)
           }
 
         case Command.Format =>
@@ -299,13 +296,13 @@ object Main {
             }
           }
           val flix = mkFlixWithFiles(cmdOpts.files, options)
-          val (_, errors) = flix.check()
+          val (optRoot, errors) = flix.check()
           if (errors.isEmpty) {
             val syntaxTree = flix.getParsedAst
             LspFormatter.formatFiles(syntaxTree, cmdOpts.files.map(_.toPath).toList)(flix)
             System.exit(0)
           }
-          else exitWithErrors(flix, errors)
+          else exitWithErrors(flix, errors, optRoot)
 
 
         case Command.Run =>
@@ -338,7 +335,7 @@ object Main {
                   case Result.Ok(_) => System.exit(0)
                   case Result.Err(_) => System.exit(1)
                 }
-              case Validation.Failure(errors) => exitWithErrors(flix, errors.toList)
+              case Validation.Failure(errors) => exitWithErrors(flix, errors.toList, None)
             }
           }
 
@@ -449,29 +446,31 @@ object Main {
   /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(command: Command = Command.None,
-                     args: List[String] = Nil,
-                     entryPoint: Option[String] = None,
-                     installDeps: Boolean = true,
-                     githubToken: Option[String] = None,
-                     json: Boolean = false,
-                     listen: Option[Int] = None,
-                     threads: Option[Int] = None,
-                     assumeYes: Boolean = false,
-                     xbenchmarkCodeSize: Boolean = false,
-                     xbenchmarkIncremental: Boolean = false,
-                     xbenchmarkPhases: Boolean = false,
-                     xbenchmarkFrontend: Boolean = false,
-                     xbenchmarkThroughput: Boolean = false,
-                     xnodeprecated: Boolean = false,
-                     xlib: LibLevel = LibLevel.All,
-                     xprintphases: Boolean = false,
-                     xsummary: Boolean = false,
-                     xsubeffecting: Set[Subeffecting] = Set.empty,
-                     XPerfN: Option[Int] = None,
-                     XPerfFrontend: Boolean = false,
-                     XPerfPar: Boolean = false,
-                     files: Seq[File] = Seq())
+  case class CmdOpts(
+    command: Command = Command.None,
+    args: List[String] = Nil,
+    entryPoint: Option[String] = None,
+    installDeps: Boolean = true,
+    githubToken: Option[String] = None,
+    json: Boolean = false,
+    listen: Option[Int] = None,
+    threads: Option[Int] = None,
+    assumeYes: Boolean = false,
+    xbenchmarkCodeSize: Boolean = false,
+    xbenchmarkIncremental: Boolean = false,
+    xbenchmarkPhases: Boolean = false,
+    xbenchmarkFrontend: Boolean = false,
+    xbenchmarkThroughput: Boolean = false,
+    xnodeprecated: Boolean = false,
+    xlib: LibLevel = LibLevel.All,
+    xprintphases: Boolean = false,
+    xsummary: Boolean = false,
+    xsubeffecting: Set[Subeffecting] = Set.empty,
+    XPerfN: Option[Int] = None,
+    XPerfFrontend: Boolean = false,
+    XPerfPar: Boolean = false,
+    files: Seq[File] = Seq()
+  )
 
   /**
     * A case class representing possible commands.
@@ -726,10 +725,8 @@ object Main {
   /**
     * Prints compilation errors and exits with code 1.
     */
-  private def exitWithErrors(flix: Flix, errors: List[CompilationMessage]): Unit = {
-    flix.mkMessages(errors.sortBy(_.source.name)).foreach(println)
-    println()
-    println(s"Found ${errors.size} error(s).")
+  private def exitWithErrors(flix: Flix, errors: List[CompilationMessage], root: Option[TypedAst.Root]): Unit = {
+    println(CompilationMessage.formatAll(errors)(flix.getFormatter, root))
     System.exit(1)
   }
 

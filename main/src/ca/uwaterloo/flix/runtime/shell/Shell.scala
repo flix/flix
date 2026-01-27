@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.fmt.*
@@ -392,15 +392,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     flix.check() match {
       case (Some(r), Nil) =>
         this.root = Some(r)
-        val result = flix.codeGen(r)
-        result.toResult match {
-          case Result.Ok(_) => result
-          case Result.Err(errors) =>
-            printErrors(errors.toList)
-            result
-        }
-      case (_, errors) =>
-        printErrors(errors)
+        Validation.Success(flix.codeGen(r))
+      case (rootOpt, errors) =>
+        printErrors(errors, rootOpt)
         Validation.Failure(Chain.from(errors))
     }
   }
@@ -408,10 +402,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Prints the list of errors using the `flix` instance to the implicit terminal.
     */
-  private def printErrors(errors: List[CompilationMessage])(implicit terminal: Terminal): Unit = {
-    for (msg <- flix.mkMessages(errors)) {
-      terminal.writer().println(msg)
-    }
+  private def printErrors(errors: List[CompilationMessage], root: Option[TypedAst.Root])(implicit terminal: Terminal): Unit = {
+    terminal.writer().println(CompilationMessage.formatAll(errors)(flix.getFormatter, root))
     terminal.writer().println()
   }
 

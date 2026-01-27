@@ -3,7 +3,8 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
@@ -25,11 +26,11 @@ object SafetyError {
 
     def summary: String = s"Operation not permitted in '$sctx' security context."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Operation not permitted in '${red(sctx.toString)}' security context.
          |
-         |${src(loc, "not permitted")}
+         |${highlight(loc, "not permitted", fmt)}
          |
          |${underline("Explanation:")} Security contexts control which language features a
          |dependency can use, reducing the risk of supply-chain attacks.
@@ -65,11 +66,11 @@ object SafetyError {
 
     def summary: String = "Impossible cast: neither type is a subtype of the other."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Impossible cast: neither type is a subtype of the other.
          |
-         |${src(loc, "impossible cast")}
+         |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(FormatType.formatType(from))}
          |To  : ${red(FormatType.formatType(to))}
@@ -92,11 +93,11 @@ object SafetyError {
 
     def summary: String = "Impossible cast: cannot cast a Flix type to a Java type."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Impossible cast: cannot cast a Flix type to a Java type.
          |
-         |${src(loc, "impossible cast")}
+         |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(FormatType.formatType(from))}
          |To  : ${red(formatJavaType(to))}
@@ -118,11 +119,11 @@ object SafetyError {
 
     def summary: String = "Impossible cast: cannot cast from a type variable."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Impossible cast: cannot cast from a type variable.
          |
-         |${src(loc, "impossible cast")}
+         |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(FormatType.formatType(from))}
          |To  : ${red(FormatType.formatType(to))}
@@ -145,11 +146,11 @@ object SafetyError {
 
     def summary: String = "Impossible cast: cannot cast a Java type to a Flix type."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Impossible cast: cannot cast a Java type to a Flix type.
          |
-         |${src(loc, "impossible cast")}
+         |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(formatJavaType(from))}
          |To  : ${red(FormatType.formatType(to))}
@@ -171,11 +172,11 @@ object SafetyError {
 
     def summary: String = "Impossible cast: cannot cast to a type variable."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Impossible cast: cannot cast to a type variable.
          |
-         |${src(loc, "impossible cast")}
+         |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(FormatType.formatType(from))}
          |To  : ${red(FormatType.formatType(to))}
@@ -197,11 +198,11 @@ object SafetyError {
 
     def summary: String = s"Unexpected method effect: '${FormatType.formatType(eff)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected method effect: '${red(FormatType.formatType(eff))}'.
          |
-         |${src(loc, "unexpected effect")}
+         |${highlight(loc, "unexpected effect", fmt)}
          |
          |${underline("Explanation:")} Methods in a 'new' expression must be pure or have
          |primitive effects. Control effects cannot escape to Java.
@@ -219,11 +220,11 @@ object SafetyError {
 
     def summary: String = s"Unexpected catch type: '${clazz.getName}' is not a subclass of Throwable."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected catch type: '${red(clazz.getName)}' is not a subclass of Throwable.
          |
-         |${src(loc, "unexpected type")}
+         |${highlight(loc, "unexpected type", fmt)}
          |
          |${underline("Explanation:")} A catch clause can only catch subclasses of
          |'java.lang.Throwable'.
@@ -241,11 +242,11 @@ object SafetyError {
 
     def summary: String = s"Unexpected throw type: '${FormatType.formatType(tpe)}' is not a subclass of Throwable."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected throw type: '${red(FormatType.formatType(tpe))}' is not a subclass of Throwable.
          |
-         |${src(loc, "unexpected type")}
+         |${highlight(loc, "unexpected type", fmt)}
          |
          |${underline("Explanation:")} A throw expression can only throw subclasses of
          |'java.lang.Throwable'.
@@ -263,11 +264,11 @@ object SafetyError {
 
     def summary: String = "Unexpected wildcard '_' in negated atom."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected wildcard '${red("_")}' in negated atom.
          |
-         |${src(loc, "negated atom")}
+         |${highlight(loc, "negated atom", fmt)}
          |
          |${underline("Explanation:")} Wildcards cannot appear in negated atoms because
          |negation requires all variables to be bound by a positive atom.
@@ -285,11 +286,11 @@ object SafetyError {
 
     def summary: String = s"Unexpected wild variable '$sym' in negated atom."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected wild variable '${red(sym.text)}' in negated atom.
          |
-         |${src(loc, "negated atom")}
+         |${highlight(loc, "negated atom", fmt)}
          |
          |${underline("Explanation:")} Wild variables cannot appear in negated atoms because
          |negation requires all variables to be bound by a positive atom.
@@ -307,11 +308,11 @@ object SafetyError {
 
     def summary: String = s"Unexpected variable '$sym' in negated atom: not bound by a positive atom."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected variable '${red(sym.text)}' in negated atom: not bound by a positive atom.
          |
-         |${src(loc, "negated atom")}
+         |${highlight(loc, "negated atom", fmt)}
          |
          |${underline("Explanation:")} Variables in negated atoms must be bound by a positive atom.
          |""".stripMargin
@@ -328,11 +329,11 @@ object SafetyError {
 
     def summary: String = "Unexpected pattern in body atom."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected pattern in body atom.
          |
-         |${src(loc, "body atom")}
+         |${highlight(loc, "body atom", fmt)}
          |
          |${underline("Explanation:")} Body atoms can only contain variables, wildcards, and constants.
          |""".stripMargin
@@ -350,11 +351,11 @@ object SafetyError {
 
     def summary: String = s"Unexpected use of lattice variable '$sym' in relational position."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected use of lattice variable '${red(sym.text)}' in relational position.
          |
-         |${src(loc, "relational use")}
+         |${highlight(loc, "relational use", fmt)}
          |
          |${underline("Explanation:")} A lattice variable cannot be used in a relational atom
          |unless its origin is marked with 'fix'. For example:
@@ -379,11 +380,11 @@ object SafetyError {
 
     def summary: String = "Impossible cast: types are incompatible."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Impossible cast: types are incompatible.
          |
-         |${src(loc, "impossible cast")}
+         |${highlight(loc, "impossible cast", fmt)}
          |
          |From: ${red(FormatType.formatType(from))}
          |To  : ${red(FormatType.formatType(to))}
@@ -403,11 +404,11 @@ object SafetyError {
 
     def summary: String = "Missing default case in typematch."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing default case in typematch.
          |
-         |${src(loc, "typematch expression")}
+         |${highlight(loc, "typematch expression", fmt)}
          |
          |${underline("Explanation:")} A typematch expression must have a default case. For example:
          |
@@ -430,11 +431,11 @@ object SafetyError {
 
     def summary: String = s"Primitive effect '${sym.name}' cannot be handled."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Primitive effect '${red(sym.name)}' cannot be handled.
          |
-         |${src(loc, "handler")}
+         |${highlight(loc, "handler", fmt)}
          |
          |${underline("Explanation:")} Primitive effects like IO cannot be handled with a 'run-with' expression.
          |""".stripMargin
@@ -454,11 +455,11 @@ object SafetyError {
 
     def summary: String = s"Unexpected 'this' type for method '$name'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected 'this' type for method '${red(name)}'.
          |
-         |${src(loc, "method definition")}
+         |${highlight(loc, "method definition", fmt)}
          |
          |Expected: ${cyan(clazz.getName)}
          |Actual:   ${red(illegalThisType.toString)}
@@ -485,13 +486,13 @@ object SafetyError {
 
     def summary: String = s"Missing implementation of method '${method.getName}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
       val returnType = formatJavaType(method.getReturnType)
       s""">> Missing implementation of method '${red(method.getName)}' of '${magenta(clazz.getName)}'.
          |
-         |${src(loc, "new object")}
+         |${highlight(loc, "new object", fmt)}
          |
          |${underline("Explanation:")} Add a method with the following signature:
          |
@@ -511,11 +512,11 @@ object SafetyError {
 
     def summary: String = s"Class '${clazz.getName}' lacks a public zero-argument constructor."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Class '${red(clazz.getName)}' lacks a public zero-argument constructor.
          |
-         |${src(loc, "missing constructor")}
+         |${highlight(loc, "missing constructor", fmt)}
          |
          |${underline("Explanation:")} A 'new' expression requires the class to have a public
          |constructor with no arguments.
@@ -535,11 +536,11 @@ object SafetyError {
 
     def summary: String = s"Missing 'this' parameter for method '$name'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing 'this' parameter for method '${red(name)}'.
          |
-         |${src(loc, "missing 'this' parameter")}
+         |${highlight(loc, "missing 'this' parameter", fmt)}
          |
          |${underline("Explanation:")} The first formal parameter of any method must be 'this' and must
          |have the same type as the superclass. For example:
@@ -562,11 +563,11 @@ object SafetyError {
 
     def summary: String = s"Class '${clazz.getName}' is not public."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Class '${red(clazz.getName)}' is not public.
          |
-         |${src(loc, "non-public class")}
+         |${highlight(loc, "non-public class", fmt)}
          |""".stripMargin
     }
   }
@@ -584,11 +585,11 @@ object SafetyError {
 
     def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Method '${red(name)}' not found in superclass '${magenta(clazz.getName)}'.
          |
-         |${src(loc, "undefined method")}
+         |${highlight(loc, "undefined method", fmt)}
          |
          |${underline("Explanation:")} The method does not exist in the superclass with
          |the given signature. Check the method name and parameter types.
