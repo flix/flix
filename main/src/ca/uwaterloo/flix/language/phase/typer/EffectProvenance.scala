@@ -249,12 +249,15 @@ object EffectProvenance {
       (start, tpe2) match {
         case (Type.Cst(_,_), Type.Var(_,_)) => acc match {
           case None => flowsInto(tpe2, Some((start, loc)))
-          case Some((t, l)) => TypeConstraint.EffConflicted(TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym(t.toString))) :: Nil
+          case Some((t, l)) =>
+            val tCons = if (l.isReal) TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym(t.toString)) else TypeError.ImplicitPureFunctionUsesIO(loc, Symbol.mkEffSym(t.toString))
+            List(TypeConstraint.EffConflicted(tCons))
         }
         case (Type.Var(_,_), Type.Cst(_,_)) =>
           val (_, l) = acc.get
           if (tpe2.toString == "IO") {
-            List(TypeConstraint.EffConflicted(TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym("IO"))))
+            val tCons = if (l.isReal) TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym("IO")) else TypeError.ImplicitPureFunctionUsesIO(loc, Symbol.mkEffSym("IO"))
+            List(TypeConstraint.EffConflicted(tCons))
           }
           else {Nil}
         case (Type.Var(_,_), Type.Var(_,_)) =>  {
@@ -262,7 +265,8 @@ object EffectProvenance {
         }
         case (Type.Cst(_,_), Type.Cst(_,_)) =>  {
           if (start.toString != tpe2.toString) {
-            List(TypeConstraint.EffConflicted(TypeError.ExplicitPureFunctionUsesIO(loc, tpe2.loc, Symbol.mkEffSym("IO"))))
+            val tCons = if (loc.isReal) TypeError.ExplicitPureFunctionUsesIO(loc, tpe2.loc, Symbol.mkEffSym("IO")) else TypeError.ImplicitPureFunctionUsesIO(tpe2.loc, Symbol.mkEffSym("IO"))
+            List(TypeConstraint.EffConflicted(tCons))
           }  else {Nil}
         }
         case _ => Nil
