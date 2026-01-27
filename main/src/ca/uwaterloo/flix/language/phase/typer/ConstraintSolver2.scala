@@ -354,11 +354,11 @@ object ConstraintSolver2 {
     */
   private def contextReduction(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
 
-    case c: TypeConstraint.EffConflicted => List(c) // TODO!!!
 
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
     case c: TypeConstraint.Conflicted => List(c)
+    case c: TypeConstraint.EffConflicted => List(c)
 
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.flatMap(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
@@ -472,7 +472,8 @@ object ConstraintSolver2 {
         }
         (Nil, subst)
       case Result.Err(unsolved) =>
-        EffectProvenance.debug(eqConstrs)
+        // We try to compute user-friendly error message
+        // If unsuccessful we return original unsolved constraints
         val errors = EffectProvenance.getError(constrs0)
         val c = if (errors.nonEmpty) errors else unsolved
         // Otherwise we failed. Return the evidence of failure.
