@@ -94,7 +94,7 @@ object InstanceError {
          |
          |${underline("Example:")}
          |
-         |  instance C[(a, a)]        // Not allowed: 'a' appears twice
+         |  instance C[(a, a)]        // not OK: 'a' appears twice
          |  instance C[(a, b)]        // OK: 'a' and 'b' are distinct
          |""".stripMargin
     }
