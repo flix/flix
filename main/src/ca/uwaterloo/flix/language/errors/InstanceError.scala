@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.{FormatEqualityConstraint, FormatScheme, FormatTraitConstraint}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt.FormatTypeConstructor.formatTypeConstructor
@@ -46,11 +47,11 @@ object InstanceError {
 
     def summary: String = s"Complex type '${formatType(tpe)}' in instance declaration for trait '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Complex type '${red(formatType(tpe))}' in instance declaration for trait '${magenta(sym.name)}'.
          |
-         |${src(loc, "expected a type constructor applied to distinct type variables")}
+         |${highlight(loc, "expected a type constructor applied to distinct type variables", fmt)}
          |
          |${underline("Explanation:")} An instance type must be either:
          |  - A concrete type (e.g., Bool, Int32, String), or
@@ -82,11 +83,11 @@ object InstanceError {
 
     def summary: String = s"Duplicate type variable '${formatType(tvar)}' in instance declaration for trait '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Duplicate type variable '${red(formatType(tvar))}' in instance declaration for trait '${magenta(sym.name)}'.
          |
-         |${src(loc, "duplicate occurrence")}
+         |${highlight(loc, "duplicate occurrence", fmt)}
          |
          |${underline("Explanation:")} Each type variable in an instance type must be distinct.
          |Rename one of the occurrences to make them unique.
@@ -112,11 +113,11 @@ object InstanceError {
 
     def summary: String = s"Extraneous definition '${defnSym.name}' in instance declaration for trait '${traitSym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Extraneous definition '${red(defnSym.name)}' in instance declaration for trait '${magenta(traitSym.name)}'.
          |
-         |${src(loc, "not present in trait")}
+         |${highlight(loc, "not present in trait", fmt)}
          |
          |${underline("Explanation:")} An instance can only implement signatures declared in the trait.
          |The definition '${defnSym.name}' does not exist in trait '${traitSym.name}'.
@@ -136,11 +137,11 @@ object InstanceError {
 
     def summary: String = s"Unexpected associated type '${assoc.name}' in instance declaration for trait '${trtSym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected associated type '${red(assoc.name)}' in instance declaration for trait '${magenta(trtSym.name)}'.
          |
-         |${src(loc, "associated type not allowed here")}
+         |${highlight(loc, "associated type not allowed here", fmt)}
          |
          |${underline("Explanation:")} Instances cannot be defined on associated types.
          |""".stripMargin
@@ -158,11 +159,11 @@ object InstanceError {
 
     def summary: String = s"Unexpected redefinition of '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected redefinition of '${red(sym.name)}'.
          |
-         |${src(loc, "no default implementation to redefine")}
+         |${highlight(loc, "no default implementation to redefine", fmt)}
          |
          |${underline("Explanation:")} The signature '${sym.name}' is defined in the trait,
          |but there is no default implementation to be redefined.
@@ -182,11 +183,11 @@ object InstanceError {
 
     def summary: String = s"Unexpected type alias '${alias.name}' in instance declaration for trait '${trtSym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected type alias '${red(alias.name)}' in instance declaration for trait '${magenta(trtSym.name)}'.
          |
-         |${src(loc, "type alias not allowed here")}
+         |${highlight(loc, "type alias not allowed here", fmt)}
          |
          |${underline("Explanation:")} Instances cannot be defined on type aliases.
          |""".stripMargin
@@ -206,11 +207,11 @@ object InstanceError {
 
     def summary: String = s"Mismatched signature '${sigSym.name}' in instance declaration for trait '${sigSym.trt.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Mismatched signature '${red(sigSym.name)}' in instance declaration for trait '${magenta(sigSym.trt.name)}'.
          |
-         |${src(loc, "signature mismatch")}
+         |${highlight(loc, "signature mismatch", fmt)}
          |
          |${cyan("Expected")}: ${FormatScheme.formatScheme(expected)}
          |${red("Actual")}:   ${FormatScheme.formatScheme(actual)}
@@ -232,11 +233,11 @@ object InstanceError {
 
     def summary: String = s"Missing equality constraint '${FormatEqualityConstraint.formatEqualityConstraint(econstr)}' required by super trait '${superTrait.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing equality constraint '${red(FormatEqualityConstraint.formatEqualityConstraint(econstr))}' required by super trait '${magenta(superTrait.name)}'.
          |
-         |${src(loc, "missing constraint")}
+         |${highlight(loc, "missing constraint", fmt)}
          |
          |${underline("Explanation:")} The super trait '${superTrait.name}' requires this equality constraint to be satisfied.
          |Add the constraint to the instance declaration.
@@ -255,11 +256,11 @@ object InstanceError {
 
     def summary: String = s"Missing implementation of '${sig.name}' in instance declaration for trait '${sig.trt.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing implementation of '${red(sig.name)}' in instance declaration for trait '${magenta(sig.trt.name)}'.
          |
-         |${src(loc, "required by trait")}
+         |${highlight(loc, "required by trait", fmt)}
          |
          |${underline("Explanation:")} The trait declares the signature '${sig.name}', but this instance
          |does not provide an implementation for it. Did you misspell the signature name?
@@ -289,11 +290,11 @@ object InstanceError {
 
     def summary: String = s"Missing instance of super trait '${superTrait.name}' for type '${formatType(tpe)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing instance of super trait '${red(superTrait.name)}' for type '${magenta(formatType(tpe))}'.
          |
-         |${src(loc, "missing super trait instance")}
+         |${highlight(loc, "missing super trait instance", fmt)}
          |
          |${underline("Explanation:")} The trait '${subTrait.name}' extends '${superTrait.name}'.
          |An instance of '${subTrait.name}' requires a corresponding instance of '${superTrait.name}'.
@@ -322,11 +323,11 @@ object InstanceError {
 
     def summary: String = s"Missing trait constraint '${FormatTraitConstraint.formatTraitConstraint(tconstr)}' required by super trait '${superTrait.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(tconstr))}' required by super trait '${magenta(superTrait.name)}'.
          |
-         |${src(loc, "missing constraint")}
+         |${highlight(loc, "missing constraint", fmt)}
          |
          |${underline("Explanation:")} The super trait '${superTrait.name}' requires this trait constraint to be satisfied.
          |Add the constraint to the instance declaration.
@@ -355,11 +356,11 @@ object InstanceError {
 
     def summary: String = s"Orphan instance of '${sym.name}' for type '${formatType(tpe)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Orphan instance of '${magenta(sym.name)}' for type '${red(formatType(tpe))}'.
          |
-         |${src(loc, "orphan instance")}
+         |${highlight(loc, "orphan instance", fmt)}
          |
          |${underline("Explanation:")} An instance must be declared in the trait's namespace or in the type's namespace.
          |
@@ -392,13 +393,13 @@ object InstanceError {
 
     def summary: String = s"Overlapping instances of '${sym.name}' for type '${formatTypeConstructor(tc)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Overlapping instances of '${magenta(sym.name)}' for type '${red(formatTypeConstructor(tc))}'.
          |
-         |${src(loc1, "first instance")}
+         |${highlight(loc1, "first instance", fmt)}
          |
-         |${src(loc2, "second instance")}
+         |${highlight(loc2, "second instance", fmt)}
          |
          |${underline("Explanation:")} Two instances overlap if their types unify.
          |Each type can have at most one instance of a trait.
@@ -425,11 +426,11 @@ object InstanceError {
 
     def summary: String = s"Unlawful signature '${sym.name}' in lawful trait '${sym.trt.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unlawful signature '${red(sym.name)}' in lawful trait '${magenta(sym.trt.name)}'.
          |
-         |${src(loc, "signature not covered by any law")}
+         |${highlight(loc, "signature not covered by any law", fmt)}
          |
          |${underline("Explanation:")} Each signature in a lawful trait must appear in at least one law.
          |Add a law that uses '${sym.name}' or remove the 'lawful' modifier from the trait.
@@ -448,11 +449,11 @@ object InstanceError {
 
     def summary: String = s"Unmarked redefinition of '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unmarked redefinition of '${red(sym.name)}'.
          |
-         |${src(loc, "redefines a default implementation")}
+         |${highlight(loc, "redefines a default implementation", fmt)}
          |
          |${underline("Explanation:")} This definition redefines a default implementation in the trait.
          |Use 'redef' instead of 'def' to make the intent explicit.

@@ -19,9 +19,11 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SymbolSet
 import ca.uwaterloo.flix.language.ast.shared.Denotation
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -46,11 +48,11 @@ object TypeError {
 
     def summary: String = s"Constructor not found: '${clazz.getName}' with arguments (${tpes.mkString(", ")})."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Constructor not found: '${red(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
          |
-         |${src(loc, "cannot find constructor")}
+         |${highlight(loc, "cannot find constructor", fmt)}
          |
          |Available constructors:
          |${getConstructorsByArgs(clazz).map(c => s"  - ${formatConstructor(clazz, c)}").mkString("\n")}
@@ -73,11 +75,11 @@ object TypeError {
 
     def summary: String = s"Misplaced default handler: '${handlerSym.name}' must be in the companion module of its effect."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Misplaced default handler: '${red(handlerSym.name)}' must be in the companion module of its effect.
          |
-         |${src(loc, "must be in companion module")}
+         |${highlight(loc, "must be in companion module", fmt)}
          |
          |${underline("Explanation:")} A default handler must be defined inside the companion
          |module of the effect it handles. For example:
@@ -106,13 +108,13 @@ object TypeError {
 
     def summary: String = s"Duplicate default handler for effect '${sym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Duplicate default handler for effect '${red(sym.name)}'.
          |
-         |${src(loc1, "first occurrence")}
+         |${highlight(loc1, "first occurrence", fmt)}
          |
-         |${src(loc2, "duplicate")}
+         |${highlight(loc2, "duplicate", fmt)}
          |""".stripMargin
     }
 
@@ -150,11 +152,11 @@ object TypeError {
 
     def summary: String = s"Extra label '$label' of type '$labelType'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
          |
-         |${src(loc, "extra label.")}
+         |${highlight(loc, "extra label.", fmt)}
          |
          |The record type:
          |
@@ -178,12 +180,12 @@ object TypeError {
 
     def summary: String = s"Field not found: '${fieldName.name}' on type '${formatType(tpe)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       val availableFields = Type.classFromFlixType(tpe).map(getFieldsByName).getOrElse(Nil)
       s""">> Field not found: '${red(fieldName.name)}' on type '${magenta(formatType(tpe))}'.
          |
-         |${src(loc, "cannot find field")}
+         |${highlight(loc, "cannot find field", fmt)}
          |
          |Available fields:
          |${availableFields.map(f => s"  - ${formatField(f)}").mkString("\n")}
@@ -203,11 +205,11 @@ object TypeError {
 
     def summary: String = s"Invalid signature for default handler of effect '${effSym.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Invalid signature for default handler of effect '${red(effSym.name)}'.
          |
-         |${src(loc, "invalid signature")}
+         |${highlight(loc, "invalid signature", fmt)}
          |
          |Expected signature:
          |
@@ -249,11 +251,11 @@ object TypeError {
 
     def summary: String = s"Method not found: '${methodName.name}' on type '${formatType(tpe)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Method not found: '${red(methodName.name)}' on type '${magenta(formatType(tpe))}' with arguments (${cyan(tpes.mkString(", "))}).
          |
-         |${src(loc, "cannot find method")}
+         |${highlight(loc, "cannot find method", fmt)}
          |
          |${underline("Explanation:")} No Java method matches the given name and argument types.
          |Ensure that the argument types match exactly; Flix does not perform
@@ -273,11 +275,11 @@ object TypeError {
 
     def summary: String = s"Non-public default handler: '${handlerSym.name}' must be declared 'pub'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Non-public default handler: '${red(handlerSym.name)}' must be declared '${cyan("pub")}'.
          |
-         |${src(loc, "non-public default handler.")}
+         |${highlight(loc, "non-public default handler.", fmt)}
          |""".stripMargin
     }
   }
@@ -297,11 +299,11 @@ object TypeError {
 
     def summary: String = s"Unable to unify the effect formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
          |
-         |${src(loc, "mismatched effect formulas.")}
+         |${highlight(loc, "mismatched effect formulas.", fmt)}
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv)))}
          |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true))}
@@ -324,13 +326,13 @@ object TypeError {
 
     def summary: String = s"Mismatched predicate arity: '${pred.name}/$arity1' and '${pred.name}/$arity2'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Mismatched predicate arity: '${cyan(pred.name)}/${red(arity1.toString)}' and '${cyan(pred.name)}/${red(arity2.toString)}'.
          |
-         |${src(loc1, s"here '${pred.name}' has arity $arity1.")}
+         |${highlight(loc1, s"here '${pred.name}' has arity $arity1.", fmt)}
          |
-         |${src(loc2, s"here '${pred.name}' has arity $arity2.")}
+         |${highlight(loc2, s"here '${pred.name}' has arity $arity2.", fmt)}
          |""".stripMargin
     }
   }
@@ -350,17 +352,17 @@ object TypeError {
 
     def summary: String = s"Mismatched predicate denotation for '${pred.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       def pretty(den: Denotation): String = den match {
         case Denotation.Relational => "relation"
         case Denotation.Latticenal => "lattice"
       }
       s""">> Mismatched predicate denotation for '${cyan(pred.name)}'.
          |
-         |${src(loc1, s"here '${pred.name}' is a ${magenta(pretty(den1))}.")}
+         |${highlight(loc1, s"here '${pred.name}' is a ${magenta(pretty(den1))}.", fmt)}
          |
-         |${src(loc2, s"here '${pred.name}' is a ${magenta(pretty(den2))}.")}
+         |${highlight(loc2, s"here '${pred.name}' is a ${magenta(pretty(den2))}.", fmt)}
          |""".stripMargin
     }
   }
@@ -382,11 +384,11 @@ object TypeError {
 
     def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true, amb = amb))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true, amb = amb))}'.
          |
-         |${src(loc, "mismatched types.")}
+         |${highlight(loc, "mismatched types.", fmt)}
          |
          |Type One: ${formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb)}
          |Type Two: ${formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb)}
@@ -407,11 +409,11 @@ object TypeError {
 
     def summary: String = s"Missing instance: '${trt.name}' for type '${formatType(tpe, Some(renv))}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing instance: '${cyan(trt.name)}' for type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |${src(loc, "missing instance")}
+         |${highlight(loc, "missing instance", fmt)}
          |
          |${underline("Explanation:")} The type '${formatType(tpe, Some(renv))}' does not have an
          |instance of the '${trt.name}' trait. To fix this, either:
@@ -435,11 +437,11 @@ object TypeError {
 
     def summary: String = s"Missing instance: '${trt.name}' for function type '${formatType(tpe, Some(renv))}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing instance: '${cyan(trt.name)}' for ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |${src(loc, "missing instance")}
+         |${highlight(loc, "missing instance", fmt)}
          |
          |${underline("Hint:")} Did you forget to apply the function to all of its arguments?
          |""".stripMargin
@@ -458,11 +460,11 @@ object TypeError {
 
     def summary: String = s"Equality is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Eq."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Equality is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Eq.
          |
-         |${src(loc, s"missing Eq instance")}
+         |${highlight(loc, s"missing Eq instance", fmt)}
          |
          |${underline("Explanation:")}
          |To define equality on '${formatType(tpe, Some(renv))}', either:
@@ -489,11 +491,11 @@ object TypeError {
 
     def summary: String = s"Order is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Order."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Order is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Order.
          |
-         |${src(loc, s"missing Order instance")}
+         |${highlight(loc, s"missing Order instance", fmt)}
          |
          |${underline("Explanation:")}
          |To define an order on '${formatType(tpe, Some(renv))}', either:
@@ -522,11 +524,11 @@ object TypeError {
 
     def summary: String = s"ToString is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of ToString."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> ToString is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of ToString.
          |
-         |${src(loc, s"missing ToString instance")}
+         |${highlight(loc, s"missing ToString instance", fmt)}
          |
          |${underline("Explanation:")}
          |To define a string representation of '${formatType(tpe, Some(renv))}', either:
@@ -554,11 +556,11 @@ object TypeError {
 
     def summary: String = s"Missing trait constraint: '$trt' for type '${formatType(tpe, Some(renv))}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing trait constraint: '${magenta(trt.toString)}' for type '${red(formatType(tpe, Some(renv)))}'.
          |
-         |${src(loc, "missing trait constraint")}
+         |${highlight(loc, "missing trait constraint", fmt)}
          |""".stripMargin
     }
   }
@@ -575,11 +577,11 @@ object TypeError {
 
     def summary: String = s"Non-unit statement: has type '${formatType(tpe)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Non-unit statement: has type '${red(formatType(tpe))}'.
          |
-         |${src(loc, "non-unit type")}
+         |${highlight(loc, "non-unit type", fmt)}
          |
          |${underline("Suggestion:")} Use 'discard' to ignore the result. Instead of:
          |
@@ -608,11 +610,11 @@ object TypeError {
 
     def summary: String = s"Static method not found: '${methodName.name}' in class '${clazz.getName}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Static method not found: '${red(methodName.name)}' in class '${magenta(clazz.getName)}' with arguments (${cyan(tpes.mkString(", "))}).
          |
-         |${src(loc, "cannot find static method")}
+         |${highlight(loc, "cannot find static method", fmt)}
          |
          |${underline("Explanation:")} No static Java method matches the given name and argument types.
          |Ensure that the argument types match exactly; Flix does not perform
@@ -631,11 +633,11 @@ object TypeError {
 
     def summary: String = s"Type inference too complex: $msg"
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Type inference too complex: ${red(msg)}.
          |
-         |${src(loc, "complex type inference")}
+         |${highlight(loc, "complex type inference", fmt)}
          |
          |${underline("Suggestion:")} Break your function into smaller functions.
          |""".stripMargin
@@ -656,11 +658,11 @@ object TypeError {
 
     def summary: String = s"Missing label: '${label.name}' of type '${formatType(labelType, Some(renv))}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing label: '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
          |
-         |${src(loc, "missing label")}
+         |${highlight(loc, "missing label", fmt)}
          |
          |The record type:
          |
@@ -685,11 +687,11 @@ object TypeError {
 
     def summary: String = s"Unexpected argument: expected '${formatType(expected, Some(renv))}', got '${formatType(actual, Some(renv))}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected argument: expected '${cyan(formatType(expected, Some(renv)))}', got '${red(formatType(actual, Some(renv)))}'.
          |
-         |${src(loc, "unexpected argument type")}
+         |${highlight(loc, "unexpected argument type", fmt)}
          |
          |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${cyan(formatType(expected, Some(renv)))}'.
          |
@@ -714,11 +716,11 @@ object TypeError {
 
     def summary: String = s"Unexpected type: expected '${formatType(expected, Some(renv), amb = amb)}', found '${formatType(inferred, Some(renv), amb = amb)}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected type: expected '${cyan(formatType(expected, Some(renv), amb = amb))}', found '${red(formatType(inferred, Some(renv), amb = amb))}'.
          |
-         |${src(loc, "unexpected type")}
+         |${highlight(loc, "unexpected type", fmt)}
          |""".stripMargin
     }
   }
@@ -732,7 +734,7 @@ object TypeError {
 
     def summary: String = s"Unresolved constructor"
 
-    def message(formatter: Formatter): String = s"Unresolved constructor"
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved constructor"
   }
 
   /**
@@ -744,7 +746,7 @@ object TypeError {
 
     def summary: String = s"Unresolved field"
 
-    def message(formatter: Formatter): String = s"Unresolved field"
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved field"
   }
 
   /**
@@ -756,7 +758,7 @@ object TypeError {
 
     def summary: String = s"Unresolved method"
 
-    def message(formatter: Formatter): String = s"Unresolved method"
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved method"
   }
 
   /**
@@ -768,7 +770,7 @@ object TypeError {
 
     def summary: String = s"Unresolved static method"
 
-    def message(formatter: Formatter): String = s"Unresolved static method"
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved static method"
   }
 
   /**

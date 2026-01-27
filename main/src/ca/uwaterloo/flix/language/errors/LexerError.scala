@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -35,7 +35,7 @@ object LexerError {
 
     def summary: String = "Expected digit (0-9)."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Expected digit (0-9).
          |
@@ -54,7 +54,7 @@ object LexerError {
 
     def summary: String = "Expected hexadecimal digit (0-9, a-f, A-F)."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Expected hexadecimal digit (0-9, a-f, A-F).
          |
@@ -74,7 +74,7 @@ object LexerError {
 
     def summary: String = "Unexpected whitespace before '.'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected whitespace before '.'.
          |
@@ -93,7 +93,7 @@ object LexerError {
 
     def summary: String = "Unexpected hexadecimal number suffix."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected hexadecimal number suffix.
          |
@@ -121,7 +121,7 @@ object LexerError {
 
     def summary: String = "Unexpected number suffix."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected number suffix.
          |
@@ -152,7 +152,7 @@ object LexerError {
 
     def summary: String = "Unexpected integer suffix on decimal number."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected integer suffix on decimal number.
          |
@@ -178,7 +178,7 @@ object LexerError {
 
     def summary: String = s"Malformed hexadecimal number: unexpected '${showChar(found)}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed hexadecimal number: unexpected '${red(showChar(found))}'.
          |
@@ -197,7 +197,7 @@ object LexerError {
 
     def summary: String = s"Malformed number: unexpected '${showChar(found)}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Malformed number: unexpected '${red(showChar(found))}'.
          |
@@ -216,7 +216,7 @@ object LexerError {
 
     def summary: String = s"Unexpected character '${showChar(found)}'."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unexpected character '${red(showChar(found))}'.
          |
@@ -235,7 +235,7 @@ object LexerError {
 
     def summary: String = "Unterminated block comment."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unterminated block comment.
          |
@@ -254,7 +254,7 @@ object LexerError {
 
     def summary: String = "Unterminated built-in."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unterminated built-in.
          |
@@ -273,7 +273,7 @@ object LexerError {
 
     def summary: String = "Unterminated character literal."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unterminated character literal.
          |
@@ -292,7 +292,7 @@ object LexerError {
 
     def summary: String = "Unterminated regex literal."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unterminated regex literal.
          |
@@ -311,7 +311,7 @@ object LexerError {
 
     def summary: String = "Unterminated string literal."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unterminated string literal.
          |
@@ -330,7 +330,7 @@ object LexerError {
 
     def summary: String = "Unterminated string interpolation."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Unterminated string interpolation.
          |

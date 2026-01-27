@@ -39,7 +39,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        case _s: Object => "fail"
         |    }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalCatchType](result)
   }
 
@@ -57,7 +57,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        case _e2: String => "not ok"
         |    }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalCatchType](result)
   }
 
@@ -66,7 +66,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(): String \ IO = throw "hello"
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalThrowType](result)
   }
 
@@ -77,7 +77,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def f(): String \ IO = throw (throw new IOException())
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalThrowType](result)
   }
 
@@ -88,7 +88,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |pub def f(): String \ IO = throw Comparison.LessThan
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalThrowType](result)
   }
 
@@ -99,7 +99,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(Some(x)).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibAll)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -110,7 +110,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- B(Some(2)).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibAll)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -121,7 +121,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- B(None).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibAll)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -132,7 +132,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(()), C(x::_).
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibAll)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -143,7 +143,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- not B(x).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVar](result)
   }
 
@@ -154,7 +154,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    R(x) :- not A(x), not B(x).
         |}
     """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVar](result)
   }
 
@@ -165,7 +165,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    R(x) :- not A(x), B(12), if x > 5.
         |}
     """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVar](result)
   }
 
@@ -181,7 +181,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    };
         |    ()
     """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVar](result)
   }
 
@@ -193,7 +193,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    R(x) :- A(x), not B(_y).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildCard](result)
   }
 
@@ -206,7 +206,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    R(1) :- not A(_x), not B(_y).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildCard](result)
   }
 
@@ -218,7 +218,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    R(1) :- A(y), not A(_y), not B(y).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildCard](result)
   }
 
@@ -229,7 +229,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- not B(_).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildCard](result)
   }
 
@@ -240,7 +240,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- not B(_), A(_).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildCard](result)
   }
 
@@ -251,7 +251,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- not B(z), A(z), not B(_).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = check(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildCard](result)
   }
 
@@ -262,7 +262,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A((x: Int32)) :- B(12; x).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -273,7 +273,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(x; l), C(x, l).
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -284,7 +284,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x; l) :- B(x; l), C(x, l).
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -295,7 +295,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(12, l) :- B(12; l), fix C(12; l).
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -306,7 +306,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(12) :- B(12, l), fix C(12; l).
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -320,7 +320,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    def $run(): Unit = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.NewObjectMissingThisArg](result)
   }
 
@@ -334,7 +334,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    def $run(_this: Int32): Unit = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.NewObjectIllegalThisType](result)
   }
 
@@ -345,7 +345,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def f(): Runnable \ IO = new Runnable {}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.NewObjectMissingMethod](result)
   }
 
@@ -360,7 +360,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    def anExtraMethod(_this: Runnable): Unit = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.NewObjectUndefinedMethod](result)
   }
 
@@ -373,7 +373,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  new TestClassWithNonDefaultConstructor {
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.NewObjectMissingPublicZeroArgConstructor](result)
   }
 
@@ -386,7 +386,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  new TestNonPublicInterface {
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.NewObjectNonPublicClass](result)
   }
 
@@ -397,7 +397,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case _: Unit => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
@@ -408,7 +408,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case _: a => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
@@ -418,7 +418,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    run println("Hello, World!") with handler IO {}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
@@ -430,7 +430,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def g(): Unit \ NonDet = ???
     """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
@@ -439,7 +439,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(): Bool = unchecked_cast("true" as Bool)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -448,7 +448,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(): String = unchecked_cast(true as String)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -458,7 +458,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |enum A(Bool)
         |def f(): A = unchecked_cast(true as A)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -468,7 +468,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |enum A(Bool)
         |def f(): Bool = unchecked_cast(A.A(false) as Bool)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -478,7 +478,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |enum A(Int32)
         |def f(): A = unchecked_cast(1 as A)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -488,7 +488,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |enum A(Int32)
         |def f(): Int32 = unchecked_cast(A.A(1) as Int32)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -498,7 +498,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |enum A(String)
         |def f(): A = unchecked_cast("a" as A)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -508,7 +508,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |enum A(String)
         |def f(): String = unchecked_cast(A.A("a") as String)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -520,7 +520,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): String =
         |    unchecked_cast(('a', 'b', false) as String)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -532,7 +532,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |def f(): A[r] = unchecked_cast(true as A[r])
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -544,7 +544,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |def f(): A[r] = unchecked_cast(1 as A[r])
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -556,7 +556,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |def f(): A[r] = unchecked_cast("a" as A[r])
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
@@ -568,7 +568,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): Object =
         |    checked_cast(10i64)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastFromNonJava](result)
   }
 
@@ -579,7 +579,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): Boolean =
         |    checked_cast(true)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastFromNonJava](result)
   }
 
@@ -590,7 +590,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): StringBuilder =
         |    checked_cast(false)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastFromNonJava](result)
   }
 
@@ -603,7 +603,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): JBoolean =
         |    checked_cast(Boolean.Boolean(true))
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastFromNonJava](result)
   }
 
@@ -612,7 +612,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(x: a): String = checked_cast(x)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastFromVar](result)
   }
 
@@ -624,7 +624,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |
         |def g(x: String): a = checked_cast(x)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastToVar](result)
   }
 
@@ -634,7 +634,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(x: Int32): b =
         |    checked_cast(x)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastToVar](result)
   }
 
@@ -649,7 +649,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |            checked_cast("def");
         |    ()
     """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastToVar](result)
   }
 
@@ -664,7 +664,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def foo(): Unit \ Print = Print.println()
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
@@ -673,7 +673,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod Mod { @Export def id(x: Int32): Int32 = x }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.NonPublicExport](result)
   }
 
@@ -682,7 +682,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |@Export pub def id(x: Int32): Int32 = x
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalExportNamespace](result)
   }
 
@@ -691,7 +691,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod Mod { @Export pub def <><(x: Int32, _y: Int32): Int32 = x }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalExportName](result)
   }
 
@@ -702,7 +702,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def println(x: t): t \ Print = ???()
         |mod Mod { @Export pub def id(x: Int32): Int32 \ Print = println(x) }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
@@ -715,7 +715,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |mod Mod { @Export pub def id(x: Int32): Option[Int32] = Some(x) }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalExportType](result)
   }
 
@@ -728,7 +728,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |mod Mod { @Export pub def id(x: Int32, _y: Option[Int32]): Int32 = x }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalExportType](result)
   }
 
@@ -737,7 +737,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod Mod { @Export pub def id[t](x: t): t = x }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
@@ -749,7 +749,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
@@ -761,7 +761,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
@@ -779,7 +779,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        Ask.ask(); ()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalMethodEffect](result)
   }
 
@@ -788,7 +788,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -797,7 +797,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(_: Unit -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -806,7 +806,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(g: Unit -> Unit \ IO): Unit \ IO = g()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -815,7 +815,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(): (Unit -> Unit \ IO) = _ -> println("hello")
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -826,7 +826,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -837,7 +837,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(g: t -> Unit \ IO, x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -849,7 +849,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def g(h: Unit -> Unit \ IO, x: t): Unit \ IO = h(A.f(x))
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -861,7 +861,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: t): Unit \ A.Aef[t]
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -882,7 +882,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -904,7 +904,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -926,7 +926,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -949,7 +949,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -958,7 +958,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Unit = unchecked_cast(println(42) as _ \ {})
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -970,7 +970,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): Unit = ()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -982,7 +982,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): StringBuilder \ IO = new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -994,7 +994,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): StringBuilder = unsafe new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -1009,7 +1009,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    }
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -1018,7 +1018,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1027,7 +1027,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(_: Unit -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1036,7 +1036,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(g: Unit -> Unit \ IO): Unit \ IO = g()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1045,7 +1045,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(): (Unit -> Unit \ IO) = _ -> println("hello")
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1056,7 +1056,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1067,7 +1067,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(g: t -> Unit \ IO, x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1079,7 +1079,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def g(h: Unit -> Unit \ IO, x: t): Unit \ IO = h(A.f(x))
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1091,7 +1091,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: t): Unit \ A.Aef[t]
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1112,7 +1112,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1134,7 +1134,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1156,7 +1156,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1179,7 +1179,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectSuccess(result)
   }
 
@@ -1188,7 +1188,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Unit = unchecked_cast(println(42) as _ \ {})
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectError[Forbidden](result)
   }
 
@@ -1200,7 +1200,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): Unit = ()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibNix)(SecurityContext.Plain)
     expectError[Forbidden](result)
   }
 
@@ -1212,7 +1212,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): StringBuilder \ IO = new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectError[Forbidden](result)
   }
 
@@ -1224,7 +1224,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): StringBuilder = unsafe new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibNix)(SecurityContext.Plain)
     expectError[Forbidden](result)
   }
 
@@ -1239,7 +1239,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    }
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectError[Forbidden](result)
   }
 
@@ -1248,7 +1248,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1257,7 +1257,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(_: Unit -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1266,7 +1266,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(g: Unit -> Unit \ IO): Unit \ IO = g()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1275,7 +1275,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(): (Unit -> Unit \ IO) = _ -> println("hello")
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1286,7 +1286,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1297,7 +1297,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(g: t -> Unit \ IO, x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1309,7 +1309,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def g(h: Unit -> Unit \ IO, x: t): Unit \ IO = h(A.f(x))
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1321,7 +1321,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: t): Unit \ A.Aef[t]
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1342,7 +1342,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1364,7 +1364,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1386,7 +1386,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1409,7 +1409,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N(a)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1418,7 +1418,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Unit = unchecked_cast(println(42) as _ \ {})
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1430,7 +1430,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): Unit = ()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibNix)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1442,7 +1442,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): StringBuilder \ IO = new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1455,7 +1455,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): StringBuilder \ IO = new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1470,7 +1470,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    }
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
+    val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 }

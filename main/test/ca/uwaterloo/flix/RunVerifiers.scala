@@ -1,8 +1,10 @@
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.{Flix, FlixEvent, FlixListener}
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
+import ca.uwaterloo.flix.util.{Options, Validation}
 import ca.uwaterloo.flix.verifier.{EffectVerifier, TokenVerifier, TypeVerifier}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -36,21 +38,21 @@ class RunVerifiers extends AnyFunSuite with TestUtils {
     implicit val flix: Flix = new Flix()
 
     flix.setOptions(Options.TestWithLibAll)
-    flix.addListener(new FlixListener {
-      override def notify(e: FlixEvent): Unit = e match {
-        case FlixEvent.AfterLexer(sources) =>
-          TokenVerifier.verify(sources)
-        case FlixEvent.AfterTyper(root) =>
-          EffectVerifier.verify(root)
-        case FlixEvent.AfterTailPos(root) =>
-          TypeVerifier.verify(root)
-        case _ => ()
-      }
-    })
+    flix.addListener {
+      case FlixEvent.AfterLexer(sources) =>
+        TokenVerifier.verify(sources)
+      case FlixEvent.AfterTyper(root) =>
+        EffectVerifier.verify(root)
+      case FlixEvent.AfterTailPos(root) =>
+        TypeVerifier.verify(root)
+      case _ => ()
+    }
     flix.addFile(Paths.get(path))(SecurityContext.Unrestricted)
 
-    val res = flix.compile()
-    expectSuccess(res)
+    flix.compile() match {
+      case Validation.Success(_) => ()
+      case Validation.Failure(errors) => fail(CompilationMessage.formatAll(errors.toList)(NoFormatter, None))
+    }
   }
 
 }
