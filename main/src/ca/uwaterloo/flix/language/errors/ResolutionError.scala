@@ -594,8 +594,8 @@ object ResolutionError {
          |
          |  struct S[r] { x: Int32, y: Int32 }
          |
-         |  new S @ r { x = 1 }           // error: missing 'y'
-         |  new S @ r { x = 1, y = 2 }    // ok
+         |  new S @ r { x = 1 }           // not OK: missing 'y'
+         |  new S @ r { x = 1, y = 2 }    // OK
          |""".stripMargin
     }
   }
@@ -622,11 +622,11 @@ object ResolutionError {
          |
          |  mod M {
          |      pub sealed trait T[a]
-         |      instance T[Int32]       // ok: same module
+         |      instance T[Int32]       // OK: same module
          |  }
          |  mod N {
          |      use M.T
-         |      instance T[String]      // error: different module
+         |      instance T[String]      // not OK: different module
          |  }
          |""".stripMargin
     }
@@ -1061,8 +1061,8 @@ object ResolutionError {
          |  trait T[a] {
          |      type S[a]: Type
          |  }
-         |  def f(x: T.S): Unit = ...      // error: T.S is under-applied
-         |  def f(x: T.S[a]): Unit = ...   // ok
+         |  def f(x: T.S): Unit = ...      // not OK: T.S is under-applied
+         |  def f(x: T.S[a]): Unit = ...   // OK
          |""".stripMargin
     }
   }
@@ -1087,8 +1087,8 @@ object ResolutionError {
          |${underline("Explanation:")} Type aliases must be fully applied.
          |
          |  type alias T[a] = ...
-         |  def f(x: T): Unit = ...          // error: T is under-applied
-         |  def f(x: T[Int32]): Unit = ...   // ok
+         |  def f(x: T): Unit = ...          // not OK: T is under-applied
+         |  def f(x: T[Int32]): Unit = ...   // OK
          |""".stripMargin
     }
   }
