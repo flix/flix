@@ -130,8 +130,8 @@ object TypeError {
 
     def summary: String = "IO used inside explicitly Pure function"
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s"""${src(loc, "Function declared with Pure")}
          |${src(loc2, s"but uses ${sym.toString} here")}
          |""".stripMargin
@@ -231,7 +231,7 @@ object TypeError {
 
     def summary: String = "IO used inside implicitly Pure function"
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s"""${src(loc, s"${sym.toString} used here, but is used inside a function that is inferred to be Pure")}
          |""".stripMargin
