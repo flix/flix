@@ -337,7 +337,7 @@ object Kinder {
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val tpe = visitType(tpe0, Kind.Star, kenv, root)
-      val declaredEff = visitEffectDefaultPure(eff0, kenv, root, tpe0.loc)
+      val declaredEff = visitEffectDefaultPure(eff0, kenv, root, Some(tpe0.loc))
       // If we're inside an effect, add that effect to the scheme.
       val eff = effect match {
         case None => declaredEff
@@ -1166,7 +1166,7 @@ object Kinder {
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
         case Some(_) =>
-          val eff = visitEffectDefaultPure(eff0, kenv, root, SourceLocation.Unknown)
+          val eff = visitEffectDefaultPure(eff0, kenv, root, Some(loc))
           Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
         case None =>
           sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
@@ -1312,8 +1312,8 @@ object Kinder {
   /**
     * Performs kinding on the given effect, assuming it to be Pure if it is absent.
     */
-  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root, loc: SourceLocation)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Type = tpe match {
-    case None => Type.mkPure(loc)
+  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root, loc: Option[SourceLocation])(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Type = tpe match {
+    case None => Type.mkPure(loc.getOrElse(SourceLocation.Unknown))
     case Some(t) => visitType(t, Kind.Eff, kenv, root)
   }
 
@@ -1400,7 +1400,7 @@ object Kinder {
     case ResolvedAst.JvmMethod(_, fparams0, exp0, tpe0, eff0, loc) =>
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val exp = visitExp(exp0, kenv, root)
-      val eff = visitEffectDefaultPure(eff0, kenv, root, SourceLocation.Unknown)
+      val eff = visitEffectDefaultPure(eff0, kenv, root, None)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
       KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
   }
