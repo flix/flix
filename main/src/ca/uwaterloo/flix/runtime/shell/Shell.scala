@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.fmt.*
@@ -182,6 +182,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Release => execBootstrap(bootstrap.release(flix).toValidation)
       case Command.Check => execBootstrap(bootstrap.check(flix).toValidation)
       case Command.Doc => execBootstrap(bootstrap.doc(flix).toValidation)
+      case Command.Format => execBootstrap(bootstrap.format(flix).toValidation)
       case Command.Test => execBootstrap(bootstrap.test(flix).toValidation)
       case Command.Outdated => execBootstrap(bootstrap.outdated(flix).toValidation)
       case Command.Unknown(s) => execUnknown(s)
@@ -268,6 +269,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :release                    Publishes a release of the current project to GitHub.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :doc :d                     Generates API documentation for the current project.")
+    w.println("  :format :fmt                Formats the source code of the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
     w.println("  :outdated                   Shows dependencies which have newer versions available.")
     w.println("  :quit :q                    Terminates the Flix shell.")
@@ -390,15 +392,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     flix.check() match {
       case (Some(r), Nil) =>
         this.root = Some(r)
-        val result = flix.codeGen(r)
-        result.toResult match {
-          case Result.Ok(_) => result
-          case Result.Err(errors) =>
-            printErrors(errors.toList)
-            result
-        }
-      case (_, errors) =>
-        printErrors(errors)
+        Validation.Success(flix.codeGen(r))
+      case (rootOpt, errors) =>
+        printErrors(errors, rootOpt)
         Validation.Failure(Chain.from(errors))
     }
   }
@@ -406,10 +402,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Prints the list of errors using the `flix` instance to the implicit terminal.
     */
-  private def printErrors(errors: List[CompilationMessage])(implicit terminal: Terminal): Unit = {
-    for (msg <- flix.mkMessages(errors)) {
-      terminal.writer().print(msg)
-    }
+  private def printErrors(errors: List[CompilationMessage], root: Option[TypedAst.Root])(implicit terminal: Terminal): Unit = {
+    terminal.writer().println(CompilationMessage.formatAll(errors)(flix.getFormatter, root))
     terminal.writer().println()
   }
 

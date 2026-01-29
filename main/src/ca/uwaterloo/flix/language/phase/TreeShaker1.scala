@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
@@ -37,13 +38,15 @@ object TreeShaker1 {
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
     val initReach: Set[ReachableSym] = root.entryPoints.map(ReachableSym.DefnSym.apply)
 
+    val defaultHandlers = root.defaultHandlers.map(handler => ReachableSym.DefnSym(handler.handlerSym)).toSet
+
     val loweringTargets: Set[ReachableSym] = root.defs.foldLeft(Set[ReachableSym]()) {
       case (acc, (_, defn)) if defn.spec.ann.isLoweringTarget => acc + ReachableSym.DefnSym(defn.sym)
       case (acc, _) => acc
     }
 
     // Compute the symbols that are transitively reachable.
-    val allReachable = ParOps.parReach(initReach ++ loweringTargets, visitSym(_, root))
+    val allReachable = ParOps.parReach(initReach ++ loweringTargets ++ defaultHandlers, visitSym(_, root))
 
     // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {
@@ -78,26 +81,41 @@ object TreeShaker1 {
     case Expr.Var(_, _, _) =>
       Set.empty
 
+    case Expr.Hole(_, _, _, _, _) =>
+      Set.empty
+
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.OpenAs(_, exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Use(_, _, exp, _) =>
+      visitExp(exp)
+
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(sym, exps, _, _, _, _, _) =>
-      Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
+    case Expr.ApplyDef(bnd, exps, _, _, _, _, _) =>
+      Set(ReachableSym.DefnSym(bnd.sym)) ++ visitExps(exps)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
       visitExps(exps)
 
     case Expr.ApplyOp(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplySig(sym, exps, _, _, _, _, _, _) =>
-      Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
+    case Expr.ApplySig(bnd, exps, _, _, _, _, _, _) =>
+      Set(ReachableSym.SigSym(bnd.sym)) ++ visitExps(exps)
 
-    case Expr.ApplyAtomic(_, exps, _, _, _) =>
-      visitExps(exps)
+    case Expr.Unary(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.Binary(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -120,8 +138,56 @@ object TreeShaker1 {
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
+    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
+      visitExp(exp) ++ visitExps(rules.map(_.exp))
+
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+    case Expr.Tag(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.ExtTag(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.Tuple(exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.RecordSelect(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.RecordRestrict(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.ArrayLit(exps, exp, _, _, _) =>
+      visitExps(exps) ++ visitExp(exp)
+
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.ArrayLength(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      visitExps(fields.map(_._2)) ++ region.map(visitExp).getOrElse(Set.empty)
+
+    case Expr.StructGet(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
@@ -135,20 +201,59 @@ object TreeShaker1 {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Cast(exp, _, _, _, _, _) =>
+    case Expr.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.CheckedCast(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.UncheckedCast(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.Unsafe(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.Handler(_, rules, _, _, _, _, _) =>
+      visitExps(rules.map(_.exp))
+
+    case Expr.InvokeConstructor(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
+      visitExp(exp) ++ visitExps(exps)
+
+    case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.GetField(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.PutField(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.GetStaticField(_, _, _, _) =>
+      Set.empty
+
+    case Expr.PutStaticField(_, exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
-    case Expr.RunWith(exp, _, rules, _, _, _) =>
-      visitExp(exp) ++ visitExps(rules.map(_.exp))
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp)
@@ -159,18 +264,75 @@ object TreeShaker1 {
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expr.Spawn(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expr.SelectChannel(selects, optExp, _, _, _) =>
-      visitExps(selects.map(_.exp)) ++ visitExps(selects.map(_.chan)) ++ optExp.map(visitExp).getOrElse(Set())
+      visitExps(selects.map(_.exp)) ++ visitExps(selects.map(_.chan)) ++ optExp.map(visitExp).getOrElse(Set.empty)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       visitExps(frags.map(_.exp)) ++ visitExp(exp)
 
+    case Expr.Lazy(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Force(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.FixpointConstraintSet(cs, _, _) =>
+      cs.map(visitConstraint).fold(Set.empty)(_ ++ _)
+
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+      visitExps(exps) ++ visitHead(select)
+
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from0, where0, _, _, _, _) =>
+      visitExps(exps) ++
+        visitExp(queryExp) ++
+        visitExps(selects) ++
+        visitBodies(from0) ++
+        visitExps(where0)
+
+    case Expr.FixpointSolveWithProject(exps0, _, _, _, _, _) =>
+      visitExps(exps0)
+
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.Error(m, _, _) =>
+      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
   }
 
   /** Returns the symbols reachable from `exps`. */
   private def visitExps(exps: List[Expr]): Set[ReachableSym] =
-    exps.map(visitExp).fold(Set())(_ ++ _)
+    exps.map(visitExp).fold(Set.empty)(_ ++ _)
 
+  /** Returns the symbols reachable from `cs`. */
+  private def visitConstraint(cs: Constraint): Set[ReachableSym] = cs match {
+    case Constraint(_, head, bodies, _) =>
+      visitHead(head) ++ visitBodies(bodies)
+  }
+
+  /** Returns the symbols reachable from `bodies`. */
+  private def visitBodies(bodies: List[Predicate.Body]): Set[ReachableSym] =
+    bodies.map(visitBody).fold(Set.empty)(_ ++ _)
+
+  /** Returns the symbols reachable from `head`. */
+  private def visitHead(head: Predicate.Head): Set[ReachableSym] = head match {
+    case Head.Atom(_, _, exps, _, _) => visitExps(exps)
+  }
+
+  /** Returns the symbols reachable from `body`. */
+  private def visitBody(body: Predicate.Body): Set[ReachableSym] = body match {
+    case Body.Atom(_, _, _, _, _, _, _) => Set.empty
+    case Body.Functional(_, exp, _) => visitExp(exp)
+    case Body.Guard(exp, _) => visitExp(exp)
+  }
 
   /** Reachable symbols (defs, traits, sigs). */
   private sealed trait ReachableSym

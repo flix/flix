@@ -4,7 +4,7 @@ mod Test.Equality.BigDecimal {
 
     @Test
     def testEqBigDecimal_01(): Unit \ Assert =
-        assertEq(expected = +0.0ff, +0.0ff)
+        assertEq(expected = 0.0ff, 0.0ff)
 
     @Test
     def testEqBigDecimal_02(): Unit \ Assert =
@@ -12,7 +12,7 @@ mod Test.Equality.BigDecimal {
 
     @Test
     def testEqBigDecimal_03(): Unit \ Assert =
-        assertEq(expected = +1.0ff, +1.0ff)
+        assertEq(expected = 1.0ff, 1.0ff)
 
     @Test
     def testEqBigDecimal_04(): Unit \ Assert =
@@ -20,15 +20,15 @@ mod Test.Equality.BigDecimal {
 
     @Test
     def testEqBigDecimal_05(): Unit \ Assert =
-        assertEq(expected = +0.0ff, -0.0ff)
+        assertEq(expected = 0.0ff, -0.0ff)
 
     @Test
     def testNeqBigDecimal_01(): Unit \ Assert =
-        assertNeq(unexpected = -1.0ff, +1.0ff)
+        assertNeq(unexpected = -1.0ff, 1.0ff)
 
     @Test
     def testNeqBigDecimal_02(): Unit \ Assert =
-        assertNeq(unexpected = +1.0ff, -1.0ff)
+        assertNeq(unexpected = 1.0ff, -1.0ff)
 
     @Test
     def testNeqBigDecimal_03(): Unit \ Assert =

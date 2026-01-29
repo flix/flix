@@ -1,5 +1,7 @@
 mod Test.Handler.ZeroShot.AtomicInteger {
 
+    use Assert.{assertEq, assertTrue};
+
     import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
@@ -13,17 +15,17 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     }
 
     @Test
-    def testLinear01(): Bool =
+    def testLinear01(): Unit \ Assert =
         def f1() = Exc.raise();
         let result = run {
             f1()
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testLinear02(): Bool =
+    def testLinear02(): Unit \ Assert =
         def f1() = Exc.raise();
         def f2() = { discard f1(); unreachable!() };
         let result = run {
@@ -31,10 +33,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testLinear03(): Bool =
+    def testLinear03(): Unit \ Assert =
         def f1() = Exc.raise();
         def f2() = { discard f1(); unreachable!() };
         def f3() = { discard f2(); unreachable!() };
@@ -43,10 +45,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testRecursiveLetRec01(): Bool =
+    def testRecursiveLetRec01(): Unit \ Assert =
         def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { discard r(x - 1); unreachable!() } ;
         let result = run {
@@ -54,10 +56,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testRecursiveLetRec02(): Bool =
+    def testRecursiveLetRec02(): Unit \ Assert =
         def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { discard r(x - 1); unreachable!() } ;
         let result = run {
@@ -65,10 +67,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testRecursiveLetRec03(): Bool =
+    def testRecursiveLetRec03(): Unit \ Assert =
         def f() = Exc.raise();
         def r(x) = if (x == 0) f() else { discard r(x - 1); unreachable!() } ;
         let result = run {
@@ -76,61 +78,61 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testMutualRecursive01(): Bool =
+    def testMutualRecursive01(): Unit \ Assert =
         let result = run {
             mutual1(0)
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testMutualRecursive02(): Bool =
+    def testMutualRecursive02(): Unit \ Assert =
         let result = run {
             mutual1(1)
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testMutualRecursive03(): Bool =
+    def testMutualRecursive03(): Unit \ Assert =
         let result = run {
             mutual1(2)
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testMutualRecursive04(): Bool =
+    def testMutualRecursive04(): Unit \ Assert =
         let result = run {
             mutual1(3)
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testMutualRecursive05(): Bool =
+    def testMutualRecursive05(): Unit \ Assert =
         let result = run {
             mutual1(10)
         } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
-        toInt(newAtomicInteger(42)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
-    def testMutualRecursive06(): Bool =
+    def testMutualRecursive06(): Unit \ Assert =
         let result = run {
             mutual1(10)
         } with handler Exc {
             def raise(_k) = newAtomicInteger(40)
         };
-        toInt(newAtomicInteger(40)) == toInt(result)
+        assertEq(expected = toInt(newAtomicInteger(40)), toInt(result))
 
     def f(): AtomicInteger \ Exc =
          discard Exc.raise();

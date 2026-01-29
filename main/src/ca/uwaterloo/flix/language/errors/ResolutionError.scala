@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TypedAst, UnkindedType}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -37,29 +38,18 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class CyclicTraitHierarchy(path: List[Symbol.TraitSym], loc: SourceLocation) extends ResolutionError {
-    private val fullCycle = path.last :: path
+    def code: ErrorCode = ErrorCode.E9067
 
-    override def summary: String = {
-      val pathString = fullCycle.map(clazz => s"'${clazz.name}'").mkString(" extends ")
-      "Cyclic inheritance: " + pathString
-    }
+    def summary: String = s"Cyclic trait hierarchy: ${path.map(_.name).mkString(", ")}."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s"""${code(loc, "cyclic inheritance.")}
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Cyclic trait hierarchy: ${red(path.map(_.name).mkString(", "))}.
          |
-         |The following traits are in the cycle:
+         |${highlight(loc, "cyclic inheritance", fmt)}
          |
-         |$cyclicTraits
+         |${underline("Explanation:")} A trait cannot directly or indirectly extend itself.
          |""".stripMargin
-    }
-
-    private def cyclicTraits: String = {
-      var res = ""
-      for (case List(subTrait, superTrait) <- fullCycle.sliding(2)) {
-        res += s"$subTrait extends $superTrait" + System.lineSeparator()
-      }
-      res
     }
   }
 
@@ -70,28 +60,18 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError {
-    private val fullCycle = path.last :: path
+    def code: ErrorCode = ErrorCode.E9178
 
-    def summary: String = {
-      val pathString = fullCycle.map(alias => s"'${alias.name}'").mkString(" references ")
-      "Cyclic type aliases: " + pathString
-    }
+    def summary: String = s"Cyclic type aliases: ${path.map(_.name).mkString(", ")}."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s"""${code(loc, "Cyclic type aliases.")}
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Cyclic type aliases: ${red(path.map(_.name).mkString(", "))}.
          |
-         |The following type aliases are in the cycle:
-         |$appendCycles
+         |${highlight(loc, "cyclic type aliases", fmt)}
+         |
+         |${underline("Explanation:")} A type alias cannot directly or indirectly reference itself.
          |""".stripMargin
-    }
-
-    private def appendCycles: String = {
-      var res = ""
-      for (case List(referrer, referee) <- fullCycle.sliding(2)) {
-        res += s"$referrer references $referee" + System.lineSeparator()
-      }
-      res
     }
   }
 
@@ -103,17 +83,19 @@ object ResolutionError {
     * @param loc2 the location of the second associated type definition.
     */
   case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Duplicate associated type definition: $sym."
+    def code: ErrorCode = ErrorCode.E9281
 
-    override def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Duplicate associated type definition: $sym."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Duplicate associated type definition: ${red(sym.name)}.
          |
-         |${code(loc2, "duplicate associated type definition.")}
+         |${highlight(loc1, "first occurrence", fmt)}
+         |
+         |${highlight(loc2, "duplicate", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
 
     val loc: SourceLocation = loc1
   }
@@ -126,25 +108,21 @@ object ResolutionError {
     * @param loc2 the location of the second occurrence.
     */
   case class DuplicateDerivation(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Duplicate derivation: ${sym.name}"
+    def code: ErrorCode = ErrorCode.E9394
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Duplicate derivation: ${sym.name}"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Duplicate derivation '${red(sym.name)}'.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${highlight(loc1, "first occurrence", fmt)}
          |
-         |${code(loc2, "the second occurrence was here.")}
-         |
+         |${highlight(loc2, "duplicate", fmt)}
          |""".stripMargin
     }
 
-    override def loc: SourceLocation = loc1
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove one of the occurrences."
-    })
+    def loc: SourceLocation = loc1
 
   }
 
@@ -156,15 +134,17 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class ExtraStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Unexpected field '$field' in new struct expression"
+    def code: ErrorCode = ErrorCode.E9407
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Unexpected field '$field' in new struct expression"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected field '${red(field.toString)}' in new struct expression.
          |
          |>> The struct '${cyan(sym.toString)}' does not declare a '${red(field.toString)}' field.
          |
-         |${code(loc, "unexpected field")}
+         |${highlight(loc, "unexpected field", fmt)}
          |""".stripMargin
     }
   }
@@ -175,19 +155,22 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "Illegal associated type application."
+    def code: ErrorCode = ErrorCode.E9512
 
-    override def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Illegal associated type application.
+    def summary: String = "Unexpected associated type application."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected associated type application.
          |
-         |${code(loc, "illegal associated type application.")}
+         |${highlight(loc, "unexpected application", fmt)}
+         |
+         |${underline("Explanation:")} An associated type may only be applied to a type variable.
+         |
+         |  Elm[a]     // OK
+         |  Elm[Int32] // not OK
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "An associated type may only be applied to a variable."
-    })
   }
 
   /**
@@ -197,15 +180,17 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Illegal non-Java type. Expected class or interface type."
+    def code: ErrorCode = ErrorCode.E9623
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = "Unexpected non-Java type. Expected class or interface type."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Unexpected non-Java type: '${red(tpe.toString)}'.
          |
-         |${code(loc, "unexpected type.")}
+         |${highlight(loc, "unexpected type", fmt)}
          |
-         |Expected a Java class or interface.
+         |${underline("Explanation:")} Expected a Java class or interface.
          |""".stripMargin
     }
   }
@@ -213,23 +198,29 @@ object ResolutionError {
   /**
     * An error raised to indicate that a signature does not include the trait's type parameter.
     *
-    * @param sym the symbol of the signature.
-    * @param loc the location where the error occurred.
+    * @param sym  the symbol of the signature.
+    * @param tvar the type variable of the trait.
+    * @param loc  the location where the error occurred.
     */
-  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Unexpected signature which does not mention the type variable of the trait."
+  case class IllegalSignature(sym: Symbol.SigSym, tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E9736
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the trait.
+    def summary: String = s"Unexpected signature which does not mention the type variable '${tvar.toString}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable '${cyan(tvar.toString)}'.
          |
-         |${code(loc, "unexpected signature.")}
+         |${highlight(loc, "unexpected signature", fmt)}
+         |
+         |${underline("Explanation:")} Every signature in a trait must mention the type variable of the trait.
+         |
+         |  trait T[a] {
+         |      pub def f(x: a): a    // OK
+         |      pub def g(): Int32    // not OK
+         |  }
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Every signature in a trait must mention the type variable of the trait."
-    })
 
   }
 
@@ -240,19 +231,20 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Illegal wildcard type: '$ident'."
+    def code: ErrorCode = ErrorCode.E9843
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Illegal wildcard type: '$ident'.
+    def summary: String = s"Unexpected wildcard type: '$ident'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected wildcard type: '${red(ident.toString)}'.
          |
-         |${code(loc, "illegal wildcard type.")}
+         |${highlight(loc, "unexpected wildcard type", fmt)}
+         |
+         |${underline("Explanation:")} Wildcard types (types starting with an underscore) are
+         |not allowed in this position.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Wildcard types (types starting with an underscore) are not allowed in this position."
-    })
   }
 
   /**
@@ -262,15 +254,23 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Modification of immutable field `${field.name}`."
+    def code: ErrorCode = ErrorCode.E9956
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Modification of immutable field '${red(field.name)}' on ${cyan(field.structSym.toString)}'.
+    def summary: String = s"Modification of immutable field '${field.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Modification of immutable field '${red(field.name)}' on '${cyan(field.structSym.toString)}'.
          |
-         |${code(loc, "immutable field")}
+         |${highlight(loc, "immutable field", fmt)}
          |
-         |Mark the field as 'mut' in the declaration of the struct.
+         |${underline("Explanation:")} Struct fields are immutable by default.
+         |To allow modification, mark the field as mutable:
+         |
+         |  struct S[r] {
+         |      x: Int32,         // immutable
+         |      mut y: Int32      // mutable
+         |  }
          |""".stripMargin
     }
   }
@@ -283,22 +283,19 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Inaccessible."
+    def code: ErrorCode = ErrorCode.E0124
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Trait '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+    def summary: String = s"Inaccessible trait: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Trait '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible trait.")}
+         |${highlight(loc, "inaccessible trait", fmt)}
          |
+         |${underline("Tip:")} Mark the trait as 'pub'.
          |""".stripMargin
-
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the trait as public."
-    })
   }
 
   /**
@@ -309,22 +306,19 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Inaccessible."
+    def code: ErrorCode = ErrorCode.E0237
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+    def summary: String = s"Inaccessible definition: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Definition '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible definition.")}
+         |${highlight(loc, "inaccessible definition", fmt)}
          |
+         |${underline("Tip:")} Mark the definition as 'pub'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
-
   }
 
   /**
@@ -335,22 +329,19 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleEffect(sym: Symbol.EffSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Inaccessible alias ${sym.name}"
+    def code: ErrorCode = ErrorCode.E0348
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Effect '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+    def summary: String = s"Inaccessible effect: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Effect '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible effect.")}
+         |${highlight(loc, "inaccessible effect", fmt)}
          |
+         |${underline("Tip:")} Mark the effect as 'pub'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the effect as public."
-    })
-
   }
 
   /**
@@ -361,22 +352,19 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Inaccessible."
+    def code: ErrorCode = ErrorCode.E0459
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+    def summary: String = s"Inaccessible enum: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible enum.")}
+         |${highlight(loc, "inaccessible enum", fmt)}
          |
+         |${underline("Tip:")} Mark the enum as 'pub'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
-
   }
 
   /**
@@ -387,21 +375,19 @@ object ResolutionError {
     * @param loc the location where the error occurred
     */
   case class InaccessibleStruct(sym: Symbol.StructSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Inaccessible."
+    def code: ErrorCode = ErrorCode.E0562
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Struct '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+    def summary: String = s"Inaccessible struct: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Struct '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible struct.")}
+         |${highlight(loc, "inaccessible struct", fmt)}
          |
+         |${underline("Tip:")} Mark the struct as 'pub'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
   }
 
   /**
@@ -412,22 +398,19 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleRestrictableEnum(sym: Symbol.RestrictableEnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Inaccessible."
+    def code: ErrorCode = ErrorCode.E0673
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+    def summary: String = s"Inaccessible enum: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Enum '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible enum.")}
+         |${highlight(loc, "inaccessible enum", fmt)}
          |
+         |${underline("Tip:")} Mark the enum as 'pub'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
-
   }
 
   /**
@@ -438,21 +421,19 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleSig(sym: Symbol.SigSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Inaccessible."
+    def code: ErrorCode = ErrorCode.E0784
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+    def summary: String = s"Inaccessible signature: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Signature '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible definition.")}
+         |${highlight(loc, "inaccessible signature", fmt)}
+         |
+         |${underline("Tip:")} Mark the signature as 'pub'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the definition as public."
-    })
-
   }
 
   /**
@@ -463,43 +444,41 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Inaccessible type alias ${sym.name}"
+    def code: ErrorCode = ErrorCode.E0895
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+    def summary: String = s"Inaccessible type alias: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Type alias '${red(sym.toString)}' is not accessible from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible type alias.")}
+         |${highlight(loc, "inaccessible type alias", fmt)}
          |
+         |${underline("Tip:")} Mark the type alias as 'pub'.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Mark the type alias as public."
-    })
-
   }
 
   /**
-    * An error indicating the number of effect operation arguments does not match the expected number.
+    * An error indicating the number of effect operation parameters does not match the expected number.
     *
     * @param op       the effect operation symbol.
-    * @param expected the expected number of arguments.
-    * @param actual   the actual number of arguments.
+    * @param expected the expected number of parameters.
+    * @param actual   the actual number of parameters.
     * @param loc      the location where the error occurred.
     */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
+    def code: ErrorCode = ErrorCode.E0912
 
-    override def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Mismatched arity.
+    def summary: String = s"Mismatched arity for operation '${op.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched arity for operation '${red(op.name)}'.
          |
-         |The operation $op expects ${Grammar.n_things(expected, "parameter")},
-         |but ${Grammar.n_are(actual)} provided here.
+         |Expected ${Grammar.n_things(expected, "parameter")} but found $actual.
          |
-         |${code(loc, s"expected ${Grammar.n_things(expected, "parameter")} but found $actual")}
+         |${highlight(loc, s"expected $expected parameters", fmt)}
          |""".stripMargin
     }
   }
@@ -513,13 +492,17 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedTagPatternArity(caze: Symbol.CaseSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found ${Grammar.n_things(actual, "argument")}."
+    def code: ErrorCode = ErrorCode.E1023
 
-    override def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""" Expected ${Grammar.n_things(expected, "argument")} for ${cyan(caze.toString)} but found ${Grammar.n_things(actual, "argument")}.
+    def summary: String = s"Mismatched arity for tag '${caze.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched arity for tag '${red(caze.name)}'.
          |
-         |${code(loc, s"mismatched arguments")}
+         |Expected ${Grammar.n_things(expected, "argument")} but found $actual.
+         |
+         |${highlight(loc, s"expected $expected arguments", fmt)}
          |""".stripMargin
     }
   }
@@ -531,13 +514,28 @@ object ResolutionError {
     * @param loc  the location of the instance symbol where the error occurred.
     */
   case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Missing associated type definition: $name."
+    def code: ErrorCode = ErrorCode.E1134
 
-    override def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Missing associated type definition: $name.
+    def summary: String = s"Missing associated type definition: '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Missing associated type definition: '${red(name)}'.
          |
-         |${code(loc, s"missing associated type definition: $name.")}
+         |${highlight(loc, "missing definition", fmt)}
+         |
+         |${underline("Explanation:")} Every instance must define all associated types declared
+         |by the trait, unless the trait provides a default.
+         |
+         |  trait T[a] {
+         |      type U: Type            // no default
+         |      type V: Type = String   // has default
+         |  }
+         |
+         |  instance T[Int32] {
+         |      type U = String         // required
+         |      // type V uses the default
+         |  }
          |""".stripMargin
     }
   }
@@ -549,15 +547,26 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class MissingHandlerDef(sym: Symbol.OpSym, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Missing handler definition: ${sym.name}"
+    def code: ErrorCode = ErrorCode.E1245
 
-    override def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Missing handler definition '${red(sym.name)}' for effect ${cyan(sym.eff.name)}'.
+    def summary: String = s"Missing handler definition: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Missing handler definition '${red(sym.name)}' for effect '${cyan(sym.eff.name)}'.
          |
-         |${code(loc, "missing handler definition")}
+         |${highlight(loc, "missing handler definition", fmt)}
          |
-         |Add a handler definition for ${sym.name}
+         |${underline("Explanation:")} When handling an effect, you must provide definitions
+         |for all its operations.
+         |
+         |  eff E {
+         |      pub def op(): Unit
+         |  }
+         |
+         |  run { ... } with handler E {
+         |      def op() = ...  // required
+         |  }
          |""".stripMargin
     }
   }
@@ -566,17 +575,27 @@ object ResolutionError {
     * An error raised to indicate a `new` struct expression is missing a field.
     *
     * @param sym   the symbol of the struct.
-    * @param field the name of the missing fields.
+    * @param field the name of the missing field.
     * @param loc   the location where the error occurred.
     */
   case class MissingStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Missing struct field '$field' in new struct expression"
+    def code: ErrorCode = ErrorCode.E1356
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Missing struct field '$field' in new struct expression."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Missing struct field '${red(field.toString)}' in new struct expression for struct '${cyan(sym.toString)}'.
          |
-         |${code(loc, "missing field")}
+         |${highlight(loc, "missing field", fmt)}
+         |
+         |${underline("Explanation:")} When creating a new struct, all fields must be initialized.
+         |For example:
+         |
+         |  struct S[r] { x: Int32, y: Int32 }
+         |
+         |  new S @ r { x = 1 }           // not OK: missing 'y'
+         |  new S @ r { x = 1, y = 2 }    // OK
          |""".stripMargin
     }
   }
@@ -589,92 +608,100 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class SealedTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Sealed trait."
+    def code: ErrorCode = ErrorCode.E1467
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Sealed trait: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Trait '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "sealed trait.")}
+         |${highlight(loc, "sealed trait", fmt)}
          |
+         |${underline("Explanation:")} A sealed trait can only be implemented within its declaring module.
+         |
+         |  mod M {
+         |      pub sealed trait T[a]
+         |      instance T[Int32]       // OK: same module
+         |  }
+         |  mod N {
+         |      use M.T
+         |      instance T[String]      // not OK: different module
+         |  }
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Move the instance or subtrait to the trait's module."
-    })
 
   }
 
   /**
-    * Undefined associated type error.
+    * Undefined Associated Type Error.
     *
-    * @param qn  associated type.
-    * @param loc the location where the error occurred.
+    * @param trt    the trait symbol.
+    * @param assoc  the associated type.
+    * @param assocs the available associated types on the trait.
+    * @param loc    the location where the error occurred.
     */
-  case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined associated type: '$qn'."
+  case class UndefinedAssocType(trt: Symbol.TraitSym, assoc: Name.QName, assocs: List[Symbol.AssocTypeSym], loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E1578
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Undefined associated type'${red(qn.toString)}'.
+    def summary: String = s"Undefined associated type: '$assoc'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Undefined associated type '${red(assoc.toString)}' in trait '${cyan(trt.name)}'.
          |
-         |${code(loc, "associated type not found.")}
+         |${highlight(loc, "associated type not found", fmt)}
          |
+         |${underline("Explanation:")} The trait does not declare an associated type with this name.
+         |
+         |The trait '${cyan(trt.name)}' defines the following associated types:
+         |${assocs.map(s => s"  - '${cyan(s.name)}'").mkString("\n")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent associated type?"
-    })
   }
 
   /**
     * Undefined Effect Error.
     *
     * @param qn  the unresolved effect.
-    * @param ap  then anchor position.
+    * @param ap  the anchor position.
     * @param ns  the current namespace.
     * @param scp the local scope.
     * @param loc the location where the error occurred.
     */
   case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E1689
+
     def summary: String = s"Undefined effect '${qn.toString}'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined effect '${red(qn.toString)}'.
          |
-         |${code(loc, "effect not found")}
-         |
+         |${highlight(loc, "effect not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent effect?"
-    })
 
   }
 
   /**
     * An error raised to indicate that a class name was not found.
     *
-    * @param name  the class name.
-    * @param ap    the anchor position.
-    * @param msg   the Java error message.
-    * @param loc   the location of the class name.
+    * @param name the class name.
+    * @param ap   the anchor position.
+    * @param msg  the Java error message.
+    * @param loc  the location of the class name.
     */
   case class UndefinedJvmClass(name: Name.Ident, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E1792
+
     def summary: String = s"Undefined Java class: '$name'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined Java class '${red(name.name)}'.
          |
-         |${code(loc, "undefined class.")}
+         |${highlight(loc, "undefined class", fmt)}
          |
          |$msg
          |""".stripMargin
@@ -682,7 +709,7 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that the class name in an importing was not found.
+    * An error raised to indicate that the class name in an import was not found.
     *
     * @param name the class name.
     * @param ap   the anchor position.
@@ -690,26 +717,29 @@ object ResolutionError {
     * @param loc  the location of the class name.
     */
   case class UndefinedJvmImport(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined class in Java Import: '$name'."
+    def code: ErrorCode = ErrorCode.E1803
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Undefined class in Java Import '${red(name)}'.
+    def summary: String = s"Undefined Java class: '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Undefined Java class '${red(name)}'.
          |
-         |${code(loc, "undefined class.")}
+         |${highlight(loc, "unknown import", fmt)}
          |
          |$msg
+         |$nestedClassHint
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = {
+    private def nestedClassHint: String = {
       if (raw".*\.[A-Z].*\.[A-Z].*".r matches name)
-        Some(s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder")
+        s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder"
       else
-        None
+        ""
     }
   }
 
@@ -721,13 +751,15 @@ object ResolutionError {
     * @param loc   the location of the field access.
     */
   case class UndefinedJvmStaticField(clazz: Class[?], field: Name.Ident, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined static field."
+    def code: ErrorCode = ErrorCode.E1914
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Undefined static field: '${field.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
          |
-         |${code(loc, "undefined static field.")}
+         |${highlight(loc, "field not found", fmt)}
          |""".stripMargin
     }
   }
@@ -740,95 +772,89 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2025
+
     def summary: String = s"Undefined kind: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined kind '${red(qn.toString)}'.
          |
-         |${code(loc, "undefined kind.")}
+         |${highlight(loc, "kind not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent kind?"
-    })
   }
 
   /**
     * Undefined Name Error.
     *
-    * @param qn    the unresolved name.
-    * @param ap    the anchor position.
-    * @param scp   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ap  the anchor position.
+    * @param scp the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedName(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2136
+
     def summary: String = s"Undefined name: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined name '${red(qn.toString)}'.
          |
-         |${code(loc, "name not found")}
-         |
+         |${highlight(loc, "name not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent definition?"
-    })
 
   }
 
   /**
     * Undefined Name Error (unrecoverable).
     *
-    * @param qn    the unresolved name.
-    * @param ns    the current namespace.
-    * @param scp   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ns  the current namespace.
+    * @param scp the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2247
+
     def summary: String = s"Undefined name: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined name '${red(qn.toString)}'.
          |
-         |${code(loc, "name not found")}
-         |
+         |${highlight(loc, "name not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent definition?"
-    })
 
   }
 
   /**
-    * An error raised to indicate that class/struct name was not found in a new expression.
+    * An error raised to indicate that a class/struct name was not found in a new expression.
     *
-    * @param name the jvm class/struct name
+    * @param name the class/struct name.
     * @param ap   the anchor position.
     * @param scp  the local scope.
-    * @param msg  the error message.
     * @param loc  the location of the class/struct name.
     */
-  case class UndefinedNewJvmClassOrStruct(name: Name.Ident, ap: AnchorPosition, scp: LocalScope, msg: String, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined New: '$name'."
+  case class UndefinedNew(name: Name.Ident, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2358
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Undefined New '${red(name.name)}'.
+    def summary: String = s"Undefined class or struct: '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Undefined class or struct '${red(name.name)}'.
          |
-         |${code(loc, "undefined new.")}
+         |${highlight(loc, "not found", fmt)}
          |
-         |$msg
+         |${underline("Explanation:")} The 'new' expression requires a Java class or Flix struct.
+         |
+         |  import java.io.File
+         |  new File("path")            // Java class (must be imported)
+         |  new S @ r { x = 1 }         // Flix struct
          |""".stripMargin
     }
   }
@@ -836,25 +862,29 @@ object ResolutionError {
   /**
     * Undefined Op Error.
     *
-    * @param qn    the qualified name of the operation.
-    * @param loc   the location where the error occurred.
+    * @param eff the effect symbol.
+    * @param op  the qualified name of the operation.
+    * @param ops the available operations in the effect.
+    * @param loc the location where the error occurred.
     */
-  case class UndefinedOp(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined operation '${qn.toString}'."
+  case class UndefinedOp(eff: Symbol.EffSym, op: Name.QName, ops: List[Symbol.OpSym], ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2469
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Undefined operation '${red(qn.toString)}'.
+    def summary: String = s"Undefined operation '${op.ident.name}' in effect '${eff.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Undefined operation '${red(op.ident.name)}' in effect '${cyan(eff.name)}'.
          |
-         |${code(loc, "operation not found")}
+         |${highlight(loc, "operation not found", fmt)}
          |
+         |${underline("Explanation:")} The effect does not declare an operation with this name.
+         |
+         |The effect '${cyan(eff.name)}' defines the following operations:
+         |
+         |${ops.map(o => s"  - '${cyan(o.name)}'").mkString("\n")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent operation?"
-    })
   }
 
   /**
@@ -865,22 +895,17 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedRestrictableTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2572
+
     def summary: String = s"Undefined restrictable tag: '$tag'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined restrictable tag '${red(tag)}'.
          |
-         |${code(loc, "tag not found.")}
-         |
+         |${highlight(loc, "tag not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent tag?"
-    })
-
   }
 
   /**
@@ -891,48 +916,38 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedRestrictableType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2683
+
     def summary: String = s"Undefined restrictable type: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined restrictable type '${red(qn.toString)}'.
          |
-         |${code(loc, "type not found.")}
-         |
+         |${highlight(loc, "type not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent type?"
-    })
-
   }
 
   /**
     * Undefined Tag Error.
     *
-    * @param qn the tag.
+    * @param qn  the tag.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
   case class UndefinedTag(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2794
+
     def summary: String = s"Undefined tag: '$qn'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined tag '${red(qn.toString)}'.
          |
-         |${code(loc, "tag not found.")}
-         |
+         |${highlight(loc, "tag not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent tag?"
-    })
-
   }
 
   /**
@@ -946,49 +961,40 @@ object ResolutionError {
     * @param loc          the location where the error occurred.
     */
   case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUsageKind, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2805
+
     def summary: String = s"Undefined trait: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined trait '${red(qn.toString)}'.
          |
-         |${code(loc, "trait not found")}
-         |
+         |${highlight(loc, "trait not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent trait?"
-    })
 
   }
 
   /**
     * Undefined Type Error.
     *
-    * @param qn       the name.
-    * @param kindOpt  the kind of the type.
-    * @param ap       the enclosing module.
-    * @param loc      the location where the error occurred.
+    * @param qn      the name.
+    * @param kindOpt the kind of the type.
+    * @param ap      the enclosing module.
+    * @param loc     the location where the error occurred.
     */
   case class UndefinedType(qn: Name.QName, kindOpt: Option[Kind], ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E2916
+
     def summary: String = s"Undefined type: '${qn.toString}'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined type '${red(qn.toString)}'.
          |
-         |${code(loc, "type not found.")}
-         |
+         |${highlight(loc, "type not found", fmt)}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent type?"
-    })
-
   }
 
   /**
@@ -998,65 +1004,67 @@ object ResolutionError {
     * @param loc  the location of the undefined type variable.
     */
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3027
+
     def summary: String = s"Undefined type variable '$name'."
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined type variable '${red(name)}'.
          |
-         |${code(loc, "undefined type variable.")}
+         |${highlight(loc, "undefined type variable", fmt)}
          |""".stripMargin
-
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Flix cannot find the type variable. Maybe there is a typo?"
-    })
   }
 
   /**
     * Undefined Use Error (unrecoverable).
     *
-    * @param qn    the unresolved name.
-    * @param ns    the current namespace.
-    * @param env   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ns  the current namespace.
+    * @param env the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedUse(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined '${qn.toString}' use."
+    def code: ErrorCode = ErrorCode.E3138
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Undefined '${red(qn.toString)}' use.
+    def summary: String = s"Undefined use: '${qn.toString}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Undefined use '${red(qn.toString)}'.
          |
-         |${code(loc, "name not found")}
-         |
+         |${highlight(loc, "name not found", fmt)}
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate an under-applied type alias.
+    * An error raised to indicate an under-applied associated type.
     *
     * @param sym the associated type.
     * @param loc the location where the error occurred.
     */
   case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Under-applied associated type: ${sym.name}"
+    def code: ErrorCode = ErrorCode.E3249
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Under-applied associated type '${red(sym.name)}'.
+    def summary: String = s"Under-applied associated type '${sym.name}' in trait '${sym.trt.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Under-applied associated type '${red(sym.name)}' in trait '${cyan(sym.trt.name)}'.
          |
-         |${code(loc, "Under-applied associated type.")}
+         |${highlight(loc, "under-applied associated type", fmt)}
+         |
+         |${underline("Explanation:")} Associated types must be fully applied.
+         |
+         |  trait T[a] {
+         |      type S[a]: Type
+         |  }
+         |  def f(x: T.S): Unit = ...      // not OK: T.S is under-applied
+         |  def f(x: T.S[a]): Unit = ...   // OK
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Associated types must be fully applied."
-    })
-
   }
 
   /**
@@ -1066,21 +1074,23 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Under-applied type alias: ${sym.name}"
+    def code: ErrorCode = ErrorCode.E3352
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Under-applied type alias: '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Under-applied type alias '${red(sym.name)}'.
          |
-         |${code(loc, "Under-applied type alias.")}
+         |${highlight(loc, "under-applied type alias", fmt)}
+         |
+         |${underline("Explanation:")} Type aliases must be fully applied.
+         |
+         |  type alias T[a] = ...
+         |  def f(x: T): Unit = ...          // not OK: T is under-applied
+         |  def f(x: T[Int32]): Unit = ...   // OK
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Type aliases must be fully applied."
-    })
-
   }
 
   /**
@@ -1090,13 +1100,15 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class UndefinedStruct(name: Name.QName, ap: AnchorPosition, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Undefined struct"
+    def code: ErrorCode = ErrorCode.E3463
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Undefined struct"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined struct '${red(name.toString)}'.
          |
-         |${code(loc, "undefined struct")}
+         |${highlight(loc, "undefined struct", fmt)}
          |""".stripMargin
     }
   }
@@ -1109,13 +1121,15 @@ object ResolutionError {
     * @param loc    the location where the error occurred.
     */
   case class UndefinedStructField(struct: Option[Symbol.StructSym], field: Name.Label, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Undefined struct field '$field'$structMessage"
+    def code: ErrorCode = ErrorCode.E3574
 
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
+    def summary: String = s"Undefined struct field '$field'$structMessage"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
       s""">> Undefined struct field '${red(field.toString)}'$structMessage.
          |
-         |${code(loc, "undefined field")}
+         |${highlight(loc, "undefined field", fmt)}
          |""".stripMargin
     }
 

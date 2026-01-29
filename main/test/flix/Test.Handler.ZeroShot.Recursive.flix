@@ -1,6 +1,6 @@
 mod Test.Handler.ZeroShot.Recursive {
 
-    use Assert.assertEq;
+    use Assert.{assertEq, assertTrue};
 
     eff Exc {
         def raise(): Unit

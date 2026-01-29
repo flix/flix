@@ -16,38 +16,30 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.CodeHint
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import org.json4s.JsonDSL.*
 import org.json4s.*
 import org.eclipse.lsp4j
 
-import scala.annotation.unused
 import scala.jdk.CollectionConverters.*
 
 /**
   * Companion object for [[Diagnostic]].
   */
 object Diagnostic {
-  def from(m: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
+  def from(m: CompilationMessage, root: Option[TypedAst.Root]): Diagnostic = {
     val range = Range.from(m.loc)
     val severity = Some(DiagnosticSeverity.Error)
     val code = m.kind.toString
     val summary = m.summary
-    val explanationHeading =
-      s"""
-         |${formatter.underline("Explanation:")}
-         |""".stripMargin
-    val explanation = m.explain(formatter) match {
-      case Some(expl) if explain => explanationHeading + expl
-      case _ => ""
-    }
-    val fullMessage = m.messageWithLoc(formatter) + explanation
+    val fullMessage = m.messageWithLoc(AnsiTerminalFormatter)(root)
     val relatedInformation = m.locs.map(l => DiagnosticRelatedInformation(Location.from(l), m.summary))
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil, relatedInformation)
   }
 
-  def from(codeHint: CodeHint, @unused formatter: Formatter): Diagnostic = {
+  def from(codeHint: CodeHint): Diagnostic = {
     val range = Range.from(codeHint.loc)
     val severity = Some(DiagnosticSeverity.from(codeHint.severity))
     val summary = codeHint.summary

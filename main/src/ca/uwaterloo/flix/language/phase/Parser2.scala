@@ -219,9 +219,14 @@ object Parser2 {
 
   /** Get first non-comment previous position of the parser as a [[SourceLocation]]. */
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
-    // TODO: It might make sense to seek the first non-comment position.
-    val token = s.tokens((s.position - 1).max(0))
-    token.mkSourceLocation()
+    val prevPos = (s.position - previousNonComment(1)).max(0)
+    if (0 <= prevPos && prevPos < s.tokens.length) {
+      val token = s.tokens(prevPos)
+      token.mkSourceLocation()
+    } else {
+      // This cannot happen.
+      throw InternalCompilerException(s"Parser arrived in impossible case", currentSourceLocation())
+    }
   }
 
   /** Get current position of the parser as a [[SourceLocation]]. */
@@ -499,6 +504,19 @@ object Parser2 {
     } else s.tokens(s.position + lookahead).kind match {
       case t if t.isComment => nextNonComment(lookahead + 1)
       case _ => lookahead
+    }
+  }
+
+  /**
+    * Returns the distance to the first non-comment token after lookahead.
+    */
+  @tailrec
+  private def previousNonComment(lookbehind: Int)(implicit s: State): Int = {
+    if (s.position - lookbehind < 1) {
+      lookbehind
+    } else s.tokens(s.position - lookbehind).kind match {
+      case t if t.isComment => previousNonComment(lookbehind + 1)
+      case _ => lookbehind
     }
   }
 
@@ -2847,7 +2865,7 @@ object Parser2 {
         // `new Type { ... }`.
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-          checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
+          checkForItem = _ => nth(nextNonComment(0))  == TokenKind.KeywordDef,
           getItem = jvmMethod,
           breakWhen = _.isRecoverInExpr,
           delimiterL = TokenKind.CurlyL,
@@ -2873,8 +2891,9 @@ object Parser2 {
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordDef))
+      // Have to eat potential comments before the `assert`.
       val mark = open()
+      assert(at(TokenKind.KeywordDef))
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_JAVA)
       Decl.parameters()

@@ -181,23 +181,28 @@ mod ShortestDistance {
         Set#{ (0, 1, 1), (0, 1, 3), (1, 1, 2), (1, 1, 5), (2, 2, 6), (3, 2, 5), (3, 6, 4), (5, 1, 6) }
 
     @Test
-    def testExampleGraphShortestDistances01(): Bool =
-        sssd(0, exampleGraph01()) == Map#{0 => 0, 1 => 2, 2 => 9, 3 => 3, 4 => 6, 5 => 10}
+    def testExampleGraphShortestDistances01(): Unit \ Assert =
+        let expected = Map#{0 => 0, 1 => 2, 2 => 9, 3 => 3, 4 => 6, 5 => 10};
+        Assert.assertEq(expected = expected, sssd(0, exampleGraph01()))
 
     @Test
-    def testExampleGraphShortestDistances02(): Bool =
-        sssd(0, exampleGraph02()) == Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 2, 5 => 3}
+    def testExampleGraphShortestDistances02(): Unit \ Assert =
+        let expected = Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 2, 5 => 3};
+        Assert.assertEq(expected = expected, sssd(0, exampleGraph02()))
 
     @Test
-    def testExampleGraphShortestDistances03(): Bool =
-        sssd(0, exampleGraph03()) == Map#{0 => 0, 1 => 10, 2 => 11, 3 => 21}
+    def testExampleGraphShortestDistances03(): Unit \ Assert =
+        let expected = Map#{0 => 0, 1 => 10, 2 => 11, 3 => 21};
+        Assert.assertEq(expected = expected, sssd(0, exampleGraph03()))
 
     @Test
-    def testExampleGraphShortestDistances04(): Bool =
-        sssd(0, exampleGraph04()) == Map#{0 => 0, 1 => 10, 2 => 25, 3 => 30, 4 => 10, 5 => 30, 6 => 20, 7 => 10, 8 => 15, 9 => 22, 10 => 35}
+    def testExampleGraphShortestDistances04(): Unit \ Assert =
+        let expected = Map#{0 => 0, 1 => 10, 2 => 25, 3 => 30, 4 => 10, 5 => 30, 6 => 20, 7 => 10, 8 => 15, 9 => 22, 10 => 35};
+        Assert.assertEq(expected = expected, sssd(0, exampleGraph04()))
 
     @Test
-    def testExampleGraphShortestDistances05(): Bool =
-        sssd(0, exampleGraph05()) == Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 7, 5 => 2, 6 => 3}
+    def testExampleGraphShortestDistances05(): Unit \ Assert =
+        let expected = Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 7, 5 => 2, 6 => 3};
+        Assert.assertEq(expected = expected, sssd(0, exampleGraph05()))
 
 }

@@ -21,7 +21,6 @@ dependencies {
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
     implementation('org.apache.commons:commons-lang3:3.18.0')
-    implementation('com.lihaoyi:sourcecode_2.13:0.4.4')
 
     implementation('io.get-coursier:coursier_2.13:2.1.24')
 
@@ -78,6 +77,7 @@ sourceSets {
 jar {
     manifest {
         attributes 'Main-Class': 'ca.uwaterloo.flix.Main'
+        attributes 'Enable-Native-Access': 'ALL-UNNAMED'
     }
 
     from {

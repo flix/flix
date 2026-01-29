@@ -1225,4 +1225,16 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp);
         assertEq(expected = expected, actual)
 
+    /////////////////////////////////////////////////////////////////////////////
+    /// `pquery` should work with fresh relation in `with`.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryFreshRelation01(): Unit \ Assert =
+        let p = #{
+            A().
+        };
+        let f = pquery p select A() with {B};
+        assertEq(expected = 0, Vector.length(f))
+
 }

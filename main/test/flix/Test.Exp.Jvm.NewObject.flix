@@ -310,4 +310,13 @@ mod Test.Exp.Jvm.NewObject {
     @CompileTest
     def testClassWithProtectedConstructor01(): TestClassWithProtectedConstructor \ IO =
         new TestClassWithProtectedConstructor {}
+
+    @CompileTest
+    def testCommentBeforeJVMMethod01(): Unit \ IO =
+        let _ = new TestBoolInterface {
+            /// We can write comments here.
+            def testMethod(_this: TestBoolInterface, x: Bool): Bool = not x
+        };
+        ()
+
 }

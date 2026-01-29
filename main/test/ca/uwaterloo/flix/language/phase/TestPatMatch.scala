@@ -32,7 +32,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case 'c' => 3
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -44,7 +44,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case 3 => 3
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -56,7 +56,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case 3i64 => 3
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -68,7 +68,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case "baz" => 3
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -84,7 +84,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case (_, Color.Blu) => 2
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -96,7 +96,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case (7i8, (_,_)) => 7
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -111,7 +111,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case (1,2,3,4,_) => 1
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -126,7 +126,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case (p, IntList.Lst(x, rs)) => x
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -141,7 +141,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case (IntList.Lst(x,xs), IntList.Lst(y,ys)) => 1
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -155,7 +155,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case IntList.Empty => 42
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -167,7 +167,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |
         |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalConstantPattern](result)
   }
 
@@ -175,7 +175,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
     val input =
       """def f(e: (Int8, Int8)): Int8 = let (a,1i8) = e; a
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalConstantPattern](result)
   }
 
@@ -190,7 +190,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  case Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, _))))))) => Evil.Evil(Evil.Good, Evil.Good)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -205,7 +205,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |def f(): Option[Int32] -> Int32 = match None -> 42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalConstantPattern](result)
   }
 
@@ -220,7 +220,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |def f(): Option[Int32] -> Int32 = match Some(x) -> x
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -241,7 +241,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |  }
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -258,7 +258,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |         case Nil => 42
         |     }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -276,7 +276,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -295,7 +295,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -317,7 +317,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -335,7 +335,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -349,7 +349,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |
         |def f(): E = par (E.E1 <- if (true) E.E1 else E.E2) yield E.E1
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[IllegalConstantPattern](result)
   }
 
@@ -366,7 +366,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case E.E2 => 456
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -377,7 +377,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = 1 } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -388,7 +388,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = 1 | _ } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -399,7 +399,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = 1, y = 2 } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -410,7 +410,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = 1, y = 2 | _ } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -421,7 +421,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = 1, y = () } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -437,7 +437,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = A.A } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -453,7 +453,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = A.A | _ } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -469,7 +469,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = A.A, y = A.B } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -485,7 +485,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = { x = { }, y = A.A }, y = A.B } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -501,7 +501,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = { x = { }, y = A.A | _ }, y = A.B } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -517,7 +517,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = { y = A.A | _ }, y = A.B } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -533,7 +533,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { x = { x = { } | _ }, y = A.B } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -550,7 +550,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case { a = A.B, a = A.A } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 }

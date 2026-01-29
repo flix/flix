@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -148,13 +148,16 @@ object ParseError {
   case class Malformed(namedTokenSet: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
+    def code: ErrorCode = ErrorCode.E6063
+
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
+      s""">> Malformed ${red(namedTokenSet.display(formatter))}.
          |
-         |${fmt.code(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -168,13 +171,15 @@ object ParseError {
   case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
+    def code: ErrorCode = ErrorCode.E6176
+
     def summary: String = s"Misplaced comment(s)."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Misplaced comment(s).
          |
-         |${code(loc, s"Here")}
+         |${src(loc, s"Here")}
          |Hint: Place comments on their own line.
          |""".stripMargin
     }
@@ -189,13 +194,15 @@ object ParseError {
   case class MisplacedDocComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
+    def code: ErrorCode = ErrorCode.E6289
+
     def summary: String = s"Misplaced doc-comment(s)."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Misplaced doc-comment(s).
          |
-         |${code(loc, s"Here")}
+         |${src(loc, s"Here")}
          |Hint: doc-comments must annotate declarations.
          |""".stripMargin
     }
@@ -211,13 +218,15 @@ object ParseError {
   case class MissingRegion(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
+    def code: ErrorCode = ErrorCode.E6392
+
     def summary: String = s"Expected region on ${token.display}."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Expected ${red("region")} on ${cyan(token.display)}.
          |
-         |${code(loc, s"Here")}
+         |${src(loc, s"Here")}
          |Hint: Add a region using `@ <region>`
          |""".stripMargin
     }
@@ -234,13 +243,16 @@ object ParseError {
   case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
+    def code: ErrorCode = ErrorCode.E6405
+
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
 
-    def message(fmt: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Expected at least one ${expected.display(fmt)}.
+      s""">> Expected at least one ${expected.display(formatter)}.
          |
-         |${fmt.code(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -255,13 +267,15 @@ object ParseError {
   case class TrailingSeparator(separator: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
+    def code: ErrorCode = ErrorCode.E6518
+
     def summary: String = s"Trailing ${separator.display}."
 
-    def message(formatter: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Trailing ${red(separator.display)}.
          |
-         |${code(loc, s"Here")}
+         |${src(loc, s"Here")}
          |""".stripMargin
     }
   }
@@ -278,19 +292,22 @@ object ParseError {
   case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext = SyntacticContext.Unknown, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
+    def code: ErrorCode = ErrorCode.E6629
+
     def summary: String = {
       val expectedStr = s"Expected ${expected.display(Formatter.NoFormatter)}"
       val actualStr = actual.map(a => s" before $a").getOrElse("")
       s"$expectedStr$actualStr."
     }
 
-    def message(fmt: Formatter): String = {
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      val expectedStr = s"Expected ${expected.display(fmt)}"
-      val actualStr = actual.map(a => s" before ${fmt.red(a.display)}").getOrElse("")
+      val expectedStr = s"Expected ${expected.display(formatter)}"
+      val actualStr = actual.map(a => s" before ${red(a.display)}").getOrElse("")
       s""">> $expectedStr$actualStr.
          |
-         |${fmt.code(loc, s"Here")}$hintStr
+         |${src(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }

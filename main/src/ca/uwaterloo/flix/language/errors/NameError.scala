@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.Formatter
 
 import java.nio.file.Path
@@ -37,75 +38,76 @@ object NameError {
     * @param loc the location of the deprecated feature.
     */
   case class Deprecated(loc: SourceLocation) extends NameError {
-    def summary: String = s"Deprecated feature."
+    def code: ErrorCode = ErrorCode.E5281
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Deprecated feature. Use --Xdeprecated to enable.
+    def summary: String = "Deprecated feature."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Deprecated feature.
          |
-         |${code(loc, "deprecated")}
+         |${highlight(loc, "deprecated feature", fmt)}
+         |
+         |${underline("Tip:")} Enable with the '${cyan("--Xdeprecated")}' compiler flag.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised to indicate that the given `name` is defined multiple time.
+    * An error raised to indicate that the given `name` is defined multiple times.
     *
     * @param name the name.
-    * @param loc1 the location of the first name.
-    * @param loc2 the location of the second name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
     */
   case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate definition of '$name'."
+    def code: ErrorCode = ErrorCode.E5394
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Duplicate definition of '${red(name)}'.
+    def summary: String = s"Duplicate definition: '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate definition: '${red(name)}'.
          |
-         |${code(loc1, "the first definition was here.")}
+         |${highlight(loc1, "first occurrence", fmt)}
          |
-         |${code(loc2, "the second definition was here.")}
+         |${highlight(loc2, "duplicate", fmt)}
+         |
+         |${underline("Explanation:")} Flix does not support overloading. You cannot define
+         |two functions with the same name, even if their parameters differ.
+         |
+         |${underline("Possible fixes:")}
+         |  - Put each definition into its own module.
+         |  - Introduce a trait and implement two instances.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      """Flix does not support overloading. For example, you cannot define two
-        |functions with the same name, even if their formal parameters differ.
-        |
-        |If you want two functions to share the same name you have to either:
-        |
-        |    (a) put each function into its own namespace, or
-        |    (b) introduce a trait and implement two instances.
-        |""".stripMargin
-    })
 
     def loc: SourceLocation = loc1
   }
 
   /**
-    * An error raised to indicate that the given `name` is defined multiple time.
+    * An error raised to indicate that the given `name` is defined multiple times.
     *
     * @param name the name.
-    * @param loc1 the location of the first name.
-    * @param loc2 the location of the second name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
     */
   case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate definition of '$name'."
+    def code: ErrorCode = ErrorCode.E5407
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Duplicate definition of '${red(name)}'.
+    def summary: String = s"Duplicate definition: '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate definition: '${red(name)}'.
          |
-         |${code(loc1, "the first definition was here.")}
+         |${highlight(loc1, "first occurrence", fmt)}
          |
-         |${code(loc2, "the second definition was here.")}
+         |${highlight(loc2, "duplicate", fmt)}
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
-
   }
 
   /**
@@ -116,49 +118,76 @@ object NameError {
     * @param loc       the location where the orphaned module is declared.
     */
   case class OrphanModule(sym: Symbol.ModuleSym, parentSym: Symbol.ModuleSym, loc: SourceLocation) extends NameError {
-    def summary: String = s"Module '$sym' is orphaned. Missing declaration of parent: '$parentSym'."
+    def code: ErrorCode = ErrorCode.E5512
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Module '${blue(sym.toString)}' is orphaned. Missing declaration of parent: '${red(parentSym.toString)}'.
+    def summary: String = s"Orphaned module: '$sym' (missing parent '$parentSym')."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Orphaned module: '${magenta(sym.toString)}' (missing parent '${red(parentSym.toString)}').
          |
-         |${code(loc, "orphaned module")}
+         |${highlight(loc, "orphaned module", fmt)}
+         |
+         |${underline("Explanation:")} A module cannot be declared without its parent module.
+         |Declare the parent module first. For example:
+         |
+         |  // File A.flix
+         |  mod A { ... }
+         |
+         |  // File A/B.flix
+         |  mod A.B { ... }  // OK: parent 'A' exists
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the module `qname` is wrongly declared in the file specified by `path`.
+    * An error raised to indicate that the module `qname` is declared in an unexpected file.
     *
     * @param qname The name of the module.
-    * @param path  The real or virtual path where the module is declared.
-    * @param loc   The source location the qname.
+    * @param path  The actual path where the module is declared.
+    * @param loc   The source location of the module declaration.
     */
   case class IllegalModuleFile(qname: Name.QName, path: Path, loc: SourceLocation) extends NameError {
-    def summary: String = s"Module '$qname' unexpectedly declared in file '$path'."
+    def code: ErrorCode = ErrorCode.E5623
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Module '${blue(qname.toString)}' unexpectedly declared in '${red(path.toString)}'.
+    def summary: String = s"Mismatched module and file: '$qname' in '$path'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched module and file: '${magenta(qname.toString)}' in '${red(path.toString)}'.
          |
-         |${code(loc, "mismatched module name and path.")}
+         |${highlight(loc, "unexpected location", fmt)}
+         |
+         |${underline("Explanation:")} A module must be declared in a file that matches its name.
+         |For example:
+         |
+         |  // File A.flix
+         |  mod A { ... }      // OK
+         |
+         |  // File A/B.flix
+         |  mod A.B { ... }    // OK
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the given `name` is a reserved name
+    * An error raised to indicate that the given `name` is a reserved name.
     *
-    * @param name The reserved name with location
+    * @param name The reserved name with location.
     */
   case class IllegalReservedName(name: Name.Ident) extends NameError {
-    def summary: String = s"Redefinition of a reserved name: ${name.name}"
+    def code: ErrorCode = ErrorCode.E5736
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Redefinition of a reserved name: ${name.name}
+    def summary: String = s"Reserved name: '${name.name}' cannot be redefined."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Reserved name: '${red(name.name)}' cannot be redefined.
          |
-         |${code(name.loc, "illegal name")}
+         |${highlight(name.loc, "reserved identifier", fmt)}
+         |
+         |${underline("Explanation:")} Certain names are reserved for internal use and cannot
+         |be used as identifiers. Choose a different name.
          |""".stripMargin
     }
 
@@ -172,26 +201,21 @@ object NameError {
     * @param loc  the location of the suspicious type variable.
     */
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
+    def code: ErrorCode = ErrorCode.E5849
 
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
+    def summary: String = s"Suspicious type variable: '$name'. Did you mean '${name.capitalize}'?"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Suspicious type variable: '${red(name)}'. Did you mean '${cyan(name.capitalize)}'?
          |
-         |${code(loc, "suspicious type variable.")}
+         |${highlight(loc, "possible typo", fmt)}
+         |
+         |${underline("Explanation:")} Type variables in Flix are lowercase, but '${red(name)}'
+         |looks like the built-in type '${cyan(name.capitalize)}'.
+         |
+         |For example, '${cyan("Int32")}' is a built-in type whereas '${red("int32")}' is a type variable.
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      """Flix uses lowercase variable names.
-        |
-        |The type variable looks suspiciously like the name of a built-in type.
-        |
-        |Perhaps you meant to use the built-in type?
-        |
-        |For example, `Int32` is a built-in type whereas `int32` is a type variable.
-        |""".stripMargin
-    })
-
   }
 }

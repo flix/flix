@@ -351,11 +351,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       flix.check() match {
         case (Some(r), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, r, List.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, r, List.empty, t)
 
         case (Some(r), errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
-          processSuccessfulCheck(requestId, r, errors, flix.options.explain, t)
+          processSuccessfulCheck(requestId, r, errors, t)
 
         case (None, errors) =>
           // Case 3: Compilation failed. Send back the error messages.
@@ -364,7 +364,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
           this.currentErrors = errors
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
+          val results = PublishDiagnosticsParams.fromMessages(currentErrors, None)
           ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
@@ -379,7 +379,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], t0: Long): JValue = {
     // Update the root and the errors.
     this.root = root
     this.currentErrors = errors
@@ -394,7 +394,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     val codeHints = CodeHinter.run(sources.keysIterator.map(_.toString).toSet)(root)
 
     // Determine the status based on whether there are errors.
-    val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    val results = PublishDiagnosticsParams.fromMessages(currentErrors, Some(root)) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 

@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.errors.ErrorCode
 import ca.uwaterloo.flix.util.Formatter
 
 import scala.collection.mutable
@@ -31,6 +32,11 @@ trait CompilationMessage {
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
     */
   def kind: CompilationMessageKind
+
+  /**
+    * Returns the error code.
+    */
+  def code: ErrorCode
 
   /**
     * Returns the input source of the error message.
@@ -54,50 +60,39 @@ trait CompilationMessage {
 
   /**
     * Returns the error message.
-    *
-    * You probably want to use [[messageWithLoc]] instead.
     */
-  def message(formatter: Formatter): String
-
-  /**
-    * Returns a formatted string with helpful suggestions.
-    */
-  def explain(formatter: Formatter): Option[String] = None
+  protected def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String
 
   /**
     * Returns the error message formatted with source location.
     */
-  def messageWithLoc(formatter: Formatter): String = {
-    formatter.line(kind.toString, source.name) + System.lineSeparator() + message(formatter)
-  }
-
-  /**
-    * Returns the given message `m` but with a URL linking to the source code of the error on GitHub.
-    */
-  protected def messageWithLink(m: String)(implicit f: sourcecode.FullName, l: sourcecode.Line): String = {
-    // Assumes that flix.dev is configured with:
-    //   location ~ ^/go/(.*)$ {
-    //     return 301 https://github.com/flix/flix/edit/master/main/src/ca/uwaterloo/flix/$1;
-    //   }
-    val base = "https://flix.dev/go"
-
-    // We convert the Java name:
-    //   "ca.uwaterloo.flix.language.errors.ResolutionError.UndefinedName.message"
-    // to:
-    //   "language/errors/ResolutionError.scala"
-    val file = f.value.split('.').drop(3).dropRight(2).mkString("/") + ".scala"
-    val line = l.value
-    val url = s"$base/$file#L$line"
-
-    s"""$m
-       |~ Want to help improve this error message? Create a PR on GitHub:
-       |  $url
-       |""".stripMargin
+  def messageWithLoc(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    formatter.line(kind, code, source) + System.lineSeparator() + message(formatter)
   }
 
 }
 
 object CompilationMessage {
+
+  /**
+    * Returns the given list of `errors` as a human-readable pretty printed string.
+    */
+  def formatAll(errors: List[CompilationMessage])(implicit fmt: Formatter, root: Option[TypedAst.Root] = None): String = {
+    val sb = new StringBuilder()
+    val sorted = filterShadowedMessages(errors).sortBy(_.loc)
+    for ((cm, i) <- sorted.zipWithIndex) {
+      sb.append(cm.messageWithLoc(fmt))
+      if (i < sorted.size - 1) {
+        sb.append(System.lineSeparator())
+      }
+    }
+    if (errors.size > 1) {
+      sb.append(System.lineSeparator())
+      sb.append(System.lineSeparator())
+      sb.append(s"Compilation failed with ${errors.size} error(s).")
+    }
+    sb.toString()
+  }
 
   /**
     * Filters compilation messages to prevent cascading errors.
@@ -117,7 +112,7 @@ object CompilationMessage {
     * @param l the list of compilation messages to filter
     * @return the filtered list containing only the earliest relevant error for each location
     */
-  def filterShadowedMessages(l: List[CompilationMessage]): List[CompilationMessage] = {
+  private def filterShadowedMessages(l: List[CompilationMessage]): List[CompilationMessage] = {
     // Accumulator for messages that pass the filter
     val result = mutable.ArrayBuffer.empty[CompilationMessage]
 

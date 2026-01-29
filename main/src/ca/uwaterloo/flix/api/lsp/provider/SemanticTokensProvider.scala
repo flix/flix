@@ -29,9 +29,10 @@ import scala.collection.mutable.ArrayBuffer
 object SemanticTokensProvider {
 
   /**
-    * Processes a request for (full) semantic tokens.
+    * Returns the semantic tokens for the given URI as SemanticToken objects.
+    * Use this when you need direct access to the tokens (e.g., for highlighting).
     */
-  def provideSemanticTokens(uri: String)(implicit root: Root): List[Int] = {
+  def getSemanticTokens(uri: String)(implicit root: Root): List[SemanticToken] = {
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
@@ -132,12 +133,15 @@ object SemanticTokensProvider {
     //
     // Split multiline tokens in the list into multiple single-line tokens.
     //
-    val splitTokens = splitToken(filteredTokens)
+    splitToken(filteredTokens)
+  }
 
-    //
-    // Encode the semantic tokens as a list of integers.
-    //
-    encodeSemanticTokens(splitTokens)
+  /**
+    * Processes a request for (full) semantic tokens.
+    * Returns LSP-encoded format for the language server protocol.
+    */
+  def provideSemanticTokens(uri: String)(implicit root: Root): List[Int] = {
+    encodeSemanticTokens(getSemanticTokens(uri))
   }
 
   /**

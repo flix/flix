@@ -154,15 +154,14 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = unsafe IO { printBugMsg(m); ?panic }
-
-pub def printBugMsg(m: String): Unit \ IO = {
+pub def bug!(m: String): a = unsafe IO {
     System.err.println("*".repeat(80));
     System.err.println("**") ;
     System.err.println("**  BUG: ${m}") ;
     System.err.println("**") ;
     System.err.println("*".repeat(80));
-    System.err.println("")
+    System.err.println("");
+    ?panic
 }
 
 ///

@@ -1,141 +1,143 @@
 mod Test.Exp.Indexable {
 
+    use Assert.assertTrue
+
     @Test
-    def array01(): Bool = region rc {
+    def array01(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        run a[0] == 1 with handle
+        assertTrue(run a[0] == 1 with handle)
     }
 
     @Test
-    def array02(): Bool = region rc {
+    def array02(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        run a[1] == 2 with handle
+        assertTrue(run a[1] == 2 with handle)
     }
 
     @Test
-    def array03(): Bool = region rc {
+    def array03(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        run a[2] == 3 with handle
+        assertTrue(run a[2] == 3 with handle)
     }
 
     @Test
-    def array04(): Bool = region rc {
+    def array04(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        run a[3] == 4 with handle
+        assertTrue(run a[3] == 4 with handle)
     }
 
     @Test
-    def array05(): Bool = region rc {
+    def array05(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        not run a[4] == -1 with handle
+        assertTrue(not run a[4] == -1 with handle)
     }
 
     @Test
-    def array06(): Bool = region rc {
+    def array06(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        not run a[-1] == -1 with handle
+        assertTrue(not run a[-1] == -1 with handle)
     }
 
     @Test
-    def vector01(): Bool =
+    def vector01(): Unit \ Assert =
         let v = Vector#{1, 2, 3, 4};
-        run v[0] == 1 with handle
+        assertTrue(run v[0] == 1 with handle)
 
     @Test
-    def vector02(): Bool =
+    def vector02(): Unit \ Assert =
         let v = Vector#{1, 2, 3, 4};
-        run v[1] == 2 with handle
+        assertTrue(run v[1] == 2 with handle)
 
     @Test
-    def vector03(): Bool =
+    def vector03(): Unit \ Assert =
         let v = Vector#{1, 2, 3, 4};
-        run v[2] == 3 with handle
+        assertTrue(run v[2] == 3 with handle)
 
     @Test
-    def vector04(): Bool =
+    def vector04(): Unit \ Assert =
         let v = Vector#{1, 2, 3, 4};
-        run v[3] == 4 with handle
+        assertTrue(run v[3] == 4 with handle)
 
     @Test
-    def vector05(): Bool =
+    def vector05(): Unit \ Assert =
         let v = Vector#{1, 2, 3, 4};
-        not run v[4] == -1 with handle
+        assertTrue(not run v[4] == -1 with handle)
 
     @Test
-    def vector06(): Bool =
+    def vector06(): Unit \ Assert =
         let v = Vector#{1, 2, 3, 4};
-        not run v[-1] == -1 with handle
+        assertTrue(not run v[-1] == -1 with handle)
 
     @Test
-    def map01(): Bool =
+    def map01(): Unit \ Assert =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        run m[0] == 1 with handle
+        assertTrue(run m[0] == 1 with handle)
 
     @Test
-    def map02(): Bool =
+    def map02(): Unit \ Assert =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        run m[1] == 2 with handle
+        assertTrue(run m[1] == 2 with handle)
 
     @Test
-    def map03(): Bool =
+    def map03(): Unit \ Assert =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        run m[2] == 3 with handle
+        assertTrue(run m[2] == 3 with handle)
 
     @Test
-    def map04(): Bool =
+    def map04(): Unit \ Assert =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        run m[3] == 4 with handle
+        assertTrue(run m[3] == 4 with handle)
 
     @Test
-    def map05(): Bool =
+    def map05(): Unit \ Assert =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        not run m[4] == -1  with handle
+        assertTrue(not run m[4] == -1  with handle)
 
     @Test
-    def map06(): Bool =
+    def map06(): Unit \ Assert =
         let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
-        not run m[-1] == -1  with handle
+        assertTrue(not run m[-1] == -1  with handle)
 
     @Test
-    def record01(): Bool =
+    def record01(): Unit \ Assert =
         let r = { v = Vector#{1, 2, 3, 4} };
-        run r#v[1] == 2 with handle
+        assertTrue(run r#v[1] == 2 with handle)
 
     @Test
-    def record02(): Bool =
+    def record02(): Unit \ Assert =
         let r = { r = { v = Vector#{1, 2, 3, 4} } };
-        run r#r#v[1] == 2 with handle
+        assertTrue(run r#r#v[1] == 2 with handle)
 
     @Test
-    def record03(): Bool =
+    def record03(): Unit \ Assert =
         let r = { r = { v = Vector#{{ v = Vector#{1, 2, 3, 4} } } } };
-        run r#r#v[0]#v[1] == 2 with handle
+        assertTrue(run r#r#v[0]#v[1] == 2 with handle)
 
     @Test
-    def record04(): Bool =
+    def record04(): Unit \ Assert =
         let r = { r = { v = Vector#{Vector#{}, Vector#{{ v = Vector#{1, 2, 3, 4} }} } } };
-        run r#r#v[1][0]#v[1] == 2 with handle
+        assertTrue(run r#r#v[1][0]#v[1] == 2 with handle)
 
     @Test
-    def multiple01(): Bool =
+    def multiple01(): Unit \ Assert =
         let v = Vector#{Vector#{Vector#{1, 2, 3, 4}}};
-        run v[0][0][2] == 3 with handle
+        assertTrue(run v[0][0][2] == 3 with handle)
 
     @Test
-    def multiple02(): Bool = region rc {
+    def multiple02(): Unit \ Assert = region rc {
         let v = Vector#{Vector#{Array#{1, 2, 3, 4} @ rc}};
-        run v[0][0][2] == 3 with handle
+        assertTrue(run v[0][0][2] == 3 with handle)
     }
 
     @Test
-    def multiple03(): Bool = region rc {
+    def multiple03(): Unit \ Assert = region rc {
         let v = Vector#{Array#{Map#{0 => 1, 1 => 2, 2 => 3, 4 => 4}} @ rc};
-        run v[0][0][2] == 3 with handle
+        assertTrue(run v[0][0][2] == 3 with handle)
     }
 
     @Test
-    def genWithRecord01(): Bool =
-        run f()()#v[0]()[0]#r#g()[2] == 3 with handle
+    def genWithRecord01(): Unit \ Assert =
+        assertTrue(run f()()#v[0]()[0]#r#g()[2] == 3 with handle)
 
     def f(): Unit -> { v = Vector[Unit -> Vector[{ r = { g = Unit -> Map[Int32, Int32] } }]] } =
         () -> {
