@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type}
 
 import scala.collection.mutable
