@@ -501,17 +501,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Collects a list of tuples `(sym, scheme, uses)` if function represented by `sym` is not an effect safe upgrade.
     */
   private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme], useGraph: ListMap[String, SourceLocation])(implicit flix: Flix): List[(String, Scheme, List[SourceLocation])] = {
-    val errorBuf = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
+    val errors = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
     for ((sym, lockedScheme) <- lockedFunctions) {
       if (upgradeFunctions.contains(sym)) {
         val upgradedScheme = upgradeFunctions(sym)
         val uses = useGraph.get(sym)
         if (!(uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix))) {
-          errorBuf.addOne((sym, upgradedScheme, uses))
+          errors.addOne((sym, upgradedScheme, uses))
         }
       }
     }
-    errorBuf.toList
+    errors.toList
   }
 
   /**
