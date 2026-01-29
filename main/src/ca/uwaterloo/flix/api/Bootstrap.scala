@@ -441,8 +441,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Returns `Ok(())` if the current program is an effect-safe upgrade with respect to `effects.lock` file.
-    * Returns `Err(e)` if an error `e` occurred or if the upgrade is not effect safe.
+    * Returns `Ok(())` if the dependencies are consistent with the `effects.lock` file.
+    * Returns `Err(e)` if an error `e` occurred or if the dependencies are inconsistent with the `effect.lock` file.
     */
   def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
