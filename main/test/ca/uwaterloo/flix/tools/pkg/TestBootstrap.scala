@@ -268,6 +268,9 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("eff-check on same version as before is ok") {
+    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
+    // There is no upgrade done, but we assert that
+    // performing eff-check after eff-lock succeeds.
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
 
@@ -294,6 +297,10 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("eff-check on effect unsafe upgrade reports error") {
+    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
+    // Version 0.1.1 of the dependency has signature `Int32 -> Int32 \ IO`.
+    // We upgrade from `Int32 -> Int32` to `Int32 -> Int32 \ IO`
+    // and assert that it does NOT succeed.
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
 
@@ -342,6 +349,10 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("eff-check on effect downgrade is ok") {
+    // Version 0.1.0 of the dependency has signature `Int32 -> Int32`.
+    // Version 0.1.1 of the dependency has signature `Int32 -> Int32 \ IO`.
+    // We downgrade from `Int32 -> Int32 \ IO` to `Int32 -> Int32`
+    // and assert that it succeeds.
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet // Unsafe get to crash in case of error
 
