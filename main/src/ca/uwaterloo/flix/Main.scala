@@ -611,7 +611,7 @@ object Main {
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
 
-      cmd("eff-check").text("  checks that current program is an effect safe upgrade with respect to the current 'effects.lock' file.")
+      cmd("eff-check").text("  checks that dependencies respect the 'effects.lock' file.")
         .action((_, c) => c.copy(command = Command.EffCheck))
 
       cmd("eff-lock").text("  locks the current effect signatures.")
