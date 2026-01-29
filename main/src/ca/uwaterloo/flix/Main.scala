@@ -412,6 +412,19 @@ object Main {
               System.exit(1)
           }
 
+        case Command.EffCheck =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'eff-check' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.checkEffects(flix)
+            }
+          }
+
         case Command.EffLock =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'eff-lock' command does not support file arguments.")
@@ -423,19 +436,6 @@ object Main {
                 val flix = new Flix().setFormatter(formatter)
                 flix.setOptions(options.copy(progress = false))
                 bootstrap.lockEffects(flix)
-            }
-          }
-
-        case Command.EffCheck =>
-          if (cmdOpts.files.nonEmpty) {
-            println("The 'eff-check' command does not support file arguments.")
-            System.exit(1)
-          }
-          exitOnResult {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
-              bootstrap.checkEffects(flix)
             }
           }
 
@@ -526,9 +526,9 @@ object Main {
 
     case object Outdated extends Command
 
-    case object EffLock extends Command
-
     case object EffCheck extends Command
+
+    case object EffLock extends Command
 
     case object CompilerPerf extends Command
 
@@ -611,11 +611,11 @@ object Main {
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
 
-      cmd("eff-lock").text("  locks the current effect signatures.")
-        .action((_, c) => c.copy(command = Command.EffLock))
-
       cmd("eff-check").text("  checks that current program is an effect safe upgrade with respect to the current 'effects.lock' file.")
         .action((_, c) => c.copy(command = Command.EffCheck))
+
+      cmd("eff-lock").text("  locks the current effect signatures.")
+        .action((_, c) => c.copy(command = Command.EffLock))
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
