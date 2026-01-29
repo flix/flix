@@ -35,7 +35,6 @@ sealed trait TypeError extends CompilationMessage {
 
 object TypeError {
 
-
   /**
     * Java constructor not found type error.
     *
@@ -119,23 +118,6 @@ object TypeError {
     }
 
     def loc: SourceLocation = loc1
-  }
-
-  // case class PureFunctionUsesIO(signatureLoc: SourceLocation, effLoc: SourceLocation, sym: EffSym) extends TypeError {
-  // message = function declared as pure but has $sym effect
-  // ${src(signatureLoc, "effect declared as Pure here")}
-  // ${src(effLoc, "effect $sym used here")}
-  case class ExplicitPureFunctionUsesIO(loc: SourceLocation, loc2: SourceLocation, sym: Symbol.EffSym) extends TypeError {
-    def code: ErrorCode = ErrorCode.E8354
-
-    def summary: String = "IO used inside explicitly Pure function"
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s"""${src(loc, "Function declared with Pure")}
-         |${src(loc2, s"but uses ${sym.toString} here")}
-         |""".stripMargin
-    }
   }
 
   /**
@@ -222,18 +204,6 @@ object TypeError {
          |
          |That is, a default handler must handle the effect (i.e. remove it from
          |the effect set) and it may only introduce the 'IO' effect.
-         |""".stripMargin
-    }
-  }
-
-  case class ImplicitPureFunctionUsesIO(loc: SourceLocation, sym: Symbol.EffSym) extends TypeError {
-    def code: ErrorCode = ErrorCode.E8354
-
-    def summary: String = "IO used inside implicitly Pure function"
-
-    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import formatter.*
-      s"""${src(loc, s"${sym.toString} used here, but is used inside a function that is inferred to be Pure")}
          |""".stripMargin
     }
   }

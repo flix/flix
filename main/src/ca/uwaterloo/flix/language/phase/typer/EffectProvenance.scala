@@ -15,12 +15,12 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.TypeConstructor
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
-
 import scala.collection.immutable.SortedSet
 
 sealed trait SourceEffect {
@@ -40,7 +40,6 @@ object SourceEffect {
 }
 
 object EffectProvenance {
-
 
   /**
     * Whether to enable effect provenance debugging.
@@ -225,87 +224,5 @@ object EffectProvenance {
       case TypeConstraint.Equality(eff1, eff2, prov) => println(s"$eff1 ~ $eff2 at ${prov.loc} with provenance $prov")
       case _ => ()
     }
-  }
-
-
-  type Edge = (Type, Type, SourceLocation)
-  type Graph = (List[Type], List[Edge])
-
-  def solve(graph: Graph): List[TypeConstraint] = {
-    def findStart(): Option[Type] = {
-      val (_, es) = graph
-      println(es)
-      es.find {
-        case (tpe1, _, _) => tpe1.toString == "Pure"
-      }.map(x => x._1)
-    }
-
-    def flowsInto(start: Type, acc: Option[(Type, SourceLocation)]) : List[TypeConstraint]= {
-      val (_, es) = graph
-      val (_, tpe2, loc) = es.find {
-          case (tpe1, _, _) =>
-            tpe1.toString == start.toString
-        }.getOrElse(return Nil)
-      (start, tpe2) match {
-        case (Type.Cst(_,_), Type.Var(_,_)) => acc match {
-          case None => flowsInto(tpe2, Some((start, loc)))
-          case Some((t, l)) =>
-            val tCons = if (l.isReal) TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym(t.toString)) else TypeError.ImplicitPureFunctionUsesIO(loc, Symbol.mkEffSym(t.toString))
-            List(TypeConstraint.EffConflicted(tCons))
-        }
-        case (Type.Var(_,_), Type.Cst(_,_)) =>
-          val (_, l) = acc.get
-          if (tpe2.toString == "IO") {
-            val tCons = if (l.isReal) TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym("IO")) else TypeError.ImplicitPureFunctionUsesIO(loc, Symbol.mkEffSym("IO"))
-            List(TypeConstraint.EffConflicted(tCons))
-          }
-          else {Nil}
-        case (Type.Var(_,_), Type.Var(_,_)) =>  {
-          flowsInto(tpe2, acc)
-        }
-        case (Type.Cst(_,_), Type.Cst(_,_)) =>  {
-          if (start.toString != tpe2.toString) {
-            val tCons = if (loc.isReal) TypeError.ExplicitPureFunctionUsesIO(loc, tpe2.loc, Symbol.mkEffSym("IO")) else TypeError.ImplicitPureFunctionUsesIO(tpe2.loc, Symbol.mkEffSym("IO"))
-            List(TypeConstraint.EffConflicted(tCons))
-          }  else {Nil}
-        }
-        case _ => Nil
-      }
-
-    }
-
-    findStart() match {
-      case Some(value) => flowsInto(value, None)
-      case None => List()
-    }
-
-  }
-
-  def getError(constrs0: List[TypeConstraint]): List[TypeConstraint] = {
-    var flow: List[Edge] = Nil
-    var v: Set[(Type)] = Set.empty
-    constrs0.foreach {
-      case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-        val t = (tpe1)
-        val t2 = (tpe2)
-        prov match {
-          case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
-            v = v + t + t2
-            flow = (tpe1, tpe2, prov.loc) :: flow
-          }
-          case TypeConstraint.Provenance.Source(_, _, _) => {
-            v = v + t + t2
-            flow = (tpe1, tpe2, prov.loc) :: flow
-          }
-          case TypeConstraint.Provenance.Match(_,_,_) => {
-            v = v + t + t2
-            flow = (tpe1, tpe2, prov.loc) :: flow
-          }
-          case _ => {} // TODO
-        }
-      case _ => {} // TODO
-    }
-    val graph = (v.toList, flow)
-    solve(graph)
   }
 }

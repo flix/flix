@@ -173,7 +173,8 @@ object Typer {
     changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
-        val enableSubeffects = shouldSubeffect(defn.spec.eff, Subeffecting.ModDefs)
+        val eff1 = defn.spec.eff.getOrElse(Type.Pure)
+        val enableSubeffects = shouldSubeffect(eff1, Subeffecting.ModDefs)
         visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
     })
   }
@@ -243,7 +244,8 @@ object Typer {
 
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
         // A small optimization: If the signature is pure there is no room for subeffecting.
-        val open = shouldSubeffect(sig.spec.eff, Subeffecting.ModDefs)
+        val eff1 = sig.spec.eff.getOrElse(Type.Pure)
+        val open = shouldSubeffect(eff1, Subeffecting.ModDefs)
         val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
         val infResult = InfResult(constrs, tpe, eff, renv)
@@ -284,7 +286,8 @@ object Typer {
       val defs = defs0.map {
         defn =>
           // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
-          val open = shouldSubeffect(defn.spec.eff, Subeffecting.InsDefs)
+          val eff1 = defn.spec.eff.getOrElse(Type.Pure)
+          val open = shouldSubeffect(eff1, Subeffecting.InsDefs)
           visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
       }
       TypedAst.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, ns, loc)
@@ -401,7 +404,8 @@ object Typer {
   private def checkSpecAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = spec0 match {
     case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
       // get all the associated types in the spec
-      val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap(getTypes)
+      val eff1 = eff.getOrElse(Type.Pure)
+      val tpes = fparams.map(_.tpe) ::: tpe :: eff1 :: econstrs.flatMap(getTypes)
 
       // check that they are all covered by the type constraints
       for {

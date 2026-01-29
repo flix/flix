@@ -144,7 +144,6 @@ object Debug {
       val edges = nested.map { child => s"${constraintId(constr)} -> ${constraintId(child)};" }
       (header :: children ::: edges).mkString("\n")
     case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"""${constraintId(constr)} [label = "$tpe1 ≁ $tpe2"];"""
-    case TypeConstraint.EffConflicted(effErr) => format(effErr.toString)
   }
 
   /**

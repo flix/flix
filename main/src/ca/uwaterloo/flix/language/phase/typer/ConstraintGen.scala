@@ -101,7 +101,7 @@ object ConstraintGen {
         val tconstrs = defn.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc2))
         val econstrs = defn.spec.econstrs.map(subst.apply).map(_.copy(loc = loc2))
 
-        val declaredEff = subst(defn.spec.eff)
+        val declaredEff = subst(defn.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = subst(defn.spec.tpe)
         val declaredArgumentTypes = defn.spec.fparams.map(_.tpe).map(subst.apply)
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc2)
@@ -157,7 +157,7 @@ object ConstraintGen {
         val tconstrs = sig.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc2))
         val econstrs = sig.spec.econstrs.map(subst.apply).map(_.copy(loc = loc2))
 
-        val declaredEff = subst(sig.spec.eff)
+        val declaredEff = subst(sig.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = subst(sig.spec.tpe)
         val declaredArgumentTypes = sig.spec.fparams.map(_.tpe).map(subst.apply)
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)

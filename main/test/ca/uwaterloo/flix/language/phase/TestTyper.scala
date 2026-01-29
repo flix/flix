@@ -24,47 +24,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
 
-  test("TestEffError01") {
-    val input =
-      """
-       |def f () : Unit \ {} = {
-       |    println("42")
-       |}
-       | eff IO
-       | pub def println(x: String): Unit \ IO =
-       |  System.out.println(x)
-       |      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.ExplicitPureFunctionUsesIO](result)
-  }
-  test("TestEffError02") {
-    val input =
-      """
-        |def f () : Unit = {
-        |    println("42")
-        |}
-        | eff IO
-        | pub def println(x: String): Unit \ IO =
-        |    System.out.println(x)
-        |      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.ImplicitPureFunctionUsesIO](result)
-  }
-  test("TestEffError03") {
-    val input =
-      """
-        |def f () : Unit \ {IO} = {
-        |    let x = Clock.now();
-        |    println(x)
-        |}
-        | eff IO
-        | pub def println(x: String): Unit \ IO =
-        |  System.out.println(x)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
   test("TestLeq01") {
     val input =
       """

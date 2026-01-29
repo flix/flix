@@ -353,7 +353,11 @@ object Kinder {
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
       val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs, base)
-      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
+      if (declaredEff == Type.Pure && !declaredEff.loc.isReal) {
+        KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, None, tconstrs, econstrs)
+      } else {
+        KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, Some(eff), tconstrs, econstrs)
+      }
   }
 
   /**
