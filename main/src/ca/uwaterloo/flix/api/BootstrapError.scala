@@ -64,10 +64,10 @@ object BootstrapError {
          |            ~~ Effect signatures have changed! ~~
          |
          |The following potentially harmful changes were detected:
-         |$effectSets
+         |$fmtEffectSets
          |
          |The functions are used in these places:
-         |$uses
+         |$fmtUses
          |""".stripMargin
     }
 
@@ -78,13 +78,11 @@ object BootstrapError {
       *
       * {{{"  + 'f' now uses *{ A, B, C }*"}}}
       */
-    private def effectSets: String = {
-      e.map {
-        case (sym, upgrade, _) =>
-          val effs = upgrade.base.effects.mkString("*{ ", ", ", " }*")
-          s"  + '$sym' now uses $effs"
-      }.mkString(System.lineSeparator())
-    }
+    private def fmtEffectSets: String = e.map {
+      case (sym, upgrade, _) =>
+        val effs = upgrade.base.effects.mkString("*{ ", ", ", " }*")
+        s"  + '$sym' now uses $effs"
+    }.mkString(System.lineSeparator())
 
     /**
       * Returns a formatted string containing each symbol and where it is used.
@@ -98,14 +96,11 @@ object BootstrapError {
       * "
       * }}}
       */
-    private def uses: String = {
-      e.map {
-        case (sym, _, uses) =>
-          val formattedSym = s"  + '$sym':"
-          val formattedUses = uses.map(loc => s"    - $loc").mkString(System.lineSeparator())
-          s""""$formattedSym
-             |$formattedUses""".stripMargin
-      }.mkString(System.lineSeparator())
-    }
+    private def fmtUses: String = e.map {
+      case (sym, _, uses) =>
+        val formattedSym = s"  + '$sym':"
+        val formattedUses = uses.map(loc => s"    - $loc").mkString(System.lineSeparator())
+        s"$formattedSym${System.lineSeparator()}$formattedUses"
+    }.mkString(System.lineSeparator())
   }
 }
