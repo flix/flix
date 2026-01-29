@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.SourcePosition.moveRight
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
@@ -84,7 +85,11 @@ object ConstraintSolverInterface {
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val declaredEffConstr = eff match {
         case Some(e) => TypeConstraint.Equality(e, infEff, Provenance.ExpectEffect(expected = e, actual = infEff, loc))
-        case None => TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc))
+        case None => {
+          // In case of implicitly pure function we return the location after the type
+          val loc1 = SourceLocation(true, tpe.loc.source, moveRight(tpe.loc.end), moveRight(tpe.loc.end))
+          TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
+        }
       }
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
