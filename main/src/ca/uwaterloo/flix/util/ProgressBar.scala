@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.api.Flix
+
 import java.util.concurrent.atomic.AtomicInteger
 
-class ProgressBar {
+class ProgressBar(flix: Flix) {
   /**
     * The characters in the spinner.
     */
@@ -29,11 +31,6 @@ class ProgressBar {
     * Monotonically increasing.
     */
   private val spinnerTick = new AtomicInteger(0)
-
-  /**
-    * A Boolean that represents whether the terminal is believed to support color.
-    */
-  private val supportsColors: Boolean = Formatter.hasColorSupport
 
   /**
     * Updates the progress with the given message `msg` in the given `phase`.
@@ -68,14 +65,14 @@ class ProgressBar {
     val memoryPadded = f"$usedMemoryInMegaBytes%4dM"
     val memPart = usedMemoryInMegaBytes match {
       case x if x <= 1_000 => memoryPadded
-      case x if x <= 4_000 => colorYellow(memoryPadded)
-      case _ => colorRed(memoryPadded)
+      case x if x <= 4_000 => flix.getFormatter.yellow(memoryPadded)
+      case _ => flix.getFormatter.red(memoryPadded)
     }
 
     // We abbreviate phase and msg if they are too long to fit.
     val p = abbreviate(phase, 20)
     val m = abbreviate(msg, 80 - (20 + 10))
-    val s = s" [${colorGreen(spinner)}] [$memPart] [${colorBlue(p)}] $m "
+    val s = s" [${flix.getFormatter.green(spinner)}] [$memPart] [${flix.getFormatter.blue(p)}] $m "
 
     // Print the string followed by carriage return.
     // NB: We do *NOT* print a newline because then
@@ -97,41 +94,5 @@ class ProgressBar {
       s
     else
       s.substring(0, l - 3) + "..."
-
-  /**
-    * Colors the given string `s` blue (if supported).
-    */
-  private def colorBlue(s: String): String =
-    if (supportsColors)
-      Console.BLUE + s + Console.RESET
-    else
-      s
-
-  /**
-    * Colors the given string `s` green (if supported).
-    */
-  private def colorGreen(s: String): String =
-    if (supportsColors)
-      Console.GREEN + s + Console.RESET
-    else
-      s
-
-  /**
-    * Colors the given string `s` red (if supported).
-    */
-  private def colorRed(s: String): String =
-    if (supportsColors)
-      Console.RED + s + Console.RESET
-    else
-      s
-
-  /**
-    * Colors the given string `s` yellow (if supported).
-    */
-  private def colorYellow(s: String): String =
-    if (supportsColors)
-      Console.YELLOW + s + Console.RESET
-    else
-      s
 
 }
