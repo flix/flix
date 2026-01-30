@@ -125,4 +125,18 @@ class TestListMap extends AnyFunSuite {
     val res = lm1 -- ks
     assert(res == ListMap(3 -> List(5, 6)))
   }
+
+  test("ListMap.invert.01") {
+    assert(ListMap.empty.invert == ListMap.empty[Int, Int])
+  }
+
+  test("ListMap.invert.02") {
+    val lm = ListMap(1 -> List(1, 2), 2 -> List(3, 4), 3 -> List(5, 6))
+    assert(lm.invert == ListMap(1 -> List(1), 2 -> List(1), 3 -> List(2), 4 -> List(2), 5 -> List(3), 6 -> List(3)))
+  }
+
+  test("ListMap.invert.03") {
+    val lm = ListMap(1 -> List(1, 2), 2 -> List(1, 3, 4), 3 -> List(1, 5, 6))
+    assert(lm.invert == ListMap(1 -> List(1, 2, 3), 2 -> List(1), 3 -> List(2), 4 -> List(2), 5 -> List(3), 6 -> List(3)))
+  }
 }

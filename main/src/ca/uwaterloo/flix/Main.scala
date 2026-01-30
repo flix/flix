@@ -412,6 +412,19 @@ object Main {
               System.exit(1)
           }
 
+        case Command.EffCheck =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'eff-check' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.checkEffects(flix)
+            }
+          }
+
         case Command.EffLock =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'eff-lock' command does not support file arguments.")
@@ -513,6 +526,8 @@ object Main {
 
     case object Outdated extends Command
 
+    case object EffCheck extends Command
+
     case object EffLock extends Command
 
     case object CompilerPerf extends Command
@@ -595,6 +610,9 @@ object Main {
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
+
+      cmd("eff-check").text("  checks that dependencies respect the 'effects.lock' file.")
+        .action((_, c) => c.copy(command = Command.EffCheck))
 
       cmd("eff-lock").text("  locks the current effect signatures.")
         .action((_, c) => c.copy(command = Command.EffLock))

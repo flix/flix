@@ -195,6 +195,11 @@ object Scheme {
 
   }
 
+  /** Replaces type aliases with the types they represent in `sc0.base`. */
+  def eraseAliases(sc0: Scheme): Scheme = {
+    sc0.copy(base = Type.eraseAliases(sc0.base))
+  }
+
 }
 
 /**
