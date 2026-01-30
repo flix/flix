@@ -184,4 +184,15 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     * Returns ´this´ list map without the mappings for ´ks´.
     */
   def --(ks: Iterable[K]): ListMap[K, V] = ListMap(m -- ks)
+
+  /**
+    * Returns a new `ListMap` with `v -> k` for all `k -> v` in `this`.
+    */
+  def invert: ListMap[V, K] = {
+    m.foldRight(ListMap.empty[V, K]) {
+      case ((k, vs), acc) => vs.foldLeft(acc) {
+        case (acc1, v) => acc1 + (v -> k)
+      }
+    }
+  }
 }

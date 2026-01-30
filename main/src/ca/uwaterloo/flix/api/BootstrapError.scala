@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation}
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
@@ -53,5 +54,53 @@ object BootstrapError {
 
   case class GeneralError(e: String) extends BootstrapError {
     override def message(f: Formatter): String = e
+  }
+
+  case class EffectUpgradeError(e: List[(String, Scheme, List[SourceLocation])]) extends BootstrapError {
+    override def message(f: Formatter): String = {
+      s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
+         |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         |            ~~ Effect signatures have changed! ~~
+         |
+         |The following potentially harmful changes were detected:
+         |$fmtEffectSets
+         |
+         |The functions are used in these places:
+         |$fmtUses
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string containing each symbol and what new effects it has.
+      *
+      * E.g.,if `f` has effect set `A, B, C` then the string is formatted as
+      *
+      * {{{"  + 'f' now uses *{ A, B, C }*"}}}
+      */
+    private def fmtEffectSets: String = e.map {
+      case (sym, upgrade, _) =>
+        val effs = upgrade.base.effects.mkString("*{ ", ", ", " }*")
+        s"  + '$sym' now uses $effs"
+    }.mkString(System.lineSeparator())
+
+    /**
+      * Returns a formatted string containing each symbol and where it is used.
+      *
+      * E.g.,if `f` is used in `main` and `mainHelper` then the string is formatted as
+      *
+      * {{{
+      * "  + 'f':
+      *      - main:13:2
+      *      - mainHelper:2:42
+      * "
+      * }}}
+      */
+    private def fmtUses: String = e.map {
+      case (sym, _, uses) =>
+        val formattedSym = s"  + '$sym':"
+        val formattedUses = uses.map(loc => s"    - $loc").mkString(System.lineSeparator())
+        s"$formattedSym${System.lineSeparator()}$formattedUses"
+    }.mkString(System.lineSeparator())
   }
 }
