@@ -342,22 +342,20 @@ object Kinder {
       val eff = effect match {
         case None => declaredEff
         case Some(sym) =>
-          Type.mkUnion(
-            Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown), // TODO EFFECT-TPARAMS need kind
-            declaredEff,
-            SourceLocation.Unknown
+          Some(
+            Type.mkUnion(
+              Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown), // TODO EFFECT-TPARAMS need kind
+              declaredEff.getOrElse(Type.Pure),
+              SourceLocation.Unknown
+            )
           )
       }
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, root))
       val econstrs = econstrs0.map(visitEqualityConstraint(_, kenv, root))
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
+      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff.getOrElse(Type.Pure), tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs, base)
-      if (declaredEff == Type.Pure && !declaredEff.loc.isReal) {
-        KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, None, tconstrs, econstrs)
-      } else {
-        KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, Some(eff), tconstrs, econstrs)
-      }
+      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
 
   /**
@@ -1170,7 +1168,7 @@ object Kinder {
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
         case Some(_) =>
-          val eff = visitEffectDefaultPure(eff0, kenv, root)
+          val eff = visitEffectDefaultPure(eff0, kenv, root).getOrElse(Type.Pure)
           Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
         case None =>
           sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
@@ -1316,9 +1314,9 @@ object Kinder {
   /**
     * Performs kinding on the given effect, assuming it to be Pure if it is absent.
     */
-  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Type = tpe match {
-    case None => Type.mkPure(SourceLocation.Unknown)
-    case Some(t) => visitType(t, Kind.Eff, kenv, root)
+  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Option[Type] = tpe match {
+    case None => None
+    case Some(t) => Some(visitType(t, Kind.Eff, kenv, root))
   }
 
   /**
@@ -1404,7 +1402,7 @@ object Kinder {
     case ResolvedAst.JvmMethod(_, fparams0, exp0, tpe0, eff0, loc) =>
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val exp = visitExp(exp0, kenv, root)
-      val eff = visitEffectDefaultPure(eff0, kenv, root)
+      val eff = visitEffectDefaultPure(eff0, kenv, root).getOrElse(Type.Pure)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
       KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
   }

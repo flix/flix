@@ -173,6 +173,7 @@ object Typer {
     changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
+        // If no effect is specified, we assume the function is pure
         val eff1 = defn.spec.eff.getOrElse(Type.Pure)
         val enableSubeffects = shouldSubeffect(eff1, Subeffecting.ModDefs)
         visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
@@ -244,6 +245,7 @@ object Typer {
 
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs. Note: We consider signatures implemented in traits to be module-level.
         // A small optimization: If the signature is pure there is no room for subeffecting.
+        // If no effect is specified, we assume the signature is pure
         val eff1 = sig.spec.eff.getOrElse(Type.Pure)
         val open = shouldSubeffect(eff1, Subeffecting.ModDefs)
         val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
@@ -286,6 +288,7 @@ object Typer {
       val defs = defs0.map {
         defn =>
           // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
+          // If no effect is specified, we assume the function is pure
           val eff1 = defn.spec.eff.getOrElse(Type.Pure)
           val open = shouldSubeffect(eff1, Subeffecting.InsDefs)
           visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)

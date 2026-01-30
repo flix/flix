@@ -101,6 +101,7 @@ object ConstraintGen {
         val tconstrs = defn.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc2))
         val econstrs = defn.spec.econstrs.map(subst.apply).map(_.copy(loc = loc2))
 
+        // If no effect specified, we assume the function is pure
         val declaredEff = subst(defn.spec.eff.getOrElse(Type.Pure))
         val declaredResultType = subst(defn.spec.tpe)
         val declaredArgumentTypes = defn.spec.fparams.map(_.tpe).map(subst.apply)
