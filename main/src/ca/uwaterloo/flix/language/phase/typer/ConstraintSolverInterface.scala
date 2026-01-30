@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.SourcePosition.moveRight
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
@@ -64,7 +65,7 @@ object ConstraintSolverInterface {
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
-      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(_.tpe2.typeVars)
+      val allTparams = tpe.typeVars ++ eff.getOrElse(Type.Pure).typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(_.tpe2.typeVars)
 
       // The rigidity environment is made up of:
       // 1. rigid variables from the context (e.g. from instance type parameters)
@@ -82,7 +83,16 @@ object ConstraintSolverInterface {
 
       // We add extra constraints for the declared type and effect
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
-      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
+      val declaredEffConstr = eff match {
+        case Some(e) => TypeConstraint.Equality(e, infEff, Provenance.ExpectEffect(expected = e, actual = infEff, loc))
+        case None => {
+          // No effect annotation. The function is implicitly true.
+          // We use the source location immediately to the right of the return type
+          val tpos = moveRight(tpe.loc.end)
+          val loc1 = SourceLocation(true, tpe.loc.source, tpos, tpos)
+          TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
+        }
+      }
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
       // Apply the initial substitution to all the constraints
@@ -108,7 +118,7 @@ object ConstraintSolverInterface {
 
             case Build.Development =>
               // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
-              val declaredEffWithDebug = Type.mkUnion(eff, Type.Debug, loc)
+              val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
               val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
               val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
               val constrsWithDebug = constrs0.map(initialTree.apply)

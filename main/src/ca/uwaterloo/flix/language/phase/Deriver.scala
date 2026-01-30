@@ -193,7 +193,7 @@ object Deriver {
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkBool(loc), loc)
         ),
         tpe = Type.mkBool(loc),
-        eff = Type.Cst(TypeConstructor.Pure, loc),
+        eff = Some(Type.Cst(TypeConstructor.Pure, loc)),
         tconstrs = List(TraitConstraint(TraitSymUse(eqTraitSym, loc), tpe, loc)),
         econstrs = Nil,
       )
@@ -401,7 +401,7 @@ object Deriver {
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
-        eff = Type.Cst(TypeConstructor.Pure, loc),
+        eff = Some(Type.Cst(TypeConstructor.Pure, loc)),
         tconstrs = List(TraitConstraint(TraitSymUse(orderTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
@@ -581,7 +581,7 @@ object Deriver {
           Type.mkPureArrow(tpe, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
-        eff = Type.Cst(TypeConstructor.Pure, loc),
+        eff = Some(Type.Cst(TypeConstructor.Pure, loc)),
         tconstrs = List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
@@ -726,7 +726,7 @@ object Deriver {
           Type.mkPureArrow(tpe, Type.mkInt32(loc), loc)
         ),
         tpe = Type.mkInt32(loc),
-        eff = Type.Cst(TypeConstructor.Pure, loc),
+        eff = Some(Type.Cst(TypeConstructor.Pure, loc)),
         tconstrs = List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
@@ -883,7 +883,7 @@ object Deriver {
           Type.mkPureArrow(tpe, retTpe, loc)
         ),
         tpe = retTpe,
-        eff = Type.Cst(TypeConstructor.Pure, loc),
+        eff = Some(Type.Cst(TypeConstructor.Pure, loc)),
         tconstrs = List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),
         econstrs = Nil
       )
