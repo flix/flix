@@ -126,13 +126,13 @@ object TypeError {
   // ${src(signatureLoc, "effect declared as Pure here")}
   // ${src(effLoc, "effect $sym used here")}
   case class ExplicitPureFunctionUsesIO(loc: SourceLocation, loc2: SourceLocation, sym: Symbol.EffSym) extends TypeError {
-    def code: ErrorCode = ErrorCode.E8354
+    def code: ErrorCode = ErrorCode.E6214
 
     def summary: String = "IO used inside explicitly Pure function"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s"""${src(loc, "Function declared with Pure")}
+      s""">> ${src(loc, "Function declared with Pure")}
          |${src(loc2, s"but uses ${sym.toString} here")}
          |""".stripMargin
     }
@@ -226,14 +226,15 @@ object TypeError {
     }
   }
 
-  case class ImplicitPureFunctionUsesIO(loc: SourceLocation, sym: Symbol.EffSym) extends TypeError {
-    def code: ErrorCode = ErrorCode.E8354
+  case class ImplicitPureFunctionUsesIO(emptyLoc: SourceLocation, loc: SourceLocation, sym: Symbol.EffSym) extends TypeError {
+    def code: ErrorCode = ErrorCode.E8752
 
     def summary: String = "IO used inside implicitly Pure function"
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s"""${src(loc, s"${sym.toString} used here, but is used inside a function that is inferred to be Pure")}
+      s""">> ${src(emptyLoc, "Function is inferred to be Pure")}
+         |${src(loc, s"${sym.toString} used here, but is used inside a function that is inferred to be Pure")}
          |""".stripMargin
     }
   }

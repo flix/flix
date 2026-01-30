@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{IOVertex, PureExplicitVertex, PureImplicitVertex, VarVertex}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -227,51 +228,63 @@ object EffectProvenance {
     }
   }
 
+  sealed trait Vertex
+  object Vertex {
+    case class PureExplicitVertex(loc: SourceLocation) extends Vertex
+    case object PureImplicitVertex extends Vertex
+    case object IOVertex extends Vertex
+    case class VarVertex(sym: Symbol.KindedTypeVarSym) extends Vertex
+  }
+  type Edge = (Vertex, Vertex, SourceLocation)
+  type Graph = (List[Vertex], List[Edge])
 
-  type Edge = (Type, Type, SourceLocation)
-  type Graph = (List[Type], List[Edge])
+  private def toVertex(tpe: Type): Option[Vertex] = tpe match {
+    case Type.Var(sym, _) => Some(VarVertex(sym))
+    case Type.Cst(tc, loc) => tc match {
+      case TypeConstructor.Pure => if (loc.isReal) Some(PureExplicitVertex(loc)) else Some(PureImplicitVertex)
+      case TypeConstructor.Effect(sym, _) => if (sym == Symbol.IO) Some(IOVertex) else None
+      case _ => None
+    }
+    case _ => None
+  }
 
   def solve(graph: Graph): List[TypeConstraint] = {
-    def findStart(): Option[Type] = {
+    def findStart(): Option[Vertex] = {
       val (_, es) = graph
       println(es)
       es.find {
-        case (tpe1, _, _) => tpe1.toString == "Pure"
+        case (v1, _, _) => v1 == IOVertex
       }.map(x => x._1)
     }
 
-    def flowsInto(start: Type, acc: Option[(Type, SourceLocation)]) : List[TypeConstraint]= {
+    def flowsInto(from: Vertex, acc: Option[(Vertex, SourceLocation)]) : List[TypeConstraint]= {
       val (_, es) = graph
-      val (_, tpe2, loc) = es.find {
-          case (tpe1, _, _) =>
-            tpe1.toString == start.toString
-        }.getOrElse(return Nil)
-      (start, tpe2) match {
-        case (Type.Cst(_,_), Type.Var(_,_)) => acc match {
-          case None => flowsInto(tpe2, Some((start, loc)))
-          case Some((t, l)) =>
-            val tCons = if (l.isReal) TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym(t.toString)) else TypeError.ImplicitPureFunctionUsesIO(loc, Symbol.mkEffSym(t.toString))
-            List(TypeConstraint.EffConflicted(tCons))
-        }
-        case (Type.Var(_,_), Type.Cst(_,_)) =>
-          val (_, l) = acc.get
-          if (tpe2.toString == "IO") {
-            val tCons = if (l.isReal) TypeError.ExplicitPureFunctionUsesIO(l, loc, Symbol.mkEffSym("IO")) else TypeError.ImplicitPureFunctionUsesIO(loc, Symbol.mkEffSym("IO"))
-            List(TypeConstraint.EffConflicted(tCons))
-          }
-          else {Nil}
-        case (Type.Var(_,_), Type.Var(_,_)) =>  {
-          flowsInto(tpe2, acc)
-        }
-        case (Type.Cst(_,_), Type.Cst(_,_)) =>  {
-          if (start.toString != tpe2.toString) {
-            val tCons = if (loc.isReal) TypeError.ExplicitPureFunctionUsesIO(loc, tpe2.loc, Symbol.mkEffSym("IO")) else TypeError.ImplicitPureFunctionUsesIO(tpe2.loc, Symbol.mkEffSym("IO"))
-            List(TypeConstraint.EffConflicted(tCons))
-          }  else {Nil}
-        }
-        case _ => Nil
-      }
+      val (_, v2, provLoc) = es.find {case (v1, _, _) => v1 == from}.getOrElse(return Nil)
+      val (_, l1) = acc.getOrElse((IOVertex, SourceLocation.Unknown))
 
+      (from, v2) match {
+        case (IOVertex, PureExplicitVertex(exLoc)) =>
+          val tCons = TypeError.ExplicitPureFunctionUsesIO(exLoc, l1, Symbol.IO)
+          List(TypeConstraint.EffConflicted(tCons))
+
+        case (IOVertex, PureImplicitVertex) =>
+          val tCons = TypeError.ImplicitPureFunctionUsesIO(provLoc, l1, Symbol.IO)
+          List(TypeConstraint.EffConflicted(tCons))
+
+        case (IOVertex, vvt @ VarVertex(_)) => flowsInto(vvt, Some((IOVertex, provLoc)))
+
+        case (VarVertex(_), PureExplicitVertex(exLoc)) =>
+          val tCons = TypeError.ExplicitPureFunctionUsesIO(exLoc, l1, Symbol.IO)
+          List(TypeConstraint.EffConflicted(tCons))
+
+        case (VarVertex(_), PureImplicitVertex) =>
+          val tCons = TypeError.ImplicitPureFunctionUsesIO(provLoc, l1, Symbol.IO)
+          List(TypeConstraint.EffConflicted(tCons))
+
+        case (VarVertex(_), vvt @ VarVertex(_)) => flowsInto(vvt, acc)
+        case (vertex1, vertex2) => println(s"unhandled case v1 ${vertex1}, v2 ${vertex2}"); Nil
+
+      }
     }
 
     findStart() match {
@@ -283,27 +296,30 @@ object EffectProvenance {
 
   def getError(constrs0: List[TypeConstraint]): List[TypeConstraint] = {
     var flow: List[Edge] = Nil
-    var v: Set[(Type)] = Set.empty
+    var v: Set[Vertex] = Set.empty
     constrs0.foreach {
       case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-        val t = (tpe1)
-        val t2 = (tpe2)
-        prov match {
-          case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
-            v = v + t + t2
-            flow = (tpe1, tpe2, prov.loc) :: flow
-          }
-          case TypeConstraint.Provenance.Source(_, _, _) => {
-            v = v + t + t2
-            flow = (tpe1, tpe2, prov.loc) :: flow
-          }
-          case TypeConstraint.Provenance.Match(_,_,_) => {
-            v = v + t + t2
-            flow = (tpe1, tpe2, prov.loc) :: flow
-          }
+        val t1 = toVertex(tpe1)
+        val t2 = toVertex(tpe2)
+        (t1, t2) match {
+          case (None, _) => return Nil
+          case (_, None) => return Nil
+          case (Some(v1), Some(v2)) =>
+            prov match {
+              case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
+                flow = (v2, v1, prov.loc) :: flow
+              }
+              case TypeConstraint.Provenance.Source(_, _, _) => {
+                flow = (v2, v1, prov.loc) :: flow
+              }
+              case TypeConstraint.Provenance.Match(_,_,_) => {
+                flow = (v2, v1, prov.loc) :: flow
+              }
+              case _ => {} // TODO
+            }
           case _ => {} // TODO
         }
-      case _ => {} // TODO
+      case _ => ()
     }
     val graph = (v.toList, flow)
     solve(graph)
