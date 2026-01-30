@@ -94,7 +94,7 @@ object InstanceError {
          |
          |${underline("Example:")}
          |
-         |  instance C[(a, a)]        // Not allowed: 'a' appears twice
+         |  instance C[(a, a)]        // not OK: 'a' appears twice
          |  instance C[(a, b)]        // OK: 'a' and 'b' are distinct
          |""".stripMargin
     }
@@ -213,8 +213,8 @@ object InstanceError {
          |
          |${highlight(loc, "signature mismatch", fmt)}
          |
-         |${cyan("Expected")}: ${FormatScheme.formatScheme(expected)}
-         |${red("Actual")}:   ${FormatScheme.formatScheme(actual)}
+         |Expected: ${cyan(FormatScheme.formatScheme(expected))}
+         |Actual:   ${red(FormatScheme.formatScheme(actual))}
          |
          |${underline("Explanation:")} The implementation must match the signature declared in the trait.
          |""".stripMargin
@@ -263,7 +263,7 @@ object InstanceError {
          |${highlight(loc, "required by trait", fmt)}
          |
          |${underline("Explanation:")} The trait declares the signature '${sig.name}', but this instance
-         |does not provide an implementation for it. Did you misspell the signature name?
+         |does not provide an implementation for it.
          |
          |${underline("Example:")}
          |
