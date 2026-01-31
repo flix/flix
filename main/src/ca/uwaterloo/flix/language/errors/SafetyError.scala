@@ -161,6 +161,31 @@ object SafetyError {
   }
 
   /**
+    * An error indicating that a primitive `value` is used in `value.field` or `value.method()`
+    *
+    * @param tpe           the type of `value`.
+    * @param lookupPurpose 'method' or 'field'.
+    * @param loc           the source location of the lookup.
+    */
+  case class IllegalNonJavaPrimitive(tpe: Type, lookupPurpose: String, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E4038
+
+    def summary: String = s"Cannot perform $lookupPurpose lookup on primitive type."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Cannot perform $lookupPurpose lookup on primitive type.
+         |
+         |${highlight(loc, s"impossible $lookupPurpose lookup", fmt)}
+         |
+         |Type: ${red(FormatType.formatType(tpe))}.
+         |
+         |${underline("Explanation:")} A $lookupPurpose lookup can only be performed on non-primitive Java types.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate a cast from a type to a type variable.
     *
     * @param from the source type.
