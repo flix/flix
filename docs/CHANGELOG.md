@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.68.0:
+- Compiler: Added syntax highlighting to error messages (thanks Magnus!)
+- Compiler: Significantly improved error messages across the board (thanks Magnus!)
+- Compiler: Improved support for monomorphization (thanks Casper!)
+
 Version 0.67.2:
 - Library: Minor fixes (thanks Casper, Daniel, Magnus, Matt, Patrick!)
 
