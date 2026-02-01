@@ -118,7 +118,7 @@ class Flix {
   /**
     * The progress bar.
     */
-  private val progressBar: ProgressBar = new ProgressBar
+  private val progressBar: ProgressBar = new ProgressBar(this)
 
   /**
     * The currently registered event listeners.

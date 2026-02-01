@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
-import ca.uwaterloo.flix.api.effectlock.EffectLock
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 import ca.uwaterloo.flix.api.lsp.Formatter as LspFormatter
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -33,6 +34,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
+import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.util.{Failure, Success, Using}
@@ -436,6 +438,80 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Success(()) => Result.Ok(())
       case Failure(e) => Result.Err(BootstrapError.FileError(e.getMessage))
     }
+  }
+
+  /**
+    * Returns `Ok(())` if the dependencies are consistent with the `effects.lock` file.
+    * Returns `Err(e)` if an error `e` occurred or if the dependencies are inconsistent with the `effect.lock` file.
+    */
+  def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
+    if (!isProjectMode) {
+      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-check'"))
+    }
+
+    FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(false) => return Err(BootstrapError.FileError("No 'effects.lock' file found. Unable to run 'eff-check'."))
+      case Ok(true) => ()
+    }
+
+    Steps.updateStaleSources(flix)
+    for {
+      json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      (lockedDefs, lockedSigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
+      root <- Steps.check(flix)
+      errors <- reportEffectUpgradeErrors(lockedDefs, lockedSigs, root)(flix)
+    } yield {
+      errors
+    }
+  }
+
+  /**
+    * Helper function for [[checkEffects]] to be used in for comprehension.
+    *
+    * Returns `Ok(())` if no effect upgrade errors are found.
+    * Returns `Err(BootstrapError.EffectUpgradeError(errors))` otherwise.
+    */
+  private def reportEffectUpgradeErrors(lockedDefs: Map[Symbol.DefnSym, Scheme], lockedSigs: Map[Symbol.SigSym, Scheme], root: TypedAst.Root)(implicit flix: Flix): Result[Unit, BootstrapError] = {
+    // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
+    val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
+      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
+    })
+
+    // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
+    val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
+    val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
+    val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
+    val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
+    val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)
+    val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)
+    val allErrors = defnErrors ::: sigErrors
+
+    if (allErrors.isEmpty) {
+      Ok(())
+    } else {
+      Err(BootstrapError.EffectUpgradeError(allErrors))
+    }
+  }
+
+  /**
+    * Collects a list of tuples `(sym, scheme, uses)` if function represented by `sym` is not an effect safe upgrade.
+    */
+  private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme], useGraph: ListMap[String, SourceLocation])(implicit flix: Flix): List[(String, Scheme, List[SourceLocation])] = {
+    val errors = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
+    for ((sym, lockedScheme) <- lockedFunctions) {
+      if (upgradeFunctions.contains(sym)) {
+        val upgradedScheme = upgradeFunctions(sym)
+        val uses = useGraph.get(sym)
+        if (!(uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix))) {
+          errors.addOne((sym, upgradedScheme, uses))
+        }
+      }
+    }
+    errors.toList
   }
 
   /**

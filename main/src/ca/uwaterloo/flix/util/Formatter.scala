@@ -204,7 +204,7 @@ object Formatter {
 
     override def bgBlack(s: String): String = bgColor(1, 1, 1, white(s))
 
-    override def blue(s: String): String = fgColor(0, 111, 184, s)
+    override def blue(s: String): String = fgColor(68, 147, 200, s)
 
     override def bgBlue(s: String): String = bgColor(0, 111, 184, white(s))
 
@@ -220,7 +220,7 @@ object Formatter {
 
     override def bgMagenta(s: String): String = bgColor(118, 38, 113, white(s))
 
-    override def red(s: String): String = fgColor(222, 56, 43, s)
+    override def red(s: String): String = fgColor(232, 111, 102, s)
 
     override def bgRed(s: String): String = bgColor(222, 56, 43, white(s))
 
@@ -254,7 +254,7 @@ object Formatter {
     *
     * Assumes color support by default, only disabling for explicitly unsupported terminals.
     */
-  def hasColorSupport: Boolean = !isDumbTerminal && !hasNoColorEnv
+  private def hasColorSupport: Boolean = !isDumbTerminal && !hasNoColorEnv
 
   /**
     * Returns `true` if the terminal is explicitly a dumb terminal with no capabilities.

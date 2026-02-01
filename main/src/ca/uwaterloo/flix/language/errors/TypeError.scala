@@ -142,7 +142,7 @@ object TypeError {
          |
          |The record type:
          |
-         |  ${formatType(recordType, Some(renv))}
+         |  ${cyan(formatType(recordType, Some(renv)))}
          |
          |contains the extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
          |""".stripMargin
@@ -360,8 +360,8 @@ object TypeError {
          |
          |${highlight(loc, "mismatched types.", fmt)}
          |
-         |Type One: ${formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb)}
-         |Type Two: ${formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb)}
+         |Type One: ${cyan(formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb))}
          |""".stripMargin
     }
   }
@@ -636,7 +636,7 @@ object TypeError {
          |
          |The record type:
          |
-         |  ${formatType(recordType, Some(renv))}
+         |  ${cyan(formatType(recordType, Some(renv)))}
          |
          |does not contain the label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
          |""".stripMargin
