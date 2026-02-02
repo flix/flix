@@ -53,8 +53,9 @@ object TypeReconstruction {
     case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, tconstrs, econstrs) =>
       val tparams = tparams0.map(visitTypeParam)
       val fparams = fparams0.map(visitFormalParam(_, SubstitutionTree.empty))
+      val eff1 = eff.getOrElse(Type.Pure)
       // We do not perform substitution on any of the types because they should all be rigid.
-      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
+      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff1, tconstrs, econstrs)
   }
 
   /**
