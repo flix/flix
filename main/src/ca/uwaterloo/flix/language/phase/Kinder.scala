@@ -337,7 +337,7 @@ object Kinder {
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val tpe = visitType(tpe0, Kind.Star, kenv, root)
-      val declaredEff = visitEffectDefaultPure(eff0, kenv, root)
+      val declaredEff = visitEff(eff0, kenv, root)
       // If we're inside an effect, add that effect to the scheme.
       val eff = effect match {
         case None => declaredEff
@@ -1168,7 +1168,7 @@ object Kinder {
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
         case Some(_) =>
-          val eff = visitEffectDefaultPure(eff0, kenv, root).getOrElse(Type.Pure)
+          val eff = visitEff(eff0, kenv, root).getOrElse(Type.Pure)
           Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
         case None =>
           sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
@@ -1312,9 +1312,9 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given effect, assuming it to be Pure if it is absent.
+    * Performs kinding on the given effect, returning None if it is absent.
     */
-  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Option[Type] = {
+  private def visitEff(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Option[Type] = {
     tpe.map(t => visitType(t, Kind.Eff, kenv, root))
   }
 
@@ -1401,7 +1401,7 @@ object Kinder {
     case ResolvedAst.JvmMethod(_, fparams0, exp0, tpe0, eff0, loc) =>
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val exp = visitExp(exp0, kenv, root)
-      val eff = visitEffectDefaultPure(eff0, kenv, root).getOrElse(Type.Pure)
+      val eff = visitEff(eff0, kenv, root).getOrElse(Type.Pure)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
       KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
   }
