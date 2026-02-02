@@ -407,8 +407,7 @@ object Typer {
   private def checkSpecAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = spec0 match {
     case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
       // get all the associated types in the spec
-      val eff1 = eff.getOrElse(Type.Pure)
-      val tpes = fparams.map(_.tpe) ::: tpe :: eff1 :: econstrs.flatMap(getTypes)
+      val tpes = fparams.map(_.tpe) ::: tpe :: eff.getOrElse(Type.Pure) :: econstrs.flatMap(getTypes)
 
       // check that they are all covered by the type constraints
       for {
