@@ -5,7 +5,7 @@
 - [Matthew Lutze](https://github.com/mlutze)
 - [Magnus Madsen](https://github.com/magnus-madsen)
 - [Jonathan Lindegaard Starup](https://github.com/JonathanStarup) (Google LLC)
-- [Jakob Schneider Villumsen](https://github.com/jaschdoc)
+- [Jakob Schneider Villumsen](https://github.com/jaschdoc) (Google LLC)
 
 ## Contributors
 
@@ -92,3 +92,5 @@ By adding your name to this document, you agree to release all your contribution
 - [Daniel Neo López Martínez](https://github.com/NeonOxide)
 - [Jeff Beu](https://github.com/hexagonhill)
 - [Daniel John](https://github.com/danieljohnprojects)
+- [Alexander Friis Sommer](https://github.com/sommerblommer)
+- [Samuel Skovbakke](https://github.com/samuelskovbakke)
