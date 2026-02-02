@@ -1314,9 +1314,8 @@ object Kinder {
   /**
     * Performs kinding on the given effect, assuming it to be Pure if it is absent.
     */
-  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Option[Type] = tpe match {
-    case None => None
-    case Some(t) => Some(visitType(t, Kind.Eff, kenv, root))
+  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Option[Type] = {
+    tpe.map(t => visitType(t, Kind.Eff, kenv, root))
   }
 
   /**
