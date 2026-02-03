@@ -121,19 +121,30 @@ object TypeError {
     def loc: SourceLocation = loc1
   }
 
-  // case class PureFunctionUsesIO(signatureLoc: SourceLocation, effLoc: SourceLocation, sym: EffSym) extends TypeError {
-  // message = function declared as pure but has $sym effect
-  // ${src(signatureLoc, "effect declared as Pure here")}
-  // ${src(effLoc, "effect $sym used here")}
+  /**
+    * An error raised when an effect is used in a function that is explicitly declared Pure.
+    *
+    * @param loc  the location where the function is declared Pure.
+    * @param loc2 the location where the effect is used.
+    * @param sym  the effect symbol that was used.
+    */
   case class ExplicitPureFunctionUsesIO(loc: SourceLocation, loc2: SourceLocation, sym: Symbol.EffSym) extends TypeError {
     def code: ErrorCode = ErrorCode.E6214
 
-    def summary: String = "IO used inside explicitly Pure function"
+    def summary: String = s"Unexpected effect '${sym.name}' in {} function"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> ${src(loc, "Function declared with Pure")}
-         |${src(loc2, s"but uses ${sym.toString} here")}
+      s""">> Unexpected effect '${magenta(sym.name)}' in {} function.
+         |
+         |${highlight(loc, "function declared {}", fmt)}
+         |
+         |${highlight(loc2, s"'${magenta(sym.name)}' used here", fmt)}
+         |
+         |${underline("Explanation:")} The function is explicitly declared as {},
+         |meaning it cannot perform any effects. Since '${magenta(sym.name)}' is an effect,
+         |it cannot be used in this function. To fix this, either remove the {}
+         |annotation or remove the use of '${magenta(sym.name)}'.
          |""".stripMargin
     }
   }
@@ -226,15 +237,30 @@ object TypeError {
     }
   }
 
+  /**
+    * An error raised when an effect is used in a function that is inferred to be Pure.
+    *
+    * @param emptyLoc the location where the function is inferred to be Pure.
+    * @param loc      the location where the effect is used.
+    * @param sym      the effect symbol that was used.
+    */
   case class ImplicitPureFunctionUsesIO(emptyLoc: SourceLocation, loc: SourceLocation, sym: Symbol.EffSym) extends TypeError {
     def code: ErrorCode = ErrorCode.E8752
 
-    def summary: String = "IO used inside implicitly Pure function"
+    def summary: String = s"Unexpected effect '${sym.name}' in Pure function"
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> ${src(emptyLoc, "Function is inferred to be Pure")}
-         |${src(loc, s"${sym.toString} used here, but is used inside a function that is inferred to be Pure")}
+      s""">> Unexpected effect '${magenta(sym.name)}' in {} function.
+         |
+         |${highlight(emptyLoc, "function is inferred to be {}", formatter)}
+         |
+         |${highlight(loc, s"'${magenta(sym.name)}' used here", formatter)}
+         |
+         |${underline("Explanation:")} Functions without an explicit effect annotation are
+         |inferred to be {}, meaning they cannot perform effects. Since '${magenta(sym.name)}'
+         |is an effect, it cannot be used here. To fix this, add an explicit effect
+         |annotation to the function signature with {${magenta(sym.name)}}.
          |""".stripMargin
     }
   }
