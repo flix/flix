@@ -121,10 +121,10 @@ object TypeError {
   }
 
   /**
-    * An error raised when an effect is used in a function that is explicitly declared Pure.
+    * An error raised when IO is used in a function that is explicitly declared Pure.
     *
     * @param loc  the location of the function explicitly declared as {}.
-    * @param loc2 the location where the effect is used.
+    * @param loc2 the location where IO is used.
     */
   case class ExplicitlyPureFunctionUsesIO(loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6214
@@ -236,10 +236,10 @@ object TypeError {
   }
 
   /**
-    * An error raised when an effect is used in a function that is inferred to be Pure.
+    * An error raised when IO is used in a function that is inferred to be Pure.
     *
     * @param emptyLoc the location of the function inferred to be Pure (empty space right before '=').
-    * @param loc      the location where the effect is used.
+    * @param loc      the location where the IO is used.
     */
   case class ImplicitlyPureFunctionUsesIO(emptyLoc: SourceLocation, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E8752
