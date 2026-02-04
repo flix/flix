@@ -35,7 +35,6 @@ sealed trait TypeError extends CompilationMessage {
 
 object TypeError {
 
-
   /**
     * Java constructor not found type error.
     *
