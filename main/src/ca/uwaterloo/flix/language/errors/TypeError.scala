@@ -142,9 +142,9 @@ object TypeError {
          |${highlight(loc2, s"'${magenta(sym.name)}' used here", fmt)}
          |
          |${underline("Explanation:")} The function is explicitly declared as {},
-         |meaning it cannot perform any effects. Since '${magenta(sym.name)}' is an effect,
-         |it cannot be used in this function. To fix this, either remove the {}
-         |annotation or remove the use of '${magenta(sym.name)}'.
+         |meaning it may not perform any effects. Since '${magenta(sym.name)}' is an effect,
+         |it cannot be used in this function. To fix this, either change the signature to {${magenta(sym.name)}}
+         |or remove the use of '${magenta(sym.name)}' inside the function.
          |""".stripMargin
     }
   }
@@ -258,9 +258,9 @@ object TypeError {
          |${highlight(loc, s"'${magenta(sym.name)}' used here", formatter)}
          |
          |${underline("Explanation:")} Functions without an explicit effect annotation are
-         |inferred to be {}, meaning they cannot perform effects. Since '${magenta(sym.name)}'
-         |is an effect, it cannot be used here. To fix this, add an explicit effect
-         |annotation to the function signature with {${magenta(sym.name)}}.
+         |inferred to be {}, meaning they may not perform effects. Since '${magenta(sym.name)}'
+         |is an effect, it cannot be used in this function. To fix this, either add the explicit effect annotation in the signature {${magenta(sym.name)}}
+         |or remove the use of '${magenta(sym.name)}' inside the function.
          |""".stripMargin
     }
   }
