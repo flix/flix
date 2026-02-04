@@ -123,27 +123,26 @@ object TypeError {
   /**
     * An error raised when an effect is used in a function that is explicitly declared Pure.
     *
-    * @param loc  the location where the function is declared Pure.
+    * @param loc  the location of the function explicitly declared as {}.
     * @param loc2 the location where the effect is used.
-    * @param sym  the effect symbol that was used.
     */
-  case class ExplicitPureFunctionUsesIO(loc: SourceLocation, loc2: SourceLocation, sym: Symbol.EffSym) extends TypeError {
+  case class ExplicitlyPureFunctionUsesIO(loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6214
 
-    def summary: String = s"Unexpected effect '${sym.name}' in {} function"
+    def summary: String = s"Unexpected effect 'IO' in {} function"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected effect '${magenta(sym.name)}' in {} function.
+      s""">> Unexpected effect '${magenta("IO")}' in {} function.
          |
          |${highlight(loc, "function declared {}", fmt)}
          |
-         |${highlight(loc2, s"'${magenta(sym.name)}' used here", fmt)}
+         |${highlight(loc2, s"'${magenta("IO")}' used here", fmt)}
          |
          |${underline("Explanation:")} The function is explicitly declared as {},
-         |meaning it may not perform any effects. Since '${magenta(sym.name)}' is an effect,
-         |it cannot be used in this function. To fix this, either change the signature to {${magenta(sym.name)}}
-         |or remove the use of '${magenta(sym.name)}' inside the function.
+         |meaning it may not perform any effects. Since '${magenta("IO")}' is an effect,
+         |it cannot be used in this function. To fix this, either change the signature to {${magenta("IO")}}
+         |or remove the use of '${magenta("IO")}' inside the function.
          |""".stripMargin
     }
   }
@@ -239,27 +238,26 @@ object TypeError {
   /**
     * An error raised when an effect is used in a function that is inferred to be Pure.
     *
-    * @param emptyLoc the location where the function is inferred to be Pure.
+    * @param emptyLoc the location of the function inferred to be Pure (empty space right before '=').
     * @param loc      the location where the effect is used.
-    * @param sym      the effect symbol that was used.
     */
-  case class ImplicitPureFunctionUsesIO(emptyLoc: SourceLocation, loc: SourceLocation, sym: Symbol.EffSym) extends TypeError {
+  case class ImplicitlyPureFunctionUsesIO(emptyLoc: SourceLocation, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E8752
 
-    def summary: String = s"Unexpected effect '${sym.name}' in {} function"
+    def summary: String = s"Unexpected effect 'IO' in {} function"
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> Unexpected effect '${magenta(sym.name)}' in {} function.
+      s""">> Unexpected effect '${magenta("IO")}' in {} function.
          |
          |${highlight(emptyLoc, "function is inferred to be {}", formatter)}
          |
-         |${highlight(loc, s"'${magenta(sym.name)}' used here", formatter)}
+         |${highlight(loc, s"'${magenta("IO")}' used here", formatter)}
          |
          |${underline("Explanation:")} Functions without an explicit effect annotation are
-         |inferred to be {}, meaning they may not perform effects. Since '${magenta(sym.name)}'
-         |is an effect, it cannot be used in this function. To fix this, either add the explicit effect annotation in the signature {${magenta(sym.name)}}
-         |or remove the use of '${magenta(sym.name)}' inside the function.
+         |inferred to be {}, meaning they may not perform effects. Since '${magenta("IO")}'
+         |is an effect, it cannot be used in this function. To fix this, either add the explicit effect annotation in the signature {${magenta("IO")}}
+         |or remove the use of '${magenta("IO")}' inside the function.
          |""".stripMargin
     }
   }
