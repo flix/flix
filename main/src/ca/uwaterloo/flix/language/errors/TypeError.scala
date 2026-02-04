@@ -256,7 +256,8 @@ object TypeError {
          |
          |${underline("Explanation:")} Functions without an explicit effect annotation are
          |inferred to be {}, meaning they may not perform effects. Since '${magenta("IO")}'
-         |is an effect, it cannot be used in this function. To fix this, either add the explicit effect annotation in the signature {${magenta("IO")}}
+         |is an effect, it cannot be used in this function. To fix this,
+         |either add the explicit effect annotation in the signature {${magenta("IO")}}
          |or remove the use of '${magenta("IO")}' inside the function.
          |""".stripMargin
     }
