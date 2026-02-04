@@ -246,7 +246,7 @@ object TypeError {
   case class ImplicitPureFunctionUsesIO(emptyLoc: SourceLocation, loc: SourceLocation, sym: Symbol.EffSym) extends TypeError {
     def code: ErrorCode = ErrorCode.E8752
 
-    def summary: String = s"Unexpected effect '${sym.name}' in Pure function"
+    def summary: String = s"Unexpected effect '${sym.name}' in {} function"
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
