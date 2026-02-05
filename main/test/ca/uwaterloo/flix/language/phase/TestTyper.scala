@@ -34,8 +34,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         | pub def println(x: String): Unit \ IO =
         |  System.out.println(x)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.ExplicitPureFunctionUsesIO](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
   }
   test("TestEffError02") {
     val input =
@@ -47,8 +47,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         | pub def println(x: String): Unit \ IO =
         |    System.out.println(x)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.ImplicitPureFunctionUsesIO](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
   }
   test("TestEffError03") {
     val input =
@@ -61,7 +61,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         | pub def println(x: String): Unit \ IO =
         |  System.out.println(x)
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
