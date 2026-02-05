@@ -278,21 +278,21 @@ object EffectProvenance {
 
       (from, v2) match {
         case (IOVertex, PureExplicitVertex(exLoc)) =>
-          val tCons = TypeError.ExplicitPureFunctionUsesIO(exLoc, l1, Symbol.IO)
+          val tCons = TypeError.ExplicitlyPureFunctionUsesIO(exLoc, l1)
           List(TypeConstraint.EffConflicted(tCons))
 
         case (IOVertex, PureImplicitVertex) =>
-          val tCons = TypeError.ImplicitPureFunctionUsesIO(provLoc, l1, Symbol.IO)
+          val tCons = TypeError.ImplicitlyPureFunctionUsesIO(provLoc, l1)
           List(TypeConstraint.EffConflicted(tCons))
 
         case (IOVertex, vvt @ VarVertex(_)) => flowsInto(vvt, Some((IOVertex, provLoc)))
 
         case (VarVertex(_), PureExplicitVertex(exLoc)) =>
-          val tCons = TypeError.ExplicitPureFunctionUsesIO(exLoc, l1, Symbol.IO)
+          val tCons = TypeError.ExplicitlyPureFunctionUsesIO(exLoc, l1)
           List(TypeConstraint.EffConflicted(tCons))
 
         case (VarVertex(_), PureImplicitVertex) =>
-          val tCons = TypeError.ImplicitPureFunctionUsesIO(provLoc, l1, Symbol.IO)
+          val tCons = TypeError.ImplicitlyPureFunctionUsesIO(provLoc, l1)
           List(TypeConstraint.EffConflicted(tCons))
 
         case (VarVertex(_), vvt @ VarVertex(_)) => flowsInto(vvt, acc)
