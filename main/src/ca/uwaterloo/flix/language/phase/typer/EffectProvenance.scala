@@ -17,12 +17,15 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{IOVertex, PureExplicitVertex, PureImplicitVertex, VarVertex}
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.BFSColor.{Black, Grey, White}
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{ClockVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, VarVertex}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 
 sealed trait SourceEffect {
   def equals(eff: SourceEffect): Boolean = eff match {
@@ -232,6 +235,7 @@ object EffectProvenance {
   object Vertex {
     case class PureExplicitVertex(loc: SourceLocation) extends Vertex
     case object PureImplicitVertex extends Vertex
+    case object ClockVertex extends Vertex
     case object IOVertex extends Vertex
     case class VarVertex(sym: Symbol.KindedTypeVarSym) extends Vertex
   }
@@ -242,10 +246,20 @@ object EffectProvenance {
     case Type.Var(sym, _) => Some(VarVertex(sym))
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.Pure => if (loc.isReal) Some(PureExplicitVertex(loc)) else Some(PureImplicitVertex)
-      case TypeConstructor.Effect(sym, _) => if (sym == Symbol.IO) Some(IOVertex) else None
+      case TypeConstructor.Effect(sym, _) => sym.name match {
+        case "IO" => Some(IOVertex)
+        case "Clock" => Some(ClockVertex)
+        case _ => None
+      }
       case _ => None
     }
     case _ => None
+  }
+
+  def mismatch(v1: Vertex, v2: Vertex): Boolean = (v1, v2) match {
+    case (_, VarVertex(_)) => false
+    case (VarVertex(_), _) => false
+    case (_, _) => true
   }
 
   def solve(graph: Graph): List[TypeConstraint] = {
@@ -294,8 +308,81 @@ object EffectProvenance {
 
   }
 
+    type Path = List[Vertex]
+    sealed trait BFSColor
+
+    object BFSColor {
+      case object White extends BFSColor
+
+      case object Grey extends BFSColor
+
+      case object Black extends BFSColor
+    }
+
+   private type BFSVertex = (Vertex, BFSColor, Option[Vertex])
+  def bfs(graph: Graph, source: Vertex): List[Path] = {
+    val (vs, es) = graph
+    var us: List[BFSVertex] = vs.map(v => if (v == source) (v, Grey, None) else (v, White, None))
+    val s = us.find { case (v, _, _) => v == source }.getOrElse(return Nil)
+
+    def bfsEq(v1: BFSVertex, v2: BFSVertex) = (v1, v2) match {
+     case ((x, _, _), (y, _, _)) => x == y
+    }
+
+    def update(vertex: BFSVertex, vertices: List[BFSVertex]): List[BFSVertex] = {
+     vertices.map {
+       case v => if (bfsEq(vertex, v)) vertex else v
+     }
+    }
+
+    def adj(vertex: BFSVertex, vertices: List[BFSVertex]): List[(BFSVertex)] = {
+     val (v, _, _) = vertex
+     es.foldLeft(List(): List[BFSVertex]) {
+       case (acc, (v1, v2, _)) => if (v == v1) vertices.find{ case (u, _, _) => u == v2} match {
+         case Some(res) => res :: acc
+         case None => acc
+       } else acc
+     }
+    }
+
+    @tailrec
+    def reachable(vertex: BFSVertex, bfs: List[BFSVertex], acc: List[Vertex]): List[Vertex] = bfs match {
+     case (next@(v, _, _)) :: xs => vertex._3 match {
+       case Some(parent) => if (v == parent) reachable(next, bfs, v :: acc) else reachable(vertex, xs, acc)
+       case None => acc
+     }
+     case Nil => acc
+
+    }
+
+    val q: mutable.Queue[BFSVertex] = mutable.Queue.empty
+
+
+    q.enqueue(s)
+
+    while (q.nonEmpty) {
+     val u = q.dequeue()
+     adj(u, us).foreach {
+       case (v, White, _) =>
+         val v1 = (v, Grey, Some(u._1))
+         us = update(v1, us)
+         q.enqueue(v1)
+       case (_, _, _) => {}
+     }
+     val u1 = (u._1, Black, u._3)
+     us = update(u1, us)
+    }
+
+
+    us.map(v => {
+     val r = reachable(v, us, List(v._1))
+     if (r.tail.forall(!mismatch(r.head, _))) Nil else r
+    }).filterNot(_.isEmpty)
+
+  }
+
   def getError(constrs0: List[TypeConstraint]): List[TypeConstraint] = {
-    var flow: List[Edge] = Nil
+    var flow: List[Edge] = List()
     var v: Set[Vertex] = Set.empty
     constrs0.foreach {
       case TypeConstraint.Equality(tpe1, tpe2, prov) =>
@@ -307,12 +394,15 @@ object EffectProvenance {
           case (Some(v1), Some(v2)) =>
             prov match {
               case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
+                v = v + v1 + v2
                 flow = (v2, v1, prov.loc) :: flow
               }
               case TypeConstraint.Provenance.Source(_, _, _) => {
+                v = v + v1 + v2
                 flow = (v2, v1, prov.loc) :: flow
               }
               case TypeConstraint.Provenance.Match(_,_,_) => {
+                v = v + v1 + v2
                 flow = (v2, v1, prov.loc) :: flow
               }
               case _ => {} // TODO
@@ -322,6 +412,7 @@ object EffectProvenance {
       case _ => ()
     }
     val graph = (v.toList, flow)
+    val _ = bfs(graph, IOVertex)
     solve(graph)
   }
 }
