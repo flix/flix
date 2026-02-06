@@ -89,7 +89,7 @@ object ConstraintSolverInterface {
           // No effect annotation. The function is implicitly true.
           // We use the source location immediately to the right of the return type
           val tpos = moveRight(tpe.loc.end)
-          val loc1 = SourceLocation(true, tpe.loc.source, tpos, tpos)
+          val loc1 = SourceLocation(true, tpe.loc.source, tpe.loc.end, tpos)
           TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
         }
       }
