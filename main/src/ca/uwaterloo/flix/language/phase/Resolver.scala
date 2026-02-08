@@ -219,13 +219,10 @@ object Resolver {
     */
   private def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, scp0: LocalScope, ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
-      val tparamsVal = resolveTypeParams(tparams0, scp0, ns, root)
-      mapN(tparamsVal) {
-        case tparams =>
-          val scp = scp0 ++ mkTypeParamScp(tparams)
-          val tpe = semiResolveType(tpe0, None, Wildness.ForbidWild, scp, ns, root)(Scope.Top, sctx, flix)
-          ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
-      }
+      val tparams = resolveTypeParams(tparams0, scp0, ns, root)
+      val scp = scp0 ++ mkTypeParamScp(tparams)
+      val tpe = semiResolveType(tpe0, None, Wildness.ForbidWild, scp, ns, root)(Scope.Top, sctx, flix)
+      Validation.Success(ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc))
   }
 
   /**
@@ -242,9 +239,8 @@ object Resolver {
         flatMapN(findResolutionOrder(semiResolved.values)) {
           case orderedSyms =>
             val orderedSemiResolved = orderedSyms.map(semiResolved)
-            mapN(finishResolveTypeAliases(orderedSemiResolved)) {
-              case aliases => (aliases, orderedSyms)
-            }
+            val aliases = finishResolveTypeAliases(orderedSemiResolved)
+            Validation.Success((aliases, orderedSyms))
         }
     }
   }
@@ -306,12 +302,12 @@ object Resolver {
     *
     * The given aliases must be in resolution order.
     */
-  private def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias])(implicit sctx: SharedContext): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
-    Validation.fold(aliases0, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
+  private def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias])(implicit sctx: SharedContext): Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias] = {
+    aliases0.foldLeft(Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
       case (taenv, ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe0, loc)) =>
         val tpe = finishResolveType(tpe0, taenv)
         val alias = ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
-        Validation.Success(taenv + (sym -> alias))
+        taenv + (sym -> alias)
     }
   }
 
@@ -400,15 +396,13 @@ object Resolver {
   /**
     * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
     */
-  private def resolveConstraint(c0: NamedAst.Constraint, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
+  private def resolveConstraint(c0: NamedAst.Constraint, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Constraint = c0 match {
     case NamedAst.Constraint(cparams0, head0, body0, loc) =>
       val cparams = resolveConstraintParams(cparams0, scp0)
       val scp = scp0 ++ mkConstraintParamScp(cparams)
-      val headVal = resolvePredicateHead(head0, scp)
-      val bodyVal = traverse(body0)(resolvePredicateBody(_, scp))
-      mapN(headVal, bodyVal) {
-        case (head, body) => ResolvedAst.Constraint(cparams, head, body, loc)
-      }
+      val head = resolvePredicateHead(head0, scp)
+      val body = body0.map(resolvePredicateBody(_, scp))
+      ResolvedAst.Constraint(cparams, head, body, loc)
   }
 
   /**
@@ -421,11 +415,11 @@ object Resolver {
       // ignore the parameter of the super traits; we don't use it
       val superTraitsVal = traverse(superTraits0)(tconstr => resolveSuperTrait(tconstr, scp, taenv, ns0, root))
       val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
-      val assocsVal = traverse(assocs0)(resolveAssocTypeSig(_, scp, taenv, ns0, root))
+      val assocs = assocs0.map(resolveAssocTypeSig(_, scp, taenv, ns0, root))
       val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, scp)(ns0, taenv, sctx, root, flix))
       val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
-      mapN(superTraitsVal, assocsVal, sigsListVal, lawsVal) {
-        case (superTraits, assocs, sigsList, laws) =>
+      mapN(superTraitsVal, sigsListVal, lawsVal) {
+        case (superTraits, sigsList, laws) =>
           val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
           ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
       }
@@ -436,25 +430,22 @@ object Resolver {
     */
   private def resolveInstance(i0: NamedAst.Declaration.Instance, scp0: LocalScope, ns0: Name.NName)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
     case NamedAst.Declaration.Instance(doc, ann, mod, trt0, tparams0, tpe0, tconstrs0, econstrs0, assocs0, defs0, ns, loc) =>
-      val tparamsVal = resolveTypeParams(tparams0, scp0, ns0, root)
-      flatMapN(tparamsVal) {
-        case tparams =>
-          val scp = scp0 ++ mkTypeParamScp(tparams)
-          val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Implementation, scp, ns0, root).toValidation
-          val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(Scope.Top, sctx, flix)
-          val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, scp, taenv, ns0, root))
-          val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp, taenv, ns0, root))
-          flatMapN(traitVal, optTconstrsVal, econstrsVal) {
-            case (trt, optTconstrs, econstrs) =>
-              val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
-              val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
-              val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
-              val tconstrs = optTconstrs.collect { case Some(t) => t }
-              mapN(defsVal, assocsVal) {
-                case (defs, assocs) =>
-                  val symUse = TraitSymUse(trt.sym, trt0.loc)
-                  ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
-              }
+      val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
+      val scp = scp0 ++ mkTypeParamScp(tparams)
+      val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Implementation, scp, ns0, root).toValidation
+      val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(Scope.Top, sctx, flix)
+      val optTconstrs = tconstrs0.map(resolveTraitConstraint(_, scp, taenv, ns0, root))
+      val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp, taenv, ns0, root))
+      flatMapN(traitVal, econstrsVal) {
+        case (trt, econstrs) =>
+          val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
+          val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
+          val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
+          val tconstrs = optTconstrs.collect { case Some(t) => t }
+          mapN(defsVal, assocsVal) {
+            case (defs, assocs) =>
+              val symUse = TraitSymUse(trt.sym, trt0.loc)
+              ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
           }
       }
   }
@@ -470,10 +461,8 @@ object Resolver {
         case spec =>
           val scp = scp0 ++ mkSpecScp(spec)
           checkSigSpec(sym, spec, traitTvar)
-          val expVal = traverseOpt(exp0)(resolveExp(_, scp)(Scope.Top, ns0, taenv, sctx, root, flix))
-          mapN(expVal) {
-            case exp => ResolvedAst.Declaration.Sig(sym, spec, exp, loc)
-          }
+          val exp = exp0.map(resolveExp(_, scp)(Scope.Top, ns0, taenv, sctx, root, flix))
+          Validation.Success(ResolvedAst.Declaration.Sig(sym, spec, exp, loc))
       }
   }
 
@@ -486,10 +475,8 @@ object Resolver {
       flatMapN(specVal) {
         case spec =>
           val scp = scp0 ++ mkSpecScp(spec)
-          val expVal = resolveExp(exp0, scp)(Scope.Top, ns0, taenv, sctx, root, flix)
-          mapN(expVal) {
-            case exp => ResolvedAst.Declaration.Def(sym, spec, exp, loc)
-          }
+          val exp = resolveExp(exp0, scp)(Scope.Top, ns0, taenv, sctx, root, flix)
+          Validation.Success(ResolvedAst.Declaration.Def(sym, spec, exp, loc))
       }
   }
 
@@ -498,25 +485,21 @@ object Resolver {
     */
   private def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
     case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
-      val tparams1Val = resolveTypeParams(tparams0, scp0, ns0, root)
-      flatMapN(tparams1Val) {
-        case tparams1 =>
-          val scp1 = scp0 ++ mkTypeParamScp(tparams1)
-          val wildness = Wildness.RecordWild(new ArrayBuffer)
-          val fparams = fparams0.map(resolveFormalParam(_, wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
-          val tpe = resolveType(tpe0, Some(Kind.Star), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix)
-          val eff = eff0.map(resolveType(_, Some(Kind.Eff), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
-          val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, scp1, taenv, ns0, root))
-          val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp1, taenv, ns0, root))
-          val wildTparams = wildness.syms.toList.map { case (ident, sym) => ResolvedAst.TypeParam.Implicit(ident, sym, ident.loc) }
-          val tparams = tparams1 ::: wildTparams
-          mapN(optTconstrsVal, econstrsVal) {
-            case (optTconstrs, econstrs) =>
-              // add the inherited type constraint to the list
-              val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
-              ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
-
-          }
+      val tparams1 = resolveTypeParams(tparams0, scp0, ns0, root)
+      val scp1 = scp0 ++ mkTypeParamScp(tparams1)
+      val wildness = Wildness.RecordWild(new ArrayBuffer)
+      val fparams = fparams0.map(resolveFormalParam(_, wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
+      val tpe = resolveType(tpe0, Some(Kind.Star), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix)
+      val eff = eff0.map(resolveType(_, Some(Kind.Eff), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
+      val optTconstrs = tconstrs0.map(resolveTraitConstraint(_, scp1, taenv, ns0, root))
+      val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp1, taenv, ns0, root))
+      val wildTparams = wildness.syms.toList.map { case (ident, sym) => ResolvedAst.TypeParam.Implicit(ident, sym, ident.loc) }
+      val tparams = tparams1 ::: wildTparams
+      mapN(econstrsVal) {
+        case econstrs =>
+          // add the inherited type constraint to the list
+          val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
       }
   }
 
@@ -525,17 +508,11 @@ object Resolver {
     */
   private def resolveEnum(e0: NamedAst.Declaration.Enum, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = e0 match {
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, derives0, cases0, loc) =>
-      val tparamsVal = resolveTypeParams(tparams0, scp0, ns0, root)
-      flatMapN(tparamsVal) {
-        case tparams =>
-          val scp = scp0 ++ mkTypeParamScp(tparams)
-          val derives = resolveDerivations(derives0, scp, ns0, root)
-          val casesVal = traverse(cases0)(resolveCase(_, scp, taenv, ns0, root))
-          mapN(casesVal) {
-            case cases =>
-              ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
-          }
-      }
+      val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
+      val scp = scp0 ++ mkTypeParamScp(tparams)
+      val derives = resolveDerivations(derives0, scp, ns0, root)
+      val cases = cases0.map(resolveCase(_, scp, taenv, ns0, root))
+      Validation.Success(ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc))
   }
 
   /**
@@ -543,15 +520,10 @@ object Resolver {
     */
   private def resolveStruct(s0: NamedAst.Declaration.Struct, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Struct, ResolutionError] = s0 match {
     case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
-      val tparamsVal = resolveTypeParams(tparams0, scp0, ns0, root)
-      flatMapN(tparamsVal) {
-        tparams =>
-          val scp = scp0 ++ mkTypeParamScp(tparams)
-          val fieldsVal = traverse(fields0) { case field => resolveStructField(field, scp, taenv, ns0, root) }
-          mapN(fieldsVal) {
-            fields => ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
-          }
-      }
+      val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
+      val scp = scp0 ++ mkTypeParamScp(tparams)
+      val fields = fields0.map(resolveStructField(_, scp, taenv, ns0, root))
+      Validation.Success(ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc))
   }
 
   /**
@@ -560,43 +532,38 @@ object Resolver {
   private def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableEnum, ResolutionError] = e0 match {
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, derives0, cases0, loc) =>
       val index = resolveTypeParam(index0, scp0, ns0, root)
-      val tparamsVal = resolveTypeParams(tparams0, scp0, ns0, root)
-      flatMapN(tparamsVal) {
-        tparams =>
-          val scp = scp0 ++ mkTypeParamScp(index :: tparams)
-          val derives = resolveDerivations(derives0, scp, ns0, root)
-          val casesVal = traverse(cases0)(resolveRestrictableCase(_, scp, taenv, ns0, root))
-          mapN(casesVal) {
-            cases => ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
-          }
-      }
+      val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
+      val scp = scp0 ++ mkTypeParamScp(index :: tparams)
+      val derives = resolveDerivations(derives0, scp, ns0, root)
+      val cases = cases0.map(resolveRestrictableCase(_, scp, taenv, ns0, root))
+      Validation.Success(ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc))
   }
 
   /**
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
-  private def resolveCase(caze0: NamedAst.Declaration.Case, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Case, ResolutionError] = caze0 match {
+  private def resolveCase(caze0: NamedAst.Declaration.Case, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.Case = caze0 match {
     case NamedAst.Declaration.Case(sym, tpes0, loc) =>
       val tpes = tpes0.map(resolveType(_, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix))
-      Validation.Success(ResolvedAst.Declaration.Case(sym, tpes, loc))
+      ResolvedAst.Declaration.Case(sym, tpes, loc)
   }
 
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(field0: NamedAst.Declaration.StructField, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+  private def resolveStructField(field0: NamedAst.Declaration.StructField, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.StructField = field0 match {
     case NamedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
       val tpe = resolveType(tpe0, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
-      Validation.Success(ResolvedAst.Declaration.StructField(mod, sym, tpe, loc))
+      ResolvedAst.Declaration.StructField(mod, sym, tpe, loc)
   }
 
   /**
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
-  private def resolveRestrictableCase(caze0: NamedAst.Declaration.RestrictableCase, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableCase, ResolutionError] = caze0 match {
+  private def resolveRestrictableCase(caze0: NamedAst.Declaration.RestrictableCase, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.RestrictableCase = caze0 match {
     case NamedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
       val tpes = tpes0.map(resolveType(_, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix))
-      Validation.Success(ResolvedAst.Declaration.RestrictableCase(sym, tpes, loc))
+      ResolvedAst.Declaration.RestrictableCase(sym, tpes, loc)
   }
 
   /**
@@ -605,14 +572,11 @@ object Resolver {
   private def resolveEffect(eff0: NamedAst.Declaration.Effect, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Effect, ResolutionError] = eff0 match {
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
       // TODO NS-REFACTOR maybe start a new scp
-      val tparamsVal = resolveTypeParams(tparams0, scp0, ns0, root)
-      flatMapN(tparamsVal) {
-        tparams =>
-          val scp = scp0 ++ mkTypeParamScp(tparams)
-          val opsVal = traverse(ops0)(resolveOp(_, scp, taenv, ns0, root))
-          mapN(opsVal) {
-            case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
-          }
+      val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
+      val scp = scp0 ++ mkTypeParamScp(tparams)
+      val opsVal = traverse(ops0)(resolveOp(_, scp, taenv, ns0, root))
+      mapN(opsVal) {
+        case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
       }
   }
 
@@ -630,12 +594,12 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
     */
-  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeSig, ResolutionError] = s0 match {
+  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.AssocTypeSig = s0 match {
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, tpe0, loc) =>
       val tparam = resolveTypeParam(tparam0, scp0, ns0, root)
       val kind = resolveKind(kind0, scp0, ns0, root)
       val tpe = tpe0.map(resolveType(_, Some(kind), Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix))
-      Validation.Success(ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc))
+      ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
   }
 
   /**
@@ -766,7 +730,7 @@ object Resolver {
   /**
     * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
     */
-  private def resolveExp(exp0: NamedAst.Expr, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = exp0 match {
+  private def resolveExp(exp0: NamedAst.Expr, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp0 match {
     case NamedAst.Expr.Ambiguous(qname, loc) =>
       // Special Case: We must check if we have a static field access, e.g. Math.PI
       if (qname.namespace.idents.length == 1) {
@@ -779,11 +743,11 @@ object Resolver {
             JvmUtils.getField(clazz, fieldName.name, static = true) match {
               case Some(field) =>
                 // Returns out of resolveExp
-                return Validation.Success(ResolvedAst.Expr.GetStaticField(field, loc))
+                return ResolvedAst.Expr.GetStaticField(field, loc)
               case None =>
                 val error = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
                 sctx.errors.add(error)
-                return Validation.Success(ResolvedAst.Expr.Error(error))
+                return ResolvedAst.Expr.Error(error)
             }
           case _ =>
           // Fallthrough to below.
@@ -800,10 +764,10 @@ object Resolver {
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
       }
-      Validation.Success(exp)
+      exp
 
     case NamedAst.Expr.Open(name, loc) =>
-      val exp = lookupQName(name, scp0, ns0, root) match {
+      lookupQName(name, scp0, ns0, root) match {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
         case ResolvedQName.Op(op) => visitOp(op, loc)
@@ -813,18 +777,15 @@ object Resolver {
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
       }
-      Validation.Success(exp)
 
     case NamedAst.Expr.OpenAs(name, exp, loc) =>
       lookupRestrictableEnum(name, scp0, ns0, root) match {
         case Result.Ok(enum0) =>
-          val eVal = resolveExp(exp, scp0)
-          mapN(eVal) {
-            case e => ResolvedAst.Expr.OpenAs(RestrictableEnumSymUse(enum0.sym, name.loc), e, loc)
-          }
+          val e = resolveExp(exp, scp0)
+          ResolvedAst.Expr.OpenAs(RestrictableEnumSymUse(enum0.sym, name.loc), e, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
-          Validation.Success(ResolvedAst.Expr.Error(error))
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.Hole(nameOpt, loc) =>
@@ -832,13 +793,11 @@ object Resolver {
         case None => Symbol.freshHoleSym(loc)
         case Some(name) => Symbol.mkHoleSym(ns0, name)
       }
-      Validation.Success(ResolvedAst.Expr.Hole(sym, scp0, loc))
+      ResolvedAst.Expr.Hole(sym, scp0, loc)
 
     case NamedAst.Expr.HoleWithExp(exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        case e => ResolvedAst.Expr.HoleWithExp(e, scp0, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.HoleWithExp(e, scp0, loc)
 
     case NamedAst.Expr.Use(use, exp, loc) =>
       // Lookup the used name and add it to the scp
@@ -850,20 +809,19 @@ object Resolver {
               val scp = decls.foldLeft(scp0) {
                 case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
               }
-              mapN(resolveExp(exp, scp)) {
-                // TODO NS-REFACTOR: multiple uses here
-                case e => ResolvedAst.Expr.Use(getSym(decls.head), alias, e, loc)
-              }
+              val e = resolveExp(exp, scp)
+              // TODO NS-REFACTOR: multiple uses here
+              ResolvedAst.Expr.Use(getSym(decls.head), alias, e, loc)
             case Result.Err(error) =>
               sctx.errors.add(error)
-              Validation.Success(ResolvedAst.Expr.Error(error))
+              ResolvedAst.Expr.Error(error)
           }
 
         case NamedAst.UseOrImport.Import(_, _, importLoc) => throw InternalCompilerException("unexpected import", importLoc)
       }
 
     case NamedAst.Expr.Cst(cst, loc) =>
-      Validation.Success(ResolvedAst.Expr.Cst(cst, loc))
+      ResolvedAst.Expr.Cst(cst, loc)
 
     case app@NamedAst.Expr.Apply(NamedAst.Expr.Ambiguous(qname, innerLoc), exps, outerLoc) =>
       // Special Case: We must check if we have a static method call, i.e. Math.abs(123)
@@ -874,14 +832,14 @@ object Resolver {
           case List(Resolution.JavaClass(clazz)) =>
             // We have a static method call.
             val methodName = qname.ident
-            val expsVal = traverse(exps)(resolveExp(_, scp0))
+            val es = exps.map(resolveExp(_, scp0))
             // Check for a single Unit argument
             // Returns out of resolveExp
-            return flatMapN(expsVal) {
+            return es match {
               case ResolvedAst.Expr.Cst(Constant.Unit, _) :: Nil =>
-                Validation.Success(ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, Nil, outerLoc))
-              case es =>
-                Validation.Success(ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, es, outerLoc))
+                ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, Nil, outerLoc)
+              case _ =>
+                ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, es, outerLoc)
             }
           case _ =>
           // Fallthrough to below.
@@ -908,7 +866,7 @@ object Resolver {
         case ResolvedQName.Var(_) => visitApplyClo(app, scp0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, scp0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, scp0, innerLoc, outerLoc)
-        case ResolvedQName.Error(error) => Validation.Success(ResolvedAst.Expr.Error(error))
+        case ResolvedQName.Error(error) => ResolvedAst.Expr.Error(error)
       }
 
     case app@NamedAst.Expr.Apply(_, _, _) =>
@@ -917,109 +875,83 @@ object Resolver {
     case NamedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = resolveFormalParam(fparam, Wildness.AllowWild, scp0, taenv, ns0, root)
       val scp = scp0 ++ mkFormalParamScp(List(p))
-      val eVal = resolveExp(exp, scp)
-      mapN(eVal) {
-        case e => ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
-      }
+      val e = resolveExp(exp, scp)
+      ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
 
     case NamedAst.Expr.Unary(sop, exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.Unary(sop, e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Unary(sop, e, loc)
 
     case NamedAst.Expr.Binary(sop, exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.Binary(sop, e1, e2, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.Binary(sop, e1, e2, loc)
 
     case NamedAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      val e3Val = resolveExp(exp3, scp0)
-      mapN(e1Val, e2Val, e3Val) {
-        case (e1, e2, e3) => ResolvedAst.Expr.IfThenElse(e1, e2, e3, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      val e3 = resolveExp(exp3, scp0)
+      ResolvedAst.Expr.IfThenElse(e1, e2, e3, loc)
 
     case NamedAst.Expr.Stm(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.Stm(e1, e2, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.Stm(e1, e2, loc)
 
     case NamedAst.Expr.Discard(exp, loc) =>
-      mapN(resolveExp(exp, scp0)) {
-        case e => ResolvedAst.Expr.Discard(e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Discard(e, loc)
 
     case NamedAst.Expr.Let(sym, exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
+      val e1 = resolveExp(exp1, scp0)
       val scp = scp0 ++ mkVarScp(sym)
-      val e2Val = resolveExp(exp2, scp)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.Let(sym, e1, e2, loc)
-      }
+      val e2 = resolveExp(exp2, scp)
+      ResolvedAst.Expr.Let(sym, e1, e2, loc)
 
     case NamedAst.Expr.LocalDef(sym, fparams0, exp1, exp2, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       val scp1 = scp0 ++ mkLocalDefScp(sym, fparams) ++ mkFormalParamScp(fparams)
-      val exp1Val = resolveExp(exp1, scp1)
+      val e1 = resolveExp(exp1, scp1)
       val scp2 = scp0 ++ mkLocalDefScp(sym, fparams)
-      val exp2Val = resolveExp(exp2, scp2)
-      mapN(exp1Val, exp2Val) {
-        case (e1, e2) => ResolvedAst.Expr.LocalDef(sym, fparams, e1, e2, loc)
-      }
+      val e2 = resolveExp(exp2, scp2)
+      ResolvedAst.Expr.LocalDef(sym, fparams, e1, e2, loc)
 
     case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
       // Visit the body in the new scope
-      val eVal = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.Region(sym, regSym, e, loc)
-      }
+      val e = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
+      ResolvedAst.Expr.Region(sym, regSym, e, loc)
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
-      val rulesVal = traverse(rules) {
+      val rs = rules.map {
         case NamedAst.MatchRule(pat, guard, body, ruleLoc) =>
           val p = resolvePattern(pat, scp0, ns0, root)
           val scp = scp0 ++ mkPatternScp(p)
-          val gVal = traverseOpt(guard)(resolveExp(_, scp))
-          val bVal = resolveExp(body, scp)
-          mapN(gVal, bVal) {
-            case (g, b) => ResolvedAst.MatchRule(p, g, b, ruleLoc)
-          }
+          val g = guard.map(resolveExp(_, scp))
+          val b = resolveExp(body, scp)
+          ResolvedAst.MatchRule(p, g, b, ruleLoc)
       }
 
-      val eVal = resolveExp(exp, scp0)
-      val rsVal = rulesVal
-      mapN(eVal, rsVal) {
-        case (e, rs) => ResolvedAst.Expr.Match(e, rs, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Match(e, rs, loc)
 
     case NamedAst.Expr.TypeMatch(exp, rules, loc) =>
-      val rulesVal = traverse(rules) {
+      val rs = rules.map {
         case NamedAst.TypeMatchRule(sym, tpe, body, ruleLoc) =>
           val t = resolveType(tpe, None, Wildness.AllowWild, scp0, taenv, ns0, root)
           val scp = scp0 ++ mkVarScp(sym)
-          val bVal = resolveExp(body, scp)
-          mapN(bVal) {
-            b => ResolvedAst.TypeMatchRule(sym, t, b, ruleLoc)
-          }
+          val b = resolveExp(body, scp)
+          ResolvedAst.TypeMatchRule(sym, t, b, ruleLoc)
       }
 
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal, rulesVal) {
-        case (e, rs) => ResolvedAst.Expr.TypeMatch(e, rs, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.TypeMatch(e, rs, loc)
 
     case NamedAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
-      val expVal = resolveExp(exp, scp0)
-      val rulesVal = traverse(rules) {
+      val e = resolveExp(exp, scp0)
+      val rs = rules.map {
         case NamedAst.RestrictableChooseRule(pat0, body) =>
-          val pVal = pat0 match {
+          val p = pat0 match {
             case NamedAst.RestrictableChoosePattern.Tag(qname, pat, tagLoc) =>
               val pats = pat.map {
                 case NamedAst.RestrictableChoosePattern.Wild(patLoc) => ResolvedAst.RestrictableChoosePattern.Wild(patLoc)
@@ -1028,12 +960,12 @@ object Resolver {
               }
               lookupRestrictableTag(qname, scp0, ns0, root) match {
                 case Result.Ok(tag) =>
-                  Validation.Success(ResolvedAst.RestrictableChoosePattern.Tag(RestrictableCaseSymUse(tag.sym, qname.loc), pats, tagLoc))
+                  ResolvedAst.RestrictableChoosePattern.Tag(RestrictableCaseSymUse(tag.sym, qname.loc), pats, tagLoc)
                 case Result.Err(error) =>
                   sctx.errors.add(error)
-                  Validation.Success(ResolvedAst.RestrictableChoosePattern.Error(qname.loc))
+                  ResolvedAst.RestrictableChoosePattern.Error(qname.loc)
               }
-            case NamedAst.RestrictableChoosePattern.Error(tagLoc) => Validation.Success(ResolvedAst.RestrictableChoosePattern.Error(tagLoc))
+            case NamedAst.RestrictableChoosePattern.Error(tagLoc) => ResolvedAst.RestrictableChoosePattern.Error(tagLoc)
           }
           val scp = pat0 match {
             case NamedAst.RestrictableChoosePattern.Tag(_, pat, _) =>
@@ -1045,100 +977,70 @@ object Resolver {
             case NamedAst.RestrictableChoosePattern.Error(_) => scp0
           }
 
-          val eVal = resolveExp(body, scp)
-          flatMapN(pVal, eVal) {
-            case (p, e) =>
-              Validation.Success(ResolvedAst.RestrictableChooseRule(p, e))
-          }
+          val b = resolveExp(body, scp)
+          ResolvedAst.RestrictableChooseRule(p, b)
       }
-      mapN(expVal, rulesVal) {
-        case (e, rs) => ResolvedAst.Expr.RestrictableChoose(star, e, rs, loc)
-      }
+      ResolvedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
     case NamedAst.Expr.ExtMatch(exp, rules, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      val rsVal = traverse(rules)(resolveExtMatchRule(_, scp0))
-      mapN(eVal, rsVal) {
-        case (e, rs) =>
-          ResolvedAst.Expr.ExtMatch(e, rs, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      val rs = rules.map(resolveExtMatchRule(_, scp0))
+      ResolvedAst.Expr.ExtMatch(e, rs, loc)
 
     case NamedAst.Expr.ExtTag(label, exps, loc) =>
-      val esVal = traverse(exps)(e => resolveExp(e, scp0))
-      mapN(esVal) {
-        es => ResolvedAst.Expr.ExtTag(label, es, loc)
-      }
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.ExtTag(label, es, loc)
 
     case NamedAst.Expr.Tuple(elms, loc) =>
-      val esVal = traverse(elms)(e => resolveExp(e, scp0))
-      mapN(esVal) {
-        es => ResolvedAst.Expr.Tuple(es, loc)
-      }
+      val es = elms.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.Tuple(es, loc)
 
     case NamedAst.Expr.RecordSelect(base, label, loc) =>
-      val bVal = resolveExp(base, scp0)
-      mapN(bVal) {
-        b => ResolvedAst.Expr.RecordSelect(b, label, loc)
-      }
+      val b = resolveExp(base, scp0)
+      ResolvedAst.Expr.RecordSelect(b, label, loc)
 
     case NamedAst.Expr.RecordExtend(label, value, rest, loc) =>
-      val vVal = resolveExp(value, scp0)
-      val rVal = resolveExp(rest, scp0)
-      mapN(vVal, rVal) {
-        case (v, r) => ResolvedAst.Expr.RecordExtend(label, v, r, loc)
-      }
+      val v = resolveExp(value, scp0)
+      val r = resolveExp(rest, scp0)
+      ResolvedAst.Expr.RecordExtend(label, v, r, loc)
 
     case NamedAst.Expr.RecordRestrict(label, rest, loc) =>
-      val rVal = resolveExp(rest, scp0)
-      mapN(rVal) {
-        r => ResolvedAst.Expr.RecordRestrict(label, r, loc)
-      }
+      val r = resolveExp(rest, scp0)
+      ResolvedAst.Expr.RecordRestrict(label, r, loc)
 
     case NamedAst.Expr.ArrayLit(exps, exp, loc) =>
-      val expsVal = traverse(exps)(resolveExp(_, scp0))
-      val expVal = resolveExp(exp, scp0)
-      mapN(expsVal, expVal) {
-        case (es, e) =>
-          ResolvedAst.Expr.ArrayLit(es, e, loc)
-      }
+      val es = exps.map(resolveExp(_, scp0))
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.ArrayLit(es, e, loc)
 
     case NamedAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      val e3Val = resolveExp(exp3, scp0)
-      mapN(e1Val, e2Val, e3Val) {
-        case (e1, e2, e3) =>
-          ResolvedAst.Expr.ArrayNew(e1, e2, e3, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      val e3 = resolveExp(exp3, scp0)
+      ResolvedAst.Expr.ArrayNew(e1, e2, e3, loc)
 
     case NamedAst.Expr.ArrayLoad(base, index, loc) =>
-      val bVal = resolveExp(base, scp0)
-      val iVal = resolveExp(index, scp0)
-      mapN(bVal, iVal) {
-        case (b, i) => ResolvedAst.Expr.ArrayLoad(b, i, loc)
-      }
+      val b = resolveExp(base, scp0)
+      val i = resolveExp(index, scp0)
+      ResolvedAst.Expr.ArrayLoad(b, i, loc)
 
     case NamedAst.Expr.ArrayStore(base, index, elm, loc) =>
-      val bVal = resolveExp(base, scp0)
-      val iVal = resolveExp(index, scp0)
-      val eVal = resolveExp(elm, scp0)
-      mapN(bVal, iVal, eVal) {
-        case (b, i, e) => ResolvedAst.Expr.ArrayStore(b, i, e, loc)
-      }
+      val b = resolveExp(base, scp0)
+      val i = resolveExp(index, scp0)
+      val e = resolveExp(elm, scp0)
+      ResolvedAst.Expr.ArrayStore(b, i, e, loc)
 
     case NamedAst.Expr.ArrayLength(base, loc) =>
-      val bVal = resolveExp(base, scp0)
-      mapN(bVal) {
-        b => ResolvedAst.Expr.ArrayLength(b, loc)
-      }
+      val b = resolveExp(base, scp0)
+      ResolvedAst.Expr.ArrayLength(b, loc)
 
     case NamedAst.Expr.StructNew(name, fields0, region0, loc) =>
       lookupStruct(name, scp0, ns0, root) match {
         case Result.Ok(st0) =>
           checkStructIsAccessible(st0, ns0, loc)
-          val fieldsVal = traverse(fields0) {
+          val fields = fields0.map {
             case (f, exp) =>
-              val eVal = resolveExp(exp, scp0)
+              val e = resolveExp(exp, scp0)
               // Lookup the field symbol or make up a fictitious one.
               val label = st0.fields.find(_.sym.name == f.name) match {
                 case Some(field) => Name.Label(field.sym.name, field.sym.loc)
@@ -1146,21 +1048,9 @@ object Resolver {
               }
               val fieldSym = Symbol.mkStructFieldSym(st0.sym, label)
               val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
-              mapN(eVal) {
-                case e => (fieldSymUse, e)
-              }
+              (fieldSymUse, e)
           }
-          val regionValOpt = region0.map(resolveExp(_, scp0))
-          val structNew = regionValOpt match {
-            case None => mapN(fieldsVal) {
-              fields => ResolvedAst.Expr.StructNew(st0.sym, fields, None, loc)
-            }
-            case Some(regionVal) =>
-              mapN(fieldsVal, regionVal) {
-                case (fields, region) =>
-                  ResolvedAst.Expr.StructNew(st0.sym, fields, Some(region), loc)
-              }
-          }
+          val regionOpt = region0.map(resolveExp(_, scp0))
           // Potential errors
           val providedFieldNames = fields0.map { case (k, _) => Name.Label(k.name, k.loc) }
           val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
@@ -1171,145 +1061,122 @@ object Resolver {
           val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
           val errors = extraFieldErrors ++ missingFieldErrors
           errors.foreach(sctx.errors.add)
-          structNew
+          ResolvedAst.Expr.StructNew(st0.sym, fields, regionOpt, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
-          Validation.Success(ResolvedAst.Expr.Error(error))
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.StructGet(exp, field0, loc) =>
       lookupStructField(field0, scp0, ns0, root) match {
         case Result.Ok(field) =>
-          val eVal = resolveExp(exp, scp0)
+          val e = resolveExp(exp, scp0)
           val symUse = StructFieldSymUse(field.sym, field0.loc)
-          mapN(eVal) {
-            case e => ResolvedAst.Expr.StructGet(e, symUse, loc)
-          }
+          ResolvedAst.Expr.StructGet(e, symUse, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
-          Validation.Success(ResolvedAst.Expr.Error(error))
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.StructPut(exp1, field0, exp2, loc) =>
       lookupStructField(field0, scp0, ns0, root) match {
         case Result.Ok(field) =>
-          val e1Val = resolveExp(exp1, scp0)
-          val e2Val = resolveExp(exp2, scp0)
+          val e1 = resolveExp(exp1, scp0)
+          val e2 = resolveExp(exp2, scp0)
           val symUse = StructFieldSymUse(field.sym, field0.loc)
           if (!field.mod.isMutable) {
             val error = ResolutionError.ImmutableField(field.sym, field0.loc)
             sctx.errors.add(error)
           }
-          mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expr.StructPut(e1, symUse, e2, loc)
-          }
+          ResolvedAst.Expr.StructPut(e1, symUse, e2, loc)
 
         case Result.Err(error) =>
           sctx.errors.add(error)
-          Validation.Success(ResolvedAst.Expr.Error(error))
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.VectorLit(exps, loc) =>
-      val expsVal = traverse(exps)(resolveExp(_, scp0))
-      mapN(expsVal) {
-        case es => ResolvedAst.Expr.VectorLit(es, loc)
-      }
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.VectorLit(es, loc)
 
     case NamedAst.Expr.VectorLoad(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.VectorLoad(e1, e2, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.VectorLoad(e1, e2, loc)
 
     case NamedAst.Expr.VectorLength(exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        case e => ResolvedAst.Expr.VectorLength(e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.VectorLength(e, loc)
 
     case NamedAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
       val expectedTyp = expectedType.map(resolveType(_, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root))
       val expectedEf = expectedEff.map(resolveType(_, Some(Kind.Eff), Wildness.AllowWild, scp0, taenv, ns0, root))
 
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.Ascribe(e, expectedTyp, expectedEf, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Ascribe(e, expectedTyp, expectedEf, loc)
 
     case NamedAst.Expr.InstanceOf(exp, className, loc) =>
-      flatMapN(resolveExp(exp, scp0)) {
-        case e => scp0.get(className.name) match {
-          case List(Resolution.JavaClass(clazz)) =>
-            Validation.Success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
-          case _ =>
-            val error = ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
-            sctx.errors.add(error)
-            Validation.Success(ResolvedAst.Expr.Error(error))
-        }
+      val e = resolveExp(exp, scp0)
+      scp0.get(className.name) match {
+        case List(Resolution.JavaClass(clazz)) =>
+          ResolvedAst.Expr.InstanceOf(e, clazz, loc)
+        case _ =>
+          val error = ResolutionError.UndefinedJvmClass(className, AnchorPosition.mkImportOrUseAnchor(ns0), "", loc)
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.CheckedCast(c, exp, loc) =>
-      mapN(resolveExp(exp, scp0)) {
-        case e => ResolvedAst.Expr.CheckedCast(c, e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.CheckedCast(c, e, loc)
 
     case NamedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
       val declaredTyp = declaredType.map(resolveType(_, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root))
       val declaredEf = declaredEff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root))
 
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.UncheckedCast(e, declaredTyp, declaredEf, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.UncheckedCast(e, declaredTyp, declaredEf, loc)
 
     case NamedAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
-      val eVal = resolveExp(exp, scp0)
+      val e = resolveExp(exp, scp0)
       val eff = resolveType(eff0, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root)
       val asEff = asEff0.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root))
-      mapN(eVal) {
-        e => ResolvedAst.Expr.Unsafe(e, eff, asEff, loc)
-      }
+      ResolvedAst.Expr.Unsafe(e, eff, asEff, loc)
 
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
-      val rulesVal = traverse(rules) {
+      val rs = rules.map {
         case NamedAst.CatchRule(sym, className, body, ruleLoc) =>
           val scp = scp0 ++ mkVarScp(sym)
-          val clazzVal = lookupJvmClass2(className, ns0, scp0).toValidation
-          val bVal = resolveExp(body, scp)
-          mapN(clazzVal, bVal) {
-            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b, ruleLoc)
+          val b = resolveExp(body, scp)
+          lookupJvmClass2(className, ns0, scp0) match {
+            case Result.Ok(clazz) => ResolvedAst.CatchRule(sym, clazz, b, ruleLoc)
+            case Result.Err(error) =>
+              sctx.errors.add(error)
+              ResolvedAst.CatchRule(sym, classOf[Object], b, ruleLoc)
           }
       }
 
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal, rulesVal) {
-        case (e, rs) => ResolvedAst.Expr.TryCatch(e, rs, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.TryCatch(e, rs, loc)
 
     case NamedAst.Expr.Throw(exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        case e => ResolvedAst.Expr.Throw(e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Throw(e, loc)
 
     case NamedAst.Expr.Without(exp, qname, loc) =>
       lookupEffect(qname, scp0, ns0, root) match {
         case Result.Ok(decl) =>
           checkEffectIsAccessible(decl, ns0, qname.loc)
           val symUse = EffSymUse(decl.sym, qname)
-          val expVal = resolveExp(exp, scp0)
-          mapN(expVal) {
-            case e => ResolvedAst.Expr.Without(e, symUse, loc)
-          }
+          val e = resolveExp(exp, scp0)
+          ResolvedAst.Expr.Without(e, symUse, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
-          Validation.Success(ResolvedAst.Expr.Error(error))
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.Handler(qname, rules, loc) =>
-      val handlerVal = visitHandler(qname, rules, scp0)
-      mapN(handlerVal) {
+      visitHandler(qname, rules, scp0) match {
         case Result.Ok((symUse, rs)) =>
           ResolvedAst.Expr.Handler(symUse, rs, loc)
         case Result.Err(error) =>
@@ -1318,213 +1185,153 @@ object Resolver {
       }
 
     case NamedAst.Expr.RunWith(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.RunWith(e1, e2, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.RunWith(e1, e2, loc)
 
     case NamedAst.Expr.InvokeConstructor(className, exps, loc) =>
-      val esVal = traverse(exps)(resolveExp(_, scp0))
-      flatMapN(esVal) {
-        es =>
-          scp0.get(className.name) match {
-            case List(Resolution.JavaClass(clazz)) =>
-              Validation.Success(ResolvedAst.Expr.InvokeConstructor(clazz, es, loc))
-            case _ =>
-              val error = ResolutionError.UndefinedNew(className, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, loc)
-              sctx.errors.add(error)
-              Validation.Success(ResolvedAst.Expr.Error(error))
-          }
+      val es = exps.map(resolveExp(_, scp0))
+      scp0.get(className.name) match {
+        case List(Resolution.JavaClass(clazz)) =>
+          ResolvedAst.Expr.InvokeConstructor(clazz, es, loc)
+        case _ =>
+          val error = ResolutionError.UndefinedNew(className, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, loc)
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.InvokeMethod(exp, name, exps, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      val esVal = traverse(exps)(resolveExp(_, scp0))
-      mapN(eVal, esVal) {
-        case (e, es) =>
-          ResolvedAst.Expr.InvokeMethod(e, name, es, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.InvokeMethod(e, name, es, loc)
 
     case NamedAst.Expr.GetField(exp, name, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        case e =>
-          ResolvedAst.Expr.GetField(e, name, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.GetField(e, name, loc)
 
     case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
-      flatMapN(traverse(methods)(visitJvmMethod(_, scp0))) {
-        ms =>
-          //
-          // Check that the type is a JVM type (after type alias erasure).
-          //
-          UnkindedType.eraseAliases(t) match {
-            case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
-              Validation.Success(ResolvedAst.Expr.NewObject(name, clazz, ms, loc))
-            case _ =>
-              val error = ResolutionError.IllegalNonJavaType(t, t.loc)
-              sctx.errors.add(error)
-              Validation.Success(ResolvedAst.Expr.Error(error))
-          }
+      val ms = methods.map(visitJvmMethod(_, scp0))
+      //
+      // Check that the type is a JVM type (after type alias erasure).
+      //
+      UnkindedType.eraseAliases(t) match {
+        case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
+          ResolvedAst.Expr.NewObject(name, clazz, ms, loc)
+        case _ =>
+          val error = ResolutionError.IllegalNonJavaType(t, t.loc)
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.NewChannel(exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        case e => ResolvedAst.Expr.NewChannel(e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.NewChannel(e, loc)
 
     case NamedAst.Expr.GetChannel(exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.GetChannel(e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.GetChannel(e, loc)
 
     case NamedAst.Expr.PutChannel(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.PutChannel(e1, e2, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.PutChannel(e1, e2, loc)
 
     case NamedAst.Expr.SelectChannel(rules, default, loc) =>
-      val rulesVal = traverse(rules) {
+      val rs = rules.map {
         case NamedAst.SelectChannelRule(sym, chan, body, ruleLoc) =>
-          val cVal = resolveExp(chan, scp0)
+          val c = resolveExp(chan, scp0)
           val scp = scp0 ++ mkVarScp(sym)
-          val bVal = resolveExp(body, scp)
-          mapN(cVal, bVal) {
-            case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b, ruleLoc)
-          }
+          val b = resolveExp(body, scp)
+          ResolvedAst.SelectChannelRule(sym, c, b, ruleLoc)
       }
 
-      val defaultVal = default match {
-        case Some(exp) =>
-          val eVal = resolveExp(exp, scp0)
-          mapN(eVal) {
-            e => Some(e)
-          }
-        case None =>
-          Validation.Success(None)
-      }
+      val d = default.map(resolveExp(_, scp0))
 
-      mapN(rulesVal, defaultVal) {
-        case (rs, d) => ResolvedAst.Expr.SelectChannel(rs, d, loc)
-      }
+      ResolvedAst.Expr.SelectChannel(rs, d, loc)
 
     case NamedAst.Expr.Spawn(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) =>
-          ResolvedAst.Expr.Spawn(e1, e2, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.Spawn(e1, e2, loc)
 
     case NamedAst.Expr.ParYield(frags, exp, loc) =>
       // mutable LocalScope to be updated during traversal
       var finalUscp = scp0
 
-      val fragsVal = traverse(frags) {
+      val fs = frags.map {
         case NamedAst.ParYieldFragment(pat, e0, l0) =>
           val p = resolvePattern(pat, scp0, ns0, root)
           val patScp = mkPatternScp(p)
           val scp = scp0 ++ patScp
           finalUscp = finalUscp ++ patScp
-          val e0Val = resolveExp(e0, scp)
-          mapN(e0Val) {
-            case e1 => ResolvedAst.ParYieldFragment(p, e1, l0)
-          }
+          val e1 = resolveExp(e0, scp)
+          ResolvedAst.ParYieldFragment(p, e1, l0)
       }
 
-      mapN(fragsVal, resolveExp(exp, finalUscp)) {
-        case (fs, e) => ResolvedAst.Expr.ParYield(fs, e, loc)
-      }
+      val e = resolveExp(exp, finalUscp)
+      ResolvedAst.Expr.ParYield(fs, e, loc)
 
     case NamedAst.Expr.Lazy(exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.Lazy(e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Lazy(e, loc)
 
     case NamedAst.Expr.Force(exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.Force(e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Force(e, loc)
 
     case NamedAst.Expr.FixpointConstraintSet(cs0, loc) =>
-      val csVal = traverse(cs0)(resolveConstraint(_, scp0))
-      mapN(csVal) {
-        cs => ResolvedAst.Expr.FixpointConstraintSet(cs, loc)
-      }
+      val cs = cs0.map(resolveConstraint(_, scp0))
+      ResolvedAst.Expr.FixpointConstraintSet(cs, loc)
 
     case NamedAst.Expr.FixpointLambda(pparams, exp, loc) =>
       val ps = pparams.map(resolvePredicateParam(_, scp0))
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.FixpointLambda(ps, e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.FixpointLambda(ps, e, loc)
 
     case NamedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.FixpointMerge(e1, e2, loc)
-      }
+      val e1 = resolveExp(exp1, scp0)
+      val e2 = resolveExp(exp2, scp0)
+      ResolvedAst.Expr.FixpointMerge(e1, e2, loc)
 
     case NamedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
-      val esVal = traverse(exps)(resolveExp(_, scp0))
-      val sVal = resolvePredicateHead(select, scp0)
-      mapN(esVal, sVal) {
-        case (es, s) =>
-          ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
-      }
+      val es = exps.map(resolveExp(_, scp0))
+      val s = resolvePredicateHead(select, scp0)
+      ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
     case NamedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
-      val esVal = traverse(exps)(resolveExp(_, scp0))
-      val qeVal = resolveExp(queryExp, scp0)
+      val es = exps.map(resolveExp(_, scp0))
+      val qe = resolveExp(queryExp, scp0)
       // We cannot call resolvePredicateBody as it does not allow new variables to be introduced
-      val fVal = traverse(from) {
+      val f = from.map {
         case NamedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, loc1) =>
           val ts = terms.map(resolvePattern(_, scp0, ns0, root))
-          Validation.Success(ResolvedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, ts, loc1))
+          ResolvedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, ts, loc1)
         case _ => throw InternalCompilerException("Unexpected predicate body when expecting body atom", loc)
       }
       // We have to bind variables appearing in the atoms before resolving the select and where exps
-      flatMapN(esVal, qeVal, fVal) {
-        case (es, qe, f) =>
-          // Collect all variables appearing in atoms and bind them
-          val ts = f.flatMap(_.terms)
-          val scp1 = ts.foldLeft(scp0)(
-            (acc, t) => t match {
-              case ResolvedAst.Pattern.Var(sym, _) => acc ++ mkVarScp(sym)
-              case _ => acc
-            })
-          // Resolve select and where exps
-          val sVal = traverse(selects)(resolveExp(_, scp1))
-          val wVal = traverse(where)(resolveExp(_, scp1))
-          mapN(sVal, wVal) {
-            case (s, w) =>
-              ResolvedAst.Expr.FixpointQueryWithSelect(es, qe, s, f, w, pred, loc)
-          }
-      }
+      // Collect all variables appearing in atoms and bind them
+      val ts = f.flatMap(_.terms)
+      val scp1 = ts.foldLeft(scp0)(
+        (acc, t) => t match {
+          case ResolvedAst.Pattern.Var(sym, _) => acc ++ mkVarScp(sym)
+          case _ => acc
+        })
+      // Resolve select and where exps
+      val s = selects.map(resolveExp(_, scp1))
+      val w = where.map(resolveExp(_, scp1))
+      ResolvedAst.Expr.FixpointQueryWithSelect(es, qe, s, f, w, pred, loc)
 
     case NamedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
-      val esVal = traverse(exps)(resolveExp(_, scp0))
-      mapN(esVal) {
-        es => ResolvedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
-      }
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
 
     case NamedAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
-      val esVal = traverse(exps)(resolveExp(_, scp0))
-      mapN(esVal) {
-        es => ResolvedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
-      }
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
 
     case NamedAst.Expr.Error(m) =>
-      Validation.Success(ResolvedAst.Expr.Error(m))
+      ResolvedAst.Expr.Error(m)
 
   }
 
@@ -1562,24 +1369,20 @@ object Resolver {
   /**
     * Resolve the application expression, performing currying over the subexpressions.
     */
-  private def visitApplyClo(exp: NamedAst.Expr.Apply, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = exp match {
+  private def visitApplyClo(exp: NamedAst.Expr.Apply, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp match {
     case NamedAst.Expr.Apply(exp0, exps0, loc) =>
-      val expVal = resolveExp(exp0, scp0)
-      val expsVal = traverse(exps0)(resolveExp(_, scp0))
-      mapN(expVal, expsVal) {
-        case (e, es) => mkApplyClo(e, es, loc.asSynthetic)
-      }
+      val e = resolveExp(exp0, scp0)
+      val es = exps0.map(resolveExp(_, scp0))
+      mkApplyClo(e, es, loc.asSynthetic)
   }
 
   /**
     * Resolves the exps and creates an ApplyClo node applying an error node to the exps.
     */
-  private def visitApplyError(err: CompilationMessage, exps: List[NamedAst.Expr], scp0: LocalScope, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    val expsVal = traverse(exps)(resolveExp(_, scp0))
+  private def visitApplyError(err: CompilationMessage, exps: List[NamedAst.Expr], scp0: LocalScope, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val es = exps.map(resolveExp(_, scp0))
     val exp: ResolvedAst.Expr = ResolvedAst.Expr.Error(err)
-    mapN(expsVal) {
-      case es => mkApplyClo(exp, es, loc.asSynthetic)
-    }
+    mkApplyClo(exp, es, loc.asSynthetic)
   }
 
   /** A trait used by [[visitApplyFull]] to let-bind some partially-applied arguments. */
@@ -1690,12 +1493,10 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    mapN(traverse(exps)(resolveExp(_, scp0))) {
-      es =>
-        val base = args => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, innerLoc), args, outerLoc)
-        visitApplyFull(base, defn.spec.fparams.length, es, outerLoc)
-    }
+  private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val es = exps.map(resolveExp(_, scp0))
+    val base = args => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, innerLoc), args, outerLoc)
+    visitApplyFull(base, defn.spec.fparams.length, es, outerLoc)
   }
 
   /**
@@ -1717,12 +1518,10 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    mapN(traverse(exps)(resolveExp(_, scp0))) {
-      es =>
-        val base = args => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, innerLoc), args, outerLoc)
-        visitApplyFull(base, sig.spec.fparams.length, es, outerLoc)
-    }
+  private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val es = exps.map(resolveExp(_, scp0))
+    val base = args => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, innerLoc), args, outerLoc)
+    visitApplyFull(base, sig.spec.fparams.length, es, outerLoc)
   }
 
   /**
@@ -1744,12 +1543,10 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    mapN(traverse(exps)(resolveExp(_, scp0))) {
-      es =>
-        val base = args => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, innerLoc), args, outerLoc)
-        visitApplyFull(base, arity, es, outerLoc)
-    }
+  private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val es = exps.map(resolveExp(_, scp0))
+    val base = args => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, innerLoc), args, outerLoc)
+    visitApplyFull(base, arity, es, outerLoc)
   }
 
   /**
@@ -1771,12 +1568,10 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    mapN(traverse(exps)(resolveExp(_, scp0))) {
-      es =>
-        val base = args => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, innerLoc), args, outerLoc)
-        visitApplyFull(base, op.spec.fparams.length, es, outerLoc)
-    }
+  private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val es = exps.map(resolveExp(_, scp0))
+    val base = args => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, innerLoc), args, outerLoc)
+    visitApplyFull(base, op.spec.fparams.length, es, outerLoc)
   }
 
   /**
@@ -1788,12 +1583,10 @@ object Resolver {
     *   - ` Cons(a,b)  ===> Cons(a, b)`
     *   - `Cons(a,b,c) ===> Cons(a, b)(c)`
     */
-  private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    mapN(traverse(exps)(resolveExp(_, scp0))) {
-      es =>
-        val base = args => ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), args, outerLoc)
-        visitApplyFull(base, caze.tpes.length, es, outerLoc)
-    }
+  private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val es = exps.map(resolveExp(_, scp0))
+    val base = args => ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), args, outerLoc)
+    visitApplyFull(base, caze.tpes.length, es, outerLoc)
   }
 
   /**
@@ -1805,65 +1598,56 @@ object Resolver {
     *   - ` Add(a,b)  ===> Add(a, b)`
     *   - `Add(a,b,c) ===> Add(a, b)(c)`
     */
-  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    mapN(traverse(exps)(resolveExp(_, scp0))) {
-      es =>
-        val base = args => ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), args, isOpen, outerLoc)
-        visitApplyFull(base, caze.tpes.length, es, outerLoc)
-    }
+  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val es = exps.map(resolveExp(_, scp0))
+    val base = args => ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), args, isOpen, outerLoc)
+    visitApplyFull(base, caze.tpes.length, es, outerLoc)
   }
 
   /**
     * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
     */
-  private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
+  private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmMethod = method match {
     case NamedAst.JvmMethod(ident, fparams0, exp, tpe, eff, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       val scp = scp0 ++ mkFormalParamScp(fparams)
-      val expVal = resolveExp(exp, scp)
+      val e = resolveExp(exp, scp)
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
-      mapN(expVal) {
-        e => ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
-      }
+      ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
   }
 
   /**
     * Performs name resolution on the handler that handles `eff` with rules `rules0`.
     */
-  // TODO: the nested Result/Validation is ugly here, but should be fixed by the Validation removal refactoring
-  private def visitHandler(qname: Name.QName, rules0: List[NamedAst.HandlerRule], scp0: LocalScope)(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[Result[(EffSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect], ResolutionError] = {
+  private def visitHandler(qname: Name.QName, rules0: List[NamedAst.HandlerRule], scp0: LocalScope)(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Result[(EffSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect] = {
     lookupEffect(qname, scp0, ns, root) match {
       case Result.Ok(decl) =>
         checkEffectIsAccessible(decl, ns, qname.loc)
         val symUse = EffSymUse(decl.sym, qname)
-        val rulesVal = traverse(rules0) {
+        val rules = rules0.flatMap {
           case NamedAst.HandlerRule(ident, fparams, body, loc) =>
-            val opVal = findOpInEffect(ident, decl, ns, scp0).toValidation
             val fp = fparams.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns, root))
-            flatMapN(opVal) {
-              o =>
+            findOpInEffect(ident, decl, ns, scp0) match {
+              case Result.Ok(o) =>
                 val scp = scp0 ++ mkFormalParamScp(fp)
                 checkOpArity(o, fp.length - 1, ident.loc)
-                val bodyVal = resolveExp(body, scp)
-                mapN(bodyVal) {
-                  case b =>
-                    ResolvedAst.HandlerRule(OpSymUse(o.sym, ident.loc), fp, b, loc)
-                }
+                val b = resolveExp(body, scp)
+                Some(ResolvedAst.HandlerRule(OpSymUse(o.sym, ident.loc), fp, b, loc))
+              case Result.Err(error) =>
+                sctx.errors.add(error)
+                None
             }
         }
-        mapN(rulesVal) {
-          case rules =>
-            // Check that all the operations have respective definitions
-            val allOps = decl.ops.map(_.sym)
-            val missingDefs = allOps.toSet -- rules.map(_.symUse.sym)
-            missingDefs.foreach {
-              case sym => sctx.errors.add(ResolutionError.MissingHandlerDef(sym, qname.loc))
-            }
-            Result.Ok((symUse, rules))
+        // Check that all the operations have respective definitions
+        val allOps = decl.ops.map(_.sym)
+        val missingDefs = allOps.toSet -- rules.map(_.symUse.sym)
+        missingDefs.foreach {
+          case sym => sctx.errors.add(ResolutionError.MissingHandlerDef(sym, qname.loc))
         }
+        Result.Ok((symUse, rules))
       case Result.Err(error) =>
-        Validation.Success(Result.Err(error))
+        Result.Err(error)
     }
   }
 
@@ -2017,21 +1801,19 @@ object Resolver {
   /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
     */
-  private def resolvePredicateHead(h0: NamedAst.Predicate.Head, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+  private def resolvePredicateHead(h0: NamedAst.Predicate.Head, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Predicate.Head = h0 match {
     case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
-      val tsVal = traverse(terms)(t => resolveExp(t, scp0))
-      mapN(tsVal) {
-        ts => ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
-      }
+      val ts = terms.map(resolveExp(_, scp0))
+      ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
   }
 
   /**
     * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
     */
-  private def resolvePredicateBody(b0: NamedAst.Predicate.Body, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+  private def resolvePredicateBody(b0: NamedAst.Predicate.Body, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Predicate.Body = b0 match {
     case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(resolvePatternInConstraint(_, scp0, ns0, root))
-      Validation.Success(ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
+      ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
 
     case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
       val syms = idents.map {
@@ -2039,16 +1821,12 @@ object Resolver {
           case Resolution.Var(sym) => sym
         }.getOrElse(throw InternalCompilerException(s"Unbound variable in functional predicate: '$ident'.", ident.loc))
       }
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        case e => ResolvedAst.Predicate.Body.Functional(syms, e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Predicate.Body.Functional(syms, e, loc)
 
     case NamedAst.Predicate.Body.Guard(exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Predicate.Body.Guard(e, loc)
-      }
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Predicate.Body.Guard(e, loc)
   }
 
   /**
@@ -2136,7 +1914,7 @@ object Resolver {
   /**
     * Performs name resolution on the given type parameters `tparams0`.
     */
-  private def resolveTypeParams(tparams0: List[NamedAst.TypeParam], scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[List[ResolvedAst.TypeParam], ResolutionError] = {
+  private def resolveTypeParams(tparams0: List[NamedAst.TypeParam], scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): List[ResolvedAst.TypeParam] = {
     // Isolate the implicit type params: these are allowed to have redundancies.
     val (impTparams0, expTparams0) = tparams0.partition {
       case _: NamedAst.TypeParam.Implicit => true
@@ -2147,7 +1925,7 @@ object Resolver {
     val impTparams = impTparams0.flatMap(resolveImplicitTypeParam(_, scp0))
     val expTparams = expTparams0.map(resolveTypeParam(_, scp0, ns0, root))
 
-    Validation.Success(impTparams ++ expTparams)
+    impTparams ++ expTparams
   }
 
   /**
@@ -2160,16 +1938,16 @@ object Resolver {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  private def resolveTraitConstraint(tconstr0: NamedAst.TraitConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Option[ResolvedAst.TraitConstraint], ResolutionError] = tconstr0 match {
+  private def resolveTraitConstraint(tconstr0: NamedAst.TraitConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[ResolvedAst.TraitConstraint] = tconstr0 match {
     case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
       val optTrait = lookupTrait(trt0, TraitUsageKind.Constraint, scp0, ns0, root)
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
 
-      Validation.Success(optTrait.map {
+      optTrait.map {
         trt =>
           val head = TraitSymUse(trt.sym, trt0.loc)
           ResolvedAst.TraitConstraint(head, tpe, loc)
-      })
+      }
   }
 
   /**
@@ -2235,14 +2013,12 @@ object Resolver {
     }
   }
 
-  private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.ExtMatchRule, ResolutionError] = rule0 match {
+  private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.ExtMatchRule = rule0 match {
     case NamedAst.ExtMatchRule(pat, exp, loc) =>
       val (p, scps) = resolveExtPattern(pat)
       val scp = scps.foldLeft(scp0)(_ ++ _)
-      val eVal = resolveExp(exp, scp)
-      mapN(eVal) {
-        case e => ResolvedAst.ExtMatchRule(p, e, loc)
-      }
+      val e = resolveExp(exp, scp)
+      ResolvedAst.ExtMatchRule(p, e, loc)
   }
 
   /**
