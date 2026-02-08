@@ -180,10 +180,10 @@ object Resolver {
           val aliases0 = decls.collect {
             case alias: NamedAst.Declaration.TypeAlias => alias
           }
-          val aliasesVal = traverse(aliases0)(semiResolveTypeAlias(_, scp, Name.RootNS, root))
+          val aliases = aliases0.map(semiResolveTypeAlias(_, scp, Name.RootNS, root))
           val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
-          mapN(aliasesVal, nsVal) {
-            case (aliases, ns) => aliases ::: ns.flatten
+          mapN(nsVal) {
+            case ns => aliases ::: ns.flatten
           }
       }
   }
@@ -204,10 +204,10 @@ object Resolver {
           val aliases0 = decls.collect {
             case alias: NamedAst.Declaration.TypeAlias => alias
           }
-          val aliasesVal = traverse(aliases0)(semiResolveTypeAlias(_, scp, ns0, root))
+          val aliases = aliases0.map(semiResolveTypeAlias(_, scp, ns0, root))
           val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
-          mapN(aliasesVal, nsVal) {
-            case (aliases, ns) => aliases ::: ns.flatten
+          mapN(nsVal) {
+            case ns => aliases ::: ns.flatten
           }
       }
   }
@@ -217,12 +217,12 @@ object Resolver {
     *
     * Type aliases within the type are given temporary placeholders.
     */
-  private def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, scp0: LocalScope, ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
+  private def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, scp0: LocalScope, ns: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.TypeAlias = alias match {
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
       val tparams = resolveTypeParams(tparams0, scp0, ns, root)
       val scp = scp0 ++ mkTypeParamScp(tparams)
       val tpe = semiResolveType(tpe0, None, Wildness.ForbidWild, scp, ns, root)(Scope.Top, sctx, flix)
-      Validation.Success(ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc))
+      ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
   }
 
   /**
@@ -352,11 +352,11 @@ object Resolver {
     case defn@NamedAst.Declaration.Def(_, _, _, _) =>
       resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix)
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
-      resolveEnum(enum0, scp0, taenv, ns0, root)
+      Validation.Success(resolveEnum(enum0, scp0, taenv, ns0, root))
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
-      resolveStruct(struct, scp0, taenv, ns0, root)
+      Validation.Success(resolveStruct(struct, scp0, taenv, ns0, root))
     case enum0@NamedAst.Declaration.RestrictableEnum(_, _, _, _, _, _, _, _, _) =>
-      resolveRestrictableEnum(enum0, scp0, taenv, ns0, root)
+      Validation.Success(resolveRestrictableEnum(enum0, scp0, taenv, ns0, root))
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       Validation.Success(taenv(sym))
     case eff@NamedAst.Declaration.Effect(_, _, _, _, _, _, _) =>
@@ -506,37 +506,37 @@ object Resolver {
   /**
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
-  private def resolveEnum(e0: NamedAst.Declaration.Enum, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = e0 match {
+  private def resolveEnum(e0: NamedAst.Declaration.Enum, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.Enum = e0 match {
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, derives0, cases0, loc) =>
       val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
       val scp = scp0 ++ mkTypeParamScp(tparams)
       val derives = resolveDerivations(derives0, scp, ns0, root)
       val cases = cases0.map(resolveCase(_, scp, taenv, ns0, root))
-      Validation.Success(ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc))
+      ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
   /**
     * Performs name resolution on the given struct `s0` in the given namespace `ns0`.
     */
-  private def resolveStruct(s0: NamedAst.Declaration.Struct, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Struct, ResolutionError] = s0 match {
+  private def resolveStruct(s0: NamedAst.Declaration.Struct, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.Struct = s0 match {
     case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
       val scp = scp0 ++ mkTypeParamScp(tparams)
       val fields = fields0.map(resolveStructField(_, scp, taenv, ns0, root))
-      Validation.Success(ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc))
+      ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
   /**
     * Performs name resolution on the given restrictable enum `e0` in the given namespace `ns0`.
     */
-  private def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.RestrictableEnum, ResolutionError] = e0 match {
+  private def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.RestrictableEnum = e0 match {
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, derives0, cases0, loc) =>
       val index = resolveTypeParam(index0, scp0, ns0, root)
       val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
       val scp = scp0 ++ mkTypeParamScp(index :: tparams)
       val derives = resolveDerivations(derives0, scp, ns0, root)
       val cases = cases0.map(resolveRestrictableCase(_, scp, taenv, ns0, root))
-      Validation.Success(ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc))
+      ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
   }
 
   /**
