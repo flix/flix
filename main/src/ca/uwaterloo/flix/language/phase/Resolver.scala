@@ -33,6 +33,7 @@ import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, ListOps, MapOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.annotation.unused
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -73,7 +74,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError]) = flix.phaseNew("Resolver") {
+  def run(root: NamedAst.Root, @unused oldRoot: ResolvedAst.Root, @unused changeSet: ChangeSet)(implicit flix: Flix): (Validation[ResolvedAst.Root, ResolutionError], List[ResolutionError]) = flix.phaseNew("Resolver") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Get the default uses.
@@ -85,7 +86,7 @@ object Resolver {
 
     val usesVal = root.uses.map {
       case (ns, uses0) =>
-        mapN(traverse(uses0)(visitUseOrImport(_, ns, root))) {
+        mapN(Validation.traverse(uses0)(u => visitUseOrImport(u, ns, root).toValidation)) {
           u => new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone) -> u
         }
     }
@@ -169,7 +170,7 @@ object Resolver {
     */
   private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, _) =>
-      val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
+      val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, Name.RootNS, root).toValidation)
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
@@ -193,7 +194,7 @@ object Resolver {
   private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Mod, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
     case NamedAst.Declaration.Mod(_, _, sym, usesAndImports0, decls, _) =>
       val ns0 = Name.mkUnlocatedNName(sym.ns)
-      val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns0, root))
+      val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, ns0, root).toValidation)
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
@@ -322,7 +323,7 @@ object Resolver {
     */
   private def visitUnit(unit: NamedAst.CompilationUnit, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
-      val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
+      val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, Name.RootNS, root).toValidation)
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
@@ -341,7 +342,7 @@ object Resolver {
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
       val ns = Name.mkUnlocatedNNameWithLoc(sym.ns, loc)
-      val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
+      val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, ns, root).toValidation)
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           // reset the scp
@@ -445,7 +446,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         case tparams =>
           val scp = scp0 ++ mkTypeParamScp(tparams)
-          val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Implementation, scp, ns0, root)
+          val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Implementation, scp, ns0, root).toValidation
           val tpeVal = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(Scope.Top, sctx, flix)
           val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, scp, taenv, ns0, root))
           val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp, taenv, ns0, root))
@@ -713,15 +714,15 @@ object Resolver {
       // For now, we don't add any tvars from the args. We should have gotten those directly from the instance
       val argVal = resolveType(arg0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
       val tpeVal = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
-      val symVal = trt.assocs.collectFirst {
+      val symVal: Result[Symbol.AssocTypeSym, ResolutionError] = trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
         case None =>
           val assocs = trt.assocs.map { case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym }
-          Validation.Failure(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
-        case Some(sym) => Validation.Success(sym)
+          Result.Err(ResolutionError.UndefinedAssocType(trt.sym, Name.QName(Name.RootNS, ident, ident.loc), assocs, ident.loc))
+        case Some(sym) => Result.Ok(sym)
       }
-      mapN(symVal, argVal, tpeVal) {
+      mapN(symVal.toValidation, argVal, tpeVal) {
         case (sym, arg, tpe) =>
           val symUse = AssocTypeSymUse(sym, ident.loc)
           ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
@@ -749,7 +750,7 @@ object Resolver {
         val name = qname.ident.name
         Kinds.get(name) match {
           case None =>
-            lookupRestrictableEnum(qname, scp0, ns0, root).toResult match {
+            lookupRestrictableEnum(qname, scp0, ns0, root) match {
               case Result.Ok(enum0) =>
                 Kind.CaseSet(enum0.sym)
               case Result.Err(_) =>
@@ -761,7 +762,7 @@ object Resolver {
           case Some(kind) => kind
         }
       } else {
-        lookupRestrictableEnum(qname, scp0, ns0, root).toResult match {
+        lookupRestrictableEnum(qname, scp0, ns0, root) match {
           case Result.Ok(enum0) => Kind.CaseSet(enum0.sym)
           case Result.Err(_) =>
             // We don't know the kind, so default to Star.
@@ -829,10 +830,15 @@ object Resolver {
       Validation.Success(exp)
 
     case NamedAst.Expr.OpenAs(name, exp, loc) =>
-      val enumVal = lookupRestrictableEnum(name, scp0, ns0, root)
-      val eVal = resolveExp(exp, scp0)
-      mapN(enumVal, eVal) {
-        case (enum0, e) => ResolvedAst.Expr.OpenAs(RestrictableEnumSymUse(enum0.sym, name.loc), e, loc)
+      lookupRestrictableEnum(name, scp0, ns0, root) match {
+        case Result.Ok(enum0) =>
+          val eVal = resolveExp(exp, scp0)
+          mapN(eVal) {
+            case e => ResolvedAst.Expr.OpenAs(RestrictableEnumSymUse(enum0.sym, name.loc), e, loc)
+          }
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          Validation.Success(ResolvedAst.Expr.Error(error))
       }
 
     case NamedAst.Expr.Hole(nameOpt, loc) =>
@@ -853,8 +859,8 @@ object Resolver {
       use match {
         case NamedAst.UseOrImport.Use(qname, alias, _) =>
           // TODO NS-REFACTOR allowing relative uses here...
-          flatMapN(lookupQualifiedName(qname, scp0, ns0, root)) {
-            case decls =>
+          lookupQualifiedName(qname, scp0, ns0, root) match {
+            case Result.Ok(decls) =>
               val scp = decls.foldLeft(scp0) {
                 case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
               }
@@ -862,6 +868,9 @@ object Resolver {
                 // TODO NS-REFACTOR: multiple uses here
                 case e => ResolvedAst.Expr.Use(getSym(decls.head), alias, e, loc)
               }
+            case Result.Err(error) =>
+              sctx.errors.add(error)
+              Validation.Success(ResolvedAst.Expr.Error(error))
           }
 
         case NamedAst.UseOrImport.Import(_, _, importLoc) => throw InternalCompilerException("unexpected import", importLoc)
@@ -1032,14 +1041,17 @@ object Resolver {
         case NamedAst.RestrictableChooseRule(pat0, body) =>
           val pVal = pat0 match {
             case NamedAst.RestrictableChoosePattern.Tag(qname, pat, tagLoc) =>
-              val tagVal = lookupRestrictableTag(qname, scp0, ns0, root)
               val pats = pat.map {
                 case NamedAst.RestrictableChoosePattern.Wild(patLoc) => ResolvedAst.RestrictableChoosePattern.Wild(patLoc)
                 case NamedAst.RestrictableChoosePattern.Var(sym, patLoc) => ResolvedAst.RestrictableChoosePattern.Var(sym, patLoc)
                 case NamedAst.RestrictableChoosePattern.Error(patLoc) => ResolvedAst.RestrictableChoosePattern.Error(patLoc)
               }
-              mapN(tagVal) {
-                case tag => ResolvedAst.RestrictableChoosePattern.Tag(RestrictableCaseSymUse(tag.sym, qname.loc), pats, tagLoc)
+              lookupRestrictableTag(qname, scp0, ns0, root) match {
+                case Result.Ok(tag) =>
+                  Validation.Success(ResolvedAst.RestrictableChoosePattern.Tag(RestrictableCaseSymUse(tag.sym, qname.loc), pats, tagLoc))
+                case Result.Err(error) =>
+                  sctx.errors.add(error)
+                  Validation.Success(ResolvedAst.RestrictableChoosePattern.Error(qname.loc))
               }
             case NamedAst.RestrictableChoosePattern.Error(tagLoc) => Validation.Success(ResolvedAst.RestrictableChoosePattern.Error(tagLoc))
           }
@@ -1849,7 +1861,7 @@ object Resolver {
         val symUse = EffSymUse(decl.sym, qname)
         val rulesVal = traverse(rules0) {
           case NamedAst.HandlerRule(ident, fparams, body, loc) =>
-            val opVal = findOpInEffect(ident, decl, ns, scp0)
+            val opVal = findOpInEffect(ident, decl, ns, scp0).toValidation
             val fparamsVal = traverse(fparams)(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns, root))
             flatMapN(opVal, fparamsVal) {
               case (o, fp) =>
@@ -2196,7 +2208,7 @@ object Resolver {
     */
   private def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.EqualityConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
-      val assocVal = lookupAssocType(qname, scp0, ns0, root)
+      val assocVal = lookupAssocType(qname, scp0, ns0, root).toValidation
 
       val t1Val = resolveType(tpe1, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
       val t2Val = resolveType(tpe2, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
@@ -2213,7 +2225,7 @@ object Resolver {
     */
   private def resolveSuperTrait(tconstr0: NamedAst.TraitConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.TraitConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
-      val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Constraint, scp0, ns0, root)
+      val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Constraint, scp0, ns0, root).toValidation
       val tpeVal = resolveType(tpe0, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
 
       mapN(traitVal, tpeVal) {
@@ -2267,7 +2279,7 @@ object Resolver {
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
-  private def lookupTraitForImplementation(qname: Name.QName, traitUseKind: TraitUsageKind, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
+  private def lookupTraitForImplementation(qname: Name.QName, traitUseKind: TraitUsageKind, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Result[NamedAst.Declaration.Trait, ResolutionError] = {
     val traitOpt = tryLookupName(qname, scp0, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
@@ -2275,18 +2287,18 @@ object Resolver {
       case Some(trt) =>
         getTraitAccessibility(trt, ns0) match {
           case TraitAccessibility.Accessible =>
-            Validation.Success(trt)
+            Result.Ok(trt)
           case TraitAccessibility.Sealed =>
             val error = ResolutionError.SealedTrait(trt.sym, ns0, qname.loc)
             sctx.errors.add(error)
-            Validation.Success(trt)
+            Result.Ok(trt)
           case TraitAccessibility.Inaccessible =>
             val error = ResolutionError.InaccessibleTrait(trt.sym, ns0, qname.loc)
             sctx.errors.add(error)
-            Validation.Success(trt)
+            Result.Ok(trt)
         }
       case None =>
-        Validation.Failure(ResolutionError.UndefinedTrait(qname, traitUseKind, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, ns0, qname.loc))
+        Result.Err(ResolutionError.UndefinedTrait(qname, traitUseKind, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, ns0, qname.loc))
     }
   }
 
@@ -2368,15 +2380,15 @@ object Resolver {
   /**
     * Looks up the effect operation as a member of the given effect.
     */
-  private def findOpInEffect(ident: Name.Ident, eff: NamedAst.Declaration.Effect, ns: Name.NName, scp0: LocalScope): Validation[NamedAst.Declaration.Op, ResolutionError] = {
+  private def findOpInEffect(ident: Name.Ident, eff: NamedAst.Declaration.Effect, ns: Name.NName, scp0: LocalScope): Result[NamedAst.Declaration.Op, ResolutionError] = {
     val opOpt = eff.ops.find(o => o.sym.name == ident.name)
     opOpt match {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
         val qname = Name.mkQName(nname, ident.name, ident.loc)
-        Validation.Failure(ResolutionError.UndefinedOp(eff.sym, qname, eff.ops.map(_.sym), AnchorPosition.mkImportOrUseAnchor(ns), scp0, ident.loc))
+        Result.Err(ResolutionError.UndefinedOp(eff.sym, qname, eff.ops.map(_.sym), AnchorPosition.mkImportOrUseAnchor(ns), scp0, ident.loc))
       case Some(op) =>
-        Validation.Success(op)
+        Result.Ok(op)
     }
   }
 
@@ -2442,7 +2454,7 @@ object Resolver {
   /**
     * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  private def lookupRestrictableTag(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableCase, ResolutionError] = {
+  private def lookupRestrictableTag(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.RestrictableCase, ResolutionError] = {
     // look up the name
     val matches = tryLookupName(qname, scp0, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.RestrictableCase) => c
@@ -2450,10 +2462,10 @@ object Resolver {
 
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Validation.Failure(ResolutionError.UndefinedRestrictableTag(qname.ident.name, ns0, qname.loc))
+      case Nil => Result.Err(ResolutionError.UndefinedRestrictableTag(qname.ident.name, ns0, qname.loc))
       // Case 1: Exactly one match. Success.
       case caze :: Nil =>
-        Validation.Success(caze)
+        Result.Ok(caze)
       // Case 2: Multiple matches. Error
       case _ => throw InternalCompilerException(s"unexpected duplicate tag: $qname", qname.loc)
     }
@@ -2463,14 +2475,14 @@ object Resolver {
   /**
     * Looks up the restrictable enum name.
     */
-  private def lookupRestrictableEnum(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
+  private def lookupRestrictableEnum(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
     val matches = tryLookupName(qname, scp0, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.RestrictableEnum) => c
     }
 
     matches match {
-      case Nil => Validation.Failure(ResolutionError.UndefinedRestrictableType(qname, ns0, qname.loc))
-      case enum0 :: _ => Validation.Success(enum0)
+      case Nil => Result.Err(ResolutionError.UndefinedRestrictableType(qname, ns0, qname.loc))
+      case enum0 :: _ => Result.Ok(enum0)
     }
   }
 
@@ -2577,8 +2589,8 @@ object Resolver {
 
       case NamedAst.Type.SchemaRowExtendWithAlias(qname, targs, rest, loc) =>
         // Lookup the type alias.
-        flatMapN(lookupTypeAlias(qname, scp0, ns0, root)) {
-          typeAlias =>
+        lookupTypeAlias(qname, scp0, ns0, root) match {
+          case Result.Ok(typeAlias) =>
             val t = getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
             val tsVal = traverse(targs)(visit)
             val rVal = visit(rest)
@@ -2587,6 +2599,9 @@ object Resolver {
                 val app = UnkindedType.mkApply(t, ts, loc)
                 UnkindedType.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
             }
+          case Result.Err(error) =>
+            sctx.errors.add(error)
+            Validation.Success(UnkindedType.Error(loc))
         }
 
       case NamedAst.Type.SchemaRowExtendWithTypes(ident, den, tpes, rest, loc) =>
@@ -2670,9 +2685,12 @@ object Resolver {
         Validation.Success(UnkindedType.Cst(TypeConstructor.Pure, loc))
 
       case NamedAst.Type.CaseSet(cases0, loc) =>
-        val casesVal = traverse(cases0)(lookupRestrictableTag(_, scp0, ns0, root))
-        mapN(casesVal) {
-          case cases => UnkindedType.CaseSet(cases.map(_.sym), loc)
+        Result.traverse(cases0)(lookupRestrictableTag(_, scp0, ns0, root)) match {
+          case Result.Ok(cases) =>
+            Validation.Success(UnkindedType.CaseSet(cases.map(_.sym), loc))
+          case Result.Err(error) =>
+            sctx.errors.add(error)
+            Validation.Success(UnkindedType.Error(loc))
         }
 
       case NamedAst.Type.CaseComplement(tpe, loc) =>
@@ -2946,27 +2964,27 @@ object Resolver {
   /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
-  private def lookupTypeAlias(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
+  private def lookupTypeAlias(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Result[NamedAst.Declaration.TypeAlias, ResolutionError] = {
     val symOpt = tryLookupName(qname, scp0, ns0, root)
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
         checkTypeAliasIsAccessible(alias, ns0, qname.loc)
-        Validation.Success(alias)
-    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, scp0, qname.loc)))
+        Result.Ok(alias)
+    }.getOrElse(Result.Err(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, scp0, qname.loc)))
   }
 
   /**
     * Optionally returns the associated type signature with the given `name` in the given namespace `ns0`.
     */
-  private def lookupAssocType(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
+  private def lookupAssocType(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
     val symOpt = tryLookupName(qname, scp0, ns0, root)
 
     symOpt.collectFirst {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
         getAssocTypeIfAccessible(assoc)
-        Validation.Success(assoc)
-    }.getOrElse(Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, scp0, qname.loc)))
+        Result.Ok(assoc)
+    }.getOrElse(Result.Err(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, scp0, qname.loc)))
   }
 
   /**
@@ -3105,10 +3123,10 @@ object Resolver {
   /**
     * Looks up the qualified name in the given root.
     */
-  private def lookupQualifiedName(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
+  private def lookupQualifiedName(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Result[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, scp0, ns0, root) match {
-      case None => Validation.Failure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, scp0, qname.loc))
-      case Some(decl) => Validation.Success(decl)
+      case None => Result.Err(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, scp0, qname.loc))
+      case Some(decl) => Result.Ok(decl)
     }
   }
 
@@ -3514,22 +3532,22 @@ object Resolver {
   /**
     * Resolves the given Use.
     */
-  private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UseOrImport, ResolutionError] = useOrImport match {
+  private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Result[UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => Validation.Failure(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
+      case Nil => Result.Err(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
-        Validation.Success(UseOrImport.Use(getSym(d), alias, loc))
+        Result.Ok(UseOrImport.Use(getSym(d), alias, loc))
       // Case 3: Impossible. Crash.
       case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
-      val clazzVal = lookupJvmClass(name.toString, ns, name.loc).toValidation
-      mapN(clazzVal) {
-        case clazz => UseOrImport.Import(clazz, alias, loc)
+      lookupJvmClass(name.toString, ns, name.loc) match {
+        case Result.Ok(clazz) => Result.Ok(UseOrImport.Import(clazz, alias, loc))
+        case Result.Err(error) => Result.Err(error)
       }
   }
 
@@ -3791,7 +3809,7 @@ object Resolver {
       */
     private def resilientMergeEnums(enum1: ResolvedAst.Declaration.Enum, enum2: Option[ResolvedAst.Declaration.Enum]): Option[ResolvedAst.Declaration.Enum] = (enum1, enum2) match {
       case (_, None) => Some(enum1)
-      case (ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, tparams1, Derivations(derives1, derLoc), cases1, loc1), Some(ResolvedAst.Declaration.Enum(_, _, _, _, tparams2, Derivations(derives2, _), cases2, loc2))) =>
+      case (ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, tparams1, Derivations(derives1, derLoc), cases1, loc1), Some(ResolvedAst.Declaration.Enum(_, _, _, _, tparams2, Derivations(derives2, _), cases2, _))) =>
         val combinedTparams = (tparams1 ++ tparams2).distinctBy(_.name.name)
         val combinedDerivations = Derivations((derives1 ++ derives2).distinctBy(_.sym), derLoc)
         val combinedCases = (cases1 ++ cases2).distinctBy(_.sym)
