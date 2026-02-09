@@ -18,10 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.BFSColor.{Black, Grey, White}
-import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{ClockVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, VarVertex}
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, VarVertex}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -34,7 +31,7 @@ object EffectProvenance {
   object Vertex {
     case class PureExplicitVertex(loc: SourceLocation) extends Vertex
     case class PureImplicitVertex(loc: SourceLocation) extends Vertex
-    case class ClockVertex(loc: SourceLocation) extends Vertex
+    case class CstVertex(sym: Symbol.EffSym, loc: SourceLocation) extends Vertex
     case class IOVertex(loc: SourceLocation) extends Vertex
     case class VarVertex(sym: Symbol.KindedTypeVarSym) extends Vertex
   }
@@ -47,7 +44,7 @@ object EffectProvenance {
       case TypeConstructor.Pure => if (loc.isReal) List(PureExplicitVertex(loc)) else List(PureImplicitVertex(provLoc))
       case TypeConstructor.Effect(sym, _) => sym match {
         case Symbol.IO => List(IOVertex(provLoc))
-        case eff => if (Symbol.mkEffSym("Clock") == eff) List(ClockVertex(provLoc)) else List()
+        case eff => List(CstVertex(eff, provLoc))
       }
       case _ => List()
     }
@@ -70,18 +67,18 @@ object EffectProvenance {
     case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
     case _ => Nil
   }
-    type Path = List[Vertex]
-    sealed trait BFSColor
+  type Path = List[Vertex]
+  sealed trait BFSColor
 
-    object BFSColor {
-      case object White extends BFSColor
+  object BFSColor {
+    case object White extends BFSColor
 
-      case object Grey extends BFSColor
+    case object Grey extends BFSColor
 
-      case object Black extends BFSColor
-    }
+    case object Black extends BFSColor
+  }
 
-   private type BFSVertex = (Vertex, BFSColor, Option[Vertex])
+ private type BFSVertex = (Vertex, BFSColor, Option[Vertex])
   def bfs(graph: Graph, source: Vertex): List[Path] = {
     val (vs, es) = graph
     var us: List[BFSVertex] = vs.map(v => if (v == source) (v, Grey, None) else (v, White, None))
@@ -183,6 +180,7 @@ object EffectProvenance {
       case VarVertex(_) => false
       case _ => true
     }.flatMap(bfs(graph, _))
+    println(b)
     b.flatMap(mkError)
   }
 }
