@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
-import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource}
+import ca.uwaterloo.flix.util.LocalResource
 import com.github.rjeschke.txtmark
 
 import java.io.IOException
@@ -1205,14 +1205,9 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
-      e.symUse match {
-        case SymOrNot.Found(symUse) =>
-          docTraitName(symUse.sym.trt)
-          sb.append(".")
-          sb.append(esc(symUse.sym.name))
-        case SymOrNot.NotFound =>
-          throw InternalCompilerException("unexpected unresolved associated type in equality constraint", e.loc)
-      }
+      docTraitName(e.symUse.sym.trt)
+      sb.append(".")
+      sb.append(esc(e.symUse.sym.name))
       sb.append("[")
       docType(e.tpe1)
       sb.append("] ~ ")

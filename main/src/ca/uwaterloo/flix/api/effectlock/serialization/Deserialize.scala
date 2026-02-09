@@ -216,7 +216,7 @@ object Deserialize {
 
   private def deserializeEqualityConstraint(econstr0: EqConstr): EqualityConstraint = econstr0 match {
     case EqConstr(sym, tpe1, tpe2) =>
-      EqualityConstraint(SymOrNot.Found(deserializeAssocTypeSymUse(sym)), deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
+      EqualityConstraint(deserializeAssocTypeSymUse(sym), deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
   }
 
   private def deserializeTraitConstraint(tconstr0: TraitConstr): TraitConstraint = tconstr0 match {

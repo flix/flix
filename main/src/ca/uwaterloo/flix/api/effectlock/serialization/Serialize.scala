@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock.serialization
 
 import ca.uwaterloo.flix.api.effectlock.Util
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymOrNot, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -200,12 +200,7 @@ object Serialize {
   }
 
   private def serializeEqualityConstraint(econstr0: EqualityConstraint): EqConstr = {
-    econstr0.symUse match {
-      case SymOrNot.Found(symUse) =>
-        EqConstr(serializeAssocTypeSym(symUse.sym), serializeType(econstr0.tpe1), serializeType(econstr0.tpe2))
-      case SymOrNot.NotFound =>
-        throw InternalCompilerException("unexpected unresolved associated type in equality constraint", econstr0.loc)
-    }
+    EqConstr(serializeAssocTypeSym(econstr0.symUse.sym), serializeType(econstr0.tpe1), serializeType(econstr0.tpe2))
   }
 
 }

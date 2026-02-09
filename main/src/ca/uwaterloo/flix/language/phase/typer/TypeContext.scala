@@ -243,16 +243,12 @@ class TypeContext {
     * Adds the given equality constraints to the context.
     */
   def addEqualityConstraints(econstrs0: List[EqualityConstraint], loc: SourceLocation): Unit = {
-    for (EqualityConstraint(symOrNot, tpe1, tpe2, _) <- econstrs0) {
-      symOrNot match {
-        case SymOrNot.Found(symUse) =>
-          val t1 = Type.AssocType(symUse, tpe1, tpe2.kind, loc)
-          val t2 = tpe2
-          val prov = Provenance.Match(t1, t2, loc)
-          val tconstr = TypeConstraint.Equality(t1, t2, prov)
-          currentScopeConstraints.add(tconstr)
-        case SymOrNot.NotFound => // skip
-      }
+    for (EqualityConstraint(symUse, tpe1, tpe2, _) <- econstrs0) {
+      val t1 = Type.AssocType(symUse, tpe1, tpe2.kind, loc)
+      val t2 = tpe2
+      val prov = Provenance.Match(t1, t2, loc)
+      val tconstr = TypeConstraint.Equality(t1, t2, prov)
+      currentScopeConstraints.add(tconstr)
     }
   }
 
