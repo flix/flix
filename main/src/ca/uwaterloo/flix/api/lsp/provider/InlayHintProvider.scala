@@ -81,6 +81,14 @@ object InlayHintProvider {
         textEdits = List.empty,
         tooltip = s"IO",
       ))
+    case TypeError.ImplicitlyPureFunctionUsesIO(loc, _) =>
+      Some(InlayHint(
+        position = Position.from(loc.end),
+        label = s"\\ {IO}",
+        kind = Some(InlayHintKind.Parameter),
+        textEdits = List.empty,
+        tooltip = s"\\ {IO}",
+      ))
     case _ => None
   }
 
