@@ -350,7 +350,7 @@ object Resolver {
     case inst@NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, _) =>
       resolveInstance(inst, scp0, ns0)
     case defn@NamedAst.Declaration.Def(_, _, _, _) =>
-      resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix)
+      Validation.Success(resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix))
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
       Validation.Success(resolveEnum(enum0, scp0, taenv, ns0, root))
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
@@ -360,7 +360,7 @@ object Resolver {
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       Validation.Success(taenv(sym))
     case eff@NamedAst.Declaration.Effect(_, _, _, _, _, _, _) =>
-      resolveEffect(eff, scp0, taenv, ns0, root)
+      Validation.Success(resolveEffect(eff, scp0, taenv, ns0, root))
     case NamedAst.Declaration.Op(sym, _, _) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, _, _, _) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException("unexpected case", sym.loc)
@@ -416,10 +416,10 @@ object Resolver {
       val superTraitsVal = traverse(superTraits0)(tconstr => resolveSuperTrait(tconstr, scp, taenv, ns0, root))
       val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
       val assocs = assocs0.map(resolveAssocTypeSig(_, scp, taenv, ns0, root))
-      val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, scp)(ns0, taenv, sctx, root, flix))
-      val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
-      mapN(superTraitsVal, sigsListVal, lawsVal) {
-        case (superTraits, sigsList, laws) =>
+      val sigsList = signatures.map(resolveSig(_, sym, tparam.sym, scp)(ns0, taenv, sctx, root, flix))
+      val laws = laws0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
+      mapN(superTraitsVal) {
+        case superTraits =>
           val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
           ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
       }
@@ -440,10 +440,10 @@ object Resolver {
         case trt =>
           val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
           val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
-          val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
+          val defs = defs0.map(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
           val tconstrs = optTconstrs.collect { case Some(t) => t }
-          mapN(defsVal, assocsVal) {
-            case (defs, assocs) =>
+          mapN(assocsVal) {
+            case assocs =>
               val symUse = TraitSymUse(trt.sym, trt0.loc)
               ResolvedAst.Declaration.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
           }
