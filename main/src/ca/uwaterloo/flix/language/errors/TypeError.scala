@@ -121,6 +121,34 @@ object TypeError {
   }
 
   /**
+    * An error raised when an effect is used in a function that is explicitly declared Pure.
+    *
+    * @param effSym the symbol of the effect causing the error
+    * @param loc    the location of the function explicitly declared as {}.
+    * @param loc2   the location where the effect is used.
+    */
+  case class ExplicitlyPureFunctionUsesEffect(effSym: Symbol.EffSym, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6215
+
+    def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected effect '${magenta(effSym.name)}' in {} function.
+         |
+         |${highlight(loc, "function declared {}", fmt)}
+         |
+         |${highlight(loc2, s"'${magenta(effSym.name)}' used here", fmt)}
+         |
+         |${underline("Explanation:")} The function is explicitly declared as {},
+         |meaning it may not perform any effects. Since '${magenta(effSym.name)}' is an effect,
+         |it cannot be used in this function. To fix this, either change the signature to {${magenta(effSym.name)}}
+         |or remove the use of '${magenta(effSym.name)}' inside the function.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised when IO is used in a function that is explicitly declared Pure.
     *
     * @param loc  the location of the function explicitly declared as {}.
@@ -231,6 +259,35 @@ object TypeError {
          |
          |That is, a default handler must handle the effect (i.e. remove it from
          |the effect set) and it may only introduce the 'IO' effect.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when IO is used in a function that is inferred to be Pure.
+    *
+    * @param effSym   the symbol of the effect causing the error
+    * @param emptyLoc the location of the function inferred to be Pure (empty space right before '=').
+    * @param loc      the location where the effect is used.
+    */
+  case class ImplicitlyPureFunctionUsesEffect(effSym: Symbol.EffSym, emptyLoc: SourceLocation, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E5252
+
+    def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect '${magenta(effSym.name)}' in {} function.
+         |
+         |${highlight(emptyLoc, "function is inferred to be {}", formatter)}
+         |
+         |${highlight(loc, s"'${magenta(effSym.name)}' used here", formatter)}
+         |
+         |${underline("Explanation:")} Functions without an explicit effect annotation are
+         |inferred to be {}, meaning they may not perform effects. Since '${magenta(effSym.name)}'
+         |is an effect, it cannot be used in this function. To fix this,
+         |either add the explicit effect annotation in the signature {${magenta(effSym.name)}}
+         |or remove the use of '${magenta(effSym.name)}' inside the function.
          |""".stripMargin
     }
   }
