@@ -32,7 +32,7 @@ object InlayHintProvider {
   /**
     * Whether to enable effect hints.
     */
-  private val EnableEffectHints: Boolean = true
+  private val EnableEffectHints: Boolean = false
 
   /**
     * Returns a list of inlay hints for the given URI and range.
