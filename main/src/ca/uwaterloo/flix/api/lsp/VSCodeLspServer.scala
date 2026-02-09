@@ -325,7 +325,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       }
 
     case Request.InlayHint(id, uri, range) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range, currentErrors).map(_.toJSON))
 
     case Request.ShowAst(id) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("path" -> ShowAstProvider.showAst()(flix).toAbsolutePath.toString))

@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, Visitor}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.errors.TypeError
 
 /**
   * Provides inlay hints for effects in the Flix language.
@@ -30,7 +32,7 @@ object InlayHintProvider {
   /**
     * Whether to enable effect hints.
     */
-  private val EnableEffectHints: Boolean = false
+  private val EnableEffectHints: Boolean = true
 
   /**
     * Returns a list of inlay hints for the given URI and range.
@@ -40,7 +42,7 @@ object InlayHintProvider {
     * @param root  The root of the typed AST.
     * @return A list of inlay hints.
     */
-  def getInlayHints(uri: String, range: Range)(implicit root: Root): List[InlayHint] = {
+  def getInlayHints(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[InlayHint] = {
     if (EnableEffectHints) {
       val opSymUses: List[(SymUse.OpSymUse, SourceLocation)] = getOpSymUses(uri)
       val opEffSyms: List[(Symbol.EffSym, SourceLocation)] = opSymUses.map {
@@ -64,10 +66,22 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap)
+      mkHintsFromEffects(positionToEffectsMap) ::: errors.flatMap(x => mkIOHint(x))
     } else {
       List.empty[InlayHint]
     }
+  }
+
+  private def mkIOHint(x: CompilationMessage): Option[InlayHint] = x match {
+    case TypeError.ExplicitlyPureFunctionUsesIO(loc, _) =>
+      Some(InlayHint(
+        position = Position.from(loc.start),
+        label = s"IO",
+        kind = Some(InlayHintKind.Type),
+        textEdits = List.empty,
+        tooltip = s"IO",
+      ))
+    case _ => None
   }
 
   /**
