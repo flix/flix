@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock.serialization
 
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, SymOrNot, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
 import scala.collection.immutable.SortedSet
@@ -216,7 +216,7 @@ object Deserialize {
 
   private def deserializeEqualityConstraint(econstr0: EqConstr): EqualityConstraint = econstr0 match {
     case EqConstr(sym, tpe1, tpe2) =>
-      EqualityConstraint(SymOrNot.Found(deserializeAssocTypeSymUse(sym)), deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
+      EqualityConstraint(deserializeAssocTypeSymUse(sym), deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
   }
 
   private def deserializeTraitConstraint(tconstr0: TraitConstr): TraitConstraint = tconstr0 match {
