@@ -453,9 +453,11 @@ object Typer {
     * Returns a list containing both types in the constraint.
     */
   private def getTypes(econstr: EqualityConstraint): List[Type] = econstr match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      // Kind is irrelevant for our purposes
-      List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+    case EqualityConstraint(symOrNot, tpe1, tpe2, _) =>
+      symOrNot match {
+        case SymOrNot.Found(symUse) => List(Type.AssocType(symUse, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+        case SymOrNot.NotFound => List(tpe1, tpe2)
+      }
   }
 
   /**

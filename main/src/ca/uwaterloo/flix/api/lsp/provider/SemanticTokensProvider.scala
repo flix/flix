@@ -930,8 +930,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given equality constraint `tc0`.
     */
   private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      visitAssocTypeSymUse(cst) ++ visitType(tpe1) ++ visitType(tpe2)
+    case EqualityConstraint(symOrNot, tpe1, tpe2, _) =>
+      val symUseTokens = symOrNot match {
+        case SymOrNot.Found(symUse) => visitAssocTypeSymUse(symUse)
+        case SymOrNot.NotFound => Iterator.empty
+      }
+      symUseTokens ++ visitType(tpe1) ++ visitType(tpe2)
   }
 
   /**

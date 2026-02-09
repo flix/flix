@@ -435,9 +435,9 @@ object Resolver {
       val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Implementation, scp, ns0, root).toValidation
       val tpe = resolveType(tpe0, None, Wildness.ForbidWild, scp, taenv, ns0, root)(Scope.Top, sctx, flix)
       val optTconstrs = tconstrs0.map(resolveTraitConstraint(_, scp, taenv, ns0, root))
-      val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp, taenv, ns0, root))
-      flatMapN(traitVal, econstrsVal) {
-        case (trt, econstrs) =>
+      val econstrs = econstrs0.map(resolveEqualityConstraint(_, scp, taenv, ns0, root))
+      flatMapN(traitVal) {
+        case trt =>
           val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
           val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
           val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
@@ -453,37 +453,31 @@ object Resolver {
   /**
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
-  private def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Sig, ResolutionError] = s0 match {
+  private def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Sig = s0 match {
     case NamedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
-      val specVal = resolveSpec(spec0, Some(tconstr), scp0, taenv, ns0, root)
-      flatMapN(specVal) {
-        case spec =>
-          val scp = scp0 ++ mkSpecScp(spec)
-          checkSigSpec(sym, spec, traitTvar)
-          val exp = exp0.map(resolveExp(_, scp)(Scope.Top, ns0, taenv, sctx, root, flix))
-          Validation.Success(ResolvedAst.Declaration.Sig(sym, spec, exp, loc))
-      }
+      val spec = resolveSpec(spec0, Some(tconstr), scp0, taenv, ns0, root)
+      val scp = scp0 ++ mkSpecScp(spec)
+      checkSigSpec(sym, spec, traitTvar)
+      val exp = exp0.map(resolveExp(_, scp)(Scope.Top, ns0, taenv, sctx, root, flix))
+      ResolvedAst.Declaration.Sig(sym, spec, exp, loc)
   }
 
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Def, ResolutionError] = d0 match {
+  private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Def = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      val specVal = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
-      flatMapN(specVal) {
-        case spec =>
-          val scp = scp0 ++ mkSpecScp(spec)
-          val exp = resolveExp(exp0, scp)(Scope.Top, ns0, taenv, sctx, root, flix)
-          Validation.Success(ResolvedAst.Declaration.Def(sym, spec, exp, loc))
-      }
+      val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
+      val scp = scp0 ++ mkSpecScp(spec)
+      val exp = resolveExp(exp0, scp)(Scope.Top, ns0, taenv, sctx, root, flix)
+      ResolvedAst.Declaration.Def(sym, spec, exp, loc)
   }
 
   /**
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
-  private def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
+  private def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Spec = s0 match {
     case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparams1 = resolveTypeParams(tparams0, scp0, ns0, root)
       val scp1 = scp0 ++ mkTypeParamScp(tparams1)
@@ -492,15 +486,12 @@ object Resolver {
       val tpe = resolveType(tpe0, Some(Kind.Star), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix)
       val eff = eff0.map(resolveType(_, Some(Kind.Eff), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
       val optTconstrs = tconstrs0.map(resolveTraitConstraint(_, scp1, taenv, ns0, root))
-      val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp1, taenv, ns0, root))
+      val econstrs = econstrs0.map(resolveEqualityConstraint(_, scp1, taenv, ns0, root))
       val wildTparams = wildness.syms.toList.map { case (ident, sym) => ResolvedAst.TypeParam.Implicit(ident, sym, ident.loc) }
       val tparams = tparams1 ::: wildTparams
-      mapN(econstrsVal) {
-        case econstrs =>
-          // add the inherited type constraint to the list
-          val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
-      }
+      // add the inherited type constraint to the list
+      val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
+      ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
   }
 
   /**
@@ -569,26 +560,22 @@ object Resolver {
   /**
     * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
     */
-  private def resolveEffect(eff0: NamedAst.Declaration.Effect, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Effect, ResolutionError] = eff0 match {
+  private def resolveEffect(eff0: NamedAst.Declaration.Effect, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.Effect = eff0 match {
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
       // TODO NS-REFACTOR maybe start a new scp
       val tparams = resolveTypeParams(tparams0, scp0, ns0, root)
       val scp = scp0 ++ mkTypeParamScp(tparams)
-      val opsVal = traverse(ops0)(resolveOp(_, scp, taenv, ns0, root))
-      mapN(opsVal) {
-        case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
-      }
+      val ops = ops0.map(resolveOp(_, scp, taenv, ns0, root))
+      ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
   }
 
   /**
     * Performs name resolution on the given effect operation `op0` in the given namespace `ns0`.
     */
-  private def resolveOp(op0: NamedAst.Declaration.Op, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Op, ResolutionError] = op0 match {
+  private def resolveOp(op0: NamedAst.Declaration.Op, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.Declaration.Op = op0 match {
     case NamedAst.Declaration.Op(sym, spec0, loc) =>
-      val specVal = resolveSpec(spec0, None, scp0, taenv, ns0, root)
-      mapN(specVal) {
-        spec => ResolvedAst.Declaration.Op(sym, spec, loc)
-      }
+      val spec = resolveSpec(spec0, None, scp0, taenv, ns0, root)
+      ResolvedAst.Declaration.Op(sym, spec, loc)
   }
 
   /**
@@ -1953,17 +1940,18 @@ object Resolver {
   /**
     * Performs name resolution on the given equality constraint `econstr0`.
     */
-  private def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.EqualityConstraint, ResolutionError] = tconstr0 match {
+  private def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): ResolvedAst.EqualityConstraint = tconstr0 match {
     case NamedAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
-      val assocVal = lookupAssocType(qname, scp0, ns0, root).toValidation
-
       val t1 = resolveType(tpe1, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
       val t2 = resolveType(tpe2, None, Wildness.ForbidWild, scp0, taenv, ns0, root)(Scope.Top, sctx, flix)
 
-      mapN(assocVal) {
-        assoc =>
-          val head = AssocTypeSymUse(assoc.sym, qname.loc)
+      lookupAssocType(qname, scp0, ns0, root) match {
+        case Result.Ok(assoc) =>
+          val head = SymOrNot.Found(AssocTypeSymUse(assoc.sym, qname.loc))
           ResolvedAst.EqualityConstraint(head, t1, t2, loc)
+        case Result.Err(error) =>
+          sctx.errors.add(error)
+          ResolvedAst.EqualityConstraint(SymOrNot.NotFound, t1, t2, loc)
       }
   }
 

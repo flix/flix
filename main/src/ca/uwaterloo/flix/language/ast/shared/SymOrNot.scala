@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Holger Dal Mogensen
+ * Copyright 2026 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,20 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
-
 /**
-  * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
+  * Represents a symbol use that may or may not have been resolved during name resolution.
+  *
+  * - [[SymOrNot.Found]] indicates that the symbol was successfully resolved.
+  * - [[SymOrNot.NotFound]] indicates that name resolution failed (the error is reported separately).
   */
-case class EqualityConstraint(symUse: SymOrNot[AssocTypeSymUse], tpe1: Type, tpe2: Type, loc: SourceLocation)
+sealed trait SymOrNot[+T]
+
+object SymOrNot {
+
+  /** The symbol was successfully resolved to `t`. */
+  case class Found[T](t: T) extends SymOrNot[T]
+
+  /** The symbol could not be resolved. */
+  case object NotFound extends SymOrNot[Nothing]
+
+}

@@ -285,14 +285,17 @@ object Visitor {
   }
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EqualityConstraint(symUse, tpe1, tpe2, loc) = ec
+    val EqualityConstraint(symOrNot, tpe1, tpe2, loc) = ec
     if (!a.accept(loc)) {
       return
     }
 
     c.consumeEqualityConstraint(ec)
 
-    visitAssocTypeSymUse(symUse)
+    symOrNot match {
+      case SymOrNot.Found(symUse) => visitAssocTypeSymUse(symUse)
+      case SymOrNot.NotFound => // skip
+    }
     visitType(tpe1)
     visitType(tpe2)
   }

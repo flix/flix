@@ -399,7 +399,7 @@ object ConstraintSolver2 {
         case Some((newTconstrs, newEconstrs)) =>
           progress.markProgress()
           val tTypeConstrs = newTconstrs.map(traitConstraintToTypeConstraint(_, loc))
-          val eTypeConstrs = newEconstrs.map(equalityConstraintToTypeConstraint(_, loc))
+          val eTypeConstrs = newEconstrs.flatMap(equalityConstraintToTypeConstraint(_, loc))
           tTypeConstrs ++ eTypeConstrs
       }
   }
@@ -639,10 +639,14 @@ object ConstraintSolver2 {
     *
     * Replaces the location with the given location.
     */
-  private def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
-    case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
-      TypeConstraint.Equality(assoc, tpe2, Provenance.Match(tpe1, tpe2, loc))
+  private def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): Option[TypeConstraint] = constr match {
+    case EqualityConstraint(symOrNot, tpe1, tpe2, _) =>
+      symOrNot match {
+        case SymOrNot.Found(cst) =>
+          val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
+          Some(TypeConstraint.Equality(assoc, tpe2, Provenance.Match(tpe1, tpe2, loc)))
+        case SymOrNot.NotFound => None
+      }
   }
 
   /**

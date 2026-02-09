@@ -1444,13 +1444,18 @@ object Kinder {
     * Infers a kind environment from the given equality constraint.
     */
   private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext): KindEnv = econstr match {
-    case ResolvedAst.EqualityConstraint(AssocTypeSymUse(sym, _), tpe1, tpe2, _) =>
-      val trt = root.traits(sym.trt)
-      val kind1 = getTraitKind(trt)
-      val kind2 = trt.assocs.find(_.sym == sym).get.kind
-      val kenv1 = inferType(tpe1, kind1, kenv, root)
-      val kenv2 = inferType(tpe2, kind2, kenv, root)
-      kenv1 ++ kenv2
+    case ResolvedAst.EqualityConstraint(symOrNot, tpe1, tpe2, _) =>
+      symOrNot match {
+        case SymOrNot.Found(AssocTypeSymUse(sym, _)) =>
+          val trt = root.traits(sym.trt)
+          val kind1 = getTraitKind(trt)
+          val kind2 = trt.assocs.find(_.sym == sym).get.kind
+          val kenv1 = inferType(tpe1, kind1, kenv, root)
+          val kenv2 = inferType(tpe2, kind2, kenv, root)
+          kenv1 ++ kenv2
+        case SymOrNot.NotFound =>
+          kenv
+      }
   }
 
   /**

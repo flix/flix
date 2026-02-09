@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, SymOrNot, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SourcePosition.moveRight
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -394,8 +394,12 @@ object ConstraintSolverInterface {
     */
   def expandEqualityEnv(eqEnv: EqualityEnv, econstrs: List[EqualityConstraint]): EqualityEnv = {
     econstrs.foldLeft(eqEnv) {
-      case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), tpe1, tpe2, _)) =>
-        acc.addAssocTypeDef(sym, tpe1, tpe2)
+      case (acc, EqualityConstraint(symOrNot, tpe1, tpe2, _)) =>
+        symOrNot match {
+          case SymOrNot.Found(AssocTypeSymUse(sym, _)) =>
+            acc.addAssocTypeDef(sym, tpe1, tpe2)
+          case SymOrNot.NotFound => acc
+        }
     }
   }
 }
