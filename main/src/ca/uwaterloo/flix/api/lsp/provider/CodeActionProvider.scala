@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -58,6 +58,22 @@ object CodeActionProvider {
 
     case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
+
+    case TypeError.ExplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "add IO to {}",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "{IO}"))))),
+        command = None
+      ))
+
+    case TypeError.ImplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "add \\ {IO} to signature",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ {IO}"))))),
+        command = None
+      ))
 
     case _ => Nil
   }
