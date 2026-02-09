@@ -51,6 +51,7 @@ object EffectProvenance {
     case Type.Apply(tpe1, tpe2, _) => (tpe1, tpe2) match {
       case (Type.Var(sym, _), _) => VarVertex(sym) :: toVertex(tpe2, provLoc)
       case (_, Type.Var(sym, _)) => VarVertex(sym) :: toVertex(tpe1, provLoc)
+      case (Type.Apply(_, _, _), Type.Apply(_,_,_)) => toVertex(tpe1, provLoc) ::: toVertex(tpe2, provLoc)
       case _ => List()
     }
     case _ => List()
@@ -65,6 +66,8 @@ object EffectProvenance {
   private def mkError(path: Path): List[TypeConstraint] = (path.head, path.last) match {
     case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
     case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
+    case (CstVertex(sym, loc) , PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc)))
+    case (CstVertex(sym, loc) , PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc)))
     case _ => Nil
   }
   type Path = List[Vertex]
