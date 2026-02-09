@@ -57,6 +57,6 @@ pub mod TcpConnectWithResult {
     /// In other words, re-interprets the `TcpConnectWithResult` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpConnectWithResult + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpConnectWithResult) + IO = handle(f)()
 
 }
