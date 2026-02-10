@@ -66,30 +66,18 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: errors.flatMap(x => mkIOHint(x))
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors)
     } else {
       List.empty[InlayHint]
     }
   }
 
-  private def mkIOHint(x: CompilationMessage): Option[InlayHint] = x match {
-    case TypeError.ExplicitlyPureFunctionUsesIO(loc, _) =>
-      Some(InlayHint(
-        position = Position.from(loc.start),
-        label = s"IO",
-        kind = Some(InlayHintKind.Type),
-        textEdits = List.empty,
-        tooltip = s"IO",
-      ))
-    case TypeError.ImplicitlyPureFunctionUsesIO(loc, _) =>
-      Some(InlayHint(
-        position = Position.from(loc.end),
-        label = s"\\ {IO}",
-        kind = Some(InlayHintKind.Parameter),
-        textEdits = List.empty,
-        tooltip = s"\\ {IO}",
-      ))
-    case _ => None
+  /**
+    * Returns a list of inlay hints from a given list of CompilationMessage(s),
+    * specifically containing explicitly and implicitly pure functions using IO, errors.
+    */
+  private def getInlayHintsFromErrors(errors: List[CompilationMessage]): List[InlayHint] = {
+    errors.flatMap(x => mkIOHint(x))
   }
 
   /**
@@ -128,7 +116,6 @@ object InlayHintProvider {
     defSymUses
   }
 
-
   /**
     * Creates a list of inlay hints from the effects mapped to their positions.
     */
@@ -152,5 +139,28 @@ object InlayHintProvider {
       textEdits = List.empty,
       tooltip = s"{ $effectString }",
     )
+  }
+
+  /**
+    * Creates an inlay hint for explicitly and implicitly pure functions using IO.
+    */
+  private def mkIOHint(cm: CompilationMessage): Option[InlayHint] = cm match {
+    case TypeError.ExplicitlyPureFunctionUsesIO(loc, _) =>
+      Some(InlayHint(
+        position = Position.from(loc.start),
+        label = s"IO",
+        kind = Some(InlayHintKind.Type),
+        textEdits = List.empty,
+        tooltip = s"IO",
+      ))
+    case TypeError.ImplicitlyPureFunctionUsesIO(loc, _) =>
+      Some(InlayHint(
+        position = Position.from(loc.end),
+        label = s"\\ {IO}",
+        kind = Some(InlayHintKind.Parameter),
+        textEdits = List.empty,
+        tooltip = s"\\ {IO}",
+      ))
+    case _ => None
   }
 }
