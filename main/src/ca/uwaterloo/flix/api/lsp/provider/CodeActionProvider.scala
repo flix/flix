@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -72,6 +72,14 @@ object CodeActionProvider {
         title = "add \\ {IO} to signature",
         kind = CodeActionKind.QuickFix,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ {IO}"))))),
+        command = None
+      ))
+
+    case ParseError.ExpectedThickArrowRGotEqual(loc, _, _) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "Replace '=' with '=>'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "=>"))))),
         command = None
       ))
 

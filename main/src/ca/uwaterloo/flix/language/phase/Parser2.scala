@@ -2386,7 +2386,11 @@ object Parser2 {
       if (eat(TokenKind.Colon)) {
         Type.ttype()
       }
-      // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
+      if (eat(TokenKind.Equal)) {
+        closeWithError(open(), ExpectedThickArrowRGotEqual(previousSourceLocation(), sctx, Some("Use => instead of =")))
+        // Continue parsing the rule as if we had seen '=>' to suppress other errors.
+        statement()
+      }
       if (eat(TokenKind.ArrowThickR)) {
         statement()
       }

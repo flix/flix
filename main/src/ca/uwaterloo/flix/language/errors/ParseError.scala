@@ -280,6 +280,22 @@ object ParseError {
     }
   }
 
+  case class ExpectedThickArrowRGotEqual(loc: SourceLocation, sctx: SyntacticContext, hint: Option[String]) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E8652
+    def summary: String = s"Expected thick arrow (=>) got equal (=)"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      s""">> Expected thick arrow (=>) got equal (=)
+         |
+         |${src(loc, s"Here")}$hintStr
+         |""".stripMargin
+    }
+
+  }
+
   /**
     * An error raised to indicate an unexpected token was found.
     *
