@@ -225,4 +225,6 @@ object EffectProvenance {
       case _ => ()
     }
   }
+
+  def getError(constrs0: List[TypeConstraint]): List[TypeConstraint] = List()
 }
