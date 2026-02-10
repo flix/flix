@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
-import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, Visitor}
+import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
@@ -148,18 +148,18 @@ object InlayHintProvider {
     case TypeError.ExplicitlyPureFunctionUsesIO(loc, _) =>
       Some(InlayHint(
         position = Position.from(loc.start),
-        label = s"IO",
+        label = "IO",
         kind = Some(InlayHintKind.Type),
-        textEdits = List.empty,
-        tooltip = s"IO",
+        textEdits = List(TextEdit(Range.from(loc), "IO")),
+        tooltip = "IO",
       ))
     case TypeError.ImplicitlyPureFunctionUsesIO(loc, _) =>
       Some(InlayHint(
         position = Position.from(loc.end),
-        label = s"\\ {IO}",
+        label = "\\ {IO}",
         kind = Some(InlayHintKind.Parameter),
-        textEdits = List.empty,
-        tooltip = s"\\ {IO}",
+        textEdits = List(TextEdit(Range.from(loc), "\\ {IO}")),
+        tooltip = "\\ {IO}",
       ))
     case _ => None
   }
