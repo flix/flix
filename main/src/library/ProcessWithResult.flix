@@ -183,6 +183,7 @@ pub mod ProcessWithResult {
     ///
     /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ProcessWithResult) + IO = handle(f)()
 
 }

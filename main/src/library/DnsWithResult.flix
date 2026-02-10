@@ -75,6 +75,7 @@ pub mod DnsWithResult {
     ///
     /// In other words, re-interprets the `DnsWithResult` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ ef - DnsWithResult + IO = handle(f)()
 
 }
