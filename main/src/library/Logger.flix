@@ -86,4 +86,33 @@ pub mod Logger {
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
 
+    ///
+    /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
+    ///
+    pub def handleWithFileWrite(filename: {file = String}, f: a -> b \ ef): a -> b \ (ef - Logger) + FileWrite = 
+        z -> run {
+            f(z)
+        } with handler Logger {
+            def log(s, m, k) = 
+                let prefix = match s {
+                    case Severity.Trace => "[Trace]: "
+                    case Severity.Debug => "[Debug]: "
+                    case Severity.Info  => "[Info]: "
+                    case Severity.Warn  => "[Warn]: "
+                    case Severity.Fatal => "[Fatal]: "
+                };
+                let output = prefix + RichString.toString(m) + "\n";
+                FileWrite.append({str = output}, filename#file);
+                k()
+        }
+
+    ///
+    /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
+    ///
+    pub def runWithFileWrite(filename: {file = String}, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
+        handleWithFileWrite(filename, f)()
 }
