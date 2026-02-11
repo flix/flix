@@ -558,6 +558,7 @@ object ConstraintSolver2 {
       TypeConstraint.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), prov, nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)))
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       TypeConstraint.Conflicted(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
+    case TypeConstraint.EffConflicted(_) => constr
   }
 
   /**
