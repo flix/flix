@@ -77,7 +77,7 @@ object InlayHintProvider {
     * specifically containing explicitly and implicitly pure functions using IO, errors.
     */
   private def getInlayHintsFromErrors(errors: List[CompilationMessage]): List[InlayHint] = {
-    errors.foldLeft(List()) {
+    errors.foldLeft(List(): List[InlayHint]) {
       case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc)) :: acc
       case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.end), " \\ IO", " \\ IO", Range.from(loc)) :: acc
       case (acc, _) => acc
