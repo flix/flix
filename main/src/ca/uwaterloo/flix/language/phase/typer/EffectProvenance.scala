@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Gagan Chandan
+ * Copyright 2026 Alexander Sommer, Samuel Skovbakke
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,20 @@ import scala.collection.mutable
 
 object EffectProvenance {
 
+  sealed trait BFSColor
+  object BFSColor {
+    case object White extends BFSColor
+
+    case object Grey extends BFSColor
+
+    case object Black extends BFSColor
+  }
+
+  private type BFSVertex = (Vertex, BFSColor, Option[Vertex])
+
+  private type Edge = (Vertex, Vertex, SourceLocation)
+  private type Graph = (List[Vertex], List[Edge])
+  private type Path = List[Vertex]
 
   sealed trait Vertex
   object Vertex {
@@ -36,8 +50,132 @@ object EffectProvenance {
     case class IOVertex(loc: SourceLocation) extends Vertex
     case class VarVertex(sym: Symbol.KindedTypeVarSym) extends Vertex
   }
-  type Edge = (Vertex, Vertex, SourceLocation)
-  type Graph = (List[Vertex], List[Edge])
+
+
+  def getError(constrs0: List[TypeConstraint]): Option[List[EffConflicted]] = {
+    val graph = buildGraph(constrs0)
+    graph.flatMap(findErrorsInGraph)
+  }
+
+  private def bfs(graph: Graph, source: Vertex): List[Path] = {
+    val (vs, es) = graph
+    var us: List[BFSVertex] = vs.map(v => if (v == source) (v, Grey, None) else (v, White, None))
+    val start = us.find { case (v, _, _) => v == source }.getOrElse(return Nil)
+
+    def bfsEq(v1: BFSVertex, v2: BFSVertex) = (v1, v2) match {
+      case ((x, _, _), (y, _, _)) => x == y
+    }
+
+    def update(vertex: BFSVertex, vertices: List[BFSVertex]): List[BFSVertex] = {
+      vertices.map {
+        case v => if (bfsEq(vertex, v)) vertex else v
+      }
+    }
+
+    def adj(vertex: BFSVertex, vertices: List[BFSVertex]): List[(BFSVertex)] = {
+      val (v, _, _) = vertex
+      es.foldLeft(List(): List[BFSVertex]) {
+        case (acc, (v1, v2, _)) => if (v == v1) vertices.find{ case (u, _, _) => u == v2} match {
+          case Some(res) => res :: acc
+          case None => acc
+        } else acc
+      }
+    }
+
+    def reachable(start: BFSVertex, bfs: List[BFSVertex]): List[Vertex] = {
+      @tailrec
+      def helper(vertex1: BFSVertex, subList: List[BFSVertex], acc: List[Vertex]): List[Vertex] = subList match {
+        case (next@(v, _, _)) :: xs => vertex1._3 match {
+          case Some(parent) => if (v == parent) helper(next, bfs, v :: acc) else helper(vertex1, xs, acc)
+          case None => acc
+        }
+        case Nil => acc
+      }
+      helper(start, bfs, List(start._1))
+    }
+
+    val q: mutable.Queue[BFSVertex] = mutable.Queue.empty
+
+
+    q.enqueue(start)
+
+    while (q.nonEmpty) {
+      val u = q.dequeue()
+      adj(u, us).foreach {
+        case (v, White, _) =>
+          val v1 = (v, Grey, Some(u._1))
+          us = update(v1, us)
+          q.enqueue(v1)
+        case (_, _, _) => {}
+      }
+      val u1 = (u._1, Black, u._3)
+      us = update(u1, us)
+    }
+
+
+    us.map(v => {
+      val r = reachable(v, us)
+      if (r.tail.forall(!mismatch(r.head, _))) Nil else r
+    }).filterNot(_.isEmpty)
+  }
+
+  private def buildGraph(constraints: List[TypeConstraint]): Option[Graph] = {
+    var flow: List[Edge] = List()
+    var v: Set[Vertex] = Set.empty
+    constraints.foreach {
+      case TypeConstraint.Equality(tpe1, tpe2, prov) =>
+        val vtpe1 = toVertex(tpe1, prov.loc)
+        val vtpe2 = toVertex(tpe2, prov.loc)
+        (vtpe1, vtpe2) match {
+          case (Nil, _) => return None
+          case (_, Nil) => return None
+          case (to::Nil, fromVertices) =>
+            fromVertices.foreach(v += _)
+            v = v + to
+            prov match {
+              case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
+                fromVertices.foreach(from => flow = (from, to, prov.loc) :: flow)
+              }
+              case TypeConstraint.Provenance.Source(_, _, _) => {
+                fromVertices.foreach(from => flow = (from, to, prov.loc) :: flow)
+              }
+              case TypeConstraint.Provenance.Match(_,_,_) => {
+                fromVertices.foreach(from => flow = (from, to, prov.loc) :: flow)
+              }
+              case _ => {}
+            }
+          case _ => {}
+        }
+      case _ => ()
+    }
+   Some((v.toList, flow))
+  }
+
+  private def findErrorsInGraph(graph: Graph): Option[List[EffConflicted]] = {
+    val (v, _) = graph
+    val errs = v.filter{
+      case VarVertex(_) => false
+      case _ => true
+    }.flatMap(bfs(graph, _)).flatMap(mkError)
+    errs match {
+      case Nil => None
+      case l => Some(l)
+    }
+  }
+
+  private def mismatch(v1: Vertex, v2: Vertex): Boolean = (v1, v2) match {
+    case (_, VarVertex(_)) => false
+    case (VarVertex(_), _) => false
+    case (_, _) => true
+  }
+
+  private def mkError(path: Path): List[EffConflicted] = (path.head, path.last) match {
+    case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
+    case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
+    case (CstVertex(sym, loc1) , PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
+    case (CstVertex(sym, loc1) , PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
+    case _ => Nil
+  }
 
   private def toVertex(tpe: Type, provLoc: SourceLocation): List[Vertex] = tpe match {
     case Type.Var(sym, _) => List(VarVertex(sym))
@@ -57,133 +195,5 @@ object EffectProvenance {
       case _ => List()
     }
     case _ => List()
-  }
-
-  def mismatch(v1: Vertex, v2: Vertex): Boolean = (v1, v2) match {
-    case (_, VarVertex(_)) => false
-    case (VarVertex(_), _) => false
-    case (_, _) => true
-  }
-
-  private def mkError(path: Path): List[EffConflicted] = (path.head, path.last) match {
-    case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
-    case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
-    case (CstVertex(sym, loc) , PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc)))
-    case (CstVertex(sym, loc) , PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc)))
-    case _ => Nil
-  }
-  type Path = List[Vertex]
-  sealed trait BFSColor
-
-  object BFSColor {
-    case object White extends BFSColor
-
-    case object Grey extends BFSColor
-
-    case object Black extends BFSColor
-  }
-
- private type BFSVertex = (Vertex, BFSColor, Option[Vertex])
-  def bfs(graph: Graph, source: Vertex): List[Path] = {
-    val (vs, es) = graph
-    var us: List[BFSVertex] = vs.map(v => if (v == source) (v, Grey, None) else (v, White, None))
-    val s = us.find { case (v, _, _) => v == source }.getOrElse(return Nil)
-
-    def bfsEq(v1: BFSVertex, v2: BFSVertex) = (v1, v2) match {
-     case ((x, _, _), (y, _, _)) => x == y
-    }
-
-    def update(vertex: BFSVertex, vertices: List[BFSVertex]): List[BFSVertex] = {
-     vertices.map {
-       case v => if (bfsEq(vertex, v)) vertex else v
-     }
-    }
-
-    def adj(vertex: BFSVertex, vertices: List[BFSVertex]): List[(BFSVertex)] = {
-     val (v, _, _) = vertex
-     es.foldLeft(List(): List[BFSVertex]) {
-       case (acc, (v1, v2, _)) => if (v == v1) vertices.find{ case (u, _, _) => u == v2} match {
-         case Some(res) => res :: acc
-         case None => acc
-       } else acc
-     }
-    }
-
-    def reachable(start: BFSVertex, bfs: List[BFSVertex]): List[Vertex] = {
-      @tailrec
-      def helper(vertex1: BFSVertex, subList: List[BFSVertex], acc: List[Vertex]): List[Vertex] = subList match {
-        case (next@(v, _, _)) :: xs => vertex1._3 match {
-          case Some(parent) => if (v == parent) helper(next, bfs, v :: acc) else helper(vertex1, xs, acc)
-          case None => acc
-        }
-        case Nil => acc
-      }
-    helper(start, bfs, List(start._1))
-    }
-
-    val q: mutable.Queue[BFSVertex] = mutable.Queue.empty
-
-
-    q.enqueue(s)
-
-    while (q.nonEmpty) {
-     val u = q.dequeue()
-     adj(u, us).foreach {
-       case (v, White, _) =>
-         val v1 = (v, Grey, Some(u._1))
-         us = update(v1, us)
-         q.enqueue(v1)
-       case (_, _, _) => {}
-     }
-     val u1 = (u._1, Black, u._3)
-     us = update(u1, us)
-    }
-
-
-    us.map(v => {
-     val r = reachable(v, us)
-     if (r.tail.forall(!mismatch(r.head, _))) Nil else r
-    }).filterNot(_.isEmpty)
-
-  }
-
-  def getError(constrs0: List[TypeConstraint]): Option[List[EffConflicted]] = {
-    var flow: List[Edge] = List()
-    var v: Set[Vertex] = Set.empty
-    constrs0.foreach {
-      case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-        val t1 = toVertex(tpe1, prov.loc)
-        val t2 = toVertex(tpe2, prov.loc)
-        (t1, t2) match {
-          case (Nil, _) => return None
-          case (_, Nil) => return None
-          case (v1::Nil, v2) =>
-            v2.foreach(v += _)
-            v = v + v1
-            prov match {
-              case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
-                v2.foreach(x => flow = (x, v1, prov.loc) :: flow)
-              }
-              case TypeConstraint.Provenance.Source(_, _, _) => {
-                v2.foreach(x => flow = (x, v1, prov.loc) :: flow)
-              }
-              case TypeConstraint.Provenance.Match(_,_,_) => {
-                v2.foreach(x => flow = (x, v1, prov.loc) :: flow)
-              }
-              case _ => {} // TODO
-            }
-          case _ => {} // TODO
-        }
-      case _ => ()
-    }
-    val graph = (v.toList, flow)
-    val b = v.toList.filter{
-      case VarVertex(_) => false
-      case _ => true
-    }.flatMap(bfs(graph, _)).flatMap(mkError)
-    b match {
-      case Nil => None
-      case l => Some(l)
-    }
   }
 }
