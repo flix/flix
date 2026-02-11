@@ -149,12 +149,12 @@ object InlayHintProvider {
     * Creates an inlay hint for explicitly and implicitly pure functions using IO.
     */
   private def mkIOHint(pos: Position, lbl: String, ttp: String, rng: Range): InlayHint = {
-    InlayHint(
-      position = pos,
-      label = lbl,
-      kind = Some(InlayHintKind.Type),
-      textEdits = List(TextEdit(rng, lbl)),
-      tooltip = ttp,
-    )
+      InlayHint(
+        position = pos,
+        label = lbl,
+        kind = Some(InlayHintKind.Type),
+        textEdits = List(TextEdit(rng, lbl)),
+        tooltip = ttp,
+      )
   }
 }
