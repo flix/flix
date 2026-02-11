@@ -1480,7 +1480,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError.NeedAtleastOne](result)
   }
 
-  test("ExpectedThickArrowRGotEqual.01") {
+  test("ExpectedArrowThickRGotEqual.01") {
     val input =
       """
         |def inspect(x: a): String = typematch x {
@@ -1490,6 +1490,31 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.ExpectedThickArrowRGotEqual](result)
+    expectError[ParseError.ExpectedArrowThickRGotEqual](result)
+  }
+
+
+  test("ExpectedArrowThickRGotEqual.02") {
+    val input =
+      """
+        |def f(): Int32 = match 42 {
+        |      case x = x + 1
+        |      case _ => 0
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedArrowThickRGotEqual](result)
+  }
+
+  test("ExpectedArrowThickRGotEqual.03") {
+    val input =
+      """
+        |def map(): Option[Int32] = {
+        |    let m = Map#{"a" = 1, "b" => 2, "c" => 3};
+        |    Map.get("b", m)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedArrowThickRGotEqual](result)
   }
 }

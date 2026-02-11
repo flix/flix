@@ -75,7 +75,7 @@ object CodeActionProvider {
         command = None
       ))
 
-    case ParseError.ExpectedThickArrowRGotEqual(loc, _, _) if overlaps(range, loc) =>
+    case ParseError.ExpectedArrowThickRGotEqual(_, loc) if overlaps(range, loc) =>
       List(CodeAction(
         title = "Replace '=' with '=>'",
         kind = CodeActionKind.QuickFix,

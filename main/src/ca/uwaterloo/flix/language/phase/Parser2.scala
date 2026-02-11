@@ -2324,13 +2324,7 @@ object Parser2 {
         expression()
       }
       if (eat(TokenKind.Equal)) {
-        val error = UnexpectedToken(
-          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
-          actual = Some(TokenKind.Equal),
-          sctx = sctx,
-          hint = Some("use '=>' instead of '='."),
-          loc = previousSourceLocation())
-        closeWithError(open(), error)
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2345,13 +2339,7 @@ object Parser2 {
       expect(TokenKind.KeywordCase)
       Pattern.pattern()
       if (eat(TokenKind.Equal)) {
-        val error = UnexpectedToken(
-          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
-          actual = Some(TokenKind.Equal),
-          sctx = sctx,
-          hint = Some("use '=>' instead of '='."),
-          loc = previousSourceLocation())
-        closeWithError(open(), error)
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2387,13 +2375,11 @@ object Parser2 {
         Type.ttype()
       }
       if (eat(TokenKind.Equal)) {
-        closeWithError(open(), ExpectedThickArrowRGotEqual(previousSourceLocation(), sctx, Some("Use => instead of =")))
-        // Continue parsing the rule as if we had seen '=>' to suppress other errors.
-        statement()
+        closeWithError(open(), ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else {
+        expect(TokenKind.ArrowThickR)
       }
-      if (eat(TokenKind.ArrowThickR)) {
-        statement()
-      }
+      statement()
       close(mark, TreeKind.Expr.TypeMatchRuleFragment)
     }
 
@@ -2635,7 +2621,11 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expression()
-      expect(TokenKind.ArrowThickR)
+      if(eat(TokenKind.Equal)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else {
+        expect(TokenKind.ArrowThickR)
+      }
       expression()
       close(mark, TreeKind.Expr.LiteralMapKeyValueFragment)
     }

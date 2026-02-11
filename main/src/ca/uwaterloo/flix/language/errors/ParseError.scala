@@ -279,18 +279,22 @@ object ParseError {
          |""".stripMargin
     }
   }
-
-  case class ExpectedThickArrowRGotEqual(loc: SourceLocation, sctx: SyntacticContext, hint: Option[String]) extends ParseError {
+  /**
+    * An error raised to indicate that a Thick Right Arrow was expected, but got an Equal.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedArrowThickRGotEqual(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
     def code: ErrorCode = ErrorCode.E8652
-    def summary: String = s"Expected thick arrow (=>) got equal (=)"
+    def summary: String = s"Expected '=>' got '='"
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s""">> Expected thick arrow (=>) got equal (=)
+      s""">> Expected '=>' got '='
          |
-         |${src(loc, s"Here")}$hintStr
+         |${src(loc, s"Use '=>' instead of '='")}
          |""".stripMargin
     }
 
