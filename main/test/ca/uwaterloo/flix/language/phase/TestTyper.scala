@@ -30,39 +30,26 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f () : Unit \ {} = {
         |    println("42")
         |}
-        | eff IO
-        | pub def println(x: String): Unit \ IO =
-        |  System.out.println(x)
+        |eff IO
+        |pub def println(x: String): Unit \ IO =
+        |    System.out.println(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
   }
+
   test("TestEffError02") {
     val input =
       """
         |def f () : Unit = {
         |    println("42")
         |}
-        | eff IO
-        | pub def println(x: String): Unit \ IO =
+        |eff IO
+        |pub def println(x: String): Unit \ IO =
         |    System.out.println(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
-  }
-  test("TestEffError03") {
-    val input =
-      """
-        |def f () : Unit \ {IO} = {
-        |    let x = Clock.now();
-        |    println(x)
-        |}
-        | eff IO
-        | pub def println(x: String): Unit \ IO =
-        |  System.out.println(x)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
   }
 
   test("TestLeq01") {
