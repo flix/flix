@@ -159,8 +159,11 @@ pub mod FileWrite {
             def append(data, file, k) = {
                 try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-                    let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                    Files.write(Paths.get(file), bytes, ...{opt});
+                    let opts: Vector[OpenOption] = ...{
+                        checked_cast(StandardOpenOption.APPEND), 
+                        checked_cast(StandardOpenOption.CREATE)
+                    };
+                    Files.write(Paths.get(file), bytes, opts);
                     k(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -171,8 +174,11 @@ pub mod FileWrite {
 
             def appendLines(data, file, k) = {
                 try {
-                    let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                    let bf = Files.newBufferedWriter(Paths.get(file), ...{opt});
+                    let opts: Vector[OpenOption] = ...{
+                        checked_cast(StandardOpenOption.APPEND), 
+                        checked_cast(StandardOpenOption.CREATE)
+                    };
+                    let bf = Files.newBufferedWriter(Paths.get(file), opts);
                     List.forEach(line -> {
                         bf.write(line, 0, String.length(line));
                         bf.newLine()
@@ -190,8 +196,11 @@ pub mod FileWrite {
                 try {
                     region rc {
                         let bytes = Vector.toArray(rc, data);
-                        let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                        Files.write(Paths.get(file), bytes, ...{opt});
+                        let opts: Vector[OpenOption] = ...{
+                            checked_cast(StandardOpenOption.APPEND), 
+                            checked_cast(StandardOpenOption.CREATE)
+                        };
+                        Files.write(Paths.get(file), bytes, opts);
                         k(())
                     }
                 } catch {
