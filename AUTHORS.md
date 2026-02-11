@@ -94,4 +94,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Daniel John](https://github.com/danieljohnprojects)
 - [Alexander Friis Sommer](https://github.com/sommerblommer)
 - [Samuel Skovbakke](https://github.com/samuelskovbakke)
-- [Mikkel Sejdelin](https://github.com/sejder)
+- [Mikkel Sejdelin](https://github.com/Sejder)
