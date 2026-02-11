@@ -356,6 +356,7 @@ object ConstraintSolver2 {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
     case c: TypeConstraint.Conflicted => List(c)
+    case c: TypeConstraint.EffConflicted => List(c)
 
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.flatMap(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
@@ -469,9 +470,14 @@ object ConstraintSolver2 {
         }
         (Nil, subst)
       case Result.Err(unsolved) =>
-        EffectProvenance.debug(eqConstrs)
-        // Otherwise we failed. Return the evidence of failure.
-        (unsolved, Substitution.empty)
+        // We try to compute user-friendly error message
+        // If unsuccessful we return original unsolved constraints
+        val errors = EffectProvenance.getError(constrs0)
+        val c = errors match {
+          case Some(effErrors) => effErrors
+          case None => unsolved
+        }
+        (c, Substitution.empty)
     }
 
     val tree0 = SubstitutionTree.shallow(subst1)
@@ -552,6 +558,7 @@ object ConstraintSolver2 {
       TypeConstraint.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), prov, nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)))
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       TypeConstraint.Conflicted(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
+    case TypeConstraint.EffConflicted(_) => constr
   }
 
   /**
