@@ -68,7 +68,7 @@ object InlayHintProvider {
       }
       mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors)
     } else {
-      List.empty[InlayHint]
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors)
     }
   }
 
@@ -77,7 +77,11 @@ object InlayHintProvider {
     * specifically containing explicitly and implicitly pure functions using IO, errors.
     */
   private def getInlayHintsFromErrors(errors: List[CompilationMessage]): List[InlayHint] = {
-    errors.flatMap(x => mkIOHint(x))
+    errors.foldLeft(List()) {
+      case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc)) :: acc
+      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.end), "\\ IO", "\\ IO", Range.from(loc)) :: acc
+      case (acc, _) => acc
+    }
   }
 
   /**
@@ -144,23 +148,13 @@ object InlayHintProvider {
   /**
     * Creates an inlay hint for explicitly and implicitly pure functions using IO.
     */
-  private def mkIOHint(cm: CompilationMessage): Option[InlayHint] = cm match {
-    case TypeError.ExplicitlyPureFunctionUsesIO(loc, _) =>
-      Some(InlayHint(
-        position = Position.from(loc.start),
-        label = "IO",
+  private def mkIOHint(pos: Position, lbl: String, ttp: String, rng: Range): InlayHint = {
+      InlayHint(
+        position = pos,
+        label = lbl,
         kind = Some(InlayHintKind.Type),
-        textEdits = List(TextEdit(Range.from(loc), "IO")),
-        tooltip = "IO",
-      ))
-    case TypeError.ImplicitlyPureFunctionUsesIO(loc, _) =>
-      Some(InlayHint(
-        position = Position.from(loc.end),
-        label = "\\ {IO}",
-        kind = Some(InlayHintKind.Parameter),
-        textEdits = List(TextEdit(Range.from(loc), "\\ {IO}")),
-        tooltip = "\\ {IO}",
-      ))
-    case _ => None
+        textEdits = List(TextEdit(rng, lbl)),
+        tooltip = ttp,
+      )
   }
 }
