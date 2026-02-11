@@ -95,3 +95,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Alexander Friis Sommer](https://github.com/sommerblommer)
 - [Samuel Skovbakke](https://github.com/samuelskovbakke)
 - [Mikkel Sejdelin](https://github.com/Sejder)
+- [Anders Bjerrum Jensen](https://github.com/AndersJensenStudie)
