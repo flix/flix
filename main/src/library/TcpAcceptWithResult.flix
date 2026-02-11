@@ -57,6 +57,7 @@ pub mod TcpAcceptWithResult {
     ///
     /// In other words, re-interprets the `TcpAcceptWithResult` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpAcceptWithResult + IO = handle(f)()
 
 }
