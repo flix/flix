@@ -473,7 +473,10 @@ object ConstraintSolver2 {
         // We try to compute user-friendly error message
         // If unsuccessful we return original unsolved constraints
         val errors = EffectProvenance.getError(constrs0)
-        val c = if (errors.nonEmpty) errors else unsolved
+        val c = errors match {
+          case Some(effErrors) => effErrors
+          case None => unsolved
+        }
         (c, Substitution.empty)
     }
 

@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.TypeConstructor
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.{EffConflicted, Provenance}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import scala.collection.immutable.SortedSet
 
@@ -226,5 +226,5 @@ object EffectProvenance {
     }
   }
 
-  def getError(constrs0: List[TypeConstraint]): List[TypeConstraint] = List()
+  def getError(constrs0: List[TypeConstraint]): Option[List[EffConflicted]] = None
 }
