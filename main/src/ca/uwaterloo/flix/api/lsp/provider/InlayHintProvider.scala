@@ -17,10 +17,12 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
-import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, Visitor}
+import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.errors.TypeError
 
 /**
   * Provides inlay hints for effects in the Flix language.
@@ -40,7 +42,7 @@ object InlayHintProvider {
     * @param root  The root of the typed AST.
     * @return A list of inlay hints.
     */
-  def getInlayHints(uri: String, range: Range)(implicit root: Root): List[InlayHint] = {
+  def getInlayHints(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[InlayHint] = {
     if (EnableEffectHints) {
       val opSymUses: List[(SymUse.OpSymUse, SourceLocation)] = getOpSymUses(uri)
       val opEffSyms: List[(Symbol.EffSym, SourceLocation)] = opSymUses.map {
@@ -64,9 +66,21 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors)
     } else {
-      List.empty[InlayHint]
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors)
+    }
+  }
+
+  /**
+    * Returns a list of inlay hints from a given list of CompilationMessage(s),
+    * specifically containing explicitly and implicitly pure functions using IO, errors.
+    */
+  private def getInlayHintsFromErrors(errors: List[CompilationMessage]): List[InlayHint] = {
+    errors.foldLeft(List(): List[InlayHint]) {
+      case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc)) :: acc
+      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.end), " \\ IO", " \\ IO", Range.from(loc)) :: acc
+      case (acc, _) => acc
     }
   }
 
@@ -106,7 +120,6 @@ object InlayHintProvider {
     defSymUses
   }
 
-
   /**
     * Creates a list of inlay hints from the effects mapped to their positions.
     */
@@ -130,5 +143,18 @@ object InlayHintProvider {
       textEdits = List.empty,
       tooltip = s"{ $effectString }",
     )
+  }
+
+  /**
+    * Creates an inlay hint for explicitly and implicitly pure functions using IO.
+    */
+  private def mkIOHint(pos: Position, lbl: String, ttp: String, rng: Range): InlayHint = {
+      InlayHint(
+        position = pos,
+        label = lbl,
+        kind = Some(InlayHintKind.Type),
+        textEdits = List(TextEdit(rng, lbl)),
+        tooltip = ttp,
+      )
   }
 }
