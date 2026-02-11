@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.BFSColor.{Black, Grey, White}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, VarVertex}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.EffConflicted
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -44,6 +45,7 @@ object EffectProvenance {
       case TypeConstructor.Pure => if (loc.isReal) List(PureExplicitVertex(loc)) else List(PureImplicitVertex(provLoc))
       case TypeConstructor.Effect(sym, _) => sym match {
         case Symbol.IO => List(IOVertex(provLoc))
+        case Symbol.Debug => Nil
         case eff => List(CstVertex(eff, provLoc))
       }
       case _ => List()
@@ -63,7 +65,7 @@ object EffectProvenance {
     case (_, _) => true
   }
 
-  private def mkError(path: Path): List[TypeConstraint] = (path.head, path.last) match {
+  private def mkError(path: Path): List[EffConflicted] = (path.head, path.last) match {
     case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
     case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
     case (CstVertex(sym, loc) , PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc)))
@@ -145,7 +147,7 @@ object EffectProvenance {
 
   }
 
-  def getError(constrs0: List[TypeConstraint]): List[TypeConstraint] = {
+  def getError(constrs0: List[TypeConstraint]): Option[List[EffConflicted]] = {
     var flow: List[Edge] = List()
     var v: Set[Vertex] = Set.empty
     constrs0.foreach {
@@ -153,23 +155,19 @@ object EffectProvenance {
         val t1 = toVertex(tpe1, prov.loc)
         val t2 = toVertex(tpe2, prov.loc)
         (t1, t2) match {
-          case (Nil, _) => return Nil
-          case (_, Nil) => return Nil
+          case (Nil, _) => return None
+          case (_, Nil) => return None
           case (v1::Nil, v2) =>
+            v2.foreach(v += _)
+            v = v + v1
             prov match {
               case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
-                v2.foreach(v += _)
-                v = v + v1
                 v2.foreach(x => flow = (x, v1, prov.loc) :: flow)
               }
               case TypeConstraint.Provenance.Source(_, _, _) => {
-                v2.foreach(v += _)
-                v = v + v1
                 v2.foreach(x => flow = (x, v1, prov.loc) :: flow)
               }
               case TypeConstraint.Provenance.Match(_,_,_) => {
-                v2.foreach(v += _)
-                v = v + v1
                 v2.foreach(x => flow = (x, v1, prov.loc) :: flow)
               }
               case _ => {} // TODO
@@ -182,8 +180,10 @@ object EffectProvenance {
     val b = v.toList.filter{
       case VarVertex(_) => false
       case _ => true
-    }.flatMap(bfs(graph, _))
-    println(b)
-    b.flatMap(mkError)
+    }.flatMap(bfs(graph, _)).flatMap(mkError)
+    b match {
+      case Nil => None
+      case l => Some(l)
+    }
   }
 }
