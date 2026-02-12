@@ -45,21 +45,21 @@ mod TestLogger {
 
     // Tests doing multiple writes using different defintions.
     @Test
-    pub def runWithFileWrite03(): Unit \ Assert = 
+    def runWithFileWrite03(): Unit \ Assert = 
         let res = run {
             info("Logging 1");
-            info("Logging 2");
-            info("Logging 3");
-            info("Logging 4");
+            Trace("Logging 2");
+            debug("Logging 3");
+            warn("Logging 4");
             fatal("Logging 5");
             ""
         } with runWithFileWrite(file = "info.log")
         with fileWriteHandlerStub;
         let expected = 
             "Writing to info.log: [Info]: Logging 1\n" 
-            + "Writing to info.log: [Info]: Logging 2\n"
-            + "Writing to info.log: [Info]: Logging 3\n"
-            + "Writing to info.log: [Info]: Logging 4\n"
+            + "Writing to info.log: [Trace]: Logging 2\n"
+            + "Writing to info.log: [Debug]: Logging 3\n"
+            + "Writing to info.log: [Warn]: Logging 4\n"
             + "Writing to info.log: [Fatal]: Logging 5\n";
         assertEq(expected = expected, res)
 
