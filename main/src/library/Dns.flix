@@ -82,7 +82,7 @@ pub mod Dns {
     ///  
     /// In other words, re-interprets the `Dns` effect using the `DnsWithResult` effect.
     ///
-    def handleWithDnsWithResult(f: (a -> b \ ef)): a -> Result[IoError, b] \ (ef - Dns) + DnsWithResult =
+    pub def handleWithDnsWithResult(f: (a -> b \ ef)): a -> Result[IoError, b] \ (ef - Dns) + DnsWithResult =
     y -> run {
         Ok(f(y))
     } with handler Dns {
@@ -107,7 +107,7 @@ pub mod Dns {
     ///  
     /// In other words, re-interprets the `Dns` effect using the `DnsWithResult` effect.
     ///
-    def runWithDnsWithResult(f: (Unit -> b \ ef)): Result[IoError, b] \ (ef - Dns) + DnsWithResult = handleWithDnsWithResult(f)()
+    pub def runWithDnsWithResult(f: (Unit -> b \ ef)): Result[IoError, b] \ (ef - Dns) + DnsWithResult = handleWithDnsWithResult(f)()
 
 }
 
