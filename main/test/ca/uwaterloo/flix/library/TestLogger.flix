@@ -76,9 +76,9 @@ mod TestLogger {
     pub def runWithFileWrite03(): Unit \ Assert = 
         let res = run {
             info("Logging 1");
-            info("Logging 2");
-            info("Logging 3");
-            info("Logging 4");
+            trace("Logging 2");
+            debug("Logging 3");
+            warn("Logging 4");
             fatal("Logging 5");
             ""
         } with runWithFileWrite(file = "info.log")
