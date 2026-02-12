@@ -1,6 +1,6 @@
 mod TestLogger {
     use Assert.assertEq
-    use Logger.{log, info, fatal}
+    use Logger.{log, info, fatal, warn, trace, debug, runWithFileWrite}
 
     def fileWriteHandlerStub(g: Unit -> String \ ef): String \ (ef - FileWrite) = 
         run {
@@ -48,7 +48,7 @@ mod TestLogger {
     def runWithFileWrite03(): Unit \ Assert = 
         let res = run {
             info("Logging 1");
-            Trace("Logging 2");
+            trace("Logging 2");
             debug("Logging 3");
             warn("Logging 4");
             fatal("Logging 5");
