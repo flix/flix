@@ -1,5 +1,6 @@
 mod TestDns {
     use Assert.assertEq
+    use Dns.{runWithDnsWithResult, lookup}
     
     //Testing the translation of Dns -> DnsWithResult
     //with stubbed behavior for DnsWithResult
