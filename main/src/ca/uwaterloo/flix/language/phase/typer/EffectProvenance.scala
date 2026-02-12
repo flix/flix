@@ -351,7 +351,8 @@ object EffectProvenance {
     case Type.Apply(tpe1, tpe2, _) => (tpe1, tpe2) match {
       case (Type.Var(sym, _), _) => VarVertex(sym) :: toVertex(tpe2, constLoc)
       case (_, Type.Var(sym, _)) => VarVertex(sym) :: toVertex(tpe1, constLoc)
-      case (Type.Apply(_, _, _), Type.Apply(_,_,_)) => toVertex(tpe1, constLoc) ::: toVertex(tpe2, constLoc)
+      case (Type.Apply(_, _, _), _) => toVertex(tpe1, constLoc) ::: toVertex(tpe2, constLoc)
+      case (_, Type.Apply(_,_,_)) => toVertex(tpe1, constLoc) ::: toVertex(tpe2, constLoc)
       case _ => List()
     }
     case _ => List()
