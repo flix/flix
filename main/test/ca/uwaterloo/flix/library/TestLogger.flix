@@ -23,6 +23,7 @@ mod TestLogger {
     // FileWrite                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
+    // Tests the log-operation directly
     @Test
     @Test
     def runWithFileWrite01(): Unit \ Assert = 
@@ -38,6 +39,7 @@ mod TestLogger {
         with fileWriteHandlerStub;
         assertEq(expected = "Writing to log: [Fatal]: Testing a simple string\n", res)
 
+    // Tests the info-defintion. 
     @Test
     def runWithFileWrite02(): Unit \ Assert = 
         let res = run {
@@ -69,6 +71,7 @@ mod TestLogger {
         with fileWriteHandlerStub;
         assertEq(expected = "Writing to info.log: [Info]: Log at info level\n", res)
 
+    // Tests doing multiple writes using different defintions.
     @Test
     pub def runWithFileWrite03(): Unit \ Assert = 
         let res = run {
