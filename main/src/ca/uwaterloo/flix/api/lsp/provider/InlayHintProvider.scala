@@ -79,7 +79,7 @@ object InlayHintProvider {
   private def getInlayHintsFromErrors(errors: List[CompilationMessage]): List[InlayHint] = {
     errors.foldLeft(List(): List[InlayHint]) {
       case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc)) :: acc
-      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.end), " \\ IO", " \\ IO", Range.from(loc)) :: acc
+      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.end), "\\ IO", "\\ IO", Range.from(loc)) :: acc
       case (acc, _) => acc
     }
   }
@@ -151,10 +151,10 @@ object InlayHintProvider {
   private def mkIOHint(pos: Position, lbl: String, ttp: String, rng: Range): InlayHint = {
       InlayHint(
         position = pos,
-        label = lbl,
+        label = s" ${lbl} ",
         kind = Some(InlayHintKind.Type),
-        textEdits = List(TextEdit(rng, lbl)),
-        tooltip = ttp,
+        textEdits = List(TextEdit(rng, s" ${lbl} ")),
+        tooltip = s" ${ttp} ",
       )
   }
 }
