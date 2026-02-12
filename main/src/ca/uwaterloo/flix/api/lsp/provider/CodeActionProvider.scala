@@ -61,17 +61,17 @@ object CodeActionProvider {
 
     case TypeError.ExplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
       List(CodeAction(
-        title = "add IO to {}",
+        title = "Change {} to IO",
         kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "{IO}"))))),
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "IO"))))),
         command = None
       ))
 
     case TypeError.ImplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
       List(CodeAction(
-        title = "add \\ {IO} to signature",
+        title = "add \\ IO to signature",
         kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ {IO}"))))),
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ IO "))))),
         command = None
       ))
 
