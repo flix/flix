@@ -1,6 +1,10 @@
 mod TestLogger {
     use Assert.assertEq
-    use Logger.{log, info, fatal, warn, trace, debug, runWithFileWrite}
+    use Logger.{log, info, fatal, warn, trace, debug, runWithFileWrite, runWithConsole}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FileWrite                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
     def fileWriteHandlerStub(g: Unit -> String \ ef): String \ (ef - FileWrite) = 
         run {
@@ -63,4 +67,35 @@ mod TestLogger {
             + "Writing to info.log: [Fatal]: Logging 5\n";
         assertEq(expected = expected, res)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Console                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def consoleHandlerStub(g: Unit -> String \ ef): String \ (ef - Console) = 
+        run {
+            g()
+        } with handler Console {
+            def println(s, k) = {
+                let res = "Logging to Console: " + s + k();
+                res
+            }
+            def readln(k) = ???
+            def print(s, k) = ???
+            def eprint(s, k) = ???
+            def eprintln(s, k) = ???
+        }
+
+    // Tests the log operation directly
+    @Test
+    def runWithFileWrite01(): Unit \ Assert = 
+        let m = RichString.fromString("Testing a simple string");
+        let s = Severity.Fatal;
+        let res = run {
+            Logger.log(s, m);
+            ""
+        } with runWithConsole
+        with consoleHandlerStub;
+        let expected = "${RichString.toString(RichString.bold(RichString.red("[Fatal]")))} Testing a simple string";
+        Assert.assertEq(expected="Logging to Console: " + expected, res)
 }
