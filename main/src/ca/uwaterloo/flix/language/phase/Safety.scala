@@ -289,6 +289,7 @@ object Safety {
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+      checkLookup(exp.tpe, "method", loc)
       checkPermissions(loc.security, loc)
       visitExp(exp)
       args.foreach(visitExp)
@@ -298,10 +299,12 @@ object Safety {
       args.foreach(visitExp)
 
     case Expr.GetField(_, exp, _, _, loc) =>
+      checkLookup(exp.tpe, "field", loc)
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.PutField(_, exp1, exp2, _, _, loc) =>
+      checkLookup(exp1.tpe, "field", loc)
       checkPermissions(loc.security, loc)
       visitExp(exp1)
       visitExp(exp2)
@@ -401,6 +404,39 @@ object Safety {
 
       case SecurityContext.Paranoid =>
         sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+    }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a non-primitive type. `Box.Boxed` is treated as non-primitive.
+    */
+  private def isNonPrimitiveJvmType(tpe: Type): Boolean = tpe match {
+    case Type.Cst(TypeConstructor.BigDecimal, _) =>
+      true
+    case Type.Cst(TypeConstructor.BigInt, _) =>
+      true
+    case Type.Cst(TypeConstructor.Str, _) =>
+      true
+    case Type.Cst(TypeConstructor.Regex, _) =>
+      true
+    case Type.Cst(TypeConstructor.Native(_), _) =>
+      true
+    case Type.AssocType(symUse, _, _, _) =>
+      val sym = symUse.sym
+      // `Box.Boxed` should be treated as a non-primitive JVM type.
+      sym.name == "Boxed" && (sym.namespace.mkString(".") == "Box")
+    case _ => false
+  }
+
+  /**
+    * Emits an error if `tpe` is not typed to a non-primitive JVM type.
+    *
+    * @param lookupPurpose Either `method` or `field`, depending on use.
+    */
+  private def checkLookup(tpe: Type, lookupPurpose: String, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
+    val erasedTpe = Type.eraseAliases(tpe)
+    if (!isNonPrimitiveJvmType(erasedTpe)) {
+      sctx.errors.add(SafetyError.IllegalNonJavaPrimitive(erasedTpe, lookupPurpose, loc))
     }
   }
 
