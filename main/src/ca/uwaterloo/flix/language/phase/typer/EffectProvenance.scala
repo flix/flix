@@ -39,6 +39,7 @@ object EffectProvenance {
     * Color used in BFS search traversal.
     */
   sealed trait BFSColor
+
   object BFSColor {
     /** Unvisited vertex. */
     case object White extends BFSColor
@@ -62,6 +63,8 @@ object EffectProvenance {
       case BFSVertex(v2, _, _) => this.vertex == v2
       case _ => false
     }
+
+    override def hashCode(): Int = vertex.hashCode()
   }
 
   /**
@@ -90,6 +93,7 @@ object EffectProvenance {
     *   - Effect variables
     */
   sealed trait Vertex
+
   object Vertex {
     /**
       * Explicitly Pure function (has a real source location).
@@ -179,7 +183,7 @@ object EffectProvenance {
     def adj(vertex: BFSVertex, vertices: List[BFSVertex]): List[(BFSVertex)] = {
       val BFSVertex(v, _, _) = vertex
       graph.edges.foldLeft(List(): List[BFSVertex]) {
-        case (acc, Edge(v1, v2, _)) => if (v == v1) vertices.find{ case BFSVertex(u, _, _) => u == v2} match {
+        case (acc, Edge(v1, v2, _)) => if (v == v1) vertices.find { case BFSVertex(u, _, _) => u == v2 } match {
           case Some(res) => res :: acc
           case None => acc
         } else acc
@@ -198,6 +202,7 @@ object EffectProvenance {
         }
         case Nil => acc
       }
+
       helper(start, bfs, List(start.vertex))
     }
 
@@ -249,7 +254,7 @@ object EffectProvenance {
         (vtpe1, vtpe2) match {
           case (Nil, _) => return None
           case (_, Nil) => return None
-          case (to::Nil, fromVertices) =>
+          case (to :: Nil, fromVertices) =>
             fromVertices.foreach(v += _)
             v = v + to
             prov match {
@@ -259,7 +264,7 @@ object EffectProvenance {
               case TypeConstraint.Provenance.Source(_, _, _) => {
                 fromVertices.foreach(from => flow = Edge(from, to, prov.loc) :: flow)
               }
-              case TypeConstraint.Provenance.Match(_,_,_) => {
+              case TypeConstraint.Provenance.Match(_, _, _) => {
                 fromVertices.foreach(from => flow = Edge(from, to, prov.loc) :: flow)
               }
               case _ => {}
@@ -282,7 +287,7 @@ object EffectProvenance {
     * @return Some(conflicts) if conflicts could be found, None otherwise
     */
   private def findErrorsInGraph(graph: Graph): Option[List[EffConflicted]] = {
-    val errs = graph.vertices.filter{
+    val errs = graph.vertices.filter {
       case VarVertex(_) => false
       case _ => true
     }.flatMap(bfs(graph, _)).flatMap(mkError)
@@ -319,8 +324,8 @@ object EffectProvenance {
   private def mkError(path: Path): List[EffConflicted] = (path.head, path.last) match {
     case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
     case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
-    case (CstVertex(sym, loc1) , PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
-    case (CstVertex(sym, loc1) , PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
+    case (CstVertex(sym, loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
+    case (CstVertex(sym, loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
     case _ => Nil
   }
 
@@ -332,9 +337,9 @@ object EffectProvenance {
     * cannot be represented as vertices.
     *
     * Examples: IO becomes IOVertex, functions defined to be {} becomes PureExplicitVertex,
-    *           and PureImplicitVertex in the implicit case.
+    * and PureImplicitVertex in the implicit case.
     *
-    * @param tpe the type to convert
+    * @param tpe      the type to convert
     * @param constLoc the constraint location from where the type was encountered
     * @return the list of vertices representing this type
     */
@@ -349,11 +354,77 @@ object EffectProvenance {
       }
       case _ => List()
     }
+
+    /**
+      * The basic pattern for an apply:
+      *          Apply
+      *          / \
+      *         /   \
+      *      Apply  tpe2
+      *       / \
+      *     /    \
+      *   Cst    tpe1
+      *    |
+      *   Op
+      * Here Op, is a boolean ring operand e.g. Union (+)
+      */
     case Type.Apply(tpe1, tpe2, _) => (tpe1, tpe2) match {
-      case (Type.Var(sym, _), _) => VarVertex(sym) :: toVertex(tpe2, constLoc)
-      case (_, Type.Var(sym, _)) => VarVertex(sym) :: toVertex(tpe1, constLoc)
-      case (Type.Apply(_, _, _), _) => toVertex(tpe1, constLoc) ::: toVertex(tpe2, constLoc)
-      case (_, Type.Apply(_,_,_)) => toVertex(tpe1, constLoc) ::: toVertex(tpe2, constLoc)
+
+
+      /**
+        * The "leaf" pattern :
+        *           .
+        *          / \
+        *         /   \
+        *      Apply  Var
+        *       / \
+        *     /    \
+        *   Cst    Var
+        *    |
+        *   Op
+        */
+      case (Type.Apply(Type.Cst(tc, _), Type.Var(lSym, _), _), Type.Var(rSym, _)) => tc match {
+        case TypeConstructor.Union => List(VarVertex(lSym), VarVertex(rSym))
+        case _ => List()
+      }
+
+      /**
+        * The pattern where the right-hand side is nested :
+        *           .
+        *          / \
+        *         /   \
+        *      Apply  Apply
+        *       / \     ...
+        *     /    \
+        *   Cst    Var
+        *    |
+        *   Op
+        */
+      case (Type.Apply(Type.Cst(tc, _), Type.Var(lSym, _), _), Type.Apply(_, _, _)) =>
+        val rhs = toVertex(tpe2, constLoc)
+        tc match {
+          case TypeConstructor.Union => VarVertex(lSym) :: rhs
+          case _ => List()
+        }
+
+      /**
+        * The pattern where the left-hand side is nested :
+        *           .
+        *          / \
+        *         /   \
+        *      Apply  Var
+        *       / \
+        *     /    \
+        *   Cst    Apply
+        *    |       ...
+        *   Op
+        */
+      case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), Type.Var(rSym, _)) =>
+        val lhs = toVertex(nested, constLoc)
+        tc match {
+          case TypeConstructor.Union => VarVertex(rSym) :: lhs
+          case _ => List()
+        }
       case _ => List()
     }
     case _ => List()
