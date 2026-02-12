@@ -57,17 +57,22 @@ object EffectProvenance {
     * and only the starting vertex will not have a parent,
     * i.e. it is the root vertex / starting vertex.
     */
-  private type BFSVertex = (Vertex, BFSColor, Option[Vertex])
+  private case class BFSVertex(vertex: Vertex, color: BFSColor, parent: Option[Vertex]) {
+    override def equals(that: Any): Boolean = that match {
+      case BFSVertex(v2, _, _) => this.vertex == v2
+      case _ => false
+    }
+  }
 
   /**
     * Represents a directed edge in the effect constraint graph.
     */
-  private type Edge = (Vertex, Vertex, SourceLocation)
+  private case class Edge(v1: Vertex, v2: Vertex, loc: SourceLocation)
 
   /**
     * Represents a directed graph of effect flow.
     */
-  private type Graph = (List[Vertex], List[Edge])
+  private case class Graph(vertices: List[Vertex], edges: List[Edge])
 
   /**
     * Represents a path through the effect constraint graph.
@@ -155,23 +160,16 @@ object EffectProvenance {
     * @return the conflicting paths found in the graph, from the source
     */
   private def bfs(graph: Graph, source: Vertex): List[Path] = {
-    val (vs, es) = graph
-    var us: List[BFSVertex] = vs.map(v => if (v == source) (v, Grey, None) else (v, White, None))
-    val start = us.find { case (v, _, _) => v == source }.getOrElse(return Nil)
+    var us: List[BFSVertex] = graph.vertices.map(v => if (v == source) BFSVertex(v, Grey, None) else BFSVertex(v, White, None))
+    val start = us.find { case BFSVertex(v, _, _) => v == source }.getOrElse(return Nil)
 
-    /**
-      * Checks if two BFS vertices are equal.
-      */
-    def bfsEq(v1: BFSVertex, v2: BFSVertex) = (v1, v2) match {
-      case ((x, _, _), (y, _, _)) => x == y
-    }
 
     /**
       * Traverses list of vertices, the first argument replaces all elements that it is equal to in the list.
       */
     def update(vertex: BFSVertex, vertices: List[BFSVertex]): List[BFSVertex] = {
       vertices.map {
-        case v => if (bfsEq(vertex, v)) vertex else v
+        case v => if (vertex == v) vertex else v
       }
     }
 
@@ -179,9 +177,9 @@ object EffectProvenance {
       * Gets all vertices adjacent to the given vertex.
       */
     def adj(vertex: BFSVertex, vertices: List[BFSVertex]): List[(BFSVertex)] = {
-      val (v, _, _) = vertex
-      es.foldLeft(List(): List[BFSVertex]) {
-        case (acc, (v1, v2, _)) => if (v == v1) vertices.find{ case (u, _, _) => u == v2} match {
+      val BFSVertex(v, _, _) = vertex
+      graph.edges.foldLeft(List(): List[BFSVertex]) {
+        case (acc, Edge(v1, v2, _)) => if (v == v1) vertices.find{ case BFSVertex(u, _, _) => u == v2} match {
           case Some(res) => res :: acc
           case None => acc
         } else acc
@@ -194,13 +192,13 @@ object EffectProvenance {
     def reachable(start: BFSVertex, bfs: List[BFSVertex]): List[Vertex] = {
       @tailrec
       def helper(vertex1: BFSVertex, subList: List[BFSVertex], acc: List[Vertex]): List[Vertex] = subList match {
-        case (next@(v, _, _)) :: xs => vertex1._3 match {
-          case Some(parent) => if (v == parent) helper(next, bfs, v :: acc) else helper(vertex1, xs, acc)
+        case (next) :: xs => vertex1.parent match {
+          case Some(parent) => if (next.vertex == parent) helper(next, bfs, next.vertex :: acc) else helper(vertex1, xs, acc)
           case None => acc
         }
         case Nil => acc
       }
-      helper(start, bfs, List(start._1))
+      helper(start, bfs, List(start.vertex))
     }
 
     val q: mutable.Queue[BFSVertex] = mutable.Queue.empty
@@ -211,20 +209,24 @@ object EffectProvenance {
     while (q.nonEmpty) {
       val u = q.dequeue()
       adj(u, us).foreach {
-        case (v, White, _) =>
-          val v1 = (v, Grey, Some(u._1))
+        case BFSVertex(v, White, _) =>
+          val v1 = BFSVertex(v, Grey, Some(u.vertex))
           us = update(v1, us)
           q.enqueue(v1)
-        case (_, _, _) => {}
+        case _ => {}
       }
-      val u1 = (u._1, Black, u._3)
+      val u1 = BFSVertex(u.vertex, Black, u.parent)
       us = update(u1, us)
     }
 
 
+    // Creates a path from each vertex
+    // then checks for conflicts
     us.map(v => {
+      // reachable returns a list of vertices which represents a path in the graph
       val r = reachable(v, us)
-      if (r.tail.forall(!mismatch(r.head, _))) Nil else r
+      // we check that the starting vertex of the path conflicts with any other vertex further down the path
+      if (r.tail.forall(!isConflicting(r.head, _))) Nil else r
     }).filterNot(_.isEmpty)
   }
 
@@ -252,13 +254,13 @@ object EffectProvenance {
             v = v + to
             prov match {
               case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
-                fromVertices.foreach(from => flow = (from, to, prov.loc) :: flow)
+                fromVertices.foreach(from => flow = Edge(from, to, prov.loc) :: flow)
               }
               case TypeConstraint.Provenance.Source(_, _, _) => {
-                fromVertices.foreach(from => flow = (from, to, prov.loc) :: flow)
+                fromVertices.foreach(from => flow = Edge(from, to, prov.loc) :: flow)
               }
               case TypeConstraint.Provenance.Match(_,_,_) => {
-                fromVertices.foreach(from => flow = (from, to, prov.loc) :: flow)
+                fromVertices.foreach(from => flow = Edge(from, to, prov.loc) :: flow)
               }
               case _ => {}
             }
@@ -267,7 +269,7 @@ object EffectProvenance {
       case _ => ()
     }
     if (flow.isEmpty) return None
-    Some((v.toList, flow))
+    Some(Graph(v.toList, flow))
   }
 
   /**
@@ -280,8 +282,7 @@ object EffectProvenance {
     * @return Some(conflicts) if conflicts could be found, None otherwise
     */
   private def findErrorsInGraph(graph: Graph): Option[List[EffConflicted]] = {
-    val (v, _) = graph
-    val errs = v.filter{
+    val errs = graph.vertices.filter{
       case VarVertex(_) => false
       case _ => true
     }.flatMap(bfs(graph, _)).flatMap(mkError)
@@ -301,7 +302,7 @@ object EffectProvenance {
     * @param v2 the second vertex
     * @return true if the vertices represent a conflict, false otherwise
     */
-  private def mismatch(v1: Vertex, v2: Vertex): Boolean = (v1, v2) match {
+  private def isConflicting(v1: Vertex, v2: Vertex): Boolean = (v1, v2) match {
     case (_, VarVertex(_)) => false
     case (VarVertex(_), _) => false
     case (_, _) => true
