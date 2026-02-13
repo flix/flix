@@ -35,11 +35,7 @@ mod TestLogger {
         } with runWithFileWrite("log")
         with fileWriteHandlerStub;
         assertEq(expected = "Writing to log: [Fatal] Testing a simple string\n", res)
-        } with runWithFileWrite(file = "log")
-        with fileWriteHandlerStub;
-        assertEq(expected = "Writing to log: [Fatal]: Testing a simple string\n", res)
 
-    // Tests the info-defintion. 
     @Test
     def runWithFileWrite02(): Unit \ Assert = 
         let res = run {
@@ -69,9 +65,8 @@ mod TestLogger {
         assertEq(expected = expected, res)
         } with runWithFileWrite(file = "info.log")
         with fileWriteHandlerStub;
-        assertEq(expected = "Writing to info.log: [Info]: Log at info level\n", res)
+        assertEq(expected = "Writing to info.log: [Info] Log at info level\n", res)
 
-    // Tests doing multiple writes using different defintions.
     @Test
     pub def runWithFileWrite03(): Unit \ Assert = 
         let res = run {
@@ -81,13 +76,13 @@ mod TestLogger {
             warn("Logging 4");
             fatal("Logging 5");
             ""
-        } with runWithFileWrite(file = "info.log")
+        } with runWithFileWrite("info.log")
         with fileWriteHandlerStub;
         let expected = 
             "Writing to info.log: [Info]: Logging 1\n" 
-            + "Writing to info.log: [Info]: Logging 2\n"
-            + "Writing to info.log: [Info]: Logging 3\n"
-            + "Writing to info.log: [Info]: Logging 4\n"
+            + "Writing to info.log: [Trace]: Logging 2\n"
+            + "Writing to info.log: [Debug]: Logging 3\n"
+            + "Writing to info.log: [Warn]: Logging 4\n"
             + "Writing to info.log: [Fatal]: Logging 5\n";
         assertEq(expected = expected, res)
 
