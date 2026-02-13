@@ -77,6 +77,36 @@ pub mod DnsWithResult {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ ef - DnsWithResult + IO = handle(f)()
+    
+    /// 
+    /// Handles the `DnsWithResult` effect of the given function `f`.
+    ///  
+    /// In other words, re-interprets the `DnsWithResult` effect using the `Dns` effect.
+    ///
+    pub def handleWithDns(f: (a -> Result[e, b] \ ef) ): (a -> b \ (ef - DnsWithResult) + Dns) =
+    y -> let x = run {
+        f(y)
+    } with handler DnsWithResult {
+        def lookup(host, k) = {
+            let dnsRes = Dns.lookup(host);
+            k(Ok(dnsRes))
+        }
+        def lookupAll(host, k) = {
+            let dnsRes = Dns.lookupAll(host);
+            k(Ok(dnsRes))
+        }
+    };
+    match x {
+        case Ok(k) => k
+        case Err(_t) => unreachable!() //allegedly
+    }
+
+    /// 
+    /// Runs the `DnsWithResult` effect of the given function `f`.
+    ///  
+    /// In other words, re-interprets the `DnsWithResult` effect using the `Dns` effect.
+    ///
+    pub def runWithDns(f: (Unit -> Result[e, b] \ ef) ): b \ (ef - DnsWithResult) + Dns = handleWithDns(f)()
 
 }
 
