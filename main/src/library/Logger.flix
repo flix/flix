@@ -91,20 +91,13 @@ pub mod Logger {
     ///
     /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(filename: {file = String}, f: a -> b \ ef): a -> b \ (ef - Logger) + FileWrite = 
-        z -> run {
-            f(z)
+    pub def handleWithFileWrite(filename: String, f: a -> b \ ef): a -> b \ (ef - Logger) + FileWrite = 
+        x -> run {
+            f(x)
         } with handler Logger {
             def log(s, m, k) = 
-                let prefix = match s {
-                    case Severity.Trace => "[Trace]: "
-                    case Severity.Debug => "[Debug]: "
-                    case Severity.Info  => "[Info]: "
-                    case Severity.Warn  => "[Warn]: "
-                    case Severity.Fatal => "[Fatal]: "
-                };
-                let output = prefix + RichString.toString(m) + "\n";
-                FileWrite.append({str = output}, filename#file);
+                let output = "[${ToString.toString(s)}] ${RichString.toString(m)}\n";
+                FileWrite.append({str = output}, filename);
                 k()
         }
 
@@ -113,7 +106,7 @@ pub mod Logger {
     ///
     /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
     ///
-    pub def runWithFileWrite(filename: {file = String}, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
+    def runWithFileWrite(filename: String, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
         handleWithFileWrite(filename, f)()
 
     ///
