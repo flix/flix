@@ -59,21 +59,21 @@ object CodeActionProvider {
     case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
 
-    case TypeError.ExplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
+    case te@TypeError.ExplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
       List(CodeAction(
         title = "Change {} to IO",
         kind = CodeActionKind.QuickFix,
-        diagnostic = Some(Diagnostic.from(CodeHint.Experimental(loc))),
+        diagnostic = Some(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "IO"))))),
         command = None
       ))
 
-    case TypeError.ImplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
+    case te@TypeError.ImplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
       List(CodeAction(
         title = "add \\ IO to signature",
         kind = CodeActionKind.QuickFix,
-        diagnostic = Some(Diagnostic.from(CodeHint.Experimental(loc))),
+        diagnostic = Some(Diagnostic.from(te, Some(root))),
         isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ IO "))))),
         command = None
