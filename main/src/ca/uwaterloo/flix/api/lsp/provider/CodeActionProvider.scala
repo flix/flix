@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
-import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Diagnostic, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{CodeHint, ParseError, ResolutionError, TypeError}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -63,6 +63,8 @@ object CodeActionProvider {
       List(CodeAction(
         title = "Change {} to IO",
         kind = CodeActionKind.QuickFix,
+        diagnostic = Some(Diagnostic.from(CodeHint.Experimental(loc))),
+        isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "IO"))))),
         command = None
       ))
@@ -71,6 +73,8 @@ object CodeActionProvider {
       List(CodeAction(
         title = "add \\ IO to signature",
         kind = CodeActionKind.QuickFix,
+        diagnostic = Some(Diagnostic.from(CodeHint.Experimental(loc))),
+        isPreferred = true,
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ IO "))))),
         command = None
       ))
