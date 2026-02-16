@@ -2801,9 +2801,12 @@ object Parser2 {
       nameUnqualified(NAME_VARIABLE)
       expect(TokenKind.Colon)
       nameAllowQualified(NAME_JAVA, tail = Set())
-      if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+      if (eat(TokenKind.Equal)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
-      } else {
+      }
+      else {
         expect(TokenKind.ArrowThickR)
       }
       statement()
