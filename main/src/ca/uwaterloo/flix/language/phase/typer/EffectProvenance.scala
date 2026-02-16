@@ -366,7 +366,6 @@ object EffectProvenance {
       *   Cst    tpe1
       *    |
       *   Op
-      * Here Op, is a boolean ring operand e.g. Union (+)
       */
     case Type.Apply(tpe1, tpe2, _) => (tpe1, tpe2) match {
 
