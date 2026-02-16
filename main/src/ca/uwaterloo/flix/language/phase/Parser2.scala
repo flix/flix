@@ -2375,7 +2375,7 @@ object Parser2 {
         Type.ttype()
       }
       if (eat(TokenKind.Equal)) {
-        closeWithError(open(), ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2793,7 +2793,11 @@ object Parser2 {
       nameUnqualified(NAME_VARIABLE)
       expect(TokenKind.Colon)
       nameAllowQualified(NAME_JAVA, tail = Set())
-      expect(TokenKind.ArrowThickR)
+      if (eat(TokenKind.Equal)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else {
+        expect(TokenKind.ArrowThickR)
+      }
       statement()
       close(mark, TreeKind.Expr.TryCatchRuleFragment)
     }
