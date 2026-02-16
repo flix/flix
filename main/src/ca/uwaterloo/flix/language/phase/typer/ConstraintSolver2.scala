@@ -472,7 +472,7 @@ object ConstraintSolver2 {
       case Result.Err(unsolved) =>
         // We try to compute user-friendly error message
         // If unsuccessful we return original unsolved constraints
-        val errors = EffectProvenance.getError(constrs0)
+        val errors = EffectProvenance.getErrors(constrs0)
         val c = errors match {
           case Some(effErrors) => effErrors
           case None => unsolved
