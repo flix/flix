@@ -1517,4 +1517,34 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[ParseError.ExpectedArrowThickRGotEqual](result)
   }
+
+  test("ExpectedArrowThickRGotEqual.04") {
+    val input =
+      """
+        |import java.io.BufferedReader
+        |import java.io.File
+        |import java.io.FileReader
+        |import java.io.FileNotFoundException
+        |import java.io.IOException
+        |
+        |def main(): Unit \ IO =
+        |    let f = new File("foo.txt");
+        |    try {
+        |        let r = new BufferedReader(new FileReader(f));
+        |        let l = r.readLine();
+        |        println("The first line of the file is: ${l}");
+        |        r.close()
+        |    } catch {
+        |        case _: FileNotFoundException =>
+        |            println("The file does not exist!")
+        |        case ex: IOException =
+        |            println("The file could not be read!");
+        |            println("The error message was: ${ex.getMessage()}")
+        |    }
+        |
+        |""".stripMargin
+
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedArrowThickRGotEqual](result)
+  }
 }
