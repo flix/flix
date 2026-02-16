@@ -24,7 +24,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
 
-  test("TestEffError01") {
+  test("Test.ExplicitlyPureUsingIO.01") {
     val input =
       """
         |def f () : Unit \ {} = {
@@ -38,7 +38,71 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
   }
 
-  test("TestEffError02") {
+  test("Test.ExplicitlyPureUsingIO.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ {} = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.03") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ {} = println(x)
+        |}
+        |def foo(): Unit \ IO =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.04") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit \ IO
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ IO = println(x)
+        |}
+        |def foo(): Unit \ {} =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.05") {
+    val input =
+      """
+        |def a(): Unit \ IO = println(42)
+        |def b(): Unit \ {} = a()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.01") {
     val input =
       """
         |def f () : Unit = {
@@ -50,6 +114,172 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.03") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit = println(x)
+        |}
+        |def foo(): Unit \ IO =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.04") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit \ IO
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ IO = println(x)
+        |}
+        |def foo(): Unit =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.05") {
+    val input =
+      """
+        |def a(): Unit \ IO = println(42)
+        |def b(): Unit = a()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.01") {
+    val input =
+      """
+        |def foo(): Unit \ {} =
+        |    Bar.buzz()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ {} = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.03") {
+    val input =
+      """
+        |def a(): Unit \ Bar = Bar.buzz()
+        |def b(): Unit \ {} = a()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.01") {
+    val input =
+      """
+        |def foo(): Unit =
+        |    Bar.buzz()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.03") {
+    val input =
+      """
+        |def a(): Unit \ Bar = Bar.buzz()
+        |def b(): Unit = a()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
   }
 
   test("TestLeq01") {
