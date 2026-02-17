@@ -49,105 +49,12 @@ object Terminator {
   /** Checks a definition for termination properties if annotated with @Terminates. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Def = {
     if (defn.spec.ann.isTerminates) {
-      // Check strict positivity of parameter types
       checkStrictPositivity(defn)
-
-      // Build the initial substructure environment and walk the body.
-      // If the function is not self-recursive the env is irrelevant — visitExp
-      // still checks for forbidden expressions in every case.
-      val selfRecursive = isSelfRecursive(defn.sym, defn.exp)
       val fparams = defn.spec.fparams
-      val initialEnv: SubEnv =
-        if (selfRecursive) fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, false)).toMap
-        else Map.empty
-      visitExp(defn.sym, if (selfRecursive) Some(fparams) else None, initialEnv, defn.exp)
+      val initialEnv: SubEnv = fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, false)).toMap
+      visitExp(defn.sym, fparams, initialEnv, defn.exp)
     }
     defn
-  }
-
-  /** Returns true if the expression contains a self-recursive call. */
-  private def isSelfRecursive(sym: Symbol.DefnSym, exp: Expr): Boolean = {
-    var found = false
-    def go(e: Expr): Unit = if (!found) {
-      e match {
-        case Expr.ApplyDef(symUse, exps, _, _, _, _, _) =>
-          if (symUse.sym == sym) found = true
-          else exps.foreach(go)
-        case Expr.Match(scr, rules, _, _, _) =>
-          go(scr); rules.foreach(r => { r.guard.foreach(go); go(r.exp) })
-        case Expr.Let(_, e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.LocalDef(_, _, e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.IfThenElse(e1, e2, e3, _, _, _) => go(e1); go(e2); go(e3)
-        case Expr.Lambda(_, e1, _, _) => go(e1)
-        case Expr.ApplyClo(e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.Stm(e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.Tag(_, exps, _, _, _) => exps.foreach(go)
-        case Expr.Tuple(exps, _, _, _) => exps.foreach(go)
-        case Expr.Unary(_, e1, _, _, _) => go(e1)
-        case Expr.Binary(_, e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.Region(_, _, e1, _, _, _) => go(e1)
-        case Expr.Discard(e1, _, _) => go(e1)
-        case Expr.TryCatch(e1, rules, _, _, _) => go(e1); rules.foreach(r => go(r.exp))
-        case Expr.TypeMatch(e1, rules, _, _, _) => go(e1); rules.foreach(r => go(r.exp))
-        case Expr.ExtMatch(e1, rules, _, _, _) => go(e1); rules.foreach(r => go(r.exp))
-        case Expr.RestrictableChoose(_, e1, rules, _, _, _) => go(e1); rules.foreach(r => go(r.exp))
-        case Expr.Handler(_, rules, _, _, _, _, _) => rules.foreach(r => go(r.exp))
-        case Expr.RunWith(e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(go)
-        case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(go)
-        case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.foreach(go)
-        case Expr.Ascribe(e1, _, _, _, _, _) => go(e1)
-        case Expr.CheckedCast(_, e1, _, _, _) => go(e1)
-        case Expr.UncheckedCast(e1, _, _, _, _, _) => go(e1)
-        case Expr.Unsafe(e1, _, _, _, _, _) => go(e1)
-        case Expr.Without(e1, _, _, _, _) => go(e1)
-        case Expr.RecordSelect(e1, _, _, _, _) => go(e1)
-        case Expr.RecordExtend(_, e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.RecordRestrict(_, e1, _, _, _) => go(e1)
-        case Expr.ArrayLit(exps, e1, _, _, _) => exps.foreach(go); go(e1)
-        case Expr.ArrayNew(e1, e2, e3, _, _, _) => go(e1); go(e2); go(e3)
-        case Expr.ArrayLoad(e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.ArrayLength(e1, _, _) => go(e1)
-        case Expr.ArrayStore(e1, e2, e3, _, _) => go(e1); go(e2); go(e3)
-        case Expr.StructNew(_, fields, region, _, _, _) => fields.foreach(f => go(f._2)); region.foreach(go)
-        case Expr.StructGet(e1, _, _, _, _) => go(e1)
-        case Expr.StructPut(e1, _, e2, _, _, _) => go(e1); go(e2)
-        case Expr.VectorLit(exps, _, _, _) => exps.foreach(go)
-        case Expr.VectorLoad(e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.VectorLength(e1, _) => go(e1)
-        case Expr.Lazy(e1, _, _) => go(e1)
-        case Expr.Force(e1, _, _, _) => go(e1)
-        case Expr.FixpointLambda(_, e1, _, _, _) => go(e1)
-        case Expr.FixpointMerge(e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.foreach(go)
-        case Expr.FixpointQueryWithProvenance(exps, _, _, _, _, _) => exps.foreach(go)
-        case Expr.FixpointQueryWithSelect(exps, q, sels, _, wh, _, _, _, _) => exps.foreach(go); go(q); sels.foreach(go); wh.foreach(go)
-        case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.foreach(go)
-        case Expr.InvokeConstructor(_, exps, _, _, _) => exps.foreach(go)
-        case Expr.InvokeMethod(_, e1, exps, _, _, _) => go(e1); exps.foreach(go)
-        case Expr.InvokeStaticMethod(_, exps, _, _, _) => exps.foreach(go)
-        case Expr.GetField(_, e1, _, _, _) => go(e1)
-        case Expr.PutField(_, e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.PutStaticField(_, e1, _, _, _) => go(e1)
-        case Expr.NewObject(_, _, _, _, methods, _) => methods.foreach(m => go(m.exp))
-        case Expr.NewChannel(e1, _, _, _) => go(e1)
-        case Expr.GetChannel(e1, _, _, _) => go(e1)
-        case Expr.PutChannel(e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.SelectChannel(rules, default, _, _, _) => rules.foreach(r => { go(r.chan); go(r.exp) }); default.foreach(go)
-        case Expr.Spawn(e1, e2, _, _, _) => go(e1); go(e2)
-        case Expr.ParYield(frags, e1, _, _, _) => frags.foreach(f => go(f.exp)); go(e1)
-        case Expr.Throw(e1, _, _, _) => go(e1)
-        case Expr.Use(_, _, e1, _) => go(e1)
-        case Expr.OpenAs(_, e1, _, _) => go(e1)
-        case Expr.HoleWithExp(e1, _, _, _, _) => go(e1)
-        case Expr.InstanceOf(e1, _, _) => go(e1)
-        case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(go)
-        case Expr.ExtTag(_, exps, _, _, _) => exps.foreach(go)
-        case _ => () // Cst, Var, Hole, GetStaticField, FixpointConstraintSet, Error
-      }
-    }
-    go(exp)
-    found
   }
 
   // =========================================================================
@@ -157,25 +64,23 @@ object Terminator {
   /**
     * Recursively visits `exp`, performing two checks simultaneously:
     *
-    *   - **Forbidden features**: Every expression is checked regardless of `fparamsOpt`.
-    *   - **Structural recursion**: When `fparamsOpt` is `Some(fparams)` (i.e. the function
-    *     is self-recursive), self-recursive calls are verified to pass a strict substructure
-    *     of a formal parameter, and the substructure environment `env` is threaded through
-    *     pattern matches and let-bindings.
+    *   - **Forbidden features**: Every expression is checked regardless of recursion.
+    *   - **Structural recursion**: Self-recursive calls are verified to pass a strict
+    *     substructure of a formal parameter, and the substructure environment `env` is
+    *     threaded through pattern matches and let-bindings.
     *
-    * @param defnSym   the symbol of the enclosing @Terminates function.
-    * @param fparamsOpt `Some(fparams)` when checking structural recursion, `None` otherwise.
-    * @param env       the current substructure environment.
-    * @param exp       the expression to check.
+    * @param defnSym the symbol of the enclosing @Terminates function.
+    * @param fparams the formal parameters of the function.
+    * @param env     the current substructure environment.
+    * @param exp     the expression to check.
     */
-  private def visitExp(defnSym: Symbol.DefnSym, fparamsOpt: Option[List[FormalParam]], env: SubEnv, exp: Expr)(implicit sctx: SharedContext): Unit = {
+  private def visitExp(defnSym: Symbol.DefnSym, fparams: List[FormalParam], env: SubEnv, exp: Expr)(implicit sctx: SharedContext): Unit = {
 
-    def visit(e: Expr): Unit = visitExp(defnSym, fparamsOpt, env, e)
+    def visit(e: Expr): Unit = visitExp(defnSym, fparams, env, e)
 
     exp match {
       // --- Self-recursive call (structural recursion check) ---
-      case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) if fparamsOpt.exists(_ => symUse.sym == defnSym) =>
-        val fparams = fparamsOpt.get
+      case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) if symUse.sym == defnSym =>
         val hasDecreasingArg = exps.zip(fparams).exists {
           case (Expr.Var(sym, _, _), fp) =>
             env.get(sym) match {
@@ -202,8 +107,8 @@ object Terminator {
               case Some(rel) => extendEnvFromPattern(env, pat, rel.rootParam)
               case None => env
             }
-            guard.foreach(visitExp(defnSym, fparamsOpt, extEnv, _))
-            visitExp(defnSym, fparamsOpt, extEnv, body)
+            guard.foreach(visitExp(defnSym, fparams, extEnv, _))
+            visitExp(defnSym, fparams, extEnv, body)
         }
 
       // --- Let: propagate alias when RHS is a tracked variable ---
@@ -213,7 +118,7 @@ object Terminator {
           case Expr.Var(sym, _, _) => env.get(sym).map(rel => env + (bnd.sym -> rel)).getOrElse(env)
           case _ => env
         }
-        visitExp(defnSym, fparamsOpt, extEnv, exp2)
+        visitExp(defnSym, fparams, extEnv, exp2)
 
       // --- LocalDef: don't propagate sub-env into local def body ---
       case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
