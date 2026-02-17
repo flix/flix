@@ -66,6 +66,38 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     expectError[NonStructuralRecursion](result)
   }
 
+  test("NonStructuralRecursion.05") {
+    // Tuple scrutinee but recursive call passes original params, not sub-patterns
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def f(l1: MyList[Int32], l2: MyList[Int32]): Int32 = match (l1, l2) {
+        |    case (MyList.Nil, _)                          => 0
+        |    case (MyList.Cons(_, xs), MyList.Cons(_, ys)) => f(l1, l2)
+        |    case _                                         => 0
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("NonStructuralRecursion.06") {
+    // Tuple scrutinee: passes a sub of l1 but in l2's position, and l1's position gets l2
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def f(l1: MyList[Int32], l2: MyList[Int32]): Int32 = match (l1, l2) {
+        |    case (MyList.Nil, _)                          => 0
+        |    case (MyList.Cons(_, xs), MyList.Cons(_, ys)) => f(l2, xs)
+        |    case _                                         => 0
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
   // =========================================================================
   // NonStrictlyPositiveType
   // =========================================================================

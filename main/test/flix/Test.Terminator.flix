@@ -208,4 +208,51 @@ mod Test.Terminator {
     def testOptionGetOrElse01(): Unit \ Assert =
         assertTrue(optGetOrElse(MyOption.Some(42), 0) == 42)
 
+    // --- Tuple-scrutinee structural recursion ---
+
+    @Terminates
+    def isPrefixOf(l1: MyList[Int32], l2: MyList[Int32]): Bool = match (l1, l2) {
+        case (MyList.Nil, _)                          => true
+        case (_, MyList.Nil)                           => false
+        case (MyList.Cons(x, xs), MyList.Cons(y, ys)) =>
+            if (x == y) isPrefixOf(xs, ys) else false
+    }
+
+    @Test
+    def testIsPrefixOf01(): Unit \ Assert =
+        assertTrue(isPrefixOf(MyList.Cons(1, MyList.Nil), MyList.Cons(1, MyList.Cons(2, MyList.Nil))))
+
+    @Test
+    def testIsPrefixOf02(): Unit \ Assert =
+        assertTrue(not isPrefixOf(MyList.Cons(3, MyList.Nil), MyList.Cons(1, MyList.Nil)))
+
+    @Terminates
+    def myZip(l1: MyList[Int32], l2: MyList[Int32]): MyList[(Int32, Int32)] = match (l1, l2) {
+        case (MyList.Nil, _)                          => MyList.Nil
+        case (_, MyList.Nil)                           => MyList.Nil
+        case (MyList.Cons(x, xs), MyList.Cons(y, ys)) =>
+            MyList.Cons((x, y), myZip(xs, ys))
+    }
+
+    @Test
+    def testZip01(): Unit \ Assert =
+        assertTrue(myZip(MyList.Cons(1, MyList.Cons(2, MyList.Nil)),
+                         MyList.Cons(3, MyList.Cons(4, MyList.Nil))) ==
+            MyList.Cons((1, 3), MyList.Cons((2, 4), MyList.Nil)))
+
+    @Terminates
+    def natEq(n: Nat, m: Nat): Bool = match (n, m) {
+        case (Nat.Zero, Nat.Zero)       => true
+        case (Nat.Succ(a), Nat.Succ(b)) => natEq(a, b)
+        case _                           => false
+    }
+
+    @Test
+    def testNatEq01(): Unit \ Assert =
+        assertTrue(natEq(Nat.Succ(Nat.Succ(Nat.Zero)), Nat.Succ(Nat.Succ(Nat.Zero))))
+
+    @Test
+    def testNatEq02(): Unit \ Assert =
+        assertTrue(not natEq(Nat.Succ(Nat.Zero), Nat.Zero))
+
 }

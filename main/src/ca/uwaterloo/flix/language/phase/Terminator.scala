@@ -196,19 +196,12 @@ object Terminator {
         }
         exps.foreach(visit)
 
-      // --- Match: extend env when scrutinee is a tracked variable ---
+      // --- Match: extend env when scrutinee is a tracked variable or tuple ---
       case Expr.Match(scrutinee, rules, _, _, _) =>
         visit(scrutinee)
-        val scrutineeRelation: Option[ParamRelation] = scrutinee match {
-          case Expr.Var(sym, _, _) => env.lookup(sym)
-          case _ => None
-        }
         rules.foreach {
           case MatchRule(pat, guard, body, _) =>
-            val extEnv = scrutineeRelation match {
-              case Some(rel) => extendEnvFromPattern(env, pat, rel.rootParam)
-              case None => env
-            }
+            val extEnv = extendEnvFromScrutinee(env, scrutinee, pat)
             guard.foreach(visitExp(defnSym, fparams, extEnv, _))
             visitExp(defnSym, fparams, extEnv, body)
         }
@@ -385,6 +378,28 @@ object Terminator {
   // =========================================================================
   // Pattern environment helpers
   // =========================================================================
+
+  /**
+    * Pairs a scrutinee expression with its pattern and extends the sub-env accordingly.
+    *
+    * Handles two cases recursively:
+    *  - `Expr.Var` + any pattern — looks up the var in the env and delegates to `extendEnvFromPattern`.
+    *  - `Expr.Tuple` + `Pattern.Tuple` — zips the tuple elements with the sub-patterns and recurses
+    *    on each pair, accumulating env extensions. This naturally supports nested tuples.
+    */
+  private def extendEnvFromScrutinee(env: SubEnv, scrutinee: Expr, pat: Pattern): SubEnv =
+    (scrutinee, pat) match {
+      case (Expr.Var(sym, _, _), _) =>
+        env.lookup(sym) match {
+          case Some(rel) => extendEnvFromPattern(env, pat, rel.rootParam)
+          case None      => env
+        }
+      case (Expr.Tuple(exps, _, _, _), Pattern.Tuple(pats, _, _)) =>
+        exps.zip(pats.toList).foldLeft(env) {
+          case (acc, (expr, subPat)) => extendEnvFromScrutinee(acc, expr, subPat)
+        }
+      case _ => env
+    }
 
   /**
     * Extends the substructure environment based on a pattern match.
