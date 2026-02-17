@@ -178,13 +178,11 @@ object Terminator {
     * @param defnSym the symbol of the enclosing @Terminates function.
     * @param fparams the formal parameters of the function.
     * @param env     the current substructure environment.
-    * @param exp     the expression to check.
+    * @param exp0    the expression to check.
     */
-  private def visitExp(defnSym: Symbol.DefnSym, fparams: List[FormalParam], env: SubEnv, exp: Expr)(implicit sctx: SharedContext): Unit = {
+  private def visitExp(defnSym: Symbol.DefnSym, fparams: List[FormalParam], env: SubEnv, exp0: Expr)(implicit sctx: SharedContext): Unit = {
 
-    def visit(e: Expr): Unit = visitExp(defnSym, fparams, env, e)
-
-    exp match {
+    def visit(exp0: Expr): Unit = exp0 match {
       // --- Self-recursive call (structural recursion check) ---
       case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) if symUse.sym == defnSym =>
         val hasDecreasingArg = exps.zip(fparams).exists {
@@ -373,6 +371,8 @@ object Terminator {
       case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.foreach(visit)
       case Expr.Error(_, _, _) => ()
     }
+
+    visit(exp0)
   }
 
   // =========================================================================
