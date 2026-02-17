@@ -264,30 +264,45 @@ object Terminator {
       case Expr.ExtTag(_, exps, _, _, _) => exps.foreach(visit)
       case Expr.Tuple(exps, _, _, _) => exps.foreach(visit)
       case Expr.RecordSelect(e, _, _, _, _) => visit(e)
-      case Expr.RecordExtend(_, e1, e2, _, _, _) => visit(e1); visit(e2)
+      case Expr.RecordExtend(_, e1, e2, _, _, _) =>
+        visit(e1)
+        visit(e2)
       case Expr.RecordRestrict(_, e, _, _, _) => visit(e)
-      case Expr.ArrayLit(exps, e, _, _, _) => exps.foreach(visit); visit(e)
+      case Expr.ArrayLit(exps, e, _, _, _) =>
+        exps.foreach(visit)
+        visit(e)
 
       case Expr.ArrayNew(e1, e2, e3, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e1); visit(e2); visit(e3)
+        visit(e1)
+        visit(e2)
+        visit(e3)
 
-      case Expr.ArrayLoad(e1, e2, _, _, _) => visit(e1); visit(e2)
+      case Expr.ArrayLoad(e1, e2, _, _, _) =>
+        visit(e1)
+        visit(e2)
       case Expr.ArrayLength(e, _, _) => visit(e)
 
       case Expr.ArrayStore(e1, e2, e3, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e1); visit(e2); visit(e3)
+        visit(e1)
+        visit(e2)
+        visit(e3)
 
-      case Expr.StructNew(_, fields, region, _, _, _) => fields.foreach(f => visit(f._2)); region.foreach(visit)
+      case Expr.StructNew(_, fields, region, _, _, _) =>
+        fields.foreach(f => visit(f._2))
+        region.foreach(visit)
       case Expr.StructGet(e, _, _, _, _) => visit(e)
 
       case Expr.StructPut(e1, _, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e1); visit(e2)
+        visit(e1)
+        visit(e2)
 
       case Expr.VectorLit(exps, _, _, _) => exps.foreach(visit)
-      case Expr.VectorLoad(e1, e2, _, _, _) => visit(e1); visit(e2)
+      case Expr.VectorLoad(e1, e2, _, _, _) =>
+        visit(e1)
+        visit(e2)
       case Expr.VectorLength(e, _) => visit(e)
       case Expr.Ascribe(e, _, _, _, _, _) => visit(e)
       case Expr.InstanceOf(e, _, _) => visit(e)
@@ -302,14 +317,18 @@ object Terminator {
         visit(e)
 
       case Expr.Without(e, _, _, _, _) => visit(e)
-      case Expr.TryCatch(e, rules, _, _, _) => visit(e); rules.foreach(r => visit(r.exp))
+      case Expr.TryCatch(e, rules, _, _, _) =>
+        visit(e)
+        rules.foreach(r => visit(r.exp))
 
       case Expr.Throw(e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.Handler(_, rules, _, _, _, _, _) => rules.foreach(r => visit(r.exp))
-      case Expr.RunWith(e1, e2, _, _, _) => visit(e1); visit(e2)
+      case Expr.RunWith(e1, e2, _, _, _) =>
+        visit(e1)
+        visit(e2)
 
       case Expr.InvokeConstructor(_, exps, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
@@ -317,7 +336,8 @@ object Terminator {
 
       case Expr.InvokeMethod(_, e, exps, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e); exps.foreach(visit)
+        visit(e)
+        exps.foreach(visit)
 
       case Expr.InvokeStaticMethod(_, exps, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
@@ -329,7 +349,8 @@ object Terminator {
 
       case Expr.PutField(_, e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e1); visit(e2)
+        visit(e1)
+        visit(e2)
 
       case Expr.GetStaticField(_, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
@@ -352,20 +373,26 @@ object Terminator {
 
       case Expr.PutChannel(e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e1); visit(e2)
+        visit(e1)
+        visit(e2)
 
       case Expr.SelectChannel(rules, default, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        rules.foreach(r => { visit(r.chan); visit(r.exp) })
+        rules.foreach { r =>
+          visit(r.chan)
+          visit(r.exp)
+        }
         default.foreach(visit)
 
       case Expr.Spawn(e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e1); visit(e2)
+        visit(e1)
+        visit(e2)
 
       case Expr.ParYield(frags, e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        frags.foreach(f => visit(f.exp)); visit(e)
+        frags.foreach(f => visit(f.exp))
+        visit(e)
 
       case Expr.Lazy(e, _, _) => visit(e)
 
@@ -378,7 +405,8 @@ object Terminator {
 
       case Expr.FixpointMerge(e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e1); visit(e2)
+        visit(e1)
+        visit(e2)
 
       case Expr.FixpointQueryWithProvenance(exps, _, _, _, _, _) => exps.foreach(visit)
       case Expr.FixpointQueryWithSelect(exps, q, sels, _, where, _, _, _, _) =>
