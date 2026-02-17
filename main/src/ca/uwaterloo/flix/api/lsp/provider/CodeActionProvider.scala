@@ -34,7 +34,7 @@ import ca.uwaterloo.flix.language.errors.{CodeHint, ParseError, ResolutionError,
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = {
-    getActionsFromErrors(uri, range, errors)
+    getActionsFromErrors(uri, range, filterDuplicateErrors(errors))
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
@@ -314,4 +314,24 @@ object CodeActionProvider {
     */
   private def overlaps(range: Range, loc: SourceLocation): Boolean =
     range.overlapsWith(Range.from(loc))
+
+  /**
+    * Returns a filtered list of errors, errors with the same `loc` are removed.
+    * This is specifically for effect errors.
+    */
+  private def filterDuplicateErrors(errors: List[CompilationMessage]): List[CompilationMessage] = {
+    def key(cm: CompilationMessage): Option[SourceLocation] = cm match {
+      case TypeError.ExplicitlyPureFunctionUsesIO(loc, _)         => Some(loc)
+      case TypeError.ImplicitlyPureFunctionUsesIO(loc, _)         => Some(loc)
+      case TypeError.ImplicitlyPureFunctionUsesEffect(_, loc, _)  => Some(loc)
+      case TypeError.ExplicitlyPureFunctionUsesEffect(_, loc, _)  => Some(loc)
+      case _                                                      => None
+    }
+
+    errors.foldLeft(List.empty[CompilationMessage]) {
+      (acc, cm) =>
+        val isDuplicate = key(cm).exists(k => acc.exists(te => key(te).contains(k)))
+        if (isDuplicate) acc else cm :: acc
+    }
+  }
 }
