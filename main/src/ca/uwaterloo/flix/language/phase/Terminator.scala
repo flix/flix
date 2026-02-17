@@ -215,23 +215,101 @@ object Terminator {
 
       // --- LocalDef: don't propagate sub-env into local def body ---
       case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1); visit(exp2)
+        visit(exp1)
+        visit(exp2)
 
-      // =====================================================================
-      // Forbidden expressions — report and recurse into children
-      // =====================================================================
+      // --- All other expressions (TypedAst declaration order) ---
+
+      case Expr.Cst(_, _, _) => ()
+      case Expr.Var(_, _, _) => ()
+      case Expr.Hole(_, _, _, _, _) => ()
+      case Expr.HoleWithExp(e, _, _, _, _) => visit(e)
+      case Expr.OpenAs(_, e, _, _) => visit(e)
+      case Expr.Use(_, _, e, _) => visit(e)
+      case Expr.Lambda(_, e, _, _) => visit(e)
+
+      case Expr.ApplyClo(e1, e2, _, _, loc) =>
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        visit(e1)
+        visit(e2)
+
+      case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.foreach(visit)
+      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visit)
+      case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(visit)
+      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.foreach(visit)
+      case Expr.Unary(_, e, _, _, _) => visit(e)
+      case Expr.Binary(_, e1, e2, _, _, _) =>
+        visit(e1)
+        visit(e2)
+      case Expr.Region(_, _, e, _, _, _) => visit(e)
+      case Expr.IfThenElse(e1, e2, e3, _, _, _) =>
+        visit(e1)
+        visit(e2)
+        visit(e3)
+      case Expr.Stm(e1, e2, _, _, _) =>
+        visit(e1)
+        visit(e2)
+      case Expr.Discard(e, _, _) => visit(e)
+      case Expr.TypeMatch(e, rules, _, _, _) =>
+        visit(e)
+        rules.foreach(r => visit(r.exp))
+      case Expr.RestrictableChoose(_, e, rules, _, _, _) =>
+        visit(e)
+        rules.foreach(r => visit(r.exp))
+      case Expr.ExtMatch(e, rules, _, _, _) =>
+        visit(e)
+        rules.foreach(r => visit(r.exp))
+      case Expr.Tag(_, exps, _, _, _) => exps.foreach(visit)
+      case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visit)
+      case Expr.ExtTag(_, exps, _, _, _) => exps.foreach(visit)
+      case Expr.Tuple(exps, _, _, _) => exps.foreach(visit)
+      case Expr.RecordSelect(e, _, _, _, _) => visit(e)
+      case Expr.RecordExtend(_, e1, e2, _, _, _) => visit(e1); visit(e2)
+      case Expr.RecordRestrict(_, e, _, _, _) => visit(e)
+      case Expr.ArrayLit(exps, e, _, _, _) => exps.foreach(visit); visit(e)
 
       case Expr.ArrayNew(e1, e2, e3, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2); visit(e3)
 
+      case Expr.ArrayLoad(e1, e2, _, _, _) => visit(e1); visit(e2)
+      case Expr.ArrayLength(e, _, _) => visit(e)
+
       case Expr.ArrayStore(e1, e2, e3, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2); visit(e3)
 
+      case Expr.StructNew(_, fields, region, _, _, _) => fields.foreach(f => visit(f._2)); region.foreach(visit)
+      case Expr.StructGet(e, _, _, _, _) => visit(e)
+
       case Expr.StructPut(e1, _, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2)
+
+      case Expr.VectorLit(exps, _, _, _) => exps.foreach(visit)
+      case Expr.VectorLoad(e1, e2, _, _, _) => visit(e1); visit(e2)
+      case Expr.VectorLength(e, _) => visit(e)
+      case Expr.Ascribe(e, _, _, _, _, _) => visit(e)
+      case Expr.InstanceOf(e, _, _) => visit(e)
+      case Expr.CheckedCast(_, e, _, _, _) => visit(e)
+
+      case Expr.UncheckedCast(e, _, _, _, _, loc) =>
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        visit(e)
+
+      case Expr.Unsafe(e, _, _, _, _, loc) =>
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        visit(e)
+
+      case Expr.Without(e, _, _, _, _) => visit(e)
+      case Expr.TryCatch(e, rules, _, _, _) => visit(e); rules.foreach(r => visit(r.exp))
+
+      case Expr.Throw(e, _, _, loc) =>
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        visit(e)
+
+      case Expr.Handler(_, rules, _, _, _, _, _) => rules.foreach(r => visit(r.exp))
+      case Expr.RunWith(e1, e2, _, _, _) => visit(e1); visit(e2)
 
       case Expr.InvokeConstructor(_, exps, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
@@ -264,14 +342,6 @@ object Terminator {
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         methods.foreach(m => visit(m.exp))
 
-      case Expr.UncheckedCast(e, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e)
-
-      case Expr.Unsafe(e, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e)
-
       case Expr.NewChannel(e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
@@ -297,77 +367,30 @@ object Terminator {
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         frags.foreach(f => visit(f.exp)); visit(e)
 
-      case Expr.FixpointSolveWithProject(exps, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        exps.foreach(visit)
-
-      case Expr.FixpointMerge(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e1); visit(e2)
-
-      case Expr.Throw(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
-        visit(e)
+      case Expr.Lazy(e, _, _) => visit(e)
 
       case Expr.Force(e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
-      case Expr.ApplyClo(e1, e2, _, _, loc) =>
+      case Expr.FixpointConstraintSet(_, _, _) => ()
+      case Expr.FixpointLambda(_, e, _, _, _) => visit(e)
+
+      case Expr.FixpointMerge(e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2)
 
-      // =====================================================================
-      // Allowed expressions — just recurse into children
-      // =====================================================================
-
-      case Expr.Cst(_, _, _) => ()
-      case Expr.Var(_, _, _) => ()
-      case Expr.Hole(_, _, _, _, _) => ()
-      case Expr.HoleWithExp(e, _, _, _, _) => visit(e)
-      case Expr.OpenAs(_, e, _, _) => visit(e)
-      case Expr.Use(_, _, e, _) => visit(e)
-      case Expr.Lambda(_, e, _, _) => visit(e)
-      case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.foreach(visit)
-      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visit)
-      case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(visit)
-      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.foreach(visit)
-      case Expr.Unary(_, e, _, _, _) => visit(e)
-      case Expr.Binary(_, e1, e2, _, _, _) => visit(e1); visit(e2)
-      case Expr.Region(_, _, e, _, _, _) => visit(e)
-      case Expr.IfThenElse(e1, e2, e3, _, _, _) => visit(e1); visit(e2); visit(e3)
-      case Expr.Stm(e1, e2, _, _, _) => visit(e1); visit(e2)
-      case Expr.Discard(e, _, _) => visit(e)
-      case Expr.TypeMatch(e, rules, _, _, _) => visit(e); rules.foreach(r => visit(r.exp))
-      case Expr.RestrictableChoose(_, e, rules, _, _, _) => visit(e); rules.foreach(r => visit(r.exp))
-      case Expr.ExtMatch(e, rules, _, _, _) => visit(e); rules.foreach(r => visit(r.exp))
-      case Expr.Tag(_, exps, _, _, _) => exps.foreach(visit)
-      case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visit)
-      case Expr.ExtTag(_, exps, _, _, _) => exps.foreach(visit)
-      case Expr.Tuple(exps, _, _, _) => exps.foreach(visit)
-      case Expr.RecordSelect(e, _, _, _, _) => visit(e)
-      case Expr.RecordExtend(_, e1, e2, _, _, _) => visit(e1); visit(e2)
-      case Expr.RecordRestrict(_, e, _, _, _) => visit(e)
-      case Expr.ArrayLit(exps, e, _, _, _) => exps.foreach(visit); visit(e)
-      case Expr.ArrayLoad(e1, e2, _, _, _) => visit(e1); visit(e2)
-      case Expr.ArrayLength(e, _, _) => visit(e)
-      case Expr.StructNew(_, fields, region, _, _, _) => fields.foreach(f => visit(f._2)); region.foreach(visit)
-      case Expr.StructGet(e, _, _, _, _) => visit(e)
-      case Expr.VectorLit(exps, _, _, _) => exps.foreach(visit)
-      case Expr.VectorLoad(e1, e2, _, _, _) => visit(e1); visit(e2)
-      case Expr.VectorLength(e, _) => visit(e)
-      case Expr.Ascribe(e, _, _, _, _, _) => visit(e)
-      case Expr.InstanceOf(e, _, _) => visit(e)
-      case Expr.CheckedCast(_, e, _, _, _) => visit(e)
-      case Expr.Without(e, _, _, _, _) => visit(e)
-      case Expr.TryCatch(e, rules, _, _, _) => visit(e); rules.foreach(r => visit(r.exp))
-      case Expr.Handler(_, rules, _, _, _, _, _) => rules.foreach(r => visit(r.exp))
-      case Expr.RunWith(e1, e2, _, _, _) => visit(e1); visit(e2)
-      case Expr.Lazy(e, _, _) => visit(e)
-      case Expr.FixpointConstraintSet(_, _, _) => ()
-      case Expr.FixpointLambda(_, e, _, _, _) => visit(e)
       case Expr.FixpointQueryWithProvenance(exps, _, _, _, _, _) => exps.foreach(visit)
-      case Expr.FixpointQueryWithSelect(exps, q, sels, _, where, _, _, _, _) => exps.foreach(visit); visit(q); sels.foreach(visit); where.foreach(visit)
+      case Expr.FixpointQueryWithSelect(exps, q, sels, _, where, _, _, _, _) =>
+        exps.foreach(visit)
+        visit(q)
+        sels.foreach(visit)
+        where.foreach(visit)
+
+      case Expr.FixpointSolveWithProject(exps, _, _, _, _, loc) =>
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        exps.foreach(visit)
+
       case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.foreach(visit)
       case Expr.Error(_, _, _) => ()
     }
