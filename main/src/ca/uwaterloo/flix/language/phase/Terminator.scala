@@ -231,99 +231,99 @@ object Terminator {
       // =====================================================================
 
       case Expr.ArrayNew(e1, e2, e3, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "mutable array operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2); visit(e3)
 
       case Expr.ArrayStore(e1, e2, e3, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "mutable array operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2); visit(e3)
 
       case Expr.StructPut(e1, _, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "mutable struct operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2)
 
       case Expr.InvokeConstructor(_, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "Java interop", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         exps.foreach(visit)
 
       case Expr.InvokeMethod(_, e, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "Java interop", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e); exps.foreach(visit)
 
       case Expr.InvokeStaticMethod(_, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "Java interop", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         exps.foreach(visit)
 
       case Expr.GetField(_, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "Java field access", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.PutField(_, e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "Java field access", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2)
 
       case Expr.GetStaticField(_, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "Java field access", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
 
       case Expr.PutStaticField(_, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "Java field access", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.NewObject(_, _, _, _, methods, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "Java object creation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         methods.foreach(m => visit(m.exp))
 
       case Expr.UncheckedCast(e, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "unchecked cast", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.Unsafe(e, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "unsafe block", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.NewChannel(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "channel operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.GetChannel(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "channel operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.PutChannel(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "channel operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2)
 
       case Expr.SelectChannel(rules, default, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "channel operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         rules.foreach(r => { visit(r.chan); visit(r.exp) })
         default.foreach(visit)
 
       case Expr.Spawn(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "concurrency", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2)
 
       case Expr.ParYield(frags, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "concurrency", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         frags.foreach(f => visit(f.exp)); visit(e)
 
       case Expr.FixpointSolveWithProject(exps, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "fixpoint operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         exps.foreach(visit)
 
       case Expr.FixpointMerge(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "fixpoint operation", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2)
 
       case Expr.Throw(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "throw expression", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.Force(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "lazy force", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e)
 
       case Expr.ApplyClo(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, "closure application", loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
         visit(e1); visit(e2)
 
       // =====================================================================

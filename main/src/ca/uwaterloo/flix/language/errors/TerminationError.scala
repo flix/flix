@@ -15,24 +15,22 @@ object TerminationError {
   /**
     * An error raised when a forbidden expression appears in a @Terminates function.
     *
-    * @param sym     the symbol of the function.
-    * @param feature the name of the forbidden feature.
-    * @param loc     the source location of the forbidden expression.
+    * @param sym the symbol of the function.
+    * @param loc the source location of the forbidden expression.
     */
-  case class ForbiddenExpression(sym: Symbol.DefnSym, feature: String, loc: SourceLocation) extends TerminationError {
+  case class ForbiddenExpression(sym: Symbol.DefnSym, loc: SourceLocation) extends TerminationError {
     def code: ErrorCode = ErrorCode.E9983
 
-    def summary: String = s"Forbidden $feature in @Terminates function '${sym.name}'."
+    def summary: String = s"Forbidden expression in @Terminates function '${sym.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Forbidden ${red(feature)} in @Terminates function '${red(sym.name)}'.
+      s""">> Forbidden expression in @Terminates function '${red(sym.name)}'.
          |
-         |${highlight(loc, s"forbidden $feature", fmt)}
+         |${highlight(loc, "forbidden expression", fmt)}
          |
          |${underline("Explanation:")} A function annotated with @Terminates must not use features
-         |that could break the termination guarantee. The feature '$feature' is not
-         |allowed in a @Terminates function.
+         |that could break the termination guarantee.
          |""".stripMargin
     }
   }
