@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
@@ -38,11 +38,11 @@ object TerminationError {
   /**
     * An error raised when the decreasing argument's type is not strictly positive.
     *
-    * @param sym the symbol of the function.
-    * @param tpe the type that is not strictly positive.
-    * @param loc the source location of the type.
+    * @param sym     the symbol of the function.
+    * @param caseSym the enum case that contains a recursive occurrence in a negative position.
+    * @param loc     the source location of the type.
     */
-  case class NonStrictlyPositiveType(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TerminationError {
+  case class NonStrictlyPositiveType(sym: Symbol.DefnSym, caseSym: Symbol.CaseSym, loc: SourceLocation) extends TerminationError {
     def code: ErrorCode = ErrorCode.E9972
 
     def summary: String = s"Non-strictly positive type in '${sym.name}'."
@@ -52,6 +52,10 @@ object TerminationError {
       s""">> Non-strictly positive type in '${red(sym.name)}'.
          |
          |${highlight(loc, "non-strictly positive type", fmt)}
+         |
+         |The enum case '${red(caseSym.name)}' contains a recursive occurrence in a negative position.
+         |
+         |${highlight(caseSym.loc, "negative occurrence", fmt)}
          |
          |${underline("Explanation:")} A function annotated with @Terminates requires that any
          |type used for structural recursion is strictly positive. A type is not strictly

@@ -430,12 +430,11 @@ object Terminator {
     */
   private def checkStrictPositivity(defn: Def)(implicit sctx: SharedContext, root: Root): Unit = {
     for (fparam <- defn.spec.fparams) {
-      val tpe = fparam.tpe
-      tpe.typeConstructor match {
+      fparam.tpe.typeConstructor match {
         case Some(TypeConstructor.Enum(enumSym, _)) =>
           root.enums.get(enumSym).foreach { enm =>
-            if (!isStrictlyPositive(enumSym, enm)) {
-              sctx.errors.add(TerminationError.NonStrictlyPositiveType(defn.sym, tpe, fparam.loc))
+            findNonPositiveCase(enumSym, enm).foreach { caseSym =>
+              sctx.errors.add(TerminationError.NonStrictlyPositiveType(defn.sym, caseSym, fparam.loc))
             }
           }
         case _ => // Not an enum type, nothing to check
@@ -444,13 +443,14 @@ object Terminator {
   }
 
   /**
-    * Returns true if the enum is strictly positive (i.e., its recursive type constructor
-    * does not appear in a negative position in any case field).
+    * Returns the first enum case that violates strict positivity, if any.
+    * A case violates strict positivity if the enum's recursive type constructor
+    * appears in a negative position in one of its fields.
     */
-  private def isStrictlyPositive(enumSym: Symbol.EnumSym, enm: TypedAst.Enum): Boolean = {
-    enm.cases.values.forall { caze =>
-      caze.tpes.forall(checkPositivity(enumSym, _, positive = true))
-    }
+  private def findNonPositiveCase(enumSym: Symbol.EnumSym, enm: TypedAst.Enum): Option[Symbol.CaseSym] = {
+    enm.cases.values.find { caze =>
+      !caze.tpes.forall(checkPositivity(enumSym, _, positive = true))
+    }.map(_.sym)
   }
 
   /**
