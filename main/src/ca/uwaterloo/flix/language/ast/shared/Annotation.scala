@@ -179,6 +179,17 @@ object Annotation {
   }
 
   /**
+    * An AST node that represents a `@Terminates` annotation.
+    *
+    * A function marked with `@Terminates` is verified to be structurally recursive by the compiler.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class Terminates(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@Terminates"
+  }
+
+  /**
     * An AST node that represents an undefined (i.e. erroneous) annotation.
     *
     * @param name the name of the annotation.

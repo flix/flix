@@ -523,6 +523,9 @@ class Flix {
             val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
             errors ++= safetyErrors
 
+            val (_, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
+            errors ++= terminationErrors
+
             val (afterDependencies, _) = Dependencies.run(afterRedundancy, cachedTyperAst, changeSet)
 
             if (options.incremental) {

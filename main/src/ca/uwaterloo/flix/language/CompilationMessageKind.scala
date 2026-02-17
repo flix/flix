@@ -31,6 +31,7 @@ sealed trait CompilationMessageKind {
     case ResolutionError => "Resolution Error"
     case SafetyError => "Safety Error"
     case StratificationError => "Stratification Error"
+    case TerminationError => "Termination Error"
     case TestError => "Test Error"
     case TypeError => "Type Error"
     case WeederError => "Syntax Error"
@@ -55,7 +56,8 @@ sealed trait CompilationMessageKind {
     case StratificationError => Some(PatternMatchError)
     case PatternMatchError => Some(RedundancyError)
     case RedundancyError => Some(SafetyError)
-    case SafetyError => None
+    case SafetyError => Some(TerminationError)
+    case TerminationError => None
     case TestError => None
   }
 }
@@ -85,6 +87,8 @@ object CompilationMessageKind {
   case object SafetyError extends CompilationMessageKind
 
   case object StratificationError extends CompilationMessageKind
+
+  case object TerminationError extends CompilationMessageKind
 
   case object TestError extends CompilationMessageKind
 

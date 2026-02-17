@@ -707,6 +707,7 @@ object Weeder2 {
         case "@Skip" => Skip(loc)
         case "@Test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)
+        case "@Terminates" => Terminates(loc)
         case other =>
           val name = other.stripPrefix("@")
           val error = UndefinedAnnotation(name, loc)
