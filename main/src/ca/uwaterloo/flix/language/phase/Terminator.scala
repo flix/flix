@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.ParOps
@@ -34,25 +33,132 @@ object Terminator {
     }
 
   /**
-    * Represents the relationship of a variable to a formal parameter.
+    * Classifies the structural depth of a variable relative to a formal parameter.
     *
-    * @param rootParam the formal parameter this variable is related to.
-    * @param isStrict  true if the variable is a strict substructure of the parameter.
+    *  - `Alias`: the variable is equal to, or a renaming of, the formal parameter.
+    *    It has not been destructured, so passing it to a recursive call does ''not''
+    *    constitute a decrease.
+    *  - `StrictSub`: the variable was extracted from inside a data constructor
+    *    (e.g. via a `Tag` pattern), so it is strictly smaller than the formal parameter
+    *    and may be passed to a recursive call.
     */
-  private case class ParamRelation(rootParam: Symbol.VarSym, isStrict: Boolean)
+  private sealed trait Strictness
+
+  /** The variable is equal to or a renaming of the formal parameter — not yet destructured. */
+  private case object Alias extends Strictness
+
+  /** The variable is a strict substructure of the formal parameter. */
+  private case object StrictSub extends Strictness
 
   /**
-    * A map from variable symbols to their structural relationship with formal parameters.
+    * Describes the structural relationship between a local variable and a formal parameter
+    * of the enclosing `@Terminates` function.
+    *
+    * During the termination check, every local variable that can be traced back to a formal
+    * parameter is assigned a `ParamRelation`. The `rootParam` field identifies which formal
+    * parameter the variable descends from, and `strictness` records whether the variable is
+    * known to be a ''strict'' substructure (i.e. extracted from inside a constructor) or merely
+    * an alias (i.e. equal to or a renaming of the parameter).
+    *
+    * ==Example==
+    * Given:
+    * {{{
+    *   @Terminates
+    *   def length(xs: List[a]): Int32 = match xs {
+    *     case Nil     => 0
+    *     case _ :: tl => 1 + length(tl)
+    *   }
+    * }}}
+    *
+    *  - At the entry point, `xs` has `ParamRelation(xs, Alias)` — it ''is'' the parameter,
+    *    not yet destructured.
+    *  - Inside the `_ :: tl` branch, `tl` has `ParamRelation(xs, StrictSub)` because it was
+    *    bound inside a `Tag` (cons cell) pattern, making it a strict substructure of `xs`.
+    *  - The recursive call `length(tl)` is accepted because `tl` is a `StrictSub` of `xs`,
+    *    which is the formal parameter in the corresponding argument position.
+    *
+    * @param rootParam  the formal parameter this variable is structurally related to.
+    * @param strictness whether the variable is a strict substructure or merely an alias.
     */
-  private type SubEnv = Map[Symbol.VarSym, ParamRelation]
+  private case class ParamRelation(rootParam: Symbol.VarSym, strictness: Strictness)
+
+  /**
+    * Tracks the structural relationship between local variables and the formal parameters
+    * of the enclosing `@Terminates` function.
+    *
+    * As the termination checker walks the expression tree it maintains a `SubEnv` that grows
+    * whenever a pattern match or let-binding introduces a new variable that can be traced
+    * back to a formal parameter. The environment is then queried at every self-recursive
+    * call site to verify that at least one argument is a strict substructure of the
+    * corresponding formal parameter.
+    *
+    * ==Lifecycle==
+    * {{{
+    *   @Terminates
+    *   def length(xs: List[a]): Int32 = match xs {
+    *     case Nil     => 0
+    *     case _ :: tl => 1 + length(tl)
+    *   }
+    * }}}
+    *
+    * The `SubEnv` evolves as follows:
+    *  1. '''Entry''': `{ xs -> (xs, Alias) }` — the parameter tracks itself as an alias.
+    *  2. '''Inside _ :: tl''': `{ xs -> (xs, Alias), tl -> (xs, StrictSub) }` — `tl` is
+    *     a strict substructure of `xs` because it was bound inside a `Tag` pattern.
+    *  3. At the call `length(tl)`, `isStrictSubOf(tl, xs)` returns `true`.
+    *     Since `xs` is the corresponding formal parameter, the call is accepted.
+    */
+  private case class SubEnv(m: Map[Symbol.VarSym, ParamRelation]) {
+
+    /** Looks up the structural relation of `sym`, if tracked. */
+    def lookup(sym: Symbol.VarSym): Option[ParamRelation] = m.get(sym)
+
+    /** Binds `sym` with the given relation, returning an extended environment. */
+    def bind(sym: Symbol.VarSym, rel: ParamRelation): SubEnv = SubEnv(m + (sym -> rel))
+
+    /**
+      * Returns `true` if `sym` is a strict substructure of `rootParam`.
+      *
+      * This is the key query at self-recursive call sites: an argument is decreasing
+      * if and only if it is a strict substructure of the formal parameter in the
+      * same position.
+      */
+    def isStrictSubOf(sym: Symbol.VarSym, rootParam: Symbol.VarSym): Boolean =
+      m.get(sym) match {
+        case Some(ParamRelation(rp, StrictSub)) => rp == rootParam
+        case _ => false
+      }
+
+    /**
+      * If `from` is a tracked variable, binds `to` with the same relation.
+      *
+      * Used for let-bindings like `let y = x` where `x` is tracked — `y` inherits
+      * whatever structural relationship `x` has with a formal parameter.
+      */
+    def propagateAlias(from: Symbol.VarSym, to: Symbol.VarSym): SubEnv =
+      m.get(from) match {
+        case Some(rel) => SubEnv(m + (to -> rel))
+        case None => this
+      }
+  }
+
+  private object SubEnv {
+    /**
+      * Creates the initial environment for a `@Terminates` function.
+      *
+      * Each formal parameter is mapped to itself with `Alias` strictness,
+      * meaning "this variable ''is'' the parameter, not a substructure of it".
+      */
+    def init(fparams: List[FormalParam]): SubEnv =
+      SubEnv(fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, Alias)).toMap)
+  }
 
   /** Checks a definition for termination properties if annotated with @Terminates. */
-  private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Def = {
+  private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root): Def = {
     if (defn.spec.ann.isTerminates) {
       checkStrictPositivity(defn)
       val fparams = defn.spec.fparams
-      val initialEnv: SubEnv = fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, false)).toMap
-      visitExp(defn.sym, fparams, initialEnv, defn.exp)
+      visitExp(defn.sym, fparams, SubEnv.init(fparams), defn.exp)
     }
     defn
   }
@@ -82,11 +188,7 @@ object Terminator {
       // --- Self-recursive call (structural recursion check) ---
       case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) if symUse.sym == defnSym =>
         val hasDecreasingArg = exps.zip(fparams).exists {
-          case (Expr.Var(sym, _, _), fp) =>
-            env.get(sym) match {
-              case Some(ParamRelation(rootParam, true)) => rootParam == fp.bnd.sym
-              case _ => false
-            }
+          case (Expr.Var(sym, _, _), fp) => env.isStrictSubOf(sym, fp.bnd.sym)
           case _ => false
         }
         if (!hasDecreasingArg) {
@@ -98,7 +200,7 @@ object Terminator {
       case Expr.Match(scrutinee, rules, _, _, _) =>
         visit(scrutinee)
         val scrutineeRelation: Option[ParamRelation] = scrutinee match {
-          case Expr.Var(sym, _, _) => env.get(sym)
+          case Expr.Var(sym, _, _) => env.lookup(sym)
           case _ => None
         }
         rules.foreach {
@@ -115,7 +217,7 @@ object Terminator {
       case Expr.Let(bnd, exp1, exp2, _, _, _) =>
         visit(exp1)
         val extEnv = exp1 match {
-          case Expr.Var(sym, _, _) => env.get(sym).map(rel => env + (bnd.sym -> rel)).getOrElse(env)
+          case Expr.Var(sym, _, _) => env.propagateAlias(from = sym, to = bnd.sym)
           case _ => env
         }
         visitExp(defnSym, fparams, extEnv, exp2)
@@ -296,7 +398,7 @@ object Terminator {
     case Pattern.Tuple(pats, _, _) =>
       pats.toList.foldLeft(env)((acc, p) => extendEnvFromPattern(acc, p, rootParam))
     case Pattern.Var(bnd, _, _) =>
-      env + (bnd.sym -> ParamRelation(rootParam, false))
+      env.bind(bnd.sym, ParamRelation(rootParam, Alias))
     case _ => env
   }
 
@@ -306,7 +408,7 @@ object Terminator {
     */
   private def collectStrictSubstructures(env: SubEnv, pat: Pattern, rootParam: Symbol.VarSym): SubEnv = pat match {
     case Pattern.Var(bnd, _, _) =>
-      env + (bnd.sym -> ParamRelation(rootParam, true))
+      env.bind(bnd.sym, ParamRelation(rootParam, StrictSub))
     case Pattern.Tag(_, pats, _, _) =>
       pats.foldLeft(env)((acc, p) => collectStrictSubstructures(acc, p, rootParam))
     case Pattern.Tuple(pats, _, _) =>
