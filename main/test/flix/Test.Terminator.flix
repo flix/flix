@@ -298,6 +298,23 @@ mod Test.Terminator {
     def testNonRecursiveLocalDef01(): Unit \ Assert =
         assertTrue(nonRecursiveLocalDef(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) == 5)
 
+    // --- Local def calling outer function with strict sub ---
+
+    @Terminates
+    def localDefCallsOuter(l: MyList[Int32]): Int32 = match l {
+        case MyList.Nil         => 0
+        case MyList.Cons(_, xs) =>
+            def helper(ll: MyList[Int32]): Int32 = match ll {
+                case MyList.Nil         => localDefCallsOuter(xs)
+                case MyList.Cons(_, ys) => helper(ys)
+            };
+            helper(xs)
+    }
+
+    @Test
+    def testLocalDefCallsOuter01(): Unit \ Assert =
+        assertTrue(localDefCallsOuter(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) == 0)
+
     // --- Trait default implementations ---
 
     trait ListLen[a] {

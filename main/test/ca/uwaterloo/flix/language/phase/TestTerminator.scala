@@ -302,6 +302,36 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     expectError[NonStructuralRecursion](result)
   }
 
+  test("NonStructuralRecursion.LocalDef.OuterCall.01") {
+    // Local def calls outer function with its own param (untracked in outer env)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def f(x: MyList[Int32]): Int32 =
+        |    def loop(ll: MyList[Int32]): Int32 = f(ll);
+        |    loop(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("NonStructuralRecursion.LocalDef.OuterCall.02") {
+    // Deeply nested local def calls outermost function non-structurally
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def f(x: MyList[Int32]): Int32 =
+        |    def g(y: MyList[Int32]): Int32 =
+        |        def h(z: MyList[Int32]): Int32 = f(z);
+        |        h(y);
+        |    g(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
   test("ForbiddenExpression.LocalDef.01") {
     // Forbidden `unsafe` inside local def body in @Terminates function
     val input =

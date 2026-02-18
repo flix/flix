@@ -38,10 +38,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   * Known limitations:
   * - Mutual recursion between local defs, or between a local def and the enclosing function,
   *   is not detected. This matches the existing behavior for top-level defs.
-  * - Outer function self-recursion inside a local def body is not checked. The local def has
-  *   its own `SelfSym`, so calls to the outer function are not recognized as self-calls.
-  *   This is acceptable because the outer function's own structural recursion is validated
-  *   at the top level.
   */
 object Terminator {
 
@@ -122,6 +118,15 @@ object Terminator {
   }
 
   /**
+    * Groups the state needed to check structural recursion at one nesting level.
+    *
+    * When visiting a local def body, a new context for the local def is pushed
+    * onto the front of the context list, so that calls to both the local def
+    * ''and'' any enclosing `@Terminates` function are checked.
+    */
+  private case class RecursionContext(selfSym: SelfSym, fparams: List[FormalParam], env: SubEnv)
+
+  /**
     * Tracks the structural relationship between local variables and the formal parameters
     * of the enclosing `@Terminates` function.
     *
@@ -180,7 +185,7 @@ object Terminator {
               case Some(sig) =>
                 checkStrictPositivity(defn.spec.fparams, defn.sym)
                 val fparams = defn.spec.fparams
-                visitExp(SelfInstanceDef(defn.sym, sig.sym), fparams, SubEnv.init(fparams), defn.exp)
+                visitExp(List(RecursionContext(SelfInstanceDef(defn.sym, sig.sym), fparams, SubEnv.init(fparams))), defn.exp)
               case None =>
                 visitDef(defn)
             }
@@ -198,7 +203,7 @@ object Terminator {
       if (sig.spec.ann.isTerminates) {
         checkStrictPositivity(sig.spec.fparams, sig.sym)
         val fparams = sig.spec.fparams
-        visitExp(SelfSig(sig.sym), fparams, SubEnv.init(fparams), exp)
+        visitExp(List(RecursionContext(SelfSig(sig.sym), fparams, SubEnv.init(fparams))), exp)
       }
     }
   }
@@ -208,10 +213,27 @@ object Terminator {
     if (defn.spec.ann.isTerminates) {
       checkStrictPositivity(defn.spec.fparams, defn.sym)
       val fparams = defn.spec.fparams
-      visitExp(SelfDef(defn.sym), fparams, SubEnv.init(fparams), defn.exp)
+      visitExp(List(RecursionContext(SelfDef(defn.sym), fparams, SubEnv.init(fparams))), defn.exp)
     }
     defn
   }
+
+  // =========================================================================
+  // Self-call matching
+  // =========================================================================
+
+  /**
+    * If `exp` is a self-recursive call matching `selfSym`, returns the call arguments and location.
+    */
+  private def matchSelf(selfSym: SelfSym, exp: Expr): Option[(List[Expr], SourceLocation)] =
+    (selfSym, exp) match {
+      case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
+      case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
+      case (SelfInstanceDef(defSym, _), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == defSym => Some((exps, loc))
+      case (SelfInstanceDef(_, sigSym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sigSym => Some((exps, loc))
+      case (SelfLocalDef(varSym, _), Expr.ApplyLocalDef(symUse, exps, _, _, _, loc)) if symUse.sym == varSym => Some((exps, loc))
+      case _ => None
+    }
 
   // =========================================================================
   // Unified expression visitor — structural recursion + forbidden features
@@ -225,30 +247,32 @@ object Terminator {
     *     substructure of a formal parameter, and the substructure environment `env` is
     *     threaded through pattern matches and let-bindings.
     *
-    * @param selfSym the self-symbol of the enclosing @Terminates function or sig.
-    * @param fparams the formal parameters of the function.
-    * @param env     the current substructure environment.
-    * @param exp0    the expression to check.
+    * The `contexts` list contains one [[RecursionContext]] per nesting level (innermost first).
+    * When a local def body is entered, a new context for the local def is pushed onto the front;
+    * calls to both the local def and any enclosing function are checked against their respective
+    * contexts.
+    *
+    * @param contexts the recursion contexts, innermost first.
+    * @param exp0     the expression to check.
     */
-  private def visitExp(selfSym: SelfSym, fparams: List[FormalParam], env: SubEnv, exp0: Expr)(implicit sctx: SharedContext, root: Root): Unit = {
+  private def visitExp(contexts: List[RecursionContext], exp0: Expr)(implicit sctx: SharedContext, root: Root): Unit = {
 
-    def isSelfRecursiveCall(exp: Expr): Option[(List[Expr], SourceLocation)] = (selfSym, exp) match {
-      case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
-      case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
-      case (SelfInstanceDef(defSym, _), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == defSym => Some((exps, loc))
-      case (SelfInstanceDef(_, sigSym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sigSym => Some((exps, loc))
-      case (SelfLocalDef(varSym, _), Expr.ApplyLocalDef(symUse, exps, _, _, _, loc)) if symUse.sym == varSym => Some((exps, loc))
-      case _ => None
-    }
+    /** The symbol of the top-level `@Terminates` function (used for forbidden-expression errors). */
+    val topSym = contexts.last.selfSym.sym
 
-    def visit(exp0: Expr): Unit = isSelfRecursiveCall(exp0) match {
+    def findSelfRecursiveCall(exp: Expr): Option[(RecursionContext, List[Expr], SourceLocation)] =
+      contexts.iterator.flatMap { ctx =>
+        matchSelf(ctx.selfSym, exp).map { case (exps, loc) => (ctx, exps, loc) }
+      }.nextOption()
+
+    def visit(exp0: Expr): Unit = findSelfRecursiveCall(exp0) match {
       // --- Self-recursive call (structural recursion check) ---
-      case Some((exps, loc)) =>
-        val argInfos = exps.zip(fparams).map {
+      case Some((ctx, exps, loc)) =>
+        val argInfos = exps.zip(ctx.fparams).map {
           case (Expr.Var(sym, _, _), fp) =>
             val paramName = fp.bnd.sym.text
             val argText = sym.text
-            val status = env.lookup(sym) match {
+            val status = ctx.env.lookup(sym) match {
               case None =>
                 TerminationError.ArgStatus.Untracked
               case Some(ParamRelation(rp, StrictSub)) if rp == fp.bnd.sym =>
@@ -264,35 +288,40 @@ object Terminator {
         }
         val hasDecreasingArg = argInfos.exists(_.status == TerminationError.ArgStatus.Decreasing)
         if (!hasDecreasingArg) {
-          sctx.errors.add(TerminationError.NonStructuralRecursion(selfSym.sym, argInfos, loc))
+          sctx.errors.add(TerminationError.NonStructuralRecursion(ctx.selfSym.sym, argInfos, loc))
         }
         exps.foreach(visit)
 
       case None => exp0 match {
-      // --- Match: extend env when scrutinee is a tracked variable or tuple ---
+      // --- Match: extend env in all contexts ---
       case Expr.Match(scrutinee, rules, _, _, _) =>
         visit(scrutinee)
         rules.foreach {
           case MatchRule(pat, guard, body, _) =>
-            val extEnv = extendEnvFromScrutinee(env, scrutinee, pat)
-            guard.foreach(visitExp(selfSym, fparams, extEnv, _))
-            visitExp(selfSym, fparams, extEnv, body)
+            val extContexts = contexts.map(ctx =>
+              ctx.copy(env = extendEnvFromScrutinee(ctx.env, scrutinee, pat)))
+            guard.foreach(visitExp(extContexts, _))
+            visitExp(extContexts, body)
         }
 
-      // --- Let: propagate alias when RHS is a tracked variable ---
+      // --- Let: propagate alias in all contexts ---
       case Expr.Let(bnd, exp1, exp2, _, _, _) =>
         visit(exp1)
-        val extEnv = exp1 match {
-          case Expr.Var(sym, _, _) => env.propagateAlias(from = sym, to = bnd.sym)
-          case _ => env
+        val extContexts = exp1 match {
+          case Expr.Var(sym, _, _) =>
+            contexts.map(ctx => ctx.copy(env = ctx.env.propagateAlias(from = sym, to = bnd.sym)))
+          case _ => contexts
         }
-        visitExp(selfSym, fparams, extEnv, exp2)
+        visitExp(extContexts, exp2)
 
-      // --- LocalDef: check self-recursive local defs ---
+      // --- LocalDef: push new context, visit body with extended list ---
       case Expr.LocalDef(bnd, localFparams, exp1, exp2, _, _, _) =>
-        val localSelfSym = SelfLocalDef(bnd.sym, selfSym.sym)
-        checkStrictPositivity(localFparams, selfSym.sym)
-        visitExp(localSelfSym, localFparams, SubEnv.init(localFparams), exp1)
+        val localCtx = RecursionContext(
+          SelfLocalDef(bnd.sym, contexts.head.selfSym.sym),
+          localFparams,
+          SubEnv.init(localFparams))
+        checkStrictPositivity(localFparams, contexts.head.selfSym.sym)
+        visitExp(localCtx :: contexts, exp1)
         visit(exp2)
 
       // --- All other expressions (TypedAst declaration order) ---
@@ -306,7 +335,7 @@ object Terminator {
       case Expr.Lambda(_, e, _, _) => visit(e)
 
       case Expr.ApplyClo(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e1)
         visit(e2)
 
@@ -350,7 +379,7 @@ object Terminator {
         visit(e)
 
       case Expr.ArrayNew(e1, e2, e3, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e1)
         visit(e2)
         visit(e3)
@@ -361,7 +390,7 @@ object Terminator {
       case Expr.ArrayLength(e, _, _) => visit(e)
 
       case Expr.ArrayStore(e1, e2, e3, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e1)
         visit(e2)
         visit(e3)
@@ -372,7 +401,7 @@ object Terminator {
       case Expr.StructGet(e, _, _, _, _) => visit(e)
 
       case Expr.StructPut(e1, _, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e1)
         visit(e2)
 
@@ -386,11 +415,11 @@ object Terminator {
       case Expr.CheckedCast(_, e, _, _, _) => visit(e)
 
       case Expr.UncheckedCast(e, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
       case Expr.Unsafe(e, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
       case Expr.Without(e, _, _, _, _) => visit(e)
@@ -399,7 +428,7 @@ object Terminator {
         rules.foreach(r => visit(r.exp))
 
       case Expr.Throw(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
       case Expr.Handler(_, rules, _, _, _, _, _) => rules.foreach(r => visit(r.exp))
@@ -408,53 +437,53 @@ object Terminator {
         visit(e2)
 
       case Expr.InvokeConstructor(_, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         exps.foreach(visit)
 
       case Expr.InvokeMethod(_, e, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
         exps.foreach(visit)
 
       case Expr.InvokeStaticMethod(_, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         exps.foreach(visit)
 
       case Expr.GetField(_, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
       case Expr.PutField(_, e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e1)
         visit(e2)
 
       case Expr.GetStaticField(_, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
 
       case Expr.PutStaticField(_, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
       case Expr.NewObject(_, _, _, _, methods, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         methods.foreach(m => visit(m.exp))
 
       case Expr.NewChannel(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
       case Expr.GetChannel(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
       case Expr.PutChannel(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e1)
         visit(e2)
 
       case Expr.SelectChannel(rules, default, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         rules.foreach { r =>
           visit(r.chan)
           visit(r.exp)
@@ -462,26 +491,26 @@ object Terminator {
         default.foreach(visit)
 
       case Expr.Spawn(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e1)
         visit(e2)
 
       case Expr.ParYield(frags, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         frags.foreach(f => visit(f.exp))
         visit(e)
 
       case Expr.Lazy(e, _, _) => visit(e)
 
       case Expr.Force(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
       case Expr.FixpointConstraintSet(_, _, _) => ()
       case Expr.FixpointLambda(_, e, _, _, _) => visit(e)
 
       case Expr.FixpointMerge(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e1)
         visit(e2)
 
@@ -493,7 +522,7 @@ object Terminator {
         where.foreach(visit)
 
       case Expr.FixpointSolveWithProject(exps, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         exps.foreach(visit)
 
       case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.foreach(visit)

@@ -41,7 +41,7 @@ object TerminationError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Forbidden expression in @Terminates function '${red(sym.name)}'.
+      s""">> Forbidden expression in @Terminates function '${magenta(sym.name)}'.
          |
          |${highlight(loc, "forbidden expression", fmt)}
          |
@@ -65,7 +65,7 @@ object TerminationError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Non-strictly positive type in '${red(sym.name)}'.
+      s""">> Non-strictly positive type in '${magenta(sym.name)}'.
          |
          |${highlight(loc, "non-strictly positive type", fmt)}
          |
@@ -101,9 +101,9 @@ object TerminationError {
       val headers = List("Parameter", "Argument", "Status")
 
       def statusText(info: TerminationError.ArgInfo): String = info.status match {
-        case TerminationError.ArgStatus.Decreasing       => "strict sub (decreasing)"
-        case TerminationError.ArgStatus.NotAVariable      => "not a variable"
-        case TerminationError.ArgStatus.Untracked         => "untracked variable"
+        case TerminationError.ArgStatus.Decreasing        => s"strict sub (decreasing)"
+        case TerminationError.ArgStatus.NotAVariable      => s"not a variable"
+        case TerminationError.ArgStatus.Untracked         => s"untracked variable"
         case TerminationError.ArgStatus.AliasOf(p)        => s"alias of '${p.text}' (not destructured)"
         case TerminationError.ArgStatus.WrongParam(p)     => s"strict sub of '${p.text}' (wrong position)"
       }
@@ -117,7 +117,7 @@ object TerminationError {
 
       val tableStr = fmt.table(headers, formatters, rows)
 
-      s""">> Non-structural recursion in '${red(sym.name)}'.
+      s""">> Non-structural recursion in '${magenta(sym.name)}'.
          |
          |${highlight(loc, "non-structural recursive call", fmt)}
          |
@@ -126,7 +126,9 @@ object TerminationError {
          |${underline("Explanation:")} A function annotated with @Terminates must be structurally
          |recursive. Every recursive call must pass a strict substructure of a formal
          |parameter as an argument. A strict substructure is a variable bound inside a
-         |pattern match on the parameter (e.g. the tail of a list).
+         |pattern match on the parameter (e.g. the tail of a list). To fix this, ensure
+         |each recursive call argument is a variable bound by pattern matching on the
+         |corresponding parameter.
          |""".stripMargin
     }
   }
