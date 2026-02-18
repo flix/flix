@@ -98,6 +98,23 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     expectError[NonStructuralRecursion](result)
   }
 
+  test("NonStructuralRecursion.07") {
+    // Recursive call with a variable not derived from any formal parameter
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def f(x: MyList[Int32]): Int32 = match x {
+        |    case MyList.Nil         => 0
+        |    case MyList.Cons(_, _)  =>
+        |        let y = MyList.Nil;
+        |        f(y)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
   // =========================================================================
   // NonStrictlyPositiveType
   // =========================================================================

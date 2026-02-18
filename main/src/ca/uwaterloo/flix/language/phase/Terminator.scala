@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
@@ -66,23 +81,6 @@ object Terminator {
     * known to be a ''strict'' substructure (i.e. extracted from inside a constructor) or merely
     * an alias (i.e. equal to or a renaming of the parameter).
     *
-    * ==Example==
-    * Given:
-    * {{{
-    *   @Terminates
-    *   def length(xs: List[a]): Int32 = match xs {
-    *     case Nil     => 0
-    *     case _ :: tl => 1 + length(tl)
-    *   }
-    * }}}
-    *
-    *  - At the entry point, `xs` has `ParamRelation(xs, Alias)` — it ''is'' the parameter,
-    *    not yet destructured.
-    *  - Inside the `_ :: tl` branch, `tl` has `ParamRelation(xs, StrictSub)` because it was
-    *    bound inside a `Tag` (cons cell) pattern, making it a strict substructure of `xs`.
-    *  - The recursive call `length(tl)` is accepted because `tl` is a `StrictSub` of `xs`,
-    *    which is the formal parameter in the corresponding argument position.
-    *
     * @param rootParam  the formal parameter this variable is structurally related to.
     * @param strictness whether the variable is a strict substructure or merely an alias.
     */
@@ -118,22 +116,6 @@ object Terminator {
     * back to a formal parameter. The environment is then queried at every self-recursive
     * call site to verify that at least one argument is a strict substructure of the
     * corresponding formal parameter.
-    *
-    * ==Lifecycle==
-    * {{{
-    *   @Terminates
-    *   def length(xs: List[a]): Int32 = match xs {
-    *     case Nil     => 0
-    *     case _ :: tl => 1 + length(tl)
-    *   }
-    * }}}
-    *
-    * The `SubEnv` evolves as follows:
-    *  1. '''Entry''': `{ xs -> (xs, Alias) }` — the parameter tracks itself as an alias.
-    *  2. '''Inside _ :: tl''': `{ xs -> (xs, Alias), tl -> (xs, StrictSub) }` — `tl` is
-    *     a strict substructure of `xs` because it was bound inside a `Tag` pattern.
-    *  3. At the call `length(tl)`, `isStrictSubOf(tl, xs)` returns `true`.
-    *     Since `xs` is the corresponding formal parameter, the call is accepted.
     */
   private case class SubEnv(m: Map[Symbol.VarSym, ParamRelation]) {
 
