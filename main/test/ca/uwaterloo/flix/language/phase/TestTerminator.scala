@@ -187,4 +187,88 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     expectError[ForbiddenExpression](result)
   }
 
+  // =========================================================================
+  // Trait default implementations
+  // =========================================================================
+
+  test("NonStructuralRecursion.Trait.01") {
+    // Trait default impl with non-structural self-recursion
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |trait Foo[a] {
+        |    @Terminates
+        |    pub def foo(x: MyList[a]): Int32 = Foo.foo(x)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("ForbiddenExpression.Trait.01") {
+    // Trait default impl with forbidden unsafe expression
+    val input =
+      """
+        |trait Bar[a] {
+        |    @Terminates
+        |    pub def bar(x: a): Int32 = unsafe 42
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ForbiddenExpression](result)
+  }
+
+  test("NonStrictlyPositiveType.Trait.01") {
+    // Trait default impl with non-strictly positive type
+    val input =
+      """
+        |enum Bad { case MkBad(Bad -> Int32) }
+        |trait Baz[a] {
+        |    @Terminates
+        |    pub def baz(x: Bad): Int32 = match x {
+        |        case Bad.MkBad(_) => 0
+        |    }
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStrictlyPositiveType](result)
+  }
+
+  // =========================================================================
+  // Instance implementations
+  // =========================================================================
+
+  test("NonStructuralRecursion.Instance.01") {
+    // Instance def with non-structural self-recursion
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |trait Foo[a] {
+        |    pub def foo(x: MyList[a]): Int32
+        |}
+        |instance Foo[Int32] {
+        |    @Terminates
+        |    pub def foo(x: MyList[Int32]): Int32 = Foo.foo(x)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("ForbiddenExpression.Instance.01") {
+    // Instance def with forbidden unsafe expression
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Int32
+        |}
+        |instance Bar[Int32] {
+        |    @Terminates
+        |    def bar(x: Int32): Int32 = unsafe 42
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ForbiddenExpression](result)
+  }
+
 }

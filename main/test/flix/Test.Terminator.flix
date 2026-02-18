@@ -255,4 +255,50 @@ mod Test.Terminator {
     def testNatEq02(): Unit \ Assert =
         assertTrue(not natEq(Nat.Succ(Nat.Zero), Nat.Zero))
 
+    // --- Trait default implementations ---
+
+    trait ListLen[a] {
+        @Terminates
+        pub def listLen(l: MyList[a]): Int32 = match l {
+            case MyList.Nil         => 0
+            case MyList.Cons(_, xs) => 1 + ListLen.listLen(xs)
+        }
+    }
+
+    instance ListLen[Int32]
+
+    @Test
+    def testTraitDefault01(): Unit \ Assert =
+        assertTrue(ListLen.listLen(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) == 2)
+
+    // --- Instance implementations ---
+
+    trait MySize[a] {
+        pub def mySize(x: a): Int32
+    }
+
+    instance MySize[MyList[Int32]] {
+        @Terminates
+        def mySize(x: MyList[Int32]): Int32 = match x {
+            case MyList.Nil         => 0
+            case MyList.Cons(_, xs) => 1 + MySize.mySize(xs)
+        }
+    }
+
+    @Test
+    def testInstanceDef01(): Unit \ Assert =
+        assertTrue(MySize.mySize(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil)))) == 3)
+
+    instance MySize[MyTree[Int32]] {
+        @Terminates
+        def mySize(x: MyTree[Int32]): Int32 = match x {
+            case MyTree.Leaf(_)    => 1
+            case MyTree.Node(l, r) => MySize.mySize(l) + MySize.mySize(r)
+        }
+    }
+
+    @Test
+    def testInstanceDef02(): Unit \ Assert =
+        assertTrue(MySize.mySize(MyTree.Node(MyTree.Leaf(1), MyTree.Leaf(2))) == 2)
+
 }
