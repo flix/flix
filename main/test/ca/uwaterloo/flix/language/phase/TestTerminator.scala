@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.TerminationError.{ForbiddenExpression, NonStrictlyPositiveType, NonStructuralRecursion}
+import ca.uwaterloo.flix.language.errors.TerminationError.{ForbiddenExpression, NonStrictlyPositiveType, NonStructuralRecursion, NonTerminatingCall}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -380,6 +380,68 @@ class TestTerminator extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ForbiddenExpression](result)
+  }
+
+  // =========================================================================
+  // NonTerminatingCall
+  // =========================================================================
+
+  test("NonTerminatingCall.01") {
+    // Calling a non-@Terminates def from a @Terminates function
+    val input =
+      """
+        |def g(x: Int32): Int32 = x + 1
+        |@Terminates
+        |def f(x: Int32): Int32 = g(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTerminatingCall](result)
+  }
+
+  test("NonTerminatingCall.02") {
+    // Calling a @Terminates def from a @Terminates function is allowed
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def g(x: Int32): Int32 = x + 1
+        |@Terminates
+        |def f(l: MyList[Int32]): Int32 = match l {
+        |    case MyList.Nil         => 0
+        |    case MyList.Cons(x, xs) => g(x) + f(xs)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("NonTerminatingCall.03") {
+    // Calling a non-@Terminates def inside a match branch
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |def helper(x: Int32): Int32 = x * 2
+        |@Terminates
+        |def f(l: MyList[Int32]): Int32 = match l {
+        |    case MyList.Nil         => 0
+        |    case MyList.Cons(x, xs) => helper(x) + f(xs)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTerminatingCall](result)
+  }
+
+  test("NonTerminatingCall.04") {
+    // Multiple non-@Terminates calls
+    val input =
+      """
+        |def g(x: Int32): Int32 = x
+        |def h(x: Int32): Int32 = x
+        |@Terminates
+        |def f(x: Int32): Int32 = g(x) + h(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTerminatingCall](result)
   }
 
   // =========================================================================

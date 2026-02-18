@@ -133,6 +133,31 @@ object TerminationError {
     }
   }
 
+  /**
+    * An error raised when a `@Terminates` function calls a def that is not annotated with `@Terminates`.
+    *
+    * @param sym       the symbol of the enclosing `@Terminates` function.
+    * @param calledSym the symbol of the called non-`@Terminates` function.
+    * @param loc       the source location of the call.
+    */
+  case class NonTerminatingCall(sym: QualifiedSym, calledSym: Symbol.DefnSym, loc: SourceLocation) extends TerminationError {
+    def code: ErrorCode = ErrorCode.E9950
+
+    def summary: String = s"Call to non-@Terminates function '${calledSym.name}' in @Terminates function '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Call to non-@Terminates function '${red(calledSym.name)}' in @Terminates function '${magenta(sym.name)}'.
+         |
+         |${highlight(loc, "non-terminating call", fmt)}
+         |
+         |${underline("Explanation:")} A function annotated with @Terminates may only call other
+         |functions that are also annotated with @Terminates. The function '${calledSym.name}' is
+         |not annotated with @Terminates.
+         |""".stripMargin
+    }
+  }
+
   /** Describes why a single argument in a recursive call does or does not satisfy the
     * structural recursion requirement for its corresponding formal parameter. */
   sealed trait ArgStatus

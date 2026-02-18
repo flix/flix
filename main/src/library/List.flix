@@ -241,7 +241,6 @@ pub mod List {
     ///
     /// The infix operator `:::` is an alias for `append` (`l1 ::: l2 = append(l1, l2)`).
     ///
-    @Terminates
     pub def append(l1: List[a], l2: List[a]): List[a] =
         foldRight((x, acc) -> x :: acc, l2, l1)
 
@@ -250,7 +249,6 @@ pub mod List {
     ///
     /// More efficient than `append(reverse(l1), l2)` as it does not use reverse.
     ///
-    @Terminates
     def reverseAppend(l1: List[a], l2: List[a]): List[a] =
         foldLeft((acc, x) -> x :: acc, l2, l1)
 
@@ -523,7 +521,6 @@ pub mod List {
     ///
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
-    @Terminates
     pub def update(i: Int32, a: a, l: List[a]): List[a] =
         def loop(ll, j, acc) = match (j, ll) {
             case (_, Nil)     => l
@@ -632,7 +629,6 @@ pub mod List {
     ///
     /// That is, `l` is the first subsequence and `Nil` is the last subsequence.
     ///
-    @Terminates
     pub def subsequences(l: List[a]): List[List[a]] = match l {
         case Nil     => Nil :: Nil
         case x :: xs =>
@@ -706,7 +702,6 @@ pub mod List {
     ///
     /// Helper function for `transpose`.
     ///
-    @Terminates
     def transposeHelper(l: List[List[a]], len: Int32): List[List[a]] = match l {
         case Nil     => repeat(len, Nil)
         case x :: xs => applyListHelper(x, transposeHelper(xs, len))
@@ -812,7 +807,6 @@ pub mod List {
     ///
     /// Returns the concatenation of the elements in `l`.
     ///
-    @Terminates
     pub def flatten(l: List[List[a]]): List[a] =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -1476,7 +1470,6 @@ pub mod List {
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
     /// If two elements compare `EqualTo`, then the element of `l1` is first in the result.
     ///
-    @Terminates
     pub def merge(l1: List[a], l2: List[a]): List[a] with Order[a] =
         def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
@@ -1499,7 +1492,6 @@ pub mod List {
     ///
     /// Returns the frequency for each element in list `l`
     ///
-    @Terminates
     pub def frequency(l: List[t]): Map[t, Int32] with Order[t] =
         def freq(ll, m) = match ll {
             case Nil      => m

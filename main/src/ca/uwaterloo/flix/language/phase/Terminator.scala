@@ -342,10 +342,21 @@ object Terminator {
         visit(e1)
         visit(e2)
 
-      case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.foreach(visit)
+      case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) =>
+        root.defs.get(symUse.sym) match {
+          case Some(defn) if !defn.spec.ann.isTerminates =>
+            sctx.errors.add(TerminationError.NonTerminatingCall(topSym, symUse.sym, loc))
+          case _ => ()
+        }
+        exps.foreach(visit)
       case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visit)
-      case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(visit)
-      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.foreach(visit)
+
+      case Expr.ApplyOp(_, exps, _, _, loc) =>
+        sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
+        exps.foreach(visit)
+
+      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.foreach(visit) // TODO: More complex.
+
       case Expr.Unary(_, e, _, _, _) => visit(e)
       case Expr.Binary(_, e1, e2, _, _, _) =>
         visit(e1)
