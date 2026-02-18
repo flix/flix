@@ -35,9 +35,12 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   * - Absence of features that could break the termination guarantee.
   * - Self-recursive local defs inside `@Terminates` functions.
   *
-  * Known limitations:
-  * - Mutual recursion between local defs, or between a local def and the enclosing function,
-  *   is not detected. This matches the existing behavior for top-level defs.
+  * Known limitations (sound — may reject valid programs, but never accepts non-terminating ones):
+  * - A local def that calls the enclosing `@Terminates` function is checked for structural
+  *   decrease, but the sub-environment does not flow across the local def boundary. This means
+  *   a local def that passes a strict substructure of its own parameter to the enclosing function
+  *   is rejected even though it terminates. Mutual recursion between local defs is impossible
+  *   because local defs have sequential scoping.
   */
 object Terminator {
 
