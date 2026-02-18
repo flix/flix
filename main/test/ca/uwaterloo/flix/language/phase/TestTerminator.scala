@@ -252,6 +252,70 @@ class TestTerminator extends AnyFunSuite with TestUtils {
   }
 
   // =========================================================================
+  // NonStructuralRecursion — Local Defs
+  // =========================================================================
+
+  test("NonStructuralRecursion.LocalDef.01") {
+    // Local def with infinite recursion: loop(ll, acc) = loop(ll, acc + 1)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |pub def evil(l: MyList[Int32]): Int32 =
+        |    def loop(ll: MyList[Int32], acc: Int32): Int32 = loop(ll, acc + 1);
+        |    loop(l, 0)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("NonStructuralRecursion.LocalDef.02") {
+    // Local def passes alias, not strict sub: let y = ll; loop(y)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |pub def bad(l: MyList[Int32]): Int32 =
+        |    def loop(ll: MyList[Int32]): Int32 = match ll {
+        |        case MyList.Nil         => 0
+        |        case MyList.Cons(_, xs) =>
+        |            let y = ll;
+        |            loop(y)
+        |    };
+        |    loop(l)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("NonStructuralRecursion.LocalDef.03") {
+    // Local def calls itself with unchanged arg: helper(ll) = helper(ll)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |pub def bad2(l: MyList[Int32]): Int32 =
+        |    def helper(ll: MyList[Int32]): Int32 = helper(ll);
+        |    helper(l)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("ForbiddenExpression.LocalDef.01") {
+    // Forbidden `unsafe` inside local def body in @Terminates function
+    val input =
+      """
+        |@Terminates
+        |pub def badUnsafe(): Int32 =
+        |    def helper(): Int32 = unsafe 42;
+        |    helper()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ForbiddenExpression](result)
+  }
+
+  // =========================================================================
   // Instance implementations
   // =========================================================================
 

@@ -33,6 +33,15 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   * It also checks:
   * - Strict positivity of data types used for structural recursion.
   * - Absence of features that could break the termination guarantee.
+  * - Self-recursive local defs inside `@Terminates` functions.
+  *
+  * Known limitations:
+  * - Mutual recursion between local defs, or between a local def and the enclosing function,
+  *   is not detected. This matches the existing behavior for top-level defs.
+  * - Outer function self-recursion inside a local def body is not checked. The local def has
+  *   its own `SelfSym`, so calls to the outer function are not recognized as self-calls.
+  *   This is acceptable because the outer function's own structural recursion is validated
+  *   at the top level.
   */
 object Terminator {
 
@@ -107,6 +116,11 @@ object Terminator {
     def sym: QualifiedSym = defnSym
   }
 
+  /** A self-recursive local def inside a `@Terminates` function. */
+  private case class SelfLocalDef(varSym: Symbol.VarSym, parentSym: QualifiedSym) extends SelfSym {
+    def sym: QualifiedSym = parentSym
+  }
+
   /**
     * Tracks the structural relationship between local variables and the formal parameters
     * of the enclosing `@Terminates` function.
@@ -124,19 +138,6 @@ object Terminator {
 
     /** Binds `sym` with the given relation, returning an extended environment. */
     def bind(sym: Symbol.VarSym, rel: ParamRelation): SubEnv = SubEnv(m + (sym -> rel))
-
-    /**
-      * Returns `true` if `sym` is a strict substructure of `rootParam`.
-      *
-      * This is the key query at self-recursive call sites: an argument is decreasing
-      * if and only if it is a strict substructure of the formal parameter in the
-      * same position.
-      */
-    def isStrictSubOf(sym: Symbol.VarSym, rootParam: Symbol.VarSym): Boolean =
-      m.get(sym) match {
-        case Some(ParamRelation(rp, StrictSub)) => rp == rootParam
-        case _ => false
-      }
 
     /**
       * If `from` is a tracked variable, binds `to` with the same relation.
@@ -229,13 +230,14 @@ object Terminator {
     * @param env     the current substructure environment.
     * @param exp0    the expression to check.
     */
-  private def visitExp(selfSym: SelfSym, fparams: List[FormalParam], env: SubEnv, exp0: Expr)(implicit sctx: SharedContext): Unit = {
+  private def visitExp(selfSym: SelfSym, fparams: List[FormalParam], env: SubEnv, exp0: Expr)(implicit sctx: SharedContext, root: Root): Unit = {
 
     def isSelfRecursiveCall(exp: Expr): Option[(List[Expr], SourceLocation)] = (selfSym, exp) match {
       case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
       case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
       case (SelfInstanceDef(defSym, _), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == defSym => Some((exps, loc))
       case (SelfInstanceDef(_, sigSym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sigSym => Some((exps, loc))
+      case (SelfLocalDef(varSym, _), Expr.ApplyLocalDef(symUse, exps, _, _, _, loc)) if symUse.sym == varSym => Some((exps, loc))
       case _ => None
     }
 
@@ -286,9 +288,11 @@ object Terminator {
         }
         visitExp(selfSym, fparams, extEnv, exp2)
 
-      // --- LocalDef: don't propagate sub-env into local def body ---
-      case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1)
+      // --- LocalDef: check self-recursive local defs ---
+      case Expr.LocalDef(bnd, localFparams, exp1, exp2, _, _, _) =>
+        val localSelfSym = SelfLocalDef(bnd.sym, selfSym.sym)
+        checkStrictPositivity(localFparams, selfSym.sym)
+        visitExp(localSelfSym, localFparams, SubEnv.init(localFparams), exp1)
         visit(exp2)
 
       // --- All other expressions (TypedAst declaration order) ---

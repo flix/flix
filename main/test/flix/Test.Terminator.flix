@@ -255,6 +255,49 @@ mod Test.Terminator {
     def testNatEq02(): Unit \ Assert =
         assertTrue(not natEq(Nat.Succ(Nat.Zero), Nat.Zero))
 
+    // --- Local defs ---
+
+    @Terminates
+    def localLength(l: MyList[Int32]): Int32 =
+        def loop(ll: MyList[Int32], acc: Int32): Int32 = match ll {
+            case MyList.Nil         => acc
+            case MyList.Cons(_, xs) => loop(xs, acc + 1)
+        };
+        loop(l, 0)
+
+    @Test
+    def testLocalLength01(): Unit \ Assert =
+        assertTrue(localLength(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil)))) == 3)
+
+    @Terminates
+    def nestedLocalDef(l: MyList[Int32]): Int32 =
+        def outer(ll: MyList[Int32]): Int32 = match ll {
+            case MyList.Nil         => 0
+            case MyList.Cons(_, xs) =>
+                def inner(mm: MyList[Int32], acc: Int32): Int32 = match mm {
+                    case MyList.Nil         => acc
+                    case MyList.Cons(_, ys) => inner(ys, acc + 1)
+                };
+                1 + inner(xs, 0) + outer(xs)
+        };
+        outer(l)
+
+    @Test
+    def testNestedLocalDef01(): Unit \ Assert =
+        assertTrue(nestedLocalDef(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) > 0)
+
+    @Terminates
+    def nonRecursiveLocalDef(l: MyList[Int32]): Int32 =
+        def helper(x: Int32): Int32 = x + 1;
+        match l {
+            case MyList.Nil         => 0
+            case MyList.Cons(x, xs) => helper(x) + nonRecursiveLocalDef(xs)
+        }
+
+    @Test
+    def testNonRecursiveLocalDef01(): Unit \ Assert =
+        assertTrue(nonRecursiveLocalDef(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) == 5)
+
     // --- Trait default implementations ---
 
     trait ListLen[a] {

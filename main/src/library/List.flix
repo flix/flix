@@ -345,7 +345,6 @@ pub mod List {
     ///
     /// Returns `Nil` if `b >= e`.
     ///
-    @Terminates
     pub def range(b: Int32, e: Int32): List[Int32] =
         def loop(i, acc) =
             if (i < b)
@@ -359,7 +358,6 @@ pub mod List {
     ///
     /// Returns `Nil` if `n < 0`.
     ///
-    @Terminates
     pub def repeat(n: Int32, a: a): List[a] =
         def loop(i, acc) =
             if (i >= n)
