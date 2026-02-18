@@ -277,9 +277,9 @@ mod Test.Terminator {
         pub def mySize(x: a): Int32
     }
 
-    instance MySize[MyList[Int32]] {
+    instance MySize[MyList[a]] {
         @Terminates
-        def mySize(x: MyList[Int32]): Int32 = match x {
+        pub def mySize(x: MyList[a]): Int32 = match x {
             case MyList.Nil         => 0
             case MyList.Cons(_, xs) => 1 + MySize.mySize(xs)
         }
@@ -289,9 +289,9 @@ mod Test.Terminator {
     def testInstanceDef01(): Unit \ Assert =
         assertTrue(MySize.mySize(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil)))) == 3)
 
-    instance MySize[MyTree[Int32]] {
+    instance MySize[MyTree[a]] {
         @Terminates
-        def mySize(x: MyTree[Int32]): Int32 = match x {
+        pub def mySize(x: MyTree[a]): Int32 = match x {
             case MyTree.Leaf(_)    => 1
             case MyTree.Node(l, r) => MySize.mySize(l) + MySize.mySize(r)
         }

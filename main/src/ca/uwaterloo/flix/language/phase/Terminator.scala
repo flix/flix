@@ -104,6 +104,11 @@ object Terminator {
     def sym: QualifiedSym = sigSym
   }
 
+  /** An instance def that implements a trait sig — matches both `ApplyDef` and `ApplySig`. */
+  private case class SelfInstanceDef(defnSym: Symbol.DefnSym, sigSym: Symbol.SigSym) extends SelfSym {
+    def sym: QualifiedSym = defnSym
+  }
+
   /**
     * Tracks the structural relationship between local variables and the formal parameters
     * of the enclosing `@Terminates` function.
@@ -183,7 +188,24 @@ object Terminator {
 
   /** Checks an instance's def implementations for termination properties. */
   private def visitInstance(inst: Instance)(implicit sctx: SharedContext, root: Root): Instance = {
-    inst.defs.foreach(visitDef)
+    val traitSym = inst.trt.sym
+    root.traits.get(traitSym) match {
+      case Some(trt) =>
+        inst.defs.foreach { defn =>
+          if (defn.spec.ann.isTerminates) {
+            trt.sigs.find(_.sym.name == defn.sym.text) match {
+              case Some(sig) =>
+                checkStrictPositivity(defn.spec.fparams, defn.sym)
+                val fparams = defn.spec.fparams
+                visitExp(SelfInstanceDef(defn.sym, sig.sym), fparams, SubEnv.init(fparams), defn.exp)
+              case None =>
+                visitDef(defn)
+            }
+          }
+        }
+      case None =>
+        inst.defs.foreach(visitDef)
+    }
     inst
   }
 
@@ -230,6 +252,8 @@ object Terminator {
     def isSelfRecursiveCall(exp: Expr): Option[(List[Expr], SourceLocation)] = (selfSym, exp) match {
       case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
       case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
+      case (SelfInstanceDef(defSym, _), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == defSym => Some((exps, loc))
+      case (SelfInstanceDef(_, sigSym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sigSym => Some((exps, loc))
       case _ => None
     }
 
