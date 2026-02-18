@@ -104,8 +104,8 @@ object TerminationError {
         case TerminationError.ArgStatus.Decreasing       => "strict sub (decreasing)"
         case TerminationError.ArgStatus.NotAVariable      => "not a variable"
         case TerminationError.ArgStatus.Untracked         => "untracked variable"
-        case TerminationError.ArgStatus.AliasOf(p)        => s"alias of '$p' (not destructured)"
-        case TerminationError.ArgStatus.WrongParam(p)     => s"strict sub of '$p' (wrong position)"
+        case TerminationError.ArgStatus.AliasOf(p)        => s"alias of '${p.text}' (not destructured)"
+        case TerminationError.ArgStatus.WrongParam(p)     => s"strict sub of '${p.text}' (wrong position)"
       }
 
       val rows = args.map(a => List(a.paramName, a.argText, statusText(a)))
@@ -146,10 +146,10 @@ object TerminationError {
     case object Untracked extends ArgStatus
 
     /** The argument is an alias (or renaming) of the given parameter — not destructured. */
-    case class AliasOf(param: String) extends ArgStatus
+    case class AliasOf(param: Symbol.VarSym) extends ArgStatus
 
     /** The argument is a strict sub of a *different* parameter than the one in this position. */
-    case class WrongParam(actualParam: String) extends ArgStatus
+    case class WrongParam(actualParam: Symbol.VarSym) extends ArgStatus
   }
 
   /** Per-argument diagnostic for a non-structural recursive call. */

@@ -254,9 +254,9 @@ object Terminator {
               case Some(ParamRelation(rp, StrictSub)) if rp == fp.bnd.sym =>
                 TerminationError.ArgStatus.Decreasing
               case Some(ParamRelation(rp, StrictSub)) =>
-                TerminationError.ArgStatus.WrongParam(rp.text)
+                TerminationError.ArgStatus.WrongParam(rp)
               case Some(ParamRelation(rp, Alias)) =>
-                TerminationError.ArgStatus.AliasOf(rp.text)
+                TerminationError.ArgStatus.AliasOf(rp)
             }
             TerminationError.ArgInfo(paramName, argText, status)
           case (_, fp) =>
