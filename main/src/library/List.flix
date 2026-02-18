@@ -44,6 +44,7 @@ instance Hash[List[a]] with Hash[a] {
 }
 
 instance Eq[List[a]] with Eq[a] {
+    @Terminates
     pub def eq(l1: List[a], l2: List[a]): Bool = match (l1, l2) {
         case (Nil, Nil) => true
         case (x :: rs, y :: qs) => if (x != y) false else rs == qs
@@ -56,6 +57,7 @@ instance Order[List[a]] with Order[a] {
     ///
     /// Compares `l1` and `l2` lexicographically.
     ///
+    @Terminates
     pub def compare(l1: List[a], l2: List[a]): Comparison = match (l1, l2) {
         case (_ :: _, Nil) => Comparison.GreaterThan
         case (Nil, Nil) => Comparison.EqualTo
@@ -170,11 +172,13 @@ pub mod List {
     ///
     /// Returns the empty list `Nil`.
     ///
+    @Terminates
     pub def empty(): List[a] = Nil
 
     ///
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.
     ///
+    @Terminates
     pub def isEmpty(l: List[a]): Bool = match l {
         case Nil => true
         case _   => false
@@ -183,11 +187,13 @@ pub mod List {
     ///
     /// Returns true if and only if `l` is a non-empty list.
     ///
+    @Terminates
     pub def nonEmpty(l: List[a]): Bool = not isEmpty(l)
 
     ///
     /// Returns a new list with element `x` added to the front of list `l`.
     ///
+    @Terminates
     pub def cons(x: a, l: List[a]): List[a] = Cons(x, l)
 
     ///
@@ -195,6 +201,7 @@ pub mod List {
     ///
     /// Returns `None` if `l` is empty.
     ///
+    @Terminates
     pub def head(l: List[a]): Option[a] = match l {
         case Nil    => None
         case x :: _ => Some(x)
@@ -205,6 +212,7 @@ pub mod List {
     ///
     /// Returns `None` if `l` is empty.
     ///
+    @Terminates
     pub def last(l: List[a]): Option[a] = match l {
         case Nil      => None
         case x :: Nil => Some(x)
@@ -214,6 +222,7 @@ pub mod List {
     ///
     /// Returns the number of elements in `l`.
     ///
+    @Terminates
     pub def length(l: List[a]): Int32 =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -224,6 +233,7 @@ pub mod List {
     ///
     /// Returns the number of elements in `l`.
     ///
+    @Terminates
     pub def size(l: List[a]): Int32 = length(l)
 
     ///
@@ -231,6 +241,7 @@ pub mod List {
     ///
     /// The infix operator `:::` is an alias for `append` (`l1 ::: l2 = append(l1, l2)`).
     ///
+    @Terminates
     pub def append(l1: List[a], l2: List[a]): List[a] =
         foldRight((x, acc) -> x :: acc, l2, l1)
 
@@ -239,12 +250,14 @@ pub mod List {
     ///
     /// More efficient than `append(reverse(l1), l2)` as it does not use reverse.
     ///
+    @Terminates
     def reverseAppend(l1: List[a], l2: List[a]): List[a] =
         foldLeft((acc, x) -> x :: acc, l2, l1)
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
+    @Terminates
     pub def memberOf(a: a, l: List[a]): Bool with Eq[a] = match l {
         case Nil     => false
         case x :: xs => if (a == x) true else memberOf(a, xs)
@@ -285,6 +298,7 @@ pub mod List {
     ///
     /// Optionally returns the position of `x` in `l`.
     ///
+    @Terminates
     pub def indexOf(a: a, l: List[a]): Option[Int32] with Eq[a] =
         def loop(ll, acc) = match ll {
             case Nil     => None
@@ -331,6 +345,7 @@ pub mod List {
     ///
     /// Returns `Nil` if `b >= e`.
     ///
+    @Terminates
     pub def range(b: Int32, e: Int32): List[Int32] =
         def loop(i, acc) =
             if (i < b)
@@ -344,6 +359,7 @@ pub mod List {
     ///
     /// Returns `Nil` if `n < 0`.
     ///
+    @Terminates
     pub def repeat(n: Int32, a: a): List[a] =
         def loop(i, acc) =
             if (i >= n)
@@ -400,6 +416,7 @@ pub mod List {
     ///
     /// Return the singleton list with element `x`.
     ///
+    @Terminates
     pub def point(a: a) : List[a] = a :: Nil
 
     ///
@@ -471,6 +488,7 @@ pub mod List {
     ///
     /// Returns the reverse of `l`.
     ///
+    @Terminates
     pub def reverse(l: List[a]): List[a] =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -507,6 +525,7 @@ pub mod List {
     ///
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
+    @Terminates
     pub def update(i: Int32, a: a, l: List[a]): List[a] =
         def loop(ll, j, acc) = match (j, ll) {
             case (_, Nil)     => l
@@ -572,6 +591,7 @@ pub mod List {
     ///
     /// Helper function for `permutations`.
     ///
+    @Terminates
     def removeIndex(i: Int32, l: List[a]): List[a] = match (i, l) {
         case (_, Nil) => l
         case (0, _ :: xs) => xs
@@ -614,6 +634,7 @@ pub mod List {
     ///
     /// That is, `l` is the first subsequence and `Nil` is the last subsequence.
     ///
+    @Terminates
     pub def subsequences(l: List[a]): List[List[a]] = match l {
         case Nil     => Nil :: Nil
         case x :: xs =>
@@ -625,6 +646,7 @@ pub mod List {
     /// Helper function for `permutations` and `subsequences`.
     /// Returns `l` with `x` added to the beginning of each element in `l`.
     ///
+    @Terminates
     def applyHelper(a: a, l: List[List[a]]): List[List[a]] =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -677,6 +699,7 @@ pub mod List {
     ///
     /// Helper function for `transpose`.
     ///
+    @Terminates
     def uniformHelper(l: List[List[a]], len: Int32): Bool = match l {
         case Nil     => true
         case x :: xs => if (length(x) == len) uniformHelper(xs, len) else false
@@ -685,6 +708,7 @@ pub mod List {
     ///
     /// Helper function for `transpose`.
     ///
+    @Terminates
     def transposeHelper(l: List[List[a]], len: Int32): List[List[a]] = match l {
         case Nil     => repeat(len, Nil)
         case x :: xs => applyListHelper(x, transposeHelper(xs, len))
@@ -702,6 +726,7 @@ pub mod List {
     ///
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
+    @Terminates
     pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
         case (Nil, _)           => true
         case (_, Nil)           => false
@@ -711,6 +736,7 @@ pub mod List {
     ///
     /// Returns `true` if and only if `l1` is an infix of `l2`.
     ///
+    @Terminates
     pub def isInfixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
         case (Nil, _)     => true
         case (_, Nil)     => false
@@ -720,6 +746,7 @@ pub mod List {
     ///
     /// Returns `true` if and only if `l1` is a suffix of `l2`.
     ///
+    @Terminates
     pub def isSuffixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = isPrefixOf(reverse(l1), reverse(l2))
 
     ///
@@ -787,6 +814,7 @@ pub mod List {
     ///
     /// Returns the concatenation of the elements in `l`.
     ///
+    @Terminates
     pub def flatten(l: List[List[a]]): List[a] =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -902,6 +930,7 @@ pub mod List {
     /// Returns `Nil` if `n > length(l)`.
     /// Returns `l` if `n < 0`.
     ///
+    @Terminates
     pub def drop(n: Int32, l: List[a]): List[a] = match l {
         case _ if n <= 0 => l
         case Nil         => Nil
@@ -1008,6 +1037,7 @@ pub mod List {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
+    @Terminates
     pub def zip(l1: List[a], l2: List[b]): List[(a, b)] =
         def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => loop(xs, ys, (x, y) :: acc)
@@ -1034,6 +1064,7 @@ pub mod List {
     /// Returns a list where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
+    @Terminates
     pub def zipWithIndex(l: List[a]): List[(Int32, a)] =
         def loop(ll, i, acc) = match ll {
             case Nil       => acc
@@ -1057,6 +1088,7 @@ pub mod List {
     /// Returns a pair of lists, the first containing all first components in `l`
     /// and the second containing all second components in `l`.
     ///
+    @Terminates
     pub def unzip(l: List[(a, b)]): (List[a], List[b]) =
         def loop(ll, acc1, acc2) = match ll {
             case Nil            => (acc1, acc2)
@@ -1096,6 +1128,7 @@ pub mod List {
     /// the second containing all second components in `l` and the third containing all
     /// third components in `l`.
     ///
+    @Terminates
     pub def unzip3(l: List[(a, b, c)]): (List[a], List[b], List[c]) =
         def loop(ll, acc1, acc2, acc3) = match ll {
             case Nil             => (reverse(acc1), reverse(acc2), reverse(acc3))
@@ -1355,6 +1388,7 @@ pub mod List {
     /// `distinct` uses the Flix's builtin equality test. Use `distinctWith` if you
     /// need a custom equality test.
     ///
+    @Terminates
     pub def distinct(l: List[a]): List[a] with Eq[a] =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -1444,6 +1478,7 @@ pub mod List {
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
     /// If two elements compare `EqualTo`, then the element of `l1` is first in the result.
     ///
+    @Terminates
     pub def merge(l1: List[a], l2: List[a]): List[a] with Order[a] =
         def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
@@ -1466,6 +1501,7 @@ pub mod List {
     ///
     /// Returns the frequency for each element in list `l`
     ///
+    @Terminates
     pub def frequency(l: List[t]): Map[t, Int32] with Order[t] =
         def freq(ll, m) = match ll {
             case Nil      => m
