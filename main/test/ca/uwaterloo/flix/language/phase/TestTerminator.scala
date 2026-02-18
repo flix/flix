@@ -352,4 +352,52 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     expectError[ForbiddenExpression](result)
   }
 
+  // =========================================================================
+  // Type Aliases
+  // =========================================================================
+
+  test("NonStructuralRecursion.TypeAlias.01") {
+    // Type alias for MyList; non-structural recursive call f(x)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |type alias ML = MyList[Int32]
+        |@Terminates
+        |def f(x: ML): Int32 = f(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("NonStrictlyPositiveType.TypeAlias.01") {
+    // Non-strictly-positive enum behind a type alias
+    val input =
+      """
+        |enum Bad { case MkBad(Bad -> Int32) }
+        |type alias BadAlias = Bad
+        |@Terminates
+        |def f(x: BadAlias): Int32 = match x {
+        |    case Bad.MkBad(_) => 0
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStrictlyPositiveType](result)
+  }
+
+  test("NonStructuralRecursion.TypeAlias.02") {
+    // Parameterized type alias; recursive call passes original param instead of substructure
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |type alias ML[a] = MyList[a]
+        |@Terminates
+        |def f(x: ML[Int32]): Int32 = match x {
+        |    case MyList.Nil         => 0
+        |    case MyList.Cons(_, xs) => f(x)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
 }
