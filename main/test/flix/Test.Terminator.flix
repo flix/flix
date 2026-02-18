@@ -361,4 +361,62 @@ mod Test.Terminator {
     def testInstanceDef02(): Unit \ Assert =
         assertTrue(MySize.mySize(MyTree.Node(MyTree.Leaf(1), MyTree.Leaf(2))) == 2)
 
+    // --- @Terminates calling another @Terminates def ---
+
+    @Terminates
+    def helperLen(l: MyList[Int32]): Int32 = match l {
+        case MyList.Nil         => 0
+        case MyList.Cons(_, xs) => 1 + helperLen(xs)
+    }
+
+    @Terminates
+    def callsTerminating(l: MyList[Int32]): Int32 = match l {
+        case MyList.Nil         => 0
+        case MyList.Cons(_, xs) => helperLen(xs) + callsTerminating(xs)
+    }
+
+    @Test
+    def testCallsTerminating01(): Unit \ Assert =
+        assertTrue(callsTerminating(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil)))) == 3)
+
+    // --- Nested constructor pattern with recursive call ---
+
+    @Terminates
+    def everyOther(l: MyList[Int32]): MyList[Int32] = match l {
+        case MyList.Nil                           => MyList.Nil
+        case MyList.Cons(x, MyList.Nil)           => MyList.Cons(x, MyList.Nil)
+        case MyList.Cons(x, MyList.Cons(_, rest)) => MyList.Cons(x, everyOther(rest))
+    }
+
+    @Test
+    def testEveryOther01(): Unit \ Assert =
+        assertTrue(everyOther(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Cons(4, MyList.Nil))))) ==
+            MyList.Cons(1, MyList.Cons(3, MyList.Nil)))
+
+    // --- Match guard with structural recursion ---
+
+    @Terminates
+    def takeWhilePositive(l: MyList[Int32]): MyList[Int32] = match l {
+        case MyList.Cons(x, xs) if x > 0 => MyList.Cons(x, takeWhilePositive(xs))
+        case _                            => MyList.Nil
+    }
+
+    @Test
+    def testTakeWhilePositive01(): Unit \ Assert =
+        assertTrue(takeWhilePositive(MyList.Cons(1, MyList.Cons(2, MyList.Cons(-1, MyList.Cons(3, MyList.Nil))))) ==
+            MyList.Cons(1, MyList.Cons(2, MyList.Nil)))
+
+    // --- Double negation in strict positivity (should pass) ---
+
+    enum Good { case MkGood((Good -> Int32) -> Int32) }
+
+    @Terminates
+    def useGood(x: Good): Int32 = match x {
+        case Good.MkGood(_) => 0
+    }
+
+    @Test
+    def testDoubleNegation01(): Unit \ Assert =
+        assertTrue(useGood(Good.MkGood(_ -> 0)) == 0)
+
 }

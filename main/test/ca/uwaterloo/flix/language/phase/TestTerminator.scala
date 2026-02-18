@@ -115,6 +115,36 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     expectError[NonStructuralRecursion](result)
   }
 
+  test("NonStructuralRecursion.08") {
+    // Recursive call with a non-variable expression (ArgStatus.NotAVariable)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def f(x: MyList[Int32]): Int32 = match x {
+        |    case MyList.Nil         => 0
+        |    case MyList.Cons(_, xs) => f(MyList.Nil)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("NonStructuralRecursion.09") {
+    // Strict sub of wrong param: xs is sub of x, passed in y's position; y passed in x's position
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def f(x: MyList[Int32], y: MyList[Int32]): Int32 = match x {
+        |    case MyList.Nil         => 0
+        |    case MyList.Cons(_, xs) => f(y, xs)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
   // =========================================================================
   // NonStrictlyPositiveType
   // =========================================================================
@@ -159,6 +189,41 @@ class TestTerminator extends AnyFunSuite with TestUtils {
         |@Terminates
         |def f(x: Tricky): Int32 = match x {
         |    case Tricky.MkTricky(_) => 0
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStrictlyPositiveType](result)
+  }
+
+  test("NonStrictlyPositiveType.04") {
+    // Non-strictly-positive type on a local def parameter
+    val input =
+      """
+        |enum Bad { case MkBad(Bad -> Int32) }
+        |@Terminates
+        |def f(x: Int32): Int32 =
+        |    def loop(b: Bad): Int32 = match b {
+        |        case Bad.MkBad(_) => 0
+        |    };
+        |    loop(Bad.MkBad(_ -> 0))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStrictlyPositiveType](result)
+  }
+
+  test("NonStrictlyPositiveType.Instance.01") {
+    // Non-strictly-positive type on an instance def parameter
+    val input =
+      """
+        |enum Bad { case MkBad(Bad -> Int32) }
+        |trait Baz[a] {
+        |    pub def baz(x: a): Int32
+        |}
+        |instance Baz[Bad] {
+        |    @Terminates
+        |    pub def baz(x: Bad): Int32 = match x {
+        |        case Bad.MkBad(_) => 0
+        |    }
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -422,6 +487,20 @@ class TestTerminator extends AnyFunSuite with TestUtils {
         |def h(x: Int32): Int32 = x
         |@Terminates
         |def f(x: Int32): Int32 = g(x) + h(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTerminatingCall](result)
+  }
+
+  test("NonTerminatingCall.04") {
+    // Non-@Terminates call inside a local def body
+    val input =
+      """
+        |def helper(x: Int32): Int32 = x + 1
+        |@Terminates
+        |def f(x: Int32): Int32 =
+        |    def loop(y: Int32): Int32 = helper(y);
+        |    loop(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[NonTerminatingCall](result)
