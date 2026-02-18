@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
@@ -18,7 +19,7 @@ object TerminationError {
     * @param sym the symbol of the function.
     * @param loc the source location of the forbidden expression.
     */
-  case class ForbiddenExpression(sym: Symbol.DefnSym, loc: SourceLocation) extends TerminationError {
+  case class ForbiddenExpression(sym: QualifiedSym, loc: SourceLocation) extends TerminationError {
     def code: ErrorCode = ErrorCode.E9983
 
     def summary: String = s"Forbidden expression in @Terminates function '${sym.name}'."
@@ -42,7 +43,7 @@ object TerminationError {
     * @param caseSym the enum case that contains a recursive occurrence in a negative position.
     * @param loc     the source location of the type.
     */
-  case class NonStrictlyPositiveType(sym: Symbol.DefnSym, caseSym: Symbol.CaseSym, loc: SourceLocation) extends TerminationError {
+  case class NonStrictlyPositiveType(sym: QualifiedSym, caseSym: Symbol.CaseSym, loc: SourceLocation) extends TerminationError {
     def code: ErrorCode = ErrorCode.E9972
 
     def summary: String = s"Non-strictly positive type in '${sym.name}'."
@@ -74,7 +75,7 @@ object TerminationError {
     * @param args per-argument diagnostics explaining why the call is non-structural.
     * @param loc  the source location of the recursive call.
     */
-  case class NonStructuralRecursion(sym: Symbol.DefnSym, args: List[TerminationError.ArgInfo], loc: SourceLocation) extends TerminationError {
+  case class NonStructuralRecursion(sym: QualifiedSym, args: List[TerminationError.ArgInfo], loc: SourceLocation) extends TerminationError {
     def code: ErrorCode = ErrorCode.E9961
 
     def summary: String = s"Non-structural recursion in '${sym.name}'."

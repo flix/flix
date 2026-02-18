@@ -2,7 +2,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
+import ca.uwaterloo.flix.language.ast.{ChangeSet, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.ParOps
@@ -29,7 +30,12 @@ object Terminator {
       implicit val _r: Root = root
       val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(
         ParOps.parMapValues(_)(visitDef))
-      (root.copy(defs = defs), sctx.errors.asScala.toList)
+      val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(
+        ParOps.parMapValues(_)(visitTrait))
+      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances,
+        (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(
+        ParOps.parMapValueList(_)(visitInstance))
+      (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
     }
 
   /**
@@ -81,6 +87,22 @@ object Terminator {
     * @param strictness whether the variable is a strict substructure or merely an alias.
     */
   private case class ParamRelation(rootParam: Symbol.VarSym, strictness: Strictness)
+
+  /**
+    * Represents the "self" symbol of the enclosing `@Terminates` function, used
+    * to detect self-recursive calls. Wraps either a `DefnSym` or a `SigSym`.
+    */
+  private sealed trait SelfSym {
+    def sym: QualifiedSym
+  }
+
+  private case class SelfDef(defnSym: Symbol.DefnSym) extends SelfSym {
+    def sym: QualifiedSym = defnSym
+  }
+
+  private case class SelfSig(sigSym: Symbol.SigSym) extends SelfSym {
+    def sym: QualifiedSym = sigSym
+  }
 
   /**
     * Tracks the structural relationship between local variables and the formal parameters
@@ -153,12 +175,35 @@ object Terminator {
       SubEnv(fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, Alias)).toMap)
   }
 
+  /** Checks a trait's default sig implementations for termination properties. */
+  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, root: Root): Trait = {
+    trt.sigs.foreach(visitSig)
+    trt
+  }
+
+  /** Checks an instance's def implementations for termination properties. */
+  private def visitInstance(inst: Instance)(implicit sctx: SharedContext, root: Root): Instance = {
+    inst.defs.foreach(visitDef)
+    inst
+  }
+
+  /** Checks a trait default implementation for termination properties if annotated with @Terminates. */
+  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root): Unit = {
+    sig.exp.foreach { exp =>
+      if (sig.spec.ann.isTerminates) {
+        checkStrictPositivity(sig.spec.fparams, sig.sym)
+        val fparams = sig.spec.fparams
+        visitExp(SelfSig(sig.sym), fparams, SubEnv.init(fparams), exp)
+      }
+    }
+  }
+
   /** Checks a definition for termination properties if annotated with @Terminates. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root): Def = {
     if (defn.spec.ann.isTerminates) {
-      checkStrictPositivity(defn)
+      checkStrictPositivity(defn.spec.fparams, defn.sym)
       val fparams = defn.spec.fparams
-      visitExp(defn.sym, fparams, SubEnv.init(fparams), defn.exp)
+      visitExp(SelfDef(defn.sym), fparams, SubEnv.init(fparams), defn.exp)
     }
     defn
   }
@@ -175,16 +220,22 @@ object Terminator {
     *     substructure of a formal parameter, and the substructure environment `env` is
     *     threaded through pattern matches and let-bindings.
     *
-    * @param defnSym the symbol of the enclosing @Terminates function.
+    * @param selfSym the self-symbol of the enclosing @Terminates function or sig.
     * @param fparams the formal parameters of the function.
     * @param env     the current substructure environment.
     * @param exp0    the expression to check.
     */
-  private def visitExp(defnSym: Symbol.DefnSym, fparams: List[FormalParam], env: SubEnv, exp0: Expr)(implicit sctx: SharedContext): Unit = {
+  private def visitExp(selfSym: SelfSym, fparams: List[FormalParam], env: SubEnv, exp0: Expr)(implicit sctx: SharedContext): Unit = {
 
-    def visit(exp0: Expr): Unit = exp0 match {
+    def isSelfRecursiveCall(exp: Expr): Option[(List[Expr], SourceLocation)] = (selfSym, exp) match {
+      case (SelfDef(sym), Expr.ApplyDef(symUse, exps, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
+      case (SelfSig(sym), Expr.ApplySig(symUse, exps, _, _, _, _, _, loc)) if symUse.sym == sym => Some((exps, loc))
+      case _ => None
+    }
+
+    def visit(exp0: Expr): Unit = isSelfRecursiveCall(exp0) match {
       // --- Self-recursive call (structural recursion check) ---
-      case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) if symUse.sym == defnSym =>
+      case Some((exps, loc)) =>
         val argInfos = exps.zip(fparams).map {
           case (Expr.Var(sym, _, _), fp) =>
             val paramName = fp.bnd.sym.text
@@ -205,18 +256,19 @@ object Terminator {
         }
         val hasDecreasingArg = argInfos.exists(_.status == TerminationError.ArgStatus.Decreasing)
         if (!hasDecreasingArg) {
-          sctx.errors.add(TerminationError.NonStructuralRecursion(defnSym, argInfos, loc))
+          sctx.errors.add(TerminationError.NonStructuralRecursion(selfSym.sym, argInfos, loc))
         }
         exps.foreach(visit)
 
+      case None => exp0 match {
       // --- Match: extend env when scrutinee is a tracked variable or tuple ---
       case Expr.Match(scrutinee, rules, _, _, _) =>
         visit(scrutinee)
         rules.foreach {
           case MatchRule(pat, guard, body, _) =>
             val extEnv = extendEnvFromScrutinee(env, scrutinee, pat)
-            guard.foreach(visitExp(defnSym, fparams, extEnv, _))
-            visitExp(defnSym, fparams, extEnv, body)
+            guard.foreach(visitExp(selfSym, fparams, extEnv, _))
+            visitExp(selfSym, fparams, extEnv, body)
         }
 
       // --- Let: propagate alias when RHS is a tracked variable ---
@@ -226,7 +278,7 @@ object Terminator {
           case Expr.Var(sym, _, _) => env.propagateAlias(from = sym, to = bnd.sym)
           case _ => env
         }
-        visitExp(defnSym, fparams, extEnv, exp2)
+        visitExp(selfSym, fparams, extEnv, exp2)
 
       // --- LocalDef: don't propagate sub-env into local def body ---
       case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
@@ -244,7 +296,7 @@ object Terminator {
       case Expr.Lambda(_, e, _, _) => visit(e)
 
       case Expr.ApplyClo(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e1)
         visit(e2)
 
@@ -288,7 +340,7 @@ object Terminator {
         visit(e)
 
       case Expr.ArrayNew(e1, e2, e3, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e1)
         visit(e2)
         visit(e3)
@@ -299,7 +351,7 @@ object Terminator {
       case Expr.ArrayLength(e, _, _) => visit(e)
 
       case Expr.ArrayStore(e1, e2, e3, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e1)
         visit(e2)
         visit(e3)
@@ -310,7 +362,7 @@ object Terminator {
       case Expr.StructGet(e, _, _, _, _) => visit(e)
 
       case Expr.StructPut(e1, _, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e1)
         visit(e2)
 
@@ -324,11 +376,11 @@ object Terminator {
       case Expr.CheckedCast(_, e, _, _, _) => visit(e)
 
       case Expr.UncheckedCast(e, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
 
       case Expr.Unsafe(e, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
 
       case Expr.Without(e, _, _, _, _) => visit(e)
@@ -337,7 +389,7 @@ object Terminator {
         rules.foreach(r => visit(r.exp))
 
       case Expr.Throw(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
 
       case Expr.Handler(_, rules, _, _, _, _, _) => rules.foreach(r => visit(r.exp))
@@ -346,53 +398,53 @@ object Terminator {
         visit(e2)
 
       case Expr.InvokeConstructor(_, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         exps.foreach(visit)
 
       case Expr.InvokeMethod(_, e, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
         exps.foreach(visit)
 
       case Expr.InvokeStaticMethod(_, exps, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         exps.foreach(visit)
 
       case Expr.GetField(_, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
 
       case Expr.PutField(_, e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e1)
         visit(e2)
 
       case Expr.GetStaticField(_, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
 
       case Expr.PutStaticField(_, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
 
       case Expr.NewObject(_, _, _, _, methods, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         methods.foreach(m => visit(m.exp))
 
       case Expr.NewChannel(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
 
       case Expr.GetChannel(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
 
       case Expr.PutChannel(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e1)
         visit(e2)
 
       case Expr.SelectChannel(rules, default, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         rules.foreach { r =>
           visit(r.chan)
           visit(r.exp)
@@ -400,26 +452,26 @@ object Terminator {
         default.foreach(visit)
 
       case Expr.Spawn(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e1)
         visit(e2)
 
       case Expr.ParYield(frags, e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         frags.foreach(f => visit(f.exp))
         visit(e)
 
       case Expr.Lazy(e, _, _) => visit(e)
 
       case Expr.Force(e, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e)
 
       case Expr.FixpointConstraintSet(_, _, _) => ()
       case Expr.FixpointLambda(_, e, _, _, _) => visit(e)
 
       case Expr.FixpointMerge(e1, e2, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         visit(e1)
         visit(e2)
 
@@ -431,11 +483,12 @@ object Terminator {
         where.foreach(visit)
 
       case Expr.FixpointSolveWithProject(exps, _, _, _, _, loc) =>
-        sctx.errors.add(TerminationError.ForbiddenExpression(defnSym, loc))
+        sctx.errors.add(TerminationError.ForbiddenExpression(selfSym.sym, loc))
         exps.foreach(visit)
 
       case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.foreach(visit)
       case Expr.Error(_, _, _) => ()
+      }
     }
 
     visit(exp0)
@@ -509,13 +562,13 @@ object Terminator {
   /**
     * Checks that the types of formal parameters are strictly positive.
     */
-  private def checkStrictPositivity(defn: Def)(implicit sctx: SharedContext, root: Root): Unit = {
-    for (fparam <- defn.spec.fparams) {
+  private def checkStrictPositivity(fparams: List[FormalParam], sym: QualifiedSym)(implicit sctx: SharedContext, root: Root): Unit = {
+    for (fparam <- fparams) {
       fparam.tpe.typeConstructor match {
         case Some(TypeConstructor.Enum(enumSym, _)) =>
           root.enums.get(enumSym).foreach { enm =>
             findNonPositiveCase(enumSym, enm).foreach { caseSym =>
-              sctx.errors.add(TerminationError.NonStrictlyPositiveType(defn.sym, caseSym, fparam.loc))
+              sctx.errors.add(TerminationError.NonStrictlyPositiveType(sym, caseSym, fparam.loc))
             }
           }
         case _ => // Not an enum type, nothing to check
