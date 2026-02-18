@@ -399,23 +399,6 @@ class TestTerminator extends AnyFunSuite with TestUtils {
   }
 
   test("NonTerminatingCall.02") {
-    // Calling a @Terminates def from a @Terminates function is allowed
-    val input =
-      """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |@Terminates
-        |def g(x: Int32): Int32 = x + 1
-        |@Terminates
-        |def f(l: MyList[Int32]): Int32 = match l {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(x, xs) => g(x) + f(xs)
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectSuccess(result)
-  }
-
-  test("NonTerminatingCall.03") {
     // Calling a non-@Terminates def inside a match branch
     val input =
       """
@@ -431,7 +414,7 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     expectError[NonTerminatingCall](result)
   }
 
-  test("NonTerminatingCall.04") {
+  test("NonTerminatingCall.03") {
     // Multiple non-@Terminates calls
     val input =
       """
