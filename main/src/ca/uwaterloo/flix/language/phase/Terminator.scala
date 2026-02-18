@@ -185,12 +185,27 @@ object Terminator {
     def visit(exp0: Expr): Unit = exp0 match {
       // --- Self-recursive call (structural recursion check) ---
       case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) if symUse.sym == defnSym =>
-        val hasDecreasingArg = exps.zip(fparams).exists {
-          case (Expr.Var(sym, _, _), fp) => env.isStrictSubOf(sym, fp.bnd.sym)
-          case _ => false
+        val argInfos = exps.zip(fparams).map {
+          case (Expr.Var(sym, _, _), fp) =>
+            val paramName = fp.bnd.sym.text
+            val argText = sym.text
+            val status = env.lookup(sym) match {
+              case None =>
+                TerminationError.ArgStatus.Untracked
+              case Some(ParamRelation(rp, StrictSub)) if rp == fp.bnd.sym =>
+                TerminationError.ArgStatus.Decreasing
+              case Some(ParamRelation(rp, StrictSub)) =>
+                TerminationError.ArgStatus.WrongParam(rp.text)
+              case Some(ParamRelation(rp, Alias)) =>
+                TerminationError.ArgStatus.AliasOf(rp.text)
+            }
+            TerminationError.ArgInfo(paramName, argText, status)
+          case (_, fp) =>
+            TerminationError.ArgInfo(fp.bnd.sym.text, "<expr>", TerminationError.ArgStatus.NotAVariable)
         }
+        val hasDecreasingArg = argInfos.exists(_.status == TerminationError.ArgStatus.Decreasing)
         if (!hasDecreasingArg) {
-          sctx.errors.add(TerminationError.NonStructuralRecursion(defnSym, loc))
+          sctx.errors.add(TerminationError.NonStructuralRecursion(defnSym, argInfos, loc))
         }
         exps.foreach(visit)
 

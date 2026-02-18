@@ -70,19 +70,42 @@ object TerminationError {
   /**
     * An error raised when a recursive call is not on a strict substructure of a formal parameter.
     *
-    * @param sym the symbol of the function.
-    * @param loc the source location of the recursive call.
+    * @param sym  the symbol of the function.
+    * @param args per-argument diagnostics explaining why the call is non-structural.
+    * @param loc  the source location of the recursive call.
     */
-  case class NonStructuralRecursion(sym: Symbol.DefnSym, loc: SourceLocation) extends TerminationError {
+  case class NonStructuralRecursion(sym: Symbol.DefnSym, args: List[TerminationError.ArgInfo], loc: SourceLocation) extends TerminationError {
     def code: ErrorCode = ErrorCode.E9961
 
     def summary: String = s"Non-structural recursion in '${sym.name}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
+
+      val headers = List("Parameter", "Argument", "Status")
+
+      def statusText(info: TerminationError.ArgInfo): String = info.status match {
+        case TerminationError.ArgStatus.Decreasing       => "strict sub (decreasing)"
+        case TerminationError.ArgStatus.NotAVariable      => "not a variable"
+        case TerminationError.ArgStatus.Untracked         => "untracked variable"
+        case TerminationError.ArgStatus.AliasOf(p)        => s"alias of '$p' (not destructured)"
+        case TerminationError.ArgStatus.WrongParam(p)     => s"strict sub of '$p' (wrong position)"
+      }
+
+      val rows = args.map(a => List(a.paramName, a.argText, statusText(a)))
+      val formatters: List[String => String] = List(
+        identity,
+        identity,
+        s => if (s.contains("decreasing")) green(s) else red(s)
+      )
+
+      val tableStr = fmt.table(headers, formatters, rows)
+
       s""">> Non-structural recursion in '${red(sym.name)}'.
          |
          |${highlight(loc, "non-structural recursive call", fmt)}
+         |
+         |$tableStr
          |
          |${underline("Explanation:")} A function annotated with @Terminates must be structurally
          |recursive. Every recursive call must pass a strict substructure of a formal
@@ -91,5 +114,29 @@ object TerminationError {
          |""".stripMargin
     }
   }
+
+  /** Describes why a single argument in a recursive call does or does not satisfy the
+    * structural recursion requirement for its corresponding formal parameter. */
+  sealed trait ArgStatus
+
+  object ArgStatus {
+    /** The argument is a strict substructure of the correct formal parameter. */
+    case object Decreasing extends ArgStatus
+
+    /** The argument is not a simple variable — it is a complex expression. */
+    case object NotAVariable extends ArgStatus
+
+    /** The argument variable is not tracked (not derived from any formal parameter). */
+    case object Untracked extends ArgStatus
+
+    /** The argument is an alias (or renaming) of the given parameter — not destructured. */
+    case class AliasOf(param: String) extends ArgStatus
+
+    /** The argument is a strict sub of a *different* parameter than the one in this position. */
+    case class WrongParam(actualParam: String) extends ArgStatus
+  }
+
+  /** Per-argument diagnostic for a non-structural recursive call. */
+  case class ArgInfo(paramName: String, argText: String, status: ArgStatus)
 
 }
