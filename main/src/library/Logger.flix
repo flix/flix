@@ -86,4 +86,28 @@ pub mod Logger {
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
 
+    ///
+    /// Handles the `Logger` effect of the given function `f`.
+    ///
+    /// Removes severity levels that are not present in `filter`
+    ///
+    pub def handleWithSeverityFilter(filter: Set[Severity], f: a -> b \ ef): a -> b \ (ef - Logger) + Logger = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                if (Set.exists(a -> a == s, filter)) {
+                    k(Logger.log(s, m))
+                } else {
+                    k()
+                }
+            }
+        }
+
+    ///
+    /// Runs the `Logger` effect of the given function `f`.
+    ///
+    /// Removes severity levels that are not present in `filter`
+    ///
+    pub def runWithSeverityFilter(filter: Set[Severity], f: Unit -> b \ ef): b \ (ef - Logger) + Logger = handleWithSeverityFilter(filter, f)()
 }
