@@ -92,17 +92,17 @@ pub mod Logger {
     /// Removes severity levels that are not present in `filter`
     ///
     pub def handleWithSeverityFilter(filter: Set[Severity], f: a -> b \ ef): a -> b \ (ef - Logger) + Logger = 
-    x -> run {
-        f(x)
-    } with handler Logger {
-        def log(s, m, k) = {
-            if (Set.exists(a -> a == s, filter)) {
-                k(Logger.log(s,m))
-            } else {
-                k()
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                if (Set.exists(a -> a == s, filter)) {
+                    k(Logger.log(s, m))
+                } else {
+                    k()
+                }
             }
         }
-    }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
