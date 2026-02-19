@@ -1,6 +1,6 @@
 mod TestLogger {
     use Assert.assertEq
-    use Logger.{log, info, fatal, warn, trace, debug, runWithFileWrite, runWithConsole}
+    use Logger.{log, info, fatal, warn, trace, debug, runWithConsole}
 
     /////////////////////////////////////////////////////////////////////////////
     // Console                                                                 //
@@ -8,7 +8,7 @@ mod TestLogger {
 
     // Tests the log operation directly
     @Test
-    def runWithFileWrite01(): Unit \ Assert = 
+    def runWithConsole01(): Unit \ Assert = 
         let m = RichString.fromString("Testing a simple string");
         let s = Severity.Fatal;
         let res = run {
