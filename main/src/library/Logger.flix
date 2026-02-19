@@ -29,6 +29,7 @@ pub eff Logger {
 pub mod Logger {
 
     use RichString.{gray, cyan, green, yellow, red, bold, text};
+    use Severity.{Warn, Fatal, Trace, Debug, Info}
 
     ///
     /// Logs the message `m` at the `Trace` level.
@@ -66,11 +67,11 @@ pub mod Logger {
         } with handler Logger {
             def log(s, m, k) = {
                 let prefix = match s {
-                    case Severity.Trace => gray("[Trace]")
-                    case Severity.Debug => cyan("[Debug]")
-                    case Severity.Info  => green("[Info]")
-                    case Severity.Warn  => yellow("[Warn]")
-                    case Severity.Fatal => bold(red("[Fatal]"))
+                    case Trace => gray("[Trace]")
+                    case Debug => cyan("[Debug]")
+                    case Info  => green("[Info]")
+                    case Warn  => yellow("[Warn]")
+                    case Fatal => bold(red("[Fatal]"))
                 };
                 let output = prefix + text(" ") + m;
                 println(RichString.toString(output));
