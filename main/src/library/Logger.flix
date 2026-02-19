@@ -106,6 +106,6 @@ pub mod Logger {
     ///
     /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
     ///
-    def runWithFileWrite(filename: String, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
+    pub def runWithFileWrite(filename: String, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
         handleWithFileWrite(filename, f)()
 }

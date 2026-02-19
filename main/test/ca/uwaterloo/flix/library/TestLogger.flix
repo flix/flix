@@ -57,15 +57,15 @@ mod TestLogger {
                 let res = "Writing to " + f + ": " + dat#str + k();
                 res
             }
-            def write(data, f, k) = unreachable!()
-            def writeLines(data, f, k) = unreachable!()
-            def writeBytes(data, f, k) = unreachable!()
-            def appendLines(data, f, k) = unreachable!()
-            def appendBytes(data, f, k) = unreachable!()
-            def truncate(f, k) = unreachable!()
-            def mkDir(d, k) = unreachable!()
-            def mkDirs(d, k) = unreachable!()
-            def mkTempDir(prefix, k) = unreachable!()
+            def write(_data, _f, _k) = unreachable!()
+            def writeLines(_data, _f, _k) = unreachable!()
+            def writeBytes(_data, _f, _k) = unreachable!()
+            def appendLines(_data, _f, _k) = unreachable!()
+            def appendBytes(_data, _f, _k) = unreachable!()
+            def truncate(_f, _k) = unreachable!()
+            def mkDir(_d, _k) = unreachable!()
+            def mkDirs(_d, _k) = unreachable!()
+            def mkTempDir(_prefix, _k) = unreachable!()
         }
 
 }
