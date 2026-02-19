@@ -83,9 +83,9 @@ mod TestLogger {
                 let res = "Logging to Console stdout: " + s + k();
                 res
             }
-            def readln(k) = unreachable!()
-            def print(s, k) = unreachable!()
-            def eprint(s, k) = unreachable!()
+            def readln(_) = unreachable!()
+            def print(_, _) = unreachable!()
+            def eprint(_, _) = unreachable!()
             def eprintln(s, k) = {
                 let res = "Logging to Console stderr: " + s + k();
                 res
