@@ -91,7 +91,7 @@ pub mod Logger {
     /// 
     /// Appends each Severity level to the file given in `files`.
     ///
-    def handleWithWriteByLevel(
+    pub def handleWithWriteByLevel(
         files: {trace = String, debug = String, info = String, warn = String, fatal = String}, 
             f: a -> b \ ef): a -> b \ (ef - Logger) + FileWrite = 
         x -> run {
@@ -114,7 +114,7 @@ pub mod Logger {
     /// 
     /// Appends each Severity level to the file given in `files`.
     ///
-    def runWithWriteByLevel(files: {trace = String, debug = String, info = String, warn = String, fatal = String}, 
+    pub def runWithWriteByLevel(files: {trace = String, debug = String, info = String, warn = String, fatal = String}, 
             f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite = 
             handleWithWriteByLevel(files, f)()
 }
