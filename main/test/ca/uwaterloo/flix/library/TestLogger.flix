@@ -1,6 +1,6 @@
 mod TestLogger {
     use Assert.assertEq
-    use Logger.{log, info, fatal, warn, trace, debug}
+    use Logger.{log, info, fatal, warn, trace, debug, runWithWriteByLevel}
 
     /////////////////////////////////////////////////////////////////////////////
     // RunWithWriteLevels                                                      //
