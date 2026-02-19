@@ -159,34 +159,4 @@ pub mod Logger {
     ///
     def runWithFileWrite(filename: String, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
         handleWithFileWrite(filename, f)()
-
-    ///
-    /// Handles the `Logger` effect of the given function `f`.
-    /// 
-    /// In other words, re-interprets the `Logger` effect using the `Console` effect.
-    ///
-    pub def handleWithConsole(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
-        x -> run {
-            f(x)
-        } with handler Logger {
-            def log(s, m, k) = {
-                let prefix = match s {
-                    case Severity.Debug => cyan("[Debug]")
-                    case Severity.Fatal => bold(red("[Fatal]"))
-                    case Severity.Info  => green("[Info]")
-                    case Severity.Trace => gray("[Trace]")
-                    case Severity.Warn  => yellow("[Warn]")
-                };
-                let output = prefix + text(" ") + m;
-                Console.println(RichString.toString(output));
-                k()
-            }
-        }
-
-    ///
-    /// Runs the `Logger` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `Logger` effect using the `Console` effect.
-    ///
-    pub def runWithConsole(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithConsole(f)()
 }
