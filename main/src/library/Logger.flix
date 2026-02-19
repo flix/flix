@@ -86,4 +86,35 @@ pub mod Logger {
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
 
+    /// 
+    /// Handles the `Logger` effect of the given function `f` with the `FileWrite` effect.
+    /// 
+    /// Appends each Severity level to the file given in `files`.
+    ///
+    pub def handleWithWriteByLevel(
+        files: {trace = String, debug = String, info = String, warn = String, fatal = String}, 
+            f: a -> b \ ef): a -> b \ (ef - Logger) + FileWrite = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = 
+                let filename = match s {
+                    case Severity.Trace => files#trace
+                    case Severity.Debug => files#debug
+                    case Severity.Info => files#info
+                    case Severity.Warn => files#warn
+                    case Severity.Fatal => files#fatal
+                };
+                let output = "[${ToString.toString(s)}] ${RichString.toString(m)}\n";
+                FileWrite.append({str = output}, filename);
+                k()
+        }
+    /// 
+    /// Runs the `Logger` effect of the given function `f` with the `FileWrite` effect.
+    /// 
+    /// Appends each Severity level to the file given in `files`.
+    ///
+    pub def runWithWriteByLevel(files: {trace = String, debug = String, info = String, warn = String, fatal = String}, 
+            f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite = 
+            handleWithWriteByLevel(files, f)()
 }
