@@ -197,18 +197,25 @@ object InlayHintProvider {
           else {
             defn.spec.ann.annotations.collectFirst {
               case t: Annotation.Terminates =>
-                InlayHint(
-                  position = Position.fromEnd(t.loc),
-                  label = s"(decreases on ${decreasingNames.mkString(", ")})",
-                  kind = Some(InlayHintKind.Parameter),
-                  textEdits = List.empty,
-                  tooltip = "Structurally decreasing parameters",
-                  paddingLeft = true,
-                  paddingRight = false
-                ) :: acc
+                mkTerminatesHint(t, decreasingNames) :: acc
             }.getOrElse(acc)
           }
         }
     }
+  }
+
+  /**
+    * Creates an inlay hint for a `@Terminates` annotation showing the decreasing parameters.
+    */
+  private def mkTerminatesHint(t: Annotation.Terminates, decreasingNames: List[String]): InlayHint = {
+    InlayHint(
+      position = Position.fromEnd(t.loc),
+      label = s"(decreases on ${decreasingNames.mkString(", ")})",
+      kind = Some(InlayHintKind.Parameter),
+      textEdits = List.empty,
+      tooltip = "Structurally decreasing parameters",
+      paddingLeft = true,
+      paddingRight = false
+    )
   }
 }
