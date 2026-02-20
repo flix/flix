@@ -231,6 +231,27 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
   }
 
+  test("Test.ExplicitlyPureUsingEffect.04") {
+    val input =
+      """
+        |def a(): Unit \ {} =
+        |    let _ = Clock.now();
+        |    ()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.05") {
+    val input =
+      """
+        |def a(): Unit \ Clock = Clock.now(); ()
+        |def b(): Unit \ {} = a()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
   test("Test.ImplicitlyPureUsingEffect.01") {
     val input =
       """
@@ -279,6 +300,27 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.04") {
+    val input =
+      """
+        |def a(): Unit =
+        |    let _ = Clock.now();
+        |    ()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.05") {
+    val input =
+      """
+        |def a(): Unit \ Clock = Clock.now(); ()
+        |def b(): Unit = a()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibAll)
     expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
   }
 
