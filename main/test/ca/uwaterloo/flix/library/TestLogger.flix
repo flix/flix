@@ -1,6 +1,7 @@
 mod TestLogger {
     use Assert.assertEq
     use Logger.{log, info, fatal, warn, trace, debug, runWithWriteByLevel}
+    use Severity.{Debug, Trace, Fatal, Warn, Info}
 
     /////////////////////////////////////////////////////////////////////////////
     // RunWithWriteLevels                                                      //
@@ -12,7 +13,10 @@ mod TestLogger {
             info("Hello, world");
             ""
         } with runWithWriteByLevel(
-            {trace = "", debug = "", info = "info.txt", warn = "", fatal = ""}
+            s -> match s {
+                case Info => "info.txt"
+                case _ => ""
+            }
         )
         with fileWriteHandlerStub;
         assertEq(expected = "Writing to info.txt: [Info] Hello, world\n", res)
@@ -25,7 +29,12 @@ mod TestLogger {
             fatal("Fatal");
             ""
         } with runWithWriteByLevel(
-            {trace = "trace.txt", debug = "", info = "info.txt", warn = "", fatal = "fatal.txt"}
+            s -> match s {
+                case Info => "info.txt"
+                case Trace => "trace.txt"
+                case Fatal => "fatal.txt"
+                case _ => ""
+            }
         )
         with fileWriteHandlerStub;
         let expected =  "Writing to info.txt: [Info] Info\nWriting to trace.txt: [Trace] Trace\nWriting to fatal.txt: [Fatal] Fatal\n";
