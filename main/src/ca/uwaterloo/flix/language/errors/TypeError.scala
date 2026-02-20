@@ -121,6 +121,41 @@ object TypeError {
   }
 
   /**
+    * An error raised when an effect is used in a function where it is not a part of the set of declared effects.
+    *
+    * @param defEffSyms the symbol(s) the effect(s) in the function definition
+    * @param usedEffSym the symbol of the effect causing the error
+    * @param loc    the location of the function explicitly declared as defEffSym.
+    * @param loc2   the location where the other effect is used.
+    */
+  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[Symbol.EffSym], usedEffSym: Symbol.EffSym, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6216
+
+    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${defEffSyms}'"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      def printDefEffSyms(syms: List[Symbol.EffSym]): String = syms match {
+        case Nil => ""
+        case end :: Nil => s"${magenta(end.name)}"
+        case head :: tail => s"${magenta(head.name)}, " + printDefEffSyms(tail)
+      }
+      val defString = s"{${magenta(printDefEffSyms(defEffSyms.reverse))}}"
+      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
+         |
+         |${highlight(loc, s"function declared as '$defString'", fmt)}
+         |
+         |${highlight(loc2, s"'${magenta(usedEffSym.name)}' used here", fmt)}
+         |
+         |${underline("Explanation:")} The function is explicitly declared as '$defString',
+         |meaning it may not perform other effects. Since '${magenta(usedEffSym.name)}' is another effect,
+         |it cannot be used in this function. To fix this, either add ${(magenta(usedEffSym.name))} to $defString
+         |or remove the use of '${magenta(usedEffSym.name)}' inside the function.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised when an effect is used in a function that is explicitly declared Pure.
     *
     * @param effSym the symbol of the effect causing the error
@@ -855,6 +890,26 @@ object TypeError {
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = s"Unresolved static method"
   }
 
+  /**
+    * An error raised when an effect declared in a function signature is unused.
+    *
+    * @param unusedEff the symbol of the unused effect in the function signature
+    * @param loc    the location of the unused effect in the function signature.
+    */
+  case class UnusedEffectInSignature(unusedEff: Symbol.EffSym, loc: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6217
+
+    def summary: String = s"Unused effect '${unusedEff.name}'"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""${highlight(loc, s"Unused effect: '${magenta(unusedEff.name)}'", fmt)}
+         |
+         |${underline("Explanation:")} To fix this, either remove '${(magenta(unusedEff.name))}' from the signature
+         |or use the effect in the function body
+         |""".stripMargin
+    }
+  }
   /**
     * Returns the constructors of the given class sorted by parameter count.
     */

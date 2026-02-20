@@ -301,7 +301,7 @@ pub mod RichString {
     ///
     /// All styling and color information is discarded.
     ///
-    def toPlainString(rs: RichString): String = match rs {
+    pub def toPlainString(rs: RichString): String = match rs {
         case RichString(spans) =>
             Chain.joinWith(match Span.Span(r) -> r#text, "", spans)
     }
