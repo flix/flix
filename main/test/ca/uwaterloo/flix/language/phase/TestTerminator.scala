@@ -260,48 +260,51 @@ class TestTerminator extends AnyFunSuite with TestUtils {
 
   // --- Closure application ---
   test("ForbiddenExpression.ClosureApp.01") {
-    // Applying a formal parameter closure is allowed
-    val input =
-      """
-        |@Terminates
-        |def f(g: Int32 -> Int32, x: Int32): Int32 = g(x)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectSuccess(result)
-  }
-
-  test("ForbiddenExpression.ClosureApp.02") {
-    // Curried formal parameter closure application is allowed
-    val input =
-      """
-        |@Terminates
-        |def f(g: Int32 -> Int32 -> Int32, x: Int32, y: Int32): Int32 = g(x)(y)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectSuccess(result)
-  }
-
-  test("ForbiddenExpression.ClosureApp.03") {
-    // Let-aliased formal parameter closure application is allowed
-    val input =
-      """
-        |@Terminates
-        |def f(g: Int32 -> Int32, x: Int32): Int32 =
-        |    let h = g;
-        |    h(x)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectSuccess(result)
-  }
-
-  test("ForbiddenExpression.ClosureApp.04") {
-    // Locally-constructed closure application is still forbidden
+    // Locally-constructed closure application is forbidden
     val input =
       """
         |@Terminates
         |def f(x: Int32): Int32 =
         |    let c = y -> y + 1;
         |    c(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ForbiddenExpression](result)
+  }
+
+  test("ForbiddenExpression.ClosureApp.02") {
+    // Closure from local def param (not top-level param) is forbidden
+    val input =
+      """
+        |@Terminates
+        |def f(x: Int32): Int32 =
+        |    def loop(g: Int32 -> Int32): Int32 = g(x);
+        |    loop(y -> y + 1)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ForbiddenExpression](result)
+  }
+
+  test("ForbiddenExpression.ClosureApp.03") {
+    // Applying a non-variable expression as closure is forbidden
+    val input =
+      """
+        |@Terminates
+        |def f(x: Int32): Int32 = (y -> y + 1)(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ForbiddenExpression](result)
+  }
+
+  test("ForbiddenExpression.ClosureApp.04") {
+    // Let-bound to a non-param value, then aliased — forbidden
+    val input =
+      """
+        |@Terminates
+        |def f(x: Int32): Int32 =
+        |    let g = (y: Int32) -> y + 1;
+        |    let h = g;
+        |    h(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ForbiddenExpression](result)

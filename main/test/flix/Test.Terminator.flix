@@ -406,6 +406,80 @@ mod Test.Terminator {
         assertTrue(takeWhilePositive(MyList.Cons(1, MyList.Cons(2, MyList.Cons(-1, MyList.Cons(3, MyList.Nil))))) ==
             MyList.Cons(1, MyList.Cons(2, MyList.Nil)))
 
+    // --- Closure application on formal parameters ---
+
+    @Terminates
+    def applyParam(g: Int32 -> Int32, x: Int32): Int32 = g(x)
+
+    @Test
+    def testApplyParam01(): Unit \ Assert =
+        assertTrue(applyParam(x -> x + 1, 5) == 6)
+
+    @Terminates
+    def applyCurriedParam(g: Int32 -> Int32 -> Int32, x: Int32, y: Int32): Int32 = g(x)(y)
+
+    @Test
+    def testApplyCurriedParam01(): Unit \ Assert =
+        assertTrue(applyCurriedParam((x, y) -> x + y, 3, 4) == 7)
+
+    @Terminates
+    def applyLetAlias(g: Int32 -> Int32, x: Int32): Int32 =
+        let h = g;
+        h(x)
+
+    @Test
+    def testApplyLetAlias01(): Unit \ Assert =
+        assertTrue(applyLetAlias(x -> x * 2, 5) == 10)
+
+    @Terminates
+    def applyDoubleLetAlias(g: Int32 -> Int32, x: Int32): Int32 =
+        let h = g;
+        let k = h;
+        k(x)
+
+    @Test
+    def testApplyDoubleLetAlias01(): Unit \ Assert =
+        assertTrue(applyDoubleLetAlias(x -> x * 3, 4) == 12)
+
+    @Terminates
+    def applyParamInMatch(g: Int32 -> Int32, x: MyList[Int32]): Int32 = match x {
+        case MyList.Nil         => 0
+        case MyList.Cons(h, _)  => g(h)
+    }
+
+    @Test
+    def testApplyParamInMatch01(): Unit \ Assert =
+        assertTrue(applyParamInMatch(x -> x + 10, MyList.Cons(5, MyList.Nil)) == 15)
+
+    @Terminates
+    def applyParamInIfThenElse(g: Int32 -> Int32, x: Int32): Int32 =
+        if (true) g(x) else g(x)
+
+    @Test
+    def testApplyParamInIfThenElse01(): Unit \ Assert =
+        assertTrue(applyParamInIfThenElse(x -> x - 1, 10) == 9)
+
+    @Terminates
+    def mapList(f: Int32 -> Int32, l: MyList[Int32]): MyList[Int32] = match l {
+        case MyList.Nil         => MyList.Nil
+        case MyList.Cons(x, xs) => MyList.Cons(f(x), mapList(f, xs))
+    }
+
+    @Test
+    def testMapList01(): Unit \ Assert =
+        assertTrue(mapList(x -> x * 2, MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil)))) ==
+            MyList.Cons(2, MyList.Cons(4, MyList.Cons(6, MyList.Nil))))
+
+    @Terminates
+    def foldRight(f: Int32 -> Int32 -> Int32, z: Int32, l: MyList[Int32]): Int32 = match l {
+        case MyList.Nil         => z
+        case MyList.Cons(x, xs) => f(x)(foldRight(f, z, xs))
+    }
+
+    @Test
+    def testFoldRight01(): Unit \ Assert =
+        assertTrue(foldRight((x, y) -> x + y, 0, MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil)))) == 6)
+
     // --- Double negation in strict positivity (should pass) ---
 
     enum Good { case MkGood((Good -> Int32) -> Int32) }

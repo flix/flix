@@ -31,17 +31,23 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   * The Terminator phase verifies that functions annotated with `@Terminates` are structurally
   * recursive — meaning every recursive call is made on a strict substructure of a formal parameter.
   *
-  * It also checks:
-  * - Strict positivity of data types used for structural recursion.
-  * - Absence of features that could break the termination guarantee.
-  * - Self-recursive local defs inside `@Terminates` functions.
+  * Checks performed:
+  *   - **Structural recursion**: Every self-recursive call must pass a strict substructure of a
+  *     formal parameter (obtained via pattern matching on a `Tag`) in the corresponding argument
+  *     position. Aliases (let-bindings, variable patterns) are tracked but do not count as decreasing.
+  *   - **Strict positivity**: Enum types used as formal parameters must be strictly positive — the
+  *     enum's own type constructor must not appear in a negative (contravariant) position in any case.
+  *   - **Callee restriction**: Calls to non-`@Terminates` defs are rejected.
+  *   - **Forbidden features**: Expressions that could break the termination guarantee (e.g. mutable
+  *     state, Java interop, concurrency, effects, unchecked casts) are rejected.
+  *   - **Local defs**: Self-recursive local defs inside `@Terminates` functions are checked
+  *     independently for structural decrease.
   *
   * Known limitations (sound — may reject valid programs, but never accepts non-terminating ones):
-  * - A local def that calls the enclosing `@Terminates` function is checked for structural
-  *   decrease, but the sub-environment does not flow across the local def boundary. This means
-  *   a local def that passes a strict substructure of its own parameter to the enclosing function
-  *   is rejected even though it terminates. Mutual recursion between local defs is impossible
-  *   because local defs have sequential scoping.
+  *   - A local def that calls the enclosing `@Terminates` function is checked for structural
+  *     decrease, but the sub-environment does not flow across the local def boundary. This means
+  *     a local def that passes a strict substructure of its own parameter to the enclosing function
+  *     is rejected even though it terminates.
   */
 object Terminator {
 
