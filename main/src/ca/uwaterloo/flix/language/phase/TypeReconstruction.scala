@@ -72,7 +72,7 @@ object TypeReconstruction {
     case KindedAst.FormalParam(sym, tpe0, src, loc) =>
       val tpe = subst(tpe0)
       val bnd = TypedAst.Binder(sym, tpe)
-      TypedAst.FormalParam(bnd, tpe, src, loc)
+      TypedAst.FormalParam(bnd, tpe, src, false, loc)
   }
 
   /**

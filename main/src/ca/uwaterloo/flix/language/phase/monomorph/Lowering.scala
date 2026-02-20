@@ -788,7 +788,7 @@ object Lowering {
   }
 
   private def lowerFormalParam(fparam: TypedAst.FormalParam): MonoAst.FormalParam = fparam match {
-    case TypedAst.FormalParam(bnd, tpe, _, loc0) => MonoAst.FormalParam(bnd.sym, lowerType(tpe), Occur.Unknown, loc0)
+    case TypedAst.FormalParam(bnd, tpe, _, _, loc0) => MonoAst.FormalParam(bnd.sym, lowerType(tpe), Occur.Unknown, loc0)
   }
 
   private def lowerTypeParam(tparam: TypedAst.TypeParam): MonoAst.TypeParam = tparam match {
@@ -888,6 +888,7 @@ object Lowering {
           TypedAst.Binder(Symbol.freshVarSym("_", BoundBy.FormalParam, expLoc)(Scope.Top, flix), Type.Unit),
           Type.Unit,
           TypeSource.Inferred,
+          false,
           expLoc
         ),
         defn.exp,

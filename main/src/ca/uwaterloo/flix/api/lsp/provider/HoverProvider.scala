@@ -42,7 +42,7 @@ object HoverProvider {
     case DefSymUse(sym, loc) => hoverDef(sym, loc)
     case SigSymUse(sym, loc) => hoverSig(sym, loc)
     case OpSymUse(symUse, loc) => hoverOp(symUse, loc)
-    case FormalParam(_, tpe, _, loc) => hoverType(tpe, loc)
+    case FormalParam(_, tpe, _, isDecreasing, loc) => hoverFormalParam(tpe, isDecreasing, loc)
     case TypeParam(_, sym, _) => hoverKind(sym.kind, sym.loc)
     case Pattern.Wild(tpe, loc) => hoverType(tpe, loc)
     case _ => None
@@ -73,11 +73,12 @@ object HoverProvider {
 
   private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Option[Hover] = {
     val defDecl = root.defs(sym)
+    val terminationInfo = formatTerminationInfo(defDecl.spec)
     val markup =
       s"""```flix
          |${FormatSignature.asMarkDown(defDecl)}
          |```
-         |
+         |$terminationInfo
          |${FormatDoc.asMarkDown(defDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -87,11 +88,12 @@ object HoverProvider {
 
   private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root, flix: Flix): Option[Hover] = {
     val sigDecl = root.sigs(sym)
+    val terminationInfo = formatTerminationInfo(sigDecl.spec)
     val markup =
       s"""```flix
          |${FormatSignature.asMarkDown(sigDecl)}
          |```
-         |
+         |$terminationInfo
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -123,6 +125,31 @@ object HoverProvider {
     }
 
     s"$t$p"
+  }
+
+  private def hoverFormalParam(tpe: Type, isDecreasing: Boolean, loc: SourceLocation)(implicit root: Root, flix: Flix): Option[Hover] = {
+    val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
+    val decreasingInfo = if (isDecreasing) "\n\n**Structurally decreasing**\n" else ""
+    val markup =
+      s"""```flix
+         |${FormatType.formatType(tpe, minimizeEffs = true)}$lowerAndUpperBounds
+         |```
+         |$decreasingInfo
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    Some(Hover(contents, range))
+  }
+
+  private def formatTerminationInfo(spec: Spec): String = {
+    if (!spec.ann.isTerminates) return ""
+    val decreasingNames = spec.fparams.collect {
+      case fp if fp.isDecreasing => s"`${fp.bnd.sym.text}`"
+    }
+    if (decreasingNames.nonEmpty)
+      s"\n**Terminates**: structurally decreasing on ${decreasingNames.mkString(", ")}\n"
+    else
+      "\n**Terminates**: non-recursive\n"
   }
 
   private def hoverKind(k: Kind, loc: SourceLocation): Option[Hover] = {

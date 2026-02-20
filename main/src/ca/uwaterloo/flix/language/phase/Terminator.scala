@@ -58,7 +58,8 @@ object Terminator {
       val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances,
         (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(
         ParOps.parMapValueList(_)(visitInstance))
-      (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
+      val updatedSigs = traits.values.flatMap(_.sigs).map(s => s.sym -> s).toMap
+      (root.copy(defs = defs, traits = traits, instances = instances, sigs = root.sigs ++ updatedSigs), sctx.errors.asScala.toList)
     }
 
   /**
@@ -171,43 +172,74 @@ object Terminator {
       SubEnv(fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, Alias)).toMap)
   }
 
+  /**
+    * Tracks which formal parameter indices have been proven
+    * structurally decreasing across recursive call sites.
+    */
+  private case class DecreasingParams(indices: Set[Int]) {
+    /** Merges two sets of decreasing params (union). */
+    def ++(other: DecreasingParams): DecreasingParams =
+      DecreasingParams(indices ++ other.indices)
+
+    /** Whether the parameter at `idx` is decreasing. */
+    def isDecreasing(idx: Int): Boolean = indices.contains(idx)
+  }
+
+  private object DecreasingParams {
+    /** No decreasing parameters. */
+    val empty: DecreasingParams = DecreasingParams(Set.empty)
+
+    /** A single decreasing parameter at `idx`. */
+    def single(idx: Int): DecreasingParams = DecreasingParams(Set(idx))
+
+    /** Union of all decreasing params from a list. */
+    def merge(xs: Iterable[DecreasingParams]): DecreasingParams =
+      xs.foldLeft(empty)(_ ++ _)
+  }
+
   /** Checks a trait's default sig implementations for termination properties. */
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext, root: Root): Trait = {
-    trt.sigs.foreach(visitSig)
-    trt
+    val updatedSigs = trt.sigs.map(visitSig)
+    trt.copy(sigs = updatedSigs)
   }
 
   /** Checks an instance's def implementations for termination properties. */
   private def visitInstance(inst: Instance)(implicit sctx: SharedContext, root: Root): Instance = {
     val traitSym = inst.trt.sym
-    root.traits.get(traitSym) match {
+    val updatedDefs = root.traits.get(traitSym) match {
       case Some(trt) =>
-        inst.defs.foreach { defn =>
+        inst.defs.map { defn =>
           if (defn.spec.ann.isTerminates) {
             trt.sigs.find(_.sym.name == defn.sym.text) match {
               case Some(sig) =>
                 checkStrictPositivity(defn.spec.fparams, defn.sym)
                 val fparams = defn.spec.fparams
-                visitExp(List(RecursionContext(SelfInstanceDef(defn.sym, sig.sym), fparams, SubEnv.init(fparams))), defn.exp)
-              case None =>
-                visitDef(defn)
+                val decreasing = visitExp(List(RecursionContext(SelfInstanceDef(defn.sym, sig.sym), fparams, SubEnv.init(fparams))), defn.exp)
+                val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
+                  if (decreasing.isDecreasing(i)) fp.copy(isDecreasing = true) else fp
+                }
+                defn.copy(spec = defn.spec.copy(fparams = newFparams))
+              case None => visitDef(defn)
             }
-          }
+          } else defn
         }
-      case None =>
-        inst.defs.foreach(visitDef)
+      case None => inst.defs.map(visitDef)
     }
-    inst
+    inst.copy(defs = updatedDefs)
   }
 
   /** Checks a trait default implementation for termination properties if annotated with @Terminates. */
-  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root): Unit = {
-    sig.exp.foreach { exp =>
-      if (sig.spec.ann.isTerminates) {
+  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root): Sig = {
+    sig.exp match {
+      case Some(exp) if sig.spec.ann.isTerminates =>
         checkStrictPositivity(sig.spec.fparams, sig.sym)
         val fparams = sig.spec.fparams
-        visitExp(List(RecursionContext(SelfSig(sig.sym), fparams, SubEnv.init(fparams))), exp)
-      }
+        val decreasing = visitExp(List(RecursionContext(SelfSig(sig.sym), fparams, SubEnv.init(fparams))), exp)
+        val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
+          if (decreasing.isDecreasing(i)) fp.copy(isDecreasing = true) else fp
+        }
+        sig.copy(spec = sig.spec.copy(fparams = newFparams))
+      case _ => sig
     }
   }
 
@@ -216,9 +248,14 @@ object Terminator {
     if (defn.spec.ann.isTerminates) {
       checkStrictPositivity(defn.spec.fparams, defn.sym)
       val fparams = defn.spec.fparams
-      visitExp(List(RecursionContext(SelfDef(defn.sym), fparams, SubEnv.init(fparams))), defn.exp)
+      val decreasing = visitExp(List(RecursionContext(SelfDef(defn.sym), fparams, SubEnv.init(fparams))), defn.exp)
+      val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
+        if (decreasing.isDecreasing(i)) fp.copy(isDecreasing = true) else fp
+      }
+      defn.copy(spec = defn.spec.copy(fparams = newFparams))
+    } else {
+      defn
     }
-    defn
   }
 
   // =========================================================================
@@ -258,7 +295,7 @@ object Terminator {
     * @param contexts the recursion contexts, innermost first.
     * @param exp0     the expression to check.
     */
-  private def visitExp(contexts: List[RecursionContext], exp0: Expr)(implicit sctx: SharedContext, root: Root): Unit = {
+  private def visitExp(contexts: List[RecursionContext], exp0: Expr)(implicit sctx: SharedContext, root: Root): DecreasingParams = {
 
     /** The symbol of the top-level `@Terminates` function (used for forbidden-expression errors). */
     val topSym = contexts.last.selfSym.sym
@@ -268,7 +305,7 @@ object Terminator {
         matchSelf(ctx.selfSym, exp).map { case (exps, loc) => (ctx, exps, loc) }
       }.nextOption()
 
-    def visit(exp0: Expr): Unit = findSelfRecursiveCall(exp0) match {
+    def visit(exp0: Expr): DecreasingParams = findSelfRecursiveCall(exp0) match {
       // --- Self-recursive call (structural recursion check) ---
       case Some((ctx, exps, loc)) =>
         val argInfos = exps.zip(ctx.fparams).map {
@@ -293,29 +330,36 @@ object Terminator {
         if (!hasDecreasingArg) {
           sctx.errors.add(TerminationError.NonStructuralRecursion(ctx.selfSym.sym, argInfos, loc))
         }
-        exps.foreach(visit)
+        val decreasingHere = DecreasingParams.merge(
+          argInfos.zipWithIndex.collect {
+            case (info, idx) if info.status == TerminationError.ArgStatus.Decreasing =>
+              ctx.selfSym match {
+                case _: SelfLocalDef => DecreasingParams.empty
+                case _ => DecreasingParams.single(idx)
+              }
+          }
+        )
+        decreasingHere ++ DecreasingParams.merge(exps.map(visit))
 
       case None => exp0 match {
       // --- Match: extend env in all contexts ---
       case Expr.Match(scrutinee, rules, _, _, _) =>
-        visit(scrutinee)
-        rules.foreach {
+        visit(scrutinee) ++ DecreasingParams.merge(rules.map {
           case MatchRule(pat, guard, body, _) =>
             val extContexts = contexts.map(ctx =>
               ctx.copy(env = extendEnvFromScrutinee(ctx.env, scrutinee, pat)))
-            guard.foreach(visitExp(extContexts, _))
-            visitExp(extContexts, body)
-        }
+            DecreasingParams.merge(guard.map(visitExp(extContexts, _)).toList) ++ visitExp(extContexts, body)
+        })
 
       // --- Let: propagate alias in all contexts ---
       case Expr.Let(bnd, exp1, exp2, _, _, _) =>
-        visit(exp1)
+        val r1 = visit(exp1)
         val extContexts = exp1 match {
           case Expr.Var(sym, _, _) =>
             contexts.map(ctx => ctx.copy(env = ctx.env.propagateAlias(from = sym, to = bnd.sym)))
           case _ => contexts
         }
-        visitExp(extContexts, exp2)
+        r1 ++ visitExp(extContexts, exp2)
 
       // --- LocalDef: push new context, visit body with extended list ---
       case Expr.LocalDef(bnd, localFparams, exp1, exp2, _, _, _) =>
@@ -324,14 +368,13 @@ object Terminator {
           localFparams,
           SubEnv.init(localFparams))
         checkStrictPositivity(localFparams, contexts.head.selfSym.sym)
-        visitExp(localCtx :: contexts, exp1)
-        visit(exp2)
+        visitExp(localCtx :: contexts, exp1) ++ visit(exp2)
 
       // --- All other expressions (TypedAst declaration order) ---
 
-      case Expr.Cst(_, _, _) => ()
-      case Expr.Var(_, _, _) => ()
-      case Expr.Hole(_, _, _, _, _) => ()
+      case Expr.Cst(_, _, _) => DecreasingParams.empty
+      case Expr.Var(_, _, _) => DecreasingParams.empty
+      case Expr.Hole(_, _, _, _, _) => DecreasingParams.empty
       case Expr.HoleWithExp(e, _, _, _, _) => visit(e)
       case Expr.OpenAs(_, e, _, _) => visit(e)
       case Expr.Use(_, _, e, _) => visit(e)
@@ -339,8 +382,7 @@ object Terminator {
 
       case Expr.ApplyClo(e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1)
-        visit(e2)
+        visit(e1) ++ visit(e2)
 
       case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) =>
         root.defs.get(symUse.sym) match {
@@ -348,81 +390,58 @@ object Terminator {
             sctx.errors.add(TerminationError.NonTerminatingCall(topSym, symUse.sym, loc))
           case _ => ()
         }
-        exps.foreach(visit)
-      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visit)
+        DecreasingParams.merge(exps.map(visit))
+      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => DecreasingParams.merge(exps.map(visit))
 
       case Expr.ApplyOp(_, exps, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        exps.foreach(visit)
+        DecreasingParams.merge(exps.map(visit))
 
-      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.foreach(visit) // TODO: More complex.
+      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => DecreasingParams.merge(exps.map(visit)) // TODO: More complex.
 
       case Expr.Unary(_, e, _, _, _) => visit(e)
-      case Expr.Binary(_, e1, e2, _, _, _) =>
-        visit(e1)
-        visit(e2)
+      case Expr.Binary(_, e1, e2, _, _, _) => visit(e1) ++ visit(e2)
       case Expr.Region(_, _, e, _, _, _) => visit(e)
-      case Expr.IfThenElse(e1, e2, e3, _, _, _) =>
-        visit(e1)
-        visit(e2)
-        visit(e3)
-      case Expr.Stm(e1, e2, _, _, _) =>
-        visit(e1)
-        visit(e2)
+      case Expr.IfThenElse(e1, e2, e3, _, _, _) => visit(e1) ++ visit(e2) ++ visit(e3)
+      case Expr.Stm(e1, e2, _, _, _) => visit(e1) ++ visit(e2)
       case Expr.Discard(e, _, _) => visit(e)
       case Expr.TypeMatch(e, rules, _, _, _) =>
-        visit(e)
-        rules.foreach(r => visit(r.exp))
+        visit(e) ++ DecreasingParams.merge(rules.map(r => visit(r.exp)))
       case Expr.RestrictableChoose(_, e, rules, _, _, _) =>
-        visit(e)
-        rules.foreach(r => visit(r.exp))
+        visit(e) ++ DecreasingParams.merge(rules.map(r => visit(r.exp)))
       case Expr.ExtMatch(e, rules, _, _, _) =>
-        visit(e)
-        rules.foreach(r => visit(r.exp))
-      case Expr.Tag(_, exps, _, _, _) => exps.foreach(visit)
-      case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visit)
-      case Expr.ExtTag(_, exps, _, _, _) => exps.foreach(visit)
-      case Expr.Tuple(exps, _, _, _) => exps.foreach(visit)
+        visit(e) ++ DecreasingParams.merge(rules.map(r => visit(r.exp)))
+      case Expr.Tag(_, exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
+      case Expr.RestrictableTag(_, exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
+      case Expr.ExtTag(_, exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
+      case Expr.Tuple(exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
       case Expr.RecordSelect(e, _, _, _, _) => visit(e)
-      case Expr.RecordExtend(_, e1, e2, _, _, _) =>
-        visit(e1)
-        visit(e2)
+      case Expr.RecordExtend(_, e1, e2, _, _, _) => visit(e1) ++ visit(e2)
       case Expr.RecordRestrict(_, e, _, _, _) => visit(e)
       case Expr.ArrayLit(exps, e, _, _, _) =>
-        exps.foreach(visit)
-        visit(e)
+        DecreasingParams.merge(exps.map(visit)) ++ visit(e)
 
       case Expr.ArrayNew(e1, e2, e3, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1)
-        visit(e2)
-        visit(e3)
+        visit(e1) ++ visit(e2) ++ visit(e3)
 
-      case Expr.ArrayLoad(e1, e2, _, _, _) =>
-        visit(e1)
-        visit(e2)
+      case Expr.ArrayLoad(e1, e2, _, _, _) => visit(e1) ++ visit(e2)
       case Expr.ArrayLength(e, _, _) => visit(e)
 
       case Expr.ArrayStore(e1, e2, e3, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1)
-        visit(e2)
-        visit(e3)
+        visit(e1) ++ visit(e2) ++ visit(e3)
 
       case Expr.StructNew(_, fields, region, _, _, _) =>
-        fields.foreach(f => visit(f._2))
-        region.foreach(visit)
+        DecreasingParams.merge(fields.map(f => visit(f._2))) ++ DecreasingParams.merge(region.map(visit).toList)
       case Expr.StructGet(e, _, _, _, _) => visit(e)
 
       case Expr.StructPut(e1, _, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1)
-        visit(e2)
+        visit(e1) ++ visit(e2)
 
-      case Expr.VectorLit(exps, _, _, _) => exps.foreach(visit)
-      case Expr.VectorLoad(e1, e2, _, _, _) =>
-        visit(e1)
-        visit(e2)
+      case Expr.VectorLit(exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
+      case Expr.VectorLoad(e1, e2, _, _, _) => visit(e1) ++ visit(e2)
       case Expr.VectorLength(e, _) => visit(e)
       case Expr.Ascribe(e, _, _, _, _, _) => visit(e)
       case Expr.InstanceOf(e, _, _) => visit(e)
@@ -438,30 +457,26 @@ object Terminator {
 
       case Expr.Without(e, _, _, _, _) => visit(e)
       case Expr.TryCatch(e, rules, _, _, _) =>
-        visit(e)
-        rules.foreach(r => visit(r.exp))
+        visit(e) ++ DecreasingParams.merge(rules.map(r => visit(r.exp)))
 
       case Expr.Throw(e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
-      case Expr.Handler(_, rules, _, _, _, _, _) => rules.foreach(r => visit(r.exp))
-      case Expr.RunWith(e1, e2, _, _, _) =>
-        visit(e1)
-        visit(e2)
+      case Expr.Handler(_, rules, _, _, _, _, _) => DecreasingParams.merge(rules.map(r => visit(r.exp)))
+      case Expr.RunWith(e1, e2, _, _, _) => visit(e1) ++ visit(e2)
 
       case Expr.InvokeConstructor(_, exps, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        exps.foreach(visit)
+        DecreasingParams.merge(exps.map(visit))
 
       case Expr.InvokeMethod(_, e, exps, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
-        exps.foreach(visit)
+        visit(e) ++ DecreasingParams.merge(exps.map(visit))
 
       case Expr.InvokeStaticMethod(_, exps, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        exps.foreach(visit)
+        DecreasingParams.merge(exps.map(visit))
 
       case Expr.GetField(_, e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
@@ -469,11 +484,11 @@ object Terminator {
 
       case Expr.PutField(_, e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1)
-        visit(e2)
+        visit(e1) ++ visit(e2)
 
       case Expr.GetStaticField(_, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
+        DecreasingParams.empty
 
       case Expr.PutStaticField(_, e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
@@ -481,7 +496,7 @@ object Terminator {
 
       case Expr.NewObject(_, _, _, _, methods, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        methods.foreach(m => visit(m.exp))
+        DecreasingParams.merge(methods.map(m => visit(m.exp)))
 
       case Expr.NewChannel(e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
@@ -493,26 +508,21 @@ object Terminator {
 
       case Expr.PutChannel(e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1)
-        visit(e2)
+        visit(e1) ++ visit(e2)
 
       case Expr.SelectChannel(rules, default, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        rules.foreach { r =>
-          visit(r.chan)
-          visit(r.exp)
-        }
-        default.foreach(visit)
+        DecreasingParams.merge(rules.map { r =>
+          visit(r.chan) ++ visit(r.exp)
+        }) ++ DecreasingParams.merge(default.map(visit).toList)
 
       case Expr.Spawn(e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1)
-        visit(e2)
+        visit(e1) ++ visit(e2)
 
       case Expr.ParYield(frags, e, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        frags.foreach(f => visit(f.exp))
-        visit(e)
+        DecreasingParams.merge(frags.map(f => visit(f.exp))) ++ visit(e)
 
       case Expr.Lazy(e, _, _) => visit(e)
 
@@ -520,27 +530,23 @@ object Terminator {
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
         visit(e)
 
-      case Expr.FixpointConstraintSet(_, _, _) => ()
+      case Expr.FixpointConstraintSet(_, _, _) => DecreasingParams.empty
       case Expr.FixpointLambda(_, e, _, _, _) => visit(e)
 
       case Expr.FixpointMerge(e1, e2, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1)
-        visit(e2)
+        visit(e1) ++ visit(e2)
 
-      case Expr.FixpointQueryWithProvenance(exps, _, _, _, _, _) => exps.foreach(visit)
+      case Expr.FixpointQueryWithProvenance(exps, _, _, _, _, _) => DecreasingParams.merge(exps.map(visit))
       case Expr.FixpointQueryWithSelect(exps, q, sels, _, where, _, _, _, _) =>
-        exps.foreach(visit)
-        visit(q)
-        sels.foreach(visit)
-        where.foreach(visit)
+        DecreasingParams.merge(exps.map(visit)) ++ visit(q) ++ DecreasingParams.merge(sels.map(visit)) ++ DecreasingParams.merge(where.map(visit).toList)
 
       case Expr.FixpointSolveWithProject(exps, _, _, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        exps.foreach(visit)
+        DecreasingParams.merge(exps.map(visit))
 
-      case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.foreach(visit)
-      case Expr.Error(_, _, _) => ()
+      case Expr.FixpointInjectInto(exps, _, _, _, _) => DecreasingParams.merge(exps.map(visit))
+      case Expr.Error(_, _, _) => DecreasingParams.empty
       }
     }
 

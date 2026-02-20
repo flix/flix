@@ -58,7 +58,7 @@ object FormatSignature {
     // Case 2: Some list of parameters. Format each and join them: `foo(x: Int32, y: Bool)`
     case fparams =>
       val formattedArgs = fparams.map {
-        case TypedAst.FormalParam(bnd, tpe, _, _) => s"${bnd.sym.text}: ${FormatType.formatType(tpe)}"
+        case TypedAst.FormalParam(bnd, tpe, _, _, _) => s"${bnd.sym.text}: ${FormatType.formatType(tpe)}"
       }
       formattedArgs.mkString(", ")
 

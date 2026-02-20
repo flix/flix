@@ -523,10 +523,10 @@ class Flix {
             val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
             errors ++= safetyErrors
 
-            val (_, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
+            val (afterTerminator, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
             errors ++= terminationErrors
 
-            val (afterDependencies, _) = Dependencies.run(afterRedundancy, cachedTyperAst, changeSet)
+            val (afterDependencies, _) = Dependencies.run(afterTerminator, cachedTyperAst, changeSet)
 
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
