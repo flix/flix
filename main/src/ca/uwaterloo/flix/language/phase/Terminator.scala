@@ -472,6 +472,7 @@ object Terminator {
           Expr.RecordRestrict(field, e, tpe, eff, loc)
 
         case Expr.ArrayLit(exps0, exp1, tpe, eff, loc) =>
+          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
           val es = exps0.map(visitExp(contexts, _))
           val e = visitExp(contexts, exp1)
           Expr.ArrayLit(es, e, tpe, eff, loc)
@@ -484,11 +485,13 @@ object Terminator {
           Expr.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
         case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
           val e1 = visitExp(contexts, exp1)
           val e2 = visitExp(contexts, exp2)
           Expr.ArrayLoad(e1, e2, tpe, eff, loc)
 
         case Expr.ArrayLength(exp1, tpe, loc) =>
+          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
           val e = visitExp(contexts, exp1)
           Expr.ArrayLength(e, tpe, loc)
 
@@ -500,11 +503,13 @@ object Terminator {
           Expr.ArrayStore(e1, e2, e3, eff, loc)
 
         case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
           val fs = fields0.map { case (f, exp1) => (f, visitExp(contexts, exp1)) }
           val r = region0.map(visitExp(contexts, _))
           Expr.StructNew(sym, fs, r, tpe, eff, loc)
 
         case Expr.StructGet(exp1, field, tpe, eff, loc) =>
+          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
           val e = visitExp(contexts, exp1)
           Expr.StructGet(e, field, tpe, eff, loc)
 
@@ -564,10 +569,12 @@ object Terminator {
           Expr.Throw(e, tpe, eff, loc)
 
         case Expr.Handler(sym, rules0, tpe, eff, purity, evar, loc) =>
+          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
           val rs = rules0.map(visitHandlerRule(contexts, _))
           Expr.Handler(sym, rs, tpe, eff, purity, evar, loc)
 
         case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
           val e1 = visitExp(contexts, exp1)
           val e2 = visitExp(contexts, exp2)
           Expr.RunWith(e1, e2, tpe, eff, loc)
