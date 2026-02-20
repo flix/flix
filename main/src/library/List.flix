@@ -241,6 +241,7 @@ pub mod List {
     ///
     /// The infix operator `:::` is an alias for `append` (`l1 ::: l2 = append(l1, l2)`).
     ///
+    @Terminates
     pub def append(l1: List[a], l2: List[a]): List[a] =
         foldRight((x, acc) -> x :: acc, l2, l1)
 
@@ -249,6 +250,7 @@ pub mod List {
     ///
     /// More efficient than `append(reverse(l1), l2)` as it does not use reverse.
     ///
+    @Terminates
     def reverseAppend(l1: List[a], l2: List[a]): List[a] =
         foldLeft((acc, x) -> x :: acc, l2, l1)
 
@@ -322,11 +324,13 @@ pub mod List {
     ///
     /// Alias for `findLeft`.
     ///
+    @Terminates
     pub def find(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = findLeft(f, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
+    @Terminates
     pub def findLeft(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = match l {
         case Nil     => None
         case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
@@ -367,6 +371,7 @@ pub mod List {
     ///
     /// Alias for `scanLeft`.
     ///
+    @Terminates
     pub def scan(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef = scanLeft(f, s, l)
 
     ///
@@ -374,6 +379,7 @@ pub mod List {
     ///
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
+    @Terminates
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
         def loop(ll, bacc, acc) = match ll {
             case Nil     => acc
@@ -388,6 +394,7 @@ pub mod List {
     ///
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
+    @Terminates
     pub def scanRight(f: (a, b) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
         def loop(ll, bacc, acc) = match ll {
             case Nil     => acc
@@ -402,6 +409,7 @@ pub mod List {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
+    @Terminates
     pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -462,6 +470,7 @@ pub mod List {
     ///
     /// That is, the result is of the form: `f(0, x0) :: f(1, x1) :: ...`.
     ///
+    @Terminates
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, i, acc) = match ll {
             case Nil     => acc
@@ -521,6 +530,7 @@ pub mod List {
     ///
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
+    @Terminates
     pub def update(i: Int32, a: a, l: List[a]): List[a] =
         def loop(ll, j, acc) = match (j, ll) {
             case (_, Nil)     => l
@@ -532,6 +542,7 @@ pub mod List {
     ///
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
+    @Terminates
     pub def replace(src: {src = a}, dst: {dst = a}, l: List[a]): List[a] with Eq[a] =
         map(e -> if (e == src#src) dst#dst else e, l)
 
@@ -598,6 +609,7 @@ pub mod List {
     ///
     /// The first occurrence in a chain of duplicates is kept.
     ///
+    @Terminates
     pub def removeAdjDups(l: List[a]): List[a] with Eq[a] = removeAdjDupsWith(Eq.eq, l)
 
     ///
@@ -608,6 +620,7 @@ pub mod List {
     ///
     /// `f` must define an equivalence relation on the elements of the list.
     ///
+    @Terminates
     pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, l: List[a]): List[a] \ ef = {
         def loop(head, acc, ll) = match ll {
             case Nil     => acc
@@ -752,6 +765,7 @@ pub mod List {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
+    @Terminates
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = match l {
         case Nil     => s
         case x :: xs => foldLeft(f, f(s, x), xs)
@@ -762,6 +776,7 @@ pub mod List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
+    @Terminates
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -776,6 +791,7 @@ pub mod List {
     ///
     /// Returns `None` if `l` is empty.
     ///
+    @Terminates
     pub def reduceLeft(f: (a, a) -> a \ ef, l: List[a]): Option[a] \ ef = match l {
         case Nil     => None
         case x :: xs => Some(foldLeft(f, x, xs))
@@ -788,6 +804,7 @@ pub mod List {
     ///
     /// Returns `None` if `l` is empty.
     ///
+    @Terminates
     pub def reduceRight(f: (a, a) -> a \ ef, l: List[a]): Option[a] \ ef =
         def loop(ll, acc) = match ll {
             case Nil     => Some(acc)
@@ -801,12 +818,14 @@ pub mod List {
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
+    @Terminates
     pub def count(f: a -> Bool \ ef, l: List[a]): Int32 \ ef =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
 
     ///
     /// Returns the concatenation of the elements in `l`.
     ///
+    @Terminates
     pub def flatten(l: List[List[a]]): List[a] =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -819,6 +838,7 @@ pub mod List {
     ///
     /// Returns `false` if `l` is empty.
     ///
+    @Terminates
     pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
         case Nil     => false
         case x :: xs => if (f(x)) true else exists(f, xs)
@@ -829,6 +849,7 @@ pub mod List {
     ///
     /// Returns `true` if `l` is empty.
     ///
+    @Terminates
     pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
         case Nil     => true
         case x :: xs => if (f(x)) forAll(f, xs) else false
@@ -837,6 +858,7 @@ pub mod List {
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
     ///
+    @Terminates
     pub def filter(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -865,6 +887,7 @@ pub mod List {
     /// That is, an element at index `i` in `l` is part of the returned sublist if and only if `i >= start` and `i < end`.
     /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(start, end, l) = slice(max(0, start), min(length(l), end), l)).
     ///
+    @Terminates
     pub def slice(start: {start = Int32}, end: {end = Int32}, l: List[a]): List[a] =
         def loop(ll, i, acc) = match ll {
             case Nil     => acc
@@ -884,6 +907,7 @@ pub mod List {
     /// `l1` contains all elements of `l` that satisfy the predicate `f`.
     /// `l2` contains all elements of `l` that do not satisfy the predicate `f`.
     ///
+    @Terminates
     pub def partition(f: a -> Bool \ ef, l: List[a]): (List[a], List[a]) \ ef =
         def loop(ll, acc1, acc2) = match ll {
             case Nil     => (acc1, acc2)
@@ -904,6 +928,7 @@ pub mod List {
     ///
     /// The function `f` must be pure.
     ///
+    @Terminates
     pub def span(f: a -> Bool, l: List[a]): (List[a], List[a]) =
         def loop(ll, acc) = match ll {
             case Nil     => (acc, Nil)
@@ -932,6 +957,7 @@ pub mod List {
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
+    @Terminates
     pub def dropWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef = match l {
         case Nil     => Nil
         case x :: xs => if (f(x)) dropWhile(f, xs) else l
@@ -943,6 +969,7 @@ pub mod List {
     /// Returns `l` if `n > length(l)`.
     /// Returns `Nil` if `n < 0`.
     ///
+    @Terminates
     pub def take(n: Int32, l: List[a]): List[a] =
         def loop(ll, i, acc) =
             if (i <= 0)
@@ -957,6 +984,7 @@ pub mod List {
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
+    @Terminates
     pub def takeWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -973,6 +1001,7 @@ pub mod List {
     /// Returns `(xs, Nil)` if `n > length(xs)`.
     /// Returns `(Nil, xs)` if `n < 0`.
     ///
+    @Terminates
     pub def splitAt(n: Int32, xs: List[a]): (List[a], List[a]) =
         (List.take(n, xs), List.drop(n, xs))
 
@@ -1043,6 +1072,7 @@ pub mod List {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
+    @Terminates
     pub def zipWith(f: (a, b) -> c \ ef, l1: List[a], l2: List[b]): List[c] \ ef =
         def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) =>
@@ -1096,6 +1126,7 @@ pub mod List {
     ///
     /// If any one of `l1`, `l2` or `l3` become depleted, then no further elements are added to the resulting list.
     ///
+    @Terminates
     pub def zip3(l1: List[a], l2: List[b], l3: List[c]): List[(a, b, c)] =
         zipWith3((x, y, z) -> (x, y, z), l1, l2, l3)
 
@@ -1106,6 +1137,7 @@ pub mod List {
     ///
     /// If any one of `l1`, `l2` or `l3` become depleted, then no further elements are added to the resulting list.
     ///
+    @Terminates
     pub def zipWith3(f: (a, b, c) -> d \ ef, l1: List[a], l2: List[b], l3: List[c]): List[d] \ ef =
         def loop(ll1, ll2, ll3, acc) = match (ll1, ll2, ll3) {
             case (x :: xs, y :: ys, z :: zs) =>
@@ -1131,12 +1163,14 @@ pub mod List {
     ///
     /// Alias for `foldLeft2`.
     ///
+    @Terminates
     pub def fold2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef = foldLeft2(f, c, l1, l2)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
     /// starting with the initial value `c` and going from left to right.
     ///
+    @Terminates
     pub def foldLeft2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef = match (l1, l2) {
         case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
         case _                  => c
@@ -1146,6 +1180,7 @@ pub mod List {
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
     /// starting with the initial value `c` and going from right to left.
     ///
+    @Terminates
     pub def foldRight2(f: (a, b, c) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef =
         def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => loop(xs, ys, f(x, y, acc))
@@ -1156,12 +1191,14 @@ pub mod List {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
+    @Terminates
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
     ///
+    @Terminates
     pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -1177,6 +1214,7 @@ pub mod List {
     ///
     /// Returns `None` if every element of `l` is `None`.
     ///
+    @Terminates
     pub def findMap(f: a -> Option[b] \ ef, l: List[a]): Option[b] \ ef = match l {
         case Nil     => None
         case x :: xs => match f(x) {
@@ -1233,6 +1271,7 @@ pub mod List {
     ///
     /// Applies `f` to every element of `l`.
     ///
+    @Terminates
     pub def forEach(f: a -> Unit \ ef, l: List[a]): Unit \ ef = match l {
         case Nil     => ()
         case x :: xs => f(x); forEach(f, xs)
@@ -1241,6 +1280,7 @@ pub mod List {
     ///
     /// Applies `f` to every element of `l` along with that element's index.
     ///
+    @Terminates
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: List[a]): Unit \ ef =
         def loop(ll, i) = match ll {
             case Nil     => ()
@@ -1397,6 +1437,7 @@ pub mod List {
     /// `f` for comparison. The first occurrence of an element is kept and except
     /// for the removal of subsequent duplicates the order of `l` is preserved.
     ///
+    @Terminates
     pub def distinctWith(f: (a, a) -> Bool, l: List[a]): List[a] =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -1470,6 +1511,7 @@ pub mod List {
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
     /// If two elements compare `EqualTo`, then the element of `l1` is first in the result.
     ///
+    @Terminates
     pub def merge(l1: List[a], l2: List[a]): List[a] with Order[a] =
         def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
