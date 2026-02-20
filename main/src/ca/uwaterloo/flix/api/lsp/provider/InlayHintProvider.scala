@@ -184,7 +184,6 @@ object InlayHintProvider {
 
   /**
     * Returns a list of inlay hints for `@Terminates` annotations summarizing decreasing parameters.
-    * Covers both top-level defs and local defs.
     */
   private def getTerminatesHints(uri: String)(implicit root: Root): List[InlayHint] = {
     var hints: List[InlayHint] = List.empty
