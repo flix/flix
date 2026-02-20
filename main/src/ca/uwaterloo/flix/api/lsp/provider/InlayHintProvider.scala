@@ -201,16 +201,6 @@ object InlayHintProvider {
           }
         }
       }
-      override def consumeExpr(expr: Expr): Unit = expr match {
-        case Expr.LocalDef(bnd, fparams, _, _, _, _, _) =>
-          val decreasingNames = fparams.collect {
-            case fp if fp.isDecreasing => fp.bnd.sym.text
-          }
-          if (decreasingNames.nonEmpty) {
-            hints = mkLocalDefTerminatesHint(bnd, decreasingNames) :: hints
-          }
-        case _ => ()
-      }
     }
     Visitor.visitRoot(root, terminatesConsumer, FileAcceptor(uri))
     hints
@@ -231,18 +221,4 @@ object InlayHintProvider {
     )
   }
 
-  /**
-    * Creates an inlay hint for a local def showing the decreasing parameters.
-    */
-  private def mkLocalDefTerminatesHint(bnd: Binder, decreasingNames: List[String]): InlayHint = {
-    InlayHint(
-      position = Position.fromEnd(bnd.sym.loc),
-      label = s"(decreases on ${decreasingNames.mkString(", ")})",
-      kind = Some(InlayHintKind.Parameter),
-      textEdits = List.empty,
-      tooltip = "Structurally decreasing parameters",
-      paddingLeft = true,
-      paddingRight = false
-    )
-  }
 }
