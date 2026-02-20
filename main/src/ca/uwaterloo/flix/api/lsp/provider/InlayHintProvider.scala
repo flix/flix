@@ -193,16 +193,32 @@ object InlayHintProvider {
         val decreasingNames = defn.spec.fparams.collect {
           case fp if fp.isDecreasing => fp.bnd.sym.text
         }
-        if (decreasingNames.nonEmpty) {
-          defn.spec.ann.annotations.collectFirst {
-            case t: Annotation.Terminates =>
+        defn.spec.ann.annotations.collectFirst {
+          case t: Annotation.Terminates =>
+            if (decreasingNames.nonEmpty)
               hints = mkTerminatesHint(t, decreasingNames) :: hints
-          }
+            else
+              hints = mkNoRecursiveCallsHint(t) :: hints
         }
       }
     }
     Visitor.visitRoot(root, terminatesConsumer, FileAcceptor(uri))
     hints
+  }
+
+  /**
+    * Creates an inlay hint for a `@Terminates` annotation when no recursive calls are detected.
+    */
+  private def mkNoRecursiveCallsHint(t: Annotation.Terminates): InlayHint = {
+    InlayHint(
+      position = Position.fromEnd(t.loc),
+      label = "(no recursive calls)",
+      kind = Some(InlayHintKind.Parameter),
+      textEdits = List.empty,
+      tooltip = "No recursive calls detected",
+      paddingLeft = true,
+      paddingRight = false
+    )
   }
 
   /**
