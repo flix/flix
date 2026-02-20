@@ -173,18 +173,6 @@ object Terminator {
       SubEnv(fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, Alias)).toMap)
   }
 
-  private object LocalContext {
-    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty)
-  }
-
-  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]]) {
-    def addDecreasing(selfSym: SelfSym, idx: Int): Unit =
-      decreasingParams.getOrElseUpdate(selfSym, mutable.Set.empty) += idx
-
-    def getDecreasing(selfSym: SelfSym): Set[Int] =
-      decreasingParams.getOrElse(selfSym, Set.empty).toSet
-  }
-
   /** Checks a trait's default sig implementations for termination properties. */
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext, root: Root): Trait = {
     val updatedSigs = trt.sigs.map(visitSig)
@@ -255,9 +243,9 @@ object Terminator {
     }
   }
 
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
   // Self-call matching
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
 
   /**
     * If `exp` is a self-recursive call matching `selfSym`, returns the call arguments and location.
@@ -272,9 +260,9 @@ object Terminator {
       case _ => None
     }
 
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
   // Unified expression visitor — structural recursion + forbidden features
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
 
   /**
     * Recursively visits `exp`, performing two checks simultaneously:
@@ -407,8 +395,9 @@ object Terminator {
           Expr.ApplyOp(symUse, es, tpe, eff, loc)
 
         case Expr.ApplySig(symUse, exps0, itpe, tpe, eff, purity, isEq, loc) =>
+          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
           val es = exps0.map(visitExp(contexts, _))
-          Expr.ApplySig(symUse, es, itpe, tpe, eff, purity, isEq, loc) // TODO: More complex.
+          Expr.ApplySig(symUse, es, itpe, tpe, eff, purity, isEq, loc)
 
         case Expr.Unary(sop, exp1, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1)
@@ -771,9 +760,9 @@ object Terminator {
     method0.copy(exp = e)
   }
 
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
   // Pattern environment helpers
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
 
   /**
     * Pairs a scrutinee expression with its pattern and extends the sub-env accordingly.
@@ -832,9 +821,9 @@ object Terminator {
     case Pattern.Error(_, _) => env
   }
 
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
   // Strict Positivity Check
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
 
   /**
     * Checks that the types of formal parameters are strictly positive.
@@ -883,9 +872,41 @@ object Terminator {
     }
   }
 
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
+  // LocalContext
+  ////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Companion object for [[LocalContext]].
+    */
+  private object LocalContext {
+    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty)
+  }
+
+  /**
+    * Mutable per-function context that accumulates which formal parameter positions
+    * have been observed as decreasing across all self-recursive call sites.
+    *
+    * After the expression visitor finishes, the accumulated indices are used to
+    * annotate the corresponding formal parameters with `isDecreasing = true`.
+    *
+    * @param decreasingParams maps each [[SelfSym]] to the set of parameter indices
+    *                         that have been passed a strict substructure at some call site.
+    */
+  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]]) {
+
+    /** Records that parameter at `idx` is decreasing for `selfSym`. */
+    def addDecreasing(selfSym: SelfSym, idx: Int): Unit =
+      decreasingParams.getOrElseUpdate(selfSym, mutable.Set.empty) += idx
+
+    /** Returns the set of parameter indices observed as decreasing for `selfSym`. */
+    def getDecreasing(selfSym: SelfSym): Set[Int] =
+      decreasingParams.getOrElse(selfSym, Set.empty).toSet
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
   // SharedContext
-  // =========================================================================
+  ////////////////////////////////////////////////////////////////////////////
 
   private object SharedContext {
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
