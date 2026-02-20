@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
 
@@ -66,9 +66,9 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTerminatesHints(uri)
     } else {
-      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors)
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTerminatesHints(uri)
     }
   }
 
@@ -156,5 +156,59 @@ object InlayHintProvider {
         textEdits = List(TextEdit(rng, lbl)),
         tooltip = ttp,
       )
+  }
+
+  /**
+    * Returns a list of inlay hints for structurally decreasing parameters.
+    */
+  private def getDecreasingParamHints(uri: String)(implicit root: Root): List[InlayHint] = {
+    var hints: List[InlayHint] = List.empty
+    object decreasingConsumer extends Consumer {
+      override def consumeFormalParam(fparam: FormalParam): Unit = {
+        if (fparam.isDecreasing) {
+          hints = InlayHint(
+            position = Position.fromBegin(fparam.loc),
+            label = "\u2193",
+            kind = Some(InlayHintKind.Parameter),
+            textEdits = List.empty,
+            tooltip = "Structurally decreasing",
+            paddingLeft = false,
+            paddingRight = true
+          ) :: hints
+        }
+      }
+    }
+    Visitor.visitRoot(root, decreasingConsumer, FileAcceptor(uri))
+    hints
+  }
+
+  /**
+    * Returns a list of inlay hints for `@Terminates` annotations summarizing decreasing parameters.
+    */
+  private def getTerminatesHints(uri: String)(implicit root: Root): List[InlayHint] = {
+    root.defs.values.foldLeft(List.empty[InlayHint]) {
+      case (acc, defn) =>
+        if (defn.loc.source.name != uri || !defn.spec.ann.isTerminates) acc
+        else {
+          val decreasingNames = defn.spec.fparams.collect {
+            case fp if fp.isDecreasing => fp.bnd.sym.text
+          }
+          if (decreasingNames.isEmpty) acc
+          else {
+            defn.spec.ann.annotations.collectFirst {
+              case t: Annotation.Terminates =>
+                InlayHint(
+                  position = Position.fromEnd(t.loc),
+                  label = s"(decreases on ${decreasingNames.mkString(", ")})",
+                  kind = Some(InlayHintKind.Parameter),
+                  textEdits = List.empty,
+                  tooltip = "Structurally decreasing parameters",
+                  paddingLeft = true,
+                  paddingRight = false
+                ) :: acc
+            }.getOrElse(acc)
+          }
+        }
+    }
   }
 }
