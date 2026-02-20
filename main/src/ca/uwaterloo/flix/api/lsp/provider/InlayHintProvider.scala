@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Def, Expr, FormalParam, Root}
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -184,24 +184,36 @@ object InlayHintProvider {
 
   /**
     * Returns a list of inlay hints for `@Terminates` annotations summarizing decreasing parameters.
+    * Covers both top-level defs and local defs.
     */
   private def getTerminatesHints(uri: String)(implicit root: Root): List[InlayHint] = {
-    root.defs.values.foldLeft(List.empty[InlayHint]) {
-      case (acc, defn) =>
-        if (defn.loc.source.name != uri || !defn.spec.ann.isTerminates) acc
-        else {
-          val decreasingNames = defn.spec.fparams.collect {
-            case fp if fp.isDecreasing => fp.bnd.sym.text
-          }
-          if (decreasingNames.isEmpty) acc
-          else {
-            defn.spec.ann.annotations.collectFirst {
-              case t: Annotation.Terminates =>
-                mkTerminatesHint(t, decreasingNames) :: acc
-            }.getOrElse(acc)
+    var hints: List[InlayHint] = List.empty
+    object terminatesConsumer extends Consumer {
+      override def consumeDef(defn: Def): Unit = {
+        if (!defn.spec.ann.isTerminates) return
+        val decreasingNames = defn.spec.fparams.collect {
+          case fp if fp.isDecreasing => fp.bnd.sym.text
+        }
+        if (decreasingNames.nonEmpty) {
+          defn.spec.ann.annotations.collectFirst {
+            case t: Annotation.Terminates =>
+              hints = mkTerminatesHint(t, decreasingNames) :: hints
           }
         }
+      }
+      override def consumeExpr(expr: Expr): Unit = expr match {
+        case Expr.LocalDef(bnd, fparams, _, _, _, _, _) =>
+          val decreasingNames = fparams.collect {
+            case fp if fp.isDecreasing => fp.bnd.sym.text
+          }
+          if (decreasingNames.nonEmpty) {
+            hints = mkLocalDefTerminatesHint(bnd, decreasingNames) :: hints
+          }
+        case _ => ()
+      }
     }
+    Visitor.visitRoot(root, terminatesConsumer, FileAcceptor(uri))
+    hints
   }
 
   /**
@@ -210,6 +222,21 @@ object InlayHintProvider {
   private def mkTerminatesHint(t: Annotation.Terminates, decreasingNames: List[String]): InlayHint = {
     InlayHint(
       position = Position.fromEnd(t.loc),
+      label = s"(decreases on ${decreasingNames.mkString(", ")})",
+      kind = Some(InlayHintKind.Parameter),
+      textEdits = List.empty,
+      tooltip = "Structurally decreasing parameters",
+      paddingLeft = true,
+      paddingRight = false
+    )
+  }
+
+  /**
+    * Creates an inlay hint for a local def showing the decreasing parameters.
+    */
+  private def mkLocalDefTerminatesHint(bnd: Binder, decreasingNames: List[String]): InlayHint = {
+    InlayHint(
+      position = Position.fromEnd(bnd.sym.loc),
       label = s"(decreases on ${decreasingNames.mkString(", ")})",
       kind = Some(InlayHintKind.Parameter),
       textEdits = List.empty,

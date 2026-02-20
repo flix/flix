@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
@@ -172,29 +173,16 @@ object Terminator {
       SubEnv(fparams.map(fp => fp.bnd.sym -> ParamRelation(fp.bnd.sym, Alias)).toMap)
   }
 
-  /**
-    * Tracks which formal parameter indices have been proven
-    * structurally decreasing across recursive call sites.
-    */
-  private case class DecreasingParams(indices: Set[Int]) {
-    /** Merges two sets of decreasing params (union). */
-    def ++(other: DecreasingParams): DecreasingParams =
-      DecreasingParams(indices ++ other.indices)
-
-    /** Whether the parameter at `idx` is decreasing. */
-    def isDecreasing(idx: Int): Boolean = indices.contains(idx)
+  private object LocalContext {
+    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty)
   }
 
-  private object DecreasingParams {
-    /** No decreasing parameters. */
-    val empty: DecreasingParams = DecreasingParams(Set.empty)
+  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]]) {
+    def addDecreasing(selfSym: SelfSym, idx: Int): Unit =
+      decreasingParams.getOrElseUpdate(selfSym, mutable.Set.empty) += idx
 
-    /** A single decreasing parameter at `idx`. */
-    def single(idx: Int): DecreasingParams = DecreasingParams(Set(idx))
-
-    /** Union of all decreasing params from a list. */
-    def merge(xs: Iterable[DecreasingParams]): DecreasingParams =
-      xs.foldLeft(empty)(_ ++ _)
+    def getDecreasing(selfSym: SelfSym): Set[Int] =
+      decreasingParams.getOrElse(selfSym, Set.empty).toSet
   }
 
   /** Checks a trait's default sig implementations for termination properties. */
@@ -212,13 +200,16 @@ object Terminator {
           if (defn.spec.ann.isTerminates) {
             trt.sigs.find(_.sym.name == defn.sym.text) match {
               case Some(sig) =>
+                implicit val lctx: LocalContext = LocalContext.mk()
                 checkStrictPositivity(defn.spec.fparams, defn.sym)
                 val fparams = defn.spec.fparams
-                val decreasing = visitExp(List(RecursionContext(SelfInstanceDef(defn.sym, sig.sym), fparams, SubEnv.init(fparams))), defn.exp)
+                val selfSym = SelfInstanceDef(defn.sym, sig.sym)
+                val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), defn.exp)
+                val decreasingIndices = lctx.getDecreasing(selfSym)
                 val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-                  if (decreasing.isDecreasing(i)) fp.copy(isDecreasing = true) else fp
+                  if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
                 }
-                defn.copy(spec = defn.spec.copy(fparams = newFparams))
+                defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
               case None => visitDef(defn)
             }
           } else defn
@@ -232,13 +223,16 @@ object Terminator {
   private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root): Sig = {
     sig.exp match {
       case Some(exp) if sig.spec.ann.isTerminates =>
+        implicit val lctx: LocalContext = LocalContext.mk()
         checkStrictPositivity(sig.spec.fparams, sig.sym)
         val fparams = sig.spec.fparams
-        val decreasing = visitExp(List(RecursionContext(SelfSig(sig.sym), fparams, SubEnv.init(fparams))), exp)
+        val selfSym = SelfSig(sig.sym)
+        val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), exp)
+        val decreasingIndices = lctx.getDecreasing(selfSym)
         val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-          if (decreasing.isDecreasing(i)) fp.copy(isDecreasing = true) else fp
+          if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
         }
-        sig.copy(spec = sig.spec.copy(fparams = newFparams))
+        sig.copy(spec = sig.spec.copy(fparams = newFparams), exp = Some(newExp))
       case _ => sig
     }
   }
@@ -246,13 +240,16 @@ object Terminator {
   /** Checks a definition for termination properties if annotated with @Terminates. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root): Def = {
     if (defn.spec.ann.isTerminates) {
+      implicit val lctx: LocalContext = LocalContext.mk()
       checkStrictPositivity(defn.spec.fparams, defn.sym)
       val fparams = defn.spec.fparams
-      val decreasing = visitExp(List(RecursionContext(SelfDef(defn.sym), fparams, SubEnv.init(fparams))), defn.exp)
+      val selfSym = SelfDef(defn.sym)
+      val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), defn.exp)
+      val decreasingIndices = lctx.getDecreasing(selfSym)
       val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-        if (decreasing.isDecreasing(i)) fp.copy(isDecreasing = true) else fp
+        if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
       }
-      defn.copy(spec = defn.spec.copy(fparams = newFparams))
+      defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
     } else {
       defn
     }
@@ -295,7 +292,7 @@ object Terminator {
     * @param contexts the recursion contexts, innermost first.
     * @param exp0     the expression to check.
     */
-  private def visitExp(contexts: List[RecursionContext], exp0: Expr)(implicit sctx: SharedContext, root: Root): DecreasingParams = {
+  private def visitExp(contexts: List[RecursionContext], exp0: Expr)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): Expr = {
 
     /** The symbol of the top-level `@Terminates` function (used for forbidden-expression errors). */
     val topSym = contexts.last.selfSym.sym
@@ -305,7 +302,7 @@ object Terminator {
         matchSelf(ctx.selfSym, exp).map { case (exps, loc) => (ctx, exps, loc) }
       }.nextOption()
 
-    def visit(exp0: Expr): DecreasingParams = findSelfRecursiveCall(exp0) match {
+    def visit(exp0: Expr): Expr = findSelfRecursiveCall(exp0) match {
       // --- Self-recursive call (structural recursion check) ---
       case Some((ctx, exps, loc)) =>
         val argInfos = exps.zip(ctx.fparams).map {
@@ -330,223 +327,233 @@ object Terminator {
         if (!hasDecreasingArg) {
           sctx.errors.add(TerminationError.NonStructuralRecursion(ctx.selfSym.sym, argInfos, loc))
         }
-        val decreasingHere = DecreasingParams.merge(
-          argInfos.zipWithIndex.collect {
-            case (info, idx) if info.status == TerminationError.ArgStatus.Decreasing =>
-              ctx.selfSym match {
-                case _: SelfLocalDef => DecreasingParams.empty
-                case _ => DecreasingParams.single(idx)
-              }
-          }
-        )
-        decreasingHere ++ DecreasingParams.merge(exps.map(visit))
+        argInfos.zipWithIndex.foreach {
+          case (info, idx) if info.status == TerminationError.ArgStatus.Decreasing =>
+            lctx.addDecreasing(ctx.selfSym, idx)
+          case _ => ()
+        }
+        exps.foreach(visit)
+        exp0
 
       case None => exp0 match {
       // --- Match: extend env in all contexts ---
-      case Expr.Match(scrutinee, rules, _, _, _) =>
-        visit(scrutinee) ++ DecreasingParams.merge(rules.map {
-          case MatchRule(pat, guard, body, _) =>
+      case Expr.Match(scrutinee, rules, tpe, eff, loc) =>
+        val newScrutinee = visit(scrutinee)
+        val newRules = rules.map {
+          case MatchRule(pat, guard, body, ruleLoc) =>
             val extContexts = contexts.map(ctx =>
               ctx.copy(env = extendEnvFromScrutinee(ctx.env, scrutinee, pat)))
-            DecreasingParams.merge(guard.map(visitExp(extContexts, _)).toList) ++ visitExp(extContexts, body)
-        })
+            val newGuard = guard.map(visitExp(extContexts, _))
+            val newBody = visitExp(extContexts, body)
+            MatchRule(pat, newGuard, newBody, ruleLoc)
+        }
+        Expr.Match(newScrutinee, newRules, tpe, eff, loc)
 
       // --- Let: propagate alias in all contexts ---
-      case Expr.Let(bnd, exp1, exp2, _, _, _) =>
-        val r1 = visit(exp1)
+      case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
+        val newExp1 = visit(exp1)
         val extContexts = exp1 match {
           case Expr.Var(sym, _, _) =>
             contexts.map(ctx => ctx.copy(env = ctx.env.propagateAlias(from = sym, to = bnd.sym)))
           case _ => contexts
         }
-        r1 ++ visitExp(extContexts, exp2)
+        val newExp2 = visitExp(extContexts, exp2)
+        Expr.Let(bnd, newExp1, newExp2, tpe, eff, loc)
 
       // --- LocalDef: push new context, visit body with extended list ---
-      case Expr.LocalDef(bnd, localFparams, exp1, exp2, _, _, _) =>
-        val localCtx = RecursionContext(
-          SelfLocalDef(bnd.sym, contexts.head.selfSym.sym),
-          localFparams,
-          SubEnv.init(localFparams))
+      case Expr.LocalDef(bnd, localFparams, exp1, exp2, tpe, eff, loc) =>
+        val localSelfSym = SelfLocalDef(bnd.sym, contexts.head.selfSym.sym)
+        val localCtx = RecursionContext(localSelfSym, localFparams, SubEnv.init(localFparams))
         checkStrictPositivity(localFparams, contexts.head.selfSym.sym)
-        visitExp(localCtx :: contexts, exp1) ++ visit(exp2)
+        val newExp1 = visitExp(localCtx :: contexts, exp1)
+        val decreasingIndices = lctx.getDecreasing(localSelfSym)
+        val newFparams = localFparams.zipWithIndex.map { case (fp, i) =>
+          if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
+        }
+        val newExp2 = visit(exp2)
+        Expr.LocalDef(bnd, newFparams, newExp1, newExp2, tpe, eff, loc)
 
       // --- All other expressions (TypedAst declaration order) ---
 
-      case Expr.Cst(_, _, _) => DecreasingParams.empty
-      case Expr.Var(_, _, _) => DecreasingParams.empty
-      case Expr.Hole(_, _, _, _, _) => DecreasingParams.empty
-      case Expr.HoleWithExp(e, _, _, _, _) => visit(e)
-      case Expr.OpenAs(_, e, _, _) => visit(e)
-      case Expr.Use(_, _, e, _) => visit(e)
-      case Expr.Lambda(_, e, _, _) => visit(e)
+      case Expr.Cst(_, _, _) => exp0
+      case Expr.Var(_, _, _) => exp0
+      case Expr.Hole(_, _, _, _, _) => exp0
+      case Expr.HoleWithExp(e, tpe, eff, purity, loc) => Expr.HoleWithExp(visit(e), tpe, eff, purity, loc)
+      case Expr.OpenAs(sym, e, tpe, loc) => Expr.OpenAs(sym, visit(e), tpe, loc)
+      case Expr.Use(sym, alias, e, loc) => Expr.Use(sym, alias, visit(e), loc)
+      case Expr.Lambda(fparam, e, tpe, loc) => Expr.Lambda(fparam, visit(e), tpe, loc)
 
-      case Expr.ApplyClo(e1, e2, _, _, loc) =>
+      case Expr.ApplyClo(e1, e2, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1) ++ visit(e2)
+        Expr.ApplyClo(visit(e1), visit(e2), tpe, eff, loc)
 
-      case Expr.ApplyDef(symUse, exps, _, _, _, _, loc) =>
+      case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, purity, loc) =>
         root.defs.get(symUse.sym) match {
           case Some(defn) if !defn.spec.ann.isTerminates =>
             sctx.errors.add(TerminationError.NonTerminatingCall(topSym, symUse.sym, loc))
           case _ => ()
         }
-        DecreasingParams.merge(exps.map(visit))
-      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => DecreasingParams.merge(exps.map(visit))
+        Expr.ApplyDef(symUse, exps.map(visit), itpe, tpe, eff, purity, loc)
+      case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
+        Expr.ApplyLocalDef(symUse, exps.map(visit), arrowTpe, tpe, eff, loc)
 
-      case Expr.ApplyOp(_, exps, _, _, loc) =>
+      case Expr.ApplyOp(symUse, exps, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        DecreasingParams.merge(exps.map(visit))
+        Expr.ApplyOp(symUse, exps.map(visit), tpe, eff, loc)
 
-      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => DecreasingParams.merge(exps.map(visit)) // TODO: More complex.
+      case Expr.ApplySig(symUse, exps, itpe, tpe, eff, purity, isEq, loc) =>
+        Expr.ApplySig(symUse, exps.map(visit), itpe, tpe, eff, purity, isEq, loc) // TODO: More complex.
 
-      case Expr.Unary(_, e, _, _, _) => visit(e)
-      case Expr.Binary(_, e1, e2, _, _, _) => visit(e1) ++ visit(e2)
-      case Expr.Region(_, _, e, _, _, _) => visit(e)
-      case Expr.IfThenElse(e1, e2, e3, _, _, _) => visit(e1) ++ visit(e2) ++ visit(e3)
-      case Expr.Stm(e1, e2, _, _, _) => visit(e1) ++ visit(e2)
-      case Expr.Discard(e, _, _) => visit(e)
-      case Expr.TypeMatch(e, rules, _, _, _) =>
-        visit(e) ++ DecreasingParams.merge(rules.map(r => visit(r.exp)))
-      case Expr.RestrictableChoose(_, e, rules, _, _, _) =>
-        visit(e) ++ DecreasingParams.merge(rules.map(r => visit(r.exp)))
-      case Expr.ExtMatch(e, rules, _, _, _) =>
-        visit(e) ++ DecreasingParams.merge(rules.map(r => visit(r.exp)))
-      case Expr.Tag(_, exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
-      case Expr.RestrictableTag(_, exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
-      case Expr.ExtTag(_, exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
-      case Expr.Tuple(exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
-      case Expr.RecordSelect(e, _, _, _, _) => visit(e)
-      case Expr.RecordExtend(_, e1, e2, _, _, _) => visit(e1) ++ visit(e2)
-      case Expr.RecordRestrict(_, e, _, _, _) => visit(e)
-      case Expr.ArrayLit(exps, e, _, _, _) =>
-        DecreasingParams.merge(exps.map(visit)) ++ visit(e)
+      case Expr.Unary(sop, e, tpe, eff, loc) => Expr.Unary(sop, visit(e), tpe, eff, loc)
+      case Expr.Binary(sop, e1, e2, tpe, eff, loc) => Expr.Binary(sop, visit(e1), visit(e2), tpe, eff, loc)
+      case Expr.Region(kind, sym, e, tpe, eff, loc) => Expr.Region(kind, sym, visit(e), tpe, eff, loc)
+      case Expr.IfThenElse(e1, e2, e3, tpe, eff, loc) => Expr.IfThenElse(visit(e1), visit(e2), visit(e3), tpe, eff, loc)
+      case Expr.Stm(e1, e2, tpe, eff, loc) => Expr.Stm(visit(e1), visit(e2), tpe, eff, loc)
+      case Expr.Discard(e, eff, loc) => Expr.Discard(visit(e), eff, loc)
+      case Expr.TypeMatch(e, rules, tpe, eff, loc) =>
+        Expr.TypeMatch(visit(e), rules.map(r => r.copy(exp = visit(r.exp))), tpe, eff, loc)
+      case Expr.RestrictableChoose(star, e, rules, tpe, eff, loc) =>
+        Expr.RestrictableChoose(star, visit(e), rules.map(r => r.copy(exp = visit(r.exp))), tpe, eff, loc)
+      case Expr.ExtMatch(e, rules, tpe, eff, loc) =>
+        Expr.ExtMatch(visit(e), rules.map(r => r.copy(exp = visit(r.exp))), tpe, eff, loc)
+      case Expr.Tag(sym, exps, tpe, eff, loc) => Expr.Tag(sym, exps.map(visit), tpe, eff, loc)
+      case Expr.RestrictableTag(sym, exps, tpe, eff, loc) => Expr.RestrictableTag(sym, exps.map(visit), tpe, eff, loc)
+      case Expr.ExtTag(sym, exps, tpe, eff, loc) => Expr.ExtTag(sym, exps.map(visit), tpe, eff, loc)
+      case Expr.Tuple(exps, tpe, eff, loc) => Expr.Tuple(exps.map(visit), tpe, eff, loc)
+      case Expr.RecordSelect(e, field, tpe, eff, loc) => Expr.RecordSelect(visit(e), field, tpe, eff, loc)
+      case Expr.RecordExtend(field, e1, e2, tpe, eff, loc) => Expr.RecordExtend(field, visit(e1), visit(e2), tpe, eff, loc)
+      case Expr.RecordRestrict(field, e, tpe, eff, loc) => Expr.RecordRestrict(field, visit(e), tpe, eff, loc)
+      case Expr.ArrayLit(exps, e, tpe, eff, loc) =>
+        Expr.ArrayLit(exps.map(visit), visit(e), tpe, eff, loc)
 
-      case Expr.ArrayNew(e1, e2, e3, _, _, loc) =>
+      case Expr.ArrayNew(e1, e2, e3, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1) ++ visit(e2) ++ visit(e3)
+        Expr.ArrayNew(visit(e1), visit(e2), visit(e3), tpe, eff, loc)
 
-      case Expr.ArrayLoad(e1, e2, _, _, _) => visit(e1) ++ visit(e2)
-      case Expr.ArrayLength(e, _, _) => visit(e)
+      case Expr.ArrayLoad(e1, e2, tpe, eff, loc) => Expr.ArrayLoad(visit(e1), visit(e2), tpe, eff, loc)
+      case Expr.ArrayLength(e, tpe, loc) => Expr.ArrayLength(visit(e), tpe, loc)
 
-      case Expr.ArrayStore(e1, e2, e3, _, loc) =>
+      case Expr.ArrayStore(e1, e2, e3, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1) ++ visit(e2) ++ visit(e3)
+        Expr.ArrayStore(visit(e1), visit(e2), visit(e3), eff, loc)
 
-      case Expr.StructNew(_, fields, region, _, _, _) =>
-        DecreasingParams.merge(fields.map(f => visit(f._2))) ++ DecreasingParams.merge(region.map(visit).toList)
-      case Expr.StructGet(e, _, _, _, _) => visit(e)
+      case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
+        Expr.StructNew(sym, fields.map { case (f, e) => (f, visit(e)) }, region.map(visit), tpe, eff, loc)
+      case Expr.StructGet(e, field, tpe, eff, loc) => Expr.StructGet(visit(e), field, tpe, eff, loc)
 
-      case Expr.StructPut(e1, _, e2, _, _, loc) =>
+      case Expr.StructPut(e1, field, e2, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1) ++ visit(e2)
+        Expr.StructPut(visit(e1), field, visit(e2), tpe, eff, loc)
 
-      case Expr.VectorLit(exps, _, _, _) => DecreasingParams.merge(exps.map(visit))
-      case Expr.VectorLoad(e1, e2, _, _, _) => visit(e1) ++ visit(e2)
-      case Expr.VectorLength(e, _) => visit(e)
-      case Expr.Ascribe(e, _, _, _, _, _) => visit(e)
-      case Expr.InstanceOf(e, _, _) => visit(e)
-      case Expr.CheckedCast(_, e, _, _, _) => visit(e)
+      case Expr.VectorLit(exps, tpe, eff, loc) => Expr.VectorLit(exps.map(visit), tpe, eff, loc)
+      case Expr.VectorLoad(e1, e2, tpe, eff, loc) => Expr.VectorLoad(visit(e1), visit(e2), tpe, eff, loc)
+      case Expr.VectorLength(e, loc) => Expr.VectorLength(visit(e), loc)
+      case Expr.Ascribe(e, tpe, eff, purity, expectedEff, loc) => Expr.Ascribe(visit(e), tpe, eff, purity, expectedEff, loc)
+      case Expr.InstanceOf(e, clazz, loc) => Expr.InstanceOf(visit(e), clazz, loc)
+      case Expr.CheckedCast(cast, e, tpe, eff, loc) => Expr.CheckedCast(cast, visit(e), tpe, eff, loc)
 
-      case Expr.UncheckedCast(e, _, _, _, _, loc) =>
+      case Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
+        Expr.UncheckedCast(visit(e), declaredType, declaredEff, tpe, eff, loc)
 
-      case Expr.Unsafe(e, _, _, _, _, loc) =>
+      case Expr.Unsafe(e, sym, tpe, eff, purity, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
+        Expr.Unsafe(visit(e), sym, tpe, eff, purity, loc)
 
-      case Expr.Without(e, _, _, _, _) => visit(e)
-      case Expr.TryCatch(e, rules, _, _, _) =>
-        visit(e) ++ DecreasingParams.merge(rules.map(r => visit(r.exp)))
+      case Expr.Without(e, effUse, tpe, eff, loc) => Expr.Without(visit(e), effUse, tpe, eff, loc)
+      case Expr.TryCatch(e, rules, tpe, eff, loc) =>
+        Expr.TryCatch(visit(e), rules.map(r => r.copy(exp = visit(r.exp))), tpe, eff, loc)
 
-      case Expr.Throw(e, _, _, loc) =>
+      case Expr.Throw(e, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
+        Expr.Throw(visit(e), tpe, eff, loc)
 
-      case Expr.Handler(_, rules, _, _, _, _, _) => DecreasingParams.merge(rules.map(r => visit(r.exp)))
-      case Expr.RunWith(e1, e2, _, _, _) => visit(e1) ++ visit(e2)
+      case Expr.Handler(sym, rules, tpe, eff, purity, evar, loc) =>
+        Expr.Handler(sym, rules.map(r => r.copy(exp = visit(r.exp))), tpe, eff, purity, evar, loc)
+      case Expr.RunWith(e1, e2, tpe, eff, loc) => Expr.RunWith(visit(e1), visit(e2), tpe, eff, loc)
 
-      case Expr.InvokeConstructor(_, exps, _, _, loc) =>
+      case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        DecreasingParams.merge(exps.map(visit))
+        Expr.InvokeConstructor(constructor, exps.map(visit), tpe, eff, loc)
 
-      case Expr.InvokeMethod(_, e, exps, _, _, loc) =>
+      case Expr.InvokeMethod(method, e, exps, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e) ++ DecreasingParams.merge(exps.map(visit))
+        Expr.InvokeMethod(method, visit(e), exps.map(visit), tpe, eff, loc)
 
-      case Expr.InvokeStaticMethod(_, exps, _, _, loc) =>
+      case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        DecreasingParams.merge(exps.map(visit))
+        Expr.InvokeStaticMethod(method, exps.map(visit), tpe, eff, loc)
 
-      case Expr.GetField(_, e, _, _, loc) =>
+      case Expr.GetField(field, e, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
+        Expr.GetField(field, visit(e), tpe, eff, loc)
 
-      case Expr.PutField(_, e1, e2, _, _, loc) =>
+      case Expr.PutField(field, e1, e2, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1) ++ visit(e2)
+        Expr.PutField(field, visit(e1), visit(e2), tpe, eff, loc)
 
       case Expr.GetStaticField(_, _, _, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        DecreasingParams.empty
+        exp0
 
-      case Expr.PutStaticField(_, e, _, _, loc) =>
+      case Expr.PutStaticField(field, e, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
+        Expr.PutStaticField(field, visit(e), tpe, eff, loc)
 
-      case Expr.NewObject(_, _, _, _, methods, loc) =>
+      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        DecreasingParams.merge(methods.map(m => visit(m.exp)))
+        Expr.NewObject(name, clazz, tpe, eff, methods.map(m => m.copy(exp = visit(m.exp))), loc)
 
-      case Expr.NewChannel(e, _, _, loc) =>
+      case Expr.NewChannel(e, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
+        Expr.NewChannel(visit(e), tpe, eff, loc)
 
-      case Expr.GetChannel(e, _, _, loc) =>
+      case Expr.GetChannel(e, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
+        Expr.GetChannel(visit(e), tpe, eff, loc)
 
-      case Expr.PutChannel(e1, e2, _, _, loc) =>
+      case Expr.PutChannel(e1, e2, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1) ++ visit(e2)
+        Expr.PutChannel(visit(e1), visit(e2), tpe, eff, loc)
 
-      case Expr.SelectChannel(rules, default, _, _, loc) =>
+      case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        DecreasingParams.merge(rules.map { r =>
-          visit(r.chan) ++ visit(r.exp)
-        }) ++ DecreasingParams.merge(default.map(visit).toList)
+        Expr.SelectChannel(
+          rules.map(r => r.copy(chan = visit(r.chan), exp = visit(r.exp))),
+          default.map(visit), tpe, eff, loc)
 
-      case Expr.Spawn(e1, e2, _, _, loc) =>
+      case Expr.Spawn(e1, e2, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1) ++ visit(e2)
+        Expr.Spawn(visit(e1), visit(e2), tpe, eff, loc)
 
-      case Expr.ParYield(frags, e, _, _, loc) =>
+      case Expr.ParYield(frags, e, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        DecreasingParams.merge(frags.map(f => visit(f.exp))) ++ visit(e)
+        Expr.ParYield(frags.map(f => f.copy(exp = visit(f.exp))), visit(e), tpe, eff, loc)
 
-      case Expr.Lazy(e, _, _) => visit(e)
+      case Expr.Lazy(e, tpe, loc) => Expr.Lazy(visit(e), tpe, loc)
 
-      case Expr.Force(e, _, _, loc) =>
+      case Expr.Force(e, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e)
+        Expr.Force(visit(e), tpe, eff, loc)
 
-      case Expr.FixpointConstraintSet(_, _, _) => DecreasingParams.empty
-      case Expr.FixpointLambda(_, e, _, _, _) => visit(e)
+      case Expr.FixpointConstraintSet(_, _, _) => exp0
+      case Expr.FixpointLambda(pparams, e, tpe, eff, loc) => Expr.FixpointLambda(pparams, visit(e), tpe, eff, loc)
 
-      case Expr.FixpointMerge(e1, e2, _, _, loc) =>
+      case Expr.FixpointMerge(e1, e2, tpe, eff, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        visit(e1) ++ visit(e2)
+        Expr.FixpointMerge(visit(e1), visit(e2), tpe, eff, loc)
 
-      case Expr.FixpointQueryWithProvenance(exps, _, _, _, _, _) => DecreasingParams.merge(exps.map(visit))
-      case Expr.FixpointQueryWithSelect(exps, q, sels, _, where, _, _, _, _) =>
-        DecreasingParams.merge(exps.map(visit)) ++ visit(q) ++ DecreasingParams.merge(sels.map(visit)) ++ DecreasingParams.merge(where.map(visit).toList)
+      case Expr.FixpointQueryWithProvenance(exps, selects, from, tpe, eff, loc) =>
+        Expr.FixpointQueryWithProvenance(exps.map(visit), selects, from, tpe, eff, loc)
+      case Expr.FixpointQueryWithSelect(exps, q, sels, guard, where, tpe, eff, from, loc) =>
+        Expr.FixpointQueryWithSelect(exps.map(visit), visit(q), sels.map(visit), guard, where.map(visit), tpe, eff, from, loc)
 
-      case Expr.FixpointSolveWithProject(exps, _, _, _, _, loc) =>
+      case Expr.FixpointSolveWithProject(exps, optNames, tpe, eff, stf, loc) =>
         sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
-        DecreasingParams.merge(exps.map(visit))
+        Expr.FixpointSolveWithProject(exps.map(visit), optNames, tpe, eff, stf, loc)
 
-      case Expr.FixpointInjectInto(exps, _, _, _, _) => DecreasingParams.merge(exps.map(visit))
-      case Expr.Error(_, _, _) => DecreasingParams.empty
+      case Expr.FixpointInjectInto(exps, idents, tpe, eff, loc) => Expr.FixpointInjectInto(exps.map(visit), idents, tpe, eff, loc)
+      case Expr.Error(_, _, _) => exp0
       }
     }
 
