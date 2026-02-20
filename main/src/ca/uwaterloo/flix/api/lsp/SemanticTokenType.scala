@@ -52,6 +52,7 @@ sealed trait SemanticTokenType {
     case SemanticTokenType.Regexp => 20
     case SemanticTokenType.Operator => 21
     case SemanticTokenType.Decorator => 22
+    case SemanticTokenType.Effect => 23
   }}
 
 object SemanticTokenType {
@@ -171,6 +172,11 @@ object SemanticTokenType {
     */
   case object Decorator extends SemanticTokenType
 
+  /**
+    * For identifiers that declare or reference an effect.
+    */
+  case object Effect extends SemanticTokenType
+
   def getWholeList: List[String] = List(
     "namespace",
     "type",
@@ -194,6 +200,7 @@ object SemanticTokenType {
     "number",
     "regexp",
     "operator",
-    "decorator"
+    "decorator",
+    "effect"
   )
 }
