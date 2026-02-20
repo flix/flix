@@ -371,7 +371,9 @@ object Terminator {
           Expr.Lambda(fparam, e, tpe, loc)
 
         case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
+          if (!isTopLevelFormalParam(contexts, exp1)) {
+            sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
+          }
           val e1 = visitExp(contexts, exp1)
           val e2 = visitExp(contexts, exp2)
           Expr.ApplyClo(e1, e2, tpe, eff, loc)
@@ -395,7 +397,7 @@ object Terminator {
           Expr.ApplyOp(symUse, es, tpe, eff, loc)
 
         case Expr.ApplySig(symUse, exps0, itpe, tpe, eff, purity, isEq, loc) =>
-          sctx.errors.add(TerminationError.ForbiddenExpression(topSym, loc))
+          // TODO: Difficult to disallow due to e.g. +, -, == and so on.
           val es = exps0.map(visitExp(contexts, _))
           Expr.ApplySig(symUse, es, itpe, tpe, eff, purity, isEq, loc)
 
@@ -699,6 +701,20 @@ object Terminator {
       }
     }
   }
+
+  /** Returns the root callee VarSym if exp is a (possibly curried) application on a Var. */
+  private def rootCalleeVar(exp: Expr): Option[Symbol.VarSym] = exp match {
+    case Expr.Var(sym, _, _)              => Some(sym)
+    case Expr.ApplyClo(inner, _, _, _, _) => rootCalleeVar(inner)
+    case _                                => None
+  }
+
+  /**
+    * Returns `true` if `exp` is a (possibly curried) closure application whose root callee
+    * is a formal parameter (or let-alias thereof) of the top-level `@Terminates` function.
+    */
+  private def isTopLevelFormalParam(contexts: List[RecursionContext], exp: Expr): Boolean =
+    rootCalleeVar(exp).exists(sym => contexts.last.env.lookup(sym).isDefined)
 
   /**
     * If `exp` is a self-recursive call matching any context, returns the context, call arguments, and location.
