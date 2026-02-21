@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -406,10 +407,12 @@ object Terminator {
           Expr.Lambda(fparam, e, tpe, loc)
 
         case Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
-          topSymOpt.foreach { topSym =>
-            if (!isTopLevelFormalParam(contexts, exp1)) {
-              checkForbidden(contexts, loc)
-            }
+          topSymOpt match {
+            case Some(_) =>
+              if (!isTopLevelFormalParam(contexts, exp1)) {
+                checkForbidden(contexts, loc)
+              }
+            case None => () // Not inside a @Terminates function — no closure restriction to check.
           }
           val e1 = visitExp(contexts, exp1, ExpPosition.NonTail)
           val e2 = visitExp(contexts, exp2, ExpPosition.NonTail)
@@ -421,12 +424,14 @@ object Terminator {
               sctx.errors.add(TerminationError.NonTailRecursiveCall(trSym, loc))
             }
           }
-          topSymOpt.foreach { topSym =>
-            root.defs.get(symUse.sym) match {
-              case Some(defn) if !defn.spec.ann.isTerminates =>
-                sctx.errors.add(TerminationError.NonTerminatingCall(topSym, symUse.sym, loc))
-              case _ => ()
-            }
+          topSymOpt match {
+            case Some(topSym) =>
+              root.defs.get(symUse.sym) match {
+                case Some(defn) if !defn.spec.ann.isTerminates =>
+                  sctx.errors.add(TerminationError.NonTerminatingCall(topSym, symUse.sym, loc))
+                case _ => ()
+              }
+            case None => () // Not inside a @Terminates function — no callee restriction to check.
           }
           val es = exps0.map(visitExp(contexts, _, ExpPosition.NonTail))
           Expr.ApplyDef(symUse, es, itpe, tpe, eff, purity, pos, loc)
@@ -761,19 +766,20 @@ object Terminator {
     contexts.lastOption.foreach(ctx => sctx.errors.add(TerminationError.ForbiddenExpression(ctx.selfSym.sym, loc)))
 
 
-  /** Returns the root callee VarSym if exp is a (possibly curried) application on a Var. */
-  private def rootCalleeVar(exp: Expr): Option[Symbol.VarSym] = exp match {
-    case Expr.Var(sym, _, _)              => Some(sym)
-    case Expr.ApplyClo(inner, _, _, _, _, _) => rootCalleeVar(inner)
-    case _                                => None
-  }
-
   /**
     * Returns `true` if `exp` is a (possibly curried) closure application whose root callee
     * is a formal parameter (or let-alias thereof) of the top-level `@Terminates` function.
     */
-  private def isTopLevelFormalParam(contexts: List[RecursionContext], exp: Expr): Boolean =
+  private def isTopLevelFormalParam(contexts: List[RecursionContext], exp: Expr): Boolean = {
+    /** Returns the root callee VarSym if exp is a (possibly curried) application on a Var. */
+    @tailrec
+    def rootCalleeVar(exp: Expr): Option[Symbol.VarSym] = exp match {
+      case Expr.Var(sym, _, _)                 => Some(sym)
+      case Expr.ApplyClo(inner, _, _, _, _, _) => rootCalleeVar(inner)
+      case _                                   => None
+    }
     rootCalleeVar(exp).exists(sym => contexts.last.env.lookup(sym).isDefined)
+  }
 
   /**
     * If `exp` is a self-recursive call matching any context, returns the context, call arguments, and location.
