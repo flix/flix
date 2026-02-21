@@ -29,20 +29,32 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
-  * The Terminator phase verifies that functions annotated with `@Terminates` are structurally
-  * recursive — meaning every recursive call is made on a strict substructure of a formal parameter.
+  * The Terminator phase performs two classes of verification and decorates all Apply nodes
+  * with their expression position (tail or non-tail) for use by later phases.
   *
-  * Checks performed:
+  * **Structural termination** (`@Terminates` functions):
   *   - **Structural recursion**: Every self-recursive call must pass a strict substructure of a
   *     formal parameter (obtained via pattern matching on a `Tag`) in the corresponding argument
   *     position. Aliases (let-bindings, variable patterns) are tracked but do not count as decreasing.
+  *     Tuple scrutinees are supported: `match (x, y)` with `(Pat1, Pat2)` extends the environment
+  *     element-wise.
   *   - **Strict positivity**: Enum types used as formal parameters must be strictly positive — the
   *     enum's own type constructor must not appear in a negative (contravariant) position in any case.
   *   - **Callee restriction**: Calls to non-`@Terminates` defs are rejected.
+  *   - **Closure restriction**: Closure applications (`ApplyClo`) are only allowed when the callee
+  *     is a formal parameter (or a let-alias thereof) of the top-level `@Terminates` function.
   *   - **Forbidden features**: Expressions that could break the termination guarantee (e.g. mutable
-  *     state, Java interop, concurrency, effects, unchecked casts) are rejected.
+  *     state, Java interop, concurrency, channels, unchecked casts, `unsafe`) are rejected.
   *   - **Local defs**: Self-recursive local defs inside `@Terminates` functions are checked
-  *     independently for structural decrease.
+  *     independently for structural decrease. Local defs calling the enclosing function are
+  *     checked against the enclosing function's sub-environment.
+  *   - **Traits and instances**: The checks apply to trait default implementations and instance
+  *     defs annotated with `@Terminates`. Instance defs recognize self-recursion via both
+  *     `ApplyDef` and `ApplySig`.
+  *
+  * **Tail-call verification** (`@TailRec` functions):
+  *   - Every self-recursive call in a `@TailRec` function must be in tail position.
+  *   - `@TailRec` is independent of `@Terminates`: a function may have either or both annotations.
   *
   * Known limitations (sound — may reject valid programs, but never accepts non-terminating ones):
   *   - A local def that calls the enclosing `@Terminates` function is checked for structural
