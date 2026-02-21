@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotation, ExpPosition, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
 
+import scala.collection.mutable
+
 /**
   * Provides inlay hints for effects in the Flix language.
   */
@@ -237,11 +239,15 @@ object InlayHintProvider {
   }
 
   /**
-    * Returns a list of inlay hints for tail-recursive self-calls in `@TailRec` functions.
+    * Returns a list of inlay hints for tail-recursive self-calls in `@TailRec` functions
+    * and self-recursive local defs.
     */
   private def getTailRecHints(uri: String)(implicit root: Root): List[InlayHint] = {
     var hints: List[InlayHint] = List.empty
     var currentDefSym: Option[Symbol.DefnSym] = None
+    // Map from local def binder sym → body source location
+    val localDefBodies: mutable.Map[Symbol.VarSym, SourceLocation] = mutable.Map.empty
+
     object tailRecConsumer extends Consumer {
       override def consumeDef(defn: Def): Unit = {
         if (defn.spec.ann.isTailRecursive)
@@ -250,26 +256,46 @@ object InlayHintProvider {
           currentDefSym = None
       }
       override def consumeExpr(expr: Expr): Unit = {
-        currentDefSym.foreach { sym =>
-          expr match {
-            case Expr.ApplyDef(symUse, _, _, _, _, _, pos, loc)
-              if symUse.sym == sym && pos == ExpPosition.Tail =>
-              hints = InlayHint(
-                position = Position.fromBegin(loc),
-                label = "\u21ba",
-                kind = Some(InlayHintKind.Parameter),
-                textEdits = List.empty,
-                tooltip = "Tail-recursive self-call",
-                paddingLeft = false,
-                paddingRight = false
-              ) :: hints
-            case _ => ()
-          }
+        expr match {
+          // Track local def body locations
+          case Expr.LocalDef(bnd, _, exp1, _, _, _, _) =>
+            localDefBodies(bnd.sym) = exp1.loc
+
+          // Existing: @TailRec top-level def self-calls
+          case Expr.ApplyDef(symUse, _, _, _, _, _, pos, loc) =>
+            currentDefSym.foreach { sym =>
+              if (symUse.sym == sym && pos == ExpPosition.Tail) {
+                hints = mkTailRecHint(loc) :: hints
+              }
+            }
+
+          // New: local def self-recursive tail calls
+          case Expr.ApplyLocalDef(symUse, _, _, _, _, pos, loc) if pos == ExpPosition.Tail =>
+            localDefBodies.get(symUse.sym).foreach { bodyLoc =>
+              if (bodyLoc.contains(loc)) {
+                hints = mkTailRecHint(loc) :: hints
+              }
+            }
+
+          case _ => ()
         }
       }
     }
     Visitor.visitRoot(root, tailRecConsumer, FileAcceptor(uri))
     hints
   }
+
+  /**
+    * Creates an inlay hint for a tail-recursive self-call.
+    */
+  private def mkTailRecHint(loc: SourceLocation): InlayHint = InlayHint(
+    position = Position.fromBegin(loc),
+    label = "\u21ba",
+    kind = Some(InlayHintKind.Parameter),
+    textEdits = List.empty,
+    tooltip = "Tail-recursive self-call",
+    paddingLeft = false,
+    paddingRight = false
+  )
 
 }
