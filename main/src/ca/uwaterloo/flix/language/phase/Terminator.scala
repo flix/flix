@@ -384,28 +384,7 @@ object Terminator {
           val e2 = visitExp(contexts, exp2, pos)
           Expr.LocalDef(bnd, fps, e1, e2, tpe, eff, loc)
 
-        // --- All other expressions (TypedAst declaration order) ---
-
-        case Expr.Cst(_, _, _) => exp0
-        case Expr.Var(_, _, _) => exp0
-        case Expr.Hole(_, _, _, _, _) => exp0
-
-        case Expr.HoleWithExp(exp1, tpe, eff, purity, loc) =>
-          val e = visitExp(contexts, exp1, ExpPosition.NonTail)
-          Expr.HoleWithExp(e, tpe, eff, purity, loc)
-
-        case Expr.OpenAs(sym, exp1, tpe, loc) =>
-          val e = visitExp(contexts, exp1, pos)
-          Expr.OpenAs(sym, e, tpe, loc)
-
-        case Expr.Use(sym, alias, exp1, loc) =>
-          val e = visitExp(contexts, exp1, pos)
-          Expr.Use(sym, alias, e, loc)
-
-        case Expr.Lambda(fparam, exp1, tpe, loc) =>
-          val e = visitExp(contexts, exp1, ExpPosition.NonTail)
-          Expr.Lambda(fparam, e, tpe, loc)
-
+        // --- ApplyClo: check closure restriction ---
         case Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
           topSymOpt match {
             case Some(_) =>
@@ -418,6 +397,7 @@ object Terminator {
           val e2 = visitExp(contexts, exp2, ExpPosition.NonTail)
           Expr.ApplyClo(e1, e2, tpe, eff, pos, loc)
 
+        // --- ApplyDef: check callee restriction ---
         case Expr.ApplyDef(symUse, exps0, itpe, tpe, eff, purity, _, loc) =>
           lctx.tailRecSym.foreach { trSym =>
             if (symUse.sym == trSym && pos != ExpPosition.Tail) {
@@ -435,6 +415,30 @@ object Terminator {
           }
           val es = exps0.map(visitExp(contexts, _, ExpPosition.NonTail))
           Expr.ApplyDef(symUse, es, itpe, tpe, eff, purity, pos, loc)
+
+        // --- All other expressions (TypedAst declaration order) ---
+
+        case Expr.Cst(_, _, _) => exp0
+
+        case Expr.Var(_, _, _) => exp0
+
+        case Expr.Hole(_, _, _, _, _) => exp0
+
+        case Expr.HoleWithExp(exp1, tpe, eff, purity, loc) =>
+          val e = visitExp(contexts, exp1, ExpPosition.NonTail)
+          Expr.HoleWithExp(e, tpe, eff, purity, loc)
+
+        case Expr.OpenAs(sym, exp1, tpe, loc) =>
+          val e = visitExp(contexts, exp1, pos)
+          Expr.OpenAs(sym, e, tpe, loc)
+
+        case Expr.Use(sym, alias, exp1, loc) =>
+          val e = visitExp(contexts, exp1, pos)
+          Expr.Use(sym, alias, e, loc)
+
+        case Expr.Lambda(fparam, exp1, tpe, loc) =>
+          val e = visitExp(contexts, exp1, ExpPosition.NonTail)
+          Expr.Lambda(fparam, e, tpe, loc)
 
         case Expr.ApplyLocalDef(symUse, exps0, arrowTpe, tpe, eff, _, loc) =>
           val es = exps0.map(visitExp(contexts, _, ExpPosition.NonTail))
