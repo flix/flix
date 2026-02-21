@@ -73,19 +73,19 @@ object UseGraph {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _, _, _) =>
       visitExps(exps) + (sym0 -> UsedSym.DefnSym(sym))
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
       visitExps(exps) + (sym0 -> UsedSym.SigSym(sym))
 
     case Expr.Unary(_, exp, _, _, _) =>

@@ -195,11 +195,11 @@ object Summary {
     case Expr.OpenAs(_, exp, _, _) => countCheckedEcasts(exp)
     case Expr.Use(_, _, exp, _) => countCheckedEcasts(exp)
     case Expr.Lambda(_, exp, _, _) => countCheckedEcasts(exp)
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplyOp(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.ApplyDef(_, exps, _, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyOp(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Unary(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum

@@ -343,23 +343,23 @@ object Visitor {
         visitFormalParam(fparam)
         visitExpr(exp)
 
-      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.ApplyDef(symUse, exps, _, _, _, _, _) =>
+      case Expr.ApplyDef(symUse, exps, _, _, _, _, _, _) =>
         visitDefSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyLocalDef(symUse, exps, _, _, _, _) =>
+      case Expr.ApplyLocalDef(symUse, exps, _, _, _, _, _) =>
         visitLocalDefSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyOp(op, exps, _, _, _) =>
+      case Expr.ApplyOp(op, exps, _, _, _, _) =>
         visitOpSymUse(op)
         exps.foreach(visitExpr)
 
-      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _) =>
+      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _, _) =>
         visitSigSymUse(symUse)
         exps.foreach(visitExpr)
 
