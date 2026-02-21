@@ -56,6 +56,16 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   *   - Every self-recursive call in a `@TailRec` function must be in tail position.
   *   - `@TailRec` is independent of `@Terminates`: a function may have either or both annotations.
   *
+  * Known unsoundness (may accept non-terminating programs):
+  *   - **Trait sig calls (`ApplySig`) are unchecked**: Calls to trait signatures are not subject
+  *     to the callee restriction because ubiquitous operations like `+`, `-`, and `==` are trait
+  *     sigs. A `@Terminates` function can therefore call a trait sig whose instance implementation
+  *     does not terminate.
+  *   - **Mutual recursion among top-level defs**: Two `@Terminates` defs can call each other
+  *     without any structural decrease, since the structural recursion check only tracks
+  *     self-recursive calls. Local defs are not affected because they are not in scope of
+  *     each other.
+  *
   * Known limitations (sound — may reject valid programs, but never accepts non-terminating ones):
   *   - A local def that calls the enclosing `@Terminates` function is checked for structural
   *     decrease, but the sub-environment does not flow across the local def boundary. This means
