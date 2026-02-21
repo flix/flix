@@ -240,7 +240,9 @@ object Terminator {
   /** Checks a definition for termination properties if annotated with @Terminates. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root): Def = {
     if (defn.spec.ann.isTerminates) {
-      implicit val lctx: LocalContext = LocalContext.mk()
+      implicit val lctx: LocalContext =
+        if (defn.spec.ann.isTailRecursive) LocalContext.mkTailRec(defn.sym)
+        else LocalContext.mk()
       checkStrictPositivity(defn.spec.fparams, defn.sym)
       val fparams = defn.spec.fparams
       val selfSym = SelfDef(defn.sym)
@@ -251,7 +253,9 @@ object Terminator {
       }
       defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
     } else {
-      implicit val lctx: LocalContext = LocalContext.mk()
+      implicit val lctx: LocalContext =
+        if (defn.spec.ann.isTailRecursive) LocalContext.mkTailRec(defn.sym)
+        else LocalContext.mk()
       defn.copy(exp = visitExp(Nil, defn.exp, ExpPosition.Tail))
     }
   }
@@ -304,6 +308,15 @@ object Terminator {
     findSelfRecursiveCall(contexts, exp0) match {
       // --- Self-recursive call (structural recursion check) ---
       case Some((ctx, args, loc)) =>
+        lctx.tailRecSym.foreach { trSym =>
+          ctx.selfSym match {
+            case SelfDef(defnSym) if defnSym == trSym && pos != ExpPosition.Tail =>
+              sctx.errors.add(TerminationError.NonTailRecursiveCall(trSym, loc))
+            case SelfInstanceDef(defnSym, _) if defnSym == trSym && pos != ExpPosition.Tail =>
+              sctx.errors.add(TerminationError.NonTailRecursiveCall(trSym, loc))
+            case _ => ()
+          }
+        }
         val argInfos = args.zip(ctx.fparams).map {
           case (Expr.Var(sym, _, _), fp) =>
             val paramName = fp.bnd.sym.text
@@ -403,6 +416,11 @@ object Terminator {
           Expr.ApplyClo(e1, e2, tpe, eff, pos, loc)
 
         case Expr.ApplyDef(symUse, exps0, itpe, tpe, eff, purity, _, loc) =>
+          lctx.tailRecSym.foreach { trSym =>
+            if (symUse.sym == trSym && pos != ExpPosition.Tail) {
+              sctx.errors.add(TerminationError.NonTailRecursiveCall(trSym, loc))
+            }
+          }
           topSymOpt.foreach { topSym =>
             root.defs.get(symUse.sym) match {
               case Some(defn) if !defn.spec.ann.isTerminates =>
@@ -944,7 +962,8 @@ object Terminator {
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty)
+    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty, None)
+    def mkTailRec(sym: Symbol.DefnSym): LocalContext = new LocalContext(mutable.HashMap.empty, Some(sym))
   }
 
   /**
@@ -957,7 +976,7 @@ object Terminator {
     * @param decreasingParams maps each [[SelfSym]] to the set of parameter indices
     *                         that have been passed a strict substructure at some call site.
     */
-  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]]) {
+  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]], tailRecSym: Option[Symbol.DefnSym]) {
 
     /** Records that parameter at `idx` is decreasing for `selfSym`. */
     def addDecreasing(selfSym: SelfSym, idx: Int): Unit =

@@ -134,6 +134,31 @@ object TerminationError {
   }
 
   /**
+    * An error raised when a self-recursive call in a `@TailRec` function is not in tail position.
+    *
+    * @param sym the symbol of the function.
+    * @param loc the source location of the non-tail recursive call.
+    */
+  case class NonTailRecursiveCall(sym: Symbol.DefnSym, loc: SourceLocation) extends TerminationError {
+    def code: ErrorCode = ErrorCode.E9939
+
+    def summary: String = s"Non-tail recursive call in @TailRec function '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Non-tail recursive call in @TailRec function '${magenta(sym.name)}'.
+         |
+         |${highlight(loc, "non-tail recursive call", fmt)}
+         |
+         |${underline("Explanation:")} A function annotated with @TailRec must only call itself
+         |in tail position. This call is not in tail position because its result is used
+         |in a further computation (e.g. passed to another function or combined with
+         |another expression).
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised when a `@Terminates` function calls a def that is not annotated with `@Terminates`.
     *
     * @param sym       the symbol of the enclosing `@Terminates` function.

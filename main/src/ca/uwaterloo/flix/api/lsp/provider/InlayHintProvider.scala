@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Def, Expr, FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, SymUse}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, ExpPosition, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
 
@@ -66,9 +66,9 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTerminatesHints(uri)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTerminatesHints(uri) ::: getTailRecHints(uri)
     } else {
-      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTerminatesHints(uri)
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTerminatesHints(uri) ::: getTailRecHints(uri)
     }
   }
 
@@ -234,6 +234,42 @@ object InlayHintProvider {
       paddingLeft = true,
       paddingRight = false
     )
+  }
+
+  /**
+    * Returns a list of inlay hints for tail-recursive self-calls in `@TailRec` functions.
+    */
+  private def getTailRecHints(uri: String)(implicit root: Root): List[InlayHint] = {
+    var hints: List[InlayHint] = List.empty
+    var currentDefSym: Option[Symbol.DefnSym] = None
+    object tailRecConsumer extends Consumer {
+      override def consumeDef(defn: Def): Unit = {
+        if (defn.spec.ann.isTailRecursive)
+          currentDefSym = Some(defn.sym)
+        else
+          currentDefSym = None
+      }
+      override def consumeExpr(expr: Expr): Unit = {
+        currentDefSym.foreach { sym =>
+          expr match {
+            case Expr.ApplyDef(symUse, _, _, _, _, _, pos, loc)
+              if symUse.sym == sym && pos == ExpPosition.Tail =>
+              hints = InlayHint(
+                position = Position.fromBegin(loc),
+                label = "\u21ba",
+                kind = Some(InlayHintKind.Parameter),
+                textEdits = List.empty,
+                tooltip = "Tail-recursive self-call",
+                paddingLeft = false,
+                paddingRight = false
+              ) :: hints
+            case _ => ()
+          }
+        }
+      }
+    }
+    Visitor.visitRoot(root, tailRecConsumer, FileAcceptor(uri))
+    hints
   }
 
 }

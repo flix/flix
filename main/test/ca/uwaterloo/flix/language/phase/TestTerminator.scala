@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.TerminationError.{ForbiddenExpression, NonStrictlyPositiveType, NonStructuralRecursion, NonTerminatingCall}
+import ca.uwaterloo.flix.language.errors.TerminationError.{ForbiddenExpression, NonStrictlyPositiveType, NonStructuralRecursion, NonTailRecursiveCall, NonTerminatingCall}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -593,6 +593,85 @@ class TestTerminator extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[NonStructuralRecursion](result)
+  }
+
+  // =========================================================================
+  // NonTailRecursiveCall
+  // =========================================================================
+
+  test("NonTailRecursiveCall.01") {
+    // Self-call used as operand in addition: f(xs) + 1
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@TailRec
+        |def f(x: MyList[Int32]): Int32 = match x {
+        |    case MyList.Nil         => 0
+        |    case MyList.Cons(_, xs) => f(xs) + 1
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTailRecursiveCall](result)
+  }
+
+  test("NonTailRecursiveCall.02") {
+    // Self-call as argument to another function
+    val input =
+      """
+        |@Terminates
+        |def g(x: Int32): Int32 = x
+        |@TailRec
+        |def f(x: Int32): Int32 = g(f(x))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTailRecursiveCall](result)
+  }
+
+  test("NonTailRecursiveCall.03") {
+    // Self-call in let binding (not tail)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@TailRec
+        |def f(x: MyList[Int32]): Int32 = match x {
+        |    case MyList.Nil         => 0
+        |    case MyList.Cons(_, xs) =>
+        |        let r = f(xs);
+        |        r
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTailRecursiveCall](result)
+  }
+
+  test("NonTailRecursiveCall.04") {
+    // Self-call in both branches of if, but wrapped in Cons (not tail)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@TailRec
+        |def f(x: MyList[Int32]): MyList[Int32] = match x {
+        |    case MyList.Nil         => MyList.Nil
+        |    case MyList.Cons(_, xs) => MyList.Cons(0, f(xs))
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTailRecursiveCall](result)
+  }
+
+  test("NonTailRecursiveCall.05") {
+    // Two self-calls: left one is non-tail (operand of +)
+    val input =
+      """
+        |enum MyTree[a] { case Leaf(a), case Node(MyTree[a], MyTree[a]) }
+        |@TailRec
+        |def f(t: MyTree[Int32]): Int32 = match t {
+        |    case MyTree.Leaf(v)    => v
+        |    case MyTree.Node(l, r) => f(l) + f(r)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTailRecursiveCall](result)
   }
 
 }
