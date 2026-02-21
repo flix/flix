@@ -250,6 +250,7 @@ object ErrorCode {
   case object E9178 extends ErrorCode
   case object E9245 extends ErrorCode
   case object E9281 extends ErrorCode
+  case object E9301 extends ErrorCode
   case object E9356 extends ErrorCode
   case object E9394 extends ErrorCode
   case object E9407 extends ErrorCode

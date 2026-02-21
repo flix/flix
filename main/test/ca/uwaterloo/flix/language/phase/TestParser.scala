@@ -1547,4 +1547,50 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[ParseError.ExpectedArrowThickRGotEqual](result)
   }
+
+  test("ExpectedBackslashBetweenTypeAndEffect.01") {
+    val input =
+      """
+        |def inc(x: Int32): Int32 { } = x + 1
+        |""".stripMargin
+
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedBackslashBetweenTypeAndEffect](result)
+  }
+
+
+  test("ExpectedBackslashBetweenTypeAndEffect.02") {
+    val input =
+      """
+        |def map(f: a -> b \ ef, l: List[a]): List[b]  ef = ...
+        |""".stripMargin
+
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedBackslashBetweenTypeAndEffect](result)
+  }
+
+  test("ExpectedBackslashBetweenTypeAndEffect.03") {
+    val input =
+      """
+        |def incAndPrint(x: Int32): Int32 IO =
+        |    let result = x + 1;
+        |    println(result);
+        |    result
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedBackslashBetweenTypeAndEffect](result)
+  }
+
+  test("ExpectedBackslashBetweenTypeAndEffect.04") {
+    val input =
+      """
+        |def foo(f: Int32 -> Int32  (ef - IO)): Int32 \ ef - IO = {
+        |    f(3)
+        |}
+        |
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedBackslashBetweenTypeAndEffect](error)
+  }
 }

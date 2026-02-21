@@ -86,6 +86,14 @@ object CodeActionProvider {
         edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "=>"))))),
         command = None
       ))
+    case ParseError.ExpectedBackslashBetweenTypeAndEffect(_, loc) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "Insert '\\' between type and effect",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ "))))),
+        command = None
+      ))
+
 
     case _ => Nil
   }

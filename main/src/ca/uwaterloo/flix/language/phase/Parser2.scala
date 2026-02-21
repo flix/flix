@@ -3350,11 +3350,22 @@ object Parser2 {
   private object Type {
     def typeAndEffect()(implicit s: State): Mark.Closed = {
       val lhs = ttype()
-      if (eat(TokenKind.Backslash)) {
+
+      val isMissingBackslash = at(TokenKind.NameUppercase) || at(TokenKind.NameLowercase) || at(TokenKind.CurlyL) || at(TokenKind.ParenL)
+
+      if (isMissingBackslash) {
+        val betweenLoc = mkSourceLocation(previousSourceLocation().end, currentSourceLocation().start)
+        val error = ParseError.ExpectedBackslashBetweenTypeAndEffect(SyntacticContext.Unknown, betweenLoc)
+        closeWithError(open(), error)
+      }
+
+      if (eat(TokenKind.Backslash) || isMissingBackslash) {
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)
-      } else lhs
+      } else {
+        lhs
+      }
     }
 
     def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
