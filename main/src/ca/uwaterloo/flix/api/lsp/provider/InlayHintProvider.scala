@@ -246,7 +246,7 @@ object InlayHintProvider {
     var hints: List[InlayHint] = List.empty
     var currentDefSym: Option[Symbol.DefnSym] = None
     // Map from local def binder sym → body source location
-    val localDefBodies: mutable.Map[Symbol.VarSym, SourceLocation] = mutable.Map.empty
+    val localDefInfo: mutable.Map[Symbol.VarSym, (SourceLocation, List[FormalParam])] = mutable.Map.empty
 
     object tailRecConsumer extends Consumer {
       override def consumeDef(defn: Def): Unit = {
@@ -258,22 +258,25 @@ object InlayHintProvider {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
           // Track local def body locations
-          case Expr.LocalDef(bnd, _, exp1, _, _, _, _) =>
-            localDefBodies(bnd.sym) = exp1.loc
+          case Expr.LocalDef(bnd, fparams, exp1, _, _, _, _) =>
+            localDefInfo(bnd.sym) = (exp1.loc, fparams)
 
           // Existing: @TailRec top-level def self-calls
-          case Expr.ApplyDef(symUse, _, _, _, _, _, pos, loc) =>
+          case Expr.ApplyDef(symUse, exps, _, _, _, _, pos, loc) =>
             currentDefSym.foreach { sym =>
               if (symUse.sym == sym && pos == ExpPosition.Tail) {
                 hints = mkTailRecHint(loc) :: hints
+                val fparams = root.defs(symUse.sym).spec.fparams
+                hints = mkDecreasingArgHints(exps, fparams) ::: hints
               }
             }
 
           // New: local def self-recursive tail calls
-          case Expr.ApplyLocalDef(symUse, _, _, _, _, pos, loc) if pos == ExpPosition.Tail =>
-            localDefBodies.get(symUse.sym).foreach { bodyLoc =>
+          case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ExpPosition.Tail =>
+            localDefInfo.get(symUse.sym).foreach { case (bodyLoc, fparams) =>
               if (bodyLoc.contains(loc)) {
                 hints = mkTailRecHint(loc) :: hints
+                hints = mkDecreasingArgHints(exps, fparams) ::: hints
               }
             }
 
@@ -297,5 +300,23 @@ object InlayHintProvider {
     paddingLeft = false,
     paddingRight = true
   )
+
+  /**
+    * Creates inlay hints for arguments corresponding to structurally decreasing parameters.
+    */
+  private def mkDecreasingArgHints(exps: List[Expr], fparams: List[FormalParam]): List[InlayHint] = {
+    exps.zip(fparams).collect {
+      case (arg, fparam) if fparam.isDecreasing =>
+        InlayHint(
+          position = Position.fromBegin(arg.loc),
+          label = "\u2193",
+          kind = Some(InlayHintKind.Parameter),
+          textEdits = List.empty,
+          tooltip = s"Argument for structurally decreasing parameter '${fparam.bnd.sym.text}'",
+          paddingLeft = false,
+          paddingRight = true
+        )
+    }
+  }
 
 }
