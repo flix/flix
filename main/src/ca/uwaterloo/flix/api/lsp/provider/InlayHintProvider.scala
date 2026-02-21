@@ -295,7 +295,7 @@ object InlayHintProvider {
     textEdits = List.empty,
     tooltip = "Tail-recursive self-call",
     paddingLeft = false,
-    paddingRight = false
+    paddingRight = true
   )
 
 }
