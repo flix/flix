@@ -408,6 +408,8 @@ object Terminator {
           // Register tail-rec tracking for this local def
           if (isTailRec) lctx.tailRecLocalSyms += bnd.sym
 
+          val prevLocalDefSym = lctx.currentLocalDefSym
+          lctx.currentLocalDefSym = Some(bnd.sym)
           val (e1, fps) = if (contexts.nonEmpty || isTerminates) {
             val parentSym = contexts.headOption.map(_.selfSym.sym).getOrElse(VarSymAsQualified(bnd.sym))
             val localSelfSym = SelfLocalDef(bnd.sym, parentSym)
@@ -422,6 +424,7 @@ object Terminator {
           } else {
             (visitExp(Nil, exp1, ExpPosition.Tail), fparams0)
           }
+          lctx.currentLocalDefSym = prevLocalDefSym
           val e2 = visitExp(contexts, exp2, pos)
           Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
 
@@ -482,7 +485,7 @@ object Terminator {
           Expr.Lambda(fparam, e, tpe, loc)
 
         case Expr.ApplyLocalDef(symUse, exps0, arrowTpe, tpe, eff, _, loc) =>
-          if (lctx.tailRecLocalSyms.contains(symUse.sym) && pos != ExpPosition.Tail) {
+          if (lctx.currentLocalDefSym.contains(symUse.sym) && lctx.tailRecLocalSyms.contains(symUse.sym) && pos != ExpPosition.Tail) {
             sctx.errors.add(TerminationError.NonTailRecursiveLocalCall(symUse.sym, loc))
           }
           val es = exps0.map(visitExp(contexts, _, ExpPosition.NonTail))
@@ -1032,7 +1035,7 @@ object Terminator {
     * @param tailRecSym        the top-level `@Tailrec` def symbol, if any.
     * @param tailRecLocalSyms  local defs annotated with `@Tailrec`.
     */
-  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]], tailRecSym: Option[Symbol.DefnSym], tailRecLocalSyms: mutable.Set[Symbol.VarSym]) {
+  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]], tailRecSym: Option[Symbol.DefnSym], tailRecLocalSyms: mutable.Set[Symbol.VarSym], var currentLocalDefSym: Option[Symbol.VarSym] = None) {
 
     /** Records that parameter at `idx` is decreasing for `selfSym`. */
     def addDecreasing(selfSym: SelfSym, idx: Int): Unit =

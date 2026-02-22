@@ -603,4 +603,35 @@ mod Test.Terminator {
     def testTailRecInsideTerminates01(): Unit \ Assert =
         assertTrue(tailRecInsideTerminates01(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) == 2)
 
+    // --- @Tailrec local def with external call in let-binding ---
+
+    @Terminates
+    def tailRecLocalLetBound01(l: MyList[(Int32, Int32)]): (MyList[Int32], MyList[Int32]) =
+        @Terminates @Tailrec
+        def loop(ll: MyList[(Int32, Int32)], acc1: MyList[Int32], acc2: MyList[Int32]): (MyList[Int32], MyList[Int32]) = match ll {
+            case MyList.Nil              => (acc1, acc2)
+            case MyList.Cons((x1, x2), xs) => loop(xs, MyList.Cons(x1, acc1), MyList.Cons(x2, acc2))
+        };
+        let (l1, l2) = loop(l, MyList.Nil, MyList.Nil);
+        (l1, l2)
+
+    @Test
+    def testTailRecLocalLetBound01(): Unit \ Assert =
+        let input = MyList.Cons((1, 10), MyList.Cons((2, 20), MyList.Nil));
+        let (a, b) = tailRecLocalLetBound01(input);
+        assertTrue(a == MyList.Cons(2, MyList.Cons(1, MyList.Nil)) and b == MyList.Cons(20, MyList.Cons(10, MyList.Nil)))
+
+    def tailRecLocalLetBound02(l: MyList[Int32]): Int32 =
+        @Tailrec
+        def loop(ll: MyList[Int32], acc: Int32): Int32 = match ll {
+            case MyList.Nil         => acc
+            case MyList.Cons(x, xs) => loop(xs, acc + x)
+        };
+        let result = loop(l, 0);
+        result + 1
+
+    @Test
+    def testTailRecLocalLetBound02(): Unit \ Assert =
+        assertTrue(tailRecLocalLetBound02(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil)))) == 7)
+
 }
