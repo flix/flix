@@ -1,9 +1,10 @@
 /// The `@Terminates` annotation on `unzip` asks the compiler to
 /// verify that the function is guaranteed to terminate.
 ///
-/// The `@Terminates` and `@Tailrec` annotations on the local def
-/// `loop` verify that it terminates via structural recursion and
-/// that every self-recursive call is in tail position.
+/// When a top-level function is marked `@Terminates`, all its inner
+/// local defs are implicitly checked for termination as well.
+/// The `@Tailrec` annotation on the local def `loop` additionally
+/// verifies that every self-recursive call is in tail position.
 
 @Terminates
 pub def unzip(l: List[(a, b)]): (List[a], List[b]) =

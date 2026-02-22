@@ -1,10 +1,10 @@
 /// The `@Terminates` annotation on `map` asks the compiler to verify
 /// that the function is guaranteed to terminate.
 ///
-/// The `@Terminates` and `@Tailrec` annotations on the local def
-/// `loop` independently verify that the inner loop terminates via
-/// structural recursion and that every self-recursive call is in
-/// tail position.
+/// When a top-level function is marked `@Terminates`, all its inner
+/// local defs are implicitly checked for termination as well.
+/// The `@Tailrec` annotation on the local def `loop` additionally
+/// verifies that every self-recursive call is in tail position.
 
 @Terminates
 pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
