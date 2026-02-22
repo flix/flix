@@ -152,6 +152,57 @@ pub mod BPlusTree {
         let rootHasNoParent = Option.isEmpty(Node.parent(root));
         nodeWorks and rootHasNoParent and rootIsUnlocked
 
+    ///
+    /// Returns the number of mappings in `t` that satisfy the predicate function `f`.
+    ///
+    /// This method unsafely removes the effect `r` when spawning threads.
+    ///
+    /// Not thread-safe.
+    ///
+    @Parallel
+    pub def count(f: k -> v -> Bool, t: BPlusTree[k, v, r]): Int32 \ r with Order[k] = {
+        let c = AtomicCounter.mkCounter(t->rc, 0);
+        parForEach(k -> v -> if (f(k, v)) AtomicCounter.increment(c) else (), t);
+        AtomicCounter.get(c)
+    }
+
+    ///
+    /// Alias for `foldLeftWithKey`
+    ///
+    pub def foldWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ r + ef with Order[k] =
+        foldLeftWithKey(f, i, t)
+
+    ///
+    /// Returns `v` if `k => v` is in `t`.
+    ///
+    /// Otherwise updates `t` with a new mapping `k => d` and returns `d`.
+    ///
+    /// Atomic and thread-safe
+    ///
+    pub def getOrElsePut(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
+        computeIfAbsent(_ -> d, k, t)
+
+    ///
+    /// Returns `true` if `t1` and `t2` contain the same keys and values, regardless of
+    /// each individual tree's internal structure.
+    ///
+    pub def sameElements(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] =
+        if (size(t1) != size(t2))
+            false
+        else
+            Node.sameElementsFrom(0, Node.leftMostChild(t1->root), 0, Node.leftMostChild(t2->root))
+
+    ///
+    /// Applies the function `f` to every value in `t`.
+    ///
+    pub def transform(f: v -> v \ ef, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
+        transformWithKey(_ -> v -> f(v), t)
+
+    ///
+    /// Applies the function `f` to every value in `t`.
+    ///
+    pub def transformWithKey(f: k -> v -> v \ ef, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
+        Node.transformWithKey(f, 0, Node.leftMostChild(t->root))
 
     ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, computes `v = f()`, inserts `k => v`
