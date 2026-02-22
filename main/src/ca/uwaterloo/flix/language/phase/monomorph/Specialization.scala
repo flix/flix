@@ -443,8 +443,8 @@ object Specialization {
         // Effect operations are monomorphic - they have no variables.
         // The substitution can be left empty.
         val fparams = fparams0.map {
-          case TypedAst.FormalParam(varSym, tpe, src, isDecreasing, fpLoc) =>
-            TypedAst.FormalParam(varSym, StrictSubstitution.empty(tpe), src, isDecreasing, fpLoc)
+          case TypedAst.FormalParam(varSym, tpe, src, decreasing, fpLoc) =>
+            TypedAst.FormalParam(varSym, StrictSubstitution.empty(tpe), src, decreasing, fpLoc)
         }
         // `tparams` and `tconstrs` are ignored by `monomorph.Lowering`.
         // They are solely passed to adhere to the `TypedAst.spec`.
@@ -1300,9 +1300,9 @@ object Specialization {
     * to a fresh variable symbol.
     */
   private def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (TypedAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
-    val TypedAst.FormalParam(bnd, tpe, src, isDecreasing, loc) = fparam0
+    val TypedAst.FormalParam(bnd, tpe, src, decreasing, loc) = fparam0
     val freshSym = Symbol.freshVarSym(bnd.sym)
-    (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, isDecreasing, loc), Map(bnd.sym -> freshSym))
+    (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, decreasing, loc), Map(bnd.sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */

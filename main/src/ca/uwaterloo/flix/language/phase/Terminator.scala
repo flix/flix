@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, QualifiedSym}
+import ca.uwaterloo.flix.language.ast.shared.{Decreasing, ExpPosition, QualifiedSym}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TerminationError
@@ -233,7 +233,7 @@ object Terminator {
                 val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), defn.exp, ExpPosition.Tail)
                 val decreasingIndices = lctx.getDecreasing(selfSym)
                 val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-                  if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
+                  if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
                 }
                 defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
               case None => visitDef(defn)
@@ -259,7 +259,7 @@ object Terminator {
         val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), exp, ExpPosition.Tail)
         val decreasingIndices = lctx.getDecreasing(selfSym)
         val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-          if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
+          if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
         }
         sig.copy(spec = sig.spec.copy(fparams = newFparams), exp = Some(newExp))
       case Some(exp) =>
@@ -284,7 +284,7 @@ object Terminator {
       }
       val decreasingIndices = lctx.getDecreasing(selfSym)
       val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
-        if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
+        if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
       }
       defn.copy(spec = defn.spec.copy(fparams = newFparams), exp = newExp)
     } else {
@@ -435,7 +435,7 @@ object Terminator {
             val body = visitExp(localCtx :: contexts, exp1, ExpPosition.Tail)
             val decreasingIndices = lctx.getDecreasing(localSelfSym)
             val newFps = fparams0.zipWithIndex.map { case (fp, i) =>
-              if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
+              if (decreasingIndices.contains(i)) fp.copy(decreasing = Decreasing.StrictlyDecreasing) else fp
             }
             (body, newFps)
           } else {
@@ -1054,7 +1054,7 @@ object Terminator {
     * have been observed as decreasing across all self-recursive call sites.
     *
     * After the expression visitor finishes, the accumulated indices are used to
-    * annotate the corresponding formal parameters with `isDecreasing = true`.
+    * annotate the corresponding formal parameters with `Decreasing.StrictlyDecreasing`.
     *
     * @param decreasingParams  maps each [[SelfSym]] to the set of parameter indices
     *                          that have been passed a strict substructure at some call site.

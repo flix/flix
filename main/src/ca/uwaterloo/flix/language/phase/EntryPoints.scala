@@ -549,7 +549,7 @@ object EntryPoints {
         TypedAst.Binder(argSym, argType),
         argType,
         TypeSource.Ascribed,
-        false,
+        Decreasing.NonDecreasing,
         SourceLocation.Unknown)
       ),
       declaredScheme = Scheme(Nil, Nil, Nil, tpe),

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Denotation, ExpPosition, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, ExpPosition, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -888,7 +888,7 @@ object Lowering {
           TypedAst.Binder(Symbol.freshVarSym("_", BoundBy.FormalParam, expLoc)(Scope.Top, flix), Type.Unit),
           Type.Unit,
           TypeSource.Inferred,
-          false,
+          Decreasing.NonDecreasing,
           expLoc
         ),
         defn.exp,

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Def, Expr, FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, SymUse}
+import ca.uwaterloo.flix.language.ast.shared.{Decreasing, ExpPosition, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
 
@@ -167,7 +167,7 @@ object InlayHintProvider {
     var hints: List[InlayHint] = List.empty
     object decreasingConsumer extends Consumer {
       override def consumeFormalParam(fparam: FormalParam): Unit = {
-        if (fparam.isDecreasing) {
+        if (fparam.decreasing == Decreasing.StrictlyDecreasing) {
           hints = InlayHint(
             position = Position.fromBegin(fparam.loc),
             label = "\u2193",
@@ -252,7 +252,7 @@ object InlayHintProvider {
     */
   private def mkDecreasingArgHints(exps: List[Expr], fparams: List[FormalParam]): List[InlayHint] = {
     exps.zip(fparams).collect {
-      case (arg, fparam) if fparam.isDecreasing =>
+      case (arg, fparam) if fparam.decreasing == Decreasing.StrictlyDecreasing =>
         InlayHint(
           position = Position.fromBegin(arg.loc),
           label = "\u2193",

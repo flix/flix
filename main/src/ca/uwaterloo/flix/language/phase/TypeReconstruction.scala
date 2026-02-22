@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, ExpPosition}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing, ExpPosition}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
 
@@ -72,7 +72,7 @@ object TypeReconstruction {
     case KindedAst.FormalParam(sym, tpe0, src, loc) =>
       val tpe = subst(tpe0)
       val bnd = TypedAst.Binder(sym, tpe)
-      TypedAst.FormalParam(bnd, tpe, src, false, loc)
+      TypedAst.FormalParam(bnd, tpe, src, Decreasing.NonDecreasing, loc)
   }
 
   /**
