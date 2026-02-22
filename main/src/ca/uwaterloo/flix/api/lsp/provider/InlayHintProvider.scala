@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.shared.{Decreasing, ExpPosition, SymUse}
+import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, Expr, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.shared.{Decreasing, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
 
@@ -204,40 +204,25 @@ object InlayHintProvider {
     */
   private def getTailRecursionHints(uri: String)(implicit root: Root): List[InlayHint] = {
     var hints: List[InlayHint] = List.empty
-    var currentDefSym: Option[Symbol.DefnSym] = None
-    // Map from local def binder sym → body source location
-    val localDefInfo: mutable.Map[Symbol.VarSym, (SourceLocation, List[FormalParam])] = mutable.Map.empty
+    val localDefFparams: mutable.Map[Symbol.VarSym, List[FormalParam]] = mutable.Map.empty
 
     object c extends Consumer {
-      override def consumeDef(defn: Def): Unit = {
-        if (defn.spec.ann.isTailRecursive)
-          currentDefSym = Some(defn.sym)
-        else
-          currentDefSym = None
-      }
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
-          // Track local def body locations
-          case Expr.LocalDef(_, bnd, fparams, exp1, _, _, _, _) =>
-            localDefInfo.put(bnd.sym, (exp1.loc, fparams))
+          case Expr.LocalDef(_, bnd, fparams, _, _, _, _, _) =>
+            localDefFparams.put(bnd.sym, fparams)
 
-          // Tail-recursive self-call in a top-level @Tailrec def
-          case Expr.ApplyDef(symUse, exps, _, _, _, _, pos, loc) =>
-            currentDefSym match {
-              case Some(sym) if symUse.sym == sym && pos == ExpPosition.Tail =>
-                hints = mkTailRecHint(loc) :: hints
-                val fparams = root.defs(symUse.sym).spec.fparams
-                hints = mkDecreasingArgHints(exps, fparams) ::: hints
-              case _ => () // Not inside a @Tailrec def, or not a tail-position self-call
+          case Expr.ApplyDef(symUse, exps, _, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
+            if (root.defs(symUse.sym).spec.ann.isTailRecursive) {
+              hints = mkTailRecHint(loc) :: hints
+              val fparams = root.defs(symUse.sym).spec.fparams
+              hints = mkDecreasingArgHints(exps, fparams) ::: hints
             }
 
-          // Tail-recursive self-call in a local def (e.g. a helper defined inside another function)
-          case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ExpPosition.Tail =>
-            localDefInfo.get(symUse.sym) match {
-              case Some((bodyLoc, fparams)) if bodyLoc.contains(loc) =>
-                hints = mkTailRecHint(loc) :: hints
-                hints = mkDecreasingArgHints(exps, fparams) ::: hints
-              case _ => () // Not a self-recursive call within its own body
+          case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
+            localDefFparams.get(symUse.sym).foreach { fparams =>
+              hints = mkTailRecHint(loc) :: hints
+              hints = mkDecreasingArgHints(exps, fparams) ::: hints
             }
 
           case _ => ()

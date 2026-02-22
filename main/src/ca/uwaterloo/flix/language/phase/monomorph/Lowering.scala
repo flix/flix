@@ -21,7 +21,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, ExpPosition, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -900,7 +901,7 @@ object Lowering {
     // Create HandledEff.handle(_ -> exp)
     val defnSym = lookup(defaultHandler.handlerSym, handlerArrowType)
     val handlerDefSymUse = SymUse.DefSymUse(defnSym, expLoc)
-    val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, ExpPosition.NonTail, expLoc)
+    val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, ApplyPosition.NonTail, expLoc)
     defn.copy(spec = spec, exp = handlerCall)
   }
 

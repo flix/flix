@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -566,7 +567,7 @@ object EntryPoints {
     val mainReturnType = mainArrowType.arrowResultType
     val mainEffect = mainArrowType.arrowEffectType
     // `mainFunc()`.
-    val mainCall = TypedAst.Expr.ApplyDef(mainSym, List(mainArg), List.empty, mainArrowType, mainReturnType, mainEffect, ExpPosition.NonTail, SourceLocation.Unknown)
+    val mainCall = TypedAst.Expr.ApplyDef(mainSym, List(mainArg), List.empty, mainArrowType, mainReturnType, mainEffect, ApplyPosition.NonTail, SourceLocation.Unknown)
 
     // `println(mainFunc())`.
     val printSym = DefSymUse(root.defs(new Symbol.DefnSym(None, Nil, "println", SourceLocation.Unknown)).sym, SourceLocation.Unknown)
@@ -576,7 +577,7 @@ object EntryPoints {
     val printEffect = Type.IO
     val printArrowType = Type.mkArrowWithEffect(printArgType, printEffect, printReturnType, SourceLocation.Unknown)
     val printCallEffect = Type.mkUnion(printEffect, printArg.eff, SourceLocation.Unknown)
-    val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), List(printArgType), printArrowType, printReturnType, printCallEffect, ExpPosition.NonTail, SourceLocation.Unknown)
+    val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), List(printArgType), printArrowType, printReturnType, printCallEffect, ApplyPosition.NonTail, SourceLocation.Unknown)
 
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
