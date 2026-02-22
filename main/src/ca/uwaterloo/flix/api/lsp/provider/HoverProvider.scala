@@ -77,6 +77,7 @@ object HoverProvider {
       s"""```flix
          |${FormatSignature.asMarkDown(defDecl)}
          |```
+         |
          |${FormatDoc.asMarkDown(defDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -90,6 +91,7 @@ object HoverProvider {
       s"""```flix
          |${FormatSignature.asMarkDown(sigDecl)}
          |```
+         |
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
