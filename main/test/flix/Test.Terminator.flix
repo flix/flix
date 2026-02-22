@@ -406,13 +406,6 @@ mod Test.Terminator {
     def testTailRecIfBranch01(): Unit \ Assert =
         assertTrue(tailRecIfBranch(Nat.Succ(Nat.Succ(Nat.Zero)), 0) == 2)
 
-    @Tailrec
-    def tailRecNonRecursive(x: Int32): Int32 = x + 1
-
-    @Test
-    def testTailRecNonRecursive01(): Unit \ Assert =
-        assertTrue(tailRecNonRecursive(5) == 6)
-
     // --- @Terminates calling another @Terminates def ---
 
     @Terminates

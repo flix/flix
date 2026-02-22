@@ -276,6 +276,9 @@ object Terminator {
       val fparams = defn.spec.fparams
       val selfSym = SelfDef(defn.sym)
       val newExp = visitExp(List(RecursionContext(selfSym, fparams, SubEnv.init(fparams))), defn.exp, ExpPosition.Tail)
+      if (defn.spec.ann.isTailRecursive && !lctx.selfCallObservedDef.contains(defn.sym)) {
+        sctx.errors.add(TerminationError.NonRecursiveTailRec(defn.sym, defn.sym.loc))
+      }
       val decreasingIndices = lctx.getDecreasing(selfSym)
       val newFparams = fparams.zipWithIndex.map { case (fp, i) =>
         if (decreasingIndices.contains(i)) fp.copy(isDecreasing = true) else fp
@@ -285,7 +288,11 @@ object Terminator {
       implicit val lctx: LocalContext =
         if (defn.spec.ann.isTailRecursive) LocalContext.mkTailRec(defn.sym)
         else LocalContext.mk()
-      defn.copy(exp = visitExp(Nil, defn.exp, ExpPosition.Tail))
+      val newExp = visitExp(Nil, defn.exp, ExpPosition.Tail)
+      if (defn.spec.ann.isTailRecursive && !lctx.selfCallObservedDef.contains(defn.sym)) {
+        sctx.errors.add(TerminationError.NonRecursiveTailRec(defn.sym, defn.sym.loc))
+      }
+      defn.copy(exp = newExp)
     }
   }
 
@@ -345,6 +352,13 @@ object Terminator {
               sctx.errors.add(TerminationError.NonTailRecursiveCall(trSym, loc))
             case _ => ()
           }
+        }
+        // Record the self-call observation
+        ctx.selfSym match {
+          case SelfDef(defnSym) => lctx.selfCallObservedDef += defnSym
+          case SelfInstanceDef(defnSym, _) => lctx.selfCallObservedDef += defnSym
+          case SelfLocalDef(varSym, _) => lctx.selfCallObservedLocal += varSym
+          case _ => ()
         }
         // Check @Tailrec on local defs
         ctx.selfSym match {
@@ -424,6 +438,9 @@ object Terminator {
           } else {
             (visitExp(Nil, exp1, ExpPosition.Tail), fparams0)
           }
+          if (isTailRec && !lctx.selfCallObservedLocal.contains(bnd.sym)) {
+            sctx.errors.add(TerminationError.NonRecursiveLocalTailRec(bnd.sym, loc))
+          }
           lctx.currentLocalDefSym = prevLocalDefSym
           val e2 = visitExp(contexts, exp2, pos)
           Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
@@ -444,8 +461,11 @@ object Terminator {
         // --- ApplyDef: check callee restriction ---
         case Expr.ApplyDef(symUse, exps0, itpe, tpe, eff, purity, _, loc) =>
           lctx.tailRecSym.foreach { trSym =>
-            if (symUse.sym == trSym && pos != ExpPosition.Tail) {
-              sctx.errors.add(TerminationError.NonTailRecursiveCall(trSym, loc))
+            if (symUse.sym == trSym) {
+              lctx.selfCallObservedDef += trSym
+              if (pos != ExpPosition.Tail) {
+                sctx.errors.add(TerminationError.NonTailRecursiveCall(trSym, loc))
+              }
             }
           }
           topSymOpt match {
@@ -485,8 +505,11 @@ object Terminator {
           Expr.Lambda(fparam, e, tpe, loc)
 
         case Expr.ApplyLocalDef(symUse, exps0, arrowTpe, tpe, eff, _, loc) =>
-          if (lctx.currentLocalDefSym.contains(symUse.sym) && lctx.tailRecLocalSyms.contains(symUse.sym) && pos != ExpPosition.Tail) {
-            sctx.errors.add(TerminationError.NonTailRecursiveLocalCall(symUse.sym, loc))
+          if (lctx.currentLocalDefSym.contains(symUse.sym)) {
+            lctx.selfCallObservedLocal += symUse.sym
+            if (lctx.tailRecLocalSyms.contains(symUse.sym) && pos != ExpPosition.Tail) {
+              sctx.errors.add(TerminationError.NonTailRecursiveLocalCall(symUse.sym, loc))
+            }
           }
           val es = exps0.map(visitExp(contexts, _, ExpPosition.NonTail))
           Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, pos, loc)
@@ -1019,8 +1042,8 @@ object Terminator {
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty, None, mutable.Set.empty)
-    def mkTailRec(sym: Symbol.DefnSym): LocalContext = new LocalContext(mutable.HashMap.empty, Some(sym), mutable.Set.empty)
+    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty, None, mutable.Set.empty, mutable.Set.empty, mutable.Set.empty)
+    def mkTailRec(sym: Symbol.DefnSym): LocalContext = new LocalContext(mutable.HashMap.empty, Some(sym), mutable.Set.empty, mutable.Set.empty, mutable.Set.empty)
   }
 
   /**
@@ -1035,7 +1058,7 @@ object Terminator {
     * @param tailRecSym        the top-level `@Tailrec` def symbol, if any.
     * @param tailRecLocalSyms  local defs annotated with `@Tailrec`.
     */
-  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]], tailRecSym: Option[Symbol.DefnSym], tailRecLocalSyms: mutable.Set[Symbol.VarSym], var currentLocalDefSym: Option[Symbol.VarSym] = None) {
+  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]], tailRecSym: Option[Symbol.DefnSym], tailRecLocalSyms: mutable.Set[Symbol.VarSym], selfCallObservedDef: mutable.Set[Symbol.DefnSym], selfCallObservedLocal: mutable.Set[Symbol.VarSym], var currentLocalDefSym: Option[Symbol.VarSym] = None) {
 
     /** Records that parameter at `idx` is decreasing for `selfSym`. */
     def addDecreasing(selfSym: SelfSym, idx: Int): Unit =

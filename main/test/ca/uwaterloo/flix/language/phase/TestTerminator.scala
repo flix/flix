@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.TerminationError.{ForbiddenExpression, NonStrictlyPositiveType, NonStructuralRecursion, NonTailRecursiveCall, NonTailRecursiveLocalCall, NonTerminatingCall}
+import ca.uwaterloo.flix.language.errors.TerminationError.{ForbiddenExpression, NonRecursiveLocalTailRec, NonRecursiveTailRec, NonStrictlyPositiveType, NonStructuralRecursion, NonTailRecursiveCall, NonTailRecursiveLocalCall, NonTerminatingCall}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -770,6 +770,71 @@ class TestTerminator extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[ForbiddenExpression](result)
+  }
+
+  // =========================================================================
+  // NonRecursiveTailRec
+  // =========================================================================
+
+  test("NonRecursiveTailRec.01") {
+    // @Tailrec on a non-recursive function (no self-calls at all)
+    val input =
+      """
+        |@Tailrec
+        |def f(x: Int32): Int32 = x + 1
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonRecursiveTailRec](result)
+  }
+
+  test("NonRecursiveTailRec.02") {
+    // @Tailrec on a function that only delegates to an inner loop
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Tailrec
+        |def f(l: MyList[Int32]): Int32 = {
+        |    def loop(ll: MyList[Int32], acc: Int32): Int32 = match ll {
+        |        case MyList.Nil         => acc
+        |        case MyList.Cons(_, xs) => loop(xs, acc + 1)
+        |    };
+        |    loop(l, 0)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonRecursiveTailRec](result)
+  }
+
+  // =========================================================================
+  // NonRecursiveLocalTailRec
+  // =========================================================================
+
+  test("NonRecursiveLocalTailRec.01") {
+    // @Tailrec on a non-recursive local def (no self-calls)
+    val input =
+      """
+        |def f(x: Int32): Int32 = {
+        |    @Tailrec
+        |    def loop(y: Int32): Int32 = y + 1;
+        |    loop(x)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonRecursiveLocalTailRec](result)
+  }
+
+  test("NonRecursiveLocalTailRec.02") {
+    // @Tailrec on a local def that calls the outer function, not itself
+    val input =
+      """
+        |def f(x: Int32): Int32 = {
+        |    @Tailrec
+        |    def loop(y: Int32): Int32 = f(y);
+        |    loop(x)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonRecursiveLocalTailRec](result)
   }
 
 }

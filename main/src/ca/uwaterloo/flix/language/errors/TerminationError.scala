@@ -206,6 +206,54 @@ object TerminationError {
     }
   }
 
+  /**
+    * An error raised when a `@Tailrec` annotation is placed on a non-recursive top-level def.
+    *
+    * @param sym the symbol of the function.
+    * @param loc the source location of the function.
+    */
+  case class NonRecursiveTailRec(sym: Symbol.DefnSym, loc: SourceLocation) extends TerminationError {
+    def code: ErrorCode = ErrorCode.E9917
+
+    def summary: String = s"@Tailrec annotation on non-recursive function '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> @Tailrec annotation on non-recursive function '${magenta(sym.name)}'.
+         |
+         |${highlight(loc, "@Tailrec annotation", fmt)}
+         |
+         |${underline("Explanation:")} The function '${sym.name}' is annotated with @Tailrec but does
+         |not contain any self-recursive calls. The @Tailrec annotation is only meaningful
+         |on functions that call themselves. Remove the annotation or add self-recursion.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a `@Tailrec` annotation is placed on a non-recursive local def.
+    *
+    * @param sym the variable symbol of the local def.
+    * @param loc the source location of the local def.
+    */
+  case class NonRecursiveLocalTailRec(sym: Symbol.VarSym, loc: SourceLocation) extends TerminationError {
+    def code: ErrorCode = ErrorCode.E9906
+
+    def summary: String = s"@Tailrec annotation on non-recursive local def '${sym.text}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> @Tailrec annotation on non-recursive local def '${magenta(sym.text)}'.
+         |
+         |${highlight(loc, "@Tailrec annotation", fmt)}
+         |
+         |${underline("Explanation:")} The local def '${sym.text}' is annotated with @Tailrec but does
+         |not contain any self-recursive calls. The @Tailrec annotation is only meaningful
+         |on defs that call themselves. Remove the annotation or add self-recursion.
+         |""".stripMargin
+    }
+  }
+
   /** Describes why a single argument in a recursive call does or does not satisfy the
     * structural recursion requirement for its corresponding formal parameter. */
   sealed trait ArgStatus
