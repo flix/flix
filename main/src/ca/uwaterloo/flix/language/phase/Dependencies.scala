@@ -189,7 +189,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, _) =>
+    case Expr.LocalDef(_, bnd, fparams, exp1, exp2, tpe, eff, _) =>
       visitBinder(bnd)
       fparams.foreach(visitFormalParam)
       visitExp(exp1)

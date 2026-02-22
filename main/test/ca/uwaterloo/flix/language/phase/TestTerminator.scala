@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.TerminationError.{ForbiddenExpression, NonStrictlyPositiveType, NonStructuralRecursion, NonTailRecursiveCall, NonTerminatingCall}
+import ca.uwaterloo.flix.language.errors.TerminationError.{ForbiddenExpression, NonStrictlyPositiveType, NonStructuralRecursion, NonTailRecursiveCall, NonTailRecursiveLocalCall, NonTerminatingCall}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -672,6 +672,104 @@ class TestTerminator extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[NonTailRecursiveCall](result)
+  }
+
+  // =========================================================================
+  // NonTailRecursiveLocalCall
+  // =========================================================================
+
+  test("NonTailRecursiveLocalCall.01") {
+    // @Tailrec local def with non-tail self-call (operand of +)
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |def f(l: MyList[Int32]): Int32 = {
+        |    @Tailrec
+        |    def loop(ll: MyList[Int32]): Int32 = match ll {
+        |        case MyList.Nil         => 0
+        |        case MyList.Cons(_, xs) => loop(xs) + 1
+        |    };
+        |    loop(l)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTailRecursiveLocalCall](result)
+  }
+
+  test("NonTailRecursiveLocalCall.02") {
+    // @Tailrec local def with self-call in let binding
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |def f(l: MyList[Int32]): Int32 = {
+        |    @Tailrec
+        |    def loop(ll: MyList[Int32]): Int32 = match ll {
+        |        case MyList.Nil         => 0
+        |        case MyList.Cons(_, xs) =>
+        |            let r = loop(xs);
+        |            r
+        |    };
+        |    loop(l)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTailRecursiveLocalCall](result)
+  }
+
+  test("NonTailRecursiveLocalCall.03") {
+    // @Tailrec @Terminates local def with non-tail self-call
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |@Terminates
+        |def f(l: MyList[Int32]): Int32 = {
+        |    @Tailrec @Terminates
+        |    def loop(ll: MyList[Int32]): Int32 = match ll {
+        |        case MyList.Nil         => 0
+        |        case MyList.Cons(_, xs) => loop(xs) + 1
+        |    };
+        |    loop(l)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonTailRecursiveLocalCall](result)
+  }
+
+  // =========================================================================
+  // Standalone @Terminates local defs — negative tests
+  // =========================================================================
+
+  test("NonStructuralRecursion.StandaloneLocalDef.01") {
+    // Standalone @Terminates local def with non-structural recursion
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |def f(l: MyList[Int32]): Int32 = {
+        |    @Terminates
+        |    def loop(ll: MyList[Int32]): Int32 = loop(ll);
+        |    loop(l)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[NonStructuralRecursion](result)
+  }
+
+  test("ForbiddenExpression.StandaloneLocalDef.01") {
+    // Standalone @Terminates local def with unsafe
+    val input =
+      """
+        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |def f(l: MyList[Int32]): Int32 = {
+        |    @Terminates
+        |    def loop(ll: MyList[Int32]): Int32 = match ll {
+        |        case MyList.Nil         => 0
+        |        case MyList.Cons(_, xs) => unsafe { loop(xs) + 1 }
+        |    };
+        |    loop(l)
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ForbiddenExpression](result)
   }
 
 }

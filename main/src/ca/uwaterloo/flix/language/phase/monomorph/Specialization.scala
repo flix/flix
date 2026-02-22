@@ -631,7 +631,7 @@ object Specialization {
       val e2 = specializeExp(exp2, env1, subst)
       Expr.Let(Binder(freshSym, subst(bnd.tpe)), e1, e2, subst(tpe), subst(eff), loc)
 
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(ann, bnd, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(bnd.sym)
       val env1 = env0 + (bnd.sym -> freshSym)
       val (fps, env2) = specializeFormalParams(fparams, subst)
@@ -639,7 +639,7 @@ object Specialization {
       val e2 = specializeExp(exp2, env1, subst)
       val t = subst(tpe)
       val ef = subst(eff)
-      Expr.LocalDef(Binder(freshSym, subst(bnd.tpe)), fps, e1, e2, t, ef, loc)
+      Expr.LocalDef(ann, Binder(freshSym, subst(bnd.tpe)), fps, e1, e2, t, ef, loc)
 
     case Expr.Region(bnd, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(bnd.sym)

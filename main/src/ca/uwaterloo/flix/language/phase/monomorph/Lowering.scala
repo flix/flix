@@ -264,7 +264,7 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.Let(bnd.sym, e1, e2, t, eff, Occur.Unknown, loc)
 
-    case TypedAst.Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LocalDef(_, bnd, fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(lowerFormalParam)
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)

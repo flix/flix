@@ -29,7 +29,7 @@ object Resolution {
 
   case class Var(sym: Symbol.VarSym) extends Resolution
 
-  case class LocalDef(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Resolution
+  case class LocalDef(ann: Annotations, sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Resolution
 
   case class TypeVar(sym: Symbol.UnkindedTypeVarSym) extends Resolution
 

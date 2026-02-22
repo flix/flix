@@ -151,6 +151,12 @@ object Terminator {
     def sym: QualifiedSym = parentSym
   }
 
+  /** Wraps a `VarSym` as a `QualifiedSym` for standalone `@Terminates` local defs. */
+  private case class VarSymAsQualified(varSym: Symbol.VarSym) extends QualifiedSym {
+    def namespace: List[String] = Nil
+    def name: String = varSym.text
+  }
+
   /**
     * Groups the state needed to check structural recursion at one nesting level.
     *
@@ -340,6 +346,12 @@ object Terminator {
             case _ => ()
           }
         }
+        // Check @Tailrec on local defs
+        ctx.selfSym match {
+          case SelfLocalDef(varSym, _) if lctx.tailRecLocalSyms.contains(varSym) && pos != ExpPosition.Tail =>
+            sctx.errors.add(TerminationError.NonTailRecursiveLocalCall(varSym, loc))
+          case _ => ()
+        }
         val argInfos = args.zip(ctx.fparams).map {
           case (Expr.Var(sym, _, _), fp) =>
             val paramName = fp.bnd.sym.text
@@ -389,11 +401,18 @@ object Terminator {
           Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
         // --- LocalDef: push new context, visit body with extended list ---
-        case Expr.LocalDef(bnd, fparams0, exp1, exp2, tpe, eff, loc) =>
-          val (e1, fps) = if (contexts.nonEmpty) {
-            val localSelfSym = SelfLocalDef(bnd.sym, contexts.head.selfSym.sym)
+        case Expr.LocalDef(ann, bnd, fparams0, exp1, exp2, tpe, eff, loc) =>
+          val isTerminates = ann.isTerminates
+          val isTailRec = ann.isTailRecursive
+
+          // Register tail-rec tracking for this local def
+          if (isTailRec) lctx.tailRecLocalSyms += bnd.sym
+
+          val (e1, fps) = if (contexts.nonEmpty || isTerminates) {
+            val parentSym = contexts.headOption.map(_.selfSym.sym).getOrElse(VarSymAsQualified(bnd.sym))
+            val localSelfSym = SelfLocalDef(bnd.sym, parentSym)
             val localCtx = RecursionContext(localSelfSym, fparams0, SubEnv.init(fparams0))
-            checkStrictPositivity(fparams0, contexts.head.selfSym.sym)
+            checkStrictPositivity(fparams0, parentSym)
             val body = visitExp(localCtx :: contexts, exp1, ExpPosition.Tail)
             val decreasingIndices = lctx.getDecreasing(localSelfSym)
             val newFps = fparams0.zipWithIndex.map { case (fp, i) =>
@@ -404,7 +423,7 @@ object Terminator {
             (visitExp(Nil, exp1, ExpPosition.Tail), fparams0)
           }
           val e2 = visitExp(contexts, exp2, pos)
-          Expr.LocalDef(bnd, fps, e1, e2, tpe, eff, loc)
+          Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
 
         // --- ApplyClo: check closure restriction ---
         case Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
@@ -463,6 +482,9 @@ object Terminator {
           Expr.Lambda(fparam, e, tpe, loc)
 
         case Expr.ApplyLocalDef(symUse, exps0, arrowTpe, tpe, eff, _, loc) =>
+          if (lctx.tailRecLocalSyms.contains(symUse.sym) && pos != ExpPosition.Tail) {
+            sctx.errors.add(TerminationError.NonTailRecursiveLocalCall(symUse.sym, loc))
+          }
           val es = exps0.map(visitExp(contexts, _, ExpPosition.NonTail))
           Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, pos, loc)
 
@@ -994,8 +1016,8 @@ object Terminator {
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty, None)
-    def mkTailRec(sym: Symbol.DefnSym): LocalContext = new LocalContext(mutable.HashMap.empty, Some(sym))
+    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty, None, mutable.Set.empty)
+    def mkTailRec(sym: Symbol.DefnSym): LocalContext = new LocalContext(mutable.HashMap.empty, Some(sym), mutable.Set.empty)
   }
 
   /**
@@ -1005,10 +1027,12 @@ object Terminator {
     * After the expression visitor finishes, the accumulated indices are used to
     * annotate the corresponding formal parameters with `isDecreasing = true`.
     *
-    * @param decreasingParams maps each [[SelfSym]] to the set of parameter indices
-    *                         that have been passed a strict substructure at some call site.
+    * @param decreasingParams  maps each [[SelfSym]] to the set of parameter indices
+    *                          that have been passed a strict substructure at some call site.
+    * @param tailRecSym        the top-level `@Tailrec` def symbol, if any.
+    * @param tailRecLocalSyms  local defs annotated with `@Tailrec`.
     */
-  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]], tailRecSym: Option[Symbol.DefnSym]) {
+  private case class LocalContext(decreasingParams: mutable.Map[SelfSym, mutable.Set[Int]], tailRecSym: Option[Symbol.DefnSym], tailRecLocalSyms: mutable.Set[Symbol.VarSym]) {
 
     /** Records that parameter at `idx` is decreasing for `selfSym`. */
     def addDecreasing(selfSym: SelfSym, idx: Int): Unit =

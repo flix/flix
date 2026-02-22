@@ -545,4 +545,62 @@ mod Test.Terminator {
     def testDoubleNegation01(): Unit \ Assert =
         assertTrue(useGood(Good.MkGood(_ -> 0)) == 0)
 
+    // --- @Tailrec on local defs ---
+
+    def tailRecLocalLoop01(l: MyList[Int32]): Int32 =
+        @Tailrec
+        def loop(ll: MyList[Int32], acc: Int32): Int32 = match ll {
+            case MyList.Nil         => acc
+            case MyList.Cons(_, xs) => loop(xs, acc + 1)
+        };
+        loop(l, 0)
+
+    @Test
+    def testTailRecLocalLoop01(): Unit \ Assert =
+        assertTrue(tailRecLocalLoop01(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil)))) == 3)
+
+    // --- @Terminates on standalone local defs ---
+
+    def standaloneTerminatesLocal01(l: MyList[Int32]): Int32 =
+        @Terminates
+        def loop(ll: MyList[Int32]): Int32 = match ll {
+            case MyList.Nil         => 0
+            case MyList.Cons(_, xs) => 1 + loop(xs)
+        };
+        loop(l)
+
+    @Test
+    def testStandaloneTerminatesLocal01(): Unit \ Assert =
+        assertTrue(standaloneTerminatesLocal01(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) == 2)
+
+    // --- @Terminates @Tailrec combined on local defs ---
+
+    @Terminates
+    def combinedAnnotationsLocal01(l: MyList[Int32]): Int32 =
+        @Terminates @Tailrec
+        def loop(ll: MyList[Int32], acc: Int32): Int32 = match ll {
+            case MyList.Nil         => acc
+            case MyList.Cons(_, xs) => loop(xs, acc + 1)
+        };
+        loop(l, 0)
+
+    @Test
+    def testCombinedAnnotationsLocal01(): Unit \ Assert =
+        assertTrue(combinedAnnotationsLocal01(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) == 2)
+
+    // --- @Tailrec local def inside @Terminates function ---
+
+    @Terminates
+    def tailRecInsideTerminates01(l: MyList[Int32]): Int32 =
+        @Tailrec
+        def loop(ll: MyList[Int32], acc: Int32): Int32 = match ll {
+            case MyList.Nil         => acc
+            case MyList.Cons(_, xs) => loop(xs, acc + 1)
+        };
+        loop(l, 0)
+
+    @Test
+    def testTailRecInsideTerminates01(): Unit \ Assert =
+        assertTrue(tailRecInsideTerminates01(MyList.Cons(1, MyList.Cons(2, MyList.Nil))) == 2)
+
 }

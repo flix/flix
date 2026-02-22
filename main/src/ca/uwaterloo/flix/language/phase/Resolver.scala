@@ -908,13 +908,13 @@ object Resolver {
       val e2 = resolveExp(exp2, scp)
       ResolvedAst.Expr.Let(sym, e1, e2, loc)
 
-    case NamedAst.Expr.LocalDef(sym, fparams0, exp1, exp2, loc) =>
+    case NamedAst.Expr.LocalDef(ann, sym, fparams0, exp1, exp2, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
-      val scp1 = scp0 ++ mkLocalDefScp(sym, fparams) ++ mkFormalParamScp(fparams)
+      val scp1 = scp0 ++ mkLocalDefScp(ann, sym, fparams) ++ mkFormalParamScp(fparams)
       val e1 = resolveExp(exp1, scp1)
-      val scp2 = scp0 ++ mkLocalDefScp(sym, fparams)
+      val scp2 = scp0 ++ mkLocalDefScp(ann, sym, fparams)
       val e2 = resolveExp(exp2, scp2)
-      ResolvedAst.Expr.LocalDef(sym, fparams, e1, e2, loc)
+      ResolvedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, loc)
 
     case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
@@ -2101,7 +2101,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Op) => decl
       case decl@Resolution.Var(_) => decl
-      case decl@Resolution.LocalDef(_, _) => decl
+      case decl@Resolution.LocalDef(_, _, _) => decl
     } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
         if (isDefAccessible(defn, ns0)) {
@@ -2128,7 +2128,7 @@ object Resolver {
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
         ResolvedQName.RestrictableTag(caze)
       // TODO NS-REFACTOR check accessibility
-      case Resolution.LocalDef(sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
+      case Resolution.LocalDef(_, sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
       case _ =>
         val error = ResolutionError.UndefinedName(qname, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, qname.loc)
@@ -3313,8 +3313,8 @@ object Resolver {
   /**
     * Creates an LocalScope from the given local def symbol and formal parameters.
     */
-  private def mkLocalDefScp(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): LocalScope = {
-    LocalScope.singleton(sym.text, Resolution.LocalDef(sym, fparams))
+  private def mkLocalDefScp(ann: Annotations, sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): LocalScope = {
+    LocalScope.singleton(sym.text, Resolution.LocalDef(ann, sym, fparams))
   }
 
   /**

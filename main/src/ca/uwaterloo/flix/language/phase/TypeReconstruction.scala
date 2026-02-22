@@ -184,7 +184,7 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
+    case KindedAst.Expr.LocalDef(ann, sym, fparams, exp1, exp2, loc) =>
       val fps = fparams.map(visitFormalParam(_, subst))
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -192,7 +192,7 @@ object TypeReconstruction {
       val eff = e2.eff
       val boundType = Type.mkUncurriedArrowWithEffect(fps.map(_.tpe), e1.tpe, e1.eff, SourceLocation.Unknown)
       val bnd = TypedAst.Binder(sym, boundType)
-      TypedAst.Expr.LocalDef(bnd, fps, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
       // Use the appropriate branch for the scope.

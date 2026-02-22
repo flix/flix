@@ -120,7 +120,7 @@ object TreeShaker1 {
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Region(_, _, exp, _, _, _) =>

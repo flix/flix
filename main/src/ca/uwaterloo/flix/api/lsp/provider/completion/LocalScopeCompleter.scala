@@ -68,7 +68,7 @@ object LocalScopeCompleter {
     */
   private def mkLocalDefCompletion(resolutions: List[Resolution], range: Range): Iterable[Completion] =
     resolutions.collect {
-      case Resolution.LocalDef(sym, fparams) => Completion.LocalDefCompletion(sym, fparams, range, Priority.High(0))
+      case Resolution.LocalDef(_, sym, fparams) => Completion.LocalDefCompletion(sym, fparams, range, Priority.High(0))
     }
 
 }

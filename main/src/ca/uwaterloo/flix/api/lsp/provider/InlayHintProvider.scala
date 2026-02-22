@@ -204,7 +204,7 @@ object InlayHintProvider {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
           // Track local def body locations
-          case Expr.LocalDef(bnd, fparams, exp1, _, _, _, _) =>
+          case Expr.LocalDef(_, bnd, fparams, exp1, _, _, _, _) =>
             localDefInfo(bnd.sym) = (exp1.loc, fparams)
 
           // Existing: @Tailrec top-level def self-calls

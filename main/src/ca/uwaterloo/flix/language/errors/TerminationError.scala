@@ -183,6 +183,29 @@ object TerminationError {
     }
   }
 
+  /**
+    * An error raised when a self-recursive call in a `@Tailrec` local def is not in tail position.
+    *
+    * @param sym the variable symbol of the local def.
+    * @param loc the source location of the non-tail recursive call.
+    */
+  case class NonTailRecursiveLocalCall(sym: Symbol.VarSym, loc: SourceLocation) extends TerminationError {
+    def code: ErrorCode = ErrorCode.E9928
+
+    def summary: String = s"Non-tail recursive call in @Tailrec local def '${sym.text}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Non-tail recursive call in @Tailrec local def '${magenta(sym.text)}'.
+         |
+         |${highlight(loc, "non-tail recursive call", fmt)}
+         |
+         |${underline("Explanation:")} A local def annotated with @Tailrec must only call itself
+         |in tail position.
+         |""".stripMargin
+    }
+  }
+
   /** Describes why a single argument in a recursive call does or does not satisfy the
     * structural recursion requirement for its corresponding formal parameter. */
   sealed trait ArgStatus

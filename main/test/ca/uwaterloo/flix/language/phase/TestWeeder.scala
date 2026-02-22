@@ -278,6 +278,34 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
+  test("IllegalAnnotation.LocalDef.01") {
+    // @Deprecated on local def should be illegal
+    val input =
+      """
+        |def f(): Int32 = {
+        |    @Deprecated
+        |    def g(i) = if (i <= 0) 0 else g(i - 1);
+        |    g(10)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotation](result)
+  }
+
+  test("IllegalAnnotation.LocalDef.02") {
+    // @Lazy on local def should be illegal
+    val input =
+      """
+        |def f(): Int32 = {
+        |    @Lazy
+        |    def g(i) = if (i <= 0) 0 else g(i - 1);
+        |    g(10)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotation](result)
+  }
+
   test("IllegalEnum.01") {
     val input =
       """
