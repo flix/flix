@@ -68,9 +68,9 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTerminatesHints(uri) ::: getTailRecHints(uri)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecHints(uri)
     } else {
-      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTerminatesHints(uri) ::: getTailRecHints(uri)
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecHints(uri)
     }
   }
 
@@ -182,60 +182,6 @@ object InlayHintProvider {
     }
     Visitor.visitRoot(root, decreasingConsumer, FileAcceptor(uri))
     hints
-  }
-
-  /**
-    * Returns a list of inlay hints for `@Terminates` annotations summarizing decreasing parameters.
-    */
-  private def getTerminatesHints(uri: String)(implicit root: Root): List[InlayHint] = {
-    var hints: List[InlayHint] = List.empty
-    object terminatesConsumer extends Consumer {
-      override def consumeDef(defn: Def): Unit = {
-        if (!defn.spec.ann.isTerminates) return
-        val decreasingNames = defn.spec.fparams.collect {
-          case fp if fp.isDecreasing => fp.bnd.sym.text
-        }
-        defn.spec.ann.annotations.collectFirst {
-          case t: Annotation.Terminates =>
-            if (decreasingNames.nonEmpty)
-              hints = mkTerminatesHint(t, decreasingNames) :: hints
-            else
-              hints = mkNoRecursiveCallsHint(t) :: hints
-        }
-      }
-    }
-    Visitor.visitRoot(root, terminatesConsumer, FileAcceptor(uri))
-    hints
-  }
-
-  /**
-    * Creates an inlay hint for a `@Terminates` annotation when no recursive calls are detected.
-    */
-  private def mkNoRecursiveCallsHint(t: Annotation.Terminates): InlayHint = {
-    InlayHint(
-      position = Position.fromEnd(t.loc),
-      label = "(no recursive calls)",
-      kind = Some(InlayHintKind.Parameter),
-      textEdits = List.empty,
-      tooltip = "No recursive calls detected",
-      paddingLeft = true,
-      paddingRight = false
-    )
-  }
-
-  /**
-    * Creates an inlay hint for a `@Terminates` annotation showing the decreasing parameters.
-    */
-  private def mkTerminatesHint(t: Annotation.Terminates, decreasingNames: List[String]): InlayHint = {
-    InlayHint(
-      position = Position.fromEnd(t.loc),
-      label = s"(decreases on ${decreasingNames.mkString(", ")})",
-      kind = Some(InlayHintKind.Parameter),
-      textEdits = List.empty,
-      tooltip = "Structurally decreasing parameters",
-      paddingLeft = true,
-      paddingRight = false
-    )
   }
 
   /**
