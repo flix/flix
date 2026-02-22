@@ -220,9 +220,14 @@ object InlayHintProvider {
             }
 
           case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
-            localDefFparams.get(symUse.sym).foreach { fparams =>
-              hints = mkTailRecHint(loc) :: hints
-              hints = mkDecreasingArgHints(exps, fparams) ::: hints
+            localDefFparams.get(symUse.sym) match {
+              case Some(fparams) =>
+                hints = mkTailRecHint(loc) :: hints
+                hints = mkDecreasingArgHints(exps, fparams) ::: hints
+              case None =>
+                // The local def has not been visited yet, which cannot happen because
+                // the visitor traverses LocalDef before its body where self-calls appear.
+                ()
             }
 
           case _ => ()
