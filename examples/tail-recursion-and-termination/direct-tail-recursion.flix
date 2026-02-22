@@ -7,7 +7,6 @@
 /// self-recursive call is in tail position — here the recursive call
 /// `isPrefixOf(xs, ys)` is the last operation in its branch.
 
-/// Returns true if `l1` is a prefix of `l2`.
 @Terminates @Tailrec
 pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
     case (Nil, _)           => true

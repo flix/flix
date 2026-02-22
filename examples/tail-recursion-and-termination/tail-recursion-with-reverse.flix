@@ -4,8 +4,7 @@
 /// The `@Terminates` and `@Tailrec` annotations on the local def
 /// `loop` independently verify that the inner loop terminates via
 /// structural recursion and that every self-recursive call is in
-/// tail position. The external call `loop(l, Nil)` is not a
-/// self-recursive call, so it is not subject to the tail-call check.
+/// tail position.
 
 @Terminates
 pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
