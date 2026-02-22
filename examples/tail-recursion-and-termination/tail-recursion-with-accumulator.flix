@@ -10,7 +10,7 @@
 pub def unzip(l: List[(a, b)]): (List[a], List[b]) =
     @Tailrec
     def loop(ll, acc1, acc2) = match ll {
-        case Nil             => (acc1, acc2)
+        case Nil            => (acc1, acc2)
         case (x1, x2) :: xs => loop(xs, x1 :: acc1, x2 :: acc2)
     };
     let (l1, l2) = loop(l, Nil, Nil);
