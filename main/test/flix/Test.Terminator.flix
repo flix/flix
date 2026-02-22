@@ -361,9 +361,9 @@ mod Test.Terminator {
     def testInstanceDef02(): Unit \ Assert =
         assertTrue(MySize.mySize(MyTree.Node(MyTree.Leaf(1), MyTree.Leaf(2))) == 2)
 
-    // --- @TailRec functions ---
+    // --- @Tailrec functions ---
 
-    @TailRec
+    @Tailrec
     def tailRecLength(l: MyList[Int32], acc: Int32): Int32 = match l {
         case MyList.Nil         => acc
         case MyList.Cons(_, xs) => tailRecLength(xs, acc + 1)
@@ -373,7 +373,7 @@ mod Test.Terminator {
     def testTailRecLength01(): Unit \ Assert =
         assertTrue(tailRecLength(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil))), 0) == 3)
 
-    @TailRec
+    @Tailrec
     def tailRecSum(l: MyList[Int32], acc: Int32): Int32 = match l {
         case MyList.Nil         => acc
         case MyList.Cons(x, xs) => tailRecSum(xs, acc + x)
@@ -383,7 +383,7 @@ mod Test.Terminator {
     def testTailRecSum01(): Unit \ Assert =
         assertTrue(tailRecSum(MyList.Cons(1, MyList.Cons(2, MyList.Cons(3, MyList.Nil))), 0) == 6)
 
-    @TailRec
+    @Tailrec
     def tailRecReverse(l: MyList[Int32], acc: MyList[Int32]): MyList[Int32] = match l {
         case MyList.Nil         => acc
         case MyList.Cons(x, xs) => tailRecReverse(xs, MyList.Cons(x, acc))
@@ -394,7 +394,7 @@ mod Test.Terminator {
         assertTrue(tailRecReverse(MyList.Cons(1, MyList.Cons(2, MyList.Nil)), MyList.Nil) ==
             MyList.Cons(2, MyList.Cons(1, MyList.Nil)))
 
-    @TailRec
+    @Tailrec
     def tailRecIfBranch(n: Nat, acc: Int32): Int32 = match n {
         case Nat.Zero    => acc
         case Nat.Succ(m) =>
@@ -406,7 +406,7 @@ mod Test.Terminator {
     def testTailRecIfBranch01(): Unit \ Assert =
         assertTrue(tailRecIfBranch(Nat.Succ(Nat.Succ(Nat.Zero)), 0) == 2)
 
-    @TailRec
+    @Tailrec
     def tailRecNonRecursive(x: Int32): Int32 = x + 1
 
     @Test

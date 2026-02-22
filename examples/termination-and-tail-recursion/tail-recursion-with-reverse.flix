@@ -2,7 +2,7 @@
 /// a list in reverse order and then reverse it.
 
 /// Returns the result of applying `f` to every element in `l`.
-@Terminates @TailRec
+@Terminates @Tailrec
 pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
     def loop(ll, acc) = match ll {
         case Nil     => acc

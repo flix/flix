@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Def, Expr, FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, ExpPosition, SymUse}
+import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
 
@@ -185,7 +185,7 @@ object InlayHintProvider {
   }
 
   /**
-    * Returns a list of inlay hints for tail-recursive self-calls in `@TailRec` functions
+    * Returns a list of inlay hints for tail-recursive self-calls in `@Tailrec` functions
     * and self-recursive local defs.
     */
   private def getTailRecHints(uri: String)(implicit root: Root): List[InlayHint] = {
@@ -207,7 +207,7 @@ object InlayHintProvider {
           case Expr.LocalDef(bnd, fparams, exp1, _, _, _, _) =>
             localDefInfo(bnd.sym) = (exp1.loc, fparams)
 
-          // Existing: @TailRec top-level def self-calls
+          // Existing: @Tailrec top-level def self-calls
           case Expr.ApplyDef(symUse, exps, _, _, _, _, pos, loc) =>
             currentDefSym.foreach { sym =>
               if (symUse.sym == sym && pos == ExpPosition.Tail) {

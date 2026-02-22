@@ -604,7 +604,7 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     val input =
       """
         |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |@TailRec
+        |@Tailrec
         |def f(x: MyList[Int32]): Int32 = match x {
         |    case MyList.Nil         => 0
         |    case MyList.Cons(_, xs) => f(xs) + 1
@@ -620,7 +620,7 @@ class TestTerminator extends AnyFunSuite with TestUtils {
       """
         |@Terminates
         |def g(x: Int32): Int32 = x
-        |@TailRec
+        |@Tailrec
         |def f(x: Int32): Int32 = g(f(x))
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -632,7 +632,7 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     val input =
       """
         |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |@TailRec
+        |@Tailrec
         |def f(x: MyList[Int32]): Int32 = match x {
         |    case MyList.Nil         => 0
         |    case MyList.Cons(_, xs) =>
@@ -649,7 +649,7 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     val input =
       """
         |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |@TailRec
+        |@Tailrec
         |def f(x: MyList[Int32]): MyList[Int32] = match x {
         |    case MyList.Nil         => MyList.Nil
         |    case MyList.Cons(_, xs) => MyList.Cons(0, f(xs))
@@ -664,7 +664,7 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     val input =
       """
         |enum MyTree[a] { case Leaf(a), case Node(MyTree[a], MyTree[a]) }
-        |@TailRec
+        |@Tailrec
         |def f(t: MyTree[Int32]): Int32 = match t {
         |    case MyTree.Leaf(v)    => v
         |    case MyTree.Node(l, r) => f(l) + f(r)

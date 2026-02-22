@@ -52,9 +52,9 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   *     defs annotated with `@Terminates`. Instance defs recognize self-recursion via both
   *     `ApplyDef` and `ApplySig`.
   *
-  * **Tail-call verification** (`@TailRec` functions):
-  *   - Every self-recursive call in a `@TailRec` function must be in tail position.
-  *   - `@TailRec` is independent of `@Terminates`: a function may have either or both annotations.
+  * **Tail-call verification** (`@Tailrec` functions):
+  *   - Every self-recursive call in a `@Tailrec` function must be in tail position.
+  *   - `@Tailrec` is independent of `@Terminates`: a function may have either or both annotations.
   *
   * Known unsoundness (may accept non-terminating programs):
   *   - **Trait sig calls (`ApplySig`) are unchecked**: Calls to trait signatures are not subject

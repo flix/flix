@@ -107,7 +107,7 @@ case class Annotations(annotations: List[Annotation]) {
   def isTerminates: Boolean = annotations exists (_.isInstanceOf[Annotation.Terminates])
 
   /**
-    * Returns `true` if `this` sequence contains the `@TailRec` annotation.
+    * Returns `true` if `this` sequence contains the `@Tailrec` annotation.
     */
   def isTailRecursive: Boolean = annotations exists (_.isInstanceOf[Annotation.TailRecursive])
 

@@ -706,7 +706,7 @@ object Weeder2 {
         case "@LazyWhenPure" => LazyWhenPure(loc)
         case "@Skip" => Skip(loc)
         case "@Test" => Test(loc)
-        case "@TailRec" => TailRecursive(loc)
+        case "@Tailrec" => TailRecursive(loc)
         case "@Terminates" => Terminates(loc)
         case other =>
           val name = other.stripPrefix("@")

@@ -2,7 +2,7 @@
 /// to make a function tail recursive.
 
 /// Returns the first and second elements of each pair in separate lists.
-@Terminates @TailRec
+@Terminates @Tailrec
 pub def unzip(l: List[(a, b)]): (List[a], List[b]) =
     def loop(ll, acc1, acc2) = match ll {
         case Nil             => (acc1, acc2)

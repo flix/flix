@@ -2,7 +2,7 @@
 /// call is the last operation in the function.
 
 /// Returns true if `l1` is a prefix of `l2`.
-@Terminates @TailRec
+@Terminates @Tailrec
 pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
     case (Nil, _)           => true
     case (_, Nil)           => false
