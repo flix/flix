@@ -68,9 +68,9 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecHints(uri)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
     } else {
-      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecHints(uri)
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
     }
   }
 
@@ -162,10 +162,15 @@ object InlayHintProvider {
 
   /**
     * Returns a list of inlay hints for structurally decreasing parameters.
+    *
+    * For example, a parameter marked as structurally decreasing:
+    * {{{
+    *   def length(↓ l: List[a]): Int32
+    * }}}
     */
   private def getDecreasingParamHints(uri: String)(implicit root: Root): List[InlayHint] = {
     var hints: List[InlayHint] = List.empty
-    object decreasingConsumer extends Consumer {
+    object c extends Consumer {
       override def consumeFormalParam(fparam: FormalParam): Unit = {
         if (fparam.decreasing == Decreasing.StrictlyDecreasing) {
           hints = InlayHint(
@@ -180,21 +185,30 @@ object InlayHintProvider {
         }
       }
     }
-    Visitor.visitRoot(root, decreasingConsumer, FileAcceptor(uri))
+    Visitor.visitRoot(root, c, FileAcceptor(uri))
     hints
   }
 
   /**
     * Returns a list of inlay hints for tail-recursive self-calls in `@Tailrec` functions
     * and self-recursive local defs.
+    *
+    * For example, a tail-recursive self-call:
+    * {{{
+    *   @Tailrec
+    *   def length(l: List[a]): Int32 = match l {
+    *       case Nil     => 0
+    *       case _ :: xs => ↺ length(xs)
+    *   }
+    * }}}
     */
-  private def getTailRecHints(uri: String)(implicit root: Root): List[InlayHint] = {
+  private def getTailRecursionHints(uri: String)(implicit root: Root): List[InlayHint] = {
     var hints: List[InlayHint] = List.empty
     var currentDefSym: Option[Symbol.DefnSym] = None
     // Map from local def binder sym → body source location
     val localDefInfo: mutable.Map[Symbol.VarSym, (SourceLocation, List[FormalParam])] = mutable.Map.empty
 
-    object tailRecConsumer extends Consumer {
+    object c extends Consumer {
       override def consumeDef(defn: Def): Unit = {
         if (defn.spec.ann.isTailRecursive)
           currentDefSym = Some(defn.sym)
@@ -205,32 +219,32 @@ object InlayHintProvider {
         expr match {
           // Track local def body locations
           case Expr.LocalDef(_, bnd, fparams, exp1, _, _, _, _) =>
-            localDefInfo(bnd.sym) = (exp1.loc, fparams)
+            localDefInfo.put(bnd.sym, (exp1.loc, fparams))
 
-          // Existing: @Tailrec top-level def self-calls
+          // Tail-recursive self-call in a top-level @Tailrec def
           case Expr.ApplyDef(symUse, exps, _, _, _, _, pos, loc) =>
-            currentDefSym.foreach { sym =>
-              if (symUse.sym == sym && pos == ExpPosition.Tail) {
+            currentDefSym match {
+              case Some(sym) if symUse.sym == sym && pos == ExpPosition.Tail =>
                 hints = mkTailRecHint(loc) :: hints
                 val fparams = root.defs(symUse.sym).spec.fparams
                 hints = mkDecreasingArgHints(exps, fparams) ::: hints
-              }
+              case _ => () // Not inside a @Tailrec def, or not a tail-position self-call
             }
 
-          // New: local def self-recursive tail calls
+          // Tail-recursive self-call in a local def (e.g. a helper defined inside another function)
           case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ExpPosition.Tail =>
-            localDefInfo.get(symUse.sym).foreach { case (bodyLoc, fparams) =>
-              if (bodyLoc.contains(loc)) {
+            localDefInfo.get(symUse.sym) match {
+              case Some((bodyLoc, fparams)) if bodyLoc.contains(loc) =>
                 hints = mkTailRecHint(loc) :: hints
                 hints = mkDecreasingArgHints(exps, fparams) ::: hints
-              }
+              case _ => () // Not a self-recursive call within its own body
             }
 
           case _ => ()
         }
       }
     }
-    Visitor.visitRoot(root, tailRecConsumer, FileAcceptor(uri))
+    Visitor.visitRoot(root, c, FileAcceptor(uri))
     hints
   }
 
