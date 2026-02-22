@@ -1,5 +1,11 @@
-/// A function is tail recursive if the recursive
-/// call is the last operation in the function.
+/// We can use the `@Terminates` annotation to have the compiler
+/// enforce that `isPrefixOf` is guaranteed to terminate.
+/// Here `isPrefixOf` terminates because `xs` and `ys` shrink
+/// on each recursive call.
+///
+/// We can use the `@Tailrec` annotation to have the compiler
+/// enforce that `isPrefixOf` is tail recursive.
+/// Here the recursive call is the last operation.
 
 /// Returns true if `l1` is a prefix of `l2`.
 @Terminates @Tailrec

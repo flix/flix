@@ -1,8 +1,7 @@
-/// A common tail-recursive pattern is to build
-/// a list in reverse order and then reverse it.
+/// We can use the `@Terminates` annotation to have the compiler
+/// enforce that `map` is guaranteed to terminate.
 
-/// Returns the result of applying `f` to every element in `l`.
-@Terminates @Tailrec
+@Terminates
 pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
     def loop(ll, acc) = match ll {
         case Nil     => acc

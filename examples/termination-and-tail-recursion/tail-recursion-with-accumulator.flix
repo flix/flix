@@ -1,8 +1,8 @@
-/// We can use an inner loop with accumulators
-/// to make a function tail recursive.
+/// We can use the `@Terminates` annotation to have the compiler
+/// enforce that `unzip` is guaranteed to terminate.
 
 /// Returns the first and second elements of each pair in separate lists.
-@Terminates @Tailrec
+@Terminates
 pub def unzip(l: List[(a, b)]): (List[a], List[b]) =
     def loop(ll, acc1, acc2) = match ll {
         case Nil             => (acc1, acc2)
