@@ -8,7 +8,7 @@
 
 @Terminates
 pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
-    @Terminates @Tailrec
+    @Tailrec
     def loop(ll, acc) = match ll {
         case Nil     => acc
         case x :: xs => loop(xs, f(x) :: acc)

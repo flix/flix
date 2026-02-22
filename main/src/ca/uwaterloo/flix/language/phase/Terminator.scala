@@ -54,6 +54,9 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   *
   * **Tail-call verification** (`@Tailrec` functions):
   *   - Every self-recursive call in a `@Tailrec` function must be in tail position.
+  *   - **Non-recursive rejection**: A `@Tailrec` function (or local def) that contains no
+  *     self-recursive calls is rejected. The annotation is only meaningful on functions that
+  *     actually call themselves.
   *   - `@Tailrec` is independent of `@Terminates`: a function may have either or both annotations.
   *
   * Known unsoundness (may accept non-terminating programs):
