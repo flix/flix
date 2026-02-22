@@ -33,7 +33,8 @@ object AnnotationCompleter {
       Completion.AnnotationCompletion("LazyWhenPure",     range, Priority.Medium(0)),
       Completion.AnnotationCompletion("Parallel",         range, Priority.Medium(0)),
       Completion.AnnotationCompletion("ParallelWhenPure", range, Priority.Medium(0)),
-      Completion.AnnotationCompletion("Terminates",        range, Priority.Medium(0)),
+      Completion.AnnotationCompletion("Tailrec",          range, Priority.Medium(0)),
+      Completion.AnnotationCompletion("Terminates",       range, Priority.Medium(0)),
       Completion.AnnotationCompletion("Test",             range, Priority.Medium(0))
     ).filter {
       case c => c.name.startsWith(prefix)
