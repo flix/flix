@@ -73,6 +73,7 @@ object flix extends ScalaModule {
 
     def forkArgs = Seq("-Xmx3g")
     def forkWorkingDir = root
+    def testParallelism = false
   }
 
   // ── Custom Tasks ────────────────────────────────────────
