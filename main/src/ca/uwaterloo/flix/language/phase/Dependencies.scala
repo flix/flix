@@ -410,6 +410,11 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.InvokeSuper(_, exps, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.InvokeMethod(_, exp, exps, tpe, eff, _) =>
       visitExp(exp)
       exps.foreach(visitExp)

@@ -331,6 +331,10 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
 
+    case Expr.InvokeSuper(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.InvokeSuper(constructor, es, tpe, eff, loc)
+
     case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)

@@ -187,6 +187,7 @@ object Eraser {
         case AtomicOp.Unbox => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Box => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeConstructor(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeSuper(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeMethod(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeStaticMethod(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.GetField(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)

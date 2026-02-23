@@ -403,6 +403,7 @@ object ConstraintGen {
         // then we don't require it to be return Unit
         val isJvm = exp1 match {
           case _: Expr.InvokeConstructor => true
+          case _: Expr.InvokeSuper => true
           case _: Expr.InvokeMethod => true
           case _: Expr.InvokeStaticMethod => true
           case _ => false
@@ -892,6 +893,19 @@ object ConstraintGen {
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
+        val clazzTpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        val resTpe = clazzTpe
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.InvokeSuper(clazz, exps, jvar, evar, loc) =>
+        // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
+        // --------------------------------------------------------
+        // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
         val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip

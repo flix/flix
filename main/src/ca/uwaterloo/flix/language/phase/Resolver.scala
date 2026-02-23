@@ -1200,6 +1200,11 @@ object Resolver {
           ResolvedAst.Expr.Error(error)
       }
 
+    case NamedAst.Expr.InvokeSuper(exps, loc) =>
+      // The class is not known here; it will be injected by the enclosing NewObject case.
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.InvokeSuper(classOf[Object], es, loc)
+
     case NamedAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = resolveExp(exp, scp0)
       val es = exps.map(resolveExp(_, scp0))
@@ -1211,15 +1216,18 @@ object Resolver {
 
     case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
-      val cs = constructors.map(visitJvmConstructor(_, scp0))
-      val ms = methods.map(visitJvmMethod(_, scp0))
       //
       // Check that the type is a JVM type (after type alias erasure).
+      // Extract the class first so we can inject it into super calls in constructor bodies.
       //
       UnkindedType.eraseAliases(t) match {
         case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
+          val cs = constructors.map(visitJvmConstructor(_, scp0, Some(clazz)))
+          val ms = methods.map(visitJvmMethod(_, scp0))
           ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
         case _ =>
+          val cs = constructors.map(visitJvmConstructor(_, scp0, None))
+          val ms = methods.map(visitJvmMethod(_, scp0))
           val error = ResolutionError.IllegalNonJavaType(t, t.loc)
           sctx.errors.add(error)
           ResolvedAst.Expr.Error(error)
@@ -1620,15 +1628,30 @@ object Resolver {
 
   /**
     * Performs name resolution on the given JvmConstructor `constructor` in the namespace `ns0`.
+    * `superClass` is the Java class being extended in the enclosing `new` expression, used to resolve `super(...)` calls.
     */
-  private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
+  private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope, superClass: Option[Class[?]])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
     case NamedAst.JvmConstructor(fparams0, exp, tpe, eff, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       val scp = scp0 ++ mkFormalParamScp(fparams)
-      val e = resolveExp(exp, scp)
+      val e0 = resolveExp(exp, scp)
+      val e = superClass.map(clazz => injectSuperClass(e0, clazz)).getOrElse(e0)
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
       ResolvedAst.JvmConstructor(fparams, e, t, p, loc)
+  }
+
+  /**
+    * Injects the given `clazz` into all `InvokeSuper` nodes in the given expression.
+    */
+  private def injectSuperClass(exp: ResolvedAst.Expr, clazz: Class[?]): ResolvedAst.Expr = exp match {
+    case ResolvedAst.Expr.InvokeSuper(_, exps, loc) =>
+      ResolvedAst.Expr.InvokeSuper(clazz, exps, loc)
+    case ResolvedAst.Expr.Stm(exp1, exp2, loc) =>
+      ResolvedAst.Expr.Stm(injectSuperClass(exp1, clazz), injectSuperClass(exp2, clazz), loc)
+    case ResolvedAst.Expr.Let(sym, exp1, exp2, loc) =>
+      ResolvedAst.Expr.Let(sym, injectSuperClass(exp1, clazz), injectSuperClass(exp2, clazz), loc)
+    case other => other
   }
 
   /**

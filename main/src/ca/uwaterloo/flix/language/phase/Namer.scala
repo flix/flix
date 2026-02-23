@@ -946,6 +946,10 @@ object Namer {
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeConstructor(className, es, loc)
 
+    case DesugaredAst.Expr.InvokeSuper(exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.InvokeSuper(es, loc)
+
     case DesugaredAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))

@@ -916,6 +916,7 @@ object Weeder2 {
         case TreeKind.Expr.Index => visitIndexExpr(tree)
         case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
         case TreeKind.Expr.InvokeConstructor => visitInvokeConstructorExpr(tree)
+        case TreeKind.Expr.InvokeSuper => visitInvokeSuperExpr(tree)
         case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
@@ -1987,6 +1988,21 @@ object Weeder2 {
               sctx.errors.add(error)
               Expr.Error(error)
           }
+      }
+    }
+
+    private def visitInvokeSuperExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeSuper)
+      val expsValidation = tryPick(TreeKind.ArgumentList, tree) match {
+        case None =>
+          val error = WeederError.MissingArgumentList(tree.loc)
+          sctx.errors.add(error)
+          Validation.Success(List.empty)
+        case Some(argumentList) =>
+          visitMethodArguments(argumentList)
+      }
+      mapN(expsValidation) {
+        exps => Expr.InvokeSuper(exps, tree.loc)
       }
     }
 

@@ -231,6 +231,9 @@ object TreeShaker1 {
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       visitExps(exps)
 
+    case Expr.InvokeSuper(_, exps, _, _, _) =>
+      visitExps(exps)
+
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 

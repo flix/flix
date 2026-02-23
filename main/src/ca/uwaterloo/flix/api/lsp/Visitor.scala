@@ -522,6 +522,9 @@ object Visitor {
       case Expr.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
+      case Expr.InvokeSuper(_, exps, _, _, _) =>
+        exps.foreach(visitExpr)
+
       case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
         visitExpr(exp)
         exps.foreach(visitExpr)

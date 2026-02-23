@@ -288,6 +288,10 @@ object Safety {
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
+    case Expr.InvokeSuper(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
     case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
       checkPermissions(loc.security, loc)
       visitExp(exp)

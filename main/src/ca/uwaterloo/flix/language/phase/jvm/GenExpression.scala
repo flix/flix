@@ -827,6 +827,16 @@ object GenExpression {
         // Call the constructor
         mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
 
+      case AtomicOp.InvokeSuper(constructor) =>
+        BytecodeInstructions.addLoc(loc)
+        val descriptor = asm.Type.getConstructorDescriptor(constructor)
+        val superClassName = asm.Type.getInternalName(constructor.getDeclaringClass)
+        for ((arg, argType) <- exps.zip(constructor.getParameterTypes)) {
+          compileExpr(arg)
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
+        mv.visitMethodInsn(INVOKESPECIAL, superClassName, JvmName.ConstructorMethod, descriptor, false)
+
       case AtomicOp.InvokeMethod(method) =>
         val exp :: args = exps
 

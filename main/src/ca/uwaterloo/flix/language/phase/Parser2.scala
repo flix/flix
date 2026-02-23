@@ -1893,6 +1893,7 @@ object Parser2 {
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
+        case TokenKind.KeywordSuper => invokeSuperExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
         case TokenKind.KeywordSelect => selectExpr()
         case TokenKind.KeywordSpawn => spawnExpr()
@@ -2830,6 +2831,15 @@ object Parser2 {
       expect(TokenKind.KeywordThrow)
       expression()
       close(mark, TreeKind.Expr.Throw)
+    }
+
+    private def invokeSuperExpr()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordSuper))
+      val mark = open()
+      expect(TokenKind.KeywordSuper)
+      arguments()
+      close(mark, TreeKind.Expr.InvokeSuper)
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {

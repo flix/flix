@@ -439,6 +439,10 @@ object TypeVerifier {
           checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
           checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
 
+        case AtomicOp.InvokeSuper(constructor) =>
+          checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
+          checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
+
         case AtomicOp.InvokeMethod(method) =>
           val t :: pts = ts
           checkJavaParameters(pts, method.getParameterTypes.toList, loc)

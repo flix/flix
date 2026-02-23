@@ -486,6 +486,11 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
 
+    case TypedAst.Expr.InvokeSuper(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuper(constructor), es, t, eff, loc)
+
     case TypedAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val es = exps.map(lowerExp)
