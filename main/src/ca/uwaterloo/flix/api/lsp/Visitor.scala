@@ -544,7 +544,8 @@ object Visitor {
       case Expr.PutStaticField(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.NewObject(_, _, _, _, _, methods, _) =>
+      case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+        for (cns <- constructors) visitExpr(cns.exp)
         methods.foreach(visitJvmMethod)
 
       case Expr.NewChannel(exp, _, _, _) =>
