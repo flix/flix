@@ -72,6 +72,7 @@ object flix extends ScalaModule {
     )
 
     def forkArgs = Seq("-Xmx3g")
+    def forkWorkingDir = root
   }
 
   // ── Custom Tasks ────────────────────────────────────────
@@ -82,7 +83,7 @@ object flix extends ScalaModule {
       "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
       "org.scalatest.tools.Runner",
       "-s", "flix.fuzzers.FuzzerSuite", "-o"
-    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit)
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root)
   }
 
   /** Run: ./mill flix.testIDECompletion */
@@ -91,7 +92,7 @@ object flix extends ScalaModule {
       "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
       "org.scalatest.tools.Runner",
       "-s", "ca.uwaterloo.flix.api.lsp.TestCompletionProvider", "-o"
-    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit)
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root)
   }
 
   /** Run: ./mill flix.testPackageManager */
@@ -100,7 +101,7 @@ object flix extends ScalaModule {
       "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
       "org.scalatest.tools.Runner",
       "-s", "ca.uwaterloo.flix.tools.pkg.PackageManagerSuite", "-o"
-    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit)
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root)
   }
 
   /** Run: ./mill flix.vscode --targetDir /path/to/vscode/project */
