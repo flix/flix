@@ -108,7 +108,6 @@ pub mod Logger {
                 Console.println(RichString.toString(output));
                 k()
             }
-        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
@@ -116,4 +115,28 @@ pub mod Logger {
     /// In other words, re-interprets the `Logger` effect using the `Console` effect.
     ///
     pub def runWithConsole(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithConsole(f)()
+
+    ///
+    /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
+    /// Otherwise, lets `Logger` effect propagate.
+    ///
+    pub def handleWithAbort(g: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ ef1 + ef2 + Abort + Logger = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) =
+                if (g(s, m)) {
+                    Abort.abort(m)
+                } else {
+                    Logger.log(s, m); k()
+                }
+            }
+
+    ///
+    /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
+    /// Otherwise, lets `Logger` effect propagate.
+    ///
+    pub def runWithAbort(g: (Severity, RichString) -> Bool \ ef1, f: Unit -> a \ ef2): a \ ef1 + ef2 + Abort + Logger = 
+        handleWithAbort(g, f)() 
+
 }
