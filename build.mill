@@ -68,7 +68,6 @@ object flix extends ScalaModule {
     def mvnDeps = Seq(
       mvn"org.scalatest::scalatest:3.2.19",
       mvn"org.scala-lang.modules::scala-xml:2.1.0",
-      mvn"org.scalatestplus::junit-5-10:3.2.19.0"
     )
 
     def forkArgs = Seq("-Xmx3g")
