@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.MethodVisitor
 
 /** Generates bytecode for anonymous classes (created through NewObject). */
@@ -58,16 +59,7 @@ object GenAnonymousClasses {
           // Super-only: no closure field needed, parameterized <init>
           val argTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
           cm.mkConstructor(ClassMaker.ConstructorMethod(className, argTypes), IsPublic, constructorInsWithSuperCall(superClass, constructor)(_))
-        case _ =>
-          // Closure-based: existing behavior
-          val cnsFields = obj.constructors.zipWithIndex.map { case (c, i) =>
-            val abstractClass = erasedArrowType(c.fparams.map(_.tpe), c.tpe)
-            val cnsField = ClassMaker.InstanceField(className, s"cns$i", abstractClass.toTpe)
-            cm.mkField(cnsField, IsPublic, NotFinal, NotVolatile)
-            (c, cnsField, abstractClass)
-          }
-          val (_, cnsField, abstractClass) = cnsFields.head
-          cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorInsWithClosure(superClass, c, cnsField, abstractClass)(_, root))
+        case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", c.loc)
       }
     } else {
       cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorIns(superClass)(_))
@@ -120,34 +112,6 @@ object GenAnonymousClasses {
     else if (clazz == java.lang.Double.TYPE)    BackendType.Float64
     else if (clazz == java.lang.Character.TYPE) BackendType.Char
     else BackendType.Reference(BackendObjType.Native(JvmName.ofClass(clazz)))
-  }
-
-  /** Creates constructor bytecode that invokes the user-defined constructor closure, which will call super(...). */
-  private def constructorInsWithClosure(superClass: JvmName, c: JvmConstructor, cnsField: ClassMaker.InstanceField, abstractClass: BackendObjType.AbstractArrow)(implicit mv: MethodVisitor, root: Root): Unit = {
-    val functionAbstractClass = abstractClass.superClass
-
-    // Load `this` and get the closure field
-    thisLoad()
-    GETFIELD(cnsField)
-    INVOKEVIRTUAL(abstractClass.GetUniqueThreadClosureMethod)
-
-    // Load `this` as first arg into arg0 of the closure
-    withNames(0, c.fparams.map(_.tpe).map(BackendType.toBackendType)) {
-      case (_, args) =>
-        for ((arg, i) <- args.zipWithIndex) {
-          DUP()
-          arg.load()
-          PUTFIELD(functionAbstractClass.ArgField(i))
-        }
-    }
-
-    // Invoke the closure (which should call super(...) internally)
-    val returnType = BackendType.toBackendType(c.tpe)
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(returnType, s"in anonymous class constructor", c.loc)
-
-    // Pop the result (constructor returns void)
-    POP()
-    RETURN()
   }
 
   /** Returns the erased abstract arrow class for the given parameter types and return type. */

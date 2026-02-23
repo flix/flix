@@ -597,6 +597,29 @@ object SafetyError {
     }
   }
 
+  /**
+    * An error raised to indicate that a constructor body is not a `super(...)` call.
+    *
+    * @param clazz the class being extended.
+    * @param loc   the source location of the constructor.
+    */
+  case class NewObjectConstructorMissingSuperCall(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5815
+
+    def summary: String = "Constructor body must be a 'super(...)' call."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Constructor body must be a '${red("super(...)")}' call.
+         |
+         |${highlight(loc, "invalid constructor body", fmt)}
+         |
+         |${underline("Explanation:")} The body of a constructor in a 'new' expression must
+         |be exactly a 'super(...)' invocation.
+         |""".stripMargin
+    }
+  }
+
   /** Returns the string representation of `tpe`. */
   private def formatJavaType(tpe: java.lang.Class[?]): String = {
     if (tpe.isPrimitive || tpe.isArray)

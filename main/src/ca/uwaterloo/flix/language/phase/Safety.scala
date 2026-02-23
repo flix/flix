@@ -810,6 +810,15 @@ object Safety {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
       }
 
+      // Each constructor body must be exactly a `super(...)` call.
+      _constructors.foreach {
+        case JvmConstructor(_, exp, _, _, constructorLoc) =>
+          exp match {
+            case _: Expr.InvokeSuper => () // OK
+            case _ => sctx.errors.add(NewObjectConstructorMissingSuperCall(clazz, constructorLoc))
+          }
+      }
+
       // `clazz` must be public.
       if (!isPublicClass(clazz)) {
         sctx.errors.add(NewObjectNonPublicClass(clazz, loc))

@@ -53,18 +53,18 @@ mod ClassHierarchyAnalysis {
         let rules = #{
             Subtype(x, x)       :- Class(x).
             Subtype(x, x)       :- Interface(x).
-            Subtype(sub, super) :- Class(sub), Interface(super), ClassImplements(sub, super).
-            Subtype(sub, super) :- Class(sub), Class(super), ClassExtends(sub, super).
-            Subtype(sub, super) :- Interface(sub), Interface(super), InterfaceExtends(sub, super).
-            Subtype(sub, super) :- Subtype(sub, a), Subtype(a, super).
+            Subtype(sub, superType) :- Class(sub), Interface(superType), ClassImplements(sub, superTypeType).
+            Subtype(sub, superTypeType) :- Class(sub), Class(superTypeType), ClassExtends(sub, superTypeType).
+            Subtype(sub, superTypeType) :- Interface(sub), Interface(superType), InterfaceExtends(sub, superType).
+            Subtype(sub, superType) :- Subtype(sub, a), Subtype(a, superType).
 
-            AvailableField(class, field) :- Field(super, field), Subtype(class, super).
+            AvailableField(class, field) :- Field(superType, field), Subtype(class, superType).
 
-            AvailableMethod(class, method) :- Class(class), ClassMethod(super, method), Subtype(class, super).
-            AvailableMethod(class, method) :- Class(class), AbstractMethod(super, method), Subtype(class, super).
+            AvailableMethod(class, method) :- Class(class), ClassMethod(superType, method), Subtype(class, superType).
+            AvailableMethod(class, method) :- Class(class), AbstractMethod(superType, method), Subtype(class, superType).
 
             InheritedMethod(class, method, class) :- Class(class), ClassMethod(class, method).
-            InheritedMethod(sub, method, source)  :- Class(sub), Subtype(sub, super), InheritedMethod(super, method, source), not ClassMethod(sub, method).
+            InheritedMethod(sub, method, source)  :- Class(sub), Subtype(sub, superType), InheritedMethod(superType, method, source), not ClassMethod(sub, method).
         };
         #(Subtype, AvailableField, AvailableMethod, InheritedMethod) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> fs <+> ms <+> ams
 
@@ -107,7 +107,7 @@ mod ClassHierarchyAnalysis {
     pub def illegalFinalClassExtension(p: Program): Vector[String] =
         let fcs  = inject p#finalClasses into Final/1;
         let rule = #{
-            ExtendsFinalClass(sub, super)  :- Final(super), Subtype(sub, super), if (sub != super).
+            ExtendsFinalClass(sub, superType)  :- Final(superType), Subtype(sub, superType), if (sub != superType).
         };
         query fcs, rule, classHierarchyAnalysis(p) select tpe from ExtendsFinalClass(tpe, _)
 
@@ -127,17 +127,17 @@ mod ClassHierarchyAnalysis {
     pub def illegalMultipleInheritance(p: Program): Vector[(String, String, String)] =
         let cs   = inject p#classes into Class/1;
         let rule = #{
-            IllegalMultipleInheritance(class, super1, super2) :-
+            IllegalMultipleInheritance(class, superType1, superType2) :-
                 Class(class),
-                Class(super1),
-                Class(super2),
-                Subtype(class, super1),
-                Subtype(class, super2),
-                if  (class  != super1
-                and class  != super2
-                and super1 != super2).
+                Class(superType1),
+                Class(superType2),
+                Subtype(class, superType1),
+                Subtype(class, superType2),
+                if  (class  != superType1
+                and class  != superType2
+                and superType1 != superType2).
         };
-        query cs, rule, classHierarchyAnalysis(p) select (class, super1, super2) from IllegalMultipleInheritance(class, super1, super2)
+        query cs, rule, classHierarchyAnalysis(p) select (class, superType1, superType2) from IllegalMultipleInheritance(class, superType1, superType2)
 
 
     /////////////////////////////////////////////////

@@ -1480,14 +1480,7 @@ object GenExpression {
               if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
             }
             mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, descriptor, false)
-          case _ =>
-            // Closure-based: existing behavior
-            constructors.map(_.exp).zipWithIndex.foreach { case (e, i) =>
-              mv.visitInsn(DUP)
-              compileExpr(e)
-              mv.visitFieldInsn(PUTFIELD, className, s"cns$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
-            }
-            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+          case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
         }
       } else {
         mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)

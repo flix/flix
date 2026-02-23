@@ -142,11 +142,7 @@ object ClosureConv {
             case Expr.ApplyAtomic(AtomicOp.InvokeSuper(_), _, _, _, _) =>
               val e = visitExp(exp)
               JvmConstructor(fparams, e, retTpe, constructorPurity, constructorLoc)
-            // Regular constructor: wrap in closure as before
-            case _ =>
-              val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
-              val clo = mkLambdaClosure(fparams, exp, cloType, constructorLoc)
-              JvmConstructor(fparams, clo, retTpe, constructorPurity, constructorLoc)
+            case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructorLoc)
           }
       }
       val methods = methods0 map {
