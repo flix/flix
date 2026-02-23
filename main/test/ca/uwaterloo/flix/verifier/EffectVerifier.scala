@@ -317,7 +317,7 @@ object EffectVerifier {
       exps.foreach(visitExp)
       // TODO Java stuff
       ()
-    case Expr.InvokeSuper(_, exps, _, _, _) =>
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
       exps.foreach(visitExp)
       ()
     case Expr.GetField(field, exp, tpe, eff, loc) =>
