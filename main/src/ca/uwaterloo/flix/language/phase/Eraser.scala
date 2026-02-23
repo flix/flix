@@ -116,6 +116,11 @@ object Eraser {
       ErasedAst.HandlerRule(op, fparams.map(visitParam), visitExp(exp))
   }
 
+  private def visitJvmConstructor(constructor: ReducedAst.JvmConstructor)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmConstructor = constructor match {
+    case ReducedAst.JvmConstructor(fparams, clo, retTpe, purity, loc) =>
+      ErasedAst.JvmConstructor(fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
+  }
+
   private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmMethod = method match {
     case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
       // return type is not erased to maintain class signatures
@@ -225,8 +230,8 @@ object Eraser {
     case ReducedAst.Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val tw = ErasedAst.Expr.RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-      ErasedAst.Expr.NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
+    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+      ErasedAst.Expr.NewObject(name, clazz, visitType(tpe), purity, constructors.map(visitJvmConstructor), methods.map(visitJvmMethod), loc)
   }
 
   /**

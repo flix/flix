@@ -198,7 +198,7 @@ object WeededAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
@@ -432,6 +432,8 @@ object WeededAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
   }
+
+  case class JvmConstructor(fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 

@@ -441,9 +441,10 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.NewObject(_, _, tpe, eff, methods, _) =>
+    case Expr.NewObject(_, _, tpe, eff, constructors, methods, _) =>
       visitType(tpe)
       visitType(eff)
+      constructors.foreach(visitJvmConstructor)
       methods.foreach(visitJvmMethod)
 
     case Expr.NewChannel(exp, tpe, eff, _) =>
@@ -699,6 +700,13 @@ object Dependencies {
     visitSymUse(handlerRule.op)
     visitExp(handlerRule.exp)
     handlerRule.fparams.foreach(visitFormalParam)
+  }
+
+  private def visitJvmConstructor(constructor: TypedAst.JvmConstructor)(implicit sctx: SharedContext): Unit = {
+    visitType(constructor.retTpe)
+    visitType(constructor.eff)
+    visitExp(constructor.exp)
+    constructor.fparams.foreach(visitFormalParam)
   }
 
   private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit sctx: SharedContext): Unit = {

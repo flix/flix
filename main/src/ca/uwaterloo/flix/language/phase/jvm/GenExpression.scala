@@ -1453,15 +1453,24 @@ object GenExpression {
         ARETURN()
       }
 
-    case Expr.NewObject(name, _, _, _, methods, _) =>
-      val exps = methods.map(_.exp)
+    case Expr.NewObject(name, _, _, _, constructors, methods, _) =>
+      val constructorExps = constructors.map(_.exp)
+      val methodExps = methods.map(_.exp)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
+
+      // For each constructor, compile the closure and store it in a field
+      constructorExps.zipWithIndex.foreach { case (e, i) =>
+        mv.visitInsn(DUP)
+        compileExpr(e)
+        mv.visitFieldInsn(PUTFIELD, className, s"cns$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
+      }
+
       mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
 
       // For each method, compile the closure which implements the body of that method and store it in a field
-      exps.zipWithIndex.foreach { case (e, i) =>
+      methodExps.zipWithIndex.foreach { case (e, i) =>
         mv.visitInsn(DUP)
         compileExpr(e)
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)

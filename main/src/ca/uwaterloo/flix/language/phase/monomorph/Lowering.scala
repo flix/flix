@@ -517,10 +517,11 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
-    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      val cs = constructors.map(lowerJvmConstructor)
       val ms = methods.map(lowerJvmMethod)
       val t = lowerType(tpe)
-      MonoAst.Expr.NewObject(name, clazz, t, eff, ms, loc)
+      MonoAst.Expr.NewObject(name, clazz, t, eff, cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -608,6 +609,17 @@ object Lowering {
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
+  }
+
+  /**
+    * Lowers the given JvmConstructor `constructor`.
+    */
+  private def lowerJvmConstructor(constructor: TypedAst.JvmConstructor)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.JvmConstructor = constructor match {
+    case TypedAst.JvmConstructor(fparams, exp, retTpe, eff, loc) =>
+      val fs = fparams.map(lowerFormalParam)
+      val e = lowerExp(exp)
+      val t = lowerType(retTpe)
+      MonoAst.JvmConstructor(fs, e, t, eff, loc)
   }
 
   /**
@@ -2087,7 +2099,7 @@ object Lowering {
       }
       MonoAst.Expr.RunWith(e, effSymUse, rs, tpe, eff, loc)
 
-    case MonoAst.Expr.NewObject(_, _, _, _, _, _) => exp0
+    case MonoAst.Expr.NewObject(_, _, _, _, _, _, _) => exp0
 
   }
 

@@ -513,11 +513,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
-    case KindedAst.Expr.NewObject(name, clazz, methods, loc) =>
+    case KindedAst.Expr.NewObject(name, clazz, constructors, methods, loc) =>
       val tpe = getFlixType(clazz)
       val eff = Type.IO
+      val cs = constructors map visitJvmConstructor
       val ms = methods map visitJvmMethod
-      TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
+      TypedAst.Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc)
 
     case KindedAst.Expr.NewChannel(exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -669,6 +670,18 @@ object TypeReconstruction {
     */
   private def visitPredicateParam(pparam: KindedAst.PredicateParam)(implicit subst: SubstitutionTree): TypedAst.PredicateParam =
     TypedAst.PredicateParam(pparam.pred, subst(pparam.tpe), pparam.loc)
+
+  /**
+    * Reconstructs types in the given JVM constructor.
+    */
+  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit subst: SubstitutionTree): TypedAst.JvmConstructor = {
+    constructor match {
+      case KindedAst.JvmConstructor(fparams0, exp0, tpe, eff, loc) =>
+        val fparams = fparams0.map(visitFormalParam(_, subst))
+        val exp = visitExp(exp0)
+        TypedAst.JvmConstructor(fparams, exp, tpe, eff, loc)
+    }
+  }
 
   /**
     * Reconstructs types in the given JVM method.

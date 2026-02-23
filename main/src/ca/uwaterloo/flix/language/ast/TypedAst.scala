@@ -241,7 +241,7 @@ object TypedAst {
 
     case class PutStaticField(field: Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -401,6 +401,8 @@ object TypedAst {
   case class FormalParam(bnd: Binder, tpe: Type, src: TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
+
+  case class JvmConstructor(fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 

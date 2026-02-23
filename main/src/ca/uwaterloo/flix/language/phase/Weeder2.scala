@@ -2013,9 +2013,10 @@ object Weeder2 {
 
     private def visitNewObjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.NewObject)
+      val constructors = pickAll(TreeKind.Expr.JvmConstructor, tree)
       val methods = pickAll(TreeKind.Expr.JvmMethod, tree)
-      mapN(Types.pickType(tree), traverse(methods)(visitJvmMethod)) {
-        (tpe, methods) => Expr.NewObject(tpe, methods, tree.loc)
+      mapN(Types.pickType(tree), traverse(constructors)(visitJvmConstructor), traverse(methods)(visitJvmMethod)) {
+        (tpe, constructors, methods) => Expr.NewObject(tpe, constructors, methods, tree.loc)
       }
     }
 
@@ -2049,6 +2050,18 @@ object Weeder2 {
         Types.tryPickEffect(tree),
       ) {
         (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitJvmConstructor(tree: Tree)(implicit sctx: SharedContext): Validation[JvmConstructor, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.JvmConstructor)
+      mapN(
+        pickExpr(tree),
+        Decls.pickFormalParameters(tree),
+        Types.pickType(tree),
+        Types.tryPickEffect(tree),
+      ) {
+        (expr, fparams, tpe, eff) => JvmConstructor(fparams, expr, tpe, eff, tree.loc)
       }
     }
 

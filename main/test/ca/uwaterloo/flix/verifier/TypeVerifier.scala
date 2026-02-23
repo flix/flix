@@ -556,7 +556,12 @@ object TypeVerifier {
 
       checkEq(tpe, exptype, loc)
 
-    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe, _, constructors, methods, loc) =>
+      for (c <- constructors) {
+        val exptype = visitExpr(c.exp)
+        val signature = SimpleType.mkArrow(c.fparams.map(_.tpe), c.tpe)
+        checkEq(signature, exptype, c.loc)
+      }
       for (m <- methods) {
         val exptype = visitExpr(m.exp)
         val signature = SimpleType.mkArrow(m.fparams.map(_.tpe), m.tpe)

@@ -738,10 +738,11 @@ object Desugar {
       val e = visitExp(exp)
       Expr.GetField(e, name, loc)
 
-    case WeededAst.Expr.NewObject(tpe, methods, loc) =>
+    case WeededAst.Expr.NewObject(tpe, constructors, methods, loc) =>
       val t = visitType(tpe)
+      val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      Expr.NewObject(t, ms, loc)
+      Expr.NewObject(t, cs, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
       DesugaredAst.Expr.Cst(Constant.Static, loc)
@@ -973,6 +974,18 @@ object Desugar {
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       DesugaredAst.JvmMethod(ident, fps, e, t, ef, loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.JvmConstructor]] `constructor0`.
+    */
+  private def visitJvmConstructor(constructor0: WeededAst.JvmConstructor)(implicit flix: Flix): DesugaredAst.JvmConstructor = constructor0 match {
+    case WeededAst.JvmConstructor(fparams, exp, tpe, eff, loc) =>
+      val fps = visitFormalParams(fparams)
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      val ef = eff.map(visitType)
+      DesugaredAst.JvmConstructor(fps, e, t, ef, loc)
   }
 
   /**

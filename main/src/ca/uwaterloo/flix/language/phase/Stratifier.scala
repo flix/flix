@@ -356,9 +356,10 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.PutStaticField(field, e, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      Expr.NewObject(name, clazz, tpe, eff, ms, loc)
+      Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc)
 
     case Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -476,6 +477,12 @@ object Stratifier {
     case HandlerRule(op, fparams, exp1, loc) =>
       val e1 = visitExp(exp1)
       HandlerRule(op, fparams, e1, loc)
+  }
+
+  private def visitJvmConstructor(constructor: JvmConstructor)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmConstructor = constructor match {
+    case JvmConstructor(fparams, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      JvmConstructor(fparams, e, tpe, eff, loc)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmMethod = method match {

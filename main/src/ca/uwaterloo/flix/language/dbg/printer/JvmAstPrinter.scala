@@ -62,7 +62,7 @@ object JvmAstPrinter {
       case JvmAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map(printJvmMethod))
+    case Expr.NewObject(name, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
   }
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
@@ -80,6 +80,12 @@ object JvmAstPrinter {
   /** Returns the [[DocAst.Expr]] representation of `sym`. */
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expr =
     DocAst.Expr.Var(sym)
+
+  /** Returns the [[DocAst.JvmConstructor]] representation of `constructor`. */
+  private def printJvmConstructor(constructor: JvmAst.JvmConstructor): DocAst.JvmConstructor = constructor match {
+    case JvmAst.JvmConstructor(fparams, exp, tpe, _, _) =>
+      DocAst.JvmConstructor(fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
+  }
 
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: JvmAst.JvmMethod): DocAst.JvmMethod = method match {

@@ -65,10 +65,16 @@ object LiftedAstPrinter {
       case LiftedAst.HandlerRule(symUse, fparams, body) =>
         (symUse.sym, fparams.map(printFormalParam), print(body))
     })
-    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map {
-      case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
-    })
+    case NewObject(name, clazz, tpe, _, constructors, methods, _) =>
+      val cs = constructors.map {
+        case LiftedAst.JvmConstructor(fparams, clo, retTpe, _, _) =>
+          DocAst.JvmConstructor(fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
+      }
+      val ms = methods.map {
+        case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
+          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
+      }
+      DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), cs, ms)
   }
 
   /**

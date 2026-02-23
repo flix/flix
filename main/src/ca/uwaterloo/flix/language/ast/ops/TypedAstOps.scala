@@ -97,7 +97,7 @@ object TypedAstOps {
     case Expr.PutField(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.GetStaticField(_, _, _, _) => Set.empty
     case Expr.PutStaticField(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.NewObject(_, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) => (constructors.flatMap(c => sigSymsOf(c.exp)) ++ methods.flatMap(method => sigSymsOf(method.exp))).toSet
     case Expr.NewChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expr.GetChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -366,8 +366,11 @@ object TypedAstOps {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      val cFvs = constructors.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, JvmConstructor(fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
+      }
+      methods.foldLeft(cFvs) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 

@@ -966,7 +966,8 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, methods, _) =>
+      case Expr.NewObject(_, clazz, constructors, methods, _) =>
+        constructors.foreach(visitJvmConstructor)
         methods.foreach(visitJvmMethod)
         val resTpe = Type.getFlixType(clazz)
         val resEff = Type.IO
@@ -1274,6 +1275,26 @@ object ConstraintGen {
 
           (actualTpe, actualEff)
       }
+  }
+
+  /**
+    * Generates constraints for the JVM constructor.
+    */
+  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = constructor match {
+    case KindedAst.JvmConstructor(fparams, exp, returnTpe, eff, _) =>
+
+      /**
+        * Constrains the given formal parameter to its declared type.
+        */
+      def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
+        case KindedAst.FormalParam(sym, tpe, _, loc) =>
+          c.unifyType(sym.tvar, tpe, loc)
+      }
+
+      fparams.foreach(visitFormalParam)
+      val (bodyTpe, bodyEff) = visitExp(exp)
+      c.expectType(expected = returnTpe, actual = bodyTpe, exp.loc)
+      c.expectType(expected = eff, actual = bodyEff, exp.loc)
   }
 
   /**

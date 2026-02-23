@@ -333,7 +333,8 @@ object EffectVerifier {
       visitExp(exp)
       // TODO Java stuff
       ()
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      constructors.foreach { c => visitExp(c.exp) }
       methods.foreach { m => visitExp(m.exp) }
       // TODO Java stuff
       ()

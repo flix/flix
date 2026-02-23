@@ -291,7 +291,9 @@ object PatMatch {
 
       case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
 
-      case Expr.NewObject(_, _, _, _, methods, _) => methods.foreach(m => visitExp(m.exp))
+      case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+        constructors.foreach(c => visitExp(c.exp))
+        methods.foreach(m => visitExp(m.exp))
 
       case Expr.NewChannel(exp, _, _, _) => visitExp(exp)
 

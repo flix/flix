@@ -107,7 +107,7 @@ object JvmAst {
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -115,7 +115,9 @@ object JvmAst {
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: SimpleType, loc: SourceLocation)
 
-  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, methods: List[JvmMethod], loc: SourceLocation)
+  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation)
+
+  case class JvmConstructor(fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 

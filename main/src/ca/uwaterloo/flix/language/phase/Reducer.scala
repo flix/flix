@@ -204,15 +204,20 @@ object Reducer {
         }
         JvmAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
-      case ErasedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      case ErasedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+        val cs = constructors.map {
+          case ErasedAst.JvmConstructor(fparams, clo, retTpe, cnsPurity, cnsLoc) =>
+            val c = visitExpr(clo)
+            JvmAst.JvmConstructor(fparams.map(visitFormalParam), c, retTpe, cnsPurity, cnsLoc)
+        }
         val specs = methods.map {
           case ErasedAst.JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
             JvmAst.JvmMethod(ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
         }
-        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, specs, loc))
+        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, cs, specs, loc))
 
-        JvmAst.Expr.NewObject(name, clazz, tpe, purity, specs, loc)
+        JvmAst.Expr.NewObject(name, clazz, tpe, purity, cs, specs, loc)
 
     }
   }

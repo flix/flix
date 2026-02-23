@@ -2864,7 +2864,13 @@ object Parser2 {
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
           checkForItem = _ => nth(nextNonComment(0))  == TokenKind.KeywordDef,
-          getItem = jvmMethod,
+          getItem = () => {
+            // If `def` is followed by `new`, parse as JvmConstructor; otherwise JvmMethod.
+            val defOffset = nextNonComment(0)
+            val afterDefOffset = nextNonComment(defOffset + 1)
+            if (nth(afterDefOffset) == TokenKind.KeywordNew) jvmConstructor()
+            else jvmMethod()
+          },
           breakWhen = _.isRecoverInExpr,
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR,
@@ -2900,6 +2906,20 @@ object Parser2 {
       expect(TokenKind.Equal)
       Expr.statement()
       close(mark, TreeKind.Expr.JvmMethod)
+    }
+
+    private def jvmConstructor()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val mark = open()
+      assert(at(TokenKind.KeywordDef))
+      expect(TokenKind.KeywordDef)
+      expect(TokenKind.KeywordNew)
+      Decl.parameters()
+      expect(TokenKind.Colon)
+      Type.typeAndEffect()
+      expect(TokenKind.Equal)
+      Expr.statement()
+      close(mark, TreeKind.Expr.JvmConstructor)
     }
 
     private def staticExpr()(implicit s: State): Mark.Closed = {

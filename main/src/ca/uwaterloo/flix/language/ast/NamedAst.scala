@@ -192,7 +192,7 @@ object NamedAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -419,6 +419,8 @@ object NamedAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
   }
+
+  case class JvmConstructor(fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 

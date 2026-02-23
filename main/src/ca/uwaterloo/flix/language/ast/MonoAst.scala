@@ -111,7 +111,7 @@ object MonoAst {
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -173,6 +173,8 @@ object MonoAst {
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation)
+
+  case class JvmConstructor(fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 

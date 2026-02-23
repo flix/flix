@@ -1209,15 +1209,16 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.GetField(e, name, loc)
 
-    case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
+    case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+      val cs = constructors.map(visitJvmConstructor(_, scp0))
       val ms = methods.map(visitJvmMethod(_, scp0))
       //
       // Check that the type is a JVM type (after type alias erasure).
       //
       UnkindedType.eraseAliases(t) match {
         case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
-          ResolvedAst.Expr.NewObject(name, clazz, ms, loc)
+          ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
         case _ =>
           val error = ResolutionError.IllegalNonJavaType(t, t.loc)
           sctx.errors.add(error)
@@ -1615,6 +1616,19 @@ object Resolver {
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
       ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
+  }
+
+  /**
+    * Performs name resolution on the given JvmConstructor `constructor` in the namespace `ns0`.
+    */
+  private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
+    case NamedAst.JvmConstructor(fparams0, exp, tpe, eff, loc) =>
+      val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
+      val scp = scp0 ++ mkFormalParamScp(fparams)
+      val e = resolveExp(exp, scp)
+      val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
+      val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
+      ResolvedAst.JvmConstructor(fparams, e, t, p, loc)
   }
 
   /**

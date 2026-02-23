@@ -254,10 +254,11 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case MonoAst.Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
       val t = visitType(tpe)
+      val constructors = constructors0 map visitJvmConstructor
       val methods = methods0 map visitJvmMethod
-      SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
+      SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), constructors, methods, loc)
 
   }
 
@@ -617,6 +618,14 @@ object Simplifier {
   private def visitFormalParam(p: MonoAst.FormalParam): SimplifiedAst.FormalParam = {
     val t = visitType(p.tpe)
     SimplifiedAst.FormalParam(p.sym, t, p.loc)
+  }
+
+  private def visitJvmConstructor(constructor: MonoAst.JvmConstructor)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmConstructor = constructor match {
+    case MonoAst.JvmConstructor(fparams0, exp0, retTpe, eff, loc) =>
+      val fparams = fparams0 map visitFormalParam
+      val exp = visitExp(exp0)
+      val rt = visitType(retTpe)
+      SimplifiedAst.JvmConstructor(fparams, exp, rt, simplifyEffect(eff), loc)
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {

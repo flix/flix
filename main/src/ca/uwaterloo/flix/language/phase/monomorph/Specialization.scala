@@ -850,9 +850,10 @@ object Specialization {
       val t = subst(tpe)
       Expr.PutStaticField(field, e, t, subst(eff), loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+      val constructors = constructors0.map(specializeJvmConstructor(_, env0, subst))
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+      Expr.NewObject(name, clazz, subst(tpe), subst(eff), constructors, methods, loc)
 
     case Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
@@ -1123,6 +1124,14 @@ object Specialization {
 
     case TypedAst.ExtTagPattern.Error(_, loc) =>
       throw InternalCompilerException("unexpected error ext pattern", loc)
+  }
+
+  /** Specializes `constructor` w.r.t. `subst`. */
+  private def specializeJvmConstructor(constructor: TypedAst.JvmConstructor, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.JvmConstructor = constructor match {
+    case TypedAst.JvmConstructor(fparams0, exp0, tpe, eff, loc) =>
+      val (fparams, env1) = specializeFormalParams(fparams0, subst)
+      val exp = specializeExp(exp0, env0 ++ env1, subst)
+      TypedAst.JvmConstructor(fparams, exp, subst(tpe), subst(eff), loc)
   }
 
   /** Specializes `method` w.r.t. `subst`. */

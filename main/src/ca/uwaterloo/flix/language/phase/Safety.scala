@@ -313,9 +313,10 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
+    case newObject@Expr.NewObject(_, _, _, _, constructors, methods, loc) =>
       checkPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
+      constructors.foreach(c => visitExp(c.exp))
       methods.foreach(method => visitExp(method.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>
@@ -797,10 +798,11 @@ object Safety {
     *   - `methods` must not let control effects escape.
     */
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, tpe0, _, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe0, _, _constructors, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
-      // `clazz` must be an interface or have a non-private constructor without arguments.
-      if (!clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz)) {
+      // `clazz` must be an interface or have a non-private constructor without arguments
+      // (unless user-defined constructors are provided).
+      if (!clazz.isInterface && _constructors.isEmpty && !hasNonPrivateZeroArgConstructor(clazz)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
       }
 

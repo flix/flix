@@ -208,7 +208,8 @@ object LambdaDrop {
       visitExp(exp1)
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      constructors.foreach(c => visitExp(c.exp))
       methods.foreach(m => visitExp(m.exp))
   }
 
@@ -354,13 +355,18 @@ object LambdaDrop {
       }
       Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff1, methods, loc1) =>
+    case Expr.NewObject(name, clazz, tpe, eff1, constructors, methods, loc1) =>
+      val cs = constructors.map {
+        case MonoAst.JvmConstructor(fparams, exp, retTpe, eff2, loc2) =>
+          val e = rewriteExp(exp)
+          MonoAst.JvmConstructor(fparams, e, retTpe, eff2, loc2)
+      }
       val ms = methods.map {
         case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff2, loc2) =>
           val e = rewriteExp(exp)
           MonoAst.JvmMethod(ident, fparams, e, retTpe, eff2, loc2)
       }
-      Expr.NewObject(name, clazz, tpe, eff1, ms, loc1)
+      Expr.NewObject(name, clazz, tpe, eff1, cs, ms, loc1)
 
   }
 

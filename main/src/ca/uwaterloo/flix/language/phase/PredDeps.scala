@@ -292,7 +292,7 @@ object PredDeps {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, _, _) => ()
+    case Expr.NewObject(_, _, _, _, _, _, _) => ()
 
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp)

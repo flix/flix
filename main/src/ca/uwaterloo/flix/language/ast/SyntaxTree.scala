@@ -262,6 +262,8 @@ object SyntaxTree {
 
       case object Intrinsic extends Expr
 
+      case object JvmConstructor extends Expr
+
       case object JvmMethod extends Expr
 
       case object Lambda extends Expr

@@ -50,10 +50,24 @@ object GenAnonymousClasses {
 
     val cm = ClassMaker.mkClass(className, IsFinal, superClass = superClass, interfaces = interfaces)
 
-    cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorIns(superClass)(_))
+    // Create fields for constructor closures.
+    val cnsFields = obj.constructors.zipWithIndex.map { case (c, i) =>
+      val abstractClass = erasedArrowType(c.fparams.map(_.tpe), c.tpe)
+      val cnsField = ClassMaker.InstanceField(className, s"cns$i", abstractClass.toTpe)
+      cm.mkField(cnsField, IsPublic, NotFinal, NotVolatile)
+      (c, cnsField, abstractClass)
+    }
+
+    // Generate constructor: if user-defined constructors exist, invoke the first one; otherwise default no-arg super().
+    if (obj.constructors.nonEmpty) {
+      val (c, cnsField, abstractClass) = cnsFields.head
+      cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorInsWithClosure(superClass, c, cnsField, abstractClass)(_, root))
+    } else {
+      cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorIns(superClass)(_))
+    }
 
     for ((m, i) <- obj.methods.zipWithIndex) {
-      val abstractClass = erasedArrowType(m)
+      val abstractClass = erasedArrowType(m.fparams.map(_.tpe), m.tpe)
       // Create the field that will store the closure implementing the body of the method.
       val cloField = ClassMaker.InstanceField(className, s"clo$i", abstractClass.toTpe)
       cm.mkField(cloField, IsPublic, NotFinal, NotVolatile)
@@ -73,11 +87,38 @@ object GenAnonymousClasses {
     RETURN()
   }
 
-  /** Returns the erased abstract arrow class of `method`. */
-  private def erasedArrowType(method: JvmMethod): BackendObjType.AbstractArrow = {
-    val args = method.fparams.map(_.tpe)
+  /** Creates constructor bytecode that invokes the user-defined constructor closure, which will call super(...). */
+  private def constructorInsWithClosure(superClass: JvmName, c: JvmConstructor, cnsField: ClassMaker.InstanceField, abstractClass: BackendObjType.AbstractArrow)(implicit mv: MethodVisitor, root: Root): Unit = {
+    val functionAbstractClass = abstractClass.superClass
+
+    // Load `this` and get the closure field
+    thisLoad()
+    GETFIELD(cnsField)
+    INVOKEVIRTUAL(abstractClass.GetUniqueThreadClosureMethod)
+
+    // Load `this` as first arg into arg0 of the closure
+    withNames(0, c.fparams.map(_.tpe).map(BackendType.toBackendType)) {
+      case (_, args) =>
+        for ((arg, i) <- args.zipWithIndex) {
+          DUP()
+          arg.load()
+          PUTFIELD(functionAbstractClass.ArgField(i))
+        }
+    }
+
+    // Invoke the closure (which should call super(...) internally)
+    val returnType = BackendType.toBackendType(c.tpe)
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(returnType, s"in anonymous class constructor", c.loc)
+
+    // Pop the result (constructor returns void)
+    POP()
+    RETURN()
+  }
+
+  /** Returns the erased abstract arrow class for the given parameter types and return type. */
+  private def erasedArrowType(paramTypes: List[SimpleType], retTpe: SimpleType): BackendObjType.AbstractArrow = {
     val boxedResult = BackendType.Object
-    BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), boxedResult)
+    BackendObjType.AbstractArrow(paramTypes.map(BackendType.toErasedBackendType), boxedResult)
   }
 
   /** Creates code to read the arguments, load it into the `cloField` closure, call that function, and returns. */
