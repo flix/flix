@@ -351,9 +351,9 @@ object SemanticTokensProvider {
       )
   }
 
-  private def visitAnnotations(annotations: Annotations) = annotations.annotations.iterator.map(visitAnnotation)
+  private def visitAnnotations(annotations: Annotations): Iterator[SemanticToken] = annotations.annotations.iterator.map(visitAnnotation)
 
-  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Modifier, Nil, annotation.loc)
+  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Decorator, Nil, annotation.loc)
 
   /**
     * Returns all semantic tokens in the given expression `exp0`.
