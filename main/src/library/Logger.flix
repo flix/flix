@@ -91,7 +91,7 @@ pub mod Logger {
     ///
     /// Filters the logging, by the `filter` function.
     ///
-    def handleWithSeverityFilter(filter: (RichString, Severity) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 = 
+    pub def handleWithSeverityFilter(filter: (RichString, Severity) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 = 
         x -> run {
             f(x)
         } with handler Logger {
@@ -110,6 +110,6 @@ pub mod Logger {
     ///
     /// Filters the logging, by the `filter` function.
     ///
-    def runWithSeverityFilter(filter: (RichString, Severity) -> Bool \ ef1, f: Unit -> b \ ef2): b \ (ef2 - Logger) + Logger + ef1 = handleWithSeverityFilter(filter, f)()
+    pub def runWithSeverityFilter(filter: (RichString, Severity) -> Bool \ ef1, f: Unit -> b \ ef2): b \ (ef2 - Logger) + Logger + ef1 = handleWithSeverityFilter(filter, f)()
 
 }
