@@ -76,12 +76,10 @@ object TerminationError {
          |${underline("Explanation:")} A function annotated with @Terminates requires that any
          |type used for structural recursion is strictly positive. A type is not strictly
          |positive if it contains a recursive occurrence in a negative position (e.g.,
-         |to the left of an arrow in a function type). This would allow circumventing
-         |the termination guarantee.
+         |to the left of an arrow in a function type).
          |""".stripMargin
     }
   }
-
 
   /**
     * An error raised when a recursive call is not on a strict substructure of a formal parameter.
@@ -126,9 +124,7 @@ object TerminationError {
          |${underline("Explanation:")} A function annotated with @Terminates must be structurally
          |recursive. Every recursive call must pass a strict substructure of a formal
          |parameter as an argument. A strict substructure is a variable bound inside a
-         |pattern match on the parameter (e.g. the tail of a list). To fix this, ensure
-         |each recursive call argument is a variable bound by pattern matching on the
-         |corresponding parameter.
+         |pattern match on the parameter (e.g. the tail of a list).
          |""".stripMargin
     }
   }
