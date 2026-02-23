@@ -37,7 +37,7 @@ object DocAst {
   /** `misc` is used for printing non-structured asts like [[ca.uwaterloo.flix.language.ast.SyntaxTree]] */
   case class Program(enums: List[Enum], defs: List[Def], misc: List[(String, Expr)])
 
-  case class JvmConstructor(fparams: List[Expr.AscriptionTpe], clo: Expr, tpe: Type)
+  case class JvmConstructor(clo: Expr, tpe: Type)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[Expr.AscriptionTpe], clo: Expr, tpe: Type)
 

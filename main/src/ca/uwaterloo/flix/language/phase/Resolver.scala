@@ -1631,14 +1631,12 @@ object Resolver {
     * `superClass` is the Java class being extended in the enclosing `new` expression, used to resolve `super(...)` calls.
     */
   private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope, superClass: Option[Class[?]])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
-    case NamedAst.JvmConstructor(fparams0, exp, tpe, eff, loc) =>
-      val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
-      val scp = scp0 ++ mkFormalParamScp(fparams)
-      val e0 = resolveExp(exp, scp)
+    case NamedAst.JvmConstructor(exp, tpe, eff, loc) =>
+      val e0 = resolveExp(exp, scp0)
       val e = superClass.map(clazz => injectSuperClass(e0, clazz)).getOrElse(e0)
-      val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
-      val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
-      ResolvedAst.JvmConstructor(fparams, e, t, p, loc)
+      val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+      val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root))
+      ResolvedAst.JvmConstructor(e, t, p, loc)
   }
 
   /**

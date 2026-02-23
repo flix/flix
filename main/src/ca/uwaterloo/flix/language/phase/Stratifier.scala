@@ -484,9 +484,9 @@ object Stratifier {
   }
 
   private def visitJvmConstructor(constructor: JvmConstructor)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmConstructor = constructor match {
-    case JvmConstructor(fparams, exp, tpe, eff, loc) =>
+    case JvmConstructor(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      JvmConstructor(fparams, e, tpe, eff, loc)
+      JvmConstructor(e, tpe, eff, loc)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmMethod = method match {

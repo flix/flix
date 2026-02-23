@@ -51,8 +51,8 @@ object MonoAstPrinter {
 
   /** Returns the [[DocAst.JvmConstructor]] representation of `constructor`. */
   private def printJvmConstructor(constructor: MonoAst.JvmConstructor): DocAst.JvmConstructor = constructor match {
-    case MonoAst.JvmConstructor(fparams, exp, retTpe, _, _) =>
-      DocAst.JvmConstructor(fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+    case MonoAst.JvmConstructor(exp, retTpe, _, _) =>
+      DocAst.JvmConstructor(print(exp), TypePrinter.print(retTpe))
   }
 
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */

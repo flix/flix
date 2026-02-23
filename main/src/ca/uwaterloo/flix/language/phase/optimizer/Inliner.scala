@@ -738,11 +738,9 @@ object Inliner {
   }
 
   private def visitJvmConstructor(constructor: MonoAst.JvmConstructor, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmConstructor = constructor match {
-    case MonoAst.JvmConstructor(fparams, exp, retTpe, eff1, loc1) =>
-      val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-      val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
-      val e = visitExp(exp, ctx)
-      MonoAst.JvmConstructor(fps, e, retTpe, eff1, loc1)
+    case MonoAst.JvmConstructor(exp, retTpe, eff1, loc1) =>
+      val e = visitExp(exp, ctx0)
+      MonoAst.JvmConstructor(e, retTpe, eff1, loc1)
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {

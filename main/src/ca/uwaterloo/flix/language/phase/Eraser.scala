@@ -117,8 +117,8 @@ object Eraser {
   }
 
   private def visitJvmConstructor(constructor: ReducedAst.JvmConstructor)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmConstructor = constructor match {
-    case ReducedAst.JvmConstructor(fparams, clo, retTpe, purity, loc) =>
-      ErasedAst.JvmConstructor(fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
+    case ReducedAst.JvmConstructor(clo, retTpe, purity, loc) =>
+      ErasedAst.JvmConstructor(visitExp(clo), visitType(retTpe), purity, loc)
   }
 
   private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmMethod = method match {

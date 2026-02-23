@@ -621,11 +621,10 @@ object Simplifier {
   }
 
   private def visitJvmConstructor(constructor: MonoAst.JvmConstructor)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmConstructor = constructor match {
-    case MonoAst.JvmConstructor(fparams0, exp0, retTpe, eff, loc) =>
-      val fparams = fparams0 map visitFormalParam
+    case MonoAst.JvmConstructor(exp0, retTpe, eff, loc) =>
       val exp = visitExp(exp0)
       val rt = visitType(retTpe)
-      SimplifiedAst.JvmConstructor(fparams, exp, rt, simplifyEffect(eff), loc)
+      SimplifiedAst.JvmConstructor(exp, rt, simplifyEffect(eff), loc)
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {

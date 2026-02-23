@@ -562,12 +562,7 @@ object TypeVerifier {
 
     case Expr.NewObject(_, clazz, tpe, _, constructors, methods, loc) =>
       for (c <- constructors) {
-        // Constructor bodies (InvokeSuper) are not wrapped in closures,
-        // so add fparams to env and check the body type directly.
-        val cenv = c.fparams.foldLeft(env) {
-          case (acc, fparam) => acc + (fparam.sym -> fparam.tpe)
-        }
-        val exptype = visitExpr(c.exp)(root, cenv, lenv)
+        val exptype = visitExpr(c.exp)(root, env, lenv)
         checkEq(c.tpe, exptype, c.loc)
       }
       for (m <- methods) {

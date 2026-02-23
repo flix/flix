@@ -812,7 +812,7 @@ object Safety {
 
       // Each constructor body must be exactly a `super(...)` call.
       _constructors.foreach {
-        case JvmConstructor(_, exp, _, _, constructorLoc) =>
+        case JvmConstructor(exp, _, _, constructorLoc) =>
           exp match {
             case _: Expr.InvokeSuperConstructor => () // OK
             case _ => sctx.errors.add(NewObjectConstructorMissingSuperCall(clazz, constructorLoc))

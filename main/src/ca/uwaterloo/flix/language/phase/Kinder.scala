@@ -1417,12 +1417,11 @@ object Kinder {
     * Performs kinding on the given JVM constructor.
     */
   private def visitJvmConstructor(constructor: ResolvedAst.JvmConstructor, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.JvmConstructor = constructor match {
-    case ResolvedAst.JvmConstructor(fparams0, exp0, tpe0, eff0, loc) =>
-      val fparams = fparams0.map(visitFormalParam(_, kenv, root))
+    case ResolvedAst.JvmConstructor(exp0, tpe0, eff0, loc) =>
       val exp = visitExp(exp0, kenv, root)
       val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
-      KindedAst.JvmConstructor(fparams, exp, tpe, eff, loc)
+      KindedAst.JvmConstructor(exp, tpe, eff, loc)
   }
 
   /**

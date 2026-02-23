@@ -828,12 +828,8 @@ object Redundancy {
 
     case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
       val usedConstructors = constructors.foldLeft(Used.empty) {
-        case (acc, JvmConstructor(fparams, exp, _, _, _)) =>
-          // Extend the environment with the formal parameter symbols
-          val env1 = env0 ++ fparams.map(_.bnd.sym)
-          val used = visitExp(exp, env1, rc)
-          val unusedFParams = findUnusedFormalParameters(fparams, used)
-          acc ++ used ++ unusedFParams
+        case (acc, JvmConstructor(exp, _, _, _)) =>
+          acc ++ visitExp(exp, env0, rc)
       }
       val usedMethods = methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>

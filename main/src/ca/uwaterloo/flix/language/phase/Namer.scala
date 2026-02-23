@@ -1540,12 +1540,11 @@ object Namer {
     * Translates the given weeded JvmConstructor to a named JvmConstructor.
     */
   private def visitJvmConstructor(constructor: DesugaredAst.JvmConstructor)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmConstructor = constructor match {
-    case DesugaredAst.JvmConstructor(fparams, exp0, tpe, eff, loc) =>
-      val fps = fparams.map(visitFormalParam)
+    case DesugaredAst.JvmConstructor(exp0, tpe, eff, loc) =>
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val e = visitExp(exp0)
-      NamedAst.JvmConstructor(fps, e, t, ef, loc)
+      NamedAst.JvmConstructor(e, t, ef, loc)
   }
 
   /**

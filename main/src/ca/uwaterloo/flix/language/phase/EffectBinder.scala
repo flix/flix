@@ -118,12 +118,11 @@ object EffectBinder {
   }
 
   private def visitJvmConstructor(constructor: LiftedAst.JvmConstructor)(implicit flix: Flix): ReducedAst.JvmConstructor = constructor match {
-    case LiftedAst.JvmConstructor(fparams0, clo0, retTpe, purity, loc) =>
+    case LiftedAst.JvmConstructor(clo0, retTpe, purity, loc) =>
       // JvmConstructors are generated as their own functions so let-binding do not
       // span across
-      val fparams = fparams0.map(visitParam)
       val clo = visitExpr(clo0)
-      ReducedAst.JvmConstructor(fparams, clo, retTpe, purity, loc)
+      ReducedAst.JvmConstructor(clo, retTpe, purity, loc)
   }
 
   private def visitJvmMethod(method: LiftedAst.JvmMethod)(implicit flix: Flix): ReducedAst.JvmMethod = method match {

@@ -136,12 +136,12 @@ object ClosureConv {
 
     case Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
       val constructors = constructors0 map {
-        case JvmConstructor(fparams, exp, retTpe, constructorPurity, constructorLoc) =>
+        case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
           exp match {
             // Super-only constructor: don't wrap in closure, just visit args
             case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(_), _, _, _, _) =>
               val e = visitExp(exp)
-              JvmConstructor(fparams, e, retTpe, constructorPurity, constructorLoc)
+              JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
             case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructorLoc)
           }
       }
@@ -256,8 +256,8 @@ object ClosureConv {
 
     case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
       val constructorFvs = constructors.foldLeft(SortedSet.empty[FreeVar]) {
-        case (acc, JvmConstructor(fparams, exp, _, _, _)) =>
-          acc ++ filterBoundParams(freeVars(exp), fparams)
+        case (acc, JvmConstructor(exp, _, _, _)) =>
+          acc ++ freeVars(exp)
       }
       methods.foldLeft(constructorFvs) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
@@ -419,9 +419,8 @@ object ClosureConv {
     }
 
     def visitJvmConstructor(constructor: JvmConstructor)(implicit flix: Flix): JvmConstructor = constructor match {
-      case JvmConstructor(fparams0, exp, retTpe, purity, loc) =>
-        val fparams = fparams0.map(visitFormalParam)
-        JvmConstructor(fparams, applySubst(exp, subst), retTpe, purity, loc)
+      case JvmConstructor(exp, retTpe, purity, loc) =>
+        JvmConstructor(applySubst(exp, subst), retTpe, purity, loc)
     }
 
     def visitJvmMethod(method: JvmMethod)(implicit flix: Flix): JvmMethod = method match {
@@ -633,9 +632,9 @@ object ClosureConv {
 
       case Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
         val cs = constructors.map {
-          case JvmConstructor(fparams, exp, retTpe, constructorPurity, constructorLoc) =>
+          case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
             val e = visit(exp)
-            JvmConstructor(fparams, e, retTpe, constructorPurity, constructorLoc)
+            JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
         }
         val ms = methods.map {
           case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>

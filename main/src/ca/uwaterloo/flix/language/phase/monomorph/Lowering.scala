@@ -620,11 +620,10 @@ object Lowering {
     * Lowers the given JvmConstructor `constructor`.
     */
   private def lowerJvmConstructor(constructor: TypedAst.JvmConstructor)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.JvmConstructor = constructor match {
-    case TypedAst.JvmConstructor(fparams, exp, retTpe, eff, loc) =>
-      val fs = fparams.map(lowerFormalParam)
+    case TypedAst.JvmConstructor(exp, retTpe, eff, loc) =>
       val e = lowerExp(exp)
       val t = lowerType(retTpe)
-      MonoAst.JvmConstructor(fs, e, t, eff, loc)
+      MonoAst.JvmConstructor(e, t, eff, loc)
   }
 
   /**

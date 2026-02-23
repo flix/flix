@@ -1295,17 +1295,7 @@ object ConstraintGen {
     * Generates constraints for the JVM constructor.
     */
   private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = constructor match {
-    case KindedAst.JvmConstructor(fparams, exp, returnTpe, eff, _) =>
-
-      /**
-        * Constrains the given formal parameter to its declared type.
-        */
-      def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
-        case KindedAst.FormalParam(sym, tpe, _, loc) =>
-          c.unifyType(sym.tvar, tpe, loc)
-      }
-
-      fparams.foreach(visitFormalParam)
+    case KindedAst.JvmConstructor(exp, returnTpe, eff, _) =>
       val (bodyTpe, bodyEff) = visitExp(exp)
       c.expectType(expected = returnTpe, actual = bodyTpe, exp.loc)
       c.expectType(expected = eff, actual = bodyEff, exp.loc)

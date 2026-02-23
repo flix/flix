@@ -435,7 +435,7 @@ object WeededAst {
 
   }
 
-  case class JvmConstructor(fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
+  case class JvmConstructor(exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 

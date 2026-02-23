@@ -331,14 +331,12 @@ object OccurrenceAnalyzer {
   }
 
   private def visitJvmConstructor(constructor: MonoAst.JvmConstructor)(implicit sym0: Symbol.DefnSym): (MonoAst.JvmConstructor, ExprContext) = constructor match {
-    case MonoAst.JvmConstructor(fparams, exp, retTpe, eff, loc) =>
+    case MonoAst.JvmConstructor(exp, retTpe, eff, loc) =>
       val (e, ctx1) = visitExp(exp)
-      val fps = fparams.map(visitFormalParam(_, ctx1))
-      val ctx2 = ctx1.removeVars(fps.map(_.sym))
-      if ((e eq exp) && ListOps.zip(fparams, fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
-        (constructor, ctx2) // Reuse constructor.
+      if (e eq exp) {
+        (constructor, ctx1) // Reuse constructor.
       } else {
-        (MonoAst.JvmConstructor(fparams, e, retTpe, eff, loc), ctx2)
+        (MonoAst.JvmConstructor(e, retTpe, eff, loc), ctx1)
       }
   }
 

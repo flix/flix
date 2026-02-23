@@ -323,7 +323,7 @@ mod Test.Exp.Jvm.NewObject {
     @Test
     def testClassWithArgConstructor01(): Unit \ Assert + IO =
         let anon = new TestClassWithArgConstructor {
-            def new(x: Int32): TestClassWithArgConstructor \ IO = super(x)
+            def new(): TestClassWithArgConstructor \ IO = super(0)
             def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n + 1
         };
         assertEq(expected = "default", anon.m_y);
@@ -331,8 +331,10 @@ mod Test.Exp.Jvm.NewObject {
 
     @Test
     def testClassWithArgConstructor02(): Unit \ Assert + IO =
+        let x = 0;
+        let y = "hello";
         let anon = new TestClassWithArgConstructor {
-            def new(x: Int32, y: String): TestClassWithArgConstructor \ IO = super(x, y)
+            def new(): TestClassWithArgConstructor \ IO = super(x, y)
             def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n * 2
         };
         assertEq(expected = 20, anon.abstractMethod(10))
@@ -340,7 +342,7 @@ mod Test.Exp.Jvm.NewObject {
     @CompileTest
     def testClassWithArgConstructor03(): TestClassWithArgConstructor \ IO =
         new TestClassWithArgConstructor {
-            def new(x: Int32): TestClassWithArgConstructor \ IO = super(x)
+            def new(): TestClassWithArgConstructor \ IO = super(0)
             def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n * 3
         }
 

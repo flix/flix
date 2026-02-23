@@ -984,12 +984,11 @@ object Desugar {
     * Desugars the given [[WeededAst.JvmConstructor]] `constructor0`.
     */
   private def visitJvmConstructor(constructor0: WeededAst.JvmConstructor)(implicit flix: Flix): DesugaredAst.JvmConstructor = constructor0 match {
-    case WeededAst.JvmConstructor(fparams, exp, tpe, eff, loc) =>
-      val fps = visitFormalParams(fparams)
+    case WeededAst.JvmConstructor(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      DesugaredAst.JvmConstructor(fps, e, t, ef, loc)
+      DesugaredAst.JvmConstructor(e, t, ef, loc)
   }
 
   /**

@@ -110,8 +110,8 @@ object TypedAstPrinter {
     * Returns the [[DocAst.JvmConstructor]] representation of `constructor`.
     */
   private def printJvmConstructor(constructor: TypedAst.JvmConstructor): DocAst.JvmConstructor = constructor match {
-    case TypedAst.JvmConstructor(fparams, exp, retTpe, _, _) =>
-      DocAst.JvmConstructor(fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+    case TypedAst.JvmConstructor(exp, retTpe, _, _) =>
+      DocAst.JvmConstructor(print(exp), TypePrinter.print(retTpe))
   }
 
   /**

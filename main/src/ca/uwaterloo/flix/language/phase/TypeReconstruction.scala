@@ -689,10 +689,9 @@ object TypeReconstruction {
     */
   private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit subst: SubstitutionTree): TypedAst.JvmConstructor = {
     constructor match {
-      case KindedAst.JvmConstructor(fparams0, exp0, tpe, eff, loc) =>
-        val fparams = fparams0.map(visitFormalParam(_, subst))
+      case KindedAst.JvmConstructor(exp0, tpe, eff, loc) =>
         val exp = visitExp(exp0)
-        TypedAst.JvmConstructor(fparams, exp, tpe, eff, loc)
+        TypedAst.JvmConstructor(exp, tpe, eff, loc)
     }
   }
 

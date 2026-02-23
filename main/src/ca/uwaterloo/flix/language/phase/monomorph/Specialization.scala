@@ -1133,10 +1133,9 @@ object Specialization {
 
   /** Specializes `constructor` w.r.t. `subst`. */
   private def specializeJvmConstructor(constructor: TypedAst.JvmConstructor, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.JvmConstructor = constructor match {
-    case TypedAst.JvmConstructor(fparams0, exp0, tpe, eff, loc) =>
-      val (fparams, env1) = specializeFormalParams(fparams0, subst)
-      val exp = specializeExp(exp0, env0 ++ env1, subst)
-      TypedAst.JvmConstructor(fparams, exp, subst(tpe), subst(eff), loc)
+    case TypedAst.JvmConstructor(exp0, tpe, eff, loc) =>
+      val exp = specializeExp(exp0, env0, subst)
+      TypedAst.JvmConstructor(exp, subst(tpe), subst(eff), loc)
   }
 
   /** Specializes `method` w.r.t. `subst`. */

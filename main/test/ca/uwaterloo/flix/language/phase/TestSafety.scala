@@ -395,8 +395,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |import java.lang.Thread
         |def f(): Thread \ IO =
+        |    let name = "test";
         |    new Thread {
-        |        def new(name: String): Thread \ IO =
+        |        def new(): Thread \ IO =
         |            let _ = 1;
         |            super(name)
         |    }
@@ -410,8 +411,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |import java.lang.Thread
         |def f(): Thread \ IO =
+        |    let name = "test";
         |    new Thread {
-        |        def new(name: String): Thread \ IO =
+        |        def new(): Thread \ IO =
         |            let _ = "hello";
         |            let _ = "world";
         |            super(name)
@@ -441,8 +443,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |import java.lang.Thread
         |def f(): Thread \ IO =
+        |    let name = "test";
         |    new Thread {
-        |        def new(name: String): Thread \ IO =
+        |        def new(): Thread \ IO =
         |            if (true) super(name) else super(name)
         |    }
       """.stripMargin

@@ -344,7 +344,7 @@ object KindedAst {
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
-  case class JvmConstructor(fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
+  case class JvmConstructor(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 

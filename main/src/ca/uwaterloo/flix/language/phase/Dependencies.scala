@@ -452,6 +452,7 @@ object Dependencies {
       constructors.foreach(visitJvmConstructor)
       methods.foreach(visitJvmMethod)
 
+
     case Expr.NewChannel(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
@@ -711,7 +712,6 @@ object Dependencies {
     visitType(constructor.retTpe)
     visitType(constructor.eff)
     visitExp(constructor.exp)
-    constructor.fparams.foreach(visitFormalParam)
   }
 
   private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit sctx: SharedContext): Unit = {

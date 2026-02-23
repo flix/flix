@@ -174,7 +174,7 @@ object MonoAst {
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation)
 
-  case class JvmConstructor(fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class JvmConstructor(exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 

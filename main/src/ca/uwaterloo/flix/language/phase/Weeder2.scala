@@ -2073,11 +2073,10 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.JvmConstructor)
       mapN(
         pickExpr(tree),
-        Decls.pickFormalParameters(tree),
         Types.pickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        (expr, fparams, tpe, eff) => JvmConstructor(fparams, expr, tpe, eff, tree.loc)
+        (expr, tpe, eff) => JvmConstructor(expr, tpe, eff, tree.loc)
       }
     }
 

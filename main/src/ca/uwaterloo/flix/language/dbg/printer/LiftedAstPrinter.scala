@@ -67,8 +67,8 @@ object LiftedAstPrinter {
     })
     case NewObject(name, clazz, tpe, _, constructors, methods, _) =>
       val cs = constructors.map {
-        case LiftedAst.JvmConstructor(fparams, clo, retTpe, _, _) =>
-          DocAst.JvmConstructor(fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
+        case LiftedAst.JvmConstructor(clo, retTpe, _, _) =>
+          DocAst.JvmConstructor(print(clo), SimpleTypePrinter.print(retTpe))
       }
       val ms = methods.map {
         case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>

@@ -237,9 +237,8 @@ object LambdaLift {
   }
 
   private def visitJvmConstructor(constructor: SimplifiedAst.JvmConstructor)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmConstructor = constructor match {
-    case SimplifiedAst.JvmConstructor(fparams0, exp, retTpe, purity, loc) =>
-      val fparams = fparams0 map visitFormalParam
-      LiftedAst.JvmConstructor(fparams, visitExp(exp), retTpe, purity, loc)
+    case SimplifiedAst.JvmConstructor(exp, retTpe, purity, loc) =>
+      LiftedAst.JvmConstructor(visitExp(exp), retTpe, purity, loc)
   }
 
   private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {

@@ -250,12 +250,11 @@ object DocAstFormatter {
     text(clazz.getName)
 
   private def formatJvmConstructor(c: JvmConstructor)(implicit i: Indent): Doc = {
-    val JvmConstructor(fparams, clo, _) = c
-    val fparamsf = fparams.map(aux(_, paren = false))
+    val JvmConstructor(clo, _) = c
     val clof = aux(clo, paren = false, inBlock = true)
     group(
       text("def") +: text("new") +:
-        tuple(fparamsf) +: text("=") +\:
+        text("=") +\:
         clof
     )
   }

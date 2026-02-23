@@ -374,7 +374,7 @@ object TypedAstOps {
 
     case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
       val cFvs = constructors.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, JvmConstructor(fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
+        case (acc, JvmConstructor(exp, _, _, _)) => acc ++ freeVars(exp)
       }
       methods.foldLeft(cFvs) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
