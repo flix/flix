@@ -294,16 +294,19 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.RigidEffUsingCstEff.01") {
     val input =
       """
-        |def foo(): Unit \ ef1 = Console.println("42")
+        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = Bar.buzz()
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
   }
 
   test("Test.RigidEffUsingIO.01") {
     val input =
       """
-        |def foo(): Unit \ ef1 = println("42")
+        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = println("42")
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
@@ -312,18 +315,25 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.CstEffUsingOtherCstEff.01") {
     val input =
       """
-        |def foo(): Unit \ Clock = Console.println("42")
+        |def foo(): Unit \ Foo = Bar.buzz()
+        |eff Foo
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
   }
 
   test("Test.IOUsingCstEff.01") {
     val input =
       """
-        |def foo(): Unit \ IO = Console.println("42")
+        |def foo(): Unit \ IO = Bar.buzz()
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
   }
 
@@ -367,10 +377,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |       w * w
         |   case Shape.Rectangle(h, w) => h * w
         |}
-        |def main(): Unit \ Console =
-        |   Console.println(area(Shape.Rectangle(2, 4)))
+        |def main(): Unit \ Bar =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        | def buzz(): Unit
+        |}
       """.stripMargin
-    val result = check(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
   }
 
