@@ -479,6 +479,52 @@ sealed trait TokenKind {
     case _ => false
   }
 
+  /**
+    * Returns `true` if this token can only start a new statement and never appear as a continuation
+    * of an existing expression (e.g. as a binary operand). Used to deterministically detect missing semicolons.
+    */
+  def isDeterministicStmtStart: Boolean = this match {
+    case TokenKind.KeywordLet => true
+    case TokenKind.KeywordDef => true
+    case TokenKind.KeywordIf => true
+    case TokenKind.KeywordMatch => true
+    case TokenKind.KeywordEMatch => true
+    case TokenKind.KeywordForeach => true
+    case TokenKind.KeywordForM => true
+    case TokenKind.KeywordForA => true
+    case TokenKind.KeywordTry => true
+    case TokenKind.KeywordRegion => true
+    case TokenKind.KeywordSelect => true
+    case TokenKind.KeywordSpawn => true
+    case TokenKind.KeywordPar => true
+    case TokenKind.KeywordUse => true
+    case TokenKind.KeywordImport => true
+    case TokenKind.KeywordUnsafe => true
+    case TokenKind.KeywordTypeMatch => true
+    case TokenKind.KeywordChoose => true
+    case TokenKind.KeywordChooseStar => true
+    case TokenKind.KeywordHandler => true
+    case TokenKind.KeywordRun => true
+    case TokenKind.KeywordInject => true
+    case TokenKind.KeywordQuery => true
+    case TokenKind.KeywordSolve => true
+    case TokenKind.KeywordNew => true
+    case TokenKind.KeywordCheckedCast => true
+    case TokenKind.KeywordCheckedECast => true
+    case TokenKind.KeywordUncheckedCast => true
+    case TokenKind.KeywordOpenVariant => true
+    case TokenKind.KeywordOpenVariantAs => true
+    case TokenKind.KeywordStaticUppercase => true
+    case TokenKind.KeywordXvar => true
+    case TokenKind.KeywordPQuery => true
+    case TokenKind.KeywordPSolve => true
+    case TokenKind.KeywordNot => true
+    case TokenKind.KeywordDiscard => true
+    case TokenKind.KeywordLazy => true
+    case TokenKind.KeywordForce => true
+    case _ => false
+  }
+
   /** Returns `true` if this token can validly appear as the first token of a type. */
   def isFirstInType: Boolean = this match {
     case TokenKind.AngleL => true

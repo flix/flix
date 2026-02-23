@@ -87,6 +87,16 @@ object CodeActionProvider {
         command = None
       ))
 
+    case ParseError.MissingSemicolon(_, semiLoc, _, loc) if overlaps(range, loc) =>
+      val insertPos = Position.fromEnd(semiLoc)
+      List(CodeAction(
+        title = "Insert ';'",
+        kind = CodeActionKind.QuickFix,
+        isPreferred = true,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range(insertPos, insertPos), ";"))))),
+        command = None
+      ))
+
     case _ => Nil
   }
 

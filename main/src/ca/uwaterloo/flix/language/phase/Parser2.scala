@@ -1440,10 +1440,24 @@ object Parser2 {
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       } else if (!rhsIsOptional) {
-        // If no semi is found and it was required, produce an error.
-        // TODO: We could add a parse error hint as an argument to statement like:
-        //       "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'".
-        expect(TokenKind.Semi)
+        if (nth(0).isDeterministicStmtStart) {
+          // The next token can only start a new statement, so the semicolon is definitely missing.
+          val mark = open()
+          val prevLoc = previousSourceLocation()
+          val errorLoc = SourceLocation.point(isReal = true, prevLoc.source, prevLoc.end)
+          val error = ParseError.MissingSemicolon(nth(0), prevLoc, sctx, errorLoc)
+          closeWithError(mark, error)
+          // Recover by continuing to parse the next statement, but only when the token cannot
+          // also start a top-level declaration. Tokens like 'def' could be either a local def
+          // or a top-level def, so we leave those for the declaration-level recovery to handle.
+          if (!nth(0).isFirstInDecl) {
+            statement()
+            lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          }
+        } else {
+          expect(TokenKind.Semi)
+        }
       }
       lhs
     }

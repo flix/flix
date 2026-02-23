@@ -1107,6 +1107,37 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("MissingSemicolon.Recovery.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let x = 1
+        |    let y = 2;
+        |    ()
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingSemicolon](result)
+    expectMain(result)
+  }
+
+  test("MissingSemicolon.Recovery.NoCascade.01") {
+    // Verify that "let x = 1 let y = 2; ()" produces only MissingSemicolon
+    // and does NOT produce a cascading UnexpectedToken error.
+    val input =
+      """
+        |def f(): Unit =
+        |    let x = 1
+        |    let y = 2;
+        |    ()
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingSemicolon](result)
+    rejectError[ParseError.UnexpectedToken](result)
+    expectMain(result)
+  }
+
   /**
     * Asserts that validation contains a defined entry point.
     */
@@ -1546,5 +1577,88 @@ class TestParserSad extends AnyFunSuite with TestUtils {
 
     val result = check(input, Options.TestWithLibNix)
     expectError[ParseError.ExpectedArrowThickRGotEqual](result)
+  }
+
+  test("MissingSemicolon.Let.Let") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let x = 1
+        |    let y = 2
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingSemicolon](result)
+  }
+
+  test("MissingSemicolon.Let.Def") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let x = 1
+        |    def g() = x;
+        |    g()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingSemicolon](result)
+  }
+
+  test("MissingSemicolon.Let.If") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let x = 1
+        |    if (true) () else ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingSemicolon](result)
+  }
+
+  test("MissingSemicolon.Let.Match") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let x = 1
+        |    match x {
+        |        case _ => 0
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingSemicolon](result)
+  }
+
+  test("MissingSemicolon.Let.Not") {
+    val input =
+      """
+        |def f(): Bool =
+        |    let x = true
+        |    not x
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingSemicolon](result)
+  }
+
+  test("MissingSemicolon.Let.Discard") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let x = 1
+        |    discard x
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingSemicolon](result)
+  }
+
+  test("MissingSemicolon.Ambiguous.Literal") {
+    // Ambiguous case: `let x = 1` then literal `2` could be a missing operator.
+    // Should NOT produce MissingSemicolon.
+    val input =
+      """
+        |def f(): Unit =
+        |    let x = 1
+        |    2
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.UnexpectedToken](result)
   }
 }
