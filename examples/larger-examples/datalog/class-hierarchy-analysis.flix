@@ -53,9 +53,9 @@ mod ClassHierarchyAnalysis {
         let rules = #{
             Subtype(x, x)       :- Class(x).
             Subtype(x, x)       :- Interface(x).
-            Subtype(sub, superType) :- Class(sub), Interface(superType), ClassImplements(sub, superTypeType).
-            Subtype(sub, superTypeType) :- Class(sub), Class(superTypeType), ClassExtends(sub, superTypeType).
-            Subtype(sub, superTypeType) :- Interface(sub), Interface(superType), InterfaceExtends(sub, superType).
+            Subtype(sub, superType) :- Class(sub), Interface(superType), ClassImplements(sub, superType).
+            Subtype(sub, superType) :- Class(sub), Class(superType), ClassExtends(sub, superType).
+            Subtype(sub, superType) :- Interface(sub), Interface(superType), InterfaceExtends(sub, superType).
             Subtype(sub, superType) :- Subtype(sub, a), Subtype(a, superType).
 
             AvailableField(class, field) :- Field(superType, field), Subtype(class, superType).
