@@ -393,31 +393,61 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("NewObjectConstructorMissingSuperCall.01") {
     val input =
       """
-        |import dev.flix.test.TestClassWithArgConstructor
-        |def f(): TestClassWithArgConstructor \ IO =
-        |  new TestClassWithArgConstructor {
-        |    def new(x: Int32): TestClassWithArgConstructor \ IO =
-        |      let _ = 1;
-        |      super(x)
-        |    def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n
-        |  }
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    new Thread {
+        |        def new(name: String): Thread \ IO =
+        |            let _ = 1;
+        |            super(name)
+        |    }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
   }
 
-  test("NewObjectConstructorWithSuperCall.01") {
+  test("NewObjectConstructorMissingSuperCall.02") {
     val input =
       """
-        |import dev.flix.test.TestClassWithArgConstructor
-        |def f(): TestClassWithArgConstructor \ IO =
-        |  new TestClassWithArgConstructor {
-        |    def new(x: Int32): TestClassWithArgConstructor \ IO = super(x)
-        |    def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n
-        |  }
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    new Thread {
+        |        def new(name: String): Thread \ IO =
+        |            let _ = "hello";
+        |            let _ = "world";
+        |            super(name)
+        |    }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectSuccess(result)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
+  }
+
+  test("NewObjectConstructorMissingSuperCall.03") {
+    val input =
+      """
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    new Thread {
+        |        def new(): Thread \ IO =
+        |            let x = "name";
+        |            super(x)
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
+  }
+
+  test("NewObjectConstructorMissingSuperCall.04") {
+    val input =
+      """
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    new Thread {
+        |        def new(name: String): Thread \ IO =
+        |            if (true) super(name) else super(name)
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
   }
 
   test("TestMissingDefaultTypeMatchCase.01") {

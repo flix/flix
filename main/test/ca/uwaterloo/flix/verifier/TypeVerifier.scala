@@ -562,9 +562,13 @@ object TypeVerifier {
 
     case Expr.NewObject(_, clazz, tpe, _, constructors, methods, loc) =>
       for (c <- constructors) {
-        val exptype = visitExpr(c.exp)
-        val signature = SimpleType.mkArrow(c.fparams.map(_.tpe), c.tpe)
-        checkEq(signature, exptype, c.loc)
+        // Constructor bodies (InvokeSuper) are not wrapped in closures,
+        // so add fparams to env and check the body type directly.
+        val cenv = c.fparams.foldLeft(env) {
+          case (acc, fparam) => acc + (fparam.sym -> fparam.tpe)
+        }
+        val exptype = visitExpr(c.exp)(root, cenv, lenv)
+        checkEq(c.tpe, exptype, c.loc)
       }
       for (m <- methods) {
         val exptype = visitExpr(m.exp)
