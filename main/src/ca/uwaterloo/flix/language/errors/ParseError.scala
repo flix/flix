@@ -322,6 +322,27 @@ object ParseError {
   }
 
   /**
+    * An error raised to indicate that a Thick Right Arrow was expected, but got an Equal.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedBackslashGotSlash(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E7584
+    def summary: String = s"Expected '\\' got '/'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '\\' got '/'
+         |
+         |${src(loc, s"Use '\\' instead of '/'")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
     * An error raised to indicate an unexpected token was found.
     *
     * @param expected Names of the tokens that are expected at the location.

@@ -3359,7 +3359,13 @@ object Parser2 {
         closeWithError(open(), error)
       }
 
-      if (eat(TokenKind.Backslash) || isMissingBackslash) {
+      val usedSlash = eat(TokenKind.Slash)
+      if (usedSlash){
+        val error = ParseError.ExpectedBackslashGotSlash(SyntacticContext.Unknown, previousSourceLocation())
+        closeWithError(open(), error)
+      }
+
+      if (eat(TokenKind.Backslash) || isMissingBackslash || usedSlash) {
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)
