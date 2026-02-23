@@ -1464,20 +1464,34 @@ object GenExpression {
       }
 
     case Expr.NewObject(name, _, _, _, constructors, methods, _) =>
-      val constructorExps = constructors.map(_.exp)
       val methodExps = methods.map(_.exp)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
 
-      // For each constructor, compile the closure and store it in a field
-      constructorExps.zipWithIndex.foreach { case (e, i) =>
-        mv.visitInsn(DUP)
-        compileExpr(e)
-        mv.visitFieldInsn(PUTFIELD, className, s"cns$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
+      // Handle constructors
+      if (constructors.nonEmpty) {
+        constructors.head.exp match {
+          case Expr.ApplyAtomic(AtomicOp.InvokeSuper(constructor), superArgs, _, _, _) =>
+            // Super-only: compile args and call parameterized <init>
+            val descriptor = asm.Type.getConstructorDescriptor(constructor)
+            for ((arg, argType) <- superArgs.zip(constructor.getParameterTypes)) {
+              compileExpr(arg)
+              if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+            }
+            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, descriptor, false)
+          case _ =>
+            // Closure-based: existing behavior
+            constructors.map(_.exp).zipWithIndex.foreach { case (e, i) =>
+              mv.visitInsn(DUP)
+              compileExpr(e)
+              mv.visitFieldInsn(PUTFIELD, className, s"cns$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
+            }
+            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        }
+      } else {
+        mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
       }
-
-      mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
 
       // For each method, compile the closure which implements the body of that method and store it in a field
       methodExps.zipWithIndex.foreach { case (e, i) =>

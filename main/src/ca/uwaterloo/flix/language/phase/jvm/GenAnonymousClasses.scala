@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SimpleType
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
@@ -50,18 +50,25 @@ object GenAnonymousClasses {
 
     val cm = ClassMaker.mkClass(className, IsFinal, superClass = superClass, interfaces = interfaces)
 
-    // Create fields for constructor closures.
-    val cnsFields = obj.constructors.zipWithIndex.map { case (c, i) =>
-      val abstractClass = erasedArrowType(c.fparams.map(_.tpe), c.tpe)
-      val cnsField = ClassMaker.InstanceField(className, s"cns$i", abstractClass.toTpe)
-      cm.mkField(cnsField, IsPublic, NotFinal, NotVolatile)
-      (c, cnsField, abstractClass)
-    }
-
     // Generate constructor: if user-defined constructors exist, invoke the first one; otherwise default no-arg super().
     if (obj.constructors.nonEmpty) {
-      val (c, cnsField, abstractClass) = cnsFields.head
-      cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorInsWithClosure(superClass, c, cnsField, abstractClass)(_, root))
+      val c = obj.constructors.head
+      c.exp match {
+        case Expr.ApplyAtomic(AtomicOp.InvokeSuper(constructor), _, _, _, _) =>
+          // Super-only: no closure field needed, parameterized <init>
+          val argTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
+          cm.mkConstructor(ClassMaker.ConstructorMethod(className, argTypes), IsPublic, constructorInsWithSuperCall(superClass, constructor)(_))
+        case _ =>
+          // Closure-based: existing behavior
+          val cnsFields = obj.constructors.zipWithIndex.map { case (c, i) =>
+            val abstractClass = erasedArrowType(c.fparams.map(_.tpe), c.tpe)
+            val cnsField = ClassMaker.InstanceField(className, s"cns$i", abstractClass.toTpe)
+            cm.mkField(cnsField, IsPublic, NotFinal, NotVolatile)
+            (c, cnsField, abstractClass)
+          }
+          val (_, cnsField, abstractClass) = cnsFields.head
+          cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorInsWithClosure(superClass, c, cnsField, abstractClass)(_, root))
+      }
     } else {
       cm.mkConstructor(ClassMaker.ConstructorMethod(className, Nil), IsPublic, constructorIns(superClass)(_))
     }
@@ -85,6 +92,34 @@ object GenAnonymousClasses {
     ALOAD(0)
     INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, Nil))
     RETURN()
+  }
+
+  /** Creates constructor bytecode that forwards parameters directly to the super constructor. */
+  private def constructorInsWithSuperCall(superClass: JvmName, constructor: java.lang.reflect.Constructor[?])(implicit mv: MethodVisitor): Unit = {
+    import BytecodeInstructions.*
+    val paramTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
+    // ALOAD 0 (this)
+    thisLoad()
+    // Load each <init> parameter (starting at slot 1)
+    withNames(1, paramTypes) { case (_, args) =>
+      for (arg <- args) arg.load()
+    }
+    // INVOKESPECIAL superClass.<init>(paramTypes...)
+    INVOKESPECIAL(ClassMaker.ConstructorMethod(superClass, paramTypes))
+    RETURN()
+  }
+
+  /** Maps a Java `Class[?]` to a `BackendType`. */
+  private def javaClassToBackendType(clazz: Class[?]): BackendType = {
+    if      (clazz == java.lang.Boolean.TYPE)   BackendType.Bool
+    else if (clazz == java.lang.Byte.TYPE)      BackendType.Int8
+    else if (clazz == java.lang.Short.TYPE)     BackendType.Int16
+    else if (clazz == java.lang.Integer.TYPE)   BackendType.Int32
+    else if (clazz == java.lang.Long.TYPE)      BackendType.Int64
+    else if (clazz == java.lang.Float.TYPE)     BackendType.Float32
+    else if (clazz == java.lang.Double.TYPE)    BackendType.Float64
+    else if (clazz == java.lang.Character.TYPE) BackendType.Char
+    else BackendType.Reference(BackendObjType.Native(JvmName.ofClass(clazz)))
   }
 
   /** Creates constructor bytecode that invokes the user-defined constructor closure, which will call super(...). */

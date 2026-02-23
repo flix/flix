@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
-import ca.uwaterloo.flix.language.ast.{SimpleType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -137,9 +137,17 @@ object ClosureConv {
     case Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
       val constructors = constructors0 map {
         case JvmConstructor(fparams, exp, retTpe, constructorPurity, constructorLoc) =>
-          val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
-          val clo = mkLambdaClosure(fparams, exp, cloType, constructorLoc)
-          JvmConstructor(fparams, clo, retTpe, constructorPurity, constructorLoc)
+          exp match {
+            // Super-only constructor: don't wrap in closure, just visit args
+            case Expr.ApplyAtomic(AtomicOp.InvokeSuper(_), _, _, _, _) =>
+              val e = visitExp(exp)
+              JvmConstructor(fparams, e, retTpe, constructorPurity, constructorLoc)
+            // Regular constructor: wrap in closure as before
+            case _ =>
+              val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
+              val clo = mkLambdaClosure(fparams, exp, cloType, constructorLoc)
+              JvmConstructor(fparams, clo, retTpe, constructorPurity, constructorLoc)
+          }
       }
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
