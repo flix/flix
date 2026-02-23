@@ -112,4 +112,9 @@ pub mod Logger {
     ///
     pub def runWithSeverityFilter(filter: (RichString, Severity) -> Bool \ ef1, f: Unit -> b \ ef2): b \ (ef2 - Logger) + Logger + ef1 = handleWithSeverityFilter(filter, f)()
 
+    ///
+    /// Filters based on a given set of severities
+    ///
+    pub def onlyLevels(set: Set[Severity]): (RichString, Severity) -> Bool = 
+        (_s, sev) -> Set.exists(a -> a == sev, set)
 }
