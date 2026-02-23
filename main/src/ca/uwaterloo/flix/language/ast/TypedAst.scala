@@ -229,7 +229,7 @@ object TypedAst {
 
     case class InvokeConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeSuper(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(method: Method, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

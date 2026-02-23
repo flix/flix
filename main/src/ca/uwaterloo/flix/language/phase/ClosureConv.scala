@@ -139,7 +139,7 @@ object ClosureConv {
         case JvmConstructor(fparams, exp, retTpe, constructorPurity, constructorLoc) =>
           exp match {
             // Super-only constructor: don't wrap in closure, just visit args
-            case Expr.ApplyAtomic(AtomicOp.InvokeSuper(_), _, _, _, _) =>
+            case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(_), _, _, _, _) =>
               val e = visitExp(exp)
               JvmConstructor(fparams, e, retTpe, constructorPurity, constructorLoc)
             case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructorLoc)

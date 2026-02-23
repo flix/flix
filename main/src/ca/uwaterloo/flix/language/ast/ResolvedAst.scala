@@ -195,7 +195,7 @@ object ResolvedAst {
 
     case class InvokeConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeSuper(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 

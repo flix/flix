@@ -107,7 +107,7 @@ object ResolvedAstPrinter {
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
-    case Expr.InvokeSuper(_, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeSuperConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetField(_, _, _) => DocAst.Expr.Unknown

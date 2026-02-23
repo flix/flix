@@ -254,7 +254,7 @@ object Summary {
     }.sum
     case Expr.RunWith(exp1, exp2, _, _, _) => countCheckedEcasts(exp1) + countCheckedEcasts(exp2)
     case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.InvokeSuper(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
     case Expr.InvokeStaticMethod(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.GetField(_, exp, _, _, _) => countCheckedEcasts(exp)

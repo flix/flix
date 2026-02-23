@@ -827,7 +827,7 @@ object GenExpression {
         // Call the constructor
         mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
 
-      case AtomicOp.InvokeSuper(constructor) =>
+      case AtomicOp.InvokeSuperConstructor(constructor) =>
         BytecodeInstructions.addLoc(loc)
         val descriptor = asm.Type.getConstructorDescriptor(constructor)
         val superClassName = asm.Type.getInternalName(constructor.getDeclaringClass)
@@ -1472,7 +1472,7 @@ object GenExpression {
       // Handle constructors
       if (constructors.nonEmpty) {
         constructors.head.exp match {
-          case Expr.ApplyAtomic(AtomicOp.InvokeSuper(constructor), superArgs, _, _, _) =>
+          case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), superArgs, _, _, _) =>
             // Super-only: compile args and call parameterized <init>
             val descriptor = asm.Type.getConstructorDescriptor(constructor)
             for ((arg, argType) <- superArgs.zip(constructor.getParameterTypes)) {

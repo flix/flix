@@ -2839,7 +2839,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordSuper)
       arguments()
-      close(mark, TreeKind.Expr.InvokeSuper)
+      close(mark, TreeKind.Expr.InvokeSuperConstructor)
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {

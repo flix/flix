@@ -91,7 +91,7 @@ object TypedAstOps {
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.exp)).toSet
     case Expr.RunWith(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
-    case Expr.InvokeSuper(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expr.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
     case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expr.GetField(_, exp, _, _, _) => sigSymsOf(exp)
@@ -345,7 +345,7 @@ object TypedAstOps {
         case (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expr.InvokeSuper(_, args, _, _, _) =>
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) =>
       args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
       }

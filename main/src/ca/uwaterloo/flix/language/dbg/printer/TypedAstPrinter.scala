@@ -80,7 +80,7 @@ object TypedAstPrinter {
     case Expr.Handler(symUse, rules, _, _, _, _, _) => DocAst.Expr.Handler(symUse.sym, rules.map(printHandlerRule))
     case Expr.RunWith(exp1, exp2, _, _, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
-    case Expr.InvokeSuper(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
+    case Expr.InvokeSuperConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
     case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))
     case Expr.InvokeStaticMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
     case Expr.GetField(field, exp, _, _, _) => DocAst.Expr.JavaGetField(field, print(exp))

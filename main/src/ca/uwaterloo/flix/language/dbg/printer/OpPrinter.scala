@@ -205,7 +205,7 @@ object OpPrinter {
     case (AtomicOp.Tuple, _) => Tuple(ds)
     case (AtomicOp.ArrayLit, _) => ArrayLit(ds)
     case (AtomicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
-    case (AtomicOp.InvokeSuper(constructor), _) => JavaInvokeConstructor(constructor, ds)
+    case (AtomicOp.InvokeSuperConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
     case (AtomicOp.InvokeStaticMethod(method), _) => JavaInvokeStaticMethod(method, ds)
     case (AtomicOp.RecordExtend(label), List(d1, d2)) => RecordExtend(label, d1, d2)
     case (AtomicOp.ArrayNew, List(d1, d2)) => ArrayNew(d1, d2)

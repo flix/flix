@@ -288,7 +288,7 @@ object Safety {
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
-    case Expr.InvokeSuper(_, args, _, _, loc) =>
+    case Expr.InvokeSuperConstructor(_, args, _, _, loc) =>
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
@@ -814,7 +814,7 @@ object Safety {
       _constructors.foreach {
         case JvmConstructor(_, exp, _, _, constructorLoc) =>
           exp match {
-            case _: Expr.InvokeSuper => () // OK
+            case _: Expr.InvokeSuperConstructor => () // OK
             case _ => sctx.errors.add(NewObjectConstructorMissingSuperCall(clazz, constructorLoc))
           }
       }

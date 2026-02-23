@@ -410,7 +410,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.InvokeSuper(_, exps, tpe, eff, _) =>
+    case Expr.InvokeSuperConstructor(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)

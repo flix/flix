@@ -805,7 +805,7 @@ object Redundancy {
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
-    case Expr.InvokeSuper(_, args, _, _, _) =>
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>

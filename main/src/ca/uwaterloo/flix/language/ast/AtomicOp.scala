@@ -80,7 +80,7 @@ object AtomicOp {
 
   case class InvokeConstructor(constructor: Constructor[?]) extends AtomicOp
 
-  case class InvokeSuper(constructor: Constructor[?]) extends AtomicOp
+  case class InvokeSuperConstructor(constructor: Constructor[?]) extends AtomicOp
 
   case class InvokeMethod(method: Method) extends AtomicOp
 

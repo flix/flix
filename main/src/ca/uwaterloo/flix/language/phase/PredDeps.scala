@@ -273,7 +273,7 @@ object PredDeps {
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foreach(visitExp)
 
-    case Expr.InvokeSuper(_, args, _, _, _) =>
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) =>
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>

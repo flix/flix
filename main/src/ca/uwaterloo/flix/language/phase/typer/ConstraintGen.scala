@@ -403,7 +403,7 @@ object ConstraintGen {
         // then we don't require it to be return Unit
         val isJvm = exp1 match {
           case _: Expr.InvokeConstructor => true
-          case _: Expr.InvokeSuper => true
+          case _: Expr.InvokeSuperConstructor => true
           case _: Expr.InvokeMethod => true
           case _: Expr.InvokeStaticMethod => true
           case _ => false
@@ -902,7 +902,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeSuper(clazz, exps, jvar, evar, loc) =>
+      case Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]

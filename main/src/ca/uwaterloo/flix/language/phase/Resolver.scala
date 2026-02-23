@@ -1200,10 +1200,10 @@ object Resolver {
           ResolvedAst.Expr.Error(error)
       }
 
-    case NamedAst.Expr.InvokeSuper(exps, loc) =>
+    case NamedAst.Expr.InvokeSuperConstructor(exps, loc) =>
       // The class is not known here; it will be injected by the enclosing NewObject case.
       val es = exps.map(resolveExp(_, scp0))
-      ResolvedAst.Expr.InvokeSuper(classOf[Object], es, loc)
+      ResolvedAst.Expr.InvokeSuperConstructor(classOf[Object], es, loc)
 
     case NamedAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = resolveExp(exp, scp0)
@@ -1642,11 +1642,11 @@ object Resolver {
   }
 
   /**
-    * Injects the given `clazz` into all `InvokeSuper` nodes in the given expression.
+    * Injects the given `clazz` into all `InvokeSuperConstructor` nodes in the given expression.
     */
   private def injectSuperClass(exp: ResolvedAst.Expr, clazz: Class[?]): ResolvedAst.Expr = exp match {
-    case ResolvedAst.Expr.InvokeSuper(_, exps, loc) =>
-      ResolvedAst.Expr.InvokeSuper(clazz, exps, loc)
+    case ResolvedAst.Expr.InvokeSuperConstructor(_, exps, loc) =>
+      ResolvedAst.Expr.InvokeSuperConstructor(clazz, exps, loc)
     case ResolvedAst.Expr.Stm(exp1, exp2, loc) =>
       ResolvedAst.Expr.Stm(injectSuperClass(exp1, clazz), injectSuperClass(exp2, clazz), loc)
     case ResolvedAst.Expr.Let(sym, exp1, exp2, loc) =>

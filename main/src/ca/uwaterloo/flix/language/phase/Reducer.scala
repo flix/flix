@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
-import ca.uwaterloo.flix.language.ast.{ErasedAst, JvmAst, Purity, SimpleType, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, JvmAst, Purity, SimpleType, Symbol}
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -207,7 +208,22 @@ object Reducer {
       case ErasedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
         val cs = constructors.map {
           case ErasedAst.JvmConstructor(fparams, clo, retTpe, cnsPurity, cnsLoc) =>
-            val c = visitExpr(clo)
+            // Constructor bodies (InvokeSuperConstructor) are not wrapped in closures, so they
+            // are compiled at the call site. Replace any Var references to constructor
+            // fparams with default constants, since those params don't exist as local
+            // variables in the enclosing method.
+            val fparamSyms = fparams.map(_.sym).toSet
+            val adjustedClo = clo match {
+              case ErasedAst.Expr.ApplyAtomic(op@AtomicOp.InvokeSuperConstructor(_), superArgs, t, p, l) =>
+                val adjustedArgs = superArgs.map {
+                  case ErasedAst.Expr.Var(sym, varTpe, varLoc) if fparamSyms.contains(sym) =>
+                    ErasedAst.Expr.Cst(defaultConstant(varTpe), varLoc)
+                  case arg => arg
+                }
+                ErasedAst.Expr.ApplyAtomic(op, adjustedArgs, t, p, l)
+              case other => other
+            }
+            val c = visitExpr(adjustedClo)
             JvmAst.JvmConstructor(fparams.map(visitFormalParam), c, retTpe, cnsPurity, cnsLoc)
         }
         val specs = methods.map {
@@ -234,6 +250,19 @@ object Reducer {
 
   private def visitFormalParam(fp: ErasedAst.FormalParam): JvmAst.FormalParam =
     JvmAst.FormalParam(fp.sym, fp.tpe)
+
+  /** Returns the default JVM constant for the given type (0 for numeric, false for bool, null for references). */
+  private def defaultConstant(tpe: SimpleType): Constant = tpe match {
+    case SimpleType.Bool => Constant.Bool(false)
+    case SimpleType.Char => Constant.Char('\u0000')
+    case SimpleType.Int8 => Constant.Int8(0)
+    case SimpleType.Int16 => Constant.Int16(0)
+    case SimpleType.Int32 => Constant.Int32(0)
+    case SimpleType.Int64 => Constant.Int64(0)
+    case SimpleType.Float32 => Constant.Float32(0.0f)
+    case SimpleType.Float64 => Constant.Float64(0.0)
+    case _ => Constant.Null
+  }
 
   /**
     * A local non-shared context. Does not need to be thread-safe.

@@ -819,10 +819,10 @@ object Specialization {
       val t = subst(tpe)
       Expr.InvokeConstructor(constructor, es, t, subst(eff), loc)
 
-    case Expr.InvokeSuper(constructor, exps, tpe, eff, loc) =>
+    case Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
-      Expr.InvokeSuper(constructor, es, t, subst(eff), loc)
+      Expr.InvokeSuperConstructor(constructor, es, t, subst(eff), loc)
 
     case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)

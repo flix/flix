@@ -456,7 +456,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }
 
-    case KindedAst.Expr.InvokeSuper(clazz, exps, jvar, evar, loc) =>
+    case KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
       val tpe = Type.getFlixType(clazz)
@@ -464,7 +464,7 @@ object TypeReconstruction {
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           val es = getArgumentsWithVarArgs(constructor, es0, loc)
-          TypedAst.Expr.InvokeSuper(constructor, es, tpe, eff, loc)
+          TypedAst.Expr.InvokeSuperConstructor(constructor, es, tpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }

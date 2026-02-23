@@ -729,9 +729,9 @@ object Desugar {
       val es = visitExps(exps)
       Expr.InvokeConstructor(className, es, loc)
 
-    case WeededAst.Expr.InvokeSuper(exps, loc) =>
+    case WeededAst.Expr.InvokeSuperConstructor(exps, loc) =>
       val es = visitExps(exps)
-      Expr.InvokeSuper(es, loc)
+      Expr.InvokeSuperConstructor(es, loc)
 
     case WeededAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)

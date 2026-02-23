@@ -55,7 +55,7 @@ object GenAnonymousClasses {
     if (obj.constructors.nonEmpty) {
       val c = obj.constructors.head
       c.exp match {
-        case Expr.ApplyAtomic(AtomicOp.InvokeSuper(constructor), _, _, _, _) =>
+        case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), _, _, _, _) =>
           // Super-only: no closure field needed, parameterized <init>
           val argTypes = constructor.getParameterTypes.toList.map(javaClassToBackendType)
           cm.mkConstructor(ClassMaker.ConstructorMethod(className, argTypes), IsPublic, constructorInsWithSuperCall(superClass, constructor)(_))

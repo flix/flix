@@ -174,7 +174,7 @@ object DesugaredAst {
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeSuper(exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeSuperConstructor(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
