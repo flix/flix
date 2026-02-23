@@ -409,4 +409,79 @@ mod Test.Terminator {
         let result = loop(l, 0);
         result + 1
 
+    // --- @Terminates @Tailrec combined on top-level def ---
+
+    @CompileTest @Terminates @Tailrec
+    def tailRecTerminatingLength(l: MyList[Int32], acc: Int32): Int32 = match l {
+        case MyList.Nil         => acc
+        case MyList.Cons(_, xs) => tailRecTerminatingLength(xs, acc + 1)
+    }
+
+    // --- Heterogeneous tuple scrutinee ---
+
+    @CompileTest @Terminates
+    def heteroTupleDecrease(n: Nat, l: MyList[Int32]): Int32 = match (n, l) {
+        case (Nat.Zero, _)                          => 0
+        case (_, MyList.Nil)                        => 0
+        case (Nat.Succ(m), MyList.Cons(x, xs))      => x + heteroTupleDecrease(m, xs)
+    }
+
+    // --- Multiple decreasing parameters ---
+
+    @CompileTest @Terminates
+    def bothDecrease(l1: MyList[Int32], l2: MyList[Int32]): Int32 = match (l1, l2) {
+        case (MyList.Nil, _)                          => 0
+        case (_, MyList.Nil)                          => 0
+        case (MyList.Cons(_, xs), MyList.Cons(_, ys)) => 1 + bothDecrease(xs, ys)
+    }
+
+    // --- Recursive call in let-binding position ---
+
+    @CompileTest @Terminates
+    def recursionInLet(l: MyList[Int32]): Int32 = match l {
+        case MyList.Nil         => 0
+        case MyList.Cons(x, xs) =>
+            let rest = recursionInLet(xs);
+            x + rest
+    }
+
+    // --- Let-chain alias propagation ---
+
+    @CompileTest @Terminates
+    def letChainAlias(l: MyList[Int32]): Int32 = match l {
+        case MyList.Nil         => 0
+        case MyList.Cons(_, xs) =>
+            let ys = xs;
+            let zs = ys;
+            1 + letChainAlias(zs)
+    }
+
+    // --- Lambda inside @Terminates body ---
+
+    @CompileTest @Terminates
+    def lambdaInTerminates(x: Int32): Int32 -> Int32 = (y: Int32) -> x + y
+
+    // --- Nested tuple scrutinee ---
+
+    @CompileTest @Terminates
+    def nestedTupleDecrease(l1: MyList[Int32], l2: MyList[Int32], q: MyList[Int32]): Int32 =
+        match ((l1, l2), q) {
+            case ((MyList.Nil, _), _)                  => 0
+            case ((MyList.Cons(_, xs), ys), _)         => 1 + nestedTupleDecrease(xs, ys, q)
+            case _                                     => 0
+        }
+
+    // --- Type ascription inside @Terminates ---
+
+    @CompileTest @Terminates
+    def ascribeInTerminates(l: MyList[Int32]): Int32 = match l {
+        case MyList.Nil         => (0 : Int32)
+        case MyList.Cons(_, xs) => (1 + ascribeInTerminates(xs) : Int32)
+    }
+
+    // --- Non-recursive @Terminates calling @Terminates ---
+
+    @CompileTest @Terminates
+    def nonRecCallsTerminating(l: MyList[Int32]): Int32 = helperLen(l)
+
 }
