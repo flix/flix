@@ -10,8 +10,6 @@ concurrency:
 jobs:
   build-and-fuzz:
     runs-on: ubuntu-latest
-    env:
-      GRADLE_OPTS: "-Xms128m -Xmx4g"
 
     steps:
       - name: Check out master
@@ -21,8 +19,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Build with gradle
-        run: ./gradlew clean compileTestScala --console=plain
+      - name: Build
+        run: ./mill clean && ./mill flix.test.compile
       - name: Fuzz with timeout
         timeout-minutes: 20
-        run: ./gradlew testFuzzerSuite --console=plain
+        run: ./mill flix.testFuzzerSuite
