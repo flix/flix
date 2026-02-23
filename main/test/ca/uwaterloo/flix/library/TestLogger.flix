@@ -4,42 +4,57 @@ mod TestLogger {
     use Logger.runWithSeverityFilter
 
     /////////////////////////////////////////////////////////////////////////////
-    // Console                                                                 //
+    // Filtering                                                               //
     /////////////////////////////////////////////////////////////////////////////
-    
     @Test
     def testRunWithSeverityFilter01(): Unit \ Assert =
         let res: String = run {
             Logger.info("info");
             "ignored"
-        } with runWithSeverityFilter(Set#{Fatal})
+        } with runWithSeverityFilter((_msg, _sev) -> true)
+        with handler Logger {
+            def log(_s, m, _k) = RichString.toString(m)
+        };
+        assertEq(expected = "info", res)
+
+    @Test
+    def testRunWithSeverityFilter02(): Unit \ Assert =
+        let res: String = run {
+            Logger.info("info");
+            "ignored"
+        } with runWithSeverityFilter((_msg, sev) -> Set.exists(a -> a == sev, Set#{Severity.Fatal}))
         with handler Logger {
             def log(_s, m, _k) = RichString.toString(m)
         };
         assertEq(expected = "ignored", res)
 
     @Test
-    def testRunWithSeverityFilter02(): Unit \ Assert =
+    def testRunWithSeverityFilter03(): Unit \ Assert =
         let res: String = run {
-            Logger.fatal("fatal");
+            Logger.info("info");
             "ignored"
-        } with runWithSeverityFilter(Set#{Fatal})
+        } with runWithSeverityFilter((msg, sev) -> if (Set.exists(a -> a == sev, Set#{Severity.Fatal})) true else {
+            Console.println(RichString.toString(msg)); false})
         with handler Logger {
             def log(_s, m, _k) = RichString.toString(m)
+        } with handler Console {
+            def readln(_k) = unreachable!()
+            def print(_s, _k) = unreachable!()
+            def eprint(_s, _k) = unreachable!()
+            def println(s, _k) = {s}
+            def eprintln(_s, _k) = unreachable!()
         };
-        assertEq(expected = "fatal", res)
+        assertEq(expected = "info", res)
 
 
     @Test
-    def testRunWithSeverityFilter03(): Unit \ Assert =
-        let res: Set[String] = run {
-            Logger.fatal("fatal");
-            Logger.warn("warn");
+    def testRunWithSeverityFilter04(): Unit \ Assert =
+        let res: String = run {
             Logger.info("info");
-            Set.empty()
-        } with runWithSeverityFilter(Set#{Fatal, Warn})
+            "ignored"
+        } with runWithSeverityFilter(Logger.onlyLevels(Set#{Warn, Fatal}))
         with handler Logger {
-            def log(_s, m, k) = Set.union(k(), Set#{RichString.toString(m)})
+            def log(_s, m, _k) = RichString.toString(m)
         };
-        assertEq(expected = Set#{"fatal", "warn"}, res)
+        assertEq(expected = "ignored", res)
 }
