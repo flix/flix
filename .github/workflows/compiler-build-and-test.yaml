@@ -23,4 +23,4 @@ jobs:
         run: ./mill flix.test.compile
       - name: Run tests with timeout
         timeout-minutes: 20
-        run: ./mill flix.test.testOnly ca.uwaterloo.flix.TestAll
+        run: ./mill flix.test
