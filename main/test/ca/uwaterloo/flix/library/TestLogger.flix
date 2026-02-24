@@ -1,7 +1,7 @@
 mod TestLogger {
     use Severity.{Fatal, Warn, Info, Trace}
     use Assert.{assertEq}
-    use Logger.runWithFilter
+    use Logger.{runWithFilter, onlyLevels}
 
     /////////////////////////////////////////////////////////////////////////////
     // Filtering                                                               //
