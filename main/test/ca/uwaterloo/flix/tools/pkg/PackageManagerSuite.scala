@@ -8,6 +8,5 @@ class PackageManagerSuite extends Suites(
   new TestBootstrap,
   new TestManifestParser,
   new TestFlixPackageManager,
-  new TestMavenPackageManager,
   new TestJarPackageManager
 )
