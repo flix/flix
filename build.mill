@@ -74,7 +74,7 @@ object flix extends ScalaModule {
     def forkWorkingDir = root
     def testSandboxWorkingDir = false
     def testParallelism = false
-    def forkEnv = super.forkEnv() ++ sys.env
+    def forkEnv = super.forkEnv() ++ Task.env
   }
 
   // ── Custom Tasks ────────────────────────────────────────
@@ -85,7 +85,7 @@ object flix extends ScalaModule {
       "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
       "org.scalatest.tools.Runner",
       "-s", "flix.fuzzers.FuzzerSuite", "-o"
-    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root)
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
   }
 
   /** Run: ./mill flix.testIDECompletion */
@@ -94,7 +94,7 @@ object flix extends ScalaModule {
       "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
       "org.scalatest.tools.Runner",
       "-s", "ca.uwaterloo.flix.api.lsp.TestCompletionProvider", "-o"
-    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root)
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
   }
 
   /** Run: ./mill flix.testPackageManager */
@@ -103,7 +103,7 @@ object flix extends ScalaModule {
       "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
       "org.scalatest.tools.Runner",
       "-s", "ca.uwaterloo.flix.tools.pkg.PackageManagerSuite", "-o"
-    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root)
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
   }
 
   /** Run: ./mill flix.vscode --targetDir /path/to/vscode/project */
