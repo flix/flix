@@ -396,7 +396,7 @@ object Resolver {
   /**
     * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
     */
-  private def resolveConstraint(c0: NamedAst.Constraint, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Constraint = c0 match {
+  private def resolveConstraint(c0: NamedAst.Constraint, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Constraint = c0 match {
     case NamedAst.Constraint(cparams0, head0, body0, loc) =>
       val cparams = resolveConstraintParams(cparams0, scp0)
       val scp = scp0 ++ mkConstraintParamScp(cparams)
@@ -461,7 +461,7 @@ object Resolver {
         case spec =>
           val scp = scp0 ++ mkSpecScp(spec)
           checkSigSpec(sym, spec, traitTvar)
-          val exp = exp0.map(resolveExp(_, scp)(Scope.Top, ns0, taenv, sctx, LocalContext.Default, root, flix))
+          val exp = exp0.map(resolveExp(_, scp)(Scope.Top, ns0, taenv, sctx, root, flix))
           Validation.Success(ResolvedAst.Declaration.Sig(sym, spec, exp, loc))
       }
   }
@@ -475,7 +475,7 @@ object Resolver {
       flatMapN(specVal) {
         case spec =>
           val scp = scp0 ++ mkSpecScp(spec)
-          val exp = resolveExp(exp0, scp)(Scope.Top, ns0, taenv, sctx, LocalContext.Default, root, flix)
+          val exp = resolveExp(exp0, scp)(Scope.Top, ns0, taenv, sctx, root, flix)
           Validation.Success(ResolvedAst.Declaration.Def(sym, spec, exp, loc))
       }
   }
@@ -730,7 +730,7 @@ object Resolver {
   /**
     * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
     */
-  private def resolveExp(exp0: NamedAst.Expr, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp0 match {
+  private def resolveExp(exp0: NamedAst.Expr, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp0 match {
     case NamedAst.Expr.Ambiguous(qname, loc) =>
       // Special Case: We must check if we have a static field access, e.g. Math.PI
       if (qname.namespace.idents.length == 1) {
@@ -874,8 +874,8 @@ object Resolver {
 
     case NamedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = resolveFormalParam(fparam, Wildness.AllowWild, scp0, taenv, ns0, root)
-      val scp = scp0 ++ mkFormalParamScp(List(p))
-      val e = resolveExp(exp, scp)(scope, ns0, taenv, sctx, LocalContext.Default, root, flix) // super calls not allowed inside lambdas
+      val scp = (scp0 ++ mkFormalParamScp(List(p))).withSuperClass(None) // super calls not allowed inside lambdas
+      val e = resolveExp(exp, scp)
       ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
 
     case NamedAst.Expr.Unary(sop, exp, loc) =>
@@ -919,7 +919,7 @@ object Resolver {
     case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
       // Visit the body in the new scope
-      val e = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, lctx, root, flix)
+      val e = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
       ResolvedAst.Expr.Region(sym, regSym, e, loc)
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
@@ -1190,7 +1190,7 @@ object Resolver {
 
     case NamedAst.Expr.InvokeSuperConstructor(exps, loc) =>
       val es = exps.map(resolveExp(_, scp0))
-      lctx.superClass match {
+      scp0.superClass match {
         case Some(clazz) =>
           ResolvedAst.Expr.InvokeSuperConstructor(clazz, es, loc)
         case None =>
@@ -1206,7 +1206,7 @@ object Resolver {
 
     case NamedAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
       val es = exps.map(resolveExp(_, scp0))
-      lctx.superClass match {
+      scp0.superClass match {
         case Some(clazz) =>
           ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, es, loc)
         case None =>
@@ -1223,13 +1223,13 @@ object Resolver {
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
       //
       // Check that the type is a JVM type (after type alias erasure).
-      // Set the LocalContext with the super class for constructor/method bodies.
+      // Set the super class on the scope for constructor/method bodies.
       //
       UnkindedType.eraseAliases(t) match {
         case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
-          val superCtx = LocalContext(superClass = Some(clazz))
-          val cs = constructors.map(visitJvmConstructor(_, scp0)(scope, ns0, taenv, sctx, superCtx, root, flix))
-          val ms = methods.map(visitJvmMethod(_, scp0)(scope, ns0, taenv, sctx, superCtx, root, flix))
+          val superScp = scp0.withSuperClass(Some(clazz))
+          val cs = constructors.map(visitJvmConstructor(_, superScp))
+          val ms = methods.map(visitJvmMethod(_, superScp))
           ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
         case _ =>
           val cs = constructors.map(visitJvmConstructor(_, scp0))
@@ -1384,7 +1384,7 @@ object Resolver {
   /**
     * Resolve the application expression, performing currying over the subexpressions.
     */
-  private def visitApplyClo(exp: NamedAst.Expr.Apply, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp match {
+  private def visitApplyClo(exp: NamedAst.Expr.Apply, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = exp match {
     case NamedAst.Expr.Apply(exp0, exps0, loc) =>
       val e = resolveExp(exp0, scp0)
       val es = exps0.map(resolveExp(_, scp0))
@@ -1394,7 +1394,7 @@ object Resolver {
   /**
     * Resolves the exps and creates an ApplyClo node applying an error node to the exps.
     */
-  private def visitApplyError(err: CompilationMessage, exps: List[NamedAst.Expr], scp0: LocalScope, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyError(err: CompilationMessage, exps: List[NamedAst.Expr], scp0: LocalScope, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
     val exp: ResolvedAst.Expr = ResolvedAst.Expr.Error(err)
     mkApplyClo(exp, es, loc.asSynthetic)
@@ -1508,7 +1508,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
     val base = args => ResolvedAst.Expr.ApplyDef(DefSymUse(defn.sym, innerLoc), args, outerLoc)
     visitApplyFull(base, defn.spec.fparams.length, es, outerLoc)
@@ -1533,7 +1533,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
     val base = args => ResolvedAst.Expr.ApplySig(SigSymUse(sig.sym, innerLoc), args, outerLoc)
     visitApplyFull(base, sig.spec.fparams.length, es, outerLoc)
@@ -1558,7 +1558,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
     val base = args => ResolvedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, innerLoc), args, outerLoc)
     visitApplyFull(base, arity, es, outerLoc)
@@ -1583,7 +1583,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
     val base = args => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, innerLoc), args, outerLoc)
     visitApplyFull(base, op.spec.fparams.length, es, outerLoc)
@@ -1598,7 +1598,7 @@ object Resolver {
     *   - ` Cons(a,b)  ===> Cons(a, b)`
     *   - `Cons(a,b,c) ===> Cons(a, b)(c)`
     */
-  private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
     val base = args => ResolvedAst.Expr.Tag(CaseSymUse(caze.sym, innerLoc), args, outerLoc)
     visitApplyFull(base, caze.tpes.length, es, outerLoc)
@@ -1613,7 +1613,7 @@ object Resolver {
     *   - ` Add(a,b)  ===> Add(a, b)`
     *   - `Add(a,b,c) ===> Add(a, b)(c)`
     */
-  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
     val es = exps.map(resolveExp(_, scp0))
     val base = args => ResolvedAst.Expr.RestrictableTag(RestrictableCaseSymUse(caze.sym, innerLoc), args, isOpen, outerLoc)
     visitApplyFull(base, caze.tpes.length, es, outerLoc)
@@ -1622,7 +1622,7 @@ object Resolver {
   /**
     * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
     */
-  private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmMethod = method match {
     case NamedAst.JvmMethod(ident, fparams0, exp, tpe, eff, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       val scp = scp0 ++ mkFormalParamScp(fparams)
@@ -1635,7 +1635,7 @@ object Resolver {
   /**
     * Performs name resolution on the given JvmConstructor `constructor` in the namespace `ns0`.
     */
-  private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
+  private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
     case NamedAst.JvmConstructor(exp, tpe, eff, loc) =>
       val e = resolveExp(exp, scp0)
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
@@ -1646,7 +1646,7 @@ object Resolver {
   /**
     * Performs name resolution on the handler that handles `eff` with rules `rules0`.
     */
-  private def visitHandler(qname: Name.QName, rules0: List[NamedAst.HandlerRule], scp0: LocalScope)(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): Result[(EffSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect] = {
+  private def visitHandler(qname: Name.QName, rules0: List[NamedAst.HandlerRule], scp0: LocalScope)(implicit scope: Scope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Result[(EffSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect] = {
     lookupEffect(qname, scp0, ns, root) match {
       case Result.Ok(decl) =>
         checkEffectIsAccessible(decl, ns, qname.loc)
@@ -1827,7 +1827,7 @@ object Resolver {
   /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
     */
-  private def resolvePredicateHead(h0: NamedAst.Predicate.Head, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Predicate.Head = h0 match {
+  private def resolvePredicateHead(h0: NamedAst.Predicate.Head, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Predicate.Head = h0 match {
     case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
       val ts = terms.map(resolveExp(_, scp0))
       ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
@@ -1836,7 +1836,7 @@ object Resolver {
   /**
     * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
     */
-  private def resolvePredicateBody(b0: NamedAst.Predicate.Body, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Predicate.Body = b0 match {
+  private def resolvePredicateBody(b0: NamedAst.Predicate.Body, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Predicate.Body = b0 match {
     case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(resolvePatternInConstraint(_, scp0, ns0, root))
       ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
@@ -2039,7 +2039,7 @@ object Resolver {
     }
   }
 
-  private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, lctx: LocalContext, root: NamedAst.Root, flix: Flix): ResolvedAst.ExtMatchRule = rule0 match {
+  private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.ExtMatchRule = rule0 match {
     case NamedAst.ExtMatchRule(pat, exp, loc) =>
       val (p, scps) = resolveExtPattern(pat)
       val scp = scps.foldLeft(scp0)(_ ++ _)
@@ -3561,17 +3561,6 @@ object Resolver {
     * @param errors the [[ResolutionError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[ResolutionError])
-
-  /**
-    * A local context threaded through expression resolution.
-    *
-    * @param superClass `None` means super calls are illegal here; `Some(clazz)` means super calls are allowed and resolve to `clazz`.
-    */
-  private case class LocalContext(superClass: Option[Class[?]])
-
-  private object LocalContext {
-    val Default: LocalContext = LocalContext(superClass = None)
-  }
 
   /**
     * A type represented by a lowercase name.
