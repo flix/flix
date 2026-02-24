@@ -71,6 +71,8 @@ object TypeVerifier {
             case SemanticOp.Int32Op.Not => SimpleType.Int32
             case SemanticOp.Int64Op.Neg => SimpleType.Int64
             case SemanticOp.Int64Op.Not => SimpleType.Int64
+            case _: SemanticOp.ReflectOp =>
+              throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
           }
           check(expected = opTpe)(actual = t, loc)
           check(expected = tpe)(actual = opTpe, loc)

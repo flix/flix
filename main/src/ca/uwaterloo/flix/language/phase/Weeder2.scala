@@ -2396,6 +2396,9 @@ object Weeder2 {
         case ("INT8_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc)
         case ("INT8_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc)
         case ("LINE", None) => Expr.Cst(Constant.Str(s"${loc.startLine}"), loc)
+        case ("REFLECT_EFF", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectEff, e1, loc)
+        case ("REFLECT_VALUE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectValue, e1, loc)
+        case ("REFLECT_TYPE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectType, e1, loc)
         case ("VECTOR_GET", Some(e1 :: e2 :: Nil)) => Expr.VectorLoad(e1, e2, loc)
         case ("VECTOR_LENGTH", Some(e1 :: Nil)) => Expr.VectorLength(e1, loc)
         case _ =>

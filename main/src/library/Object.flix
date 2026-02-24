@@ -23,7 +23,7 @@ pub mod Object {
     ///
     @Inline
     pub def isNull(x: a): Bool =
-        match Reflect.reflect(x) {
+        match Reflect.reflectValue(x) {
             case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
             case _ => false
         }

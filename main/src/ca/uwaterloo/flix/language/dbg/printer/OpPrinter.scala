@@ -162,6 +162,9 @@ object OpPrinter {
          Int16Op.Shr |
          Int32Op.Shr |
          Int64Op.Shr => shr
+    case ReflectOp.ReflectEff => "reflectEff"
+    case ReflectOp.ReflectType => "reflectType"
+    case ReflectOp.ReflectValue => "reflectValue"
   }
 
   /**
