@@ -31,14 +31,14 @@ pub mod Reflect {
         case JvmObject(JObject)
     }
 
+    /// Returns the purity of `ef`.
+    pub def reflectEff(p: ProxyEff[ef]): Purity = %%REFLECT_EFF%%(p)
+
     /// Returns the erased runtime representation of `x`.
     pub def reflectValue(x: t): JvmValue = %%REFLECT_VALUE%%(x)
 
     /// Returns the erased runtime representation of `t`.
     pub def reflectType(x: Proxy[t]): JvmType = %%REFLECT_TYPE%%(x)
-
-    /// Returns the purity of `ef`.
-    pub def reflectEff(p: ProxyEff[ef]): Purity = %%REFLECT_EFF%%(p)
 
     /// A reflected type, reflecting its erased runtime representation.
     pub enum JvmType {
