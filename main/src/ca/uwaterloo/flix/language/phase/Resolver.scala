@@ -1640,15 +1640,12 @@ object Resolver {
   }
 
   /**
-    * Injects the given `clazz` into all `InvokeSuperConstructor` nodes in the given expression.
+    * Injects the given `clazz` into the `InvokeSuperConstructor` expression.
+    * The Safety phase will ensure that constructor bodies cannot contain any other expression.
     */
   private def injectSuperClass(exp: ResolvedAst.Expr, clazz: Class[?]): ResolvedAst.Expr = exp match {
     case ResolvedAst.Expr.InvokeSuperConstructor(_, exps, loc) =>
       ResolvedAst.Expr.InvokeSuperConstructor(clazz, exps, loc)
-    case ResolvedAst.Expr.Stm(exp1, exp2, loc) =>
-      ResolvedAst.Expr.Stm(injectSuperClass(exp1, clazz), injectSuperClass(exp2, clazz), loc)
-    case ResolvedAst.Expr.Let(sym, exp1, exp2, loc) =>
-      ResolvedAst.Expr.Let(sym, injectSuperClass(exp1, clazz), injectSuperClass(exp2, clazz), loc)
     case other => other
   }
 

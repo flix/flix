@@ -794,24 +794,25 @@ object Safety {
     * are supposed to implement `clazz`.
     *
     * The conditions are that:
-    *   - `clazz` must be an interface or have a non-private constructor without arguments.
+    *   - `clazz` must be an interface or have a non-private constructor without arguments (unless user-defined constructors are provided).
     *   - `clazz` must be public.
+    *   - Each constructor body must be exactly a `super(...)` call.
     *   - `methods` must take the object itself (`this`) as the first argument.
     *   - `methods` must include all required signatures (e.g. abstract methods).
     *   - `methods` must not include non-existing methods.
     *   - `methods` must not let control effects escape.
     */
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, tpe0, _, _constructors, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
       // `clazz` must be an interface or have a non-private constructor without arguments
       // (unless user-defined constructors are provided).
-      if (!clazz.isInterface && _constructors.isEmpty && !hasNonPrivateZeroArgConstructor(clazz)) {
+      if (!clazz.isInterface && cs.isEmpty && !hasNonPrivateZeroArgConstructor(clazz)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
       }
 
       // Each constructor body must be exactly a `super(...)` call.
-      _constructors.foreach {
+      cs.foreach {
         case JvmConstructor(exp, _, _, constructorLoc) =>
           exp match {
             case _: Expr.InvokeSuperConstructor => () // OK

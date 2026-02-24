@@ -529,8 +529,8 @@ object TypeReconstruction {
     case KindedAst.Expr.NewObject(name, clazz, constructors, methods, loc) =>
       val tpe = getFlixType(clazz)
       val eff = Type.IO
-      val cs = constructors map visitJvmConstructor
-      val ms = methods map visitJvmMethod
+      val cs = constructors.map(visitJvmConstructor)
+      val ms = methods.map(visitJvmMethod)
       TypedAst.Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc)
 
     case KindedAst.Expr.NewChannel(exp, tvar, loc) =>

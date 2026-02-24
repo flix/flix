@@ -397,9 +397,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): Thread \ IO =
         |    let name = "test";
         |    new Thread {
-        |        def new(): Thread \ IO =
-        |            let _ = 1;
-        |            super(name)
+        |        def new(): Thread \ IO = ???
         |    }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -417,21 +415,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |            let _ = "hello";
         |            let _ = "world";
         |            super(name)
-        |    }
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
-  }
-
-  test("NewObjectConstructorMissingSuperCall.03") {
-    val input =
-      """
-        |import java.lang.Thread
-        |def f(): Thread \ IO =
-        |    new Thread {
-        |        def new(): Thread \ IO =
-        |            let x = "name";
-        |            super(x)
         |    }
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
