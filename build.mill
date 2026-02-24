@@ -107,7 +107,7 @@ object flix extends ScalaModule {
   }
 
   /** Run: ./mill flix.vscode */
-  def vscode = Task {
+  def vscode() = Task.Command {
     val envFile = root / ".env"
     if (!os.exists(envFile)) {
       throw new Exception("Create .env in the project root with:\n  VSCODE_PATH=/path/to/vscode/project")
