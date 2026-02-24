@@ -254,15 +254,16 @@ object Summary {
     }.sum
     case Expr.RunWith(exp1, exp2, _, _, _) => countCheckedEcasts(exp1) + countCheckedEcasts(exp2)
     case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
     case Expr.InvokeStaticMethod(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.GetField(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutField(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.GetStaticField(_, _, _, _) => 0
     case Expr.PutStaticField(_, exp, _, _, _) => countCheckedEcasts(exp)
-    case Expr.NewObject(_, _, _, _, methods, _) => methods.map {
-      case TypedAst.JvmMethod(_, _, exp, _, _, _) => countCheckedEcasts(exp)
-    }.sum
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      constructors.map { case TypedAst.JvmConstructor(exp, _, _, _) => countCheckedEcasts(exp) }.sum +
+      methods.map { case TypedAst.JvmMethod(_, _, exp, _, _, _) => countCheckedEcasts(exp) }.sum
     case Expr.NewChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum

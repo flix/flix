@@ -80,13 +80,14 @@ object TypedAstPrinter {
     case Expr.Handler(symUse, rules, _, _, _, _, _) => DocAst.Expr.Handler(symUse.sym, rules.map(printHandlerRule))
     case Expr.RunWith(exp1, exp2, _, _, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
+    case Expr.InvokeSuperConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
     case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))
     case Expr.InvokeStaticMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
     case Expr.GetField(field, exp, _, _, _) => DocAst.Expr.JavaGetField(field, print(exp))
     case Expr.PutField(field, exp1, exp2, _, _, _) => DocAst.Expr.JavaPutField(field, print(exp1), print(exp2))
     case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(field)
     case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(field, print(exp))
-    case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methods.map(printJvmMethod))
+    case Expr.NewObject(name, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
     case Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
@@ -103,6 +104,14 @@ object TypedAstPrinter {
     case Expr.FixpointSolveWithProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_, _, _) => DocAst.Expr.Error
+  }
+
+  /**
+    * Returns the [[DocAst.JvmConstructor]] representation of `constructor`.
+    */
+  private def printJvmConstructor(constructor: TypedAst.JvmConstructor): DocAst.JvmConstructor = constructor match {
+    case TypedAst.JvmConstructor(exp, retTpe, _, _) =>
+      DocAst.JvmConstructor(print(exp), TypePrinter.print(retTpe))
   }
 
   /**

@@ -137,6 +137,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordStaticLowercase => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
       case TokenKind.KeywordStruct => "'struct'"
+      case TokenKind.KeywordSuper => "'super'"
       case TokenKind.KeywordThrow => "'throw'"
       case TokenKind.KeywordTrait => "'trait'"
       case TokenKind.KeywordTrue => "'true'"
@@ -268,6 +269,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStaticLowercase => true
     case TokenKind.KeywordStruct => true
+    case TokenKind.KeywordSuper => true
     case TokenKind.KeywordThrow => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
@@ -444,6 +446,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSolve => true
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStaticUppercase => true
+    case TokenKind.KeywordSuper => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
     case TokenKind.KeywordTypeMatch => true
@@ -863,6 +866,8 @@ object TokenKind {
   case object KeywordStaticUppercase extends TokenKind
 
   case object KeywordStruct extends TokenKind
+
+  case object KeywordSuper extends TokenKind
 
   case object KeywordThrow extends TokenKind
 

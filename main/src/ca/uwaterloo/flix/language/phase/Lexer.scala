@@ -120,6 +120,7 @@ object Lexer {
       ("spawn", TokenKind.KeywordSpawn),
       ("static", TokenKind.KeywordStaticLowercase),
       ("struct", TokenKind.KeywordStruct),
+      ("super", TokenKind.KeywordSuper),
       ("throw", TokenKind.KeywordThrow),
       ("trait", TokenKind.KeywordTrait),
       ("true", TokenKind.KeywordTrue),

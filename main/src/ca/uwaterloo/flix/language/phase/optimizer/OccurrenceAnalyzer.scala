@@ -268,13 +268,15 @@ object OccurrenceAnalyzer {
           (Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
-        val (ms, ctxs) = methods.map(visitJvmMethod).unzip
-        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
-        if (ListOps.zip(methods, ms).forall { case (m1, m2) => m1 eq m2 }) {
+      case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+        val (cs, cCtxs) = constructors.map(visitJvmConstructor).unzip
+        val (ms, mCtxs) = methods.map(visitJvmMethod).unzip
+        val ctx = (cCtxs ++ mCtxs).foldLeft(ExprContext.Empty)(combineBranch)
+        if (ListOps.zip(constructors, cs).forall { case (c1, c2) => c1 eq c2 } &&
+            ListOps.zip(methods, ms).forall { case (m1, m2) => m1 eq m2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
+          (Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc), ctx)
         }
     }
   }
@@ -325,6 +327,16 @@ object OccurrenceAnalyzer {
         (rule, ctx2) // Reuse rule.
       } else {
         (MonoAst.HandlerRule(op, fps, e), ctx2)
+      }
+  }
+
+  private def visitJvmConstructor(constructor: MonoAst.JvmConstructor)(implicit sym0: Symbol.DefnSym): (MonoAst.JvmConstructor, ExprContext) = constructor match {
+    case MonoAst.JvmConstructor(exp, retTpe, eff, loc) =>
+      val (e, ctx1) = visitExp(exp)
+      if (e eq exp) {
+        (constructor, ctx1) // Reuse constructor.
+      } else {
+        (MonoAst.JvmConstructor(e, retTpe, eff, loc), ctx1)
       }
   }
 

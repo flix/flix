@@ -522,6 +522,9 @@ object Visitor {
       case Expr.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
+      case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+        exps.foreach(visitExpr)
+
       case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
         visitExpr(exp)
         exps.foreach(visitExpr)
@@ -541,7 +544,8 @@ object Visitor {
       case Expr.PutStaticField(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.NewObject(_, _, _, _, methods, _) =>
+      case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+        constructors.foreach(cn => visitExpr(cn.exp)(a, c))
         methods.foreach(visitJvmMethod)
 
       case Expr.NewChannel(exp, _, _, _) =>

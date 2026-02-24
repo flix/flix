@@ -211,6 +211,9 @@ object UseGraph {
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       visitExps(exps)
 
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      visitExps(exps)
+
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
@@ -229,8 +232,8 @@ object UseGraph {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      visitExps(methods.map(_.exp))
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      visitExps(constructors.map(_.exp)) ++ visitExps(methods.map(_.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp)

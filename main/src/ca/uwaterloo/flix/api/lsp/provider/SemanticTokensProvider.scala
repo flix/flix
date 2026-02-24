@@ -620,6 +620,11 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, e) => acc ++ visitExp(e)
@@ -642,8 +647,10 @@ object SemanticTokensProvider {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(Iterator.empty[SemanticToken]) {
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      constructors.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, c) => acc ++ visitExp(c.exp)
+      } ++ methods.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 

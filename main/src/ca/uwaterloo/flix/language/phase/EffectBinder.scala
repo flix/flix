@@ -117,6 +117,14 @@ object EffectBinder {
       ReducedAst.FormalParam(sym, tpe)
   }
 
+  private def visitJvmConstructor(constructor: LiftedAst.JvmConstructor)(implicit flix: Flix): ReducedAst.JvmConstructor = constructor match {
+    case LiftedAst.JvmConstructor(clo0, retTpe, purity, loc) =>
+      // JvmConstructors are generated as their own functions so let-binding do not
+      // span across
+      val clo = visitExpr(clo0)
+      ReducedAst.JvmConstructor(clo, retTpe, purity, loc)
+  }
+
   private def visitJvmMethod(method: LiftedAst.JvmMethod)(implicit flix: Flix): ReducedAst.JvmMethod = method match {
     case LiftedAst.JvmMethod(ident, fparams0, clo0, retTpe, purity, loc) =>
       // JvmMethods are generated as their own functions so let-binding do not
@@ -211,7 +219,7 @@ object EffectBinder {
       }
       ReducedAst.Expr.RunWith(e, effUse, rules1, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.NewObject(_, _, _, _, _, _) =>
+    case LiftedAst.Expr.NewObject(_, _, _, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
@@ -306,9 +314,10 @@ object EffectBinder {
       }
       ReducedAst.Expr.RunWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+    case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+      val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
+      ReducedAst.Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
   }
 
   /**
@@ -347,7 +356,7 @@ object EffectBinder {
       case ReducedAst.Expr.Region(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.RunWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.NewObject(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
     }
 
     bind(visitExprInnerWithBinders(binders)(exp))
