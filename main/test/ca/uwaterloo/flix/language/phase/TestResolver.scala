@@ -2034,4 +2034,75 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
+
+  test("IllegalSuperCall.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): Unit = {
+        |    super();
+        |    ()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("IllegalSuperCall.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): String = super.toString()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("IllegalSuperCall.03") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): Object \ IO =
+        |    new Object {
+        |        def toString(_this: Object): String \ IO =
+        |            let g = () -> super.toString();
+        |            g()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("IllegalSuperCall.04") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): Object \ IO =
+        |    new Object {
+        |        def hashCode(_this: Object): Int32 \ IO =
+        |            let g = () -> {
+        |                let h = () -> super.hashCode();
+        |                h()
+        |            };
+        |            g()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
+
+  test("IllegalSuperCall.05") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): Object \ IO =
+        |    new Object {
+        |        def new(): Object \ IO =
+        |            let g = () -> super();
+        |            g()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSuperCall](result)
+  }
 }
