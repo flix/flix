@@ -113,6 +113,7 @@ object ErrorCode {
   case object E3067 extends ErrorCode
   case object E3125 extends ErrorCode
   case object E3138 extends ErrorCode
+  case object E3169 extends ErrorCode
   case object E3178 extends ErrorCode
   case object E3236 extends ErrorCode
   case object E3249 extends ErrorCode

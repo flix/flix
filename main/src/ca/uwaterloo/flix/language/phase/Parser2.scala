@@ -2326,6 +2326,8 @@ object Parser2 {
       }
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2341,6 +2343,8 @@ object Parser2 {
       Pattern.pattern()
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2376,7 +2380,9 @@ object Parser2 {
         Type.ttype()
       }
       if (eat(TokenKind.Equal)) {
-        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+        closeWithError(open(), ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2622,8 +2628,10 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expression()
-      if(eat(TokenKind.Equal)) {
+      if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2796,7 +2804,10 @@ object Parser2 {
       nameAllowQualified(NAME_JAVA, tail = Set())
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
-      } else {
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
+      }
+      else {
         expect(TokenKind.ArrowThickR)
       }
       statement()
