@@ -122,13 +122,13 @@ pub mod Logger {
     /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
     /// Discards style from the logged messages.
     ///
-    pub def handleWithFileWrite(filename: String, f: a -> b \ ef): a -> b \ (ef - Logger) + FileWrite = 
+    pub def handleWithFileWrite(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + FileWrite = 
         x -> run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = 
                 let output = "[${ToString.toString(s)}] ${RichString.toPlainString(m)}\n";
-                FileWrite.append({str = output}, filename);
+                FileWrite.append({str = output}, file);
                 k()
         }
 
@@ -138,6 +138,6 @@ pub mod Logger {
     /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
     /// Discards style from the logged messages.
     ///
-    pub def runWithFileWrite(filename: String, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
-        handleWithFileWrite(filename, f)()
+    pub def runWithFileWrite(file: String, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
+        handleWithFileWrite(file, f)()
 }
