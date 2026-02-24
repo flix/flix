@@ -52,6 +52,7 @@ object GenAnonymousClasses {
     val cm = ClassMaker.mkClass(className, IsFinal, superClass = superClass, interfaces = interfaces)
 
     // Generate constructor: if user-defined constructors exist, invoke the first one; otherwise default no-arg super().
+    // Safety guarantees there is at most one constructor.
     if (obj.constructors.nonEmpty) {
       val c = obj.constructors.head
       c.exp match {

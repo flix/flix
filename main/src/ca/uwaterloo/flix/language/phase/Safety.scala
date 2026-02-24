@@ -797,6 +797,7 @@ object Safety {
     *   - `clazz` must be an interface or have a non-private constructor without arguments (unless user-defined constructors are provided).
     *   - `clazz` must be public.
     *   - Each constructor body must be exactly a `super(...)` call.
+    *   - There can be at most one constructor.
     *   - `methods` must take the object itself (`this`) as the first argument.
     *   - `methods` must include all required signatures (e.g. abstract methods).
     *   - `methods` must not include non-existing methods.
@@ -818,6 +819,11 @@ object Safety {
             case _: Expr.InvokeSuperConstructor => () // OK
             case _ => sctx.errors.add(NewObjectConstructorMissingSuperCall(clazz, constructorLoc))
           }
+      }
+
+      // There can be at most one constructor.
+      if (cs.length > 1) {
+        sctx.errors.add(NewObjectTooManyConstructors(clazz, loc))
       }
 
       // `clazz` must be public.

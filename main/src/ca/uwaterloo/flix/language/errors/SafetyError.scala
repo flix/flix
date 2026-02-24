@@ -548,6 +548,29 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate that a 'new' expression has more than one constructor.
+    *
+    * @param clazz the class or interface being extended.
+    * @param loc   the source location of the new object expression.
+    */
+  case class NewObjectTooManyConstructors(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5826
+
+    def summary: String = "A 'new' expression can have at most one constructor."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> A '${red("new")}' expression can have at most one constructor.
+         |
+         |${highlight(loc, "too many constructors", fmt)}
+         |
+         |${underline("Explanation:")} A 'new' expression that extends a class or interface
+         |can define at most one constructor.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate a missing `this` parameter for a method.
     *
     * @param clazz The expected `this` type.
