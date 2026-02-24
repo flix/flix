@@ -9,7 +9,6 @@ mod TestRichString {
         let testRcFinal = testRc1 + testRc2;
         assertEq(expected = testRc, testRcFinal)
 
-
     @Test
     def testEquals02(): Unit \ Assert = 
         let testRc = RichString.fromString("hello") |> RichString.bgWhite |> RichString.bold;
