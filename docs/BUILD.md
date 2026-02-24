@@ -61,6 +61,7 @@ Common commands:
 - `./mill flix.testPackageManager` — run package manager tests
 - `./mill flix.testFuzzerSuite` — run fuzzer tests
 - `./mill flix.testIDECompletion` — run IDE completion tests
+- `./mill flix.vscode` — build and copy JAR to VSCode project (requires `.env`)
 
 The Mill version is pinned in `.mill-version` and JVM options are configured in
 `.mill-jvm-opts`.
