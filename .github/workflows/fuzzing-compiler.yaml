@@ -19,8 +19,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Build
-        run: ./mill clean && ./mill flix.test.compile
       - name: Fuzz with timeout
         timeout-minutes: 20
         run: ./mill flix.testFuzzerSuite

@@ -23,7 +23,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Build
-        run: ./mill flix.test.compile
+        run: ./mill flix.compile
       - name: Test Package Manager suite with timeout
         env: # Only add token in this step to prevent other steps from abusing the token
           GITHUB_CI_RUNNER_TOKEN: ${{ secrets.GITHUB_TOKEN }}

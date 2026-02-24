@@ -7,5 +7,7 @@ import org.scalatest.Suites
 class PackageManagerSuite extends Suites(
   new TestBootstrap,
   new TestManifestParser,
-  new TestFlixPackageManager
+  new TestFlixPackageManager,
+  new TestMavenPackageManager,
+  new TestJarPackageManager
 )

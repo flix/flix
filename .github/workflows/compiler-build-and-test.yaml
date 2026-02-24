@@ -20,7 +20,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Build
-        run: ./mill flix.test.compile
+        run: ./mill flix.compile
       - name: Run tests with timeout
         timeout-minutes: 20
         run: ./mill flix.test
