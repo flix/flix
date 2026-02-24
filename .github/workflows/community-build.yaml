@@ -23,12 +23,12 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Build Flix JAR
-        run: ./gradlew jar
+        run: ./mill flix.assembly
       - name: Upload Flix JAR
         uses: actions/upload-artifact@v4
         with:
           name: flix-jar
-          path: build/libs/flix.jar
+          path: out/flix/assembly.dest/out.jar
 
   # Spawn a separate job per community build
   community-build:
@@ -70,4 +70,4 @@ jobs:
         timeout-minutes: 10
         run: |
           # Build the project.
-          java -jar flix.jar build --github-token ${{ secrets.GITHUB_TOKEN }}
+          java -jar out.jar build --github-token ${{ secrets.GITHUB_TOKEN }}

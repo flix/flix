@@ -15,8 +15,10 @@
  */
 package flix.fuzzers
 
+import org.scalatest.DoNotDiscover
 import org.scalatest.Suites
 
+@DoNotDiscover
 class FuzzerSuite extends Suites(
   new FuzzPrefixes,
   new FuzzDeleteLines,
