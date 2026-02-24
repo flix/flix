@@ -113,4 +113,56 @@ mod Test.Exp.Jvm.NewObject.Super {
                 super.toString()
         }
 
+    // Test 11: call super.toString() from within a concreteMethod override (cross-method)
+    @Test
+    def testSuperMethod11(): Unit \ Assert + IO =
+        let anon = new TestClassWithDefaultConstructor {
+            def abstractMethod(_this: TestClassWithDefaultConstructor, x: Int32): Int32 = x
+            def concreteMethod(_this: TestClassWithDefaultConstructor, _y: String): String \ IO =
+                super.toString()
+        };
+        assertTrue(anon.concreteMethod("ignored").startsWith("Anon"))
+
+    // Test 12: call super.hashCode() from within a toString override (cross-method)
+    @Test
+    def testSuperMethod12(): Unit \ Assert + IO =
+        let obj = new Object {
+            def toString(_this: Object): String \ IO =
+                "hash:" + Int32.toString(super.hashCode())
+        };
+        assertTrue(obj.toString().startsWith("hash:"))
+
+    // Test 13: call super.concreteMethod(y) from within a toString override (cross-method)
+    @Test
+    def testSuperMethod13(): Unit \ Assert + IO =
+        let anon = new TestClassWithDefaultConstructor {
+            def abstractMethod(_this: TestClassWithDefaultConstructor, x: Int32): Int32 = x
+            def toString(_this: TestClassWithDefaultConstructor): String \ IO =
+                super.concreteMethod("bar")
+        };
+        assertEq(expected = "foobar", anon.toString())
+
+    // Test 14: call both super.toString() and super.concreteMethod(y) from the same method override
+    @Test
+    def testSuperMethod14(): Unit \ Assert + IO =
+        let anon = new TestClassWithDefaultConstructor {
+            def abstractMethod(_this: TestClassWithDefaultConstructor, x: Int32): Int32 = x
+            def concreteMethod(_this: TestClassWithDefaultConstructor, y: String): String \ IO =
+                super.concreteMethod(y) + "|" + super.toString()
+        };
+        assertTrue(anon.concreteMethod("baz").startsWith("foobaz|"))
+
+    // Test 15: cross-method super call in one method, same-method super call in another
+    @Test
+    def testSuperMethod15(): Unit \ Assert + IO =
+        let anon = new TestClassWithDefaultConstructor {
+            def abstractMethod(_this: TestClassWithDefaultConstructor, x: Int32): Int32 = x
+            def concreteMethod(_this: TestClassWithDefaultConstructor, y: String): String \ IO =
+                super.concreteMethod(y)
+            def toString(_this: TestClassWithDefaultConstructor): String \ IO =
+                super.concreteMethod("cross")
+        };
+        assertEq(expected = "foobar", anon.concreteMethod("bar"));
+        assertEq(expected = "foocross", anon.toString())
+
 }
