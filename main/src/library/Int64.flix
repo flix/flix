@@ -248,7 +248,7 @@ pub mod Int64 {
 
     ///
     /// Returns the bit of `x` at `position` (either 0 or 1).
-    /// Considers the 6 rightmost bits of `position` (`position` mod 64).
+    /// Considers the 6 rightmost bits of `position` (`position` modulo 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
@@ -256,21 +256,21 @@ pub mod Int64 {
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
-    /// Considers the 6 rightmost bits of `position` (`position` mod 64).
+    /// Considers the 6 rightmost bits of `position` (`position` modulo 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseOr(x, leftShift(1i64, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
-    /// Considers the 6 rightmost bits of `position` (`position` mod 64).
+    /// Considers the 6 rightmost bits of `position` (`position` modulo 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseAnd(x, bitwiseNot(leftShift(1i64, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
-    /// Considers the 6 rightmost bits of `position` (`position` mod 64).
+    /// Considers the 6 rightmost bits of `position` (`position` modulo 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseXor(x, leftShift(1i64, pos#pos))
