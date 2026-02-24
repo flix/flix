@@ -887,7 +887,6 @@ object Weeder2 {
         case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
         case TreeKind.Expr.Region => visitRegionExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
-        case TreeKind.Expr.TypeMatch => visitTypeMatchExpr(tree)
         case TreeKind.Expr.RestrictableChoose
              | TreeKind.Expr.RestrictableChooseStar => visitRestrictableChooseExpr(tree)
         case TreeKind.Expr.ForApplicative => visitForApplicativeExpr(tree)
@@ -1440,25 +1439,6 @@ object Weeder2 {
         case (_, _) =>
           val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           Validation.Success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error), tree.loc))
-      }
-    }
-
-    private def visitTypeMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.TypeMatch)
-      val rules0 = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules0)(visitTypeMatchRule)) {
-        case (_, Nil) =>
-          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          sctx.errors.add(error)
-          Expr.Error(error)
-        case (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
-      }
-    }
-
-    private def visitTypeMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[TypeMatchRule, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.TypeMatchRuleFragment)
-      mapN(pickNameIdent(tree), pickExpr(tree), Types.pickType(tree)) {
-        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr, tree.loc)
       }
     }
 

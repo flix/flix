@@ -537,34 +537,6 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      // Visit the match expression.
-      val usedMatch = visitExp(exp, env0, rc)
-
-      // Visit each match rule.
-      val usedRules = rules map {
-        case TypeMatchRule(bnd, _, body, _) =>
-          // Get the free var from the sym
-          val fvs = Set(bnd.sym)
-
-          // Extend the environment with the free variables.
-          val extendedEnv = env0 ++ fvs
-
-          // Visit the pattern, guard and body.
-          val usedBody = visitExp(body, extendedEnv, rc)
-
-          // Check for unused variable symbols.
-          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
-
-          // Check for shadowed variable symbols.
-          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
-
-          // Combine everything together.
-          (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
-      }
-
-      usedMatch ++ usedRules.reduceLeft(_ ++ _)
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)

@@ -339,20 +339,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError.NeedAtleastOne](result)
   }
 
-  test("ExpectedArrowThickRGotEqual.01") {
-    val input =
-      """
-        |def inspect(x: a): String = typematch x {
-        |    case _: Int32   = "x is an Int32"
-        |    case _: String  => "x is a String"
-        |    case _: _       => "x is neither an Int32 nor a String"
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.ExpectedArrowThickRGotEqual](result)
-  }
-
-
   test("ExpectedArrowThickRGotEqual.02") {
     val input =
       """

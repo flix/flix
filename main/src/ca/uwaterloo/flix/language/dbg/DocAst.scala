@@ -97,8 +97,6 @@ object DocAst {
 
     case class ExtMatch(d: Expr, branches: List[(Expr, Expr)]) extends Atom
 
-    case class TypeMatch(d: Expr, branches: List[(Expr, Type, Expr)]) extends Atom
-
     /** e.g. `r.x` */
     case class Dot(d1: Expr, d2: Expr) extends Atom
 

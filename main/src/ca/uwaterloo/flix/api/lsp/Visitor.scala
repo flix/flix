@@ -401,10 +401,6 @@ object Visitor {
         visitExpr(exp)
         rules.foreach(visitMatchRule)
 
-      case Expr.TypeMatch(exp, rules, _, _, _) =>
-        visitExpr(exp)
-        rules.foreach(visitTypeMatchRule)
-
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
       case Expr.ExtMatch(exp, rules, _, _, _) =>
@@ -765,19 +761,6 @@ object Visitor {
 
       visitExtPattern(pat)
       visitExpr(exp)
-  }
-
-  private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TypeMatchRule(bnd, tpe, exp, loc) = rule
-    if (!a.accept(loc)) {
-      return
-    }
-
-    c.consumeTypeMatchRule(rule)
-
-    visitBinder(bnd)
-    visitType(tpe)
-    visitExpr(exp)
   }
 
   private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
