@@ -91,12 +91,12 @@ pub mod Logger {
     ///
     /// Filters the logging, by the `filter` function.
     ///
-    pub def handleWithSeverityFilter(filter: (RichString, Severity) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 = 
+    pub def handleWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 = 
         x -> run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = {
-                if (filter(m, s)) {
+                if (filter(s, m)) {
                     k(Logger.log(s,m))
                 } else {
                     k()
@@ -110,11 +110,11 @@ pub mod Logger {
     ///
     /// Filters the logging, by the `filter` function.
     ///
-    pub def runWithSeverityFilter(filter: (RichString, Severity) -> Bool \ ef1, f: Unit -> b \ ef2): b \ (ef2 - Logger) + Logger + ef1 = handleWithSeverityFilter(filter, f)()
+    pub def runWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: Unit -> b \ ef2): b \ (ef2 - Logger) + Logger + ef1 = handleWithFilter(filter, f)()
 
     ///
     /// Filters based on a given set of severities
     ///
-    pub def onlyLevels(set: Set[Severity]): (RichString, Severity) -> Bool = 
-        (_s, sev) -> Set.exists(a -> a == sev, set)
+    pub def onlyLevels(set: Set[Severity]): (Severity, RichString) -> Bool = 
+        (sev, _) -> Set.exists(a -> a == sev, set)
 }

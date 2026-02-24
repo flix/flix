@@ -1,39 +1,39 @@
 mod TestLogger {
     use Severity.{Fatal, Warn, Info, Trace}
     use Assert.{assertEq}
-    use Logger.runWithSeverityFilter
+    use Logger.runWithFilter
 
     /////////////////////////////////////////////////////////////////////////////
     // Filtering                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def testRunWithSeverityFilter01(): Unit \ Assert =
+    def testRunWithFilter01(): Unit \ Assert =
         let res: String = run {
             Logger.info("info");
             "ignored"
-        } with runWithSeverityFilter((_msg, _sev) -> true)
+        } with runWithFilter((_msg, _sev) -> true)
         with handler Logger {
             def log(_s, m, _k) = RichString.toString(m)
         };
         assertEq(expected = "info", res)
 
     @Test
-    def testRunWithSeverityFilter02(): Unit \ Assert =
+    def testRunWithFilter02(): Unit \ Assert =
         let res: String = run {
             Logger.info("info");
             "ignored"
-        } with runWithSeverityFilter((_msg, sev) -> Set.exists(a -> a == sev, Set#{Severity.Fatal}))
+        } with runWithFilter((sev, _) -> Set.exists(a -> a == sev, Set#{Fatal}))
         with handler Logger {
             def log(_s, m, _k) = RichString.toString(m)
         };
         assertEq(expected = "ignored", res)
 
     @Test
-    def testRunWithSeverityFilter03(): Unit \ Assert =
+    def testRunWithFilter03(): Unit \ Assert =
         let res: String = run {
             Logger.info("info");
             "ignored"
-        } with runWithSeverityFilter((msg, sev) -> if (Set.exists(a -> a == sev, Set#{Severity.Fatal})) true else {
+        } with runWithFilter((sev, msg) -> if (Set.exists(a -> a == sev, Set#{Fatal})) true else {
             Console.println(RichString.toString(msg)); false})
         with handler Logger {
             def log(_s, m, _k) = RichString.toString(m)
@@ -48,11 +48,11 @@ mod TestLogger {
 
 
     @Test
-    def testRunWithSeverityFilter04(): Unit \ Assert =
+    def testRunWithFilter04(): Unit \ Assert =
         let res: String = run {
             Logger.info("info");
             "ignored"
-        } with runWithSeverityFilter(Logger.onlyLevels(Set#{Warn, Fatal}))
+        } with runWithFilter(onlyLevels(Set#{Warn, Fatal}))
         with handler Logger {
             def log(_s, m, _k) = RichString.toString(m)
         };
