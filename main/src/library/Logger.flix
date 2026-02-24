@@ -97,7 +97,8 @@ pub mod Logger {
         } with handler Logger {
             def log(s, m, k) = {
                 if (filter(s, m)) {
-                    k(Logger.log(s,m))
+                    Logger.log(s, m);
+                    k()
                 } else {
                     k()
                 }
@@ -117,4 +118,10 @@ pub mod Logger {
     ///
     pub def onlyLevels(set: Set[Severity]): (Severity, RichString) -> Bool = 
         (sev, _) -> Set.exists(a -> a == sev, set)
+    
+    ///
+    /// Filters logs with greater or equal severity level
+    ///
+    pub def atLeastLevel(s: Severity): (Severity, RichString) -> Bool = 
+        (sev, _) -> Order.greaterEqual(sev, s)
 }
