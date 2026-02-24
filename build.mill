@@ -106,8 +106,20 @@ object flix extends ScalaModule {
     ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
   }
 
-  /** Run: ./mill flix.vscode --targetDir /path/to/vscode/project */
-  def vscode(targetDir: String) = Task.Command {
+  /** Run: ./mill flix.vscode */
+  def vscode = Task {
+    val envFile = root / ".env"
+    if (!os.exists(envFile)) {
+      throw new Exception("Create .env in the project root with:\n  VSCODE_PATH=/path/to/vscode/project")
+    }
+    val targetDir = os.read.lines(envFile)
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .filterNot(_.startsWith("#"))
+      .collectFirst { case s if s.startsWith("VSCODE_PATH=") =>
+        s.stripPrefix("VSCODE_PATH=").trim
+      }
+      .getOrElse(throw new Exception(".env must contain: VSCODE_PATH=/path/to/vscode/project"))
     val jar = assembly().path
     os.copy.over(jar, os.Path(targetDir) / "flix.jar")
   }

@@ -30,8 +30,14 @@ Open `TestAll.scala`, right click on `class TestAll` and select `Run 'TestAll'`
 
 ### Testing VSCode
 
-Run `./mill flix.vscode --targetDir /path/to/vscode/project` to build a Flix
-`jar` and copy it to the target directory.
+Create a `.env` file in the project root with:
+
+```
+VSCODE_PATH=/path/to/vscode/project
+```
+
+Then run `./mill flix.vscode` to build a Flix `jar` and copy it to the target
+directory.
 
 Open the directory in VSCode: `File -> Open Folder ...` and test!
 
