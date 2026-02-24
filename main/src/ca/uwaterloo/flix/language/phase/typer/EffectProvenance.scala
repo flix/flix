@@ -79,6 +79,8 @@ object EffectProvenance {
     */
   private case class Graph(vertices: List[Vertex], edges: List[Edge])
 
+  private type MapLattice = Map[Vertex, Set[Vertex]]
+
   /**
     * Represents a path through the effect constraint graph.
     */
@@ -132,6 +134,7 @@ object EffectProvenance {
 
     /**
       * A rigid effect variable
+      *
       * @param sym the effect variable symbol
       * @param loc the location of the rigid effect variable
       */
@@ -156,12 +159,14 @@ object EffectProvenance {
     * This trait is only used when constructing the graph
     */
   sealed trait NodeType
+
   object NodeType {
     case object SinkNode extends NodeType
+
     case object IntermediateNode extends NodeType
+
     case object SourceNode extends NodeType
   }
-
 
   /**
     * Builds an effect conflict graph from given constraints.
@@ -176,89 +181,39 @@ object EffectProvenance {
     */
   def getErrors(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv): Option[List[EffConflicted]] = {
     val graph = buildGraph(constrs0)
-    graph.flatMap(findErrorsInGraph)
+    graph.flatMap(analysis)
   }
 
-  /**
-    * Performs breadth-first search from a source vertex to find all invalid paths.
-    *
-    * A path is conflicting if it leads from the source to a differing vertex.
-    * For example, a path from IOVertex to PureExplicitVertex is conflicting.
-    *
-    * @param graph  the effect constraint graph (vertices, edges)
-    * @param source the vertex to start BFS from
-    * @return the conflicting paths found in the graph, from the source
-    */
-  private def bfs(graph: Graph, source: Vertex): List[Path] = {
-    var us: List[BFSVertex] = graph.vertices.map(v => if (v == source) BFSVertex(v, Grey, None) else BFSVertex(v, White, None))
-    val start = us.find { case BFSVertex(v, _, _) => v == source }.getOrElse(return Nil)
+  private def analysis(graph: Graph): Option[List[EffConflicted]] = {
+    def helper(ml: MapLattice): MapLattice = {
+      graph.edges.foldLeft(ml) {
+        case (acc, Edge(from, to, _)) =>
+          val f = acc.get((from))
+          val t = acc.get((to))
+          f match {
+            case None => t match {
+              case Some(ys) => acc + (to -> (ys))
+              case None => acc + (to -> Set(from))
+            }
+            case Some(xs) => t match {
+              case Some(ys) => acc + (to -> (ys ++ xs))
+              case None => acc + (to -> xs)
+            }
 
-
-    /**
-      * Traverses list of vertices, the first argument replaces all elements that it is equal to in the list.
-      */
-    def update(vertex: BFSVertex, vertices: List[BFSVertex]): List[BFSVertex] = {
-      vertices.map {
-        case v => if (vertex == v) vertex else v
+          }
       }
     }
 
-    /**
-      * Gets all vertices adjacent to the given vertex.
-      */
-    def adj(vertex: BFSVertex, vertices: List[BFSVertex]): List[(BFSVertex)] = {
-      val BFSVertex(v, _, _) = vertex
-      graph.edges.foldLeft(List(): List[BFSVertex]) {
-        case (acc, Edge(v1, v2, _)) => if (v == v1) vertices.find { case BFSVertex(u, _, _) => u == v2 } match {
-          case Some(res) => res :: acc
-          case None => acc
-        } else acc
+    var fp = helper(Map.empty: MapLattice)
+    while (fp != helper(fp)) {
+      fp = helper(fp)
+    }
+    val res = fp.foldLeft(List.empty[EffConflicted]) {
+      case (acc, (v, vs)) => vs.foldLeft(acc) {
+        case (acc2, x) => if (isConflicting(x, v)) mkError(x, v) ::: acc2 else acc2
       }
     }
-
-    /**
-      * Constructs a list of reachable vertices from a starting vertex.
-      */
-    def reachable(start: BFSVertex, bfs: List[BFSVertex]): List[Vertex] = {
-      @tailrec
-      def helper(vertex1: BFSVertex, subList: List[BFSVertex], acc: List[Vertex]): List[Vertex] = subList match {
-        case (next) :: xs => vertex1.parent match {
-          case Some(parent) => if (next.vertex == parent) helper(next, bfs, next.vertex :: acc) else helper(vertex1, xs, acc)
-          case None => acc
-        }
-        case Nil => acc
-      }
-
-      helper(start, bfs, List(start.vertex))
-    }
-
-    val q: mutable.Queue[BFSVertex] = mutable.Queue.empty
-
-
-    q.enqueue(start)
-
-    while (q.nonEmpty) {
-      val u = q.dequeue()
-      adj(u, us).foreach {
-        case BFSVertex(v, White, _) =>
-          val v1 = BFSVertex(v, Grey, Some(u.vertex))
-          us = update(v1, us)
-          q.enqueue(v1)
-        case _ => {}
-      }
-      val u1 = BFSVertex(u.vertex, Black, u.parent)
-      us = update(u1, us)
-    }
-
-
-    // Creates a path from each vertex
-    // then checks for conflicts
-    us.map(v => {
-      // reachable returns a list of vertices which represents a path in the graph
-      val r = reachable(v, us)
-      // we check that the starting vertex of the path conflicts with any other vertex further down the path
-      if (r.tail.forall(!isConflicting(r.head, _))) Nil else r
-    }).filterNot(_.isEmpty)
+    if (res.isEmpty) None else Some(res)
   }
 
   /**
@@ -301,31 +256,13 @@ object EffectProvenance {
     if (flow.isEmpty) return None
     Some(Graph(v.toList, flow))
   }
-  private def createEdges(fromVertices: List[Vertex], toVertices: List[Vertex], loc: SourceLocation): List[Edge] = {
-    fromVertices.foldLeft(List.empty[Edge]){
-      (acc, from) => toVertices.foldLeft(acc) {
-        (acc2, to) => Edge(from, to, loc) :: acc2
-      }
-    }
-  }
 
-  /**
-    * Finds all effect conflicts in the graph.
-    *
-    * A conflict occurs when there is a path from an impure effect (IO or custom effect)
-    * to a pure context. This is detected by running BFS from each effect vertex.
-    *
-    * @param graph the effect constraint graph
-    * @return Some(conflicts) if conflicts could be found, None otherwise
-    */
-  private def findErrorsInGraph(graph: Graph): Option[List[EffConflicted]] = {
-    val errs = graph.vertices.filter {
-      case VarVertex(_) => false
-      case _ => true
-    }.flatMap(bfs(graph, _)).flatMap(mkError)
-    errs match {
-      case Nil => None
-      case l => Some(l)
+  private def createEdges(fromVertices: List[Vertex], toVertices: List[Vertex], loc: SourceLocation): List[Edge] = {
+    fromVertices.foldLeft(List.empty[Edge]) {
+      (acc, from) =>
+        toVertices.foldLeft(acc) {
+          (acc2, to) => Edge(from, to, loc) :: acc2
+        }
     }
   }
 
@@ -355,12 +292,13 @@ object EffectProvenance {
     * @param path the path to analyze
     * @return a list containing the error (if any)
     */
-  private def mkError(path: Path): List[EffConflicted] = {
+  private def mkError(v1: Vertex, v2: Vertex): List[EffConflicted] = {
     def kSymToEffSym(sym: Symbol.KindedTypeVarSym): Option[Symbol.EffSym] = sym.text match {
       case VarText.Absent => None
       case VarText.SourceText(s) => Some(Symbol.mkEffSym(s))
     }
-    (path.head, path.last) match {
+
+    (v1, v2) match {
       case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
       case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
       case (IOVertex(loc1), CstVertex(sym2, loc2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(sym2), Symbol.IO, loc2, loc1)))
@@ -415,7 +353,7 @@ object EffectProvenance {
         }
         case Symbol.Debug => Nil
         case eff => vtpe match {
-          case SinkNode  => List(CstVertex(eff, loc))
+          case SinkNode => List(CstVertex(eff, loc))
           case SourceNode | IntermediateNode => List(CstVertex(eff, constLoc))
         }
       }
