@@ -108,6 +108,7 @@ pub mod Logger {
                 Console.println(RichString.toString(output));
                 k()
             }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
