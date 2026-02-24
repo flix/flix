@@ -28,11 +28,11 @@ pub mod Debug {
     import java.lang.Long
     import java.lang.Object
     import java.lang.Short
-    import java.lang.{String => JString}
     import java.lang.System
-    import java.lang.{Class => JClass}
-    import java.math.BigInteger
-    import java.math.{BigDecimal => JBigDecimal}
+    import java.lang.{Class => JClass}             // needed for getClass() method resolution
+    import java.lang.{String => JString}           // needed for instanceof on Object
+    import java.math.{BigDecimal => JBigDecimal}   // needed for instanceof on Object
+    import java.math.{BigInteger => JBigInteger}   // needed for instanceof on Object
     import java.util.Arrays
     import java.util.Objects
 
@@ -86,8 +86,8 @@ pub mod Debug {
                     "null"
                 } else if (obj instanceof JString) {
                     "\"" + escape(unchecked_cast(obj as String)) + "\""
-                } else if (obj instanceof BigInteger) {
-                    unchecked_cast(obj as BigInteger).toString() + "ii"
+                } else if (obj instanceof JBigInteger) {
+                    unchecked_cast(obj as JBigInteger).toString() + "ii"
                 } else if (obj instanceof JBigDecimal) {
                     unchecked_cast(obj as JBigDecimal).toString() + "ff"
                 } else {
