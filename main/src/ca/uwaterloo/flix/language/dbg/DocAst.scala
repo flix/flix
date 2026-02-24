@@ -37,6 +37,8 @@ object DocAst {
   /** `misc` is used for printing non-structured asts like [[ca.uwaterloo.flix.language.ast.SyntaxTree]] */
   case class Program(enums: List[Enum], defs: List[Def], misc: List[(String, Expr)])
 
+  case class JvmConstructor(clo: Expr, tpe: Type)
+
   case class JvmMethod(ident: Name.Ident, fparams: List[Expr.AscriptionTpe], clo: Expr, tpe: Type)
 
 
@@ -134,7 +136,7 @@ object DocAst {
 
     case class Unsafe(d: Expr, runEff: Type, asEff: Option[Type]) extends Composite
 
-    case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
+    case class NewObject(name: String, clazz: Class[?], tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.AscriptionTpe], body: Expr) extends Composite
 

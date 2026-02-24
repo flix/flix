@@ -946,6 +946,10 @@ object Namer {
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeConstructor(className, es, loc)
 
+    case DesugaredAst.Expr.InvokeSuperConstructor(exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.InvokeSuperConstructor(es, loc)
+
     case DesugaredAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
@@ -955,11 +959,12 @@ object Namer {
       val e = visitExp(exp)
       NamedAst.Expr.GetField(e, name, loc)
 
-    case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
+    case DesugaredAst.Expr.NewObject(tpe, constructors, methods, loc) =>
       val t = visitType(tpe)
+      val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
       val name = s"Anon$$${flix.genSym.freshId()}"
-      NamedAst.Expr.NewObject(name, t, ms, loc)
+      NamedAst.Expr.NewObject(name, t, cs, ms, loc)
 
     case DesugaredAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
@@ -1529,6 +1534,17 @@ object Namer {
       val ef = eff.map(visitType)
       val e = visitExp(exp0)
       NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
+  }
+
+  /**
+    * Translates the given weeded JvmConstructor to a named JvmConstructor.
+    */
+  private def visitJvmConstructor(constructor: DesugaredAst.JvmConstructor)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmConstructor = constructor match {
+    case DesugaredAst.JvmConstructor(exp0, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      val ef = eff.map(visitType)
+      val e = visitExp(exp0)
+      NamedAst.JvmConstructor(e, t, ef, loc)
   }
 
   /**

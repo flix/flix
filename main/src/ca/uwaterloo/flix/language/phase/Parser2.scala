@@ -1907,6 +1907,7 @@ object Parser2 {
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
+        case TokenKind.KeywordSuper => invokeSuperExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
         case TokenKind.KeywordSelect => selectExpr()
         case TokenKind.KeywordSpawn => spawnExpr()
@@ -2857,6 +2858,15 @@ object Parser2 {
       close(mark, TreeKind.Expr.Throw)
     }
 
+    private def invokeSuperExpr()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordSuper))
+      val mark = open()
+      expect(TokenKind.KeywordSuper)
+      arguments()
+      close(mark, TreeKind.Expr.InvokeSuperConstructor)
+    }
+
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordNew))
@@ -2889,7 +2899,13 @@ object Parser2 {
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
           checkForItem = _ => nth(nextNonComment(0))  == TokenKind.KeywordDef,
-          getItem = jvmMethod,
+          getItem = () => {
+            // If `def` is followed by `new`, parse as JvmConstructor; otherwise JvmMethod.
+            val defOffset = nextNonComment(0)
+            val afterDefOffset = nextNonComment(defOffset + 1)
+            if (nth(afterDefOffset) == TokenKind.KeywordNew) jvmConstructor()
+            else jvmMethod()
+          },
           breakWhen = _.isRecoverInExpr,
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR,
@@ -2925,6 +2941,21 @@ object Parser2 {
       expect(TokenKind.Equal)
       Expr.statement()
       close(mark, TreeKind.Expr.JvmMethod)
+    }
+
+    private def jvmConstructor()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val mark = open()
+      assert(at(TokenKind.KeywordDef))
+      expect(TokenKind.KeywordDef)
+      expect(TokenKind.KeywordNew)
+      expect(TokenKind.ParenL)
+      expect(TokenKind.ParenR)
+      expect(TokenKind.Colon)
+      Type.typeAndEffect()
+      expect(TokenKind.Equal)
+      Expr.statement()
+      close(mark, TreeKind.Expr.JvmConstructor)
     }
 
     private def staticExpr()(implicit s: State): Mark.Closed = {

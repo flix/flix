@@ -403,6 +403,7 @@ object ConstraintGen {
         // then we don't require it to be return Unit
         val isJvm = exp1 match {
           case _: Expr.InvokeConstructor => true
+          case _: Expr.InvokeSuperConstructor => true
           case _: Expr.InvokeMethod => true
           case _: Expr.InvokeStaticMethod => true
           case _ => false
@@ -901,6 +902,19 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
+      case Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
+        // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
+        // --------------------------------------------------------
+        // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
+        val clazzTpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        val resTpe = clazzTpe
+        val resEff = evar
+        (resTpe, resEff)
+
       case Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
         // ---------------------------------------------------------------
@@ -966,7 +980,8 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, methods, _) =>
+      case Expr.NewObject(_, clazz, constructors, methods, _) =>
+        constructors.foreach(visitJvmConstructor)
         methods.foreach(visitJvmMethod)
         val resTpe = Type.getFlixType(clazz)
         val resEff = Type.IO
@@ -1274,6 +1289,16 @@ object ConstraintGen {
 
           (actualTpe, actualEff)
       }
+  }
+
+  /**
+    * Generates constraints for the JVM constructor.
+    */
+  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = constructor match {
+    case KindedAst.JvmConstructor(exp, returnTpe, eff, _) =>
+      val (bodyTpe, bodyEff) = visitExp(exp)
+      c.expectType(expected = returnTpe, actual = bodyTpe, exp.loc)
+      c.expectType(expected = eff, actual = bodyEff, exp.loc)
   }
 
   /**

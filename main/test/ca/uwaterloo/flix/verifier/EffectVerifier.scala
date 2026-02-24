@@ -317,6 +317,9 @@ object EffectVerifier {
       exps.foreach(visitExp)
       // TODO Java stuff
       ()
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+      ()
     case Expr.GetField(field, exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO Java stuff
@@ -333,7 +336,8 @@ object EffectVerifier {
       visitExp(exp)
       // TODO Java stuff
       ()
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      constructors.foreach { c => visitExp(c.exp) }
       methods.foreach { m => visitExp(m.exp) }
       // TODO Java stuff
       ()

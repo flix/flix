@@ -8,8 +8,7 @@ working on the compiler and the standard library.
 ### Setup IDEA project
 
 1. Open IDEA and choose "Get from VCS"
-2. IDEA should automatically detect that this is a Gradle project
-3. In "Settings |Build, Execution, Deployment | Build Tools | Gradle":
+2. In "Settings | Build, Execution, Deployment | Build Tools":
     1. Set "Build and run using:" to "IntelliJ IDEA"
     2. Set "Run tests using:" to "IntelliJ IDEA"
 
@@ -31,15 +30,14 @@ Open `TestAll.scala`, right click on `class TestAll` and select `Run 'TestAll'`
 
 ### Testing VSCode
 
-Add a `gradle.properties` file to the project root with:
+Create a `.env` file in the project root with:
 
 ```
-dev.flix.vscode.project=C:/tmp/flix
+VSCODE_PATH=/path/to/vscode/project
 ```
 
-where `C:/tmp/flix` is a path to an empty directory. 
-
-Run `./gradlew vscode` to build a Flix `jar` and copy it to `C:/tmp/flix`.
+Then run `./mill flix.vscode` to build a Flix `jar` and copy it to the target
+directory.
 
 Open the directory in VSCode: `File -> Open Folder ...` and test!
 
@@ -48,12 +46,25 @@ Open the directory in VSCode: `File -> Open Folder ...` and test!
 Go to `Settings > Editor > Code Style > Scala > ScalaDoc` and check "add
 additional space for leading asterisk".
 
-## Building with Gradle
+## Building with Mill
 
-Flix can also be built with Gradle, but the main developers prefer to build with
+Flix can also be built with Mill, but the main developers prefer to build with
 IntelliJ IDEA.
 
-The Gradle build is used for continuous integration on GitHub.
+The Mill build is used for continuous integration on GitHub.
+
+Common commands:
+
+- `./mill flix.compile` — compile the compiler
+- `./mill flix.test` — run all tests
+- `./mill flix.assembly` — build a fat JAR
+- `./mill flix.testPackageManager` — run package manager tests
+- `./mill flix.testFuzzerSuite` — run fuzzer tests
+- `./mill flix.testIDECompletion` — run IDE completion tests
+- `./mill flix.vscode` — build and copy JAR to VSCode project (requires `.env`)
+
+The Mill version is pinned in `.mill-version` and JVM options are configured in
+`.mill-jvm-opts`.
 
 ## Troubleshooting
 
@@ -66,11 +77,8 @@ field "Shared build processes heap" and under `Scala Compiler -> Scala Compiler`
 there is "Maximum heap size". Try out which one you need to increase. 4GB should
 be enough in each case.
 
-### Problems with imports from libraries
-
-Check that all jar files in the `lib` folder are added as library (see above).
-When a new library is added or an existing one is updated, it has to be added
-(again) this way.
+For Mill builds, JVM options are configured in `.mill-jvm-opts` (currently
+`-Xmx4g`).
 
 ### Build problems in IntelliJ
 

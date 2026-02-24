@@ -805,6 +805,9 @@ object Redundancy {
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) =>
+      visitExps(args, env0, rc)
+
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp, env0, rc) ++ visitExps(args, env0, rc)
 
@@ -823,8 +826,12 @@ object Redundancy {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(Used.empty) {
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      val usedConstructors = constructors.foldLeft(Used.empty) {
+        case (acc, JvmConstructor(exp, _, _, _)) =>
+          acc ++ visitExp(exp, env0, rc)
+      }
+      val usedMethods = methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           // Extend the environment with the formal parameter symbols
           val env1 = env0 ++ fparams.map(_.bnd.sym)
@@ -832,6 +839,7 @@ object Redundancy {
           val unusedFParams = findUnusedFormalParameters(fparams, used)
           acc ++ used ++ unusedFParams
       }
+      usedConstructors ++ usedMethods
 
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)

@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
-import ca.uwaterloo.flix.language.ast.{ErasedAst, JvmAst, Purity, SimpleType, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, JvmAst, Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -204,15 +204,20 @@ object Reducer {
         }
         JvmAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
-      case ErasedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      case ErasedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+        val cs = constructors.map {
+          case ErasedAst.JvmConstructor(clo, retTpe, cnsPurity, cnsLoc) =>
+            val c = visitExpr(clo)
+            JvmAst.JvmConstructor(c, retTpe, cnsPurity, cnsLoc)
+        }
         val specs = methods.map {
           case ErasedAst.JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
             JvmAst.JvmMethod(ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
         }
-        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, specs, loc))
+        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, cs, specs, loc))
 
-        JvmAst.Expr.NewObject(name, clazz, tpe, purity, specs, loc)
+        JvmAst.Expr.NewObject(name, clazz, tpe, purity, cs, specs, loc)
 
     }
   }
@@ -229,6 +234,7 @@ object Reducer {
 
   private def visitFormalParam(fp: ErasedAst.FormalParam): JvmAst.FormalParam =
     JvmAst.FormalParam(fp.sym, fp.tpe)
+
 
   /**
     * A local non-shared context. Does not need to be thread-safe.

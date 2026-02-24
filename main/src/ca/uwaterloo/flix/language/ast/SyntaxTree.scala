@@ -212,6 +212,8 @@ object SyntaxTree {
 
       case object InvokeMethod extends Expr
 
+      case object InvokeSuperConstructor extends Expr
+
       case object FixpointConstraint extends Expr
 
       case object FixpointConstraintSet extends Expr
@@ -261,6 +263,8 @@ object SyntaxTree {
       case object InstanceOf extends Expr
 
       case object Intrinsic extends Expr
+
+      case object JvmConstructor extends Expr
 
       case object JvmMethod extends Expr
 

@@ -127,8 +127,7 @@ sealed trait Chain[+A] {
     this.foreach { x =>
       sb.addAll(x.toString); sb.addAll(sep)
     }
-    sb.dropRight(sep.length)
-    sb.mkString
+    sb.toString().dropRight(sep.length)
   }
 
   final override def hashCode(): Int = this.toList.hashCode()

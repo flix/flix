@@ -195,6 +195,8 @@ object ResolvedAst {
 
     case class InvokeConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class InvokeSuperConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
@@ -207,7 +209,7 @@ object ResolvedAst {
 
     case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -358,6 +360,8 @@ object ResolvedAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[UnkindedType], loc: SourceLocation) extends PredicateParam
 
   }
+
+  case class JvmConstructor(exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 

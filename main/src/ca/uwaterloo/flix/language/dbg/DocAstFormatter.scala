@@ -232,9 +232,10 @@ object DocAstFormatter {
         group(
           text("handler") +: text(eff.toString) +: curly(rs)
         )
-      case NewObject(_, clazz, _, methods) =>
+      case NewObject(_, clazz, _, constructors, methods) =>
+        val allFormatted = constructors.map(formatJvmConstructor) ++ methods.map(formatJvmMethod)
         group(text("new") +: formatJavaClass(clazz) +: curly(
-          semiSepOpt(methods.map(formatJvmMethod))
+          semiSepOpt(allFormatted)
         ))
       case Native(clazz) =>
         formatJavaClass(clazz)
@@ -247,6 +248,16 @@ object DocAstFormatter {
 
   private def formatJavaClass(clazz: Class[?]): Doc =
     text(clazz.getName)
+
+  private def formatJvmConstructor(c: JvmConstructor)(implicit i: Indent): Doc = {
+    val JvmConstructor(clo, _) = c
+    val clof = aux(clo, paren = false, inBlock = true)
+    group(
+      text("def") +: text("new") +:
+        text("=") +\:
+        clof
+    )
+  }
 
   private def formatJvmMethod(m: JvmMethod)(implicit i: Indent): Doc = {
     val JvmMethod(ident, fparams, clo, _) = m

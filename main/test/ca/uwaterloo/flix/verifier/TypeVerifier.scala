@@ -439,6 +439,10 @@ object TypeVerifier {
           checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
           checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
 
+        case AtomicOp.InvokeSuperConstructor(constructor) =>
+          checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
+          checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
+
         case AtomicOp.InvokeMethod(method) =>
           val t :: pts = ts
           checkJavaParameters(pts, method.getParameterTypes.toList, loc)
@@ -556,7 +560,11 @@ object TypeVerifier {
 
       checkEq(tpe, exptype, loc)
 
-    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe, _, constructors, methods, loc) =>
+      for (c <- constructors) {
+        val exptype = visitExpr(c.exp)(root, env, lenv)
+        checkEq(c.tpe, exptype, c.loc)
+      }
       for (m <- methods) {
         val exptype = visitExpr(m.exp)
         val signature = SimpleType.mkArrow(m.fparams.map(_.tpe), m.tpe)

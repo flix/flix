@@ -390,6 +390,52 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.NewObjectNonPublicClass](result)
   }
 
+  test("NewObjectConstructorMissingSuperCall.01") {
+    val input =
+      """
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    let name = "test";
+        |    new Thread {
+        |        def new(): Thread \ IO = ???
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
+  }
+
+  test("NewObjectConstructorMissingSuperCall.02") {
+    val input =
+      """
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    let name = "test";
+        |    new Thread {
+        |        def new(): Thread \ IO =
+        |            let _ = "hello";
+        |            let _ = "world";
+        |            super(name)
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
+  }
+
+  test("NewObjectConstructorMissingSuperCall.04") {
+    val input =
+      """
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    let name = "test";
+        |    new Thread {
+        |        def new(): Thread \ IO =
+        |            if (true) super(name) else super(name)
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
+  }
+
   test("TestMissingDefaultTypeMatchCase.01") {
     val input =
       """

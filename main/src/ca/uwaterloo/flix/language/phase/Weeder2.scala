@@ -916,6 +916,7 @@ object Weeder2 {
         case TreeKind.Expr.Index => visitIndexExpr(tree)
         case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
         case TreeKind.Expr.InvokeConstructor => visitInvokeConstructorExpr(tree)
+        case TreeKind.Expr.InvokeSuperConstructor => visitInvokeSuperConstructorExpr(tree)
         case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
@@ -1990,6 +1991,21 @@ object Weeder2 {
       }
     }
 
+    private def visitInvokeSuperConstructorExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeSuperConstructor)
+      val expsValidation = tryPick(TreeKind.ArgumentList, tree) match {
+        case None =>
+          val error = WeederError.MissingArgumentList(tree.loc)
+          sctx.errors.add(error)
+          Validation.Success(List.empty)
+        case Some(argumentList) =>
+          visitMethodArguments(argumentList)
+      }
+      mapN(expsValidation) {
+        exps => Expr.InvokeSuperConstructor(exps, tree.loc)
+      }
+    }
+
     private def visitInvokeMethodExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod)
       val baseExp = pickExpr(tree)
@@ -2013,9 +2029,10 @@ object Weeder2 {
 
     private def visitNewObjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.NewObject)
+      val constructors = pickAll(TreeKind.Expr.JvmConstructor, tree)
       val methods = pickAll(TreeKind.Expr.JvmMethod, tree)
-      mapN(Types.pickType(tree), traverse(methods)(visitJvmMethod)) {
-        (tpe, methods) => Expr.NewObject(tpe, methods, tree.loc)
+      mapN(Types.pickType(tree), traverse(constructors)(visitJvmConstructor), traverse(methods)(visitJvmMethod)) {
+        (tpe, constructors, methods) => Expr.NewObject(tpe, constructors, methods, tree.loc)
       }
     }
 
@@ -2049,6 +2066,17 @@ object Weeder2 {
         Types.tryPickEffect(tree),
       ) {
         (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitJvmConstructor(tree: Tree)(implicit sctx: SharedContext): Validation[JvmConstructor, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.JvmConstructor)
+      mapN(
+        pickExpr(tree),
+        Types.pickType(tree),
+        Types.tryPickEffect(tree),
+      ) {
+        (expr, tpe, eff) => JvmConstructor(expr, tpe, eff, tree.loc)
       }
     }
 

@@ -8,6 +8,7 @@ mod Test.Exp.Jvm.NewObject {
     import dev.flix.test.TestCharInterface
     import dev.flix.test.TestClass
     import dev.flix.test.TestClassWithDefaultConstructor
+    import dev.flix.test.TestClassWithArgConstructor
     import dev.flix.test.TestClassWithNonDefaultConstructor
     import dev.flix.test.TestDefaultMethods
     import dev.flix.test.TestFloat32ArrayInterface
@@ -318,5 +319,52 @@ mod Test.Exp.Jvm.NewObject {
             def testMethod(_this: TestBoolInterface, x: Bool): Bool = not x
         };
         ()
+
+    @Test
+    def testClassWithArgConstructor01(): Unit \ Assert + IO =
+        let anon = new TestClassWithArgConstructor {
+            def new(): TestClassWithArgConstructor \ IO = super(0)
+            def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n + 1
+        };
+        assertEq(expected = "default", anon.m_y);
+        assertEq(expected = 11, anon.abstractMethod(10))
+
+    @Test
+    def testClassWithArgConstructor02(): Unit \ Assert + IO =
+        let x = 0;
+        let y = "hello";
+        let anon = new TestClassWithArgConstructor {
+            def new(): TestClassWithArgConstructor \ IO = super(x, y)
+            def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n * 2
+        };
+        assertEq(expected = 20, anon.abstractMethod(10))
+
+    @CompileTest
+    def testClassWithArgConstructor03(): TestClassWithArgConstructor \ IO =
+        new TestClassWithArgConstructor {
+            def new(): TestClassWithArgConstructor \ IO = super(0)
+            def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n * 3
+        }
+
+    @Test
+    def testClassWithArgConstructorLexical01(): Unit \ Assert + IO =
+        let v = 42;
+        let anon = new TestClassWithArgConstructor {
+            def new(): TestClassWithArgConstructor \ IO = super(v)
+            def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n
+        };
+        assertEq(expected = 42, anon.m_x);
+        assertEq(expected = "default", anon.m_y)
+
+    @Test
+    def testClassWithArgConstructorLexical02(): Unit \ Assert + IO =
+        let v = 99;
+        let s = "captured";
+        let anon = new TestClassWithArgConstructor {
+            def new(): TestClassWithArgConstructor \ IO = super(v, s)
+            def abstractMethod(_this: TestClassWithArgConstructor, n: Int32): Int32 = n
+        };
+        assertEq(expected = 99, anon.m_x);
+        assertEq(expected = "captured", anon.m_y)
 
 }

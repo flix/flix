@@ -179,6 +179,8 @@ object KindedAst {
 
     case class InvokeConstructor(clazz: Class[?], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
+    case class InvokeSuperConstructor(clazz: Class[?], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
@@ -191,7 +193,7 @@ object KindedAst {
 
     case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -341,6 +343,8 @@ object KindedAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, src: TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
+
+  case class JvmConstructor(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
