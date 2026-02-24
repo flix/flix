@@ -1198,6 +1198,11 @@ object Resolver {
       val es = exps.map(resolveExp(_, scp0))
       ResolvedAst.Expr.InvokeMethod(e, name, es, loc)
 
+    case NamedAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      // The class is not known here; it will be injected by the enclosing NewObject case.
+      val es = exps.map(resolveExp(_, scp0))
+      ResolvedAst.Expr.InvokeSuperMethod(classOf[Object], methodName, es, loc)
+
     case NamedAst.Expr.GetField(exp, name, loc) =>
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.GetField(e, name, loc)
@@ -1211,11 +1216,11 @@ object Resolver {
       UnkindedType.eraseAliases(t) match {
         case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
           val cs = constructors.map(visitJvmConstructor(_, scp0, Some(clazz)))
-          val ms = methods.map(visitJvmMethod(_, scp0))
+          val ms = methods.map(visitJvmMethod(_, scp0, Some(clazz)))
           ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
         case _ =>
           val cs = constructors.map(visitJvmConstructor(_, scp0, None))
-          val ms = methods.map(visitJvmMethod(_, scp0))
+          val ms = methods.map(visitJvmMethod(_, scp0, None))
           val error = ResolutionError.IllegalNonJavaType(t, t.loc)
           sctx.errors.add(error)
           ResolvedAst.Expr.Error(error)
@@ -1603,12 +1608,14 @@ object Resolver {
 
   /**
     * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
+    * `superClass` is the Java class being extended in the enclosing `new` expression, used to resolve `super.method(...)` calls.
     */
-  private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope, superClass: Option[Class[?]])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmMethod = method match {
     case NamedAst.JvmMethod(ident, fparams0, exp, tpe, eff, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       val scp = scp0 ++ mkFormalParamScp(fparams)
-      val e = resolveExp(exp, scp)
+      val e0 = resolveExp(exp, scp)
+      val e = superClass.map(clazz => injectSuperClassIntoMethods(e0, clazz)).getOrElse(e0)
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
       ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
@@ -1635,6 +1642,110 @@ object Resolver {
     case ResolvedAst.Expr.InvokeSuperConstructor(_, exps, loc) =>
       ResolvedAst.Expr.InvokeSuperConstructor(clazz, exps, loc)
     case other => other
+  }
+
+  /**
+    * Recursively injects the given `clazz` into all `InvokeSuperMethod` expressions in the given expression tree.
+    */
+  private def injectSuperClassIntoMethods(exp: ResolvedAst.Expr, clazz: Class[?]): ResolvedAst.Expr = {
+    import ResolvedAst.Expr.*
+    val f: ResolvedAst.Expr => ResolvedAst.Expr = injectSuperClassIntoMethods(_, clazz)
+    exp match {
+      // Target case: inject the actual class
+      case InvokeSuperMethod(_, methodName, exps, loc) =>
+        InvokeSuperMethod(clazz, methodName, exps.map(f), loc)
+
+      // Leaf nodes (no sub-expressions)
+      case _: Var | _: Hole | _: Cst | _: GetStaticField | _: FixpointConstraintSet | _: Error => exp
+
+      // Single sub-expression
+      case HoleWithExp(e, scp, loc) => HoleWithExp(f(e), scp, loc)
+      case OpenAs(symUse, e, loc) => OpenAs(symUse, f(e), loc)
+      case Use(sym, alias, e, loc) => Use(sym, alias, f(e), loc)
+      case Unary(sop, e, loc) => Unary(sop, f(e), loc)
+      case Discard(e, loc) => Discard(f(e), loc)
+      case Region(sym, regSym, e, loc) => Region(sym, regSym, f(e), loc)
+      case RecordSelect(e, label, loc) => RecordSelect(f(e), label, loc)
+      case RecordRestrict(label, e, loc) => RecordRestrict(label, f(e), loc)
+      case ArrayLength(e, loc) => ArrayLength(f(e), loc)
+      case StructGet(e, symUse, loc) => StructGet(f(e), symUse, loc)
+      case VectorLength(e, loc) => VectorLength(f(e), loc)
+      case Ascribe(e, t, ef, loc) => Ascribe(f(e), t, ef, loc)
+      case InstanceOf(e, c, loc) => InstanceOf(f(e), c, loc)
+      case CheckedCast(cast, e, loc) => CheckedCast(cast, f(e), loc)
+      case UncheckedCast(e, t, ef, loc) => UncheckedCast(f(e), t, ef, loc)
+      case Unsafe(e, eff, asEff, loc) => Unsafe(f(e), eff, asEff, loc)
+      case Without(e, symUse, loc) => Without(f(e), symUse, loc)
+      case Throw(e, loc) => Throw(f(e), loc)
+      case GetField(e, name, loc) => GetField(f(e), name, loc)
+      case PutStaticField(field, e, loc) => PutStaticField(field, f(e), loc)
+      case NewChannel(e, loc) => NewChannel(f(e), loc)
+      case GetChannel(e, loc) => GetChannel(f(e), loc)
+      case Lazy(e, loc) => Lazy(f(e), loc)
+      case Force(e, loc) => Force(f(e), loc)
+      case FixpointLambda(pparams, e, loc) => FixpointLambda(pparams, f(e), loc)
+
+      // Two sub-expressions
+      case ApplyClo(e1, e2, loc) => ApplyClo(f(e1), f(e2), loc)
+      case Binary(sop, e1, e2, loc) => Binary(sop, f(e1), f(e2), loc)
+      case Stm(e1, e2, loc) => Stm(f(e1), f(e2), loc)
+      case Let(sym, e1, e2, loc) => Let(sym, f(e1), f(e2), loc)
+      case RecordExtend(label, e1, e2, loc) => RecordExtend(label, f(e1), f(e2), loc)
+      case ArrayLoad(e1, e2, loc) => ArrayLoad(f(e1), f(e2), loc)
+      case VectorLoad(e1, e2, loc) => VectorLoad(f(e1), f(e2), loc)
+      case StructPut(e1, symUse, e2, loc) => StructPut(f(e1), symUse, f(e2), loc)
+      case PutField(field, c, e1, e2, loc) => PutField(field, c, f(e1), f(e2), loc)
+      case PutChannel(e1, e2, loc) => PutChannel(f(e1), f(e2), loc)
+      case Spawn(e1, e2, loc) => Spawn(f(e1), f(e2), loc)
+      case RunWith(e1, e2, loc) => RunWith(f(e1), f(e2), loc)
+      case FixpointMerge(e1, e2, loc) => FixpointMerge(f(e1), f(e2), loc)
+
+      // Three sub-expressions
+      case IfThenElse(e1, e2, e3, loc) => IfThenElse(f(e1), f(e2), f(e3), loc)
+      case ArrayNew(e1, e2, e3, loc) => ArrayNew(f(e1), f(e2), f(e3), loc)
+      case ArrayStore(e1, e2, e3, loc) => ArrayStore(f(e1), f(e2), f(e3), loc)
+
+      // Lambda and LocalDef
+      case Lambda(fparam, e, allowSub, loc) => Lambda(fparam, f(e), allowSub, loc)
+      case LocalDef(sym, fparams, e1, e2, loc) => LocalDef(sym, fparams, f(e1), f(e2), loc)
+
+      // List of sub-expressions
+      case ApplyDef(symUse, exps, loc) => ApplyDef(symUse, exps.map(f), loc)
+      case ApplyLocalDef(symUse, exps, loc) => ApplyLocalDef(symUse, exps.map(f), loc)
+      case ApplyOp(symUse, exps, loc) => ApplyOp(symUse, exps.map(f), loc)
+      case ApplySig(symUse, exps, loc) => ApplySig(symUse, exps.map(f), loc)
+      case Tag(symUse, exps, loc) => Tag(symUse, exps.map(f), loc)
+      case RestrictableTag(symUse, exps, isOpen, loc) => RestrictableTag(symUse, exps.map(f), isOpen, loc)
+      case ExtTag(label, exps, loc) => ExtTag(label, exps.map(f), loc)
+      case Tuple(exps, loc) => Tuple(exps.map(f), loc)
+      case ArrayLit(exps, e, loc) => ArrayLit(exps.map(f), f(e), loc)
+      case VectorLit(exps, loc) => VectorLit(exps.map(f), loc)
+      case InvokeConstructor(c, exps, loc) => InvokeConstructor(c, exps.map(f), loc)
+      case InvokeSuperConstructor(c, exps, loc) => InvokeSuperConstructor(c, exps.map(f), loc)
+      case InvokeStaticMethod(c, name, exps, loc) => InvokeStaticMethod(c, name, exps.map(f), loc)
+      case FixpointSolveWithProject(exps, optPreds, mode, loc) => FixpointSolveWithProject(exps.map(f), optPreds, mode, loc)
+      case FixpointInjectInto(exps, predsAndArities, loc) => FixpointInjectInto(exps.map(f), predsAndArities, loc)
+
+      // Expression + list of sub-expressions
+      case InvokeMethod(e, name, exps, loc) => InvokeMethod(f(e), name, exps.map(f), loc)
+      case FixpointQueryWithProvenance(exps, select, withh, loc) => FixpointQueryWithProvenance(exps.map(f), select, withh, loc)
+      case FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) => FixpointQueryWithSelect(exps.map(f), f(queryExp), selects.map(f), from, where.map(f), pred, loc)
+
+      // Struct with tupled expressions
+      case StructNew(sym, exps, region, loc) => StructNew(sym, exps.map { case (use, e) => (use, f(e)) }, region.map(f), loc)
+
+      // Complex structures with rules
+      case Match(e, rules, loc) => Match(f(e), rules.map(r => ResolvedAst.MatchRule(r.pat, r.guard.map(f), f(r.exp), r.loc)), loc)
+      case RestrictableChoose(star, e, rules, loc) => RestrictableChoose(star, f(e), rules.map(r => ResolvedAst.RestrictableChooseRule(r.pat, f(r.exp))), loc)
+      case ExtMatch(e, rules, loc) => ExtMatch(f(e), rules.map(r => ResolvedAst.ExtMatchRule(r.pat, f(r.exp), r.loc)), loc)
+      case TryCatch(e, rules, loc) => TryCatch(f(e), rules.map(r => ResolvedAst.CatchRule(r.sym, r.clazz, f(r.exp), r.loc)), loc)
+      case Handler(symUse, rules, loc) => Handler(symUse, rules.map(r => ResolvedAst.HandlerRule(r.symUse, r.fparams, f(r.exp), r.loc)), loc)
+      case SelectChannel(rules, default, loc) => SelectChannel(rules.map(r => ResolvedAst.SelectChannelRule(r.sym, f(r.chan), f(r.exp), r.loc)), default.map(f), loc)
+      case ParYield(frags, e, loc) => ParYield(frags.map(fr => ResolvedAst.ParYieldFragment(fr.pat, f(fr.exp), fr.loc)), f(e), loc)
+
+      // Don't recurse into nested NewObject (it handles its own super class)
+      case _: NewObject => exp
+    }
   }
 
   /**

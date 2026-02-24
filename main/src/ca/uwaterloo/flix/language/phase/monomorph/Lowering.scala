@@ -501,6 +501,12 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, t, eff, loc)
 
+    case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
+      // The className will be injected later by the enclosing NewObject case.
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(method, ""), es, t, eff, loc)
+
     case TypedAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
@@ -528,7 +534,13 @@ object Lowering {
 
     case TypedAst.Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
       val cs = constructors.map(lowerJvmConstructor)
-      val ms = methods.map(lowerJvmMethod)
+      val ms0 = methods.map(lowerJvmMethod)
+      val ms = ms0.map { m =>
+        // The first formal parameter is `_this` (the anonymous class instance).
+        val thisParam = m.fparams.head
+        val thisRef = MonoAst.Expr.Var(thisParam.sym, thisParam.tpe, loc)
+        m.copy(exp = injectSuperMethodClassName(m.exp, name, thisRef))
+      }
       val t = lowerType(tpe)
       MonoAst.Expr.NewObject(name, clazz, t, eff, cs, ms, loc)
 
@@ -636,6 +648,43 @@ object Lowering {
       val e = lowerExp(exp)
       val t = lowerType(retTyp)
       MonoAst.JvmMethod(ident, fs, e, t, eff, loc)
+  }
+
+  /**
+    * Recursively injects the anonymous class name and the `_this` reference into all `InvokeSuperMethod` AtomicOps.
+    */
+  private def injectSuperMethodClassName(exp: MonoAst.Expr, className: String, thisRef: MonoAst.Expr): MonoAst.Expr = {
+    import MonoAst.Expr.*
+    val f: MonoAst.Expr => MonoAst.Expr = injectSuperMethodClassName(_, className, thisRef)
+    exp match {
+      case ApplyAtomic(AtomicOp.InvokeSuperMethod(method, _), exps, tpe, eff, loc) =>
+        // Prepend the receiver (`_this`) and inject the className
+        ApplyAtomic(AtomicOp.InvokeSuperMethod(method, className), thisRef :: exps.map(f), tpe, eff, loc)
+      case ApplyAtomic(op, exps, tpe, eff, loc) => ApplyAtomic(op, exps.map(f), tpe, eff, loc)
+      case _: Cst | _: Var => exp
+      case Lambda(fparam, e, tpe, loc) => Lambda(fparam, f(e), tpe, loc)
+      case ApplyClo(e1, e2, tpe, eff, loc) => ApplyClo(f(e1), f(e2), tpe, eff, loc)
+      case ApplyDef(sym, exps, itpe, tpe, eff, loc) => ApplyDef(sym, exps.map(f), itpe, tpe, eff, loc)
+      case ApplyLocalDef(sym, exps, tpe, eff, loc) => ApplyLocalDef(sym, exps.map(f), tpe, eff, loc)
+      case ApplyOp(sym, exps, tpe, eff, loc) => ApplyOp(sym, exps.map(f), tpe, eff, loc)
+      case Let(sym, e1, e2, tpe, eff, occur, loc) => Let(sym, f(e1), f(e2), tpe, eff, occur, loc)
+      case LocalDef(sym, fparams, e1, e2, tpe, eff, occur, loc) => LocalDef(sym, fparams, f(e1), f(e2), tpe, eff, occur, loc)
+      case Region(sym, regSym, e, tpe, eff, loc) => Region(sym, regSym, f(e), tpe, eff, loc)
+      case IfThenElse(e1, e2, e3, tpe, eff, loc) => IfThenElse(f(e1), f(e2), f(e3), tpe, eff, loc)
+      case Stm(e1, e2, tpe, eff, loc) => Stm(f(e1), f(e2), tpe, eff, loc)
+      case Discard(e, eff, loc) => Discard(f(e), eff, loc)
+      case Match(e, rules, tpe, eff, loc) => Match(f(e), rules.map(r => MonoAst.MatchRule(r.pat, r.guard.map(f), f(r.exp))), tpe, eff, loc)
+      case ExtMatch(e, rules, tpe, eff, loc) => ExtMatch(f(e), rules.map(r => MonoAst.ExtMatchRule(r.pat, f(r.exp), r.loc)), tpe, eff, loc)
+      case VectorLit(exps, tpe, eff, loc) => VectorLit(exps.map(f), tpe, eff, loc)
+      case VectorLoad(e1, e2, tpe, eff, loc) => VectorLoad(f(e1), f(e2), tpe, eff, loc)
+      case VectorLength(e, loc) => VectorLength(f(e), loc)
+      case Cast(e, tpe, eff, loc) => Cast(f(e), tpe, eff, loc)
+      case TryCatch(e, rules, tpe, eff, loc) => TryCatch(f(e), rules.map(r => MonoAst.CatchRule(r.sym, r.clazz, f(r.exp))), tpe, eff, loc)
+      case RunWith(e, effUse, rules, tpe, eff, loc) => RunWith(f(e), effUse, rules.map(r => MonoAst.HandlerRule(r.op, r.fparams, f(r.exp))), tpe, eff, loc)
+      case NewObject(name, clazz, tpe, eff, cs, ms, loc) =>
+        // Don't recurse into nested NewObject — it handles its own className
+        NewObject(name, clazz, tpe, eff, cs, ms, loc)
+    }
   }
 
   /**

@@ -284,6 +284,10 @@ object Safety {
       visitExp(exp)
       args.foreach(visitExp)
 
+    case Expr.InvokeSuperMethod(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
     case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)

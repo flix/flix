@@ -2810,8 +2810,17 @@ object Parser2 {
       assert(at(TokenKind.KeywordSuper))
       val mark = open()
       expect(TokenKind.KeywordSuper)
-      arguments()
-      close(mark, TreeKind.Expr.InvokeSuperConstructor)
+      if (at(TokenKind.Dot)) {
+        // super.method(args)
+        eat(TokenKind.Dot)
+        nameUnqualified(NAME_JAVA)
+        arguments()
+        close(mark, TreeKind.Expr.InvokeSuperMethod)
+      } else {
+        // super(args)
+        arguments()
+        close(mark, TreeKind.Expr.InvokeSuperConstructor)
+      }
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
