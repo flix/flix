@@ -138,7 +138,8 @@ object ClosureConv {
       val constructors = constructors0 map {
         case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
           exp match {
-            // Super-only constructor: don't wrap in closure, just visit args
+            // A super call must occur directly inside <init>, so we cannot extract it into a closure.
+            // Just visit the args without wrapping in a closure.
             case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(_), _, _, _, _) =>
               val e = visitExp(exp)
               JvmConstructor(e, retTpe, constructorPurity, constructorLoc)

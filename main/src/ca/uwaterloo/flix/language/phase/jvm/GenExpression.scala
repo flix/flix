@@ -65,13 +65,13 @@ object GenExpression {
     * `setPc`, `pcLabels`, and `pcCounter` are for.
     */
   case class EffectContext(entryPoint: Label,
-                           lenv: Map[Symbol.LabelSym, Label],
-                           newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
-                           setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
-                           localOffset: Int,
-                           pcLabels: Vector[Label],
-                           pcCounter: Ref[Int]
-                          ) extends MethodContext
+    lenv: Map[Symbol.LabelSym, Label],
+    newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
+    setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
+    localOffset: Int,
+    pcLabels: Vector[Label],
+    pcCounter: Ref[Int]
+  ) extends MethodContext
 
   /**
     * A context for control pure functions that may capture variables and therefore use
@@ -80,9 +80,9 @@ object GenExpression {
     * return at the given return expressions except if they loop indefinitely.
     */
   case class DirectInstanceContext(entryPoint: Label,
-                                   lenv: Map[Symbol.LabelSym, Label],
-                                   localOffset: Int,
-                                  ) extends MethodContext
+    lenv: Map[Symbol.LabelSym, Label],
+    localOffset: Int,
+  ) extends MethodContext
 
   /**
     * A context for control pure functions that do not closure capture any variables and therefore
@@ -91,9 +91,9 @@ object GenExpression {
     * return at the given return expressions except if they loop indefinitely.
     */
   case class DirectStaticContext(entryPoint: Label,
-                                 lenv: Map[Symbol.LabelSym, Label],
-                                 localOffset: Int,
-                                ) extends MethodContext
+    lenv: Map[Symbol.LabelSym, Label],
+    localOffset: Int,
+  ) extends MethodContext
 
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
@@ -828,14 +828,8 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
 
       case AtomicOp.InvokeSuperConstructor(constructor) =>
-        BytecodeInstructions.addLoc(loc)
-        val descriptor = asm.Type.getConstructorDescriptor(constructor)
-        val superClassName = asm.Type.getInternalName(constructor.getDeclaringClass)
-        for ((arg, argType) <- exps.zip(constructor.getParameterTypes)) {
-          compileExpr(arg)
-          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        }
-        mv.visitMethodInsn(INVOKESPECIAL, superClassName, JvmName.ConstructorMethod, descriptor, false)
+        // A InvokeSuperConstructor is handled directly in NewObject.
+        throw InternalCompilerException(s"Unexpected call to super constructor: '$constructor'.", loc)
 
       case AtomicOp.InvokeMethod(method) =>
         val exp :: args = exps
