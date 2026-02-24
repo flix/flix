@@ -301,7 +301,7 @@ object ParseError {
   }
 
   /**
-    * An error raised to indicate that a Thick Right Arrow was expected, but got a. Thin Right Arrow
+    * An error raised to indicate that a Thick Right Arrow was expected, but got a Thin Right Arrow
     *
     * @param sctx      The syntactic context.
     * @param loc       The source location.
