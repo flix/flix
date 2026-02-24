@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -242,10 +242,14 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyOp(bnd.sym, es, t, eff, loc)
 
-    case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
+    case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
+      case _: SemanticOp.ReflectOp =>
+        throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
+      case _ =>
+        val e = lowerExp(exp)
+        val t = lowerType(tpe)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
+    }
 
     case TypedAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)

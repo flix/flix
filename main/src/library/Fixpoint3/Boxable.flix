@@ -26,7 +26,7 @@ pub mod Fixpoint3.Boxable {
     @LoweringTarget
     pub def box(x: a): Boxed with Order[a] = {
         use Reflect.JvmValue;
-        match Reflect.reflect(x) {
+        match Reflect.reflectValue(x) {
             case JvmValue.JvmBool(v)  => Boxed.BoxedBool(v)
             case JvmValue.JvmChar(v)  => Boxed.BoxedChar(v)
             case JvmValue.JvmInt8(v)  => Boxed.BoxedInt8(v)

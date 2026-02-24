@@ -247,6 +247,42 @@ object ConstraintGen {
           val resTpe = tvar
           val resEff = eff
           (resTpe, resEff)
+
+        case SemanticOp.ReflectOp.ReflectEff =>
+          val effVar = freshVar(Kind.Eff, exp.loc)
+          val (tpe, eff) = visitExp(exp)
+          val proxyEffSym = Symbol.mkEnumSym("ProxyEff")
+          val proxyEffType = Type.mkEnum(proxyEffSym, List(effVar), exp.loc)
+          c.expectType(expected = proxyEffType, actual = tpe, exp.loc)
+          val puritySym = Symbol.mkEnumSym("Reflect.Purity")
+          val purityType = Type.mkEnum(puritySym, Nil, exp.loc)
+          c.unifyType(purityType, tvar, exp.loc)
+          val resTpe = tvar
+          val resEff = eff
+          (resTpe, resEff)
+
+        case SemanticOp.ReflectOp.ReflectType =>
+          val elmVar = freshVar(Kind.Star, exp.loc)
+          val (tpe, eff) = visitExp(exp)
+          val proxySym = Symbol.mkEnumSym("Proxy")
+          val proxyType = Type.mkEnum(proxySym, List(elmVar), exp.loc)
+          c.expectType(expected = proxyType, actual = tpe, exp.loc)
+          val jvmTypeSym = Symbol.mkEnumSym("Reflect.JvmType")
+          val jvmTypeType = Type.mkEnum(jvmTypeSym, Nil, exp.loc)
+          c.unifyType(jvmTypeType, tvar, exp.loc)
+          val resTpe = tvar
+          val resEff = eff
+          (resTpe, resEff)
+
+        case SemanticOp.ReflectOp.ReflectValue =>
+          val (_, eff) = visitExp(exp)
+          val jvmValueSym = Symbol.mkEnumSym("Reflect.JvmValue")
+          val jvmValueType = Type.mkEnum(jvmValueSym, Nil, exp.loc)
+          c.unifyType(jvmValueType, tvar, exp.loc)
+          val resTpe = tvar
+          val resEff = eff
+          (resTpe, resEff)
+
       }
 
       case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {

@@ -69,6 +69,10 @@ object Symbols {
     lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Fixity")
 
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
+
+    lazy val Purity: Symbol.EnumSym = Symbol.mkEnumSym("Reflect.Purity")
+    lazy val JvmType: Symbol.EnumSym = Symbol.mkEnumSym("Reflect.JvmType")
+    lazy val JvmValue: Symbol.EnumSym = Symbol.mkEnumSym("Reflect.JvmValue")
   }
 
   protected[monomorph] object Types {

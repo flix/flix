@@ -243,6 +243,9 @@ object GenExpression {
             mv.visitInsn(ICONST_M1)
             mv.visitInsn(I2L)
             mv.visitInsn(LXOR)
+
+          case _: ReflectOp =>
+            throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
         }
 
       case AtomicOp.Binary(sop) =>

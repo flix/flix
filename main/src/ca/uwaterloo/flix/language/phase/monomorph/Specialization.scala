@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Instance, StructField}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse}
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, Name, RigidityEnv, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -547,10 +547,76 @@ object Specialization {
       val es = exps.map(specializeExp(_, env0, subst))
       Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), loc)
 
-    case Expr.Unary(sop, exp, tpe, eff, loc) =>
-      val e = specializeExp(exp, env0, subst)
-      val t = subst(tpe)
-      Expr.Unary(sop, e, t, subst(eff), loc)
+    case Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
+
+      case SemanticOp.ReflectOp.ReflectEff =>
+        val expTpe = subst(exp.tpe)
+        val typeArg = expTpe.typeArguments.headOption.getOrElse(
+          throw InternalCompilerException(s"Expected ProxyEff[ef] type, got $expTpe", loc)
+        )
+        val purityEnumSym = Symbols.Enums.Purity
+        val caseName = typeArg match {
+          case Type.Cst(TypeConstructor.Pure, _) => "Pure"
+          case _                                 => "Impure"
+        }
+        val caseSym = Symbol.mkCaseSym(purityEnumSym, Name.Ident(caseName, loc))
+        val symUse = CaseSymUse(caseSym, loc)
+        val resultType = Type.mkEnum(purityEnumSym, Nil, loc)
+        Expr.Tag(symUse, Nil, resultType, Type.Pure, loc)
+
+      case SemanticOp.ReflectOp.ReflectType =>
+        val expTpe = subst(exp.tpe)
+        val typeArg = expTpe.typeArguments.headOption.getOrElse(
+          throw InternalCompilerException(s"Expected Proxy[t] type, got $expTpe", loc)
+        )
+        val jvmTypeEnumSym = Symbols.Enums.JvmType
+        val caseName = typeArg.baseType match {
+          case Type.Cst(TypeConstructor.Bool, _)    => "JvmBool"
+          case Type.Cst(TypeConstructor.Char, _)    => "JvmChar"
+          case Type.Cst(TypeConstructor.Int8, _)    => "JvmInt8"
+          case Type.Cst(TypeConstructor.Int16, _)   => "JvmInt16"
+          case Type.Cst(TypeConstructor.Int32, _)   => "JvmInt32"
+          case Type.Cst(TypeConstructor.Int64, _)   => "JvmInt64"
+          case Type.Cst(TypeConstructor.Float32, _) => "JvmFloat32"
+          case Type.Cst(TypeConstructor.Float64, _) => "JvmFloat64"
+          case _                                    => "JvmObject"
+        }
+        val caseSym = Symbol.mkCaseSym(jvmTypeEnumSym, Name.Ident(caseName, loc))
+        val symUse = CaseSymUse(caseSym, loc)
+        val resultType = Type.mkEnum(jvmTypeEnumSym, Nil, loc)
+        Expr.Tag(symUse, Nil, resultType, Type.Pure, loc)
+
+      case SemanticOp.ReflectOp.ReflectValue =>
+        val e = specializeExp(exp, env0, subst)
+        val expTpe = subst(exp.tpe)
+        val jvmValueEnumSym = Symbols.Enums.JvmValue
+        val resultType = Type.mkEnum(jvmValueEnumSym, Nil, loc)
+        val caseName = expTpe.baseType match {
+          case Type.Cst(TypeConstructor.Bool, _)    => "JvmBool"
+          case Type.Cst(TypeConstructor.Char, _)    => "JvmChar"
+          case Type.Cst(TypeConstructor.Int8, _)    => "JvmInt8"
+          case Type.Cst(TypeConstructor.Int16, _)   => "JvmInt16"
+          case Type.Cst(TypeConstructor.Int32, _)   => "JvmInt32"
+          case Type.Cst(TypeConstructor.Int64, _)   => "JvmInt64"
+          case Type.Cst(TypeConstructor.Float32, _) => "JvmFloat32"
+          case Type.Cst(TypeConstructor.Float64, _) => "JvmFloat64"
+          case _                                    => "JvmObject"
+        }
+        val caseSym = Symbol.mkCaseSym(jvmValueEnumSym, Name.Ident(caseName, loc))
+        val symUse = CaseSymUse(caseSym, loc)
+        val tagArg = if (caseName == "JvmObject") {
+          val objType = Type.mkNative(classOf[java.lang.Object], loc)
+          Expr.UncheckedCast(e, Some(objType), None, objType, Type.Pure, loc)
+        } else {
+          e
+        }
+        Expr.Tag(symUse, List(tagArg), resultType, subst(eff), loc)
+
+      case _ =>
+        val e = specializeExp(exp, env0, subst)
+        val t = subst(tpe)
+        Expr.Unary(sop, e, t, subst(eff), loc)
+    }
 
     case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
