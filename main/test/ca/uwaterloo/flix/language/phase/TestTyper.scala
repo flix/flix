@@ -387,6 +387,39 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
   }
 
+  test("Test.CstEffNotUsed.01") {
+    val input =
+      """
+        |def foo(): Unit \ {IO, Bar} =
+        |    println("€")
+        |
+        |eff Bar {
+        |    def baz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.UnusedEffectInSignature](result)
+  }
+
+  test("Test.EffectfulFunctionUsesOtherEffect.01") {
+    val input =
+      """
+        |def foo(): Unit \ {Foo, IO} =
+        |    Foo.f();
+        |    Bar.baz();
+        |    println("€")
+        |
+        |eff Foo {
+        |    def f(): Unit
+        |}
+        |eff Bar {
+        |    def baz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
   test("TestLeq01") {
     val input =
       """
