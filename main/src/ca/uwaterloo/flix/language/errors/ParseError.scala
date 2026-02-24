@@ -233,6 +233,31 @@ object ParseError {
   }
 
   /**
+    * An error raised to indicate that a semicolon is missing between two statements.
+    *
+    * @param actual  The token kind found where a semicolon was expected.
+    * @param semiLoc The source location of the previous token (where the semicolon should be inserted).
+    * @param sctx    The syntactic context.
+    * @param loc     The source location of the current token.
+    */
+  case class MissingSemicolon(actual: TokenKind, semiLoc: SourceLocation, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+
+    def code: ErrorCode = ErrorCode.E6742
+
+    def summary: String = s"Missing ';' before ${actual.display}."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing ${red("';'")} before ${red(actual.display)}.
+         |
+         |${src(loc, s"Here")}
+         |Hint: Add a ';' after the expression.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that no items were found in a context where one or more is needed.
     *
     * @param expected Names of the items that are expected at least one of. See [[TokenKind.display]].

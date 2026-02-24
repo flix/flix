@@ -330,7 +330,7 @@ object SemanticTokensProvider {
     */
   private def visitEffect(effect: TypedAst.Effect): Iterator[SemanticToken] = effect match {
     case TypedAst.Effect(_, ann, _, sym, tparams, ops, _) =>
-      val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
+      val t = SemanticToken(SemanticTokenType.Effect, Nil, sym.loc)
       IteratorOps.all(
         visitAnnotations(ann),
         Iterator(t),
@@ -351,9 +351,9 @@ object SemanticTokensProvider {
       )
   }
 
-  private def visitAnnotations(annotations: Annotations) = annotations.annotations.iterator.map(visitAnnotation)
+  private def visitAnnotations(annotations: Annotations): Iterator[SemanticToken] = annotations.annotations.iterator.map(visitAnnotation)
 
-  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Modifier, Nil, annotation.loc)
+  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Decorator, Nil, annotation.loc)
 
   /**
     * Returns all semantic tokens in the given expression `exp0`.
@@ -587,7 +587,7 @@ object SemanticTokensProvider {
       visitType(runEff) ++ asEff.map(visitType).getOrElse(Iterator()) ++ visitExp(exp)
 
     case Expr.Without(exp, symUse, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)
+      val t = SemanticToken(SemanticTokenType.Effect, Nil, symUse.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
@@ -601,7 +601,7 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expr.Handler(symUse, rules, _, _, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)
+      val t = SemanticToken(SemanticTokenType.Effect, Nil, symUse.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp, _)) =>
@@ -809,7 +809,12 @@ object SemanticTokensProvider {
 
       case Type.Cst(cst, loc) =>
         if (isVisibleTypeConstructor(cst)) {
-          val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+          val tokenType = cst match {
+            case TypeConstructor.Pure => SemanticTokenType.Effect
+            case TypeConstructor.Effect(_, _) => SemanticTokenType.Effect
+            case _ => SemanticTokenType.Type
+          }
+          val t = SemanticToken(tokenType, Nil, loc)
           Iterator(t)
         } else {
           Iterator.empty
