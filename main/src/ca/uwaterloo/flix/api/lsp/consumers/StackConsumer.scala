@@ -120,8 +120,6 @@ case class StackConsumer() extends Consumer {
 
   override def consumeStructFieldSymUse(symUse: StructFieldSymUse): Unit = push(symUse)
 
-  override def consumeTypeMatchRule(rule: TypeMatchRule): Unit = push(rule)
-
   override def consumeTrait(traitt: Trait): Unit = push(traitt)
 
   override def consumeTraitConstraint(tc: TraitConstraint): Unit = push(tc)

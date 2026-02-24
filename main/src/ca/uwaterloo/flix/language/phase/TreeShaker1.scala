@@ -189,9 +189,6 @@ object TreeShaker1 {
     case Expr.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      visitExp(exp) ++ visitExps(rules.map(_.exp))
-
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 

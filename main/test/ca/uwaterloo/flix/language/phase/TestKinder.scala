@@ -1332,33 +1332,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.TypeMatch.01") {
-    val input =
-      """
-        |def f(x: a[b]): Unit = typematch x {
-        |    case _: b[a] => ()
-        |    case _: _ => ()
-        |}
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
-  test("KindError.TypeMatch.02") {
-    val input =
-      """
-        |
-        |enum E[_]
-        |
-        |def f(x: a): Unit = typematch x {
-        |    case _: E => ()
-        |    case _: _ => ()
-        |}
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
-  }
-
   test("KindError.CaseSet.01") {
     val input =
       """

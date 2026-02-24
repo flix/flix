@@ -683,33 +683,6 @@ object Specialization {
       }
       Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case Expr.TypeMatch(exp, rules, tpe, _, loc0) =>
-      // Use the non-strict substitution to allow free type variables to match with anything.
-      val expTpe = subst.nonStrict(exp.tpe)
-      // Make the tvars in `exp`'s type rigid so that `Nil: List[x%123]` can only match `List[_]`
-      val renv = expTpe.typeVars.foldLeft(RigidityEnv.empty) {
-        case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
-      }
-      ListOps.findMap(rules) {
-        case TypedAst.TypeMatchRule(bnd, t, body0, _) =>
-          // Try to unify.
-          ConstraintSolver2.fullyUnify(expTpe, subst.nonStrict(t), Scope.Top, renv)(root.eqEnv, flix) match {
-            // Types don't unify; just continue.
-            case None => None
-            // Types unify; use the substitution in the body.
-            case Some(caseSubst) =>
-              // Visit the base expression under the initial environment.
-              val e = specializeExp(exp, env0, subst)
-              val freshSym = Symbol.freshVarSym(bnd.sym)
-              val env1 = env0 + (bnd.sym -> freshSym)
-              val subst1 = StrictSubstitution.mk(caseSubst @@ subst.nonStrict)
-              // Visit the body under the extended environment.
-              val body = specializeExp(body0, env1, subst1)
-              val eff = Type.mkUnion(e.eff, body.eff, loc0.asSynthetic)
-              Some(Expr.Let(Binder(freshSym, subst(bnd.tpe)), e, body, subst1(tpe), subst1(eff), loc0))
-          }
-      }.get // This is safe since the last case can always match.
-
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules.map(r => specializeRestrictableChooseRule(r, env0, subst))

@@ -935,18 +935,6 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.Match(e, rs, loc)
 
-    case NamedAst.Expr.TypeMatch(exp, rules, loc) =>
-      val rs = rules.map {
-        case NamedAst.TypeMatchRule(sym, tpe, body, ruleLoc) =>
-          val t = resolveType(tpe, None, Wildness.AllowWild, scp0, taenv, ns0, root)
-          val scp = scp0 ++ mkVarScp(sym)
-          val b = resolveExp(body, scp)
-          ResolvedAst.TypeMatchRule(sym, t, b, ruleLoc)
-      }
-
-      val e = resolveExp(exp, scp0)
-      ResolvedAst.Expr.TypeMatch(e, rs, loc)
-
     case NamedAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = resolveExp(exp, scp0)
       val rs = rules.map {

@@ -612,9 +612,6 @@ object Lowering {
     case TypedAst.Expr.ApplySig(_, _, _, _, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected ApplySig", exp0.loc)
 
-    case TypedAst.Expr.TypeMatch(_, _, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected TypeMatch", exp0.loc)
-
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 

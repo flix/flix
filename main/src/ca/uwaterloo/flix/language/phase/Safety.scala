@@ -68,7 +68,6 @@ object Safety {
   /**
     * Checks the safety and well-formedness of `exp0`.
     *
-    *   - [[Expr.TypeMatch]] must end with a default case.
     *   - [[Expr.Handler]] are not defined for primitive effects.
     *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
     *   - [[Expr.UncheckedCast]] are not impossible.
@@ -150,18 +149,6 @@ object Safety {
         rule.guard.foreach(visitExp)
         visitExp(rule.exp)
       }
-
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      // Check whether the last case in the type match looks like `..: _`.
-      rules.lastOption match {
-        // Use top scope since the rigidity check only cares if it's a syntactically known variable.
-        case Some(TypeMatchRule(_, Type.Var(sym, _), _, _)) if renv.isFlexible(sym)(Scope.Top) =>
-          ()
-        case Some(_) | None =>
-          sctx.errors.add(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
-      }
-      visitExp(exp)
-      rules.foreach(rule => visitExp(rule.exp))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)

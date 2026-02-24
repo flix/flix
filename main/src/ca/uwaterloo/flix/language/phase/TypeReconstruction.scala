@@ -217,21 +217,6 @@ object TypeReconstruction {
       }
       TypedAst.Expr.Match(e1, rs, tpe, eff, loc)
 
-    case KindedAst.Expr.TypeMatch(matchExp, rules, loc) =>
-      val e1 = visitExp(matchExp)
-      val rs = rules map {
-        case KindedAst.TypeMatchRule(sym, tpe0, exp, ruleLoc) =>
-          val t = subst(tpe0)
-          val b = visitExp(exp)
-          val bnd = TypedAst.Binder(sym, t)
-          TypedAst.TypeMatchRule(bnd, t, b, ruleLoc)
-      }
-      val tpe = rs.head.exp.tpe
-      val eff = rs.foldLeft(e1.eff) {
-        case (acc, TypedAst.TypeMatchRule(_, _, b, _)) => Type.mkUnion(b.eff, acc, loc)
-      }
-      TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
-
     case KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {

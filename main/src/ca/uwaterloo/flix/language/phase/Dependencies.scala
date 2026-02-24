@@ -226,12 +226,6 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.TypeMatch(exp, rules, tpe, eff, _) =>
-      visitExp(exp)
-      rules.foreach(visitTypeMatchRule)
-      visitType(tpe)
-      visitType(eff)
-
     case Expr.RestrictableChoose(_, exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitRestrictableChooseRule)
@@ -665,12 +659,6 @@ object Dependencies {
   private def visitRecordLabelPattern(pattern: Record.RecordLabelPattern)(implicit sctx: SharedContext): Unit = {
     visitPattern(pattern.pat)
     visitType(pattern.tpe)
-  }
-
-  private def visitTypeMatchRule(matchRule: TypedAst.TypeMatchRule)(implicit sctx: SharedContext): Unit = {
-    visitBinder(matchRule.bnd)
-    visitType(matchRule.tpe)
-    visitExp(matchRule.exp)
   }
 
   private def visitRestrictableChooseRule(rule: TypedAst.RestrictableChooseRule)(implicit sctx: SharedContext): Unit = {

@@ -186,11 +186,6 @@ object Stratifier {
       val rs = rules.map(visitMatchRule)
       Expr.Match(e, rs, tpe, eff, loc)
 
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitTypeMatchRule)
-      Expr.TypeMatch(e, rs, tpe, eff, loc)
-
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
@@ -451,12 +446,6 @@ object Stratifier {
       val e1 = exp1.map(visitExp)
       val e2 = visitExp(exp2)
       MatchRule(pat, e1, e2, loc)
-  }
-
-  private def visitTypeMatchRule(rule: TypeMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypeMatchRule = rule match {
-    case TypeMatchRule(sym, t, exp1, loc) =>
-      val e1 = visitExp(exp1)
-      TypeMatchRule(sym, t, e1, loc)
   }
 
   private def visitRestrictableChooseRule(rule: RestrictableChooseRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): RestrictableChooseRule = rule match {
