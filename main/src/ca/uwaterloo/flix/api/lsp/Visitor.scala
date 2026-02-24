@@ -401,10 +401,6 @@ object Visitor {
         visitExpr(exp)
         rules.foreach(visitMatchRule)
 
-      case Expr.TypeMatch(exp, rules, _, _, _) =>
-        visitExpr(exp)
-        rules.foreach(visitTypeMatchRule)
-
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
       case Expr.ExtMatch(exp, rules, _, _, _) =>
@@ -522,6 +518,9 @@ object Visitor {
       case Expr.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
+      case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+        exps.foreach(visitExpr)
+
       case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
         visitExpr(exp)
         exps.foreach(visitExpr)
@@ -541,7 +540,8 @@ object Visitor {
       case Expr.PutStaticField(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.NewObject(_, _, _, _, methods, _) =>
+      case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+        constructors.foreach(cn => visitExpr(cn.exp)(a, c))
         methods.foreach(visitJvmMethod)
 
       case Expr.NewChannel(exp, _, _, _) =>
@@ -761,19 +761,6 @@ object Visitor {
 
       visitExtPattern(pat)
       visitExpr(exp)
-  }
-
-  private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TypeMatchRule(bnd, tpe, exp, loc) = rule
-    if (!a.accept(loc)) {
-      return
-    }
-
-    c.consumeTypeMatchRule(rule)
-
-    visitBinder(bnd)
-    visitType(tpe)
-    visitExpr(exp)
   }
 
   private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {

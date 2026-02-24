@@ -390,26 +390,50 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.NewObjectNonPublicClass](result)
   }
 
-  test("TestMissingDefaultTypeMatchCase.01") {
+  test("NewObjectConstructorMissingSuperCall.01") {
     val input =
       """
-        |def f(): Bool = typematch () {
-        |    case _: Unit => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[SafetyError.MissingDefaultTypeMatchCase](result)
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    let name = "test";
+        |    new Thread {
+        |        def new(): Thread \ IO = ???
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
   }
 
-  test("TestMissingDefaultTypeMatchCase.02") {
+  test("NewObjectConstructorMissingSuperCall.02") {
     val input =
       """
-        |def f(x: a): Bool = typematch x {
-        |    case _: a => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[SafetyError.MissingDefaultTypeMatchCase](result)
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    let name = "test";
+        |    new Thread {
+        |        def new(): Thread \ IO =
+        |            let _ = "hello";
+        |            let _ = "world";
+        |            super(name)
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
+  }
+
+  test("NewObjectConstructorMissingSuperCall.04") {
+    val input =
+      """
+        |import java.lang.Thread
+        |def f(): Thread \ IO =
+        |    let name = "test";
+        |    new Thread {
+        |        def new(): Thread \ IO =
+        |            if (true) super(name) else super(name)
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
   }
 
   test("TestBaseEffectInRunWith.01") {

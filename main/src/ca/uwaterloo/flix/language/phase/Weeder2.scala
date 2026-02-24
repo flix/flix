@@ -887,7 +887,6 @@ object Weeder2 {
         case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
         case TreeKind.Expr.Region => visitRegionExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
-        case TreeKind.Expr.TypeMatch => visitTypeMatchExpr(tree)
         case TreeKind.Expr.RestrictableChoose
              | TreeKind.Expr.RestrictableChooseStar => visitRestrictableChooseExpr(tree)
         case TreeKind.Expr.ForApplicative => visitForApplicativeExpr(tree)
@@ -916,6 +915,7 @@ object Weeder2 {
         case TreeKind.Expr.Index => visitIndexExpr(tree)
         case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
         case TreeKind.Expr.InvokeConstructor => visitInvokeConstructorExpr(tree)
+        case TreeKind.Expr.InvokeSuperConstructor => visitInvokeSuperConstructorExpr(tree)
         case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
@@ -1439,25 +1439,6 @@ object Weeder2 {
         case (_, _) =>
           val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           Validation.Success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error), tree.loc))
-      }
-    }
-
-    private def visitTypeMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.TypeMatch)
-      val rules0 = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules0)(visitTypeMatchRule)) {
-        case (_, Nil) =>
-          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          sctx.errors.add(error)
-          Expr.Error(error)
-        case (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
-      }
-    }
-
-    private def visitTypeMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[TypeMatchRule, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.TypeMatchRuleFragment)
-      mapN(pickNameIdent(tree), pickExpr(tree), Types.pickType(tree)) {
-        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr, tree.loc)
       }
     }
 
@@ -1990,6 +1971,21 @@ object Weeder2 {
       }
     }
 
+    private def visitInvokeSuperConstructorExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeSuperConstructor)
+      val expsValidation = tryPick(TreeKind.ArgumentList, tree) match {
+        case None =>
+          val error = WeederError.MissingArgumentList(tree.loc)
+          sctx.errors.add(error)
+          Validation.Success(List.empty)
+        case Some(argumentList) =>
+          visitMethodArguments(argumentList)
+      }
+      mapN(expsValidation) {
+        exps => Expr.InvokeSuperConstructor(exps, tree.loc)
+      }
+    }
+
     private def visitInvokeMethodExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod)
       val baseExp = pickExpr(tree)
@@ -2013,9 +2009,10 @@ object Weeder2 {
 
     private def visitNewObjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.NewObject)
+      val constructors = pickAll(TreeKind.Expr.JvmConstructor, tree)
       val methods = pickAll(TreeKind.Expr.JvmMethod, tree)
-      mapN(Types.pickType(tree), traverse(methods)(visitJvmMethod)) {
-        (tpe, methods) => Expr.NewObject(tpe, methods, tree.loc)
+      mapN(Types.pickType(tree), traverse(constructors)(visitJvmConstructor), traverse(methods)(visitJvmMethod)) {
+        (tpe, constructors, methods) => Expr.NewObject(tpe, constructors, methods, tree.loc)
       }
     }
 
@@ -2049,6 +2046,17 @@ object Weeder2 {
         Types.tryPickEffect(tree),
       ) {
         (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitJvmConstructor(tree: Tree)(implicit sctx: SharedContext): Validation[JvmConstructor, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.JvmConstructor)
+      mapN(
+        pickExpr(tree),
+        Types.pickType(tree),
+        Types.tryPickEffect(tree),
+      ) {
+        (expr, tpe, eff) => JvmConstructor(expr, tpe, eff, tree.loc)
       }
     }
 
@@ -2368,6 +2376,9 @@ object Weeder2 {
         case ("INT8_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc)
         case ("INT8_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc)
         case ("LINE", None) => Expr.Cst(Constant.Str(s"${loc.startLine}"), loc)
+        case ("REFLECT_EFF", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectEff, e1, loc)
+        case ("REFLECT_VALUE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectValue, e1, loc)
+        case ("REFLECT_TYPE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ReflectOp.ReflectType, e1, loc)
         case ("VECTOR_GET", Some(e1 :: e2 :: Nil)) => Expr.VectorLoad(e1, e2, loc)
         case ("VECTOR_LENGTH", Some(e1 :: Nil)) => Expr.VectorLength(e1, loc)
         case _ =>

@@ -124,8 +124,6 @@ trait Consumer {
 
   def consumeStructFieldSymUse(symUse: StructFieldSymUse): Unit = ()
 
-  def consumeTypeMatchRule(rule: TypeMatchRule): Unit = ()
-
   def consumeTrait(traitt: Trait): Unit = ()
 
   def consumeTraitConstraint(tc: TraitConstraint): Unit = ()

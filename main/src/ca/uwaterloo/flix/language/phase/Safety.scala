@@ -68,7 +68,6 @@ object Safety {
   /**
     * Checks the safety and well-formedness of `exp0`.
     *
-    *   - [[Expr.TypeMatch]] must end with a default case.
     *   - [[Expr.Handler]] are not defined for primitive effects.
     *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
     *   - [[Expr.UncheckedCast]] are not impossible.
@@ -150,18 +149,6 @@ object Safety {
         rule.guard.foreach(visitExp)
         visitExp(rule.exp)
       }
-
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      // Check whether the last case in the type match looks like `..: _`.
-      rules.lastOption match {
-        // Use top scope since the rigidity check only cares if it's a syntactically known variable.
-        case Some(TypeMatchRule(_, Type.Var(sym, _), _, _)) if renv.isFlexible(sym)(Scope.Top) =>
-          ()
-        case Some(_) | None =>
-          sctx.errors.add(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
-      }
-      visitExp(exp)
-      rules.foreach(rule => visitExp(rule.exp))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
@@ -288,6 +275,10 @@ object Safety {
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
+    case Expr.InvokeSuperConstructor(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
     case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
       checkPermissions(loc.security, loc)
       visitExp(exp)
@@ -313,9 +304,10 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
+    case newObject@Expr.NewObject(_, _, _, _, constructors, methods, loc) =>
       checkPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
+      constructors.foreach(c => visitExp(c.exp))
       methods.foreach(method => visitExp(method.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>
@@ -789,19 +781,36 @@ object Safety {
     * are supposed to implement `clazz`.
     *
     * The conditions are that:
-    *   - `clazz` must be an interface or have a non-private constructor without arguments.
+    *   - `clazz` must be an interface or have a non-private constructor without arguments (unless user-defined constructors are provided).
     *   - `clazz` must be public.
+    *   - Each constructor body must be exactly a `super(...)` call.
+    *   - There can be at most one constructor.
     *   - `methods` must take the object itself (`this`) as the first argument.
     *   - `methods` must include all required signatures (e.g. abstract methods).
     *   - `methods` must not include non-existing methods.
     *   - `methods` must not let control effects escape.
     */
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, tpe0, _, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
-      // `clazz` must be an interface or have a non-private constructor without arguments.
-      if (!clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz)) {
+      // `clazz` must be an interface or have a non-private constructor without arguments
+      // (unless user-defined constructors are provided).
+      if (!clazz.isInterface && cs.isEmpty && !hasNonPrivateZeroArgConstructor(clazz)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
+      }
+
+      // Each constructor body must be exactly a `super(...)` call.
+      cs.foreach {
+        case JvmConstructor(exp, _, _, constructorLoc) =>
+          exp match {
+            case _: Expr.InvokeSuperConstructor => () // OK
+            case _ => sctx.errors.add(NewObjectConstructorMissingSuperCall(clazz, constructorLoc))
+          }
+      }
+
+      // There can be at most one constructor.
+      if (cs.length > 1) {
+        sctx.errors.add(NewObjectTooManyConstructors(clazz, loc))
       }
 
       // `clazz` must be public.

@@ -247,6 +247,42 @@ object ConstraintGen {
           val resTpe = tvar
           val resEff = eff
           (resTpe, resEff)
+
+        case SemanticOp.ReflectOp.ReflectEff =>
+          val effVar = freshVar(Kind.Eff, exp.loc)
+          val (tpe, eff) = visitExp(exp)
+          val proxyEffSym = Symbol.mkEnumSym("ProxyEff")
+          val proxyEffType = Type.mkEnum(proxyEffSym, List(effVar), exp.loc)
+          c.expectType(expected = proxyEffType, actual = tpe, exp.loc)
+          val puritySym = Symbol.mkEnumSym("Reflect.Purity")
+          val purityType = Type.mkEnum(puritySym, Nil, exp.loc)
+          c.unifyType(purityType, tvar, exp.loc)
+          val resTpe = tvar
+          val resEff = eff
+          (resTpe, resEff)
+
+        case SemanticOp.ReflectOp.ReflectType =>
+          val elmVar = freshVar(Kind.Star, exp.loc)
+          val (tpe, eff) = visitExp(exp)
+          val proxySym = Symbol.mkEnumSym("Proxy")
+          val proxyType = Type.mkEnum(proxySym, List(elmVar), exp.loc)
+          c.expectType(expected = proxyType, actual = tpe, exp.loc)
+          val jvmTypeSym = Symbol.mkEnumSym("Reflect.JvmType")
+          val jvmTypeType = Type.mkEnum(jvmTypeSym, Nil, exp.loc)
+          c.unifyType(jvmTypeType, tvar, exp.loc)
+          val resTpe = tvar
+          val resEff = eff
+          (resTpe, resEff)
+
+        case SemanticOp.ReflectOp.ReflectValue =>
+          val (_, eff) = visitExp(exp)
+          val jvmValueSym = Symbol.mkEnumSym("Reflect.JvmValue")
+          val jvmValueType = Type.mkEnum(jvmValueSym, Nil, exp.loc)
+          c.unifyType(jvmValueType, tvar, exp.loc)
+          val resTpe = tvar
+          val resEff = eff
+          (resTpe, resEff)
+
       }
 
       case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -403,6 +439,7 @@ object ConstraintGen {
         // then we don't require it to be return Unit
         val isJvm = exp1 match {
           case _: Expr.InvokeConstructor => true
+          case _: Expr.InvokeSuperConstructor => true
           case _: Expr.InvokeMethod => true
           case _: Expr.InvokeStaticMethod => true
           case _ => false
@@ -473,14 +510,6 @@ object ConstraintGen {
         val (tpe, eff) = visitExp(exp)
         val (patTpes, tpes, effs) = rules.map(visitMatchRule).unzip3
         c.unifyAllTypes(tpe :: patTpes, loc)
-        c.unifyAllTypes(tpes, loc)
-        val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
-        val resEff = Type.mkUnion(eff :: effs, loc)
-        (resTpe, resEff)
-
-      case Expr.TypeMatch(exp, rules, loc) =>
-        val (_, eff) = visitExp(exp)
-        val (tpes, effs) = rules.map(visitTypeMatchRule).unzip
         c.unifyAllTypes(tpes, loc)
         val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         val resEff = Type.mkUnion(eff :: effs, loc)
@@ -901,6 +930,19 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
+      case Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
+        // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
+        // --------------------------------------------------------
+        // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
+        val clazzTpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
+        val resTpe = clazzTpe
+        val resEff = evar
+        (resTpe, resEff)
+
       case Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
         // ---------------------------------------------------------------
@@ -966,7 +1008,8 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, methods, _) =>
+      case Expr.NewObject(_, clazz, constructors, methods, _) =>
+        constructors.foreach(visitJvmConstructor)
         methods.foreach(visitJvmMethod)
         val resTpe = Type.getFlixType(clazz)
         val resEff = Type.IO
@@ -1206,26 +1249,6 @@ object ConstraintGen {
   }
 
   /**
-    * Generates constraints for the given typematch rule.
-    *
-    * Returns the body's type and the body's effect
-    */
-  private def visitTypeMatchRule(rule: KindedAst.TypeMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.TypeMatchRule(sym, declTpe, exp, _) =>
-      // We mark all the type vars in the declared type as rigid.
-      // This ensures we get a substitution from the actual type to the declared type.
-      // This marking only really affects wildcards,
-      // as non-wildcard variables must come from the function signature
-      // and are therefore already rigid.
-      declTpe.typeVars.map(_.sym).foreach(c.rigidify)
-
-      // Unify the variable's type with the declared type
-      c.unifyType(sym.tvar, declTpe, sym.loc)
-
-      visitExp(exp)
-  }
-
-  /**
     * Generates constraints for the given catch rule.
     *
     * Returns the the body's type and the body's effect
@@ -1274,6 +1297,16 @@ object ConstraintGen {
 
           (actualTpe, actualEff)
       }
+  }
+
+  /**
+    * Generates constraints for the JVM constructor.
+    */
+  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = constructor match {
+    case KindedAst.JvmConstructor(exp, returnTpe, eff, _) =>
+      val (bodyTpe, bodyEff) = visitExp(exp)
+      c.expectType(expected = returnTpe, actual = bodyTpe, exp.loc)
+      c.expectType(expected = eff, actual = bodyEff, exp.loc)
   }
 
   /**

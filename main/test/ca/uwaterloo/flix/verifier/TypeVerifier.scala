@@ -71,6 +71,8 @@ object TypeVerifier {
             case SemanticOp.Int32Op.Not => SimpleType.Int32
             case SemanticOp.Int64Op.Neg => SimpleType.Int64
             case SemanticOp.Int64Op.Not => SimpleType.Int64
+            case _: SemanticOp.ReflectOp =>
+              throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
           }
           check(expected = opTpe)(actual = t, loc)
           check(expected = tpe)(actual = opTpe, loc)
@@ -439,6 +441,10 @@ object TypeVerifier {
           checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
           checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
 
+        case AtomicOp.InvokeSuperConstructor(constructor) =>
+          checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
+          checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
+
         case AtomicOp.InvokeMethod(method) =>
           val t :: pts = ts
           checkJavaParameters(pts, method.getParameterTypes.toList, loc)
@@ -556,7 +562,11 @@ object TypeVerifier {
 
       checkEq(tpe, exptype, loc)
 
-    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe, _, constructors, methods, loc) =>
+      for (c <- constructors) {
+        val exptype = visitExpr(c.exp)(root, env, lenv)
+        checkEq(c.tpe, exptype, c.loc)
+      }
       for (m <- methods) {
         val exptype = visitExpr(m.exp)
         val signature = SimpleType.mkArrow(m.fparams.map(_.tpe), m.tpe)

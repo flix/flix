@@ -181,10 +181,6 @@ object PatMatch {
         }
         checkRules(exp, rules, root)
 
-      case Expr.TypeMatch(exp, rules, _, _, _) =>
-        visitExp(exp)
-        rules.foreach(r => visitExp(r.exp))
-
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
@@ -275,6 +271,8 @@ object PatMatch {
 
       case Expr.InvokeConstructor(_, args, _, _, _) => args.foreach(visitExp)
 
+      case Expr.InvokeSuperConstructor(_, args, _, _, _) => args.foreach(visitExp)
+
       case Expr.InvokeMethod(_, exp, args, _, _, _) =>
         visitExp(exp)
         args.foreach(visitExp)
@@ -291,7 +289,9 @@ object PatMatch {
 
       case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
 
-      case Expr.NewObject(_, _, _, _, methods, _) => methods.foreach(m => visitExp(m.exp))
+      case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+        constructors.foreach(c => visitExp(c.exp))
+        methods.foreach(m => visitExp(m.exp))
 
       case Expr.NewChannel(exp, _, _, _) => visitExp(exp)
 

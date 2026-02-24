@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Instance, StructField}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse}
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, Name, RigidityEnv, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -547,10 +547,76 @@ object Specialization {
       val es = exps.map(specializeExp(_, env0, subst))
       Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), loc)
 
-    case Expr.Unary(sop, exp, tpe, eff, loc) =>
-      val e = specializeExp(exp, env0, subst)
-      val t = subst(tpe)
-      Expr.Unary(sop, e, t, subst(eff), loc)
+    case Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
+
+      case SemanticOp.ReflectOp.ReflectEff =>
+        val expTpe = subst(exp.tpe)
+        val typeArg = expTpe.typeArguments.headOption.getOrElse(
+          throw InternalCompilerException(s"Expected ProxyEff[ef] type, got $expTpe", loc)
+        )
+        val purityEnumSym = Symbols.Enums.Purity
+        val caseName = typeArg match {
+          case Type.Cst(TypeConstructor.Pure, _) => "Pure"
+          case _                                 => "Impure"
+        }
+        val caseSym = Symbol.mkCaseSym(purityEnumSym, Name.Ident(caseName, loc))
+        val symUse = CaseSymUse(caseSym, loc)
+        val resultType = Type.mkEnum(purityEnumSym, Nil, loc)
+        Expr.Tag(symUse, Nil, resultType, Type.Pure, loc)
+
+      case SemanticOp.ReflectOp.ReflectType =>
+        val expTpe = subst(exp.tpe)
+        val typeArg = expTpe.typeArguments.headOption.getOrElse(
+          throw InternalCompilerException(s"Expected Proxy[t] type, got $expTpe", loc)
+        )
+        val jvmTypeEnumSym = Symbols.Enums.JvmType
+        val caseName = typeArg.baseType match {
+          case Type.Cst(TypeConstructor.Bool, _)    => "JvmBool"
+          case Type.Cst(TypeConstructor.Char, _)    => "JvmChar"
+          case Type.Cst(TypeConstructor.Int8, _)    => "JvmInt8"
+          case Type.Cst(TypeConstructor.Int16, _)   => "JvmInt16"
+          case Type.Cst(TypeConstructor.Int32, _)   => "JvmInt32"
+          case Type.Cst(TypeConstructor.Int64, _)   => "JvmInt64"
+          case Type.Cst(TypeConstructor.Float32, _) => "JvmFloat32"
+          case Type.Cst(TypeConstructor.Float64, _) => "JvmFloat64"
+          case _                                    => "JvmObject"
+        }
+        val caseSym = Symbol.mkCaseSym(jvmTypeEnumSym, Name.Ident(caseName, loc))
+        val symUse = CaseSymUse(caseSym, loc)
+        val resultType = Type.mkEnum(jvmTypeEnumSym, Nil, loc)
+        Expr.Tag(symUse, Nil, resultType, Type.Pure, loc)
+
+      case SemanticOp.ReflectOp.ReflectValue =>
+        val e = specializeExp(exp, env0, subst)
+        val expTpe = subst(exp.tpe)
+        val jvmValueEnumSym = Symbols.Enums.JvmValue
+        val resultType = Type.mkEnum(jvmValueEnumSym, Nil, loc)
+        val caseName = expTpe.baseType match {
+          case Type.Cst(TypeConstructor.Bool, _)    => "JvmBool"
+          case Type.Cst(TypeConstructor.Char, _)    => "JvmChar"
+          case Type.Cst(TypeConstructor.Int8, _)    => "JvmInt8"
+          case Type.Cst(TypeConstructor.Int16, _)   => "JvmInt16"
+          case Type.Cst(TypeConstructor.Int32, _)   => "JvmInt32"
+          case Type.Cst(TypeConstructor.Int64, _)   => "JvmInt64"
+          case Type.Cst(TypeConstructor.Float32, _) => "JvmFloat32"
+          case Type.Cst(TypeConstructor.Float64, _) => "JvmFloat64"
+          case _                                    => "JvmObject"
+        }
+        val caseSym = Symbol.mkCaseSym(jvmValueEnumSym, Name.Ident(caseName, loc))
+        val symUse = CaseSymUse(caseSym, loc)
+        val tagArg = if (caseName == "JvmObject") {
+          val objType = Type.mkNative(classOf[java.lang.Object], loc)
+          Expr.UncheckedCast(e, Some(objType), None, objType, Type.Pure, loc)
+        } else {
+          e
+        }
+        Expr.Tag(symUse, List(tagArg), resultType, subst(eff), loc)
+
+      case _ =>
+        val e = specializeExp(exp, env0, subst)
+        val t = subst(tpe)
+        Expr.Unary(sop, e, t, subst(eff), loc)
+    }
 
     case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
@@ -616,33 +682,6 @@ object Specialization {
           TypedAst.ExtMatchRule(p, e1, loc1)
       }
       Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
-
-    case Expr.TypeMatch(exp, rules, tpe, _, loc0) =>
-      // Use the non-strict substitution to allow free type variables to match with anything.
-      val expTpe = subst.nonStrict(exp.tpe)
-      // Make the tvars in `exp`'s type rigid so that `Nil: List[x%123]` can only match `List[_]`
-      val renv = expTpe.typeVars.foldLeft(RigidityEnv.empty) {
-        case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
-      }
-      ListOps.findMap(rules) {
-        case TypedAst.TypeMatchRule(bnd, t, body0, _) =>
-          // Try to unify.
-          ConstraintSolver2.fullyUnify(expTpe, subst.nonStrict(t), Scope.Top, renv)(root.eqEnv, flix) match {
-            // Types don't unify; just continue.
-            case None => None
-            // Types unify; use the substitution in the body.
-            case Some(caseSubst) =>
-              // Visit the base expression under the initial environment.
-              val e = specializeExp(exp, env0, subst)
-              val freshSym = Symbol.freshVarSym(bnd.sym)
-              val env1 = env0 + (bnd.sym -> freshSym)
-              val subst1 = StrictSubstitution.mk(caseSubst @@ subst.nonStrict)
-              // Visit the body under the extended environment.
-              val body = specializeExp(body0, env1, subst1)
-              val eff = Type.mkUnion(e.eff, body.eff, loc0.asSynthetic)
-              Some(Expr.Let(Binder(freshSym, subst(bnd.tpe)), e, body, subst1(tpe), subst1(eff), loc0))
-          }
-      }.get // This is safe since the last case can always match.
 
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -819,6 +858,11 @@ object Specialization {
       val t = subst(tpe)
       Expr.InvokeConstructor(constructor, es, t, subst(eff), loc)
 
+    case Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeSuperConstructor(constructor, es, t, subst(eff), loc)
+
     case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val es = exps.map(specializeExp(_, env0, subst))
@@ -850,9 +894,10 @@ object Specialization {
       val t = subst(tpe)
       Expr.PutStaticField(field, e, t, subst(eff), loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+      val constructors = constructors0.map(specializeJvmConstructor(_, env0, subst))
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+      Expr.NewObject(name, clazz, subst(tpe), subst(eff), constructors, methods, loc)
 
     case Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)
@@ -1123,6 +1168,13 @@ object Specialization {
 
     case TypedAst.ExtTagPattern.Error(_, loc) =>
       throw InternalCompilerException("unexpected error ext pattern", loc)
+  }
+
+  /** Specializes `constructor` w.r.t. `subst`. */
+  private def specializeJvmConstructor(constructor: TypedAst.JvmConstructor, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.JvmConstructor = constructor match {
+    case TypedAst.JvmConstructor(exp0, tpe, eff, loc) =>
+      val exp = specializeExp(exp0, env0, subst)
+      TypedAst.JvmConstructor(exp, subst(tpe), subst(eff), loc)
   }
 
   /** Specializes `method` w.r.t. `subst`. */

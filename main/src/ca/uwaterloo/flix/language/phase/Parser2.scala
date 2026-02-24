@@ -1871,7 +1871,6 @@ object Parser2 {
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
         case TokenKind.KeywordRegion => regionExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
-        case TokenKind.KeywordTypeMatch => typematchExpr()
         case TokenKind.KeywordChoose
              | TokenKind.KeywordChooseStar => restrictableChooseExpr()
         case TokenKind.KeywordForA => forApplicativeExpr()
@@ -1893,6 +1892,7 @@ object Parser2 {
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
+        case TokenKind.KeywordSuper => invokeSuperExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
         case TokenKind.KeywordSelect => selectExpr()
         case TokenKind.KeywordSpawn => spawnExpr()
@@ -2325,6 +2325,8 @@ object Parser2 {
       }
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2340,47 +2342,13 @@ object Parser2 {
       Pattern.pattern()
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
       statement()
       close(mark, TreeKind.Expr.ExtMatchRuleFragment)
-    }
-
-    private def typematchExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordTypeMatch))
-      val mark = open()
-      expect(TokenKind.KeywordTypeMatch)
-      expression()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.MatchRule,
-        checkForItem = _ == TokenKind.KeywordCase,
-        getItem = typematchRule,
-        breakWhen = _.isRecoverInExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        separation = Separation.Optional(TokenKind.Comma)
-      )
-      close(mark, TreeKind.Expr.TypeMatch)
-    }
-
-    private def typematchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordCase))
-      val mark = open()
-      expect(TokenKind.KeywordCase)
-      nameUnqualified(NAME_VARIABLE)
-      if (eat(TokenKind.Colon)) {
-        Type.ttype()
-      }
-      if (eat(TokenKind.Equal)) {
-        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
-      } else {
-        expect(TokenKind.ArrowThickR)
-      }
-      statement()
-      close(mark, TreeKind.Expr.TypeMatchRuleFragment)
     }
 
     private def restrictableChooseExpr()(implicit s: State): Mark.Closed = {
@@ -2621,8 +2589,10 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expression()
-      if(eat(TokenKind.Equal)) {
+      if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2795,7 +2765,10 @@ object Parser2 {
       nameAllowQualified(NAME_JAVA, tail = Set())
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
-      } else {
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
+      }
+      else {
         expect(TokenKind.ArrowThickR)
       }
       statement()
@@ -2832,6 +2805,15 @@ object Parser2 {
       close(mark, TreeKind.Expr.Throw)
     }
 
+    private def invokeSuperExpr()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordSuper))
+      val mark = open()
+      expect(TokenKind.KeywordSuper)
+      arguments()
+      close(mark, TreeKind.Expr.InvokeSuperConstructor)
+    }
+
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordNew))
@@ -2864,7 +2846,13 @@ object Parser2 {
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
           checkForItem = _ => nth(nextNonComment(0))  == TokenKind.KeywordDef,
-          getItem = jvmMethod,
+          getItem = () => {
+            // If `def` is followed by `new`, parse as JvmConstructor; otherwise JvmMethod.
+            val defOffset = nextNonComment(0)
+            val afterDefOffset = nextNonComment(defOffset + 1)
+            if (nth(afterDefOffset) == TokenKind.KeywordNew) jvmConstructor()
+            else jvmMethod()
+          },
           breakWhen = _.isRecoverInExpr,
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR,
@@ -2900,6 +2888,21 @@ object Parser2 {
       expect(TokenKind.Equal)
       Expr.statement()
       close(mark, TreeKind.Expr.JvmMethod)
+    }
+
+    private def jvmConstructor()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val mark = open()
+      assert(at(TokenKind.KeywordDef))
+      expect(TokenKind.KeywordDef)
+      expect(TokenKind.KeywordNew)
+      expect(TokenKind.ParenL)
+      expect(TokenKind.ParenR)
+      expect(TokenKind.Colon)
+      Type.typeAndEffect()
+      expect(TokenKind.Equal)
+      Expr.statement()
+      close(mark, TreeKind.Expr.JvmConstructor)
     }
 
     private def staticExpr()(implicit s: State): Mark.Closed = {

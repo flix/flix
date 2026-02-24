@@ -514,11 +514,6 @@ object Kinder {
         val rules = rules0.map(visitMatchRule(_, kenv0, root))
         KindedAst.Expr.Match(exp, rules, loc)
 
-      case ResolvedAst.Expr.TypeMatch(exp0, rules0, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        val rules = rules0.map(visitTypeMatchRule(_, kenv0, root))
-        KindedAst.Expr.TypeMatch(exp, rules, loc)
-
       case ResolvedAst.Expr.RestrictableChoose(star, exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         val rules = rules0.map(visitRestrictableChooseRule(_, kenv0, root))
@@ -714,6 +709,12 @@ object Kinder {
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc)
 
+      case ResolvedAst.Expr.InvokeSuperConstructor(clazz, exps0, loc) =>
+        val exps = exps0.map(visitExp(_, kenv0, root))
+        val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+        KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc)
+
       case ResolvedAst.Expr.InvokeMethod(exp0, methodName, exps0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         val exps = exps0.map(visitExp(_, kenv0, root))
@@ -748,9 +749,10 @@ object Kinder {
         val exp = visitExp(exp0, kenv0, root)
         KindedAst.Expr.PutStaticField(field, exp, loc)
 
-      case ResolvedAst.Expr.NewObject(name, clazz, methods0, loc) =>
+      case ResolvedAst.Expr.NewObject(name, clazz, constructors0, methods0, loc) =>
+        val constructors = constructors0.map(visitJvmConstructor(_, kenv0, root))
         val methods = methods0.map(visitJvmMethod(_, kenv0, root))
-        KindedAst.Expr.NewObject(name, clazz, methods, loc)
+        KindedAst.Expr.NewObject(name, clazz, constructors, methods, loc)
 
       case ResolvedAst.Expr.NewChannel(exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -866,17 +868,6 @@ object Kinder {
       val pat = visitExtPattern(pat0)
       val exp = visitExp(exp0, kenv, root)
       KindedAst.ExtMatchRule(pat, exp, loc)
-  }
-
-  /**
-    * Performs kinding on the given match rule under the given kind environment.
-    */
-  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv0: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
-    case ResolvedAst.TypeMatchRule(sym, tpe0, exp0, loc) =>
-      val kenv = inferType(tpe0, Kind.Star, kenv0, root)
-      val tpe = visitType(tpe0, Kind.Star, kenv, root)
-      val exp = visitExp(exp0, kenv, root)
-      KindedAst.TypeMatchRule(sym, tpe, exp, loc)
   }
 
   /**
@@ -1404,6 +1395,17 @@ object Kinder {
       val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
       KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
+  }
+
+  /**
+    * Performs kinding on the given JVM constructor.
+    */
+  private def visitJvmConstructor(constructor: ResolvedAst.JvmConstructor, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.JvmConstructor = constructor match {
+    case ResolvedAst.JvmConstructor(exp0, tpe0, eff0, loc) =>
+      val exp = visitExp(exp0, kenv, root)
+      val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
+      val tpe = visitType(tpe0, Kind.Wild, kenv, root)
+      KindedAst.JvmConstructor(exp, tpe, eff, loc)
   }
 
   /**

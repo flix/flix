@@ -2,11 +2,13 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
 import java.nio.file.Files
 
+@DoNotDiscover
 class TestJarPackageManager extends AnyFunSuite {
   val s: String = File.separator
   val f: Formatter = Formatter.NoFormatter

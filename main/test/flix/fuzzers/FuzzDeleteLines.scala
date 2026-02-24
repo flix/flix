@@ -18,12 +18,14 @@ package flix.fuzzers
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import org.scalatest.DoNotDiscover
 
 import scala.jdk.CollectionConverters.*
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 
+@DoNotDiscover
 class FuzzDeleteLines extends AnyFunSuite with TestUtils {
   /**
     * Number of variants to make for each file. Each variant has a single line deleted.

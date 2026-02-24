@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -242,10 +242,14 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyOp(bnd.sym, es, t, eff, loc)
 
-    case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
-      val e = lowerExp(exp)
-      val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
+    case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
+      case _: SemanticOp.ReflectOp =>
+        throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
+      case _ =>
+        val e = lowerExp(exp)
+        val t = lowerType(tpe)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
+    }
 
     case TypedAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)
@@ -486,6 +490,11 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
 
+    case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(lowerExp)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), es, t, eff, loc)
+
     case TypedAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = lowerExp(exp)
       val es = exps.map(lowerExp)
@@ -517,10 +526,11 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
-    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      val cs = constructors.map(lowerJvmConstructor)
       val ms = methods.map(lowerJvmMethod)
       val t = lowerType(tpe)
-      MonoAst.Expr.NewObject(name, clazz, t, eff, ms, loc)
+      MonoAst.Expr.NewObject(name, clazz, t, eff, cs, ms, loc)
 
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -602,12 +612,19 @@ object Lowering {
     case TypedAst.Expr.ApplySig(_, _, _, _, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected ApplySig", exp0.loc)
 
-    case TypedAst.Expr.TypeMatch(_, _, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected TypeMatch", exp0.loc)
-
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
+  }
+
+  /**
+    * Lowers the given JvmConstructor `constructor`.
+    */
+  private def lowerJvmConstructor(constructor: TypedAst.JvmConstructor)(implicit ctx: Context, root: TypedAst.Root, flix: Flix): MonoAst.JvmConstructor = constructor match {
+    case TypedAst.JvmConstructor(exp, retTpe, eff, loc) =>
+      val e = lowerExp(exp)
+      val t = lowerType(retTpe)
+      MonoAst.JvmConstructor(e, t, eff, loc)
   }
 
   /**
@@ -2087,7 +2104,7 @@ object Lowering {
       }
       MonoAst.Expr.RunWith(e, effSymUse, rs, tpe, eff, loc)
 
-    case MonoAst.Expr.NewObject(_, _, _, _, _, _) => exp0
+    case MonoAst.Expr.NewObject(_, _, _, _, _, _, _) => exp0
 
   }
 

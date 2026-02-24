@@ -45,12 +45,12 @@ jobs:
           repository: ${{ env.feature_repo }}
           ref: ${{ env.feature_ref }}
       - name: Build JAR
-        run: ./gradlew jar
+        run: ./mill flix.assembly
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: JAR
-          path: build/libs/flix.jar
+          path: out/flix/assembly.dest/out.jar
       - name: Comment JAR link
         uses: actions/github-script@v7
         with:

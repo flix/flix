@@ -395,32 +395,6 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a TypeMatch expression is missing a default case.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError {
-    def code: ErrorCode = ErrorCode.E5134
-
-    def summary: String = "Missing default case in typematch."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Missing default case in typematch.
-         |
-         |${highlight(loc, "typematch expression", fmt)}
-         |
-         |${underline("Explanation:")} A typematch expression must have a default case. For example:
-         |
-         |  typematch x {
-         |      case y: Int32 => ...
-         |      case _: _ => ... // default case
-         |  }
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that a primitive effect is attempted to be handled in a try-with expression.
     *
     * @param sym the effect symbol.
@@ -520,6 +494,52 @@ object SafetyError {
          |
          |${underline("Explanation:")} A 'new' expression requires the class to have a public
          |constructor with no arguments.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a constructor body is not a `super(...)` call.
+    *
+    * @param clazz the class or interface being extended.
+    * @param loc   the source location of the constructor.
+    */
+  case class NewObjectConstructorMissingSuperCall(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5815
+
+    def summary: String = "Constructor body must be a single 'super(...)' call."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Constructor body must be a single '${red("super(...)")}' call.
+         |
+         |${highlight(loc, "invalid constructor body", fmt)}
+         |
+         |${underline("Explanation:")} The body of a constructor in a 'new' expression must
+         |be single a 'super(...)' invocation.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a 'new' expression has more than one constructor.
+    *
+    * @param clazz the class or interface being extended.
+    * @param loc   the source location of the new object expression.
+    */
+  case class NewObjectTooManyConstructors(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5826
+
+    def summary: String = "A 'new' expression can have at most one constructor."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> A '${red("new")}' expression can have at most one constructor.
+         |
+         |${highlight(loc, "too many constructors", fmt)}
+         |
+         |${underline("Explanation:")} A 'new' expression that extends a class or interface
+         |can define at most one constructor.
          |""".stripMargin
     }
   }

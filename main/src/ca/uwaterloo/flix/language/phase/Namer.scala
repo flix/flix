@@ -805,11 +805,6 @@ object Namer {
       val rs = rules.map(visitMatchRule(_))
       NamedAst.Expr.Match(e, rs, loc)
 
-    case DesugaredAst.Expr.TypeMatch(exp, rules, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitTypeMatchRule)
-      NamedAst.Expr.TypeMatch(e, rs, loc)
-
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
@@ -946,6 +941,10 @@ object Namer {
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeConstructor(className, es, loc)
 
+    case DesugaredAst.Expr.InvokeSuperConstructor(exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.InvokeSuperConstructor(es, loc)
+
     case DesugaredAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
@@ -955,11 +954,12 @@ object Namer {
       val e = visitExp(exp)
       NamedAst.Expr.GetField(e, name, loc)
 
-    case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
+    case DesugaredAst.Expr.NewObject(tpe, constructors, methods, loc) =>
       val t = visitType(tpe)
+      val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
       val name = s"Anon$$${flix.genSym.freshId()}"
-      NamedAst.Expr.NewObject(name, t, ms, loc)
+      NamedAst.Expr.NewObject(name, t, cs, ms, loc)
 
     case DesugaredAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
@@ -1056,17 +1056,6 @@ object Namer {
       val p = visitExtPattern(pat)
       val e = visitExp(exp)
       NamedAst.ExtMatchRule(p, e, loc)
-  }
-
-  /**
-    * Performs naming on the given typematch rule `rule0`.
-    */
-  private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
-    case DesugaredAst.TypeMatchRule(ident, tpe, body, loc) =>
-      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-      val t = visitType(tpe)
-      val b = visitExp(body)
-      NamedAst.TypeMatchRule(sym, t, b, loc)
   }
 
   /**
@@ -1529,6 +1518,17 @@ object Namer {
       val ef = eff.map(visitType)
       val e = visitExp(exp0)
       NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
+  }
+
+  /**
+    * Translates the given weeded JvmConstructor to a named JvmConstructor.
+    */
+  private def visitJvmConstructor(constructor: DesugaredAst.JvmConstructor)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmConstructor = constructor match {
+    case DesugaredAst.JvmConstructor(exp0, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      val ef = eff.map(visitType)
+      val e = visitExp(exp0)
+      NamedAst.JvmConstructor(e, t, ef, loc)
   }
 
   /**
