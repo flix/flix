@@ -395,32 +395,6 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a TypeMatch expression is missing a default case.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError {
-    def code: ErrorCode = ErrorCode.E5134
-
-    def summary: String = "Missing default case in typematch."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Missing default case in typematch.
-         |
-         |${highlight(loc, "typematch expression", fmt)}
-         |
-         |${underline("Explanation:")} A typematch expression must have a default case. For example:
-         |
-         |  typematch x {
-         |      case y: Int32 => ...
-         |      case _: _ => ... // default case
-         |  }
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that a primitive effect is attempted to be handled in a try-with expression.
     *
     * @param sym the effect symbol.

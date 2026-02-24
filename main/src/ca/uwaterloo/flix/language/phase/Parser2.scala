@@ -1871,7 +1871,6 @@ object Parser2 {
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
         case TokenKind.KeywordRegion => regionExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
-        case TokenKind.KeywordTypeMatch => typematchExpr()
         case TokenKind.KeywordChoose
              | TokenKind.KeywordChooseStar => restrictableChooseExpr()
         case TokenKind.KeywordForA => forApplicativeExpr()
@@ -2350,44 +2349,6 @@ object Parser2 {
       }
       statement()
       close(mark, TreeKind.Expr.ExtMatchRuleFragment)
-    }
-
-    private def typematchExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordTypeMatch))
-      val mark = open()
-      expect(TokenKind.KeywordTypeMatch)
-      expression()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.MatchRule,
-        checkForItem = _ == TokenKind.KeywordCase,
-        getItem = typematchRule,
-        breakWhen = _.isRecoverInExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        separation = Separation.Optional(TokenKind.Comma)
-      )
-      close(mark, TreeKind.Expr.TypeMatch)
-    }
-
-    private def typematchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordCase))
-      val mark = open()
-      expect(TokenKind.KeywordCase)
-      nameUnqualified(NAME_VARIABLE)
-      if (eat(TokenKind.Colon)) {
-        Type.ttype()
-      }
-      if (eat(TokenKind.Equal)) {
-        closeWithError(open(), ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
-      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
-        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
-      } else {
-        expect(TokenKind.ArrowThickR)
-      }
-      statement()
-      close(mark, TreeKind.Expr.TypeMatchRuleFragment)
     }
 
     private def restrictableChooseExpr()(implicit s: State): Mark.Closed = {

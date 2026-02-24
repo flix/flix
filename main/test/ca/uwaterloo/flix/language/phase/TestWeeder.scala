@@ -792,15 +792,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModifier](result)
   }
 
-  test("MissingTypematchBody.01") {
-    val input =
-      s"""
-         |def f(): Int32 = typematch
-         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
-  }
-
   test("IllegalNullPattern.01") {
     val input =
       s"""

@@ -436,28 +436,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.NewObjectConstructorMissingSuperCall](result)
   }
 
-  test("TestMissingDefaultTypeMatchCase.01") {
-    val input =
-      """
-        |def f(): Bool = typematch () {
-        |    case _: Unit => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[SafetyError.MissingDefaultTypeMatchCase](result)
-  }
-
-  test("TestMissingDefaultTypeMatchCase.02") {
-    val input =
-      """
-        |def f(x: a): Bool = typematch x {
-        |    case _: a => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[SafetyError.MissingDefaultTypeMatchCase](result)
-  }
-
   test("TestBaseEffectInRunWith.01") {
     val input =
       """

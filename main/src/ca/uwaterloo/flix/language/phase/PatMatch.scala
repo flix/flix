@@ -181,10 +181,6 @@ object PatMatch {
         }
         checkRules(exp, rules, root)
 
-      case Expr.TypeMatch(exp, rules, _, _, _) =>
-        visitExp(exp)
-        rules.foreach(r => visitExp(r.exp))
-
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))

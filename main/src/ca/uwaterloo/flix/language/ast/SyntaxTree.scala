@@ -368,10 +368,6 @@ object SyntaxTree {
 
       case object Tuple extends Expr
 
-      case object TypeMatch extends Expr
-
-      case object TypeMatchRuleFragment extends Expr
-
       case object Unary extends Expr
 
       case object UncheckedCast extends Expr

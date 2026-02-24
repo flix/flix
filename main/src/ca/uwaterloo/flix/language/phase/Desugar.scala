@@ -567,11 +567,6 @@ object Desugar {
       val rs = rules.map(visitMatchRule)
       Expr.Match(e, rs, loc)
 
-    case WeededAst.Expr.TypeMatch(exp, rules, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitTypeMatchRule)
-      Expr.TypeMatch(e, rs, loc)
-
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
@@ -901,16 +896,6 @@ object Desugar {
     case WeededAst.ExtTagPattern.Var(ident, loc) => DesugaredAst.ExtTagPattern.Var(ident, loc)
     case WeededAst.ExtTagPattern.Unit(loc) => DesugaredAst.ExtTagPattern.Unit(loc)
     case WeededAst.ExtTagPattern.Error(loc) => DesugaredAst.ExtTagPattern.Error(loc)
-  }
-
-  /**
-    * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
-    */
-  private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule)(implicit flix: Flix): DesugaredAst.TypeMatchRule = rule0 match {
-    case WeededAst.TypeMatchRule(ident, tpe, exp, loc) =>
-      val t = visitType(tpe)
-      val e = visitExp(exp)
-      DesugaredAst.TypeMatchRule(ident, t, e, loc)
   }
 
   /**
