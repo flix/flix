@@ -64,7 +64,8 @@ object GenExpression {
     * Such functions / methods need to record their internal state which `newFrame`,
     * `setPc`, `pcLabels`, and `pcCounter` are for.
     */
-  case class EffectContext(entryPoint: Label,
+  case class EffectContext(
+    entryPoint: Label,
     lenv: Map[Symbol.LabelSym, Label],
     newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
     setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
@@ -79,7 +80,8 @@ object GenExpression {
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
-  case class DirectInstanceContext(entryPoint: Label,
+  case class DirectInstanceContext(
+    entryPoint: Label,
     lenv: Map[Symbol.LabelSym, Label],
     localOffset: Int,
   ) extends MethodContext
@@ -90,7 +92,8 @@ object GenExpression {
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
-  case class DirectStaticContext(entryPoint: Label,
+  case class DirectStaticContext(
+    entryPoint: Label,
     lenv: Map[Symbol.LabelSym, Label],
     localOffset: Int,
   ) extends MethodContext
