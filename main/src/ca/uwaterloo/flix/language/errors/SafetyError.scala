@@ -525,6 +525,29 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate that a constructor body is not a `super(...)` call.
+    *
+    * @param clazz the class or interface being extended.
+    * @param loc   the source location of the constructor.
+    */
+  case class NewObjectConstructorMissingSuperCall(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5815
+
+    def summary: String = "Constructor body must be a single 'super(...)' call."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Constructor body must be a single '${red("super(...)")}' call.
+         |
+         |${highlight(loc, "invalid constructor body", fmt)}
+         |
+         |${underline("Explanation:")} The body of a constructor in a 'new' expression must
+         |be single a 'super(...)' invocation.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate a missing `this` parameter for a method.
     *
     * @param clazz The expected `this` type.
@@ -593,29 +616,6 @@ object SafetyError {
          |
          |${underline("Explanation:")} The method does not exist in the superclass with
          |the given signature. Check the method name and parameter types.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a constructor body is not a `super(...)` call.
-    *
-    * @param clazz the class being extended.
-    * @param loc   the source location of the constructor.
-    */
-  case class NewObjectConstructorMissingSuperCall(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
-    def code: ErrorCode = ErrorCode.E5815
-
-    def summary: String = "Constructor body must be a 'super(...)' call."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Constructor body must be a '${red("super(...)")}' call.
-         |
-         |${highlight(loc, "invalid constructor body", fmt)}
-         |
-         |${underline("Explanation:")} The body of a constructor in a 'new' expression must
-         |be exactly a 'super(...)' invocation.
          |""".stripMargin
     }
   }

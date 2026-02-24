@@ -545,7 +545,7 @@ object Visitor {
         visitExpr(exp)
 
       case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
-        for (cns <- constructors) visitExpr(cns.exp)
+        constructors.foreach(cn => visitExpr(cn.exp)(a, c))
         methods.foreach(visitJvmMethod)
 
       case Expr.NewChannel(exp, _, _, _) =>
