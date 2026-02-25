@@ -123,7 +123,7 @@ pub mod RichString {
         });
         let l1 = Chain.flatMap(splitSpans, chain1);
         let l2 = Chain.flatMap(splitSpans, chain2);
-        Chain.zip(l1, l2) |> Chain.forAll((pair -> {let (e1, e2) = pair; spanEquals(e1, e2)}))
+        Chain.zip(l1, l2) |> Chain.forAll((match (e1, e2) -> spanEquals(e1, e2)))
 
     def spanEquals(s1: Span, s2: Span): Bool =
         let Span.Span({text = t1, fgColor = fg1, bgColor = bg1, styles = style1}) = s1;
