@@ -28,7 +28,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.Bool.01") {
     val input =
       """def f(x: Bool): Int32 = match x {
-        |  case true => 1
+        |    case true => 1
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -38,9 +38,9 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.Char.01") {
     val input =
       """def f(x: Char): Int32 = match x {
-        |  case 'a' => 1
-        |  case 'b' => 2
-        |  case 'c' => 3
+        |    case 'a' => 1
+        |    case 'b' => 2
+        |    case 'c' => 3
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -50,8 +50,8 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.Int8.01") {
     val input =
       """def f(x: Int8): Int32 = match x {
-        |  case 1i8 => 1
-        |  case 2i8 => 2
+        |    case 1i8 => 1
+        |    case 2i8 => 2
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -61,8 +61,8 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.Int16.01") {
     val input =
       """def f(x: Int16): Int32 = match x {
-        |  case 1i16 => 1
-        |  case 2i16 => 2
+        |    case 1i16 => 1
+        |    case 2i16 => 2
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -72,9 +72,9 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.Int32.01") {
     val input =
       """def f(x: Int32): Int32 = match x {
-        |  case 1 => 1
-        |  case 2 => 2
-        |  case 3 => 3
+        |    case 1 => 1
+        |    case 2 => 2
+        |    case 3 => 3
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -84,9 +84,9 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.Int64.01") {
     val input =
       """def f(x: Int64): Int32 = match x {
-        |  case 1i64 => 1
-        |  case 2i64 => 2
-        |  case 3i64 => 3
+        |    case 1i64 => 1
+        |    case 2i64 => 2
+        |    case 3i64 => 3
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -96,8 +96,8 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.Float32.01") {
     val input =
       """def f(x: Float32): Int32 = match x {
-        |  case 1.0f32 => 1
-        |  case 2.0f32 => 2
+        |    case 1.0f32 => 1
+        |    case 2.0f32 => 2
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -107,8 +107,8 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.Float64.01") {
     val input =
       """def f(x: Float64): Int32 = match x {
-        |  case 1.0f64 => 1
-        |  case 2.0f64 => 2
+        |    case 1.0f64 => 1
+        |    case 2.0f64 => 2
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -118,8 +118,8 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.BigInt.01") {
     val input =
       """def f(x: BigInt): Int32 = match x {
-        |  case 1ii => 1
-        |  case 2ii => 2
+        |    case 1ii => 1
+        |    case 2ii => 2
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -129,9 +129,9 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Literal.String.01") {
     val input =
       """def f(x: String): Int32 = match x {
-        |  case "foo" => 1
-        |  case "bar" => 2
-        |  case "baz" => 3
+        |    case "foo" => 1
+        |    case "bar" => 2
+        |    case "baz" => 3
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -143,12 +143,12 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Enum.01") {
     val input =
       """enum Color {
-        |  case Red,
-        |  case Blu
+        |    case Red,
+        |    case Blu
         |}
         |
         |def f(x: Color): Int32 = match x {
-        |  case Color.Red => 1
+        |    case Color.Red => 1
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -158,14 +158,14 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Enum.02") {
     val input =
       """enum Color {
-        |  case Red,
-        |  case Grn,
-        |  case Blu
+        |    case Red,
+        |    case Grn,
+        |    case Blu
         |}
         |
         |def f(x: Color): Int32 = match x {
-        |  case Color.Red => 1
-        |  case Color.Blu => 3
+        |    case Color.Red => 1
+        |    case Color.Blu => 3
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -175,18 +175,18 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Enum.03") {
     val input =
       """enum Option[t] {
-        |  case None,
-        |  case Some(t)
+        |    case None,
+        |    case Some(t)
         |}
         |
         |enum Color {
-        |  case Red,
-        |  case Blu
+        |    case Red,
+        |    case Blu
         |}
         |
         |def f(x: Option[Color]): Int32 = match x {
-        |  case Option.None    => 0
-        |  case Option.Some(Color.Red) => 1
+        |    case Option.None    => 0
+        |    case Option.Some(Color.Red) => 1
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -201,8 +201,8 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(i: Int32, xs: List[Int32]): Int32 = match (i, xs) {
-        |  case (0, List.Cons(x, _)) => x
-        |  case (p, List.Cons(x, rs)) => x
+        |    case (0, List.Cons(x, _)) => x
+        |    case (p, List.Cons(x, rs)) => x
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -217,8 +217,8 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(l1: List[Int32], l2: List[Int32]): Int32 = match (l1, l2) {
-        |  case (List.Nil, List.Nil) => 0
-        |  case (List.Cons(x, xs), List.Cons(y, ys)) => 1
+        |    case (List.Nil, List.Nil) => 0
+        |    case (List.Cons(x, xs), List.Cons(y, ys)) => 1
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -233,7 +233,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(xs: List[Int32]): Int32 = match xs {
-        |  case List.Nil => 42
+        |    case List.Nil => 42
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -245,13 +245,13 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Tuple.01") {
     val input =
       """enum Color {
-        |  case Red,
-        |  case Blu
+        |    case Red,
+        |    case Blu
         |}
         |
         |def f(x: (Color, Color)): Int32 = match x {
-        |  case (Color.Red() ,_ ) => 1
-        |  case (_, Color.Blu) => 2
+        |    case (Color.Red(), _) => 1
+        |    case (_, Color.Blu) => 2
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -261,9 +261,9 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Tuple.02") {
     val input =
       """def f(x: (Int8, (String, String))): Int32 = match x {
-        |  case (5i8, ("five", _)) => 5
-        |  case (6i8, (_, "six")) => 6
-        |  case (7i8, (_,_)) => 7
+        |    case (5i8, ("five", _)) => 5
+        |    case (6i8, (_, "six")) => 6
+        |    case (7i8, (_, _)) => 7
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -273,12 +273,12 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Tuple.03") {
     val input =
       """def f(x: (Int32, Int32, Int32, Int32, Int32)): Int32 = match x {
-        |  case (1,2,3,4,5) => 1
-        |  case (_,2,3,4,5) => 1
-        |  case (1,_,3,4,5) => 1
-        |  case (1,2,_,4,5) => 1
-        |  case (1,2,3,_,5) => 1
-        |  case (1,2,3,4,_) => 1
+        |    case (1, 2, 3, 4, 5) => 1
+        |    case (_, 2, 3, 4, 5) => 1
+        |    case (1, _, 3, 4, 5) => 1
+        |    case (1, 2, _, 4, 5) => 1
+        |    case (1, 2, 3, _, 5) => 1
+        |    case (1, 2, 3, 4, _) => 1
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -493,14 +493,14 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Guard.02") {
     val input =
       """enum E {
-        |  case E1,
-        |  case E2,
-        |  case E3
+        |    case E1,
+        |    case E2,
+        |    case E3
         |}
         |
         |def f(x: E): Int32 = match x {
-        |  case E.E1 if true => 1
-        |  case E.E2 => 2
+        |    case E.E1 if true => 1
+        |    case E.E2 => 2
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -518,13 +518,13 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(xs: List[Int32]): Int32 = match xs {
-        |  case List.Nil => 0
-        |  case List.Cons(y, ys) => match ys {
-        |      case List.Nil => 0
-        |      case List.Cons(z, zs) => match zs {
-        |           case List.Nil => 0
-        |      }
-        |  }
+        |    case List.Nil => 0
+        |    case List.Cons(y, ys) => match ys {
+        |        case List.Nil => 0
+        |        case List.Cons(z, zs) => match zs {
+        |            case List.Nil => 0
+        |        }
+        |    }
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -539,10 +539,10 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    case Cons(t, List[t])
         |}
         |
-        |def f(l: List[Int32]): Int32 = let foo = 42 ;
-        |     match l {
-        |         case Nil => 42
-        |     }
+        |def f(l: List[Int32]): Int32 = let foo = 42;
+        |    match l {
+        |        case Nil => 42
+        |    }
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
