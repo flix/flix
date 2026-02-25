@@ -112,12 +112,6 @@ pub mod Logger {
     /// Filters the logging, by the `filter` function.
     ///
     pub def runWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: Unit -> b \ ef2): b \ (ef2 - Logger) + Logger + ef1 = handleWithFilter(filter, f)()
-
-    ///
-    /// Filters based on a given set of severities
-    ///
-    pub def onlyLevels(set: Set[Severity]): (Severity, RichString) -> Bool = 
-        (sev, _) -> Set.exists(a -> a == sev, set)
     
     ///
     /// Filters logs with greater or equal severity level
