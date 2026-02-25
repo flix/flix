@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.PatMatchError
-import ca.uwaterloo.flix.language.fmt.FormatConstant
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -61,9 +60,9 @@ object PatMatch2 {
     * [[PatMatchError.NonExhaustiveMatch]]. Unlike `TypedAst.Pattern`, witness
     * patterns carry no `Type` or `SourceLocation`.
     */
-  private sealed trait WitnessPattern
+  sealed trait WitnessPattern
 
-  private object WitnessPattern {
+  object WitnessPattern {
     /** Matches any value. Printed as `_`. */
     case object Wildcard extends WitnessPattern
 
@@ -577,40 +576,6 @@ object PatMatch2 {
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  Formatting
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-    * Formats a `WitnessPattern` as a human-readable string for error messages.
-    *
-    * Example:
-    * {{{
-    *   formatPattern(Wildcard)                     = "_"
-    *   formatPattern(Literal(true))                = "true"
-    *   formatPattern(Tag(Some, [Wildcard]))         = "Some(_)"
-    *   formatPattern(Tag(None, []))                = "None"
-    *   formatPattern(Tuple([Wildcard, Literal(1)])) = "(_, 1)"
-    *   formatPattern(Record([(x, Wildcard)], Wildcard)) = "{ x = _ | _ }"
-    * }}}
-    */
-  private def formatPattern(wp: WitnessPattern): String = wp match {
-    case WitnessPattern.Wildcard      => "_"
-    case WitnessPattern.Literal(cst)  => FormatConstant.formatConstant(cst)
-    case WitnessPattern.Tag(sym, Nil) => sym.name
-    case WitnessPattern.Tag(sym, args) =>
-      sym.name + args.map(formatPattern).mkString("(", ", ", ")")
-    case WitnessPattern.Tuple(elms) =>
-      elms.map(formatPattern).mkString("(", ", ", ")")
-    case WitnessPattern.Record(labels, tail) =>
-      val labelStr = labels.map { case (l, p) => s"$l = ${formatPattern(p)}" }.mkString(", ")
-      val tailStr = tail match {
-        case WitnessPattern.Literal(Constant.RecordEmpty) => ""
-        case t => s" | ${formatPattern(t)}"
-      }
-      "{ " + labelStr + tailStr + " }"
-  }
-
-  // ─────────────────────────────────────────────────────────────
   //  Check Entry Points
   // ─────────────────────────────────────────────────────────────
 
@@ -633,8 +598,8 @@ object PatMatch2 {
     val exhaustMatrix = PatternMatrix(unguardedPats, 1)
     computeWitness(exhaustMatrix, root) match {
       case Some(witness) =>
-        val patStr = if (witness.nonEmpty) formatPattern(witness.head) else "_"
-        sctx.errors.add(PatMatchError.NonExhaustiveMatch(patStr, exp.loc))
+        val witPat = if (witness.nonEmpty) witness.head else WitnessPattern.Wildcard
+        sctx.errors.add(PatMatchError.NonExhaustiveMatch(witPat, exp.loc))
       case None => ()
     }
 
@@ -664,8 +629,8 @@ object PatMatch2 {
       val matrix = PatternMatrix(List(List(f.pat)), 1)
       computeWitness(matrix, root) match {
         case Some(witness) =>
-          val patStr = if (witness.nonEmpty) formatPattern(witness.head) else "_"
-          sctx.errors.add(PatMatchError.NonExhaustiveMatch(patStr, loc))
+          val witPat = if (witness.nonEmpty) witness.head else WitnessPattern.Wildcard
+          sctx.errors.add(PatMatchError.NonExhaustiveMatch(witPat, loc))
         case None => ()
       }
     }

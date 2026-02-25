@@ -19,7 +19,10 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
+import ca.uwaterloo.flix.language.fmt.FormatConstant
+import ca.uwaterloo.flix.language.phase.PatMatch2.WitnessPattern
 import ca.uwaterloo.flix.util.Formatter
 
 /** A common super-type for pattern match errors. */
@@ -32,21 +35,27 @@ object PatMatchError {
   /**
     * An error raised to indicate a non-exhaustive pattern match expression.
     */
-  case class NonExhaustiveMatch(pat: String, loc: SourceLocation) extends PatMatchError {
+  case class NonExhaustiveMatch(pat: WitnessPattern, loc: SourceLocation) extends PatMatchError {
     def code: ErrorCode = ErrorCode.E5952
 
-    def summary: String = s"Non-exhaustive match: missing case '$pat'."
+    def summary: String = s"Non-exhaustive match: missing case '${formatPattern(pat)}'."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Non-exhaustive match: missing case '${red(pat)}'.
+      val patStr = formatPattern(pat)
+      s""">> Non-exhaustive match: missing case '${red(patStr)}'.
          |
-         |${highlight(loc, "incomplete match.", fmt)}
+         |${highlight(loc, "missing case", fmt)}
          |
-         |${underline("Explanation:")} Every match expression must be exhaustive, i.e. cover all
-         |possible cases. A wildcard pattern can be used to handle remaining cases. For example:
+         |${underline("Possible fixes:")}
          |
-         |    case _ => // handle all other cases.
+         |  (a) Add a case for '${magenta(patStr)}':
+         |
+         |      case $patStr => ...
+         |
+         |  (b) Add a wildcard case to cover all remaining values:
+         |
+         |      case _ => ...
          |""".stripMargin
     }
   }
@@ -63,12 +72,31 @@ object PatMatchError {
       import fmt.*
       s""">> ${red("Redundant pattern.")}
          |
-         |${highlight(loc, "redundant pattern.", fmt)}
+         |${highlight(loc, "unreachable case", fmt)}
          |
-         |${underline("Explanation:")} This case can never be reached because all values it matches
-         |are already covered by earlier patterns in the match expression.
+         |${underline("Explanation:")} Remove this case, or move it before the patterns that already cover it.
          |""".stripMargin
     }
+  }
+
+  /**
+    * Formats a `WitnessPattern` as a human-readable string for error messages.
+    */
+  private def formatPattern(wp: WitnessPattern): String = wp match {
+    case WitnessPattern.Wildcard      => "_"
+    case WitnessPattern.Literal(cst)  => FormatConstant.formatConstant(cst)
+    case WitnessPattern.Tag(sym, Nil) => sym.name
+    case WitnessPattern.Tag(sym, args) =>
+      sym.name + args.map(formatPattern).mkString("(", ", ", ")")
+    case WitnessPattern.Tuple(elms) =>
+      elms.map(formatPattern).mkString("(", ", ", ")")
+    case WitnessPattern.Record(labels, tail) =>
+      val labelStr = labels.map { case (l, p) => s"$l = ${formatPattern(p)}" }.mkString(", ")
+      val tailStr = tail match {
+        case WitnessPattern.Literal(Constant.RecordEmpty) => ""
+        case t => s" | ${formatPattern(t)}"
+      }
+      "{ " + labelStr + tailStr + " }"
   }
 
 }
