@@ -1436,18 +1436,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
-  test("UndefinedTypeVar.Expression.01") {
-    val input =
-      """
-        |def f(): Bool = typematch () {
-        |    case _: a => true
-        |    case _: _ => false
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTypeVar](result)
-  }
-
   test("IllegalSignature.01") {
     // The type variable `a` does not appear in the signature of `f`
     val input =

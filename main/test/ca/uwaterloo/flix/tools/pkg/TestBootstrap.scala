@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
+import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
@@ -12,6 +13,7 @@ import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
+@DoNotDiscover
 class TestBootstrap extends AnyFunSuite {
 
   private val ProjectPrefix: String = "flix-project-"

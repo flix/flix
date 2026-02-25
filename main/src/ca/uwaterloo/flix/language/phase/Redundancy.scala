@@ -537,34 +537,6 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      // Visit the match expression.
-      val usedMatch = visitExp(exp, env0, rc)
-
-      // Visit each match rule.
-      val usedRules = rules map {
-        case TypeMatchRule(bnd, _, body, _) =>
-          // Get the free var from the sym
-          val fvs = Set(bnd.sym)
-
-          // Extend the environment with the free variables.
-          val extendedEnv = env0 ++ fvs
-
-          // Visit the pattern, guard and body.
-          val usedBody = visitExp(body, extendedEnv, rc)
-
-          // Check for unused variable symbols.
-          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
-
-          // Check for shadowed variable symbols.
-          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
-
-          // Combine everything together.
-          (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
-      }
-
-      usedMatch ++ usedRules.reduceLeft(_ ++ _)
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
@@ -805,6 +777,9 @@ object Redundancy {
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) =>
+      visitExps(args, env0, rc)
+
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp, env0, rc) ++ visitExps(args, env0, rc)
 
@@ -823,8 +798,12 @@ object Redundancy {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(Used.empty) {
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      val usedConstructors = constructors.foldLeft(Used.empty) {
+        case (acc, JvmConstructor(exp, _, _, _)) =>
+          acc ++ visitExp(exp, env0, rc)
+      }
+      val usedMethods = methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           // Extend the environment with the formal parameter symbols
           val env1 = env0 ++ fparams.map(_.bnd.sym)
@@ -832,6 +811,7 @@ object Redundancy {
           val unusedFParams = findUnusedFormalParameters(fparams, used)
           acc ++ used ++ unusedFParams
       }
+      usedConstructors ++ usedMethods
 
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)

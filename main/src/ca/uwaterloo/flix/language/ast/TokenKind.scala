@@ -137,12 +137,12 @@ sealed trait TokenKind {
       case TokenKind.KeywordStaticLowercase => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
       case TokenKind.KeywordStruct => "'struct'"
+      case TokenKind.KeywordSuper => "'super'"
       case TokenKind.KeywordThrow => "'throw'"
       case TokenKind.KeywordTrait => "'trait'"
       case TokenKind.KeywordTrue => "'true'"
       case TokenKind.KeywordTry => "'try'"
       case TokenKind.KeywordType => "'type'"
-      case TokenKind.KeywordTypeMatch => "'typematch'"
       case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
       case TokenKind.KeywordUniv => "'univ'"
       case TokenKind.KeywordUnsafe => "'unsafe'"
@@ -268,12 +268,12 @@ sealed trait TokenKind {
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStaticLowercase => true
     case TokenKind.KeywordStruct => true
+    case TokenKind.KeywordSuper => true
     case TokenKind.KeywordThrow => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
     case TokenKind.KeywordType => true
-    case TokenKind.KeywordTypeMatch => true
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUniv => true
     case TokenKind.KeywordUnsafe => true
@@ -444,9 +444,9 @@ sealed trait TokenKind {
     case TokenKind.KeywordSolve => true
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStaticUppercase => true
+    case TokenKind.KeywordSuper => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
-    case TokenKind.KeywordTypeMatch => true
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUnsafe => true
     case TokenKind.KeywordUse => true
@@ -864,6 +864,8 @@ object TokenKind {
 
   case object KeywordStruct extends TokenKind
 
+  case object KeywordSuper extends TokenKind
+
   case object KeywordThrow extends TokenKind
 
   case object KeywordTrait extends TokenKind
@@ -873,8 +875,6 @@ object TokenKind {
   case object KeywordTry extends TokenKind
 
   case object KeywordType extends TokenKind
-
-  case object KeywordTypeMatch extends TokenKind
 
   case object KeywordUncheckedCast extends TokenKind
 

@@ -476,15 +476,6 @@ object SemanticTokensProvider {
           acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 
-    case Expr.TypeMatch(matchExp, rules, _, _, _) =>
-      val m = visitExp(matchExp)
-      rules.foldLeft(m) {
-        case (acc, TypeMatchRule(bnd, tpe, exp, _)) =>
-          val o = getSemanticTokenType(bnd.sym, tpe)
-          val t = SemanticToken(o, Nil, bnd.sym.loc)
-          acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
-      }
-
     case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>
       val c = visitExp(exp1)
       rules.foldLeft(c) {
@@ -620,6 +611,11 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, e) => acc ++ visitExp(e)
@@ -642,8 +638,10 @@ object SemanticTokensProvider {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(Iterator.empty[SemanticToken]) {
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      constructors.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, c) => acc ++ visitExp(c.exp)
+      } ++ methods.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 

@@ -226,12 +226,6 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.TypeMatch(exp, rules, tpe, eff, _) =>
-      visitExp(exp)
-      rules.foreach(visitTypeMatchRule)
-      visitType(tpe)
-      visitType(eff)
-
     case Expr.RestrictableChoose(_, exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitRestrictableChooseRule)
@@ -410,6 +404,11 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.InvokeSuperConstructor(_, exps, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.InvokeMethod(_, exp, exps, tpe, eff, _) =>
       visitExp(exp)
       exps.foreach(visitExp)
@@ -441,10 +440,12 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.NewObject(_, _, tpe, eff, methods, _) =>
+    case Expr.NewObject(_, _, tpe, eff, constructors, methods, _) =>
       visitType(tpe)
       visitType(eff)
+      constructors.foreach(visitJvmConstructor)
       methods.foreach(visitJvmMethod)
+
 
     case Expr.NewChannel(exp, tpe, eff, _) =>
       visitExp(exp)
@@ -660,12 +661,6 @@ object Dependencies {
     visitType(pattern.tpe)
   }
 
-  private def visitTypeMatchRule(matchRule: TypedAst.TypeMatchRule)(implicit sctx: SharedContext): Unit = {
-    visitBinder(matchRule.bnd)
-    visitType(matchRule.tpe)
-    visitExp(matchRule.exp)
-  }
-
   private def visitRestrictableChooseRule(rule: TypedAst.RestrictableChooseRule)(implicit sctx: SharedContext): Unit = {
     visitExp(rule.exp)
     visitRestrictableChoosePattern(rule.pat)
@@ -699,6 +694,12 @@ object Dependencies {
     visitSymUse(handlerRule.op)
     visitExp(handlerRule.exp)
     handlerRule.fparams.foreach(visitFormalParam)
+  }
+
+  private def visitJvmConstructor(constructor: TypedAst.JvmConstructor)(implicit sctx: SharedContext): Unit = {
+    visitType(constructor.retTpe)
+    visitType(constructor.eff)
+    visitExp(constructor.exp)
   }
 
   private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit sctx: SharedContext): Unit = {

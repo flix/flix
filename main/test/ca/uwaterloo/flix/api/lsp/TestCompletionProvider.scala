@@ -29,12 +29,14 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TokenKind,
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.{Formatter, Options}
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
+import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 import scala.collection.mutable
 import scala.util.Random
 
+@DoNotDiscover
 class TestCompletionProvider extends AnyFunSuite {
 
   /**

@@ -186,11 +186,6 @@ object Stratifier {
       val rs = rules.map(visitMatchRule)
       Expr.Match(e, rs, tpe, eff, loc)
 
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitTypeMatchRule)
-      Expr.TypeMatch(e, rs, tpe, eff, loc)
-
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
@@ -331,6 +326,10 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
 
+    case Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.InvokeSuperConstructor(constructor, es, tpe, eff, loc)
+
     case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
@@ -356,9 +355,10 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.PutStaticField(field, e, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      Expr.NewObject(name, clazz, tpe, eff, ms, loc)
+      Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc)
 
     case Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -448,12 +448,6 @@ object Stratifier {
       MatchRule(pat, e1, e2, loc)
   }
 
-  private def visitTypeMatchRule(rule: TypeMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypeMatchRule = rule match {
-    case TypeMatchRule(sym, t, exp1, loc) =>
-      val e1 = visitExp(exp1)
-      TypeMatchRule(sym, t, e1, loc)
-  }
-
   private def visitRestrictableChooseRule(rule: RestrictableChooseRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): RestrictableChooseRule = rule match {
     case RestrictableChooseRule(pat, exp1) =>
       val e1 = visitExp(exp1)
@@ -476,6 +470,12 @@ object Stratifier {
     case HandlerRule(op, fparams, exp1, loc) =>
       val e1 = visitExp(exp1)
       HandlerRule(op, fparams, e1, loc)
+  }
+
+  private def visitJvmConstructor(constructor: JvmConstructor)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmConstructor = constructor match {
+    case JvmConstructor(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      JvmConstructor(e, tpe, eff, loc)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmMethod = method match {

@@ -86,7 +86,7 @@ pub mod Fixpoint3 {
             case Boxed.BoxedInt64(v)     => ToString.toString(v)
             case Boxed.BoxedFloat32(v)   => ToString.toString(v)
             case Boxed.BoxedFloat64(v)   => ToString.toString(v)
-            case Boxed.BoxedObject(v, _) => Debug.stringify(v)
+            case Boxed.BoxedObject(v, _) => unsafe IO { v.toString() }
             case Boxed.NoValue           => "Boxed.NoValue"
         }
     }

@@ -567,11 +567,6 @@ object Desugar {
       val rs = rules.map(visitMatchRule)
       Expr.Match(e, rs, loc)
 
-    case WeededAst.Expr.TypeMatch(exp, rules, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitTypeMatchRule)
-      Expr.TypeMatch(e, rs, loc)
-
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
@@ -729,6 +724,10 @@ object Desugar {
       val es = visitExps(exps)
       Expr.InvokeConstructor(className, es, loc)
 
+    case WeededAst.Expr.InvokeSuperConstructor(exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeSuperConstructor(es, loc)
+
     case WeededAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
@@ -738,10 +737,11 @@ object Desugar {
       val e = visitExp(exp)
       Expr.GetField(e, name, loc)
 
-    case WeededAst.Expr.NewObject(tpe, methods, loc) =>
+    case WeededAst.Expr.NewObject(tpe, constructors, methods, loc) =>
       val t = visitType(tpe)
+      val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
-      Expr.NewObject(t, ms, loc)
+      Expr.NewObject(t, cs, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
       DesugaredAst.Expr.Cst(Constant.Static, loc)
@@ -899,16 +899,6 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
-    */
-  private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule)(implicit flix: Flix): DesugaredAst.TypeMatchRule = rule0 match {
-    case WeededAst.TypeMatchRule(ident, tpe, exp, loc) =>
-      val t = visitType(tpe)
-      val e = visitExp(exp)
-      DesugaredAst.TypeMatchRule(ident, t, e, loc)
-  }
-
-  /**
     * Desugars the given [[WeededAst.RestrictableChooseRule]] `rule0`.
     */
   private def visitRestrictableChooseRule(rule0: WeededAst.RestrictableChooseRule)(implicit flix: Flix): DesugaredAst.RestrictableChooseRule = rule0 match {
@@ -973,6 +963,17 @@ object Desugar {
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       DesugaredAst.JvmMethod(ident, fps, e, t, ef, loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.JvmConstructor]] `constructor0`.
+    */
+  private def visitJvmConstructor(constructor0: WeededAst.JvmConstructor)(implicit flix: Flix): DesugaredAst.JvmConstructor = constructor0 match {
+    case WeededAst.JvmConstructor(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      val ef = eff.map(visitType)
+      DesugaredAst.JvmConstructor(e, t, ef, loc)
   }
 
   /**
