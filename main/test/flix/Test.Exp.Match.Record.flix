@@ -15,7 +15,6 @@ mod Test.Exp.Match.Record {
     @Test
     def emptyRecord02(): Unit \ Assert = match { } {
         case { } => success("matched empty record")
-        case _   => fail("unexpected match on wildcard")
     }
 
     @Test

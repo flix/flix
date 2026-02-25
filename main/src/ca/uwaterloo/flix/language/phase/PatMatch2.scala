@@ -190,7 +190,8 @@ object PatMatch2 {
   private def sameConstructor(p1: Pattern, p2: Pattern): Boolean = (p1, p2) match {
     case (Pattern.Tag(CaseSymUse(s1, _), _, _, _), Pattern.Tag(CaseSymUse(s2, _), _, _, _)) => s1 == s2
     case (_: Pattern.Tuple, _: Pattern.Tuple)       => true
-    case (_: Pattern.Record, _: Pattern.Record)     => true
+    case (Pattern.Record(pats1, _, _, _), Pattern.Record(pats2, _, _, _)) =>
+      pats1.map(_.label) == pats2.map(_.label)
     case (Pattern.Cst(c1, _, _), Pattern.Cst(c2, _, _)) => c1 == c2
     case _                                          => false
   }

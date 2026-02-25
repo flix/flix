@@ -68,8 +68,6 @@ mod Domain.Sign {
         case (Sign.Pos, Sign.Zer) => Sign.Zer
         case (Sign.Neg, Sign.Pos) => Sign.Zer
         case (Sign.Pos, Sign.Neg) => Sign.Zer
-        case (x, Sign.Top)        => x
-        case (Sign.Top, x)        => x
         case _                    => Sign.Bot
     }
 
