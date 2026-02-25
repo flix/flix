@@ -112,14 +112,6 @@ pub mod RichString {
     }
     
     ///
-    /// Returns a `Bool` according to the equality of `s1` and `s2`.
-    ///
-    pub def spanEquals(s1: RichString.Span, s2: RichString.Span): Bool =
-        let Span.Span({text = t1, fgColor = fg1, bgColor = bg1, styles = style1}) = s1;
-        let Span.Span({text = t2, fgColor = fg2, bgColor = bg2, styles = style2}) = s2;
-        t1 == t2 and fg1 == fg2 and bg1 == bg2 and style1 == style2
-    
-    ///
     /// Returns a `Bool` according to the equality of `rs1` and `rs2`.
     ///
     /// Checks whether text and styling is equivalent for each individual character.
@@ -133,6 +125,11 @@ pub mod RichString {
         let l1 = Chain.flatMap(splitSpans, chain1);
         let l2 = Chain.flatMap(splitSpans, chain2);
         Chain.zip(l1, l2) |> Chain.forAll((pair -> {let (e1, e2) = pair; spanEquals(e1, e2)}))
+
+    def spanEquals(s1: RichString.Span, s2: RichString.Span): Bool =
+        let Span.Span({text = t1, fgColor = fg1, bgColor = bg1, styles = style1}) = s1;
+        let Span.Span({text = t2, fgColor = fg2, bgColor = bg2, styles = style2}) = s2;
+        t1 == t2 and fg1 == fg2 and bg1 == bg2 and style1 == style2
 
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given foreground color `c`.
