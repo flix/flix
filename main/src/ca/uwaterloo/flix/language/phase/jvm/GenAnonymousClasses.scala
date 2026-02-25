@@ -131,7 +131,24 @@ object GenAnonymousClasses {
     BackendObjType.AbstractArrow(paramTypes.map(BackendType.toErasedBackendType), boxedResult)
   }
 
-  /** Generates bytecode for a bridge method that calls `INVOKESPECIAL superClass.methodName`. */
+  /**
+    * Generates bytecode for a bridge method that delegates to the superclass via `INVOKESPECIAL`.
+    *
+    * This is needed because Flix closures run in a separate class from the anonymous class, so they
+    * cannot issue `INVOKESPECIAL` on the anonymous class's superclass — the JVM restricts that
+    * instruction to the class that owns the method. We work around this by generating a public
+    * bridge method on the anonymous class itself. The closure calls the bridge via `INVOKEVIRTUAL`,
+    * and the bridge forwards to the superclass via `INVOKESPECIAL`.
+    *
+    * For example, given `new Object { def hashCode(_this: ...) = super.hashCode() }`, we generate:
+    * {{{
+    *   public int super$hashCode() {
+    *       ALOAD 0
+    *       INVOKESPECIAL java/lang/Object.hashCode ()I
+    *       IRETURN
+    *   }
+    * }}}
+    */
   private def superBridgeIns(superClass: JvmName, method: java.lang.reflect.Method)(implicit mv: MethodVisitor): Unit = {
     val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
     val returnTpe = javaClassToBackendType(method.getReturnType)
