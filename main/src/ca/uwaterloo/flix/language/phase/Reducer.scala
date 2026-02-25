@@ -305,7 +305,14 @@ object Reducer {
     */
   private final class SharedContext {
 
+    /** Collects all anonymous class / new object expressions encountered during reduction. */
     private val anonClasses: ConcurrentLinkedQueue[JvmAst.AnonClass] = new ConcurrentLinkedQueue()
+
+    /** Collects all types encountered in def expressions (used as a set via `ConcurrentHashMap`). */
+    private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
+
+    /** Maps anonymous class names to the super methods they invoke, so the backend can generate `invokespecial` bridge methods. */
+    private val superMethods: ConcurrentHashMap[(String, java.lang.reflect.Method), Unit] = new ConcurrentHashMap()
 
     def addAnonClass(clazz: JvmAst.AnonClass): Unit =
       anonClasses.add(clazz)
@@ -313,16 +320,11 @@ object Reducer {
     def getAnonClasses: List[JvmAst.AnonClass] =
       anonClasses.asScala.toList.map(ac => ac.copy(superMethods = getSuperMethods(ac.name)))
 
-    private val superMethods: ConcurrentHashMap[String, ConcurrentLinkedQueue[java.lang.reflect.Method]] =
-      new ConcurrentHashMap()
-
     def addSuperMethod(className: String, method: java.lang.reflect.Method): Unit =
-      superMethods.computeIfAbsent(className, _ => new ConcurrentLinkedQueue()).add(method)
+      superMethods.putIfAbsent((className, method), ())
 
     def getSuperMethods(className: String): List[java.lang.reflect.Method] =
-      Option(superMethods.get(className)).map(_.asScala.toList).getOrElse(Nil).distinct
-
-    private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
+      superMethods.keySet.asScala.collect { case (cn, m) if cn == className => m }.toList
 
     def addDefType(tpe: SimpleType): Unit =
       defTypes.putIfAbsent(tpe, ())

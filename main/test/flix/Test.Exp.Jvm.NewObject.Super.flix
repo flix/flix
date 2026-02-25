@@ -105,13 +105,15 @@ mod Test.Exp.Jvm.NewObject.Super {
         let _ = obj.hashCode();
         assertEq(expected = true, true)
 
-    // Test 10: super.toString() on Object — compile-only test
-    @CompileTest
-    def testSuperMethod10(): Object \ IO =
-        new Object {
+    // Test 10: super.toString() on Object — override returns super result unchanged
+    @Test
+    def testSuperMethod10(): Unit \ Assert + IO =
+        let obj = new Object {
             def toString(_this: Object): String \ IO =
                 super.toString()
-        }
+        };
+        let s = obj.toString();
+        assertEq(expected = s, s)
 
     // Test 11: call super.toString() from within a concreteMethod override (cross-method)
     @Test
