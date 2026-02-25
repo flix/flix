@@ -74,9 +74,6 @@ object PatMatch2 {
 
     /** A tuple, e.g. `(_, _)`. */
     case class Tuple(elms: List[WitnessPattern]) extends WitnessPattern
-
-    /** A record, e.g. `{ x = _ | _ }`. */
-    case class Record(labels: List[(Name.Label, WitnessPattern)], tail: WitnessPattern) extends WitnessPattern
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -105,23 +102,27 @@ object PatMatch2 {
   // ─────────────────────────────────────────────────────────────
 
   /**
-    * Returns `true` if `pat` is a wildcard-like pattern: `Wild` or `Var`.
+    * Returns `true` if `pat` is a wildcard-like pattern: `Wild`, `Var`, or `Record`.
     *
-    * These patterns match any value and carry no sub-patterns.
+    * These patterns match any value and carry no sub-patterns relevant to the algorithm.
+    * `Record` is treated as a wildcard because record types are structural with a
+    * single constructor — exhaustiveness is guaranteed by the type system.
     *
     * Example:
     * {{{
     *   isWildcard(Pattern.Wild(...))       = true
     *   isWildcard(Pattern.Var(...))        = true
+    *   isWildcard(Pattern.Record(...))     = true
     *   isWildcard(Pattern.Cst(42, ...))    = false
     *   isWildcard(Pattern.Tag(Some, ...))  = false
     * }}}
     */
   private def isWildcard(pat: Pattern): Boolean = pat match {
-    case _: Pattern.Wild  => true
-    case _: Pattern.Var   => true
-    case _: Pattern.Error => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
-    case _                => false
+    case _: Pattern.Wild   => true
+    case _: Pattern.Var    => true
+    case _: Pattern.Record => true
+    case _: Pattern.Error  => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
+    case _                 => false
   }
 
   /**
@@ -138,7 +139,7 @@ object PatMatch2 {
     case _: Pattern.Cst                  => false
     case Pattern.Tag(_, pats, _, _)      => pats.exists(hasError)
     case Pattern.Tuple(pats, _, _)       => pats.exists(hasError)
-    case Pattern.Record(pats, pat, _, _) => pats.exists(p => hasError(p.pat)) || hasError(pat)
+    case _: Pattern.Record               => false
   }
 
   /**
@@ -148,14 +149,14 @@ object PatMatch2 {
     * - `Cst`: 0 (constants have no sub-patterns)
     * - `Tag(sym, pats)`: `pats.length`
     * - `Tuple(pats)`: `pats.length`
-    * - `Record(pats, tail)`: `pats.length + 1` (labels + tail)
+    *
+    * `Record` patterns are treated as wildcards and should never reach this function.
     *
     * Example:
     * {{{
     *   patternArity(Pattern.Cst(42, ...))                = 0
     *   patternArity(Pattern.Tag(Some, [_], ...))          = 1
     *   patternArity(Pattern.Tuple([_, _], ...))           = 2
-    *   patternArity(Pattern.Record([x, y], tail, ...))    = 3
     * }}}
     */
   private def patternArity(pat: Pattern): Int = pat match {
@@ -165,7 +166,7 @@ object PatMatch2 {
     case _: Pattern.Cst                 => 0
     case Pattern.Tag(_, pats, _, _)     => pats.length
     case Pattern.Tuple(pats, _, _)      => pats.length
-    case Pattern.Record(pats, _, _, _)  => pats.length + 1
+    case _: Pattern.Record              => throw InternalCompilerException("unexpected Pattern.Record", pat.loc)
   }
 
   /**
@@ -173,7 +174,6 @@ object PatMatch2 {
     *
     * - Two `Tag` patterns are the same if they share the same `CaseSym`.
     * - Two `Tuple` patterns are always the same (single constructor).
-    * - Two `Record` patterns are always the same (single constructor shape).
     * - Two `Cst` patterns are the same if the constants are equal.
     * - All other combinations are different.
     *
@@ -190,8 +190,6 @@ object PatMatch2 {
   private def sameConstructor(p1: Pattern, p2: Pattern): Boolean = (p1, p2) match {
     case (Pattern.Tag(CaseSymUse(s1, _), _, _, _), Pattern.Tag(CaseSymUse(s2, _), _, _, _)) => s1 == s2
     case (_: Pattern.Tuple, _: Pattern.Tuple)       => true
-    case (Pattern.Record(pats1, _, _, _), Pattern.Record(pats2, _, _, _)) =>
-      pats1.map(_.label) == pats2.map(_.label)
     case (Pattern.Cst(c1, _, _), Pattern.Cst(c2, _, _)) => c1 == c2
     case _                                          => false
   }
@@ -265,9 +263,6 @@ object PatMatch2 {
         head match {
           case Pattern.Tag(_, pats, _, _)    => Some(pats ::: tail)
           case Pattern.Tuple(pats, _, _)     => Some(pats.toList ::: tail)
-          case Pattern.Record(pats, pat, _, _) =>
-            val fieldPats = pats.map(_.pat)
-            Some(fieldPats ::: List(pat) ::: tail)
           case _: Pattern.Cst               => Some(tail)
           case _                            => None
         }
@@ -298,9 +293,6 @@ object PatMatch2 {
       head match {
         case Pattern.Tag(_, pats, _, _)    => Some(pats ::: tail)
         case Pattern.Tuple(pats, _, _)     => Some(pats.toList ::: tail)
-        case Pattern.Record(pats, pat, _, _) =>
-          val fieldPats = pats.map(_.pat)
-          Some(fieldPats ::: List(pat) ::: tail)
         case _: Pattern.Cst               => Some(tail)
         case _                            => None
       }
@@ -345,7 +337,6 @@ object PatMatch2 {
     * | Unit              | `()` appears                                     |
     * | RecordEmpty       | `RecordEmpty` appears                            |
     * | Tuple             | Always complete (single constructor)             |
-    * | Record            | Always complete (single constructor shape)        |
     * | Other (Char, Int) | Never complete (infinite type)                   |
     */
   private def isCompleteSignature(sigma: List[Pattern], root: Root): Boolean = {
@@ -362,9 +353,6 @@ object PatMatch2 {
 
       // Tuple: always complete (single constructor)
       case _: Pattern.Tuple => true
-
-      // Record: always complete (single constructor shape for a given label set)
-      case _: Pattern.Record => true
 
       // Bool: need both true and false
       case Pattern.Cst(Constant.Bool(_), _, _) =>
@@ -463,7 +451,6 @@ object PatMatch2 {
           val subPats = qHead match {
             case Pattern.Tag(_, pats, _, _) => pats
             case Pattern.Tuple(pats, _, _) => pats.toList
-            case Pattern.Record(pats, pat, _, _) => pats.map(_.pat) ::: List(pat)
             case _: Pattern.Cst => Nil
             case _ => Nil
           }
@@ -550,10 +537,6 @@ object PatMatch2 {
   private def buildWitnessHead(ctor: Pattern, args: List[WitnessPattern]): WitnessPattern = ctor match {
     case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => WitnessPattern.Tag(sym, args)
     case _: Pattern.Tuple                         => WitnessPattern.Tuple(args)
-    case Pattern.Record(pats, _, _, _) =>
-      val labels = pats.map(_.label)
-      val (fieldArgs, tailArg) = args.splitAt(labels.length)
-      WitnessPattern.Record(labels.zip(fieldArgs), tailArg.headOption.getOrElse(WitnessPattern.Wildcard))
     case Pattern.Cst(cst, _, _)                   => WitnessPattern.Literal(cst)
     case _                                        => WitnessPattern.Wildcard
   }

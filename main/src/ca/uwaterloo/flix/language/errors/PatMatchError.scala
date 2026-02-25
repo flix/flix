@@ -90,13 +90,6 @@ object PatMatchError {
       sym.name + args.map(formatPattern).mkString("(", ", ", ")")
     case WitnessPattern.Tuple(elms) =>
       elms.map(formatPattern).mkString("(", ", ", ")")
-    case WitnessPattern.Record(labels, tail) =>
-      val labelStr = labels.map { case (l, p) => s"$l = ${formatPattern(p)}" }.mkString(", ")
-      val tailStr = tail match {
-        case WitnessPattern.Literal(Constant.RecordEmpty) => ""
-        case t => s" | ${formatPattern(t)}"
-      }
-      "{ " + labelStr + tailStr + " }"
   }
 
 }
