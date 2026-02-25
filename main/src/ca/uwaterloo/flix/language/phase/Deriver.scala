@@ -162,10 +162,14 @@ object Deriver {
       // `case _ => false`
       val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(false), loc), loc)
 
+      // The default rule handles cross-variant comparisons (e.g. (Red, Blue) => false).
+      // For single-case enums it is unreachable and would trigger a redundancy warning.
+      val matchRules = if (cases.size > 1) mainMatchRules :+ defaultRule else mainMatchRules
+
       // group the match rules in an expression
       KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        mainMatchRules ++ List(defaultRule),
+        matchRules,
         loc
       )
   }
@@ -365,10 +369,14 @@ object Deriver {
         loc
       )
 
+      // The default rule handles cross-variant ordering (e.g. (Red, Blue) => compare(indexOf(x), indexOf(y))).
+      // For single-case enums it is unreachable and would trigger a redundancy warning.
+      val allMatchRules = if (cases.size > 1) matchRules :+ defaultMatchRule else matchRules
+
       // Wrap the cases in a match expression
       val matchExp = KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        matchRules :+ defaultMatchRule,
+        allMatchRules,
         loc
       )
 
