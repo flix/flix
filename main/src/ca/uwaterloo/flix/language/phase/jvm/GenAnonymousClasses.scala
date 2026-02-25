@@ -78,7 +78,7 @@ object GenAnonymousClasses {
     }
 
     // Generate bridge methods for super method calls.
-    val superMethods = collectSuperMethods(obj.name, root)
+    val superMethods = obj.superMethods
     for (method <- superMethods) {
       val bridgeName = s"super$$${method.getName}"
       val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
@@ -129,37 +129,6 @@ object GenAnonymousClasses {
   private def erasedArrowType(paramTypes: List[SimpleType], retTpe: SimpleType): BackendObjType.AbstractArrow = {
     val boxedResult = BackendType.Object
     BackendObjType.AbstractArrow(paramTypes.map(BackendType.toErasedBackendType), boxedResult)
-  }
-
-  /** Collects all unique `java.lang.reflect.Method`s referenced by `InvokeSuperMethod` ops targeting the given className. */
-  private def collectSuperMethods(className: String, root: Root): List[java.lang.reflect.Method] = {
-    val methods = scala.collection.mutable.LinkedHashSet.empty[java.lang.reflect.Method]
-    def scanExpr(expr: Expr): Unit = expr match {
-      case Expr.ApplyAtomic(AtomicOp.InvokeSuperMethod(method, cn), exps, _, _, _) if cn == className =>
-        methods += method
-        exps.foreach(scanExpr)
-      case Expr.ApplyAtomic(_, exps, _, _, _) => exps.foreach(scanExpr)
-      case Expr.ApplyClo(e1, e2, _, _, _, _) => scanExpr(e1); scanExpr(e2)
-      case Expr.ApplyDef(_, exps, _, _, _, _) => exps.foreach(scanExpr)
-      case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(scanExpr)
-      case Expr.ApplySelfTail(_, exps, _, _, _) => exps.foreach(scanExpr)
-      case Expr.IfThenElse(e1, e2, e3, _, _, _) => scanExpr(e1); scanExpr(e2); scanExpr(e3)
-      case Expr.Branch(e, branches, _, _, _) => scanExpr(e); branches.values.foreach(scanExpr)
-      case Expr.Let(_, _, e1, e2, _) => scanExpr(e1); scanExpr(e2)
-      case Expr.Stmt(e1, e2, _) => scanExpr(e1); scanExpr(e2)
-      case Expr.Region(_, _, e, _, _, _) => scanExpr(e)
-      case Expr.TryCatch(e, rules, _, _, _) => scanExpr(e); rules.foreach(r => scanExpr(r.exp))
-      case Expr.RunWith(e, _, rules, _, _, _, _) => scanExpr(e); rules.foreach(r => scanExpr(r.exp))
-      case Expr.NewObject(_, _, _, _, cs, ms, _) =>
-        cs.foreach(c => scanExpr(c.exp))
-        ms.foreach(m => scanExpr(m.exp))
-      case _: Expr.Cst | _: Expr.Var | _: Expr.JumpTo => ()
-    }
-    // Scan all definitions for InvokeSuperMethod targeting this class
-    for ((_, defn) <- root.defs) {
-      scanExpr(defn.expr)
-    }
-    methods.toList
   }
 
   /** Generates bytecode for a bridge method that calls `INVOKESPECIAL superClass.methodName`. */

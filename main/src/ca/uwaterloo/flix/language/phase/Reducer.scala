@@ -125,6 +125,10 @@ object Reducer {
         JvmAst.Expr.Var(sym, offset, tpe, loc)
 
       case ErasedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        op match {
+          case AtomicOp.InvokeSuperMethod(method, className) => ctx.addSuperMethod(className, method)
+          case _ => ()
+        }
         val es = exps.map(visitExpr)
         JvmAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
@@ -215,7 +219,7 @@ object Reducer {
             val c = visitExpr(clo)
             JvmAst.JvmMethod(ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
         }
-        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, cs, specs, loc))
+        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, cs, specs, Nil, loc))
 
         JvmAst.Expr.NewObject(name, clazz, tpe, purity, cs, specs, loc)
 
@@ -307,7 +311,16 @@ object Reducer {
       anonClasses.add(clazz)
 
     def getAnonClasses: List[JvmAst.AnonClass] =
-      anonClasses.asScala.toList
+      anonClasses.asScala.toList.map(ac => ac.copy(superMethods = getSuperMethods(ac.name)))
+
+    private val superMethods: ConcurrentHashMap[String, ConcurrentLinkedQueue[java.lang.reflect.Method]] =
+      new ConcurrentHashMap()
+
+    def addSuperMethod(className: String, method: java.lang.reflect.Method): Unit =
+      superMethods.computeIfAbsent(className, _ => new ConcurrentLinkedQueue()).add(method)
+
+    def getSuperMethods(className: String): List[java.lang.reflect.Method] =
+      Option(superMethods.get(className)).map(_.asScala.toList).getOrElse(Nil).distinct
 
     private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
 
