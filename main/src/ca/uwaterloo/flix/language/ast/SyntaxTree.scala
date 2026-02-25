@@ -210,9 +210,11 @@ object SyntaxTree {
 
       case object InvokeConstructor extends Expr
 
+      case object InvokeSuperConstructor extends Expr
+
       case object InvokeMethod extends Expr
 
-      case object InvokeSuperConstructor extends Expr
+      case object InvokeSuperMethod extends Expr
 
       case object FixpointConstraint extends Expr
 

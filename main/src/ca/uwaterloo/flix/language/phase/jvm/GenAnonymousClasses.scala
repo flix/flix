@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 /** Generates bytecode for anonymous classes (created through NewObject). */
 object GenAnonymousClasses {
@@ -77,6 +77,16 @@ object GenAnonymousClasses {
       cm.mkMethod(ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, m)(_, root))
     }
 
+    // Generate bridge methods for super method calls.
+    val superMethods = obj.superMethods
+    for (method <- superMethods) {
+      val bridgeName = s"super$$${method.getName}"
+      val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
+      val returnTpe = if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else javaClassToBackendType(method.getReturnType)
+      val descriptor = MethodDescriptor(paramTypes, returnTpe)
+      cm.mkMethod(ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
+    }
+
     cm.closeClassMaker()
   }
 
@@ -119,6 +129,46 @@ object GenAnonymousClasses {
   private def erasedArrowType(paramTypes: List[SimpleType], retTpe: SimpleType): BackendObjType.AbstractArrow = {
     val boxedResult = BackendType.Object
     BackendObjType.AbstractArrow(paramTypes.map(BackendType.toErasedBackendType), boxedResult)
+  }
+
+  /**
+    * Generates bytecode for a bridge method that delegates to the superclass via `INVOKESPECIAL`.
+    *
+    * This is needed because Flix closures run in a separate class from the anonymous class, so they
+    * cannot issue `INVOKESPECIAL` on the anonymous class's superclass — the JVM restricts that
+    * instruction to the class that owns the method. We work around this by generating a public
+    * bridge method on the anonymous class itself. The closure calls the bridge via `INVOKEVIRTUAL`,
+    * and the bridge forwards to the superclass via `INVOKESPECIAL`.
+    *
+    * For example, given `new Object { def hashCode(_this: ...) = super.hashCode() }`, we generate:
+    * {{{
+    *   public int super$hashCode() {
+    *       ALOAD 0
+    *       INVOKESPECIAL java/lang/Object.hashCode ()I
+    *       IRETURN
+    *   }
+    * }}}
+    */
+  private def superBridgeIns(superClass: JvmName, method: java.lang.reflect.Method)(implicit mv: MethodVisitor): Unit = {
+    val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
+    val returnTpe = javaClassToBackendType(method.getReturnType)
+    val descriptor = MethodDescriptor(paramTypes, if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else returnTpe)
+
+    // ALOAD 0 (this)
+    thisLoad()
+    // Load each parameter (starting at slot 1)
+    withNames(1, paramTypes) { case (_, args) =>
+      for (arg <- args) arg.load()
+    }
+    // INVOKESPECIAL superClass.methodName(descriptor)
+    INVOKESPECIAL(superClass, method.getName, descriptor)
+
+    // Return
+    if (method.getReturnType == java.lang.Void.TYPE) {
+      RETURN()
+    } else {
+      xReturn(returnTpe)
+    }
   }
 
   /** Creates code to read the arguments, load it into the `cloField` closure, call that function, and returns. */

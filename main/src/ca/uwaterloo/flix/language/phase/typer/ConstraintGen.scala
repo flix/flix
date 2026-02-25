@@ -441,6 +441,7 @@ object ConstraintGen {
           case _: Expr.InvokeConstructor => true
           case _: Expr.InvokeSuperConstructor => true
           case _: Expr.InvokeMethod => true
+          case _: Expr.InvokeSuperMethod => true
           case _: Expr.InvokeStaticMethod => true
           case _ => false
         }
@@ -953,6 +954,17 @@ object ConstraintGen {
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: eff :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.InvokeSuperMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
+        val baseEff = Type.JvmToEff(jvar, loc)
+        val clazzTpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)

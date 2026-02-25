@@ -525,6 +525,9 @@ object Visitor {
         visitExpr(exp)
         exps.foreach(visitExpr)
 
+      case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+        exps.foreach(visitExpr)
+
       case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 

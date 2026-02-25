@@ -276,6 +276,9 @@ object PredDeps {
       visitExp(exp)
       args.foreach(visitExp)
 
+    case Expr.InvokeSuperMethod(_, args, _, _, _) =>
+      args.foreach(visitExp)
+
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
       args.foreach(visitExp)
 
