@@ -151,7 +151,7 @@ pub mod Logger {
     /// Discards style from the logged messages. 
     ///
     pub def runWithFileWriteWithResult(file: String, onError: Option[IoError -> Unit \ ef2], f: Unit -> a \ ef): a \ (ef - Logger) + ef2 + FileWriteWithResult =
-        handleWithFileWrite(file, onError, f)()
+        handleWithFileWriteWithResult(file, onError, f)()
 
     ///
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
