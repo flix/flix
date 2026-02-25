@@ -17,6 +17,8 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.util.collection.ListMap
 
+import java.lang.{Class => JClass}
+
 /**
   * Companion object for the [[LocalScope]] class.
   */
@@ -35,9 +37,10 @@ object LocalScope {
 /**
   * Represents a local scope with a mapping from variable names to their resolutions.
   *
-  * @param scp the environment map containing variable names and their corresponding resolutions.
+  * @param scp        the environment map containing variable names and their corresponding resolutions.
+  * @param superClass `None` means super calls are illegal here; `Some(clazz)` means super calls resolve to `clazz`.
   */
-case class LocalScope(scp: ListMap[String, Resolution]) {
+case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[JClass[?]] = None) {
   /**
     * Returns the map of variable names to their resolutions.
     */
@@ -46,7 +49,7 @@ case class LocalScope(scp: ListMap[String, Resolution]) {
   /**
     * Returns the local scope extended with another local scope.
     */
-  def ++(that: LocalScope): LocalScope = LocalScope(this.scp ++ that.scp)
+  def ++(that: LocalScope): LocalScope = LocalScope(this.scp ++ that.scp, this.superClass)
 
   /**
     * Returns an option of the list of resolutions corresponding to the variable `name`.
@@ -61,7 +64,7 @@ case class LocalScope(scp: ListMap[String, Resolution]) {
   /**
     * Returns the local scope extended with the additional mapping from `name` to `res`.
     */
-  def +(kv: (String, Resolution)): LocalScope = LocalScope(scp + kv)
+  def +(kv: (String, Resolution)): LocalScope = LocalScope(scp + kv, this.superClass)
 
   /**
     * Returns the local scope extended with the additional mapping from `name` to `res`.
@@ -70,4 +73,6 @@ case class LocalScope(scp: ListMap[String, Resolution]) {
     */
   def resolve(name: String): Option[Resolution] =
     scp.get(name).headOption
+
+  def withSuperClass(clazz: Option[JClass[?]]): LocalScope = copy(superClass = clazz)
 }

@@ -621,6 +621,11 @@ object SemanticTokensProvider {
         case (acc, e) => acc ++ visitExp(e)
       }
 
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
       exps.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, e) => acc ++ visitExp(e)

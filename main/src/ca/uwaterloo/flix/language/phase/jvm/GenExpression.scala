@@ -869,6 +869,34 @@ object GenExpression {
           mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
 
+      case AtomicOp.InvokeSuperMethod(method, className) =>
+        // Add source line number for debugging
+        BytecodeInstructions.addLoc(loc)
+
+        // The first expression is the receiver (the anonymous class instance, i.e. `_this`).
+        val receiver :: args = exps
+
+        // Evaluate the receiver object.
+        compileExpr(receiver)
+        val anonClassInternalName = className.replace('.', '/')
+        mv.visitTypeInsn(CHECKCAST, anonClassInternalName)
+
+        // Evaluate and cast each argument.
+        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
+          compileExpr(arg)
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
+
+        // Call the bridge method super$methodName on the anonymous class.
+        val bridgeName = s"super$$${method.getName}"
+        val descriptor = asm.Type.getMethodDescriptor(method)
+        mv.visitMethodInsn(INVOKEVIRTUAL, anonClassInternalName, bridgeName, descriptor, false)
+
+        // If the method is void, put a unit on top of the stack
+        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        }
+
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         BytecodeInstructions.addLoc(loc)

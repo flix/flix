@@ -723,6 +723,13 @@ object Kinder {
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc)
 
+      case ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, exps0, loc) =>
+        val exps = exps0.map(visitExp(_, kenv0, root))
+        val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+        KindedAst.Expr.InvokeSuperMethod(clazz, methodName, exps, jvar, tvar, evar, loc)
+
       case ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, exps0, loc) =>
         val exps = exps0.map(visitExp(_, kenv0, root))
         val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)

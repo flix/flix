@@ -917,6 +917,7 @@ object Weeder2 {
         case TreeKind.Expr.InvokeConstructor => visitInvokeConstructorExpr(tree)
         case TreeKind.Expr.InvokeSuperConstructor => visitInvokeSuperConstructorExpr(tree)
         case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
+        case TreeKind.Expr.InvokeSuperMethod => visitInvokeSuperMethodExpr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
@@ -1995,6 +1996,15 @@ object Weeder2 {
         case (b, m, as) =>
           val result = Expr.InvokeMethod(b, m, as, tree.loc)
           result
+      }
+    }
+
+    private def visitInvokeSuperMethodExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeSuperMethod)
+      val method = pickNameIdent(tree)
+      val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
+      mapN(method, argsExps) {
+        case (m, as) => Expr.InvokeSuperMethod(m, as, tree.loc)
       }
     }
 

@@ -217,6 +217,7 @@ object OpPrinter {
     case (AtomicOp.PutField(field), List(d1, d2)) => JavaPutField(field, d1, d2)
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
+    case (AtomicOp.InvokeSuperMethod(method, _), d :: rs) => JavaInvokeMethod(method, d, rs)
     // fall back if non other applies
     case (op1, ds1) => App(Meta(op1.toString), ds1)
   }

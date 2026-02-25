@@ -125,6 +125,10 @@ object Reducer {
         JvmAst.Expr.Var(sym, offset, tpe, loc)
 
       case ErasedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        op match {
+          case AtomicOp.InvokeSuperMethod(method, className) => ctx.addSuperMethod(className, method)
+          case _ => ()
+        }
         val es = exps.map(visitExpr)
         JvmAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
@@ -215,7 +219,7 @@ object Reducer {
             val c = visitExpr(clo)
             JvmAst.JvmMethod(ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
         }
-        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, cs, specs, loc))
+        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, cs, specs, Nil, loc))
 
         JvmAst.Expr.NewObject(name, clazz, tpe, purity, cs, specs, loc)
 
@@ -301,15 +305,26 @@ object Reducer {
     */
   private final class SharedContext {
 
+    /** Collects all anonymous class / new object expressions encountered during reduction. */
     private val anonClasses: ConcurrentLinkedQueue[JvmAst.AnonClass] = new ConcurrentLinkedQueue()
+
+    /** Collects all types encountered in def expressions (used as a set via `ConcurrentHashMap`). */
+    private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
+
+    /** Maps anonymous class names to the super methods they invoke, so the backend can generate `invokespecial` bridge methods. */
+    private val superMethods: ConcurrentHashMap[(String, java.lang.reflect.Method), Unit] = new ConcurrentHashMap()
 
     def addAnonClass(clazz: JvmAst.AnonClass): Unit =
       anonClasses.add(clazz)
 
     def getAnonClasses: List[JvmAst.AnonClass] =
-      anonClasses.asScala.toList
+      anonClasses.asScala.toList.map(ac => ac.copy(superMethods = getSuperMethods(ac.name)))
 
-    private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
+    def addSuperMethod(className: String, method: java.lang.reflect.Method): Unit =
+      superMethods.putIfAbsent((className, method), ())
+
+    def getSuperMethods(className: String): List[java.lang.reflect.Method] =
+      superMethods.keySet.asScala.collect { case (cn, m) if cn == className => m }.toList
 
     def addDefType(tpe: SimpleType): Unit =
       defTypes.putIfAbsent(tpe, ())

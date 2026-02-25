@@ -733,6 +733,10 @@ object Desugar {
       val es = visitExps(exps)
       Expr.InvokeMethod(e, name, es, loc)
 
+    case WeededAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeSuperMethod(methodName, es, loc)
+
     case WeededAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
       Expr.GetField(e, name, loc)

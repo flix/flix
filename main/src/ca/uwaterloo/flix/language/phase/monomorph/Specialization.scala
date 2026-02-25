@@ -869,6 +869,11 @@ object Specialization {
       val t = subst(tpe)
       Expr.InvokeMethod(method, e, es, t, subst(eff), loc)
 
+    case Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeSuperMethod(method, es, t, subst(eff), loc)
+
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
       val t = subst(tpe)

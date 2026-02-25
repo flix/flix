@@ -307,6 +307,9 @@ object EffectVerifier {
       exps.foreach(visitExp)
       // TODO Java stuff
       ()
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+      ()
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO Java stuff
