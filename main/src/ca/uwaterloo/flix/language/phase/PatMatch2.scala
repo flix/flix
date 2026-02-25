@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.PatMatchError
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -105,7 +105,7 @@ object PatMatch2 {
   // ─────────────────────────────────────────────────────────────
 
   /**
-    * Returns `true` if `pat` is a wildcard-like pattern: `Wild`, `Var`, or `Error`.
+    * Returns `true` if `pat` is a wildcard-like pattern: `Wild` or `Var`.
     *
     * These patterns match any value and carry no sub-patterns.
     *
@@ -120,8 +120,25 @@ object PatMatch2 {
   private def isWildcard(pat: Pattern): Boolean = pat match {
     case _: Pattern.Wild  => true
     case _: Pattern.Var   => true
-    case _: Pattern.Error => true
+    case _: Pattern.Error => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
     case _                => false
+  }
+
+  /**
+    * Returns `true` if `pat` or any of its sub-patterns is a `Pattern.Error`.
+    *
+    * A `Pattern.Error` is introduced by earlier phases to represent a parse or
+    * type error.  Exhaustiveness and redundancy checking is meaningless on
+    * broken patterns, so we use this predicate to skip the entire match.
+    */
+  private def hasError(pat: Pattern): Boolean = pat match {
+    case _: Pattern.Error                => true
+    case _: Pattern.Wild                 => false
+    case _: Pattern.Var                  => false
+    case _: Pattern.Cst                  => false
+    case Pattern.Tag(_, pats, _, _)      => pats.exists(hasError)
+    case Pattern.Tuple(pats, _, _)       => pats.exists(hasError)
+    case Pattern.Record(pats, pat, _, _) => pats.exists(p => hasError(p.pat)) || hasError(pat)
   }
 
   /**
@@ -144,7 +161,7 @@ object PatMatch2 {
   private def patternArity(pat: Pattern): Int = pat match {
     case _: Pattern.Wild                => 0
     case _: Pattern.Var                 => 0
-    case _: Pattern.Error               => 0
+    case _: Pattern.Error               => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
     case _: Pattern.Cst                 => 0
     case Pattern.Tag(_, pats, _, _)     => pats.length
     case Pattern.Tuple(pats, _, _)      => pats.length
@@ -593,6 +610,10 @@ object PatMatch2 {
     * cannot make later rules redundant).
     */
   private def checkRules(exp: Expr, rules: List[TypedAst.MatchRule], root: Root)(implicit sctx: SharedContext): Unit = {
+    // Skip checking if any pattern contains an error node from an earlier phase.
+    // Errors have already been reported and the patterns are not well-formed.
+    if (rules.exists(r => hasError(r.pat))) return
+
     // --- Exhaustiveness ---
     val unguardedPats = rules.filter(_.guard.isEmpty).map(r => List(r.pat))
     val exhaustMatrix = PatternMatrix(unguardedPats, 1)
@@ -625,6 +646,10 @@ object PatMatch2 {
     * Redundancy is not checked for `ParYield` (each fragment is independent).
     */
   private def checkFrags(frags: List[ParYieldFragment], root: Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    // Skip checking if any pattern contains an error node from an earlier phase.
+    // Errors have already been reported and the patterns are not well-formed.
+    if (frags.exists(f => hasError(f.pat))) return
+
     frags.foreach { f =>
       val matrix = PatternMatrix(List(List(f.pat)), 1)
       computeWitness(matrix, root) match {
