@@ -119,25 +119,35 @@ pub mod Logger {
     ///
     /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
     ///
-    /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
-    /// Discards style from the logged messages.
+    /// In other words, re-interprets the `Logger` effect using the `FileWriteWithResult` effect.
+    /// If an `IoError` is encountered while writing to file, executes the optional `onError` function.
+    /// Discards style from the logged messages. 
     ///
-    pub def handleWithFileWrite(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + FileWrite = 
+    pub def handleWithFileWriteWithResult(file: String, onError: Option[IoError -> Unit \ ef2], f: a -> b \ ef1): a -> b \ (ef1 - Logger) + ef2 + FileWriteWithResult = 
         x -> run {
             f(x)
         } with handler Logger {
-            def log(s, m, k) = 
+            def log(s, m, k) = {
                 let output = "[${ToString.toString(s)}] ${RichString.toPlainString(m)}\n";
-                FileWrite.append({str = output}, file);
+                let res = FileWriteWithResult.append({str = output}, file);
+                match res {
+                    case Ok() => ()
+                    case Err(e) => match onError {
+                        case Some(g) => g(e)
+                        case None => ()
+                    }
+                };
                 k()
+            }
         }
 
     ///
-    /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
     ///
-    /// In other words, re-interprets the `Logger` effect using the `FileWrite` effect.
-    /// Discards style from the logged messages.
+    /// In other words, re-interprets the `Logger` effect using the `FileWriteWithResult` effect.
+    /// If an `IoError` is encountered while writing to file, executes the optional `onError` function.
+    /// Discards style from the logged messages. 
     ///
-    pub def runWithFileWrite(file: String, f: Unit -> a \ ef): a \ (ef - Logger) + FileWrite =
-        handleWithFileWrite(file, f)()
+    pub def runWithFileWriteWithResult(file: String, onError: Option[IoError -> Unit \ ef2], f: Unit -> a \ ef): a \ (ef - Logger) + ef2 + FileWriteWithResult =
+        handleWithFileWrite(file, onError, f)()
 }
