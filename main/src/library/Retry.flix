@@ -1,11 +1,11 @@
 mod Retry {
     use Retry.Policy
     use Policy.Policy
-    type alias DurationMillis = Int32
+    type alias Duration = Int32
 
 
     pub enum Policy[ef: Eff] {
-        case Policy(Int32 -> Option[DurationMillis] \ ef)
+        case Policy(Int32 -> Option[Duration] \ ef)
     }
 
     pub def limitRetries(n: Int32): Policy[{}] \ {} =
@@ -13,12 +13,12 @@ mod Retry {
             if (i < n) {Some(0)} else {None}}
         )
     
-    def backoff(f: (DurationMillis -> DurationMillis \ ef )): Policy[ef] =
+    def backoff(f: (Duration -> Duration \ ef )): Policy[ef] =
         Policy(i -> {
             Some(f(i))
         })
 
-    pub def constantBackoff(time: DurationMillis): Policy[{}] = 
+    pub def constantBackoff(time: Duration): Policy[{}] = 
         backoff(_i -> time)
     pub def expBackoff(): Policy[{}] = 
         backoff(i -> Int32.pow(base = 2, i))
