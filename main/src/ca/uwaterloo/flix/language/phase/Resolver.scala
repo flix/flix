@@ -613,7 +613,7 @@ object Resolver {
         val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
         // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ListBuffer.empty[ResolutionError]
+        val errors = mutable.ArrayBuffer.empty[ResolutionError]
 
         // Build the map `m` and check for [[DuplicateAssocTypeDef]].
         for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {

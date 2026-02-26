@@ -33,7 +33,7 @@ import ca.uwaterloo.flix.util.collection.SeqOps
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
@@ -93,7 +93,7 @@ object Redundancy {
     * Checks for unused definition symbols.
     */
   private def checkUnusedDefs()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, defn) <- root.defs) {
       if (deadDef(defn)) {
         result += UnusedDefSym(defn.sym)
@@ -106,7 +106,7 @@ object Redundancy {
     * Checks for unused effect symbols.
     */
   private def checkUnusedEffects()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, eff) <- root.effects) {
       if (deadEffect(eff)) {
         result += UnusedEffSym(eff.sym)
@@ -119,7 +119,7 @@ object Redundancy {
     * Checks for unused enum symbols and tags.
     */
   private def checkUnusedEnumsAndTags()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, enm) <- root.enums) {
       if (deadEnum(enm)) {
         result += UnusedEnumSym(enm.sym)
@@ -138,7 +138,7 @@ object Redundancy {
     * Checks for unused type parameters in enums.
     */
   private def checkUnusedTypeParamsEnums()(implicit root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, decl) <- root.enums) {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (sacc, (_, Case(_, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
@@ -157,7 +157,7 @@ object Redundancy {
     * Checks for unused type parameters in enums.
     */
   private def checkUnusedTypeParamsTypeAliases()(implicit root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, decl) <- root.typeAliases) {
       val usedTypeVars = decl.tpe.typeVars.map(_.sym)
       val unusedTypeParams = decl.tparams.filter {
@@ -174,7 +174,7 @@ object Redundancy {
     * Checks for unused struct symbols and tags.
     */
   private def checkUnusedStructsAndFields()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, struct) <- root.structs) {
       if (deadStruct(struct)) {
         result += UnusedStructSym(struct.sym)
@@ -188,7 +188,7 @@ object Redundancy {
     * Checks for unused type parameters in structs.
     */
   private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
       val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (acc, (_, field)) =>
