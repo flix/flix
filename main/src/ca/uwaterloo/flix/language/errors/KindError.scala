@@ -16,10 +16,10 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
   * A common super-type for kind errors.
@@ -29,6 +29,60 @@ sealed trait KindError extends CompilationMessage {
 }
 
 object KindError {
+
+  /**
+    * An error raised to indicate wrong number of type arguments for an enum.
+    *
+    * @param sym           the enum symbol.
+    * @param expectedArity the expected number of type arguments.
+    * @param actualArity   the actual number of type arguments.
+    * @param loc           the location where the error occurred.
+    */
+  case class MismatchedArityOfEnum(sym: Symbol.EnumSym, expectedArity: Int, actualArity: Int, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3414
+
+    private val expected = Grammar.n_things(expectedArity, "type argument")
+    private val actual = Grammar.n_things(actualArity, "type argument")
+    private val wasOrWere = if (actualArity == 1) "was" else "were"
+
+    def summary: String =
+      s"Mismatched arity: enum '${sym.name}' expects $expected but $actual $wasOrWere given."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched arity: enum '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
+         |
+         |${highlight(loc, "wrong number of type arguments", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate wrong number of type arguments for a struct.
+    *
+    * @param sym           the struct symbol.
+    * @param expectedArity the expected number of type arguments.
+    * @param actualArity   the actual number of type arguments.
+    * @param loc           the location where the error occurred.
+    */
+  case class MismatchedArityOfStruct(sym: Symbol.StructSym, expectedArity: Int, actualArity: Int, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3421
+
+    private val expected = Grammar.n_things(expectedArity, "type argument")
+    private val actual = Grammar.n_things(actualArity, "type argument")
+    private val wasOrWere = if (actualArity == 1) "was" else "were"
+
+    def summary: String =
+      s"Mismatched arity: struct '${sym.name}' expects $expected but $actual $wasOrWere given."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Mismatched arity: struct '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
+         |
+         |${highlight(loc, "wrong number of type arguments", fmt)}
+         |""".stripMargin
+    }
+  }
 
   /**
     * An error raised to indicate two incompatible kinds.
@@ -81,6 +135,52 @@ object KindError {
          |
          |Expected: ${cyan(formatKind(expectedKind))}
          |Actual:   ${red(formatKind(actualKind))}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when an effect is found where a type is expected.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class UnexpectedEffect(loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3428
+
+    def summary: String = "Unexpected kind: expected a type but found an effect."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected kind: expected a ${cyan("type")} but found an ${red("effect")}.
+         |
+         |${highlight(loc, "expected a type, not an effect", fmt)}
+         |
+         |${underline("Explanation:")} Types and effects are different kinds. A type like
+         |'Int32' has kind 'Type', while an effect like 'IO' has kind 'Eff'.
+         |An effect cannot be used where a type is expected.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a type is found where an effect is expected.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class UnexpectedType(loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3435
+
+    def summary: String = "Unexpected kind: expected an effect but found a type."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected kind: expected an ${cyan("effect")} but found a ${red("type")}.
+         |
+         |${highlight(loc, "expected an effect, not a type", fmt)}
+         |
+         |${underline("Explanation:")} Types and effects are different kinds. A type like
+         |'Int32' has kind 'Type', while an effect like 'IO' has kind 'Eff'.
+         |A type cannot be used where an effect is expected.
          |""".stripMargin
     }
   }

@@ -122,6 +122,10 @@ object ErrorCode {
   case object E3352 extends ErrorCode
   case object E3394 extends ErrorCode
   case object E3407 extends ErrorCode
+  case object E3414 extends ErrorCode
+  case object E3421 extends ErrorCode
+  case object E3428 extends ErrorCode
+  case object E3435 extends ErrorCode
   case object E3458 extends ErrorCode
   case object E3463 extends ErrorCode
   case object E3512 extends ErrorCode
