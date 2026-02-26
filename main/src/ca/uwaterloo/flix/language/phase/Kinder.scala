@@ -673,9 +673,6 @@ object Kinder {
         val asEff = asEff0.map(visitType(_, Kind.Eff, kenv0, root))
         KindedAst.Expr.Unsafe(exp, eff, asEff, loc)
 
-      case ResolvedAst.Expr.Without(exp0, symUse, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        KindedAst.Expr.Without(exp, symUse, loc)
 
       case ResolvedAst.Expr.TryCatch(exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)

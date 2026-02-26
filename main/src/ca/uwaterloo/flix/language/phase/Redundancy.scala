@@ -734,9 +734,6 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Without(exp, symUse, _, _, _) =>
-      sctx.effSyms.put(symUse.sym, ())
-      visitExp(exp, env0, rc)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)

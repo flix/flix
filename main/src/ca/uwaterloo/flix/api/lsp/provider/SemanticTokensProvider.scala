@@ -577,9 +577,6 @@ object SemanticTokensProvider {
     case Expr.Unsafe(exp, runEff, asEff, _, _, _) =>
       visitType(runEff) ++ asEff.map(visitType).getOrElse(Iterator()) ++ visitExp(exp)
 
-    case Expr.Without(exp, symUse, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Effect, Nil, symUse.qname.loc)
-      Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp1)) {

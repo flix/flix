@@ -213,7 +213,6 @@ object TypedAst {
 
     case class Unsafe(exp: Expr, runEff: Type, asEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, symUse: EffSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

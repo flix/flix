@@ -84,7 +84,7 @@ object TypedAstOps {
     case Expr.CheckedCast(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expr.Unsafe(exp, _, _, _, _, _) => sigSymsOf(exp)
-    case Expr.Without(exp, _, _, _, _) => sigSymsOf(exp)
+
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Throw(exp, _, _, _) => sigSymsOf(exp)
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.exp)).toSet
@@ -305,8 +305,6 @@ object TypedAstOps {
     case Expr.Ascribe(exp, _, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      freeVars(exp)
 
     case Expr.InstanceOf(exp, _, _) =>
       freeVars(exp)

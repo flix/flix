@@ -49,11 +49,6 @@ mod Test.Exp.Effect {
         }
     })
 
-    @CompileTest
-    def without01(): Bool = true without Fail
-
-    @CompileTest
-    def without02(): Bool = true without {Fail, Console}
 
     @CompileTest
     def singleEffect(): Bool \ Fail = ???
