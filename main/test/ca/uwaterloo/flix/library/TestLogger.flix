@@ -19,13 +19,17 @@ mod TestLogger {
         let expected = "${RichString.toString(RichString.bold(RichString.red("[Fatal]")))} Testing a simple string";
         Assert.assertEq(expected="Logging to Console: " + expected, res)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // List                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
     @Test
     def testRunWithList01(): Unit \ Assert =
         let (_, list) = run {
             Logger.fatal("A fatal error has occured")
         } with runWithList;
         let expected = List#{(Severity.Fatal, RichString.fromString("A fatal error has occured"))};
-        assertTrue(richStringSevListEqual(expected, list))
+        assertEq(expected = expected, list)
 
     @Test
     def testRunWithList02(): Unit \ Assert =
@@ -37,7 +41,7 @@ mod TestLogger {
             (Severity.Fatal, RichString.fromString("A fatal error has occured")),
             (Severity.Info, RichString.fromString("An info line"))
         };
-        assertTrue(richStringSevListEqual(expected, list))
+        assertEq(expected = expected, list)
 
     @Test
     def testRunWithList03(): Unit \ Assert =
