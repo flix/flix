@@ -27,7 +27,7 @@ mod TestLogger {
     def testRunWithList01(): Unit \ Assert =
         let (_, list) = run {
             Logger.fatal("A fatal error has occured")
-        } with runWithList;
+        } with Logger.runWithList;
         let expected = List#{(Severity.Fatal, RichString.fromString("A fatal error has occured"))};
         assertEq(expected = expected, list)
 
@@ -36,7 +36,7 @@ mod TestLogger {
         let (_, list) = run {
             Logger.fatal("A fatal error has occured");
             Logger.info("An info line")
-        } with runWithList;
+        } with Logger.runWithList;
         let expected = List#{
             (Severity.Fatal, RichString.fromString("A fatal error has occured")),
             (Severity.Info, RichString.fromString("An info line"))
@@ -48,7 +48,7 @@ mod TestLogger {
         let (stdRes, _list) = run {
             Logger.fatal("A fatal error has occured");
             5
-        } with runWithList;
+        } with Logger.runWithList;
         assertEq(expected = 5, stdRes)
 
     /////////////////////////////////////////////////////////////////////////////
