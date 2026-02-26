@@ -1175,7 +1175,14 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Enum(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          val expectedArity = Kind.kindArgs(kind).length
+          val actualArity = Kind.kindArgs(expectedKind).length
+          val error = if (expectedArity != actualArity) {
+            KindError.MismatchedArityOfEnum(sym, expectedArity, actualArity, loc)
+          } else {
+            KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc)
+          }
+          sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1193,7 +1200,14 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Struct(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          val expectedArity = Kind.kindArgs(kind).length
+          val actualArity = Kind.kindArgs(expectedKind).length
+          val error = if (expectedArity != actualArity) {
+            KindError.MismatchedArityOfStruct(sym, expectedArity, actualArity, loc)
+          } else {
+            KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc)
+          }
+          sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
       }
 

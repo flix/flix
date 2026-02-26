@@ -16,10 +16,10 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
   * A common super-type for kind errors.
@@ -29,6 +29,60 @@ sealed trait KindError extends CompilationMessage {
 }
 
 object KindError {
+
+  /**
+    * An error raised to indicate wrong number of type arguments for an enum.
+    *
+    * @param sym           the enum symbol.
+    * @param expectedArity the expected number of type arguments.
+    * @param actualArity   the actual number of type arguments.
+    * @param loc           the location where the error occurred.
+    */
+  case class MismatchedArityOfEnum(sym: Symbol.EnumSym, expectedArity: Int, actualArity: Int, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3414
+
+    private val expected = Grammar.n_things(expectedArity, "type argument")
+    private val actual = Grammar.n_things(actualArity, "type argument")
+    private val wasOrWere = if (actualArity == 1) "was" else "were"
+
+    def summary: String =
+      s"Enum '${sym.name}' expects $expected but $actual $wasOrWere given."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Enum '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
+         |
+         |${highlight(loc, "wrong number of type arguments", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate wrong number of type arguments for a struct.
+    *
+    * @param sym           the struct symbol.
+    * @param expectedArity the expected number of type arguments.
+    * @param actualArity   the actual number of type arguments.
+    * @param loc           the location where the error occurred.
+    */
+  case class MismatchedArityOfStruct(sym: Symbol.StructSym, expectedArity: Int, actualArity: Int, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3421
+
+    private val expected = Grammar.n_things(expectedArity, "type argument")
+    private val actual = Grammar.n_things(actualArity, "type argument")
+    private val wasOrWere = if (actualArity == 1) "was" else "were"
+
+    def summary: String =
+      s"Struct '${sym.name}' expects $expected but $actual $wasOrWere given."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Struct '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
+         |
+         |${highlight(loc, "wrong number of type arguments", fmt)}
+         |""".stripMargin
+    }
+  }
 
   /**
     * An error raised to indicate two incompatible kinds.

@@ -624,7 +624,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Expression.Ascribe.07") {
@@ -636,7 +636,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let x: E[Int32] = ???; 0
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Expression.Ascribe.08") {
@@ -648,7 +648,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    let x: S[Int32] = ???; 0
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Def.Expression.Cast.01") {
@@ -677,7 +677,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |pub def foo(): Int32 = unchecked_cast(0 as E[Int32])
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Expression.Cast.04") {
@@ -688,7 +688,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |pub def foo(): Int32 = unchecked_cast(0 as E[Int32])
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Expression.Cast.05") {
@@ -699,7 +699,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |pub def foo(): Int32 = unchecked_cast(0 as S[Int32, Region])
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Def.Expression.LocalDef.Effect.01") {
