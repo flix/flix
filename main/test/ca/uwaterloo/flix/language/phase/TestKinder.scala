@@ -756,7 +756,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    f(???)
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Expression.LocalDef.Type.05") {
@@ -769,7 +769,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    f(???)
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Def.Expression.LocalDef.Parameter.01") {
@@ -793,7 +793,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    f(???)
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Expression.LocalDef.Parameter.03") {
@@ -806,7 +806,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    f(???)
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Def.Expression.LocalDef.Return.01") {
@@ -832,7 +832,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    1
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Expression.LocalDef.Return.03") {
@@ -870,7 +870,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    1
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Def.Type.01") {
@@ -926,7 +926,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def f(x: E[Int32, Int32]): Int32 = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Type.08") {
@@ -937,7 +937,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def f(x: S[Int32, Int32, Region]): Int32 = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Def.Parameter.01") {
@@ -957,7 +957,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def f(x: E): Int32 = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Parameter.03") {
@@ -968,7 +968,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def f(x: S): Int32 = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Def.Return.01") {
@@ -988,7 +988,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def f(): E = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Def.Return.03") {
@@ -1017,7 +1017,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def f(): S = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Def.TraitConstraint.01") {
@@ -1081,7 +1081,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Enum.Case.03") {
@@ -1160,7 +1160,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfStruct](result)
   }
 
   test("KindError.Struct.WrongKind.04") {
@@ -1233,7 +1233,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.Instance.TraitConstraint.01") {
@@ -1261,7 +1261,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |instance C[E]
         |""".stripMargin
     val result = check(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedArityOfEnum](result)
   }
 
   test("KindError.TypeAlias.Type.01") {
