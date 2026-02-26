@@ -82,7 +82,7 @@ object Reader {
         // Open the zip file.
         Using(new ZipFile(p.toFile)) { zip =>
           // Collect all source and test files.
-          val result = mutable.ListBuffer.empty[Source]
+          val result = mutable.ArrayBuffer.empty[Source]
           val iterator = zip.entries()
           while (iterator.hasMoreElements) {
             val entry = iterator.nextElement()

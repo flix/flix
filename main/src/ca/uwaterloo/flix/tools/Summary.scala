@@ -538,13 +538,13 @@ object Summary {
   class Table {
 
     /** The rows collected so far */
-    private val rows: mutable.ListBuffer[List[String]] = mutable.ListBuffer.empty
+    private val rows: mutable.ArrayBuffer[List[String]] = mutable.ArrayBuffer.empty
 
     /**
       * Has the length of the longest list in rows. Each integer contains the
       * max length of any string in that column.
       */
-    private val maxLens: mutable.ListBuffer[Int] = mutable.ListBuffer.empty
+    private val maxLens: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
 
     /** Adds a row to the builder. The rows can have different lengths */
     def addRow(row: List[String]): Unit = insertRow(rows.length, row)

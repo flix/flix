@@ -38,7 +38,7 @@ import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
 import java.util.zip.ZipFile
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.util.Using
 
@@ -108,7 +108,7 @@ class Flix {
   /**
     * A map to track the time spent in each phase and sub-phase.
     */
-  var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
+  var phaseTimers: ArrayBuffer[PhaseTime] = ArrayBuffer.empty
 
   /**
     * The current phase we are in. Initially null.
@@ -123,7 +123,7 @@ class Flix {
   /**
     * The currently registered event listeners.
     */
-  private val listeners: ListBuffer[FlixListener] = ListBuffer.empty
+  private val listeners: ArrayBuffer[FlixListener] = ArrayBuffer.empty
 
   /**
     * The default assumed charset.
@@ -439,7 +439,7 @@ class Flix {
     initForkJoinPool()
 
     // Reset the phase information.
-    phaseTimers = ListBuffer.empty
+    phaseTimers = ArrayBuffer.empty
 
     // Reset the phase list file if relevant
     if (this.options.xprintphases) {
@@ -457,7 +457,7 @@ class Flix {
     val entryPoint = flix.options.entryPoint
 
     // The global collection of errors
-    val errors = mutable.ListBuffer.empty[CompilationMessage]
+    val errors = mutable.ArrayBuffer.empty[CompilationMessage]
 
     val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
     errors ++= readerErrors
@@ -823,7 +823,7 @@ class Flix {
     */
   private def getClassesAndInterfacesOfJar(p: Path): List[String] = {
     Using(new ZipFile(p.toFile)) { zip =>
-      val result = mutable.ListBuffer.empty[String]
+      val result = mutable.ArrayBuffer.empty[String]
       val iterator = zip.entries()
       while (iterator.hasMoreElements) {
         val entry = iterator.nextElement()

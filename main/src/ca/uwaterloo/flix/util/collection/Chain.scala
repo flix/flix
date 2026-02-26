@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.util.collection
 
 import scala.annotation.tailrec
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * A linear data structure that allows fast concatenation.
@@ -114,7 +114,7 @@ sealed trait Chain[+A] {
     * Returns `this` as a [[List]].
     */
   final def toList: List[A] = {
-    val buf = new ListBuffer[A]
+    val buf = new ArrayBuffer[A]
     this.foreach(buf.addOne)
     buf.toList
   }
