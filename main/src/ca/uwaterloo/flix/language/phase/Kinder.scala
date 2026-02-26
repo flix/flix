@@ -1088,7 +1088,7 @@ object Kinder {
         unify(expectedKind, actualKind) match {
           case Some(kind) => sym.withKind(kind)
           case None =>
-            val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc)
+            val e = mkUnexpectedKindError(expectedKind, actualKind, loc)
             sctx.errors.add(e)
             sym.withKind(Kind.Error)
         }
@@ -1109,7 +1109,7 @@ object Kinder {
       unify(expectedKind, kind) match {
         case Some(_) => Type.Cst(cst, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1123,7 +1123,7 @@ object Kinder {
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, root)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, k, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1136,7 +1136,7 @@ object Kinder {
           unify(t.kind, expectedKind) match {
             case Some(_) => Type.Alias(cst, args, t, loc)
             case None =>
-              sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
+              sctx.errors.add(mkUnexpectedKindError(expectedKind, t.kind, loc))
               Type.freshError(Kind.Error, loc)
           }
       }
@@ -1154,7 +1154,7 @@ object Kinder {
               val arg = visitType(arg0, innerExpectedKind, kenv, root)
               Type.AssocType(cst, arg, kind, loc)
             case None =>
-              sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc))
+              sctx.errors.add(mkUnexpectedKindError(expectedKind, k0, loc))
               Type.freshError(Kind.Error, loc)
           }
       }
@@ -1166,7 +1166,7 @@ object Kinder {
           val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
           Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1180,7 +1180,7 @@ object Kinder {
           val error = if (expectedArity != actualArity) {
             KindError.MismatchedArityOfEnum(sym, expectedArity, actualArity, loc)
           } else {
-            KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc)
+            mkUnexpectedKindError(expectedKind, kind, loc)
           }
           sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
@@ -1191,7 +1191,7 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Effect(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1205,7 +1205,7 @@ object Kinder {
           val error = if (expectedArity != actualArity) {
             KindError.MismatchedArityOfStruct(sym, expectedArity, actualArity, loc)
           } else {
-            KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc)
+            mkUnexpectedKindError(expectedKind, kind, loc)
           }
           sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
@@ -1216,7 +1216,7 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.RestrictableEnum(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1245,11 +1245,11 @@ object Kinder {
           Type.freshError(Kind.Error, loc)
         // Case 3: Unexpected kind. Error.
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
 
         case Some(k) if Kind.hasError(k) =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
 
         case Some(_) => throw InternalCompilerException("unexpected non-case set kind", loc)
@@ -1261,7 +1261,7 @@ object Kinder {
       unify(t.kind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseComplement(t, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, t.kind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1283,7 +1283,7 @@ object Kinder {
       unify(actualKind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseUnion(t1, t2, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1306,7 +1306,7 @@ object Kinder {
       unify(actualKind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseIntersection(t1, t2, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1318,6 +1318,18 @@ object Kinder {
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe0.loc)
 
 
+  }
+
+  /**
+    * Creates the appropriate kind error for an unexpected kind.
+    * Returns specialized errors for Type/Eff mismatches.
+    */
+  private def mkUnexpectedKindError(expectedKind: Kind, actualKind: Kind, loc: SourceLocation): KindError = {
+    (expectedKind, actualKind) match {
+      case (Kind.Star, Kind.Eff) => KindError.UnexpectedEffect(loc)
+      case (Kind.Eff, Kind.Star) => KindError.UnexpectedType(loc)
+      case _ => KindError.UnexpectedKind(expectedKind, actualKind, loc)
+    }
   }
 
   /**

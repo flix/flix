@@ -140,6 +140,52 @@ object KindError {
   }
 
   /**
+    * An error raised when an effect is found where a type is expected.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class UnexpectedEffect(loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3428
+
+    def summary: String = "Unexpected kind: expected a type but found an effect."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected kind: expected a ${cyan("type")} but found an ${red("effect")}.
+         |
+         |${highlight(loc, "expected a type, not an effect", fmt)}
+         |
+         |${underline("Explanation:")} Types and effects are different kinds. A type like
+         |'Int32' has kind 'Type', while an effect like 'IO' has kind 'Eff'.
+         |An effect cannot be used where a type is expected.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a type is found where an effect is expected.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class UnexpectedType(loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3435
+
+    def summary: String = "Unexpected kind: expected an effect but found a type."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unexpected kind: expected an ${cyan("effect")} but found a ${red("type")}.
+         |
+         |${highlight(loc, "expected an effect, not a type", fmt)}
+         |
+         |${underline("Explanation:")} Types and effects are different kinds. A type like
+         |'Int32' has kind 'Type', while an effect like 'IO' has kind 'Eff'.
+         |A type cannot be used where an effect is expected.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error resulting from a type whose kind cannot be inferred.
     *
     * @param loc The location where the error occurred.
