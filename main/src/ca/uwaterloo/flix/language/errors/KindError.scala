@@ -46,11 +46,11 @@ object KindError {
     private val wasOrWere = if (actualArity == 1) "was" else "were"
 
     def summary: String =
-      s"Enum '${sym.name}' expects $expected but $actual $wasOrWere given."
+      s"Mismatched arity: enum '${sym.name}' expects $expected but $actual $wasOrWere given."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Enum '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
+      s""">> Mismatched arity: enum '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
          |
          |${highlight(loc, "wrong number of type arguments", fmt)}
          |""".stripMargin
@@ -73,11 +73,11 @@ object KindError {
     private val wasOrWere = if (actualArity == 1) "was" else "were"
 
     def summary: String =
-      s"Struct '${sym.name}' expects $expected but $actual $wasOrWere given."
+      s"Mismatched arity: struct '${sym.name}' expects $expected but $actual $wasOrWere given."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Struct '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
+      s""">> Mismatched arity: struct '${cyan(sym.name)}' expects $expected but $actual $wasOrWere given.
          |
          |${highlight(loc, "wrong number of type arguments", fmt)}
          |""".stripMargin
