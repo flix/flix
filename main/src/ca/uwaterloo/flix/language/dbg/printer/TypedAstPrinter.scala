@@ -73,7 +73,7 @@ object TypedAstPrinter {
     case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.UncheckedCast(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Unsafe(exp, runEff, asEff, _, _, _) => DocAst.Expr.Unsafe(print(exp), TypePrinter.print(runEff), asEff.map(TypePrinter.print))
-    case Expr.Without(_, _, _, _, _) => DocAst.Expr.Unknown
+
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _, _, _, _, _) => DocAst.Expr.Handler(symUse.sym, rules.map(printHandlerRule))

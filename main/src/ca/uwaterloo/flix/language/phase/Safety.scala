@@ -244,8 +244,6 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)

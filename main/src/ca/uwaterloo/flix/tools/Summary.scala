@@ -241,7 +241,7 @@ object Summary {
     case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.Unsafe(exp, _, _, _, _, _) => countCheckedEcasts(exp)
-    case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
+
     case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.CatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum

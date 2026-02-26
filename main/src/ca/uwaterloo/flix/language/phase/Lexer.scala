@@ -131,7 +131,7 @@ object Lexer {
       ("use", TokenKind.KeywordUse),
       ("where", TokenKind.KeywordWhere),
       ("with", TokenKind.KeywordWith),
-      ("without", TokenKind.KeywordWithout),
+
       ("xor", TokenKind.KeywordXor),
       ("xvar", TokenKind.KeywordXvar),
       ("yield", TokenKind.KeywordYield),

@@ -1151,17 +1151,6 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.Throw(e, loc)
 
-    case NamedAst.Expr.Without(exp, qname, loc) =>
-      lookupEffect(qname, scp0, ns0, root) match {
-        case Result.Ok(decl) =>
-          checkEffectIsAccessible(decl, ns0, qname.loc)
-          val symUse = EffSymUse(decl.sym, qname)
-          val e = resolveExp(exp, scp0)
-          ResolvedAst.Expr.Without(e, symUse, loc)
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
-      }
 
     case NamedAst.Expr.Handler(qname, rules, loc) =>
       visitHandler(qname, rules, scp0) match {

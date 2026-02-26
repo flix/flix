@@ -850,18 +850,6 @@ object ConstraintGen {
         val resEff = Type.mkUnion(Type.mkDifference(eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
         (resTpe, resEff)
 
-      case Expr.Without(exp, symUse, _) =>
-        //
-        // e: tpe \ eff - symUse
-        // -------------------------
-        // e without symUse : tpe
-        //
-        val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc), symUse.qname.loc) // TODO EFF-TPARAMS need kind
-        c.unifyType(eff, effWithoutSym, symUse.qname.loc)
-        val resTpe = tpe
-        val resEff = eff
-        (resTpe, resEff)
 
       case Expr.TryCatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)

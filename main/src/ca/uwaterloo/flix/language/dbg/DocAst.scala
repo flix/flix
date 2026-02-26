@@ -283,8 +283,6 @@ object DocAst {
     def Box(d: Expr): Expr =
       Keyword("box", d)
 
-    def Without(d: Expr, sym: Symbol.EffSym): Expr =
-      Binary(d, "without", AsIs(sym.toString))
 
     def Cst(cst: Constant): Expr =
       printer.ConstantPrinter.print(cst)

@@ -446,8 +446,6 @@ object Lowering {
       val t = lowerType(tpe)
       mkCast(e, t, eff, loc)
 
-    case TypedAst.Expr.Without(exp, _, _, _, _) =>
-      lowerExp(exp)
 
     case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
       val e = lowerExp(exp)

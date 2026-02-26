@@ -697,9 +697,6 @@ object Desugar {
       val asEff = asEff0.map(visitType)
       Expr.Unsafe(e, eff, asEff, loc)
 
-    case WeededAst.Expr.Without(exp, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.Without(e, eff, loc)
 
     case WeededAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)

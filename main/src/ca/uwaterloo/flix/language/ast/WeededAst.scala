@@ -180,7 +180,6 @@ object WeededAst {
 
     case class Unsafe(exp: Expr, eff: Type, asEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, handlers: List[CatchRule], loc: SourceLocation) extends Expr
 
