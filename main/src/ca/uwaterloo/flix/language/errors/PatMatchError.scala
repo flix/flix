@@ -50,8 +50,11 @@ object PatMatchError {
 
   /**
     * An error raised to indicate a redundant (unreachable) pattern in a match expression.
+    *
+    * @param coveredBy the location of the first pattern that covers this one.
+    * @param loc       the location of the redundant pattern.
     */
-  case class RedundantPattern(loc: SourceLocation) extends PatMatchError {
+  case class RedundantPattern(coveredBy: SourceLocation, loc: SourceLocation) extends PatMatchError {
     def code: ErrorCode = ErrorCode.E5963
 
     def summary: String = "Redundant pattern."
@@ -61,6 +64,10 @@ object PatMatchError {
       s""">> ${red("Redundant pattern.")}
          |
          |${highlight(loc, "unreachable case", fmt)}
+         |
+         |Covered by the following pattern:
+         |
+         |${highlight(coveredBy, "covering pattern", fmt)}
          |""".stripMargin
     }
   }

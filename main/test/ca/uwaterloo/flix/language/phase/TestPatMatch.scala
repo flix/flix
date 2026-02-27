@@ -773,73 +773,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
     expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
-  // H.2 Exhaustive (no false positive)
-
-  test("Record.Exhaustive.01") {
-    // Single Bool field, both cases covered.
-    val input =
-      """def f(): Bool = match { x = true } {
-        |    case { x = true } => true
-        |    case { x = false } => false
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[PatMatchError.NonExhaustiveMatch](result)
-  }
-
-  test("Record.Exhaustive.02") {
-    // Single Bool field, wildcard covers all.
-    val input =
-      """def f(): Bool = match { x = true } {
-        |    case { x = _ } => true
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[PatMatchError.NonExhaustiveMatch](result)
-  }
-
-  test("Record.Exhaustive.03") {
-    // Enum field, all cases covered.
-    val input =
-      """enum Color {
-        |    case Red,
-        |    case Blu
-        |}
-        |
-        |def f(x: {c = Color}): Bool = match x {
-        |    case { c = Color.Red } => true
-        |    case { c = Color.Blu } => false
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[PatMatchError.NonExhaustiveMatch](result)
-  }
-
-  test("Record.Exhaustive.04") {
-    // Different field orders should still be exhaustive together.
-    val input =
-      """def f(): Bool = match { a = true, b = false } {
-        |    case { a = true, b = _ } => true
-        |    case { b = _, a = false } => false
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[PatMatchError.NonExhaustiveMatch](result)
-  }
-
-  test("Record.Exhaustive.05") {
-    // Extension patterns should be exhaustive.
-    val input =
-      """def f(r: {a = Bool | _}): Bool = match r {
-        |    case { a = true | _ } => true
-        |    case { a = false | _ } => false
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[PatMatchError.NonExhaustiveMatch](result)
-  }
-
-  // H.3 Redundant
+  // H.2 Redundant
 
   test("Record.Redundant.01") {
     // Wildcard followed by wildcard.

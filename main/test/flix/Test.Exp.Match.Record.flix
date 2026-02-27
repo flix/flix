@@ -205,6 +205,39 @@ mod Test.Exp.Match.Record {
     }
 
     @Test
+    def exhaustiveness07(): Unit \ Assert = match { x = true } {
+        case { x = true } => success("matched true")
+        case { x = false } => success("matched false")
+    }
+
+    @Test
+    def exhaustiveness08(): Unit \ Assert = match { x = true } {
+        case { x = _ } => success("matched wildcard")
+    }
+
+    @Test
+    def exhaustiveness09(): Unit \ Assert =
+        let r: {c = A} = { c = A.A };
+        match r {
+            case { c = A.A } => success("matched A")
+            case { c = A.B } => fail("unexpected match on B")
+        }
+
+    @Test
+    def exhaustiveness10(): Unit \ Assert = match { a = true, b = false } {
+        case { a = true, b = _ } => success("matched a=true")
+        case { b = _, a = false } => success("matched a=false")
+    }
+
+    @Test
+    def exhaustiveness11(): Unit \ Assert =
+        let r: {a = Bool | _} = { a = true, b = 42 };
+        match r {
+            case { a = true | _ } => success("matched true")
+            case { a = false | _ } => fail("unexpected match on false")
+        }
+
+    @Test
     def extensionLabels01(): Unit \ Assert = match { a = true, b = true } {
         case { a | r } => assertTrue(a and r#b)
     }

@@ -702,7 +702,11 @@ object PatMatch2 {
       val preceding = PatternMatrix(precedingRows, 1)
       val q = List(rule.pat)
       if (!isUseful(preceding, q, root)) {
-        sctx.errors.add(PatMatchError.RedundantPattern(rule.pat.loc))
+        // Find the first preceding pattern that individually covers q.
+        val coveredBy = precedingRows.collectFirst {
+          case row if !isUseful(PatternMatrix(List(row), 1), q, root) => row.head.loc
+        }.getOrElse(rule.pat.loc)
+        sctx.errors.add(PatMatchError.RedundantPattern(coveredBy, rule.pat.loc))
       }
       // Only add unguarded rules to the preceding matrix
       if (rule.guard.isEmpty) {
