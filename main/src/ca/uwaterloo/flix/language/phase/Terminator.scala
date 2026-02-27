@@ -560,10 +560,6 @@ object Terminator {
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
           Expr.Discard(e, eff, loc)
 
-        case Expr.TypeMatch(exp1, rules0, tpe, eff, loc) =>
-          val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          val rs = rules0.map(visitTypeMatchRule(contexts, _, pos))
-          Expr.TypeMatch(e, rs, tpe, eff, loc)
 
         case Expr.RestrictableChoose(star, exp1, rules0, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
@@ -687,9 +683,6 @@ object Terminator {
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
           Expr.Unsafe(e, sym, tpe, eff, purity, loc)
 
-        case Expr.Without(exp1, effUse, tpe, eff, loc) =>
-          val e = visitExp(contexts, exp1, pos)
-          Expr.Without(e, effUse, tpe, eff, loc)
 
         case Expr.TryCatch(exp1, rules0, tpe, eff, loc) =>
           val e = visitExp(contexts, exp1, pos)
@@ -717,11 +710,21 @@ object Terminator {
           val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
           Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
 
+        case Expr.InvokeSuperConstructor(constructor, exps0, tpe, eff, loc) =>
+          checkForbidden(contexts, loc)
+          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
+          Expr.InvokeSuperConstructor(constructor, es, tpe, eff, loc)
+
         case Expr.InvokeMethod(method, exp1, exps0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
           val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
           Expr.InvokeMethod(method, e, es, tpe, eff, loc)
+
+        case Expr.InvokeSuperMethod(method, exps0, tpe, eff, loc) =>
+          checkForbidden(contexts, loc)
+          val es = exps0.map(visitExp(contexts, _, ApplyPosition.NonTail))
+          Expr.InvokeSuperMethod(method, es, tpe, eff, loc)
 
         case Expr.InvokeStaticMethod(method, exps0, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
@@ -748,10 +751,10 @@ object Terminator {
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
           Expr.PutStaticField(field, e, tpe, eff, loc)
 
-        case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+        case Expr.NewObject(name, clazz, tpe, eff, constructors, methods0, loc) =>
           checkForbidden(contexts, loc)
           val ms = methods0.map(visitJvmMethod(contexts, _))
-          Expr.NewObject(name, clazz, tpe, eff, ms, loc)
+          Expr.NewObject(name, clazz, tpe, eff, constructors, ms, loc)
 
         case Expr.NewChannel(exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)
@@ -881,11 +884,6 @@ object Terminator {
       MatchRule(pat, guard, body, loc)
   }
 
-  /** Visits a type match rule. */
-  private def visitTypeMatchRule(contexts: List[RecursionContext], rule0: TypeMatchRule, pos: ApplyPosition)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): TypeMatchRule = {
-    val e = visitExp(contexts, rule0.exp, pos)
-    rule0.copy(exp = e)
-  }
 
   /** Visits a restrictable choose rule. */
   private def visitRestrictableChooseRule(contexts: List[RecursionContext], rule0: RestrictableChooseRule, pos: ApplyPosition)(implicit lctx: LocalContext, sctx: SharedContext, root: Root): RestrictableChooseRule = {
