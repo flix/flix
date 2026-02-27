@@ -90,6 +90,9 @@ object PatMatchError {
       sym.name + args.map(formatPattern).mkString("(", ", ", ")")
     case WitnessPattern.Tuple(elms) =>
       elms.map(formatPattern).mkString("(", ", ", ")")
+    case WitnessPattern.Record(fields) =>
+      if (fields.isEmpty) "{ }"
+      else fields.map { case (name, p) => s"$name = ${formatPattern(p)}" }.mkString("{ ", ", ", " }")
   }
 
 }

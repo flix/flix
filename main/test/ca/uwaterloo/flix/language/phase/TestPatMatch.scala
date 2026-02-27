@@ -652,4 +652,101 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
     expectError[PatMatchError.RedundantPattern](result)
   }
 
+  test("Redundant.Record.02") {
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = true } => true
+        |    case { x = false } => false
+        |    case { x = _ } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  // --- H. Record Pattern Tests ---
+
+  test("Record.NonExhaustive.01") {
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = true } => true
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.02") {
+    val input =
+      """def f(): Bool = match { x = true, y = false } {
+        |    case { x = true, y = _ } => true
+        |    case { x = false, y = true } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.Exhaustive.01") {
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = true } => true
+        |    case { x = false } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.Exhaustive.02") {
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = _ } => true
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.Exhaustive.03") {
+    // Different field orders should still be exhaustive together.
+    val input =
+      """def f(): Bool = match { a = true, b = false } {
+        |    case { a = true, b = _ } => true
+        |    case { b = _, a = false } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.Exhaustive.04") {
+    // Nested record with enum field.
+    val input =
+      """enum Color {
+        |    case Red,
+        |    case Blu
+        |}
+        |
+        |def f(x: {c = Color}): Bool = match x {
+        |    case { c = Color.Red } => true
+        |    case { c = Color.Blu } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.Exhaustive.05") {
+    // Extension patterns should be exhaustive.
+    val input =
+      """def f(r: {a = Bool | _}): Bool = match r {
+        |    case { a = true | _ } => true
+        |    case { a = false | _ } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
 }
