@@ -32,6 +32,9 @@ object PatMatchError {
 
   /**
     * An error raised to indicate a non-exhaustive pattern match expression.
+    *
+    * @param pat the witness pattern that is not covered.
+    * @param loc the location of the match expression.
     */
   case class NonExhaustiveMatch(pat: WitnessPattern, loc: SourceLocation) extends PatMatchError {
     def code: ErrorCode = ErrorCode.E5952
