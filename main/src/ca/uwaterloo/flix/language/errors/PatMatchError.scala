@@ -61,8 +61,6 @@ object PatMatchError {
       s""">> ${red("Redundant pattern.")}
          |
          |${highlight(loc, "unreachable case", fmt)}
-         |
-         |${underline("Explanation:")} Remove this case, or move it before the patterns that already cover it.
          |""".stripMargin
     }
   }
