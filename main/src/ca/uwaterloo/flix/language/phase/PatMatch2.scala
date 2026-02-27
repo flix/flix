@@ -626,7 +626,7 @@ object PatMatch2 {
     * Recursively visits all sub-expressions of `tast`, checking `Match` and
     * `ParYield` expressions for exhaustiveness and redundancy.
     *
-    * `RestrictableChoose` and `ExtMatch` are skipped per requirement (f).
+    * `RestrictableChoose` and `ExtMatch` are not checked.
     */
   private def visitExp(tast: Expr)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = {
     tast match {
