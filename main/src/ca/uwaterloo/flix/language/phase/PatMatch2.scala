@@ -44,9 +44,9 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   * if there exists a value matched by `q` but not by any row of `P`.
   *
   * - **Exhaustiveness**: the wildcard vector `(_, ..., _)` is useful w.r.t.
-  *   the matrix of all unguarded rules => the match is non-exhaustive.
+  * the matrix of all unguarded rules => the match is non-exhaustive.
   * - **Redundancy**: rule `i` is redundant if its pattern is NOT useful w.r.t.
-  *   the matrix of all preceding unguarded rules.
+  * the matrix of all preceding unguarded rules.
   */
 object PatMatch2 {
 
@@ -119,10 +119,10 @@ object PatMatch2 {
     * }}}
     */
   private def isWildcard(pat: Pattern): Boolean = pat match {
-    case _: Pattern.Wild   => true
-    case _: Pattern.Var    => true
-    case _: Pattern.Error  => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
-    case _                 => false
+    case Pattern.Wild(_, _) => true
+    case Pattern.Var(_, _, _) => true
+    case Pattern.Error(_, _) => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
+    case _ => false
   }
 
   /**
@@ -133,13 +133,13 @@ object PatMatch2 {
     * broken patterns, so we use this predicate to skip the entire match.
     */
   private def hasError(pat: Pattern): Boolean = pat match {
-    case _: Pattern.Error                => true
-    case _: Pattern.Wild                 => false
-    case _: Pattern.Var                  => false
-    case _: Pattern.Cst                  => false
-    case Pattern.Tag(_, pats, _, _)      => pats.exists(hasError)
-    case Pattern.Tuple(pats, _, _)       => pats.exists(hasError)
-    case Pattern.Record(pats, pat, _, _) => pats.exists(rlp => hasError(rlp.pat)) || hasError(pat)
+    case Pattern.Error(_, _) => true
+    case Pattern.Wild(_, _) => false
+    case Pattern.Var(_, _, _) => false
+    case Pattern.Cst(_, _, _) => false
+    case Pattern.Tag(_, pats, _, _) => pats.exists(hasError)
+    case Pattern.Tuple(pats, _, _) => pats.exists(hasError)
+    case Pattern.Record(pats, p, _, _) => pats.exists(rlp => hasError(rlp.pat)) || hasError(p)
   }
 
   /**
@@ -160,10 +160,10 @@ object PatMatch2 {
     * }}}
     */
   private def patternArity(pat: Pattern): Int = pat match {
-    case _: Pattern.Wild                => 0
-    case _: Pattern.Var                 => 0
-    case _: Pattern.Error               => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
-    case _: Pattern.Cst                 => 0
+    case Pattern.Wild(_, _)             => 0
+    case Pattern.Var(_, _, _)           => 0
+    case Pattern.Error(_, _)            => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
+    case Pattern.Cst(_, _, _)           => 0
     case Pattern.Tag(_, pats, _, _)     => pats.length
     case Pattern.Tuple(pats, _, _)      => pats.length
     case Pattern.Record(pats, _, _, _)  => pats.length
@@ -189,10 +189,10 @@ object PatMatch2 {
     */
   private def sameConstructor(p1: Pattern, p2: Pattern): Boolean = (p1, p2) match {
     case (Pattern.Tag(CaseSymUse(s1, _), _, _, _), Pattern.Tag(CaseSymUse(s2, _), _, _, _)) => s1 == s2
-    case (_: Pattern.Tuple, _: Pattern.Tuple)       => true
-    case (_: Pattern.Record, _: Pattern.Record)     => true
+    case (Pattern.Tuple(_, _, _), Pattern.Tuple(_, _, _)) => true
+    case (Pattern.Record(_, _, _, _), Pattern.Record(_, _, _, _)) => true
     case (Pattern.Cst(c1, _, _), Pattern.Cst(c2, _, _)) => c1 == c2
-    case _                                          => false
+    case _ => false
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -296,7 +296,7 @@ object PatMatch2 {
       val canonicalLabels = computeCanonicalLabels(allRecords)
       val canonical = mkCanonicalRecord(canonicalLabels, allRecords.head)
       raw.map {
-        case _: Pattern.Record => canonical
+        case Pattern.Record(_, _, _, _) => canonical
         case other => other
       }
     } else {
@@ -342,13 +342,13 @@ object PatMatch2 {
       } else if (sameConstructor(ctor, head)) {
         // Same constructor: extract sub-patterns
         head match {
-          case Pattern.Tag(_, pats, _, _)    => Some(pats ::: tail)
-          case Pattern.Tuple(pats, _, _)     => Some(pats.toList ::: tail)
-          case _: Pattern.Cst               => Some(tail)
-          case rec: Pattern.Record =>
+          case Pattern.Tag(_, pats, _, _) => Some(pats ::: tail)
+          case Pattern.Tuple(pats, _, _) => Some(pats.toList ::: tail)
+          case Pattern.Cst(_, _, _) => Some(tail)
+          case rec @ Pattern.Record(_, _, _, _) =>
             val canonicalLabels = recordPatsToCanonicalKeys(ctor.asInstanceOf[Pattern.Record].pats)
             Some(normalizeRecordPats(rec, canonicalLabels) ::: tail)
-          case _                            => None
+          case _ => None
         }
       } else {
         None
@@ -375,13 +375,13 @@ object PatMatch2 {
       Some(List.fill(arity)(head) ::: tail)
     } else if (sameConstructor(ctor, head)) {
       head match {
-        case Pattern.Tag(_, pats, _, _)    => Some(pats ::: tail)
-        case Pattern.Tuple(pats, _, _)     => Some(pats.toList ::: tail)
-        case _: Pattern.Cst               => Some(tail)
-        case rec: Pattern.Record =>
+        case Pattern.Tag(_, pats, _, _) => Some(pats ::: tail)
+        case Pattern.Tuple(pats, _, _) => Some(pats.toList ::: tail)
+        case Pattern.Cst(_, _, _) => Some(tail)
+        case rec @ Pattern.Record(_, _, _, _) =>
           val canonicalLabels = recordPatsToCanonicalKeys(ctor.asInstanceOf[Pattern.Record].pats)
           Some(normalizeRecordPats(rec, canonicalLabels) ::: tail)
-        case _                            => None
+        case _ => None
       }
     } else {
       None
@@ -440,15 +440,15 @@ object PatMatch2 {
         })
 
       // Tuple: always complete (single constructor)
-      case _: Pattern.Tuple => true
+      case Pattern.Tuple(_, _, _) => true
 
       // Record: always complete (single constructor)
-      case _: Pattern.Record => true
+      case Pattern.Record(_, _, _, _) => true
 
       // Bool: need both true and false
       case Pattern.Cst(Constant.Bool(_), _, _) =>
         sigma.exists { case Pattern.Cst(Constant.Bool(true), _, _) => true; case _ => false } &&
-        sigma.exists { case Pattern.Cst(Constant.Bool(false), _, _) => true; case _ => false }
+          sigma.exists { case Pattern.Cst(Constant.Bool(false), _, _) => true; case _ => false }
 
       // Unit: just need Unit
       case Pattern.Cst(Constant.Unit, _, _) => true
@@ -457,7 +457,7 @@ object PatMatch2 {
       case Pattern.Cst(Constant.RecordEmpty, _, _) => true
 
       // Other constants (Char, Int*, Float*, BigInt, String): never complete
-      case _: Pattern.Cst => false
+      case Pattern.Cst(_, _, _) => false
 
       // Anything else: not complete
       case _ => false
@@ -539,17 +539,6 @@ object PatMatch2 {
           val specQ = specializeVector(ctor, q).get
           isUseful(specMatrix, specQ, root)
         } else {
-          // Constructor not in sigma — check against default matrix
-          // with the sub-patterns of q prepended
-          val arity = patternArity(qHead)
-          val defMatrix = computeDefaultMatrix(matrix)
-          val subPats = qHead match {
-            case Pattern.Tag(_, pats, _, _) => pats
-            case Pattern.Tuple(pats, _, _) => pats.toList
-            case _: Pattern.Cst => Nil
-            case _ => Nil
-          }
-          val defQ = subPats ::: q.tail
           // The default matrix width is matrix.width - 1, but defQ has length arity + (q.length - 1)
           // We need to expand the default matrix rows to account for the arity.
           // Actually, for an incomplete signature with a constructor not in sigma,
@@ -631,13 +620,13 @@ object PatMatch2 {
     */
   private def buildWitnessHead(ctor: Pattern, args: List[WitnessPattern]): WitnessPattern = ctor match {
     case Pattern.Tag(CaseSymUse(sym, _), _, _, _) => WitnessPattern.Tag(sym, args)
-    case _: Pattern.Tuple                         => WitnessPattern.Tuple(args)
-    case rec: Pattern.Record =>
+    case Pattern.Tuple(_, _, _) => WitnessPattern.Tuple(args)
+    case rec @ Pattern.Record(_, _, _, _) =>
       val keys = recordPatsToCanonicalKeys(rec.pats)
       val fields = keys.zip(args).map { case ((name, _), wp) => (name, wp) }
       WitnessPattern.Record(fields)
-    case Pattern.Cst(cst, _, _)                   => WitnessPattern.Literal(cst)
-    case _                                        => WitnessPattern.Wildcard
+    case Pattern.Cst(cst, _, _) => WitnessPattern.Literal(cst)
+    case _ => WitnessPattern.Wildcard
   }
 
   /**
