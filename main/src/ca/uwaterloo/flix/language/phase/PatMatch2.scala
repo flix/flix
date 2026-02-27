@@ -164,18 +164,18 @@ object PatMatch2 {
   private def patternArity(pat: Pattern): Int = pat match {
     case Pattern.Wild(_, _)             => 0
     case Pattern.Var(_, _, _)           => 0
-    case Pattern.Error(_, _)            => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
     case Pattern.Cst(_, _, _)           => 0
     case Pattern.Tag(_, pats, _, _)     => pats.length
     case Pattern.Tuple(pats, _, _)      => pats.length
     case Pattern.Record(pats, _, _, _)  => pats.length
+    case Pattern.Error(_, _)            => throw InternalCompilerException("unexpected Pattern.Error", pat.loc)
   }
 
   /**
     * Returns `true` if two constructor patterns represent the same constructor.
     *
     * - Two `Tag` patterns are the same if they share the same `CaseSym`.
-    * - Two `Tuple` patterns are always the same (single constructor).
+    * - Two `Tuple` patterns are the same if they have the same arity.
     * - Two `Cst` patterns are the same if the constants are equal.
     * - All other combinations are different.
     *
@@ -191,9 +191,12 @@ object PatMatch2 {
     */
   private def sameConstructor(p1: Pattern, p2: Pattern): Boolean = (p1, p2) match {
     case (Pattern.Tag(CaseSymUse(s1, _), _, _, _), Pattern.Tag(CaseSymUse(s2, _), _, _, _)) => s1 == s2
-    case (Pattern.Tuple(_, _, _), Pattern.Tuple(_, _, _)) => true
+    case (Pattern.Tuple(pats1, _, _), Pattern.Tuple(pats2, _, _)) => pats1.length == pats2.length
     case (Pattern.Record(_, _, _, _), Pattern.Record(_, _, _, _)) => true
     case (Pattern.Cst(c1, _, _), Pattern.Cst(c2, _, _)) => c1 == c2
+    case (Pattern.Wild(_, _), _) | (_, Pattern.Wild(_, _)) => throw InternalCompilerException("unexpected wildcard-like pattern in sameConstructor", p1.loc)
+    case (Pattern.Var(_, _, _), _) | (_, Pattern.Var(_, _, _)) => throw InternalCompilerException("unexpected wildcard-like pattern in sameConstructor", p1.loc)
+    case (Pattern.Error(_, _), _) | (_, Pattern.Error(_, _)) => throw InternalCompilerException("unexpected wildcard-like pattern in sameConstructor", p1.loc)
     case _ => false
   }
 
