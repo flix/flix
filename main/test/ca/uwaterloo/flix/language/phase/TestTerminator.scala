@@ -15,9 +15,9 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Recursive call with unchanged argument: f(x) calls f(x)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32]): Int32 = f(x)
+        |def f(x: List[Int32]): Int32 = f(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[NonStructuralRecursion](result)
@@ -27,11 +27,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Recursive call with a completely unrelated argument (wrapping in Cons)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32]): Int32 = match x {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(_, xs) => f(MyList.Cons(1, xs))
+        |def f(x: List[Int32]): Int32 = match x {
+        |    case List.Nil         => 0
+        |    case List.Cons(_, xs) => f(List.Cons(1, xs))
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -42,9 +42,9 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Recursive call outside of any pattern match
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32]): Int32 =
+        |def f(x: List[Int32]): Int32 =
         |    if (true) 0 else f(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -55,10 +55,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Recursive call uses the whole scrutinee via top-level Var, not a sub-pattern
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32]): Int32 = match x {
-        |    case MyList.Nil => 0
+        |def f(x: List[Int32]): Int32 = match x {
+        |    case List.Nil => 0
         |    case y          => f(y)
         |}
       """.stripMargin
@@ -70,11 +70,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Tuple scrutinee but recursive call passes original params, not sub-patterns
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(l1: MyList[Int32], l2: MyList[Int32]): Int32 = match (l1, l2) {
-        |    case (MyList.Nil, _)                          => 0
-        |    case (MyList.Cons(_, xs), MyList.Cons(_, ys)) => f(l1, l2)
+        |def f(l1: List[Int32], l2: List[Int32]): Int32 = match (l1, l2) {
+        |    case (List.Nil, _)                          => 0
+        |    case (List.Cons(_, xs), List.Cons(_, ys)) => f(l1, l2)
         |    case _                                         => 0
         |}
       """.stripMargin
@@ -86,11 +86,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Tuple scrutinee: passes a sub of l1 but in l2's position, and l1's position gets l2
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(l1: MyList[Int32], l2: MyList[Int32]): Int32 = match (l1, l2) {
-        |    case (MyList.Nil, _)                          => 0
-        |    case (MyList.Cons(_, xs), MyList.Cons(_, ys)) => f(l2, xs)
+        |def f(l1: List[Int32], l2: List[Int32]): Int32 = match (l1, l2) {
+        |    case (List.Nil, _)                          => 0
+        |    case (List.Cons(_, xs), List.Cons(_, ys)) => f(l2, xs)
         |    case _                                         => 0
         |}
       """.stripMargin
@@ -102,12 +102,12 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Recursive call with a variable not derived from any formal parameter
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32]): Int32 = match x {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(_, _)  =>
-        |        let y = MyList.Nil;
+        |def f(x: List[Int32]): Int32 = match x {
+        |    case List.Nil         => 0
+        |    case List.Cons(_, _)  =>
+        |        let y = List.Nil;
         |        f(y)
         |}
       """.stripMargin
@@ -119,11 +119,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Recursive call with a non-variable expression (ArgStatus.NotAVariable)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32]): Int32 = match x {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(_, xs) => f(MyList.Nil)
+        |def f(x: List[Int32]): Int32 = match x {
+        |    case List.Nil         => 0
+        |    case List.Cons(_, xs) => f(List.Nil)
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -134,11 +134,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Strict sub of wrong param: xs is sub of x, passed in y's position; y passed in x's position
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32], y: MyList[Int32]): Int32 = match x {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(_, xs) => f(y, xs)
+        |def f(x: List[Int32], y: List[Int32]): Int32 = match x {
+        |    case List.Nil         => 0
+        |    case List.Cons(_, xs) => f(y, xs)
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -153,10 +153,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Enum with recursive type in negative position (left of arrow)
     val input =
       """
-        |enum Bad { case MkBad(Bad -> Int32) }
+        |enum E { case MkE(E -> Int32) }
         |@Terminates
-        |def f(x: Bad): Int32 = match x {
-        |    case Bad.MkBad(_) => 0
+        |def f(x: E): Int32 = match x {
+        |    case E.MkE(_) => 0
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -167,10 +167,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Polymorphic enum with type param in negative position
     val input =
       """
-        |enum Neg[a] { case MkNeg(Neg[a] -> a) }
+        |enum E[a] { case MkE(E[a] -> a) }
         |@Terminates
-        |def f(x: Neg[Int32]): Int32 = match x {
-        |    case Neg.MkNeg(_) => 0
+        |def f(x: E[Int32]): Int32 = match x {
+        |    case E.MkE(_) => 0
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -185,10 +185,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // (negative of negative = positive). Let's use a simpler case.
     val input =
       """
-        |enum Tricky { case MkTricky(Tricky -> Int32) }
+        |enum E { case MkE(E -> Int32) }
         |@Terminates
-        |def f(x: Tricky): Int32 = match x {
-        |    case Tricky.MkTricky(_) => 0
+        |def f(x: E): Int32 = match x {
+        |    case E.MkE(_) => 0
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -199,13 +199,13 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Non-strictly-positive type on a local def parameter
     val input =
       """
-        |enum Bad { case MkBad(Bad -> Int32) }
+        |enum E { case MkE(E -> Int32) }
         |@Terminates
         |def f(x: Int32): Int32 =
-        |    def loop(b: Bad): Int32 = match b {
-        |        case Bad.MkBad(_) => 0
+        |    def loop(b: E): Int32 = match b {
+        |        case E.MkE(_) => 0
         |    };
-        |    loop(Bad.MkBad(_ -> 0))
+        |    loop(E.MkE(_ -> 0))
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[NonStrictlyPositiveType](result)
@@ -215,14 +215,14 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Non-strictly-positive type on an instance def parameter
     val input =
       """
-        |enum Bad { case MkBad(Bad -> Int32) }
+        |enum E { case MkE(E -> Int32) }
         |trait Baz[a] {
         |    pub def baz(x: a): Int32
         |}
-        |instance Baz[Bad] {
+        |instance Baz[E] {
         |    @Terminates
-        |    pub def baz(x: Bad): Int32 = match x {
-        |        case Bad.MkBad(_) => 0
+        |    pub def baz(x: E): Int32 = match x {
+        |        case E.MkE(_) => 0
         |    }
         |}
       """.stripMargin
@@ -318,10 +318,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Trait default impl with non-structural self-recursion
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |trait Foo[a] {
         |    @Terminates
-        |    pub def foo(x: MyList[a]): Int32 = Foo.foo(x)
+        |    pub def foo(x: List[a]): Int32 = Foo.foo(x)
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -345,11 +345,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Trait default impl with non-strictly positive type
     val input =
       """
-        |enum Bad { case MkBad(Bad -> Int32) }
+        |enum E { case MkE(E -> Int32) }
         |trait Baz[a] {
         |    @Terminates
-        |    pub def baz(x: Bad): Int32 = match x {
-        |        case Bad.MkBad(_) => 0
+        |    pub def baz(x: E): Int32 = match x {
+        |        case E.MkE(_) => 0
         |    }
         |}
       """.stripMargin
@@ -365,10 +365,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Local def with infinite recursion: loop(ll, acc) = loop(ll, acc + 1)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |pub def evil(l: MyList[Int32]): Int32 =
-        |    def loop(ll: MyList[Int32], acc: Int32): Int32 = loop(ll, acc + 1);
+        |pub def f(l: List[Int32]): Int32 =
+        |    def loop(ll: List[Int32], acc: Int32): Int32 = loop(ll, acc + 1);
         |    loop(l, 0)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -379,12 +379,12 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Local def passes alias, not strict sub: let y = ll; loop(y)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |pub def bad(l: MyList[Int32]): Int32 =
-        |    def loop(ll: MyList[Int32]): Int32 = match ll {
-        |        case MyList.Nil         => 0
-        |        case MyList.Cons(_, xs) =>
+        |pub def f(l: List[Int32]): Int32 =
+        |    def loop(ll: List[Int32]): Int32 = match ll {
+        |        case List.Nil         => 0
+        |        case List.Cons(_, xs) =>
         |            let y = ll;
         |            loop(y)
         |    };
@@ -398,10 +398,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Local def calls itself with unchanged arg: helper(ll) = helper(ll)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |pub def bad2(l: MyList[Int32]): Int32 =
-        |    def helper(ll: MyList[Int32]): Int32 = helper(ll);
+        |pub def f(l: List[Int32]): Int32 =
+        |    def helper(ll: List[Int32]): Int32 = helper(ll);
         |    helper(l)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -412,10 +412,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Local def calls outer function with its own param (untracked in outer env)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32]): Int32 =
-        |    def loop(ll: MyList[Int32]): Int32 = f(ll);
+        |def f(x: List[Int32]): Int32 =
+        |    def loop(ll: List[Int32]): Int32 = f(ll);
         |    loop(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -426,11 +426,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Deeply nested local def calls outermost function non-structurally
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(x: MyList[Int32]): Int32 =
-        |    def g(y: MyList[Int32]): Int32 =
-        |        def h(z: MyList[Int32]): Int32 = f(z);
+        |def f(x: List[Int32]): Int32 =
+        |    def g(y: List[Int32]): Int32 =
+        |        def h(z: List[Int32]): Int32 = f(z);
         |        h(y);
         |    g(x)
       """.stripMargin
@@ -443,7 +443,7 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     val input =
       """
         |@Terminates
-        |pub def badUnsafe(): Int32 =
+        |pub def f(): Int32 =
         |    def helper(): Int32 = unsafe 42;
         |    helper()
       """.stripMargin
@@ -459,13 +459,13 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Instance def with non-structural self-recursion
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |trait Foo[a] {
-        |    pub def foo(x: MyList[a]): Int32
+        |    pub def foo(x: List[a]): Int32
         |}
         |instance Foo[Int32] {
         |    @Terminates
-        |    pub def foo(x: MyList[Int32]): Int32 = Foo.foo(x)
+        |    pub def foo(x: List[Int32]): Int32 = Foo.foo(x)
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -508,12 +508,12 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Calling a non-@Terminates def inside a match branch
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |def helper(x: Int32): Int32 = x * 2
         |@Terminates
-        |def f(l: MyList[Int32]): Int32 = match l {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(x, xs) => helper(x) + f(xs)
+        |def f(l: List[Int32]): Int32 = match l {
+        |    case List.Nil         => 0
+        |    case List.Cons(x, xs) => helper(x) + f(xs)
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -552,11 +552,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
   // =========================================================================
 
   test("NonStructuralRecursion.TypeAlias.01") {
-    // Type alias for MyList; non-structural recursive call f(x)
+    // Type alias for List; non-structural recursive call f(x)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |type alias ML = MyList[Int32]
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
+        |type alias ML = List[Int32]
         |@Terminates
         |def f(x: ML): Int32 = f(x)
       """.stripMargin
@@ -568,11 +568,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Non-strictly-positive enum behind a type alias
     val input =
       """
-        |enum Bad { case MkBad(Bad -> Int32) }
-        |type alias BadAlias = Bad
+        |enum E { case MkE(E -> Int32) }
+        |type alias EA = E
         |@Terminates
-        |def f(x: BadAlias): Int32 = match x {
-        |    case Bad.MkBad(_) => 0
+        |def f(x: EA): Int32 = match x {
+        |    case E.MkE(_) => 0
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -583,12 +583,12 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Parameterized type alias; recursive call passes original param instead of substructure
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |type alias ML[a] = MyList[a]
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
+        |type alias ML[a] = List[a]
         |@Terminates
         |def f(x: ML[Int32]): Int32 = match x {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(_, xs) => f(x)
+        |    case List.Nil         => 0
+        |    case List.Cons(_, xs) => f(x)
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -603,11 +603,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Self-call used as operand in addition: f(xs) + 1
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Tailrec
-        |def f(x: MyList[Int32]): Int32 = match x {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(_, xs) => f(xs) + 1
+        |def f(x: List[Int32]): Int32 = match x {
+        |    case List.Nil         => 0
+        |    case List.Cons(_, xs) => f(xs) + 1
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -631,11 +631,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Self-call in let binding (not tail)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Tailrec
-        |def f(x: MyList[Int32]): Int32 = match x {
-        |    case MyList.Nil         => 0
-        |    case MyList.Cons(_, xs) =>
+        |def f(x: List[Int32]): Int32 = match x {
+        |    case List.Nil         => 0
+        |    case List.Cons(_, xs) =>
         |        let r = f(xs);
         |        r
         |}
@@ -648,11 +648,11 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Self-call in both branches of if, but wrapped in Cons (not tail)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Tailrec
-        |def f(x: MyList[Int32]): MyList[Int32] = match x {
-        |    case MyList.Nil         => MyList.Nil
-        |    case MyList.Cons(_, xs) => MyList.Cons(0, f(xs))
+        |def f(x: List[Int32]): List[Int32] = match x {
+        |    case List.Nil         => List.Nil
+        |    case List.Cons(_, xs) => List.Cons(0, f(xs))
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -682,12 +682,12 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // @Tailrec local def with non-tail self-call (operand of +)
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |def f(l: MyList[Int32]): Int32 = {
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
+        |def f(l: List[Int32]): Int32 = {
         |    @Tailrec
-        |    def loop(ll: MyList[Int32]): Int32 = match ll {
-        |        case MyList.Nil         => 0
-        |        case MyList.Cons(_, xs) => loop(xs) + 1
+        |    def loop(ll: List[Int32]): Int32 = match ll {
+        |        case List.Nil         => 0
+        |        case List.Cons(_, xs) => loop(xs) + 1
         |    };
         |    loop(l)
         |}
@@ -700,12 +700,12 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // @Tailrec local def with self-call in let binding
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |def f(l: MyList[Int32]): Int32 = {
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
+        |def f(l: List[Int32]): Int32 = {
         |    @Tailrec
-        |    def loop(ll: MyList[Int32]): Int32 = match ll {
-        |        case MyList.Nil         => 0
-        |        case MyList.Cons(_, xs) =>
+        |    def loop(ll: List[Int32]): Int32 = match ll {
+        |        case List.Nil         => 0
+        |        case List.Cons(_, xs) =>
         |            let r = loop(xs);
         |            r
         |    };
@@ -720,13 +720,13 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // @Tailrec @Terminates local def with non-tail self-call
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Terminates
-        |def f(l: MyList[Int32]): Int32 = {
+        |def f(l: List[Int32]): Int32 = {
         |    @Tailrec @Terminates
-        |    def loop(ll: MyList[Int32]): Int32 = match ll {
-        |        case MyList.Nil         => 0
-        |        case MyList.Cons(_, xs) => loop(xs) + 1
+        |    def loop(ll: List[Int32]): Int32 = match ll {
+        |        case List.Nil         => 0
+        |        case List.Cons(_, xs) => loop(xs) + 1
         |    };
         |    loop(l)
         |}
@@ -743,10 +743,10 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Standalone @Terminates local def with non-structural recursion
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |def f(l: MyList[Int32]): Int32 = {
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
+        |def f(l: List[Int32]): Int32 = {
         |    @Terminates
-        |    def loop(ll: MyList[Int32]): Int32 = loop(ll);
+        |    def loop(ll: List[Int32]): Int32 = loop(ll);
         |    loop(l)
         |}
       """.stripMargin
@@ -758,12 +758,12 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // Standalone @Terminates local def with unsafe
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
-        |def f(l: MyList[Int32]): Int32 = {
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
+        |def f(l: List[Int32]): Int32 = {
         |    @Terminates
-        |    def loop(ll: MyList[Int32]): Int32 = match ll {
-        |        case MyList.Nil         => 0
-        |        case MyList.Cons(_, xs) => unsafe { loop(xs) + 1 }
+        |    def loop(ll: List[Int32]): Int32 = match ll {
+        |        case List.Nil         => 0
+        |        case List.Cons(_, xs) => unsafe { loop(xs) + 1 }
         |    };
         |    loop(l)
         |}
@@ -791,12 +791,12 @@ class TestTerminator extends AnyFunSuite with TestUtils {
     // @Tailrec on a function that only delegates to an inner loop
     val input =
       """
-        |enum MyList[a] { case Nil, case Cons(a, MyList[a]) }
+        |enum List[a] { case Nil, case Cons(a, List[a]) }
         |@Tailrec
-        |def f(l: MyList[Int32]): Int32 = {
-        |    def loop(ll: MyList[Int32], acc: Int32): Int32 = match ll {
-        |        case MyList.Nil         => acc
-        |        case MyList.Cons(_, xs) => loop(xs, acc + 1)
+        |def f(l: List[Int32]): Int32 = {
+        |    def loop(ll: List[Int32], acc: Int32): Int32 = match ll {
+        |        case List.Nil         => acc
+        |        case List.Cons(_, xs) => loop(xs, acc + 1)
         |    };
         |    loop(l, 0)
         |}
