@@ -641,32 +641,12 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
     rejectError[PatMatchError.RedundantPattern](result)
   }
 
-  test("Redundant.Record.01") {
-    val input =
-      """def f(): Bool = match { x = true } {
-        |    case { x = _ } => true
-        |    case { x = _ } => false
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[PatMatchError.RedundantPattern](result)
-  }
-
-  test("Redundant.Record.02") {
-    val input =
-      """def f(): Bool = match { x = true } {
-        |    case { x = true } => true
-        |    case { x = false } => false
-        |    case { x = _ } => false
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[PatMatchError.RedundantPattern](result)
-  }
-
   // --- H. Record Pattern Tests ---
 
+  // H.1 Non-Exhaustive
+
   test("Record.NonExhaustive.01") {
+    // Single Bool field, one case missing.
     val input =
       """def f(): Bool = match { x = true } {
         |    case { x = true } => true
@@ -677,6 +657,36 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   }
 
   test("Record.NonExhaustive.02") {
+    // Single Int32 field (infinite type), one constant.
+    val input =
+      """
+        |def f(): Bool = match { x = 1 } {
+        |    case { x = 1 } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.03") {
+    // Single enum field, one case missing.
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = A.A } {
+        |    case { x = A.A } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.04") {
+    // Multi-field Bool, one field incomplete.
     val input =
       """def f(): Bool = match { x = true, y = false } {
         |    case { x = true, y = _ } => true
@@ -687,7 +697,86 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
     expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
+  test("Record.NonExhaustive.05") {
+    // Mixed Unit (complete) + Int32 (infinite) fields.
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = () } {
+        |    case { x = 1, y = () } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.06") {
+    // Extension pattern with non-exhaustive Int32 field.
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = () } {
+        |    case { x = 1 | _ } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.07") {
+    // Extension pattern with enum non-exhaustiveness.
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = A.A, y = A.B } {
+        |    case { x = A.A | _ } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.08") {
+    // Deeply nested records.
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
+        |    case { x = { x = { }, y = A.A }, y = A.B } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.09") {
+    // Duplicate labels — exercises CanonicalKey (name, idx) system.
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { a = A.A, a = A.B } {
+        |    case { a = A.A, a = A.A } => true
+        |    case { a = A.B, a = A.A } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  // H.2 Exhaustive (no false positive)
+
   test("Record.Exhaustive.01") {
+    // Single Bool field, both cases covered.
     val input =
       """def f(): Bool = match { x = true } {
         |    case { x = true } => true
@@ -699,6 +788,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   }
 
   test("Record.Exhaustive.02") {
+    // Single Bool field, wildcard covers all.
     val input =
       """def f(): Bool = match { x = true } {
         |    case { x = _ } => true
@@ -709,19 +799,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   }
 
   test("Record.Exhaustive.03") {
-    // Different field orders should still be exhaustive together.
-    val input =
-      """def f(): Bool = match { a = true, b = false } {
-        |    case { a = true, b = _ } => true
-        |    case { b = _, a = false } => false
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    rejectError[PatMatchError.NonExhaustiveMatch](result)
-  }
-
-  test("Record.Exhaustive.04") {
-    // Nested record with enum field.
+    // Enum field, all cases covered.
     val input =
       """enum Color {
         |    case Red,
@@ -731,6 +809,18 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |def f(x: {c = Color}): Bool = match x {
         |    case { c = Color.Red } => true
         |    case { c = Color.Blu } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.Exhaustive.04") {
+    // Different field orders should still be exhaustive together.
+    val input =
+      """def f(): Bool = match { a = true, b = false } {
+        |    case { a = true, b = _ } => true
+        |    case { b = _, a = false } => false
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
@@ -747,6 +837,33 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     rejectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  // H.3 Redundant
+
+  test("Record.Redundant.01") {
+    // Wildcard followed by wildcard.
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = _ } => true
+        |    case { x = _ } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Record.Redundant.02") {
+    // Bool complete, then wildcard is redundant.
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = true } => true
+        |    case { x = false } => false
+        |    case { x = _ } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
   }
 
 }
