@@ -60,11 +60,11 @@ object PatMatchError {
   case class RedundantPattern(coveredBy: SourceLocation, loc: SourceLocation) extends PatMatchError {
     def code: ErrorCode = ErrorCode.E5963
 
-    def summary: String = "Redundant pattern."
+    def summary: String = "Unreachable pattern: already covered by a preceding case."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> ${red("Redundant pattern.")}
+      s""">> ${red("Unreachable pattern: already covered by a preceding case.")}
          |
          |${highlight(loc, "unreachable case", fmt)}
          |
