@@ -96,6 +96,8 @@ object PatMatch2 {
     * }}}
     */
   private case class PatternMatrix(rows: List[List[Pattern]], width: Int) {
+    assert(rows.forall(_.length == width), s"PatternMatrix: expected all rows to have length $width, but got rows of lengths ${rows.map(_.length).distinct.mkString(", ")}")
+
     /** Returns true if the matrix has no rows. */
     def isEmpty: Boolean = rows.isEmpty
   }
