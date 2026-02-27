@@ -916,8 +916,6 @@ object PatMatch2 {
 
       case Expr.Unsafe(exp, _, _, _, _, _) => visitExp(exp)
 
-      case Expr.Without(exp, _, _, _, _) => visitExp(exp)
-
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
