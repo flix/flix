@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
+import ca.uwaterloo.flix.language.errors.PatMatchError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -32,7 +32,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.Char.01") {
@@ -44,7 +44,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.Int8.01") {
@@ -55,7 +55,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.Int16.01") {
@@ -66,7 +66,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.Int32.01") {
@@ -78,7 +78,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.Int64.01") {
@@ -90,7 +90,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.Float32.01") {
@@ -101,7 +101,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.Float64.01") {
@@ -112,7 +112,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.BigInt.01") {
@@ -123,7 +123,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Literal.String.01") {
@@ -135,7 +135,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   // --- B. Enum Patterns ---
@@ -152,7 +152,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Enum.02") {
@@ -169,7 +169,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Enum.03") {
@@ -190,7 +190,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Enum.04") {
@@ -206,7 +206,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Enum.05") {
@@ -222,7 +222,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Enum.06") {
@@ -237,7 +237,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   // --- C. Tuple Patterns ---
@@ -255,7 +255,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Tuple.02") {
@@ -267,7 +267,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Tuple.03") {
@@ -282,196 +282,10 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
-  // --- D. Record Patterns ---
-
-  test("Record.01") {
-    val input =
-      """
-        |def f(): Bool = match { x = 1 } {
-        |    case { x = 1 } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.02") {
-    val input =
-      """
-        |def f(): Bool = match { x = 1, y = () } {
-        |    case { x = 1 | _ } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.03") {
-    val input =
-      """
-        |def f(): Bool = match { x = 1, y = 2 } {
-        |    case { x = 1, y = 2 } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.04") {
-    val input =
-      """
-        |def f(): Bool = match { x = 1, y = 2 } {
-        |    case { x = 1, y = 2 | _ } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.05") {
-    val input =
-      """
-        |def f(): Bool = match { x = 1, y = () } {
-        |    case { x = 1, y = () } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.06") {
-    val input =
-      """
-        |enum A {
-        |    case A,
-        |    case B
-        |}
-        |
-        |def f(): Bool = match { x = A.A } {
-        |    case { x = A.A } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.07") {
-    val input =
-      """
-        |enum A {
-        |    case A,
-        |    case B
-        |}
-        |
-        |def f(): Bool = match { x = A.A, y = A.B } {
-        |    case { x = A.A | _ } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.08") {
-    val input =
-      """
-        |enum A {
-        |    case A,
-        |    case B
-        |}
-        |
-        |def f(): Bool = match { x = A.A, y = A.B } {
-        |    case { x = A.A, y = A.B } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.09") {
-    val input =
-      """
-        |enum A {
-        |    case A,
-        |    case B
-        |}
-        |
-        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
-        |    case { x = { x = { }, y = A.A }, y = A.B } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.10") {
-    val input =
-      """
-        |enum A {
-        |    case A,
-        |    case B
-        |}
-        |
-        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
-        |    case { x = { x = { }, y = A.A | _ }, y = A.B } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.11") {
-    val input =
-      """
-        |enum A {
-        |    case A,
-        |    case B
-        |}
-        |
-        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
-        |    case { x = { y = A.A | _ }, y = A.B } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.12") {
-    val input =
-      """
-        |enum A {
-        |    case A,
-        |    case B
-        |}
-        |
-        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
-        |    case { x = { x = { } | _ }, y = A.B } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  test("Record.13") {
-    val input =
-      """
-        |enum A {
-        |    case A,
-        |    case B
-        |}
-        |
-        |def f(): Bool = match { a = A.A, a = A.B } {
-        |    case { a = A.A, a = A.A } => true
-        |    case { a = A.B, a = A.A } => true
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
-  }
-
-  // --- E. Guard Patterns ---
+  // --- D. Guard Patterns ---
 
   test("Guard.01") {
     val input =
@@ -487,7 +301,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Guard.02") {
@@ -504,10 +318,10 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
-  // --- F. Nested Match Expressions ---
+  // --- E. Nested Match Expressions ---
 
   test("Nested.01") {
     val input =
@@ -528,7 +342,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Nested.02") {
@@ -545,7 +359,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |    }
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Nested.03") {
@@ -563,7 +377,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Nested.04") {
@@ -582,10 +396,10 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
-  // --- G. Expression Contexts ---
+  // --- F. Expression Contexts ---
 
   test("Context.Instance.01") {
     val input =
@@ -606,7 +420,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Context.Trait.01") {
@@ -624,7 +438,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Context.MatchLambda.01") {
@@ -639,7 +453,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
   }
 
   test("Context.ParYield.01") {
@@ -653,7 +467,337 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |def f(): Int32 = par (E.E1(x) <- if (true) E.E1(1) else E.E2) yield x
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  // --- G. Redundant Pattern Tests ---
+
+  test("Redundant.Wildcard.01") {
+    val input =
+      """def f(x: Int32): Int32 = match x {
+        |    case _ => 1
+        |    case _ => 2
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.Wildcard.02") {
+    val input =
+      """def f(x: Int32): Int32 = match x {
+        |    case _ => 1
+        |    case 42 => 2
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.Bool.01") {
+    val input =
+      """def f(x: Bool): Int32 = match x {
+        |    case true => 1
+        |    case false => 2
+        |    case _ => 3
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.Enum.01") {
+    val input =
+      """enum Color {
+        |    case Red,
+        |    case Blu
+        |}
+        |
+        |def f(x: Color): Int32 = match x {
+        |    case Color.Red => 1
+        |    case Color.Blu => 2
+        |    case _ => 3
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.Enum.02") {
+    val input =
+      """enum Color {
+        |    case Red,
+        |    case Blu
+        |}
+        |
+        |def f(x: Color): Int32 = match x {
+        |    case Color.Red => 1
+        |    case Color.Blu => 2
+        |    case Color.Red => 3
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.Nested.01") {
+    val input =
+      """enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |def f(x: Option[Bool]): Int32 = match x {
+        |    case Option.None => 0
+        |    case Option.Some(true) => 1
+        |    case Option.Some(false) => 2
+        |    case Option.Some(_) => 3
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.Guard.01") {
+    // A guarded rule should NOT make later rules redundant.
+    // Here, the guard on the wildcard means `Color.Red` is still reachable.
+    val input =
+      """enum Color {
+        |    case Red,
+        |    case Blu
+        |}
+        |
+        |def f(x: Color): Int32 = match x {
+        |    case _ if true => 1
+        |    case Color.Red => 2
+        |    case Color.Blu => 3
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.Guard.02") {
+    // A guarded rule IS reported as redundant if its pattern is unreachable.
+    val input =
+      """enum Color {
+        |    case Red,
+        |    case Blu
+        |}
+        |
+        |def f(x: Color): Int32 = match x {
+        |    case Color.Red => 1
+        |    case Color.Blu => 2
+        |    case _ if true => 3
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.Tuple.01") {
+    val input =
+      """def f(x: (Bool, Bool)): Int32 = match x {
+        |    case (true, true) => 1
+        |    case (true, false) => 2
+        |    case (false, true) => 3
+        |    case (false, false) => 4
+        |    case (_, _) => 5
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.NoFalsePositive.01") {
+    // No redundancy: each enum case is distinct.
+    val input =
+      """enum Color {
+        |    case Red,
+        |    case Grn,
+        |    case Blu
+        |}
+        |
+        |def f(x: Color): Int32 = match x {
+        |    case Color.Red => 1
+        |    case Color.Grn => 2
+        |    case Color.Blu => 3
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Redundant.NoFalsePositive.02") {
+    // No redundancy: wildcard is needed for Int32 (infinite type).
+    val input =
+      """def f(x: Int32): Int32 = match x {
+        |    case 1 => 1
+        |    case 2 => 2
+        |    case _ => 3
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.RedundantPattern](result)
+  }
+
+  // --- H. Record Pattern Tests ---
+
+  // H.1 Non-Exhaustive
+
+  test("Record.NonExhaustive.01") {
+    // Single Bool field, one case missing.
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = true } => true
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.02") {
+    // Single Int32 field (infinite type), one constant.
+    val input =
+      """
+        |def f(): Bool = match { x = 1 } {
+        |    case { x = 1 } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.03") {
+    // Single enum field, one case missing.
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = A.A } {
+        |    case { x = A.A } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.04") {
+    // Multi-field Bool, one field incomplete.
+    val input =
+      """def f(): Bool = match { x = true, y = false } {
+        |    case { x = true, y = _ } => true
+        |    case { x = false, y = true } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.05") {
+    // Mixed Unit (complete) + Int32 (infinite) fields.
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = () } {
+        |    case { x = 1, y = () } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.06") {
+    // Extension pattern with non-exhaustive Int32 field.
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = () } {
+        |    case { x = 1 | _ } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.07") {
+    // Extension pattern with enum non-exhaustiveness.
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = A.A, y = A.B } {
+        |    case { x = A.A | _ } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.08") {
+    // Deeply nested records.
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
+        |    case { x = { x = { }, y = A.A }, y = A.B } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  test("Record.NonExhaustive.09") {
+    // Duplicate labels — exercises CanonicalKey (name, idx) system.
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { a = A.A, a = A.B } {
+        |    case { a = A.A, a = A.A } => true
+        |    case { a = A.B, a = A.A } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.NonExhaustiveMatch](result)
+  }
+
+  // H.2 Redundant
+
+  test("Record.Redundant.01") {
+    // Wildcard followed by wildcard.
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = _ } => true
+        |    case { x = _ } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
+  }
+
+  test("Record.Redundant.02") {
+    // Bool complete, then wildcard is redundant.
+    val input =
+      """def f(): Bool = match { x = true } {
+        |    case { x = true } => true
+        |    case { x = false } => false
+        |    case { x = _ } => false
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantPattern](result)
   }
 
 }

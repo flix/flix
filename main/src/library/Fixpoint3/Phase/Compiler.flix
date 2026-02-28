@@ -482,7 +482,6 @@ pub mod Fixpoint3.Phase.Compiler {
             case Guard3(_, _, _, _)       => acc
             case Guard4(_, _, _, _, _)    => acc
             case Guard5(_, _, _, _, _, _) => acc
-            case _                        => acc
         }};
         let res = Vector.foldLeft(innerFunc, Map#{}, body);
         Counter.set(functionalCountBackUp, functionalCounter);
@@ -514,7 +513,6 @@ pub mod Fixpoint3.Phase.Compiler {
     def isImpossible(body: Vector[(BodyPredicate, RowVar)]): Bool =
         Vector.exists(match (atom, _) ->
             match atom {
-                case BodyAtom(_, _, _, _, _)  => false
                 case BodyAtom(_, _, _, _, _)  => false
                 case Functional(_, _, _)      => false
                 case Guard0(f)                =>
