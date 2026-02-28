@@ -51,6 +51,24 @@ pub mod Console {
     import java.lang.System
 
     ///
+    /// Reads a 32-bit integer from the console.
+    ///
+    pub def readInt32(): Option[Int32] \ Console =
+        Console.readln() |> Int32.fromString
+
+    ///
+    /// Reads a 32-bit integer from the console with a prompt.
+    ///
+    /// Repeatedly prints `msg` and reads input until a valid integer in the given range `[start; end)` is entered.
+    ///
+    pub def promptInt32(start: {start = Int32}, end: {end = Int32}, msg: a): Int32 \ Console with ToString[a] =
+        Console.println("${msg}");
+        match readInt32() {
+            case Some(i) if (start#start <= i and i < end#end) => i
+            case _                                             => promptInt32(start, end, msg)
+        }
+
+    ///
     /// Handles the `Console` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
