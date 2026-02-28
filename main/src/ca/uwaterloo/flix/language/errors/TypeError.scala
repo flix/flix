@@ -140,7 +140,7 @@ object TypeError {
         case end :: Nil => s"${magenta(end.name)}"
         case head :: tail => s"${magenta(head.name)}, " + printDefEffSyms(tail)
       }
-      val defString = s"{${magenta(printDefEffSyms(defEffSyms.reverse))}}"
+      val defString = s"{${magenta(printDefEffSyms(defEffSyms))}}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
          |
          |${highlight(loc, s"function declared as '$defString'", fmt)}
