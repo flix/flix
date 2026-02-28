@@ -99,12 +99,11 @@ object PatMatchError {
     case WitnessPattern.Tuple(elms) =>
       elms.map(formatPattern).mkString("(", ", ", ")")
 
-    case WitnessPattern.Record(fields, open) =>
-      val suffix = if (open) " | _" else ""
-      if (fields.isEmpty && !open)
+    case WitnessPattern.Record(fields) =>
+      if (fields.isEmpty)
         "{ }"
       else
-        fields.map { case (name, p) => s"$name = ${formatPattern(p)}" }.mkString("{ ", ", ", s"$suffix }")
+        fields.map { case (name, p) => s"$name = ${formatPattern(p)}" }.mkString("{ ", ", ", " }")
   }
 
 }

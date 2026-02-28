@@ -75,8 +75,8 @@ object PatMatch2 {
     /** A tuple, e.g. `(_, _)`. */
     case class Tuple(elms: List[WitnessPattern]) extends WitnessPattern
 
-    /** A record, e.g. `{ x = _, y = true }` or `{ x = _ | _ }` when open. */
-    case class Record(fields: List[(String, WitnessPattern)], open: Boolean) extends WitnessPattern
+    /** A record, e.g. `{ x = _, y = true }`. */
+    case class Record(fields: List[(String, WitnessPattern)]) extends WitnessPattern
   }
 
   /**
@@ -471,7 +471,7 @@ object PatMatch2 {
     case rec @ Pattern.Record(_, _, _, _) =>
       val keys = recordPatsToCanonicalKeys(rec.pats)
       val fields = keys.zip(args).map { case ((name, _), wp) => (name, wp) }
-      WitnessPattern.Record(fields, open = false)
+      WitnessPattern.Record(fields)
     case Pattern.Cst(cst, _, _) => WitnessPattern.Literal(cst)
     case _ => WitnessPattern.Wildcard
   }
