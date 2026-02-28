@@ -502,10 +502,10 @@ class Flix {
             val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
             errors ++= typeErrors
 
-            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
-            errors ++= entryPointErrors
+//            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
+//            errors ++= entryPointErrors
 
-            val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+            val (afterInstances, instanceErrors) = Instances.run(afterTyper, cachedTyperAst, changeSet)
             errors ++= instanceErrors
 
             val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
@@ -553,8 +553,9 @@ class Flix {
     // Print summary?
     if (options.xsummary) {
       result.foreach(root => {
-        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
-        table.getMarkdownLines.foreach(println)
+        Summary.go(root)
+//        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
+//        table.getMarkdownLines.foreach(println)
       })
     }
 
