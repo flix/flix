@@ -919,25 +919,6 @@ object Visitor {
     * @param loc the `SourceLocation` that want to know if `pos` is within.
     * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
     */
-  def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
-    val sameSource = uri == loc.source.name
-    if (!sameSource) {
-      return false
-    }
-
-    val afterStart = loc.startLine < pos.line ||
-      (loc.startLine == pos.line && loc.startCol <= pos.character)
-    if (!afterStart) {
-      return false
-    }
-
-
-    val beforeEnd = pos.line < loc.endLine ||
-      (pos.line == loc.endLine && pos.character < loc.endCol)
-    if (!beforeEnd) {
-      return false
-    }
-
-    true
-  }
+  def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean =
+    uri == loc.source.name && pos.containedBy(loc)
 }
