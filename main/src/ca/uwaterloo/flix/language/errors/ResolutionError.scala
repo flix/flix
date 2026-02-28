@@ -1166,8 +1166,7 @@ object ResolutionError {
     * @param name the annotation name.
     * @param loc  the location where the error occurred.
     */
-  case class UndefinedJvmAnnotation(name: String,
-                                     loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmAnnotation(name: String, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3906
 
     def summary: String = s"Undefined JVM annotation '@$name'."
@@ -1191,8 +1190,7 @@ object ResolutionError {
     * @param name the class name.
     * @param loc  the location where the error occurred.
     */
-  case class NotAJavaAnnotation(name: String,
-                                loc: SourceLocation) extends ResolutionError {
+  case class NotAJavaAnnotation(name: String, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3907
 
     def summary: String = s"'$name' is not a Java annotation type."

@@ -147,10 +147,10 @@ object ClosureConv {
           }
       }
       val methods = methods0 map {
-        case JvmMethod(jvmAnnotations, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+        case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
           val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
           val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
-          JvmMethod(jvmAnnotations, ident, fparams, clo, retTpe, methodPurity, methodLoc)
+          JvmMethod(ann, ident, fparams, clo, retTpe, methodPurity, methodLoc)
       }
       Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
@@ -425,9 +425,9 @@ object ClosureConv {
     }
 
     def visitJvmMethod(method: JvmMethod)(implicit flix: Flix): JvmMethod = method match {
-      case JvmMethod(jvmAnnotations, ident, fparams0, exp, retTpe, purity, loc) =>
+      case JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
         val fparams = fparams0.map(visitFormalParam)
-        JvmMethod(jvmAnnotations, ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
+        JvmMethod(ann, ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
     }
 
     visitExp(e0)
@@ -638,9 +638,9 @@ object ClosureConv {
             JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
         }
         val ms = methods.map {
-          case JvmMethod(jvmAnnotations, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+          case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
             val e = visit(exp)
-            JvmMethod(jvmAnnotations, ident, fparams, e, retTpe, methodPurity, methodLoc)
+            JvmMethod(ann, ident, fparams, e, retTpe, methodPurity, methodLoc)
         }
         Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
     }

@@ -112,7 +112,7 @@ object SimplifiedAst {
 
   case class JvmConstructor(exp: Expr, retTpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class JvmMethod(jvmAnnotations: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: SimpleType, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: SimpleType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 

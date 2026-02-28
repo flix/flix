@@ -1612,24 +1612,24 @@ object Resolver {
     * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
     */
   private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmMethod = method match {
-    case NamedAst.JvmMethod(jvmAnnotations0, ident, fparams0, exp, tpe, eff, loc) =>
-      val jvmAnnotations = jvmAnnotations0.flatMap(resolveJvmAnnotation(_, scp0))
+    case NamedAst.JvmMethod(ann0, ident, fparams0, exp, tpe, eff, loc) =>
+      val ann = ann0.flatMap(resolveJvmAnnotation(_, scp0))
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       val scp = scp0 ++ mkFormalParamScp(fparams)
       val e = resolveExp(exp, scp)
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
-      ResolvedAst.JvmMethod(jvmAnnotations, ident, fparams, e, t, p, loc)
+      ResolvedAst.JvmMethod(ann, ident, fparams, e, t, p, loc)
   }
 
   /**
     * Resolves an unresolved JVM annotation to a resolved JVM annotation.
     */
-  private def resolveJvmAnnotation(ann: shared.JvmAnnotationUnresolved, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, sctx: SharedContext, flix: Flix): Option[shared.JvmAnnotation] = {
+  private def resolveJvmAnnotation(ann: JvmAnnotationUnresolved, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, sctx: SharedContext, flix: Flix): Option[JvmAnnotation] = {
     lookupJvmClass2(ann.name, ns0, scp0) match {
       case Result.Ok(clazz) =>
         if (clazz.isAnnotation) {
-          Some(shared.JvmAnnotation(clazz, ann.loc))
+          Some(JvmAnnotation(clazz, ann.loc))
         } else {
           sctx.errors.add(ResolutionError.NotAJavaAnnotation(ann.name.name, ann.loc))
           None

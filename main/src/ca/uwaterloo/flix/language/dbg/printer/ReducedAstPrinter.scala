@@ -95,7 +95,7 @@ object ReducedAstPrinter {
     * Returns the [[DocAst.JvmMethod]] representation of `method`.
     */
   private def printJvmMethod(method: ReducedAst.JvmMethod): DocAst.JvmMethod = method match {
-    case ReducedAst.JvmMethod(_, ident, fparams, exp, tpe, _, _) =>
-      DocAst.JvmMethod(ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
+    case ReducedAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _) =>
+      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
   }
 }
