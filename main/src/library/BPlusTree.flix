@@ -787,7 +787,7 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def toString(t: BPlusTree[k, v, r]): String \ r with ToString[k], ToString[v] =
-        "Search: ${Vector.join(" < ", t->search)}\nTree:\n${Node.toString(0, t->rc, t->root)}"
+        Node.toString(0, t->rc, t->root)
 
     ///
     /// Write lock `t->rootLock` and return the stamp.
