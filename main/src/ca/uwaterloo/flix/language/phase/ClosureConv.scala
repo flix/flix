@@ -147,10 +147,10 @@ object ClosureConv {
           }
       }
       val methods = methods0 map {
-        case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+        case JvmMethod(jvmAnnotations, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
           val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
           val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
-          JvmMethod(ident, fparams, clo, retTpe, methodPurity, methodLoc)
+          JvmMethod(jvmAnnotations, ident, fparams, clo, retTpe, methodPurity, methodLoc)
       }
       Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
@@ -261,7 +261,7 @@ object ClosureConv {
           acc ++ freeVars(exp)
       }
       methods.foldLeft(constructorFvs) {
-        case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
+        case (acc, JvmMethod(_, _, fparams, exp, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
 
@@ -425,9 +425,9 @@ object ClosureConv {
     }
 
     def visitJvmMethod(method: JvmMethod)(implicit flix: Flix): JvmMethod = method match {
-      case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
+      case JvmMethod(jvmAnnotations, ident, fparams0, exp, retTpe, purity, loc) =>
         val fparams = fparams0.map(visitFormalParam)
-        JvmMethod(ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
+        JvmMethod(jvmAnnotations, ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
     }
 
     visitExp(e0)
@@ -638,9 +638,9 @@ object ClosureConv {
             JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
         }
         val ms = methods.map {
-          case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+          case JvmMethod(jvmAnnotations, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
             val e = visit(exp)
-            JvmMethod(ident, fparams, e, retTpe, methodPurity, methodLoc)
+            JvmMethod(jvmAnnotations, ident, fparams, e, retTpe, methodPurity, methodLoc)
         }
         Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
     }

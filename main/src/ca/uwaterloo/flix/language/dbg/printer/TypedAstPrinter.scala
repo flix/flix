@@ -118,7 +118,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst.JvmMethod]] representation of `method`.
     */
   private def printJvmMethod(method: TypedAst.JvmMethod): DocAst.JvmMethod = method match {
-    case TypedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
+    case TypedAst.JvmMethod(_, ident, fparams, exp, retTpe, _, _) =>
       DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 

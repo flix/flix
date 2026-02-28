@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.{IsInterface, N
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
+import ca.uwaterloo.flix.language.ast.shared.JvmAnnotation
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
@@ -56,9 +57,16 @@ sealed trait ClassMaker {
     case StaticField(_, name, tpe) => makeField(name, tpe, v, f, vol, IsStatic)
   }
 
-  protected def makeMethod(i: Option[MethodVisitor => Unit], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
+  protected def makeMethod(i: Option[MethodVisitor => Unit], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract, annotations: List[JvmAnnotation] = Nil): Unit = {
     val m = v.toInt + f.toInt + s.toInt + a.toInt
     val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
+    for (ann <- annotations) {
+      val descriptor = "L" + ann.clazz.getName.replace('.', '/') + ";"
+      val retention = ann.clazz.getAnnotation(classOf[java.lang.annotation.Retention])
+      val visible = retention != null && retention.value() == java.lang.annotation.RetentionPolicy.RUNTIME
+      val av = mv.visitAnnotation(descriptor, visible)
+      av.visitEnd()
+    }
     i match {
       case None => ()
       case Some(ins) =>
@@ -89,6 +97,10 @@ object ClassMaker {
 
     def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
+    }
+
+    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, annotations: List[JvmAnnotation], ins: MethodVisitor => Unit): Unit = {
+      makeMethod(Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract, annotations)
     }
   }
 

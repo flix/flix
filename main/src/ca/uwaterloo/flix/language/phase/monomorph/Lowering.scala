@@ -646,11 +646,11 @@ object Lowering {
     * Lowers the given JvmMethod `method`.
     */
   private def lowerJvmMethod(method: TypedAst.JvmMethod)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case TypedAst.JvmMethod(ident, fparams, exp, retTyp, eff, loc) =>
+    case TypedAst.JvmMethod(jvmAnnotations, ident, fparams, exp, retTyp, eff, loc) =>
       val fs = fparams.map(lowerFormalParam)
       val e = lowerExp(exp)
       val t = lowerType(retTyp)
-      MonoAst.JvmMethod(ident, fs, e, t, eff, loc)
+      MonoAst.JvmMethod(jvmAnnotations, ident, fs, e, t, eff, loc)
   }
 
   /**

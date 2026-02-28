@@ -141,6 +141,9 @@ object ErrorCode {
   case object E3807 extends ErrorCode
   case object E3849 extends ErrorCode
   case object E3894 extends ErrorCode
+  case object E3905 extends ErrorCode
+  case object E3906 extends ErrorCode
+  case object E3907 extends ErrorCode
   case object E3918 extends ErrorCode
   case object E3952 extends ErrorCode
   case object E4029 extends ErrorCode

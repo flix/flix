@@ -1419,12 +1419,12 @@ object Kinder {
     * Performs kinding on the given JVM method.
     */
   private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.JvmMethod = method match {
-    case ResolvedAst.JvmMethod(_, fparams0, exp0, tpe0, eff0, loc) =>
+    case ResolvedAst.JvmMethod(jvmAnnotations, _, fparams0, exp0, tpe0, eff0, loc) =>
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val exp = visitExp(exp0, kenv, root)
       val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
-      KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
+      KindedAst.JvmMethod(jvmAnnotations, method.ident, fparams, exp, tpe, eff, loc)
   }
 
   /**

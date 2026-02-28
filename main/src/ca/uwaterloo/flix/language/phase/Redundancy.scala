@@ -804,7 +804,7 @@ object Redundancy {
           acc ++ visitExp(exp, env0, rc)
       }
       val usedMethods = methods.foldLeft(Used.empty) {
-        case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
+        case (acc, JvmMethod(_, _, fparams, exp, _, _, _)) =>
           // Extend the environment with the formal parameter symbols
           val env1 = env0 ++ fparams.map(_.bnd.sym)
           val used = visitExp(exp, env1, rc)

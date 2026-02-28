@@ -2026,6 +2026,7 @@ object Weeder2 {
 
     private def visitJvmMethod(tree: Tree)(implicit sctx: SharedContext): Validation[JvmMethod, CompilationMessage] = {
       expect(tree, TreeKind.Expr.JvmMethod)
+      val jvmAnns = pickJvmAnnotations(tree)
       mapN(
         pickNameIdent(tree),
         pickExpr(tree),
@@ -2033,8 +2034,36 @@ object Weeder2 {
         Types.pickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+        (ident, expr, fparams, tpe, eff) => JvmMethod(jvmAnns, ident, fparams, expr, tpe, eff, tree.loc)
       }
+    }
+
+    /**
+      * Extracts JVM annotations from a JvmMethod tree node.
+      * Known Flix annotations are rejected with an error.
+      * Unknown annotations are treated as JVM annotation references.
+      */
+    private def pickJvmAnnotations(tree: Tree)(implicit sctx: SharedContext): List[JvmAnnotationUnresolved] = {
+      val knownFlixAnnotations = Set(
+        "@CompileTest", "@DefaultHandler", "@Deprecated", "@DontInline",
+        "@Experimental", "@Export", "@Inline", "@Parallel", "@ParallelWhenPure",
+        "@LoweringTarget", "@Lazy", "@LazyWhenPure", "@Skip", "@Test", "@TailRec"
+      )
+      val optAnn = tryPick(TreeKind.AnnotationList, tree)
+      optAnn.map { annTree =>
+        val tokens = pickAllTokens(annTree)
+        tokens.toList.flatMap { token =>
+          val loc = token.mkSourceLocation()
+          if (knownFlixAnnotations.contains(token.text)) {
+            val name = token.text.stripPrefix("@")
+            sctx.errors.add(IllegalFlixAnnotationOnJvmMethod(name, loc))
+            None
+          } else {
+            val name = token.text.stripPrefix("@")
+            Some(JvmAnnotationUnresolved(Name.Ident(name, loc), loc))
+          }
+        }
+      }.getOrElse(Nil)
     }
 
     private def visitJvmConstructor(tree: Tree)(implicit sctx: SharedContext): Validation[JvmConstructor, CompilationMessage] = {

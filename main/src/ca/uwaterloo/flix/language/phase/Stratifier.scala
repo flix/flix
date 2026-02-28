@@ -480,9 +480,9 @@ object Stratifier {
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmMethod = method match {
-    case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
+    case JvmMethod(jvmAnnotations, ident, fparams, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      JvmMethod(ident, fparams, e, tpe, eff, loc)
+      JvmMethod(jvmAnnotations, ident, fparams, e, tpe, eff, loc)
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): SelectChannelRule = rule match {

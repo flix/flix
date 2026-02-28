@@ -1257,4 +1257,26 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate that a Flix annotation was used on a JVM method.
+    *
+    * @param name the name of the annotation.
+    * @param loc  the location where the error occurs.
+    */
+  case class IllegalFlixAnnotationOnJvmMethod(name: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3905
+
+    def summary: String = s"Flix annotation '@$name' is not valid on JVM methods."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Flix annotation '${red("@" + name)}' is not valid on JVM methods.
+         |
+         |${src(loc, "illegal annotation")}
+         |
+         |${underline("Explanation:")} Only JVM annotations (imported Java annotation types) are allowed on methods in 'new Object { ... }' expressions.
+         |""".stripMargin
+    }
+  }
+
 }
