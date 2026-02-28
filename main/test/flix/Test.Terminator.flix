@@ -468,7 +468,6 @@ mod Test.Terminator {
         match ((l1, l2), q) {
             case ((MyList.Nil, _), _)                  => 0
             case ((MyList.Cons(_, xs), ys), _)         => 1 + nestedTupleDecrease(xs, ys, q)
-            case _                                     => 0
         }
 
     // --- Type ascription inside @Terminates ---
