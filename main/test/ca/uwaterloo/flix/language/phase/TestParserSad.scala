@@ -458,4 +458,30 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[ParseError.ExpectedArrowThickRGotArrowThinR](result)
   }
+
+  test("ExpectedSemicolon.01") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    let x = 1
+        |    let y = x;
+        |    y
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
+
+  test("ExpectedSemicolon.02") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |    let l = 1 :: 2 :: 3 :: Nil
+        |    foreach (x1 <- l)
+        |        println(x1);
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
 }

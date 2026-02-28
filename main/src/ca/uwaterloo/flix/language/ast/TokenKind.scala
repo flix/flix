@@ -479,6 +479,14 @@ sealed trait TokenKind {
     case _ => false
   }
 
+  def isOnlyFirstInALine: Boolean = this match {
+    case TokenKind.KeywordLet => true
+    case TokenKind.KeywordForall => true
+    case TokenKind.KeywordForeach => true
+    case TokenKind.KeywordDef => true
+    case _ => false
+  }
+
   /** Returns `true` if this token can validly appear as the first token of a type. */
   def isFirstInType: Boolean = this match {
     case TokenKind.AngleL => true

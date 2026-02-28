@@ -1439,6 +1439,13 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (nth(0).isOnlyFirstInALine) {
+        val isReal = true
+        val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
+        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc))
+        statement()
+        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       } else if (!rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
