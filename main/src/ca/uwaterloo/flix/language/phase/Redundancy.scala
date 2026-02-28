@@ -380,30 +380,30 @@ object Redundancy {
       else
         innerUsed ++ shadowedVar - fparam.bnd.sym
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.defSyms.put(sym, ())
       }
       visitExps(exps, env0, rc)
 
-    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _, _) =>
       if (rc.vars.contains(sym)) {
         visitExps(exps, env0, rc)
       } else {
         Used.of(sym) ++ visitExps(exps, env0, rc)
       }
 
-    case Expr.ApplyOp(opUse, exps, _, _, _) =>
+    case Expr.ApplyOp(opUse, exps, _, _, _, _) =>
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.sigSyms.put(sym, ())
@@ -435,7 +435,7 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
-    case Expr.LocalDef(Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 

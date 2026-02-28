@@ -192,7 +192,7 @@ object HighlightProvider {
     case TypedAst.RestrictableCase(_, _, _, loc) => loc.isReal
     case TypedAst.Constraint(_, _, _, loc) => loc.isReal
     case TypedAst.ConstraintParam(_, _, loc) => loc.isReal
-    case TypedAst.FormalParam(_, _, _, loc) => loc.isReal
+    case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
     case TypedAst.CatchRule(_, _, _, _) => true
@@ -392,7 +392,7 @@ object HighlightProvider {
       }
 
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.ApplyOp(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
+        case Expr.ApplyOp(_, _, _, eff, _, loc) if eff.effects.contains(sym) => reads += loc
         case _ => ()
       }
     }

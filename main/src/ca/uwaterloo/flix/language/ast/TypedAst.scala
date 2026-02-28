@@ -121,15 +121,15 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], targs: List[Type], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], targs: List[Type], itpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
 
-    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
 
-    case class ApplySig(symUse: SigSymUse, exps: List[Expr], targ: Type, targs: List[Type], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplySig(symUse: SigSymUse, exps: List[Expr], targ: Type, targs: List[Type], itpe: Type, tpe: Type, eff: Type, pos: ApplyPosition, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -137,7 +137,7 @@ object TypedAst {
 
     case class Let(bnd: Binder, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class LocalDef(bnd: Binder, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class LocalDef(ann: Annotations, bnd: Binder, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Region(bnd: Binder, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -399,7 +399,7 @@ object TypedAst {
 
   case class ConstraintParam(bnd: Binder, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(bnd: Binder, tpe: Type, src: TypeSource, loc: SourceLocation)
+  case class FormalParam(bnd: Binder, tpe: Type, src: TypeSource, decreasing: Decreasing, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
@@ -422,6 +422,19 @@ object TypedAst {
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
+
+  sealed trait ApplyPosition
+
+  object ApplyPosition {
+    /** Not in tail position. */
+    case object NonTail extends ApplyPosition
+
+    /** In tail position, and is a self-recursive call. */
+    case object SelfTail extends ApplyPosition
+
+    /** In tail position, but not a self-recursive call. */
+    case object OtherTail extends ApplyPosition
+  }
 
   /**
     * Default handler components

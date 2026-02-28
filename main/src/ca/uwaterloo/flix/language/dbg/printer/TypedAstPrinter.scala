@@ -34,15 +34,15 @@ object TypedAstPrinter {
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
-    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
-    case Expr.ApplyOp(op, exps, _, _, _) => DocAst.Expr.ApplyOp(op.sym, exps.map(print))
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
+    case Expr.ApplyOp(op, exps, _, _, _, _) => DocAst.Expr.ApplyOp(op.sym, exps.map(print))
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
+    case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Region(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Region(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
@@ -206,7 +206,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
   private def printFormalParam(fp: TypedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val TypedAst.FormalParam(bnd, tpe, _, _) = fp
+    val TypedAst.FormalParam(bnd, tpe, _, _, _) = fp
     DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(bnd.sym), TypePrinter.print(tpe))
   }
 

@@ -467,7 +467,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
+      case Expr.LocalDef(_, sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).

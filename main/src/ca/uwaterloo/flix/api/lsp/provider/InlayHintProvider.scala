@@ -19,10 +19,12 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, Expr, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.shared.{Decreasing, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.TypeError
+
+import scala.collection.mutable
 
 /**
   * Provides inlay hints for effects in the Flix language.
@@ -66,9 +68,9 @@ object InlayHintProvider {
           val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
-      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors)
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
     } else {
-      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors)
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
     }
   }
 
@@ -92,7 +94,7 @@ object InlayHintProvider {
     object opSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
-          case Expr.ApplyOp(opSymUse, _, _, _, loc) =>
+          case Expr.ApplyOp(opSymUse, _, _, _, _, loc) =>
             opSymUses = (opSymUse, loc) :: opSymUses
           case _ => ()
         }
@@ -110,7 +112,7 @@ object InlayHintProvider {
     object defSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
-          case Expr.ApplyDef(defSymUse, _, _, _, _, _, loc) =>
+          case Expr.ApplyDef(defSymUse, _, _, _, _, _, _, loc) =>
             defSymUses = (defSymUse, loc) :: defSymUses
           case _ => ()
         }
@@ -157,4 +159,114 @@ object InlayHintProvider {
         tooltip = ttp,
       )
   }
+
+  /**
+    * Returns a list of inlay hints for structurally decreasing parameters.
+    *
+    * For example, a parameter marked as structurally decreasing:
+    * {{{
+    *   def length(↓ l: List[a]): Int32
+    * }}}
+    */
+  private def getDecreasingParamHints(uri: String)(implicit root: Root): List[InlayHint] = {
+    var hints: List[InlayHint] = List.empty
+    object c extends Consumer {
+      override def consumeFormalParam(fparam: FormalParam): Unit = {
+        if (fparam.decreasing == Decreasing.StrictlyDecreasing) {
+          hints = InlayHint(
+            position = Position.fromBegin(fparam.loc),
+            label = "\u2193",
+            kind = Some(InlayHintKind.Parameter),
+            textEdits = List.empty,
+            tooltip = "Structurally decreasing",
+            paddingLeft = false,
+            paddingRight = true
+          ) :: hints
+        }
+      }
+    }
+    Visitor.visitRoot(root, c, FileAcceptor(uri))
+    hints
+  }
+
+  /**
+    * Returns a list of inlay hints for tail-recursive self-calls in `@Tailrec` functions
+    * and self-recursive local defs.
+    *
+    * For example, a tail-recursive self-call:
+    * {{{
+    *   @Tailrec
+    *   def length(l: List[a]): Int32 = match l {
+    *       case Nil     => 0
+    *       case _ :: xs => ↺ length(xs)
+    *   }
+    * }}}
+    */
+  private def getTailRecursionHints(uri: String)(implicit root: Root): List[InlayHint] = {
+    var hints: List[InlayHint] = List.empty
+    val localDefFparams: mutable.Map[Symbol.VarSym, List[FormalParam]] = mutable.Map.empty
+
+    object c extends Consumer {
+      override def consumeExpr(expr: Expr): Unit = {
+        expr match {
+          case Expr.LocalDef(_, bnd, fparams, _, _, _, _, _) =>
+            localDefFparams.put(bnd.sym, fparams)
+
+          case Expr.ApplyDef(symUse, exps, _, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
+            if (root.defs(symUse.sym).spec.ann.isTailRecursive) {
+              hints = mkTailRecHint(loc) :: hints
+              val fparams = root.defs(symUse.sym).spec.fparams
+              hints = mkDecreasingArgHints(exps, fparams) ::: hints
+            }
+
+          case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
+            localDefFparams.get(symUse.sym) match {
+              case Some(fparams) =>
+                hints = mkTailRecHint(loc) :: hints
+                hints = mkDecreasingArgHints(exps, fparams) ::: hints
+              case None =>
+                // The local def has not been visited yet, which cannot happen because
+                // the visitor traverses LocalDef before its body where self-calls appear.
+                ()
+            }
+
+          case _ => ()
+        }
+      }
+    }
+    Visitor.visitRoot(root, c, FileAcceptor(uri))
+    hints
+  }
+
+  /**
+    * Creates an inlay hint for a tail-recursive self-call.
+    */
+  private def mkTailRecHint(loc: SourceLocation): InlayHint = InlayHint(
+    position = Position.fromBegin(loc),
+    label = "\u21ba",
+    kind = Some(InlayHintKind.Parameter),
+    textEdits = List.empty,
+    tooltip = "Tail-recursive self-call",
+    paddingLeft = false,
+    paddingRight = true
+  )
+
+  /**
+    * Creates inlay hints for arguments corresponding to structurally decreasing parameters.
+    */
+  private def mkDecreasingArgHints(exps: List[Expr], fparams: List[FormalParam]): List[InlayHint] = {
+    exps.zip(fparams).collect {
+      case (arg, fparam) if fparam.decreasing == Decreasing.StrictlyDecreasing =>
+        InlayHint(
+          position = Position.fromBegin(arg.loc),
+          label = "\u2193",
+          kind = Some(InlayHintKind.Parameter),
+          textEdits = List.empty,
+          tooltip = s"Argument for structurally decreasing parameter '${fparam.bnd.sym.text}'",
+          paddingLeft = false,
+          paddingRight = true
+        )
+    }
+  }
+
 }

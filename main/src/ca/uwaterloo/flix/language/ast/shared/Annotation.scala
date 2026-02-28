@@ -168,14 +168,25 @@ object Annotation {
   }
 
   /**
-    * An AST node that represents a `@TailRec` annotation.
+    * An AST node that represents a `@Tailrec` annotation.
     *
-    * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+    * A function marked with `@Tailrec` is guaranteed to be tail recursive by the compiler.
     *
     * @param loc the source location of the annotation.
     */
   case class TailRecursive(loc: SourceLocation) extends Annotation {
     override def toString: String = "@Tailrec"
+  }
+
+  /**
+    * An AST node that represents a `@Terminates` annotation.
+    *
+    * A function marked with `@Terminates` is verified to be structurally recursive by the compiler.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class Terminates(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@Terminates"
   }
 
   /**

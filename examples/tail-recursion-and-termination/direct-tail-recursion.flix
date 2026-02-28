@@ -1,0 +1,18 @@
+/// The `@Terminates` annotation asks the compiler to verify that
+/// `isPrefixOf` is guaranteed to terminate via structural recursion:
+/// both `xs` and `ys` are strict sub-terms of the input on every
+/// recursive call.
+///
+/// The `@Tailrec` annotation asks the compiler to verify that every
+/// self-recursive call is in tail position — here the recursive call
+/// `isPrefixOf(xs, ys)` is the last operation in its branch.
+
+@Terminates @Tailrec
+pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
+    case (Nil, _)           => true
+    case (_, Nil)           => false
+    case (x :: xs, y :: ys) => if (x == y) isPrefixOf(xs, ys) else false
+}
+
+def main(): Unit \ IO =
+    isPrefixOf(1 :: 2 :: Nil, 1 :: 2 :: 3 :: Nil) |> println
