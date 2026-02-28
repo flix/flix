@@ -54,24 +54,32 @@ object PatMatchError {
   /**
     * An error raised to indicate a redundant (unreachable) pattern in a match expression.
     *
-    * @param coveredBy the location of the first pattern that covers this one.
+    * @param coveredBy the location of the first pattern that covers this one, if a single such pattern exists.
     * @param loc       the location of the redundant pattern.
     */
-  case class RedundantPattern(coveredBy: SourceLocation, loc: SourceLocation) extends PatMatchError {
+  case class RedundantPattern(coveredBy: Option[SourceLocation], loc: SourceLocation) extends PatMatchError {
     def code: ErrorCode = ErrorCode.E5963
 
     def summary: String = "Unreachable pattern: already covered by a preceding case."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> ${red("Unreachable pattern: already covered by a preceding case.")}
-         |
-         |${highlight(loc, "unreachable case", fmt)}
-         |
-         |Covered by the following pattern:
-         |
-         |${highlight(coveredBy, "covering pattern", fmt)}
-         |""".stripMargin
+      coveredBy match {
+        case None =>
+          s""">> ${red("Unreachable pattern: already covered by a preceding case.")}
+             |
+             |${highlight(loc, "unreachable case", fmt)}
+             |""".stripMargin
+        case Some(cb) =>
+          s""">> ${red("Unreachable pattern: already covered by a preceding case.")}
+             |
+             |${highlight(loc, "unreachable case", fmt)}
+             |
+             |Covered by the following pattern:
+             |
+             |${highlight(cb, "covering pattern", fmt)}
+             |""".stripMargin
+      }
     }
   }
 
@@ -91,11 +99,12 @@ object PatMatchError {
     case WitnessPattern.Tuple(elms) =>
       elms.map(formatPattern).mkString("(", ", ", ")")
 
-    case WitnessPattern.Record(fields) =>
-      if (fields.isEmpty)
+    case WitnessPattern.Record(fields, open) =>
+      val suffix = if (open) " | _" else ""
+      if (fields.isEmpty && !open)
         "{ }"
       else
-        fields.map { case (name, p) => s"$name = ${formatPattern(p)}" }.mkString("{ ", ", ", " }")
+        fields.map { case (name, p) => s"$name = ${formatPattern(p)}" }.mkString("{ ", ", ", s"$suffix }")
   }
 
 }

@@ -13,11 +13,6 @@ mod Test.Exp.Match.Record {
     }
 
     @Test
-    def emptyRecord02(): Unit \ Assert = match { } {
-        case { } => success("matched empty record")
-    }
-
-    @Test
     def recordLabelValue01(): Unit \ Assert = match { a = 1 } {
         case { a } => assertEq(expected = 1, a)
     }

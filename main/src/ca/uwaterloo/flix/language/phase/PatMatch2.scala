@@ -75,8 +75,8 @@ object PatMatch2 {
     /** A tuple, e.g. `(_, _)`. */
     case class Tuple(elms: List[WitnessPattern]) extends WitnessPattern
 
-    /** A record, e.g. `{ x = _, y = true }`. */
-    case class Record(fields: List[(String, WitnessPattern)]) extends WitnessPattern
+    /** A record, e.g. `{ x = _, y = true }` or `{ x = _ | _ }` when open. */
+    case class Record(fields: List[(String, WitnessPattern)], open: Boolean) extends WitnessPattern
   }
 
   /**
@@ -471,7 +471,7 @@ object PatMatch2 {
     case rec @ Pattern.Record(_, _, _, _) =>
       val keys = recordPatsToCanonicalKeys(rec.pats)
       val fields = keys.zip(args).map { case ((name, _), wp) => (name, wp) }
-      WitnessPattern.Record(fields)
+      WitnessPattern.Record(fields, open = false)
     case Pattern.Cst(cst, _, _) => WitnessPattern.Literal(cst)
     case _ => WitnessPattern.Wildcard
   }
@@ -548,7 +548,7 @@ object PatMatch2 {
         // Find the first preceding pattern that individually covers q.
         val coveredBy = precedingRows.collectFirst {
           case row if !isUseful(PatternMatrix(List(row), 1), q, root) => row.head.loc
-        }.getOrElse(rule.pat.loc)
+        }
         sctx.errors.add(PatMatchError.RedundantPattern(coveredBy, rule.pat.loc))
       }
       // Only add unguarded rules to the preceding matrix
