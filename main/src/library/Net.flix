@@ -16,8 +16,6 @@
 
 pub mod Net {
 
-    use Net.SimpleHttp.Response
-
     ///
     /// An enum representing an HTTP method.
     ///
@@ -32,10 +30,43 @@ pub mod Net {
     }
 
     ///
-    /// The effect used to interact with the HTTP protocol with simplified arguments.
+    /// An HTTP request with method, URL, multi-valued headers, and optional body.
     ///
-    pub eff SimpleHttp {
-        def request(method: Method, url: String, headers: Map[String, String], body: Option[String]): Result[IoError, Response]
+    pub enum Request({
+        method  = Method,
+        url     = String,
+        headers = Map[String, List[String]],
+        body    = Option[String]
+    })
+
+    ///
+    /// An HTTP response with status code, multi-valued headers, and body.
+    ///
+    pub enum Response({
+        status  = Int32,
+        headers = Map[String, List[String]],
+        body    = String
+    })
+
+    ///
+    /// The effect used to send HTTP requests (both http:// and https://).
+    ///
+    pub eff Http {
+        def request(req: Request): Result[IoError, Response]
+    }
+
+    ///
+    /// The effect used to send HTTPS-only requests.
+    ///
+    pub eff Https {
+        def request(req: Request): Result[IoError, Response]
+    }
+
+    ///
+    /// The effect used to decide whether a failed request should be retried.
+    ///
+    pub eff Retry {
+        def shouldRetry(attempt: Int32, request: Request, error: IoError): Bool
     }
 
 }

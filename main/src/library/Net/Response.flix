@@ -14,20 +14,46 @@
  * limitations under the License.
  */
 
-pub mod Net.SimpleHttp.Response {
+pub mod Net.Response {
 
-    use Net.SimpleHttp.Response
-    use Net.SimpleHttp.Response.Response
+    use Net.Response
+    use Net.Response.Response
 
+    ///
+    /// Returns the status code of the response `r`.
+    ///
     pub def status(r: Response): Int32 = match r {
         case Response(x) => x#status
     }
-    pub def headers(r: Response): Map[String, String] = match r {
+
+    ///
+    /// Returns the headers of the response `r`.
+    ///
+    pub def headers(r: Response): Map[String, List[String]] = match r {
         case Response(x) => x#headers
     }
+
+    ///
+    /// Returns the body of the response `r`.
+    ///
     pub def body(r: Response): String = match r {
         case Response(x) => x#body
     }
+
+    ///
+    /// Returns the list of values for the header with the given `name`, or `None` if not present.
+    ///
+    pub def header(name: String, r: Response): Option[List[String]] =
+        Map.get(name, headers(r))
+
+    ///
+    /// Returns the first value of the header with the given `name`, or `None` if not present.
+    ///
+    pub def headerValue(name: String, r: Response): Option[String] =
+        match header(name, r) {
+            case Some(v :: _) => Some(v)
+            case _            => None
+        }
 
     ///
     /// Returns `true` if the response status is 200 OK.
@@ -67,11 +93,5 @@ pub mod Net.SimpleHttp.Response {
     ///
     pub def isError(r: Response): Bool =
         isClientError(r) or isServerError(r)
-
-    ///
-    /// Returns the value of the header with the given `name`, or `None` if not present.
-    ///
-    pub def header(name: String, r: Response): Option[String] =
-        Map.get(name, headers(r))
 
 }
