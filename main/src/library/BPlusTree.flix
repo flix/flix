@@ -705,12 +705,47 @@ pub mod BPlusTree {
         BPlusTree.forEach(k -> v -> BPlusTree.putWith(f, k, v, dst), src)
 
     ///
-    /// Optionally returns `k => v` where `k` is the minimum key.
+    /// Optionally returns `k => v` where `k` is the smallest key in `t` according to the 
+    /// `Order` instance on `k`.
+    ///
+    /// Returns `None` if `t` is empty.
     ///
     /// Not thread-safe.
     ///
     pub def minimumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r =
         Node.minimumKey(t->root)
+
+    /// 
+    /// Optionally returns `k => v` where `k` is the largest key in `t` according to the 
+    /// `Order` instance on `k`.
+    ///
+    /// Returns `None` if `t` is empty.
+    ///
+    /// Thread-safe.
+    ///
+    pub def maximumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
+        let (leaf, leafStamp) = rightMostLeaf(t);
+        let result = match Node.size(leaf) {
+            case 0 => None
+            case n => Some(Node.getKeyAndValueAt(n - 1, leaf))
+        };
+        if (Lock.valid(leafStamp, Node.getLock(leaf))) {
+            result
+        } else {
+            Lock.yieldBasedOn(Node.getLock(leaf));
+            maximumKey(t)
+        }
+    }
+
+    ///
+    /// Returns the rightmost leaf of `t` and its lock stamp. 
+    ///
+    /// The rightmost leaf contains the maximum key in the tree.
+    ///
+    def rightMostLeaf(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] = {
+        let (node, stamp) = getLockedRoot(t);
+        Node.rightMostLeaf(node, stamp, t)
+    }
 
     ///
     /// Returns the arity of `t`.
