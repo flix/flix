@@ -2105,4 +2105,33 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalSuperCall](result)
   }
+
+  test("UndefinedJvmAnnotation.01") {
+    val input =
+      raw"""
+           |import java.io.Serializable
+           |def foo(): Serializable \ IO =
+           |    new Serializable {
+           |        @NonExistentAnnotation
+           |        def toString(_this: Serializable): String = "hello"
+           |    }
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedJvmAnnotation](result)
+  }
+
+  test("IllegalNonJavaAnnotation.01") {
+    val input =
+      raw"""
+           |import java.io.Serializable
+           |import java.lang.String
+           |def foo(): Serializable \ IO =
+           |    new Serializable {
+           |        @String
+           |        def toString(_this: Serializable): String = "hello"
+           |    }
+       """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[ResolutionError.IllegalNonJavaAnnotation](result)
+  }
 }

@@ -1562,6 +1562,34 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
+  test("IllegalFlixAnnotationOnJvmMethod.01") {
+    val input =
+      """
+        |import java.io.Serializable
+        |def foo(): Serializable \ IO =
+        |    new Serializable {
+        |        @Test
+        |        def toString(_this: Serializable): String = "hello"
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFlixAnnotationOnJvmMethod](result)
+  }
+
+  test("IllegalFlixAnnotationOnJvmMethod.02") {
+    val input =
+      """
+        |import java.io.Serializable
+        |def foo(): Serializable \ IO =
+        |    new Serializable {
+        |        @Deprecated
+        |        def toString(_this: Serializable): String = "hello"
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFlixAnnotationOnJvmMethod](result)
+  }
+
   test("UndefinedIntrinsic.01") {
     val input =
       """

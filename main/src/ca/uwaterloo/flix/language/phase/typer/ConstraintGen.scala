@@ -1313,7 +1313,7 @@ object ConstraintGen {
     * Generates constraints for the JVM method.
     */
   private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
-    case KindedAst.JvmMethod(_, fparams, exp, returnTpe, eff, _) =>
+    case KindedAst.JvmMethod(_, _, fparams, exp, returnTpe, eff, _) =>
 
       /**
         * Constrains the given formal parameter to its declared type.

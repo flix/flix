@@ -1513,13 +1513,20 @@ object Namer {
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
   private def visitJvmMethod(method: DesugaredAst.JvmMethod)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmMethod = method match {
-    case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
+    case DesugaredAst.JvmMethod(ann, ident, fparams, exp0, tpe, eff, loc) =>
+      val a = ann.map(visitJvmAnnotation)
       val fps = fparams.map(visitFormalParam)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val e = visitExp(exp0)
-      NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
+      NamedAst.JvmMethod(a, ident, fps, e, t, ef, loc)
   }
+
+  /**
+    * Translates the given desugared JvmAnnotation to a named JvmAnnotation.
+    */
+  private def visitJvmAnnotation(ann0: DesugaredAst.JvmAnnotation): NamedAst.JvmAnnotation =
+    NamedAst.JvmAnnotation(ann0.name, ann0.loc)
 
   /**
     * Translates the given weeded JvmConstructor to a named JvmConstructor.

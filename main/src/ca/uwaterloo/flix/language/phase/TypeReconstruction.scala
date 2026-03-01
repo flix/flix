@@ -693,10 +693,10 @@ object TypeReconstruction {
     */
   private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: SubstitutionTree): TypedAst.JvmMethod = {
     method match {
-      case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
+      case KindedAst.JvmMethod(ann, ident, fparams0, exp0, tpe, eff, loc) =>
         val fparams = fparams0.map(visitFormalParam(_, subst))
         val exp = visitExp(exp0)
-        TypedAst.JvmMethod(ident, fparams, exp, tpe, eff, loc)
+        TypedAst.JvmMethod(ann, ident, fparams, exp, tpe, eff, loc)
     }
   }
 

@@ -1160,4 +1160,51 @@ object ResolutionError {
     }
   }
 
+  /**
+    * An error raised to indicate that a JVM annotation name could not be resolved to a Java class.
+    *
+    * @param name the annotation name.
+    * @param loc  the location where the error occurred.
+    */
+  case class UndefinedJvmAnnotation(name: String, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3906
+
+    def summary: String = s"Undefined JVM annotation '@$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Undefined JVM annotation '${red("@" + name)}'.
+         |
+         |${highlight(loc, "undefined annotation", fmt)}
+         |
+         |${underline("Explanation:")} The annotation name could not be resolved
+         |to a Java class. Make sure to import the annotation class,
+         |e.g. 'import org.example.MyAnnotation'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a resolved class is not a Java annotation type.
+    *
+    * @param name the class name.
+    * @param loc  the location where the error occurred.
+    */
+  case class IllegalNonJavaAnnotation(name: String, loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3907
+
+    def summary: String = s"'$name' is not a Java annotation type."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> '${red(name)}' is not a Java annotation type.
+         |
+         |${highlight(loc, "not an annotation", fmt)}
+         |
+         |${underline("Explanation:")} Only Java annotation types (declared with
+         |@interface) can be used as JVM annotations on methods.
+         |""".stripMargin
+    }
+  }
+
 }

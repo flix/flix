@@ -39,7 +39,7 @@ object DocAst {
 
   case class JvmConstructor(clo: Expr, tpe: Type)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[Expr.AscriptionTpe], clo: Expr, tpe: Type)
+  case class JvmMethod(ann: List[String], ident: Name.Ident, fparams: List[Expr.AscriptionTpe], clo: Expr, tpe: Type)
 
 
   sealed trait Expr

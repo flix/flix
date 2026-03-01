@@ -74,7 +74,7 @@ object GenAnonymousClasses {
       // Drop the first formal parameter (which always represents `this`).
       val actualArgs = m.fparams.tail.map(_.tpe).map(BackendType.toBackendType)
       val actualres = if (m.tpe == SimpleType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
-      cm.mkMethod(ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, m)(_, root))
+      cm.mkMethod(m.ann, ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, m)(_, root))
     }
 
     // Generate bridge methods for super method calls.
@@ -84,7 +84,7 @@ object GenAnonymousClasses {
       val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
       val returnTpe = if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else javaClassToBackendType(method.getReturnType)
       val descriptor = MethodDescriptor(paramTypes, returnTpe)
-      cm.mkMethod(ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
+      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
     }
 
     cm.closeClassMaker()
