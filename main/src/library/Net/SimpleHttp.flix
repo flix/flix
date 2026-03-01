@@ -17,6 +17,7 @@
 pub mod Net.SimpleHttp {
 
     use Net.Method
+    use Net.SimpleHttp
     use IoError.ErrorKind
     use IoError.IoError
 
@@ -40,56 +41,56 @@ pub mod Net.SimpleHttp {
     ///
     /// Send a `GET` request to the given `url` and wait for the response.
     ///
-    pub def get(url: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Method.Get, url, Map.empty(), None)
+    pub def get(url: String): Result[IoError, Response] \ SimpleHttp =
+        SimpleHttp.request(Method.Get, url, Map.empty(), None)
 
     ///
     /// Send a `HEAD` request to the given `url` and wait for the response.
     ///
     /// A `HEAD` request is identical to a `GET` request except that the server should not return a message-body in the response.
     ///
-    pub def head(url: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Method.Head, url, Map.empty(), None)
+    pub def head(url: String): Result[IoError, Response] \ SimpleHttp =
+        SimpleHttp.request(Method.Head, url, Map.empty(), None)
 
     ///
     /// Send a `DELETE` request to the given `url` and wait for the response.
     ///
-    pub def delete(url: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Method.Delete, url, Map.empty(), None)
+    pub def delete(url: String): Result[IoError, Response] \ SimpleHttp =
+        SimpleHttp.request(Method.Delete, url, Map.empty(), None)
 
     ///
     /// Send an `OPTIONS` request to the given `url` and wait for the response.
     ///
-    pub def options(url: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Method.Options, url, Map.empty(), None)
+    pub def options(url: String): Result[IoError, Response] \ SimpleHttp =
+        SimpleHttp.request(Method.Options, url, Map.empty(), None)
 
     ///
     /// Send a `POST` request to the given `url` with the given `body` and wait for the response.
     ///
-    pub def post(url: String, body: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Method.Post, url, Map.empty(), Some(body))
+    pub def post(url: String, body: String): Result[IoError, Response] \ SimpleHttp =
+        SimpleHttp.request(Method.Post, url, Map.empty(), Some(body))
 
     ///
     /// Send a `PUT` request to the given `url` with the given `body` and wait for the response.
     ///
-    pub def put(url: String, body: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Method.Put, url, Map.empty(), Some(body))
+    pub def put(url: String, body: String): Result[IoError, Response] \ SimpleHttp =
+        SimpleHttp.request(Method.Put, url, Map.empty(), Some(body))
 
     ///
     /// Send a `PATCH` request to the given `url` with the given `body` and wait for the response.
     ///
-    pub def patch(url: String, body: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Method.Patch, url, Map.empty(), Some(body))
+    pub def patch(url: String, body: String): Result[IoError, Response] \ SimpleHttp =
+        SimpleHttp.request(Method.Patch, url, Map.empty(), Some(body))
 
     ///
     /// Handles the `SimpleHttp` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `SimpleHttp` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Net.SimpleHttp) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - SimpleHttp) + IO = x ->
         run {
             f(x)
-        } with handler Net.SimpleHttp {
+        } with handler SimpleHttp {
             def request(method, url, headers, body, k) =
                 try {
                     let methodStr = match method {
@@ -141,6 +142,6 @@ pub mod Net.SimpleHttp {
     /// In other words, re-interprets the `SimpleHttp` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Net.SimpleHttp) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - SimpleHttp) + IO = handle(f)()
 
 }
