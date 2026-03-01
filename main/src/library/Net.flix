@@ -34,7 +34,7 @@ pub mod Net {
     ///
     /// The effect used to interact with the HTTP protocol with simplified arguments.
     ///
-    eff SimpleHttp {
+    pub eff SimpleHttp {
         def request(method: Method, url: String, headers: Map[String, String], body: Option[String]): Result[IoError, Response]
     }
 
