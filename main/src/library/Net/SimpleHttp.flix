@@ -17,7 +17,6 @@
 pub mod Net.SimpleHttp {
 
     use Net.Method
-    use Net.Method.{Get, Head, Delete, Options, Post, Put, Patch}
     use IoError.ErrorKind
     use IoError.IoError
 
@@ -42,7 +41,7 @@ pub mod Net.SimpleHttp {
     /// Send a `GET` request to the given `url` and wait for the response.
     ///
     pub def get(url: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Get, url, Map.empty(), None)
+        Net.SimpleHttp.request(Method.Get, url, Map.empty(), None)
 
     ///
     /// Send a `HEAD` request to the given `url` and wait for the response.
@@ -50,37 +49,37 @@ pub mod Net.SimpleHttp {
     /// A `HEAD` request is identical to a `GET` request except that the server should not return a message-body in the response.
     ///
     pub def head(url: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Head, url, Map.empty(), None)
+        Net.SimpleHttp.request(Method.Head, url, Map.empty(), None)
 
     ///
     /// Send a `DELETE` request to the given `url` and wait for the response.
     ///
     pub def delete(url: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Delete, url, Map.empty(), None)
+        Net.SimpleHttp.request(Method.Delete, url, Map.empty(), None)
 
     ///
     /// Send an `OPTIONS` request to the given `url` and wait for the response.
     ///
     pub def options(url: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Options, url, Map.empty(), None)
+        Net.SimpleHttp.request(Method.Options, url, Map.empty(), None)
 
     ///
     /// Send a `POST` request to the given `url` with the given `body` and wait for the response.
     ///
     pub def post(url: String, body: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Post, url, Map.empty(), Some(body))
+        Net.SimpleHttp.request(Method.Post, url, Map.empty(), Some(body))
 
     ///
     /// Send a `PUT` request to the given `url` with the given `body` and wait for the response.
     ///
     pub def put(url: String, body: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Put, url, Map.empty(), Some(body))
+        Net.SimpleHttp.request(Method.Put, url, Map.empty(), Some(body))
 
     ///
     /// Send a `PATCH` request to the given `url` with the given `body` and wait for the response.
     ///
     pub def patch(url: String, body: String): Result[IoError, Response] \ Net.SimpleHttp =
-        Net.SimpleHttp.request(Patch, url, Map.empty(), Some(body))
+        Net.SimpleHttp.request(Method.Patch, url, Map.empty(), Some(body))
 
     ///
     /// Handles the `SimpleHttp` effect of the given function `f`.
@@ -94,13 +93,13 @@ pub mod Net.SimpleHttp {
             def request(method, url, headers, body, k) =
                 try {
                     let methodStr = match method {
-                        case Get     => "GET"
-                        case Head    => "HEAD"
-                        case Delete  => "DELETE"
-                        case Options => "OPTIONS"
-                        case Post    => "POST"
-                        case Put     => "PUT"
-                        case Patch   => "PATCH"
+                        case Method.Get     => "GET"
+                        case Method.Head    => "HEAD"
+                        case Method.Delete  => "DELETE"
+                        case Method.Options => "OPTIONS"
+                        case Method.Post    => "POST"
+                        case Method.Put     => "PUT"
+                        case Method.Patch   => "PATCH"
                     };
                     let bodyPublisher = match body {
                        case Some(b) => BodyPublishers.ofString(b)
@@ -129,7 +128,7 @@ pub mod Net.SimpleHttp {
                     })))
                 } catch {
                     case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case _: ConnectException          => k(Err(IoError(ErrorKind.ConnectionFailed, "Connection failed")))
+                    case ex: ConnectException          => k(Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage())))
                     case ex: InterruptedException     => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
                     case ex: UncheckedIOException     => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                     case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
