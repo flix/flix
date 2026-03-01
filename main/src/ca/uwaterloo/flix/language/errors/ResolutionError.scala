@@ -1190,7 +1190,7 @@ object ResolutionError {
     * @param name the class name.
     * @param loc  the location where the error occurred.
     */
-  case class NotAJavaAnnotation(name: String, loc: SourceLocation) extends ResolutionError {
+  case class IllegalNonJavaAnnotation(name: String, loc: SourceLocation) extends ResolutionError {
     def code: ErrorCode = ErrorCode.E3907
 
     def summary: String = s"'$name' is not a Java annotation type."

@@ -84,7 +84,7 @@ object GenAnonymousClasses {
       val paramTypes = method.getParameterTypes.toList.map(javaClassToBackendType)
       val returnTpe = if (method.getReturnType == java.lang.Void.TYPE) VoidableType.Void else javaClassToBackendType(method.getReturnType)
       val descriptor = MethodDescriptor(paramTypes, returnTpe)
-      cm.mkMethod(ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
+      cm.mkMethod(Nil, ClassMaker.InstanceMethod(className, bridgeName, descriptor), IsPublic, NotFinal, superBridgeIns(superClass, method)(_))
     }
 
     cm.closeClassMaker()

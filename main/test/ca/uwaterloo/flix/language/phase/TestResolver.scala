@@ -2120,7 +2120,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmAnnotation](result)
   }
 
-  test("NotAJavaAnnotation.01") {
+  test("IllegalNonJavaAnnotation.01") {
     val input =
       raw"""
            |import java.io.Serializable
@@ -2132,6 +2132,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    }
        """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[ResolutionError.NotAJavaAnnotation](result)
+    expectError[ResolutionError.IllegalNonJavaAnnotation](result)
   }
 }

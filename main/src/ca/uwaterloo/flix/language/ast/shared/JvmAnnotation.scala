@@ -15,13 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
-
-/**
-  * Represents an unresolved JVM annotation (before name resolution).
-  * Used in WeededAst, DesugaredAst, and NamedAst.
-  */
-case class JvmAnnotationUnresolved(name: Name.Ident, loc: SourceLocation)
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
 /**
   * Represents a resolved JVM annotation (after name resolution).

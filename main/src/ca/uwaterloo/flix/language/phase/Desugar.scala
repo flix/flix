@@ -959,12 +959,19 @@ object Desugar {
     */
   private def visitJvmMethod(method0: WeededAst.JvmMethod)(implicit flix: Flix): DesugaredAst.JvmMethod = method0 match {
     case WeededAst.JvmMethod(ann, ident, fparams, exp, tpe, eff, loc) =>
+      val a = ann.map(visitJvmAnnotation)
       val fps = visitFormalParams(fparams)
       val e = visitExp(exp)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      DesugaredAst.JvmMethod(ann, ident, fps, e, t, ef, loc)
+      DesugaredAst.JvmMethod(a, ident, fps, e, t, ef, loc)
   }
+
+  /**
+    * Desugars the given [[WeededAst.JvmAnnotation]] `ann0`.
+    */
+  private def visitJvmAnnotation(ann0: WeededAst.JvmAnnotation): DesugaredAst.JvmAnnotation =
+    DesugaredAst.JvmAnnotation(ann0.name, ann0.loc)
 
   /**
     * Desugars the given [[WeededAst.JvmConstructor]] `constructor0`.

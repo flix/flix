@@ -1625,13 +1625,13 @@ object Resolver {
   /**
     * Resolves an unresolved JVM annotation to a resolved JVM annotation.
     */
-  private def resolveJvmAnnotation(ann: JvmAnnotationUnresolved, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, sctx: SharedContext, flix: Flix): Option[JvmAnnotation] = {
+  private def resolveJvmAnnotation(ann: NamedAst.JvmAnnotation, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, sctx: SharedContext, flix: Flix): Option[JvmAnnotation] = {
     lookupJvmClass2(ann.name, ns0, scp0) match {
       case Result.Ok(clazz) =>
         if (clazz.isAnnotation) {
           Some(JvmAnnotation(clazz, ann.loc))
         } else {
-          sctx.errors.add(ResolutionError.NotAJavaAnnotation(ann.name.name, ann.loc))
+          sctx.errors.add(ResolutionError.IllegalNonJavaAnnotation(ann.name.name, ann.loc))
           None
         }
       case Result.Err(_) =>

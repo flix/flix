@@ -61,7 +61,7 @@ sealed trait ClassMaker {
     val m = v.toInt + f.toInt + s.toInt + a.toInt
     val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
     for (a <- ann) {
-      val descriptor = "L" + a.clazz.getName.replace('.', '/') + ";"
+      val descriptor = JvmName.ofClass(a.clazz).toDescriptor
       val retention = a.clazz.getAnnotation(classOf[java.lang.annotation.Retention])
       val visible = retention != null && retention.value() == java.lang.annotation.RetentionPolicy.RUNTIME
       val av = mv.visitAnnotation(descriptor, visible)
@@ -93,10 +93,6 @@ object ClassMaker {
 
     def mkConstructor(c: ConstructorMethod, v: Visibility, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Nil, Some(ins), JvmName.ConstructorMethod, c.d, v, NotFinal, NotStatic, NotAbstract)
-    }
-
-    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
-      makeMethod(Nil, Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
 
     def mkMethod(ann: List[JvmAnnotation], m: InstanceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {

@@ -2043,7 +2043,7 @@ object Weeder2 {
       * Known Flix annotations are rejected with an error.
       * Unknown annotations are treated as JVM annotation references.
       */
-    private def pickJvmAnnotations(tree: Tree)(implicit sctx: SharedContext): List[JvmAnnotationUnresolved] = {
+    private def pickJvmAnnotations(tree: Tree)(implicit sctx: SharedContext): List[WeededAst.JvmAnnotation] = {
       val knownFlixAnnotations = Set(
         "@CompileTest", "@DefaultHandler", "@Deprecated", "@DontInline",
         "@Experimental", "@Export", "@Inline", "@Parallel", "@ParallelWhenPure",
@@ -2060,7 +2060,7 @@ object Weeder2 {
             None
           } else {
             val name = token.text.stripPrefix("@")
-            Some(JvmAnnotationUnresolved(Name.Ident(name, loc), loc))
+            Some(WeededAst.JvmAnnotation(Name.Ident(name, loc), loc))
           }
         }
       }.getOrElse(Nil)
