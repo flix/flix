@@ -30,13 +30,21 @@ pub mod Net {
     }
 
     ///
+    /// An enum representing the body of an HTTP request or response.
+    ///
+    pub enum Body with Eq, ToString {
+        case Text(String)
+        case Bytes(Vector[Int8])
+    }
+
+    ///
     /// An HTTP request with method, URL, multi-valued headers, and optional body.
     ///
     pub enum Request({
         method  = Method,
         url     = String,
         headers = Map[String, List[String]],
-        body    = Option[String]
+        body    = Option[Body]
     })
 
     ///
@@ -45,7 +53,7 @@ pub mod Net {
     pub enum Response({
         status  = Int32,
         headers = Map[String, List[String]],
-        body    = String
+        body    = Body
     })
 
     ///

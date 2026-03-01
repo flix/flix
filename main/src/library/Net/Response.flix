@@ -16,8 +16,12 @@
 
 pub mod Net.Response {
 
+    use Net.Body
     use Net.Response
     use Net.Response.Response
+
+    import java.lang.{String => JString}
+    import java.nio.charset.StandardCharsets
 
     ///
     /// Returns the status code of the response `r`.
@@ -34,10 +38,28 @@ pub mod Net.Response {
     }
 
     ///
-    /// Returns the body of the response `r`.
+    /// Returns the body of the response `r` as a string.
+    ///
+    /// If the body is binary, it is decoded as UTF-8.
     ///
     pub def body(r: Response): String = match r {
-        case Response(x) => x#body
+        case Response(x) => match x#body {
+            case Body.Text(s)  => s
+            case Body.Bytes(v) => unchecked_cast(new JString(v, StandardCharsets.UTF_8) as _ \ {})
+        }
+    }
+
+    ///
+    /// Returns the body of the response `r` as bytes.
+    ///
+    /// If the body is text, it is encoded as UTF-8.
+    ///
+    pub def bodyBytes(r: Response): Vector[Int8] = match r {
+        case Response(x) => match x#body {
+            case Body.Bytes(v) => v
+            case Body.Text(s)  => unchecked_cast(
+                Array.toVector(s.getBytes(StandardCharsets.UTF_8)) as _ \ {})
+        }
     }
 
     ///

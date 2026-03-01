@@ -16,6 +16,7 @@
 
 pub mod Net.Request {
 
+    use Net.Body
     use Net.Request
     use Net.Request.Request
     use Net.Method
@@ -45,9 +46,29 @@ pub mod Net.Request {
     }
 
     ///
-    /// Returns the body of the request `r`.
+    /// Returns the text body of the request `r`, or `None` if absent or binary.
     ///
     pub def body(r: Request): Option[String] = match r {
+        case Request(x) => match x#body {
+            case Some(Body.Text(s)) => Some(s)
+            case _                  => None
+        }
+    }
+
+    ///
+    /// Returns the binary body of the request `r`, or `None` if absent or text.
+    ///
+    pub def bodyBytes(r: Request): Option[Vector[Int8]] = match r {
+        case Request(x) => match x#body {
+            case Some(Body.Bytes(v)) => Some(v)
+            case _                   => None
+        }
+    }
+
+    ///
+    /// Returns the raw body of the request `r`.
+    ///
+    pub def bodyRaw(r: Request): Option[Body] = match r {
         case Request(x) => x#body
     }
 
@@ -79,19 +100,19 @@ pub mod Net.Request {
     /// Creates a POST request to the given `url` with the given `body`.
     ///
     pub def post(url: String, body: String): Request =
-        Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(body)})
+        Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body))})
 
     ///
     /// Creates a PUT request to the given `url` with the given `body`.
     ///
     pub def put(url: String, body: String): Request =
-        Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(body)})
+        Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body))})
 
     ///
     /// Creates a PATCH request to the given `url` with the given `body`.
     ///
     pub def patch(url: String, body: String): Request =
-        Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(body)})
+        Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body))})
 
     ///
     /// Adds the header `name` with value `value` to the request `r`.
@@ -124,11 +145,18 @@ pub mod Net.Request {
         Request({method = x#method, url = x#url, headers = merged, body = x#body})
 
     ///
-    /// Sets the body of the request `r` to the given `body`.
+    /// Sets the body of the request `r` to the given text `body`.
     ///
     pub def withBody(body: String, r: Request): Request =
         let Request(x) = r;
-        Request({method = x#method, url = x#url, headers = x#headers, body = Some(body)})
+        Request({method = x#method, url = x#url, headers = x#headers, body = Some(Body.Text(body))})
+
+    ///
+    /// Sets the body of the request `r` to the given binary `body`.
+    ///
+    pub def withBodyBytes(body: Vector[Int8], r: Request): Request =
+        let Request(x) = r;
+        Request({method = x#method, url = x#url, headers = x#headers, body = Some(Body.Bytes(body))})
 
     ///
     /// Sets the `Authorization` header to `Bearer <token>` on the request `r`.

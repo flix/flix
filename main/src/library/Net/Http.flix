@@ -16,6 +16,7 @@
 
 pub mod Net.Http {
 
+    use Net.Body
     use Net.Http
     use Net.Retry
     use Net.Request
@@ -72,19 +73,19 @@ pub mod Net.Http {
     /// Sends a POST request to the given `url` with the given `body`.
     ///
     pub def post(url: String, body: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(body)}))
+        send(Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body))}))
 
     ///
     /// Sends a PUT request to the given `url` with the given `body`.
     ///
     pub def put(url: String, body: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(body)}))
+        send(Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body))}))
 
     ///
     /// Sends a PATCH request to the given `url` with the given `body`.
     ///
     pub def patch(url: String, body: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(body)}))
+        send(Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body))}))
 
     ///
     /// Performs the actual HTTP request using the Java HTTP client.
@@ -102,8 +103,9 @@ pub mod Net.Http {
                 case Method.Patch   => "PATCH"
             };
             let bodyPublisher = match x#body {
-               case Some(b) => BodyPublishers.ofString(b)
-               case None    => BodyPublishers.noBody()
+               case Some(Body.Text(s))  => BodyPublishers.ofString(s)
+               case Some(Body.Bytes(v)) => BodyPublishers.ofByteArray(v)
+               case None                => BodyPublishers.noBody()
             };
             let builder =
                HttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
@@ -118,13 +120,14 @@ pub mod Net.Http {
                    );
             let jrequest = builder.build();
             let client = HttpClient.newHttpClient();
-            let response = client.send(jrequest, BodyHandlers.ofString());
+            let response = client.send(jrequest, BodyHandlers.ofByteArray());
             let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
             let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
+            let bytes = unchecked_cast(response.body() as Array[Int8, Static]);
             Ok(Response({
                status = response.statusCode(),
                headers = responseHeaders,
-               body = response.body().toString()
+               body = Body.Bytes(Array.toVector(bytes))
             }))
         } catch {
             case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
