@@ -116,6 +116,8 @@ pub mod Logger {
     ///
     /// Filters logs with greater or equal severity level
     ///
-    pub def atLeastLevel(s: Severity): (Severity, RichString) -> Bool = 
-        (sev, _) -> Order.greaterEqual(sev, s)
+    pub def runWithSeverityFilter(s: Severity, f: Unit -> b \ ef): b \ (ef - Logger) + Logger =
+        run {
+            f()
+        } with runWithFilter((sev, _) -> Order.greaterEqual(sev, s))
 }
