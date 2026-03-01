@@ -77,3 +77,31 @@ mod Retry {
             recDelay(() -> (), t_64, now)
         }
 }
+
+//usecases
+def prg1(): Unit \ IO = 
+    let pol = Retry.retry(Retry.limitRetries(100));
+    let res = run {
+        pol(DnsWithResult.lookup)("Somesitehere.nothing")
+    } with DnsWithResult.runWithIO
+    with Clock.runWithIO
+    with Console.runWithIO;
+    println(res); ()
+
+def prg2(): Unit \ IO =
+    let pol = Retry.retry(Retry.combine(Retry.expBackoff(), Retry.limitRetries(5)));
+    let res = run {
+        pol(DnsWithResult.lookup)("Somesitehere.nothing")
+    } with DnsWithResult.runWithIO
+    with Clock.runWithIO
+    with Console.runWithIO;
+    println(res); ()
+
+def prg3(): Unit \ IO =
+    let pol = Retry.retry(Retry.combine(Retry.constantBackoff(5), Retry.until(() -> true)));
+    let res = run {
+        pol(DnsWithResult.lookup)("Somesitehere.nothing")
+    } with DnsWithResult.runWithIO
+    with Clock.runWithIO
+    with Console.runWithIO;
+    println(res); ()
