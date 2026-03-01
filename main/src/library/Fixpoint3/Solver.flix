@@ -207,7 +207,6 @@ pub mod Fixpoint3.Solver {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
-                case _ => Comparison.LessThan
             }, db)
                 |> List.toMap
                 |> Model
@@ -898,7 +897,6 @@ pub mod Fixpoint3.Solver {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
-                case _ => Comparison.LessThan
             };
             db |>
                 Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {

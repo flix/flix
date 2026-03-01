@@ -94,7 +94,6 @@ mod Test.Exp.Force {
         let y = force x;
         match y {
             case (s, _) => assertEq(expected = "str", s)
-            case _      => fail("unexpected value")
         }
 
     @Test

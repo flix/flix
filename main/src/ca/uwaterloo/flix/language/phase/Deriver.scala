@@ -162,10 +162,14 @@ object Deriver {
       // `case _ => false`
       val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(false), loc), loc)
 
+      // The default rule handles cross-variant comparisons (e.g. (Red, Blue) => false).
+      // For single-case enums it is unreachable and would trigger a redundancy warning.
+      val matchRules = if (cases.size > 1) mainMatchRules :+ defaultRule else mainMatchRules
+
       // group the match rules in an expression
       KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        mainMatchRules ++ List(defaultRule),
+        matchRules,
         loc
       )
   }
@@ -317,63 +321,75 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
       val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
 
-      val lambdaSym = Symbol.freshVarSym("indexOf", BoundBy.Let, loc)
-
-      // Create the lambda mapping tags to indices
-      val lambdaParamSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
-      val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
-      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamSym, loc), indexMatchRules, loc)
-      val lambda = KindedAst.Expr.Lambda(
-        KindedAst.FormalParam(lambdaParamSym, lambdaParamSym.tvar, TypeSource.Ascribed, loc),
-        indexMatchExp,
-        allowSubeffecting = false,
-        loc
-      )
-
       // Create the main match expression
       val matchRules = getCasesInStableOrder(cases).map(mkComparePairMatchRule(_, loc, root))
 
-      // Create the default rule:
-      // `case _ => compare(indexOf(x), indexOf(y))`
-      val defaultMatchRule = KindedAst.MatchRule(
-        KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
-        None,
-        KindedAst.Expr.ApplySig(
-          SigSymUse(compareSigSym, loc),
-          List(
-            KindedAst.Expr.ApplyClo(
-              mkVarExpr(lambdaSym, loc),
-              mkVarExpr(param1, loc),
-              Type.freshVar(Kind.Star, loc),
-              Type.freshVar(Kind.Eff, loc),
-              loc
-            ),
-            KindedAst.Expr.ApplyClo(
-              mkVarExpr(lambdaSym, loc),
-              mkVarExpr(param2, loc),
-              Type.freshVar(Kind.Star, loc),
-              Type.freshVar(Kind.Eff, loc),
-              loc),
-          ),
-          Type.freshVar(Kind.Star, loc),
-          List.empty,
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Eff, loc),
+      if (cases.size > 1) {
+        // The indexOf lambda and default rule handle cross-variant ordering
+        // (e.g. (Red, Blue) => compare(indexOf(x), indexOf(y))).
+        // For single-case enums they are unreachable and would trigger redundancy warnings.
+        val lambdaSym = Symbol.freshVarSym("indexOf", BoundBy.Let, loc)
+
+        // Create the lambda mapping tags to indices
+        val lambdaParamSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
+        val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
+        val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamSym, loc), indexMatchRules, loc)
+        val lambda = KindedAst.Expr.Lambda(
+          KindedAst.FormalParam(lambdaParamSym, lambdaParamSym.tvar, TypeSource.Ascribed, loc),
+          indexMatchExp,
+          allowSubeffecting = false,
           loc
-        ),
-        loc
-      )
+        )
 
-      // Wrap the cases in a match expression
-      val matchExp = KindedAst.Expr.Match(
-        KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        matchRules :+ defaultMatchRule,
-        loc
-      )
+        // Create the default rule:
+        // `case _ => compare(indexOf(x), indexOf(y))`
+        val defaultMatchRule = KindedAst.MatchRule(
+          KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
+          None,
+          KindedAst.Expr.ApplySig(
+            SigSymUse(compareSigSym, loc),
+            List(
+              KindedAst.Expr.ApplyClo(
+                mkVarExpr(lambdaSym, loc),
+                mkVarExpr(param1, loc),
+                Type.freshVar(Kind.Star, loc),
+                Type.freshVar(Kind.Eff, loc),
+                loc
+              ),
+              KindedAst.Expr.ApplyClo(
+                mkVarExpr(lambdaSym, loc),
+                mkVarExpr(param2, loc),
+                Type.freshVar(Kind.Star, loc),
+                Type.freshVar(Kind.Eff, loc),
+                loc),
+            ),
+            Type.freshVar(Kind.Star, loc),
+            List.empty,
+            Type.freshVar(Kind.Star, loc),
+            Type.freshVar(Kind.Star, loc),
+            Type.freshVar(Kind.Eff, loc),
+            loc
+          ),
+          loc
+        )
 
-      // Put the expressions together in a let
-      KindedAst.Expr.Let(lambdaSym, lambda, matchExp, loc)
+        // Wrap the cases in a match expression
+        val matchExp = KindedAst.Expr.Match(
+          KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
+          matchRules :+ defaultMatchRule,
+          loc
+        )
+
+        // Put the expressions together in a let
+        KindedAst.Expr.Let(lambdaSym, lambda, matchExp, loc)
+      } else {
+        // Single-case enum: no need for indexOf or default rule
+        KindedAst.Expr.Match(
+          KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
+          matchRules,
+          loc
+        )
+      }
   }
 
   /**
