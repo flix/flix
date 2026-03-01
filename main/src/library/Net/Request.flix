@@ -20,6 +20,9 @@ pub mod Net.Request {
     use Net.Request.Request
     use Net.Method
 
+    import java.nio.charset.StandardCharsets
+    import java.net.URLEncoder
+
     ///
     /// Returns the HTTP method of the request `r`.
     ///
@@ -126,5 +129,44 @@ pub mod Net.Request {
     pub def withBody(body: String, r: Request): Request =
         let Request(x) = r;
         Request({method = x#method, url = x#url, headers = x#headers, body = Some(body)})
+
+    ///
+    /// Sets the `Authorization` header to `Bearer <token>` on the request `r`.
+    ///
+    pub def withBearerToken(token: String, r: Request): Request =
+        withHeader("Authorization", "Bearer ${token}", r)
+
+    ///
+    /// Sets the `Content-Type` header to `contentType` on the request `r`.
+    ///
+    pub def withContentType(contentType: String, r: Request): Request =
+        withHeader("Content-Type", contentType, r)
+
+    ///
+    /// Sets the `Accept` header to `accept` on the request `r`.
+    ///
+    pub def withAccept(accept: String, r: Request): Request =
+        withHeader("Accept", accept, r)
+
+    ///
+    /// Appends a query parameter `name=value` to the URL of the request `r`.
+    ///
+    /// The name and value are URL-encoded.
+    ///
+    pub def withQueryParam(name: String, value: String, r: Request): Request =
+        let Request(x) = r;
+        let encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8);
+        let encodedValue = URLEncoder.encode(value, StandardCharsets.UTF_8);
+        let separator = if (String.contains(substr = "?", x#url)) "&" else "?";
+        let newUrl = "${x#url}${separator}${encodedName}=${encodedValue}";
+        Request({method = x#method, url = newUrl, headers = x#headers, body = x#body})
+
+    ///
+    /// Appends multiple query parameters to the URL of the request `r`.
+    ///
+    /// The names and values are URL-encoded.
+    ///
+    pub def withQueryParams(params: Map[String, String], r: Request): Request =
+        Map.foldLeftWithKey((acc, name, value) -> withQueryParam(name, value, acc), r, params)
 
 }

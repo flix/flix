@@ -8,6 +8,8 @@
     "java.lang.Integer": "",
     "java.lang.Long": "",
     "java.lang.Number": "",
-    "java.lang.Short": ""
+    "java.lang.Short": "",
+    "java.net.URLEncoder": "",
+    "java.nio.charset.StandardCharsets": ""
   }
 }

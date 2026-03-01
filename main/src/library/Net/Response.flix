@@ -94,4 +94,19 @@ pub mod Net.Response {
     pub def isError(r: Response): Bool =
         isClientError(r) or isServerError(r)
 
+    ///
+    /// Returns the value of the `content-type` header, or `None` if not present.
+    ///
+    pub def contentType(r: Response): Option[String] =
+        headerValue("content-type", r)
+
+    ///
+    /// Returns the value of the `content-length` header parsed as an `Int64`, or `None` if not present or not a valid number.
+    ///
+    pub def contentLength(r: Response): Option[Int64] =
+        match headerValue("content-length", r) {
+            case Some(v) => Int64.fromString(v)
+            case None    => None
+        }
+
 }
