@@ -87,13 +87,13 @@ pub mod Logger {
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
 
     ///
-    /// Handles the `Logger` effect of the given function `f`. 
+    /// Handles the `Logger` effect of the given function `f`.
     /// 
     /// In other words, re-interprets the `Logger` effect using the `Console` effect.
-    /// 
-    /// Severities `Warn` and `Fatal` prints to the standard err. The rest prints to the standard out.
     ///
-    pub def handleWithConsole(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
+    /// Prints to standard out.
+    ///
+    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
         x -> run {
             f(x)
         } with handler Logger {
@@ -106,10 +106,7 @@ pub mod Logger {
                     case Severity.Warn  => yellow("[Warn]")
                 };
                 let output = prefix + text(" ") + m;
-                if (s==Severity.Warn or s==Severity.Fatal) 
-                    Console.eprintln(RichString.toString(output))
-                else
-                    Console.println(RichString.toString(output));
+                Console.println(RichString.toString(output));
                 k()
             }
         }
@@ -118,9 +115,43 @@ pub mod Logger {
     /// Runs the `Logger` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Logger` effect using the `Console` effect.
-    /// 
-    /// Severities `Warn` and `Fatal` prints to the standard err. The rest prints to the standard out.
     ///
-    pub def runWithConsole(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithConsole(f)()
+    /// Prints to standard out.
+    ///
+    pub def runWithStdOut(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithStdOut(f)()
 
+    ///
+    /// Handles the `Logger` effect of the given function `f`.
+    /// 
+    /// In other words, re-interprets the `Logger` effect using the `Console` effect.
+    ///
+    /// Prints to standard error.
+    ///
+    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let prefix = match s {
+                    case Severity.Debug => cyan("[Debug]")
+                    case Severity.Fatal => bold(red("[Fatal]"))
+                    case Severity.Info  => green("[Info]")
+                    case Severity.Trace => gray("[Trace]")
+                    case Severity.Warn  => yellow("[Warn]")
+                };
+                let output = prefix + text(" ") + m;
+                Console.eprintln(RichString.toString(output));
+                k()
+            }
+        }
+
+    ///
+    /// Runs the `Logger` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Logger` effect using the `Console` effect.
+    ///
+    /// Prints to standard error.
+    ///
+    pub def runWithStdErr(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithStdErr(f)()
+    
 }
