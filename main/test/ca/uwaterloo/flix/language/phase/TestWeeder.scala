@@ -1922,14 +1922,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyTypeParamList](result)
   }
 
-  test("EmptyEffectSet.01") {
-    val input =
-      """
-        |def without01(): Bool = ??? without { }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
-  }
 
   test("EmptyEnumCaseType.01") {
     val input =

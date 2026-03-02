@@ -190,8 +190,6 @@ object UseGraph {
     case Expr.Unsafe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))

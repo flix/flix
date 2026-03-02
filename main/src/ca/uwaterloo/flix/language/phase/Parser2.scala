@@ -1521,8 +1521,7 @@ object Parser2 {
                 // Hence we special case on whether the left token is ::. If it is,
                 // we avoid consuming any fuel.
                 // The next nth lookup will always fail, so we add fuel to account for it.
-                // The lookup for KeywordWithout will always happen so we add fuel to account for it.
-                if (left == BinaryOp.ColonColon) s.fuel += 2
+                if (left == BinaryOp.ColonColon) s.fuel += 1
                 continue = false
               case _ =>
                 val mark = openBefore(lhs)
@@ -1534,36 +1533,11 @@ object Parser2 {
           case None =>
             // Non-operator or EOF.
             // Add fuel for the same reason as above.
-            if (leftOpt.contains(BinaryOp.ColonColon)) s.fuel += 2
+            if (leftOpt.contains(BinaryOp.ColonColon)) s.fuel += 1
             continue = false
         }
       }
-      // Handle without expressions.
-      if (eat(TokenKind.KeywordWithout)) {
-        val mark = open()
-        if (at(TokenKind.CurlyL)) {
-          zeroOrMore(
-            namedTokenSet = NamedTokenSet.Effect,
-            getItem = () => nameAllowQualified(NAME_EFFECT),
-            checkForItem = NAME_EFFECT.contains,
-            breakWhen = _.isRecoverInExpr,
-            delimiterL = TokenKind.CurlyL,
-            delimiterR = TokenKind.CurlyR
-          )
-        } else if (NAME_EFFECT.contains(nth(0))) {
-          nameAllowQualified(NAME_EFFECT)
-        } else {
-          closeWithError(open(), UnexpectedToken(
-            expected = NamedTokenSet.Effect,
-            actual = Some(nth(0)),
-            sctx = sctx,
-            hint = Some(s"supply at least one effect to ${TokenKind.KeywordWithout.display}."),
-            loc = previousSourceLocation()))
-        }
-        close(mark, TreeKind.Type.EffectSet)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Without)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
+
       lhs
     }
 

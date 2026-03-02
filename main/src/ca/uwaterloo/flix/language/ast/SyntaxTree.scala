@@ -380,7 +380,6 @@ object SyntaxTree {
 
       case object Use extends Expr
 
-      case object Without extends Expr
 
     }
 

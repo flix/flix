@@ -160,7 +160,6 @@ object DesugaredAst {
 
     case class Unsafe(exp: Expr, eff: Type, asEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 

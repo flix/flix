@@ -368,11 +368,6 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Without(exp, symUse, tpe, eff, _) =>
-      visitExp(exp)
-      visitSymUse(symUse)
-      visitType(tpe)
-      visitType(eff)
 
     case Expr.TryCatch(exp, rules, tpe, eff, _) =>
       visitExp(exp)

@@ -149,7 +149,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
-      case TokenKind.KeywordWithout => "'without'"
+
       case TokenKind.KeywordXor => "'xor'"
       case TokenKind.KeywordXvar => "'xvar'"
       case TokenKind.KeywordYield => "'yield'"
@@ -280,7 +280,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
     case TokenKind.KeywordWith => true
-    case TokenKind.KeywordWithout => true
+
     case TokenKind.KeywordXor => true
     case TokenKind.KeywordXvar => true
     case TokenKind.KeywordYield => true
@@ -888,7 +888,6 @@ object TokenKind {
 
   case object KeywordWith extends TokenKind
 
-  case object KeywordWithout extends TokenKind
 
   case object KeywordXor extends TokenKind
 

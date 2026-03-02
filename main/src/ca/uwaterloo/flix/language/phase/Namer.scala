@@ -915,9 +915,6 @@ object Namer {
       val asEff = asEff0.map(visitType)
       NamedAst.Expr.Unsafe(e, eff, asEff, loc)
 
-    case DesugaredAst.Expr.Without(exp, qname, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.Without(e, qname, loc)
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)

@@ -496,9 +496,6 @@ object Visitor {
         asEff.foreach(visitType)
         visitExpr(exp)
 
-      case Expr.Without(exp, symUse, _, _, _) =>
-        visitExpr(exp)
-        visitEffSymUse(symUse)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)

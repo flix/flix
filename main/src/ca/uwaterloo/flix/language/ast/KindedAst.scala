@@ -165,7 +165,6 @@ object KindedAst {
 
     case class Unsafe(exp: Expr, eff: Type, asEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, symUse: EffSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 

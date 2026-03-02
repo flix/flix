@@ -407,7 +407,7 @@ object Eraser {
 
     /** Returns the entries of `m`. */
     private def toList[A, B](m: ConcurrentHashMap[(A, B), A]): List[(A, B, A)] = {
-      val res = mutable.ListBuffer.empty[(A, B, A)]
+      val res = mutable.ArrayBuffer.empty[(A, B, A)]
       m.forEach(new BiConsumer[(A, B), A] {
         override def accept(t: (A, B), u: A): Unit = res.append((t._1, t._2, u))
       })

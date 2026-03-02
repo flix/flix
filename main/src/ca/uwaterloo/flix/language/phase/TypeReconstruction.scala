@@ -386,11 +386,6 @@ object TypeReconstruction {
       val eff = Type.mkUnion(Type.mkDifference(e.eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
       TypedAst.Expr.Unsafe(e, eff0, asEff0, e.tpe, eff, loc)
 
-    case KindedAst.Expr.Without(exp, symUse, loc) =>
-      val e = visitExp(exp)
-      val tpe = e.tpe
-      val eff = e.eff
-      TypedAst.Expr.Without(e, symUse, tpe, eff, loc)
 
     case KindedAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)

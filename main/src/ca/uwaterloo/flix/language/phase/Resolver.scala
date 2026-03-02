@@ -613,7 +613,7 @@ object Resolver {
         val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
         // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ListBuffer.empty[ResolutionError]
+        val errors = mutable.ArrayBuffer.empty[ResolutionError]
 
         // Build the map `m` and check for [[DuplicateAssocTypeDef]].
         for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
@@ -1151,17 +1151,6 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.Throw(e, loc)
 
-    case NamedAst.Expr.Without(exp, qname, loc) =>
-      lookupEffect(qname, scp0, ns0, root) match {
-        case Result.Ok(decl) =>
-          checkEffectIsAccessible(decl, ns0, qname.loc)
-          val symUse = EffSymUse(decl.sym, qname)
-          val e = resolveExp(exp, scp0)
-          ResolvedAst.Expr.Without(e, symUse, loc)
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
-      }
 
     case NamedAst.Expr.Handler(qname, rules, loc) =>
       visitHandler(qname, rules, scp0) match {
