@@ -443,8 +443,8 @@ object Specialization {
         // Effect operations are monomorphic - they have no variables.
         // The substitution can be left empty.
         val fparams = fparams0.map {
-          case TypedAst.FormalParam(varSym, tpe, src, fpLoc) =>
-            TypedAst.FormalParam(varSym, StrictSubstitution.empty(tpe), src, fpLoc)
+          case TypedAst.FormalParam(varSym, tpe, src, decreasing, fpLoc) =>
+            TypedAst.FormalParam(varSym, StrictSubstitution.empty(tpe), src, decreasing, fpLoc)
         }
         // `tparams` and `tconstrs` are ignored by `monomorph.Lowering`.
         // They are solely passed to adhere to the `TypedAst.spec`.
@@ -518,34 +518,34 @@ object Specialization {
       val e = specializeExp(exp, env0 ++ env1, subst)
       Expr.Lambda(p, e, subst(tpe), loc)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, pos, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), pos, loc)
 
-    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, pos, loc) =>
       val it = subst(itpe)
       val newSym = specializeDefnSym(symUse.sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), loc)
+      Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), pos, loc)
 
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, pos, loc) =>
       val newSym = env0(symUse.sym)
       val es = exps.map(specializeExp(_, env0, subst))
       val arrowT = subst(arrowTpe)
       val t = subst(tpe)
       val ef = subst(eff)
-      Expr.ApplyLocalDef(LocalDefSymUse(newSym, symUse.loc), es, arrowT, t, ef, loc)
+      Expr.ApplyLocalDef(LocalDefSymUse(newSym, symUse.loc), es, arrowT, t, ef, pos, loc)
 
-    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, pos, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
+      Expr.ApplyOp(sym, es, subst(tpe), subst(eff), pos, loc)
 
-    case Expr.ApplySig(symUse, exps, _, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplySig(symUse, exps, _, targs, itpe, tpe, eff, pos, loc) =>
       val it = subst(itpe)
       val newSym = specializeSigSym(symUse.sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), loc)
+      Expr.ApplyDef(DefSymUse(newSym, symUse.loc), es, targs, it, subst(tpe), subst(eff), pos, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
 
@@ -631,7 +631,7 @@ object Specialization {
       val e2 = specializeExp(exp2, env1, subst)
       Expr.Let(Binder(freshSym, subst(bnd.tpe)), e1, e2, subst(tpe), subst(eff), loc)
 
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(ann, bnd, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(bnd.sym)
       val env1 = env0 + (bnd.sym -> freshSym)
       val (fps, env2) = specializeFormalParams(fparams, subst)
@@ -639,7 +639,7 @@ object Specialization {
       val e2 = specializeExp(exp2, env1, subst)
       val t = subst(tpe)
       val ef = subst(eff)
-      Expr.LocalDef(Binder(freshSym, subst(bnd.tpe)), fps, e1, e2, t, ef, loc)
+      Expr.LocalDef(ann, Binder(freshSym, subst(bnd.tpe)), fps, e1, e2, t, ef, loc)
 
     case Expr.Region(bnd, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(bnd.sym)
@@ -1300,9 +1300,9 @@ object Specialization {
     * to a fresh variable symbol.
     */
   private def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: StrictSubstitution)(implicit root: TypedAst.Root, flix: Flix): (TypedAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
-    val TypedAst.FormalParam(bnd, tpe, src, loc) = fparam0
+    val TypedAst.FormalParam(bnd, tpe, src, decreasing, loc) = fparam0
     val freshSym = Symbol.freshVarSym(bnd.sym)
-    (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, loc), Map(bnd.sym -> freshSym))
+    (TypedAst.FormalParam(Binder(freshSym, subst0(bnd.tpe)), subst0(tpe), src, decreasing, loc), Map(bnd.sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */

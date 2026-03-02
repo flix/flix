@@ -116,7 +116,7 @@ object WeededAst {
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], declaredTpe: Option[Type], declaredEff: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LocalDef(ann: Annotations, ident: Name.Ident, fparams: List[FormalParam], declaredTpe: Option[Type], declaredEff: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Region(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 

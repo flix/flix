@@ -21,7 +21,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -221,24 +222,24 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.Lambda(p, e, t, loc)
 
-    case TypedAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyClo(e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, _, loc) =>
       val es = exps.map(lowerExp)
       val it = lowerType(itpe)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyDef(sym.sym, es, it, t, eff, loc)
 
-    case TypedAst.Expr.ApplyLocalDef(bnd, exps, _, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyLocalDef(bnd, exps, _, tpe, eff, _, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyLocalDef(bnd.sym, es, t, eff, loc)
 
-    case TypedAst.Expr.ApplyOp(bnd, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyOp(bnd, exps, tpe, eff, _, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyOp(bnd.sym, es, t, eff, loc)
@@ -264,7 +265,7 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.Let(bnd.sym, e1, e2, t, eff, Occur.Unknown, loc)
 
-    case TypedAst.Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LocalDef(_, bnd, fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = fparams.map(lowerFormalParam)
       val e1 = lowerExp(exp1)
       val e2 = lowerExp(exp2)
@@ -624,7 +625,7 @@ object Lowering {
     case TypedAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
       lowerInjectInto(exps, predsAndArities, loc)
 
-    case TypedAst.Expr.ApplySig(_, _, _, _, _, _, _, _) =>
+    case TypedAst.Expr.ApplySig(_, _, _, _, _, _, _, _, _) =>
       throw InternalCompilerException(s"Unexpected ApplySig", exp0.loc)
 
     case TypedAst.Expr.Error(m, _, _) =>
@@ -788,7 +789,7 @@ object Lowering {
   }
 
   private def lowerFormalParam(fparam: TypedAst.FormalParam): MonoAst.FormalParam = fparam match {
-    case TypedAst.FormalParam(bnd, tpe, _, loc0) => MonoAst.FormalParam(bnd.sym, lowerType(tpe), Occur.Unknown, loc0)
+    case TypedAst.FormalParam(bnd, tpe, _, _, loc0) => MonoAst.FormalParam(bnd.sym, lowerType(tpe), Occur.Unknown, loc0)
   }
 
   private def lowerTypeParam(tparam: TypedAst.TypeParam): MonoAst.TypeParam = tparam match {
@@ -888,6 +889,7 @@ object Lowering {
           TypedAst.Binder(Symbol.freshVarSym("_", BoundBy.FormalParam, expLoc)(Scope.Top, flix), Type.Unit),
           Type.Unit,
           TypeSource.Inferred,
+          Decreasing.NonDecreasing,
           expLoc
         ),
         defn.exp,
@@ -899,7 +901,7 @@ object Lowering {
     // Create HandledEff.handle(_ -> exp)
     val defnSym = lookup(defaultHandler.handlerSym, handlerArrowType)
     val handlerDefSymUse = SymUse.DefSymUse(defnSym, expLoc)
-    val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, expLoc)
+    val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, ApplyPosition.NonTail, expLoc)
     defn.copy(spec = spec, exp = handlerCall)
   }
 

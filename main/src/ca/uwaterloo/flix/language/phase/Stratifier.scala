@@ -122,26 +122,26 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Lambda(fparam, e, tpe, loc)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, pos, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.ApplyClo(e1, e2, tpe, eff, loc)
+      Expr.ApplyClo(e1, e2, tpe, eff, pos, loc)
 
-    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, pos, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyDef(symUse, es, targs, itpe, tpe, eff, loc)
+      Expr.ApplyDef(symUse, es, targs, itpe, tpe, eff, pos, loc)
 
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, pos, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, loc)
+      Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, pos, loc)
 
-    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, pos, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyOp(sym, es, tpe, eff, loc)
+      Expr.ApplyOp(sym, es, tpe, eff, pos, loc)
 
-    case Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, loc) =>
+    case Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, pos, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplySig(symUse, es, targ, targs, itpe, tpe, eff, loc)
+      Expr.ApplySig(symUse, es, targ, targs, itpe, tpe, eff, pos, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -157,10 +157,10 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.Let(sym, e1, e2, tpe, eff, loc)
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(ann, sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, loc)
+      Expr.LocalDef(ann, sym, fparams, e1, e2, tpe, eff, loc)
 
     case Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
