@@ -1080,8 +1080,6 @@ mod BPlusTree.Node {
     ///
     /// `pickChild` should pick a child of `cur` if `cur` is an internal node and is not 
     /// called if `cur` is a leaf. 
-    ///
-    /// `restart` should restart the traversal from the root of the tree.
     /// 
     /// Caution: Because invalid locks trigger `restart`, `pickChild` may be called an
     /// unknown number of times before traversal succeeds.
