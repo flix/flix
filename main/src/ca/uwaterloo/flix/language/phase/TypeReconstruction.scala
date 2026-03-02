@@ -386,11 +386,6 @@ object TypeReconstruction {
       val eff = Type.mkUnion(Type.mkDifference(e.eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
       TypedAst.Expr.Unsafe(e, eff0, asEff0, e.tpe, eff, loc)
 
-    case KindedAst.Expr.Without(exp, symUse, loc) =>
-      val e = visitExp(exp)
-      val tpe = e.tpe
-      val eff = e.eff
-      TypedAst.Expr.Without(e, symUse, tpe, eff, loc)
 
     case KindedAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -466,6 +461,19 @@ object TypeReconstruction {
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, methLoc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
+      }
+
+    case KindedAst.Expr.InvokeSuperMethod(clazz, _, exps, jvar, tvar, evar, loc) =>
+      val es0 = exps.map(visitExp)
+      val returnTpe = subst(tvar)
+      val methodTpe = subst(jvar)
+      val eff = subst(evar)
+      methodTpe match {
+        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+          val es = getArgumentsWithVarArgs(method, es0, methLoc)
+          TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, methLoc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), returnTpe, eff)
       }
 
     case KindedAst.Expr.InvokeStaticMethod(_, _, exps, jvar, tvar, evar, loc) =>

@@ -441,6 +441,7 @@ object ConstraintGen {
           case _: Expr.InvokeConstructor => true
           case _: Expr.InvokeSuperConstructor => true
           case _: Expr.InvokeMethod => true
+          case _: Expr.InvokeSuperMethod => true
           case _: Expr.InvokeStaticMethod => true
           case _ => false
         }
@@ -849,18 +850,6 @@ object ConstraintGen {
         val resEff = Type.mkUnion(Type.mkDifference(eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
         (resTpe, resEff)
 
-      case Expr.Without(exp, symUse, _) =>
-        //
-        // e: tpe \ eff - symUse
-        // -------------------------
-        // e without symUse : tpe
-        //
-        val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc), symUse.qname.loc) // TODO EFF-TPARAMS need kind
-        c.unifyType(eff, effWithoutSym, symUse.qname.loc)
-        val resTpe = tpe
-        val resEff = eff
-        (resTpe, resEff)
 
       case Expr.TryCatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
@@ -953,6 +942,17 @@ object ConstraintGen {
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: eff :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.InvokeSuperMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
+        val baseEff = Type.JvmToEff(jvar, loc)
+        val clazzTpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)

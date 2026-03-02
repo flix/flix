@@ -165,7 +165,6 @@ object KindedAst {
 
     case class Unsafe(exp: Expr, eff: Type, asEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, symUse: EffSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
@@ -180,6 +179,8 @@ object KindedAst {
     case class InvokeSuperConstructor(clazz: Class[?], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
+    case class InvokeSuperMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 

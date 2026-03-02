@@ -300,9 +300,6 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Unsafe(e, runEff, asEff, tpe, eff, loc)
 
-    case Expr.Without(exp, symUse, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.Without(e, symUse, tpe, eff, loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -334,6 +331,10 @@ object Stratifier {
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       Expr.InvokeMethod(method, e, es, tpe, eff, loc)
+
+    case Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.InvokeSuperMethod(method, es, tpe, eff, loc)
 
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

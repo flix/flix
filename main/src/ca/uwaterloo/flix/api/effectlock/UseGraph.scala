@@ -190,8 +190,6 @@ object UseGraph {
     case Expr.Unsafe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
@@ -213,6 +211,9 @@ object UseGraph {
 
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
+
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
       visitExps(exps)

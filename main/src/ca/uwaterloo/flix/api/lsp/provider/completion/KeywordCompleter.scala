@@ -142,7 +142,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("use"         , range, Priority.Lowest(0)),
       // W
       Completion.KeywordCompletion("with"        , range, Priority.Lowest(0)),
-      Completion.KeywordCompletion("without"     , range, Priority.Lowest(1)),
+
       // Y
       Completion.KeywordCompletion("yield"       , range, Priority.Lowest(0))
     ).filter {

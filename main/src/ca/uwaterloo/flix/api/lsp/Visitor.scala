@@ -496,9 +496,6 @@ object Visitor {
         asEff.foreach(visitType)
         visitExpr(exp)
 
-      case Expr.Without(exp, symUse, _, _, _) =>
-        visitExpr(exp)
-        visitEffSymUse(symUse)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -523,6 +520,9 @@ object Visitor {
 
       case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
         visitExpr(exp)
+        exps.foreach(visitExpr)
+
+      case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
       case Expr.InvokeStaticMethod(_, exps, _, _, _) =>

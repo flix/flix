@@ -94,7 +94,7 @@ object ResolvedAstPrinter {
     case Expr.CheckedCast(cast, exp, _) => DocAst.Expr.CheckedCast(cast, print(exp))
     case Expr.UncheckedCast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), tpe.map(UnkindedTypePrinter.print), eff.map(UnkindedTypePrinter.print))
     case Expr.Unsafe(exp, runEff, asEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff), asEff.map(UnkindedTypePrinter.print))
-    case Expr.Without(exp, symUse, _) => DocAst.Expr.Without(print(exp), symUse.sym)
+
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, body, _) => (sym, clazz, print(body))
     })
@@ -106,6 +106,7 @@ object ResolvedAstPrinter {
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeSuperConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeSuperMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetField(_, _, _) => DocAst.Expr.Unknown
     case Expr.PutField(_, _, _, _, _) => DocAst.Expr.Unknown

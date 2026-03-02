@@ -249,8 +249,6 @@ object PredDeps {
     case Expr.Unsafe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
@@ -274,6 +272,9 @@ object PredDeps {
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp)
+      args.foreach(visitExp)
+
+    case Expr.InvokeSuperMethod(_, args, _, _, _) =>
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>

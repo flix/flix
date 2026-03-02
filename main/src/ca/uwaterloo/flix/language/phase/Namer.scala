@@ -915,9 +915,6 @@ object Namer {
       val asEff = asEff0.map(visitType)
       NamedAst.Expr.Unsafe(e, eff, asEff, loc)
 
-    case DesugaredAst.Expr.Without(exp, qname, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.Without(e, qname, loc)
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -949,6 +946,10 @@ object Namer {
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeMethod(e, name, es, loc)
+
+    case DesugaredAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.InvokeSuperMethod(methodName, es, loc)
 
     case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)

@@ -697,9 +697,6 @@ object Desugar {
       val asEff = asEff0.map(visitType)
       Expr.Unsafe(e, eff, asEff, loc)
 
-    case WeededAst.Expr.Without(exp, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.Without(e, eff, loc)
 
     case WeededAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -732,6 +729,10 @@ object Desugar {
       val e = visitExp(exp)
       val es = visitExps(exps)
       Expr.InvokeMethod(e, name, es, loc)
+
+    case WeededAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeSuperMethod(methodName, es, loc)
 
     case WeededAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)

@@ -241,7 +241,7 @@ object Summary {
     case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.Unsafe(exp, _, _, _, _, _) => countCheckedEcasts(exp)
-    case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
+
     case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.CatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
@@ -253,6 +253,7 @@ object Summary {
     case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeSuperConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeStaticMethod(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.GetField(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutField(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
@@ -537,13 +538,13 @@ object Summary {
   class Table {
 
     /** The rows collected so far */
-    private val rows: mutable.ListBuffer[List[String]] = mutable.ListBuffer.empty
+    private val rows: mutable.ArrayBuffer[List[String]] = mutable.ArrayBuffer.empty
 
     /**
       * Has the length of the longest list in rows. Each integer contains the
       * max length of any string in that column.
       */
-    private val maxLens: mutable.ListBuffer[Int] = mutable.ListBuffer.empty
+    private val maxLens: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
 
     /** Adds a row to the builder. The rows can have different lengths */
     def addRow(row: List[String]): Unit = insertRow(rows.length, row)

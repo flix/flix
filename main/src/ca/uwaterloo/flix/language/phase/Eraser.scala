@@ -189,6 +189,7 @@ object Eraser {
         case AtomicOp.InvokeConstructor(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeSuperConstructor(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeMethod(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeSuperMethod(_, _) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeStaticMethod(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.GetField(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.PutField(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
@@ -406,7 +407,7 @@ object Eraser {
 
     /** Returns the entries of `m`. */
     private def toList[A, B](m: ConcurrentHashMap[(A, B), A]): List[(A, B, A)] = {
-      val res = mutable.ListBuffer.empty[(A, B, A)]
+      val res = mutable.ArrayBuffer.empty[(A, B, A)]
       m.forEach(new BiConsumer[(A, B), A] {
         override def accept(t: (A, B), u: A): Unit = res.append((t._1, t._2, u))
       })

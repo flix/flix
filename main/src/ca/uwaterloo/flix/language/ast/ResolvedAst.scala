@@ -181,7 +181,6 @@ object ResolvedAst {
 
     case class Unsafe(exp: Expr, eff: UnkindedType, asEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, symUse: EffSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
@@ -196,6 +195,8 @@ object ResolvedAst {
     case class InvokeSuperConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeSuperMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 

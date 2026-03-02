@@ -577,9 +577,6 @@ object SemanticTokensProvider {
     case Expr.Unsafe(exp, runEff, asEff, _, _, _) =>
       visitType(runEff) ++ asEff.map(visitType).getOrElse(Iterator()) ++ visitExp(exp)
 
-    case Expr.Without(exp, symUse, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Effect, Nil, symUse.qname.loc)
-      Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp1)) {
@@ -619,6 +616,11 @@ object SemanticTokensProvider {
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, e) => acc ++ visitExp(e)
+      }
+
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
       }
 
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>

@@ -160,7 +160,6 @@ object DesugaredAst {
 
     case class Unsafe(exp: Expr, eff: Type, asEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
@@ -175,6 +174,8 @@ object DesugaredAst {
     case class InvokeSuperConstructor(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeSuperMethod(methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 

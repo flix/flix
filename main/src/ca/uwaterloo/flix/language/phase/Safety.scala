@@ -244,8 +244,6 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
@@ -282,6 +280,10 @@ object Safety {
     case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
       checkPermissions(loc.security, loc)
       visitExp(exp)
+      args.foreach(visitExp)
+
+    case Expr.InvokeSuperMethod(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, loc) =>

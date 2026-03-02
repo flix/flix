@@ -213,7 +213,6 @@ object TypedAst {
 
     case class Unsafe(exp: Expr, runEff: Type, asEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, symUse: EffSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -230,6 +229,8 @@ object TypedAst {
     case class InvokeSuperConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(method: Method, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class InvokeSuperMethod(method: Method, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethod(method: Method, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

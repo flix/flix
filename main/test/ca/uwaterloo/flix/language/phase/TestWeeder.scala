@@ -1922,14 +1922,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyTypeParamList](result)
   }
 
-  test("EmptyEffectSet.01") {
-    val input =
-      """
-        |def without01(): Bool = ??? without { }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[ParseError.NeedAtleastOne](result)
-  }
 
   test("EmptyEnumCaseType.01") {
     val input =
@@ -1952,6 +1944,55 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalUnaryPlus](result)
+  }
+
+  test("IllegalConstantPattern.LetMatch.01") {
+    val input =
+      """enum E {
+        |  case A(Bool, Char, Int8)
+        |}
+        |
+        |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalConstantPattern](result)
+  }
+
+  test("IllegalConstantPattern.LetMatch.02") {
+    val input =
+      """def f(e: (Int8, Int8)): Int8 = let (a,1i8) = e; a
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalConstantPattern](result)
+  }
+
+  test("IllegalConstantPattern.MatchLambda.01") {
+    val input =
+      """
+        |enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |def f(): Option[Int32] -> Int32 = match None -> 42
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalConstantPattern](result)
+  }
+
+  test("IllegalConstantPattern.ParYield.01") {
+    val input =
+      """
+        |enum E {
+        |    case E1
+        |    case E2
+        |}
+        |
+        |def f(): E = par (E.E1 <- if (true) E.E1 else E.E2) yield E.E1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalConstantPattern](result)
   }
 
 }

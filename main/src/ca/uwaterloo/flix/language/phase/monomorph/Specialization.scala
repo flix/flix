@@ -813,10 +813,6 @@ object Specialization {
       val asEff = asEff0.map(subst.apply)
       Expr.Unsafe(e, subst(runEff), asEff, t, subst(eff), loc)
 
-    case Expr.Without(exp, symUse, tpe, eff, loc) =>
-      val e = specializeExp(exp, env0, subst)
-      val t = subst(tpe)
-      Expr.Without(e, symUse, t, subst(eff), loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc0) =>
       val e = specializeExp(exp, env0, subst)
@@ -868,6 +864,11 @@ object Specialization {
       val es = exps.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
       Expr.InvokeMethod(method, e, es, t, subst(eff), loc)
+
+    case Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val t = subst(tpe)
+      Expr.InvokeSuperMethod(method, es, t, subst(eff), loc)
 
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))

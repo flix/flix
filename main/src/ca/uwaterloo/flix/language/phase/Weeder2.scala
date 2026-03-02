@@ -907,7 +907,7 @@ object Weeder2 {
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
-        case TreeKind.Expr.Without => visitWithoutExpr(tree)
+
         case TreeKind.Expr.Run => visitRunExpr(tree)
         case TreeKind.Expr.Handler => visitHandlerExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
@@ -917,6 +917,7 @@ object Weeder2 {
         case TreeKind.Expr.InvokeConstructor => visitInvokeConstructorExpr(tree)
         case TreeKind.Expr.InvokeSuperConstructor => visitInvokeSuperConstructorExpr(tree)
         case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
+        case TreeKind.Expr.InvokeSuperMethod => visitInvokeSuperMethodExpr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
@@ -1825,28 +1826,6 @@ object Weeder2 {
       }
     }
 
-    private def visitWithoutExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Without)
-      val effects = mapN(pick(TreeKind.Type.EffectSet, tree)) {
-        effectSetTree =>
-          val effects = pickAll(TreeKind.QName, effectSetTree).map(visitQName)
-          // Handle empty here where we have access to `effectSetTree.loc`
-          if (effects.isEmpty) {
-            sctx.errors.add(NeedAtleastOne(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, effectSetTree.loc))
-          }
-          effects
-      }
-      mapN(pickExpr(tree), effects) {
-        case (expr, effect :: effects0) =>
-          val base = Expr.Without(expr, effect, tree.loc)
-          effects0.foldLeft(base) {
-            case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
-          }
-        case (_, Nil) =>
-          // Fall back on Expr.Error
-          Expr.Error(NeedAtleastOne(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
-      }
-    }
 
     private def visitRunExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Run)
@@ -1995,6 +1974,15 @@ object Weeder2 {
         case (b, m, as) =>
           val result = Expr.InvokeMethod(b, m, as, tree.loc)
           result
+      }
+    }
+
+    private def visitInvokeSuperMethodExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeSuperMethod)
+      val method = pickNameIdent(tree)
+      val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
+      mapN(method, argsExps) {
+        case (m, as) => Expr.InvokeSuperMethod(m, as, tree.loc)
       }
     }
 
