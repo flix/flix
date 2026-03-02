@@ -48,6 +48,26 @@ pub mod Net {
     }
 
     ///
+    /// Describes why a retry is being considered.
+    ///
+    pub enum RetryOutcome {
+        /// A transport-level failure (connection refused, timeout, etc.).
+        case TransportError(IoError)
+        /// A response was received but its status code warrants a retry (e.g. 429, 503).
+        case HttpError(Response)
+    }
+
+    ///
+    /// The decision returned by a retry handler.
+    ///
+    pub enum RetryDecision with Eq, ToString {
+        /// Retry after `delayMs` milliseconds. `executeWithRetry` will sleep this long.
+        case Retry(Int64)
+        /// Do not retry; propagate the last result.
+        case Stop
+    }
+
+    ///
     /// An HTTP request with method, URL, multi-valued headers, and optional body.
     ///
     pub enum Request({
@@ -84,10 +104,11 @@ pub mod Net {
     }
 
     ///
-    /// The effect used to decide whether a failed request should be retried.
+    /// The effect used to decide whether a failed or non-success request should be retried,
+    /// and how long to wait before the next attempt.
     ///
     pub eff Retry {
-        def shouldRetry(attempt: Int32, request: Request, error: IoError): Bool
+        def retryDecision(attempt: Int32, request: Request, outcome: RetryOutcome): RetryDecision
     }
 
 }

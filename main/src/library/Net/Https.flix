@@ -102,7 +102,7 @@ pub mod Net.Https {
     ///
     /// Re-interprets the `Https` effect using the `Retry` and `IO` effects.
     /// Validates that request URLs use the `https://` scheme.
-    /// On retryable failures, raises `Retry.shouldRetry` to decide whether to retry.
+    /// On retryable failures or non-success responses, raises `Retry.retryDecision` to decide whether to retry.
     ///
     pub def handleWithRetry(f: a -> b \ ef): a -> b \ (ef - Https) + Retry + IO = x ->
         run {
