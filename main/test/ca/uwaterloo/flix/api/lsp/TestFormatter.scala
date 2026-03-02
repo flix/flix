@@ -93,6 +93,16 @@ class TestFormatter extends AnyFunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Parsability–Formattability Implication: When parsable, the formatter must be able to format the program without errors.
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parsability–Formattability Implication: When parsable, the formatter must be able to format the program without errors.") {
+    for ((program, programPath) <- Programs.zip(ProgramPathList)) {
+      val syntaxRoot = compileWithSuccess(program)
+      Formatter.format(syntaxRoot, programPath)
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Idempotence: formatting once must result in the same as formatting twice
   /////////////////////////////////////////////////////////////////////////////
   test("Idempotence: formatting once must result in the same as formatting twice.") {
