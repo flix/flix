@@ -78,7 +78,6 @@ pub mod Fixpoint3.Phase.RenamePredSyms {
                 |> Provenance(newRules)
         case Join(d1, d2) =>
             Join(fixPredSymsInternal(d1, mapping), fixPredSymsInternal(d2, mapping))
-        case _ => bug!("PredSym error")
     }
 
     ///

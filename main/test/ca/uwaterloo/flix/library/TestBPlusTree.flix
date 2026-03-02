@@ -2108,7 +2108,7 @@ mod TestBPlusTree {
         assertEq(expected = 0, c)
     }
 
-     @Test
+    @Test
     def count07(): Unit \ Assert = region rc {
         let t = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(1, 10, t);
@@ -2125,6 +2125,120 @@ mod TestBPlusTree {
         };
         let c = BPlusTree.count((k, v) -> k == v, t);
         assertEq(expected = 0, c)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iteratorKeys                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iteratorKeys01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        let it = BPlusTree.iteratorWithKeys(rc, t);
+        Assert.assertNone(Iterator.next(it))
+    }
+
+    @Test
+    def iteratorKeys02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(2, "b", t);
+        let it = BPlusTree.iteratorWithKeys(rc, t);
+        Assert.assertEq(expected = Some(1), Iterator.next(it));
+        Assert.assertEq(expected = Some(2), Iterator.next(it));
+        Assert.assertNone(Iterator.next(it))
+    }
+
+    @Test 
+    def testIteratorKeys03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        foreach (i <- Range.Range(1, 11)) {
+            BPlusTree.put(i, i * 10, t)
+        };
+        let it = BPlusTree.iteratorWithKeys(rc, t);
+
+        Assert.assertEq(expected = Vector#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, Iterator.toVector(it))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iteratorValues                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iteratorValues01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        let it = BPlusTree.iteratorValues(rc, t);
+        Assert.assertNone(Iterator.next(it))
+    }
+    
+    @Test
+    def iteratorValues02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(2, "b", t);
+        let it = BPlusTree.iteratorValues(rc, t);
+        Assert.assertEq(expected = Some("a"), Iterator.next(it));
+        Assert.assertEq(expected = Some("b"), Iterator.next(it));
+        Assert.assertNone(Iterator.next(it))
+    }
+
+    @Test 
+    def testIteratorValues03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        foreach (i <- Range.Range(1, 11)) {
+            BPlusTree.put(i, i * 10, t)
+        };
+        let it = BPlusTree.iteratorValues(rc, t);
+
+        Assert.assertEq(expected = Vector#{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}, Iterator.toVector(it))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rangeQuery                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def treeForRangeQueryTest(rc: Region[r]): BPlusTree[Int32, Int32, r] \ r = {
+        let t: BPlusTree[Int32, Int32, r] = BPlusTree.empty(rc);
+        foreach (i <- Range.Range(1, 11)) {
+            BPlusTree.put(i, i * 10, t)
+        };
+        t
+    }
+
+    @Test
+    def rangeQuery01(): Unit \ Assert = region rc {
+        let t: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc);
+        Assert.assertEq(expected = List.empty(), BPlusTree.rangeQuery(1, 10, t))
+    }
+
+    @Test
+    def rangeQuery02(): Unit \ Assert = region rc {
+        let t = treeForRangeQueryTest(rc);
+        Assert.assertEq(expected = List.empty(), BPlusTree.rangeQuery(11, Int32.maxValue(), t))
+    }
+
+    @Test
+    def rangeQuery03(): Unit \ Assert = region rc {
+        let t = treeForRangeQueryTest(rc);
+        Assert.assertEq(expected = List.empty(), BPlusTree.rangeQuery(Int32.minValue(), 0, t))
+    }
+
+    @Test
+    def rangeQuery05(): Unit \ Assert = region rc {
+        let t = treeForRangeQueryTest(rc);
+        Assert.assertEq(expected = List#{(10, 100)}, BPlusTree.rangeQuery(10, Int32.maxValue(), t))
+    }
+
+    @Test
+    def rangeQuery06(): Unit \ Assert = region rc {
+        let t = treeForRangeQueryTest(rc);
+        Assert.assertEq(expected = List#{(1, 10)}, BPlusTree.rangeQuery(Int32.minValue(), 1, t))
+    }
+
+    @Test
+    def rangeQuery07(): Unit \ Assert = region rc {
+        let t = treeForRangeQueryTest(rc);
+        Assert.assertEq(expected = List#{(2, 20), (3, 30), (4, 40), (5, 50)}, BPlusTree.rangeQuery(2, 5, t))
     }
 
 }

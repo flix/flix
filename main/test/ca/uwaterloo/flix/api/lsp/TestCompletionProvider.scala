@@ -633,7 +633,7 @@ class TestCompletionProvider extends AnyFunSuite {
 
     object DefSymUseConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _, _) if symUse.loc.isReal =>
+        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _, _, _) if symUse.loc.isReal =>
           occurs += symUse
         case _ =>
       }

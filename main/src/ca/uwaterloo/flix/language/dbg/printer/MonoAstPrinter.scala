@@ -57,8 +57,8 @@ object MonoAstPrinter {
 
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: MonoAst.JvmMethod): DocAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
-      DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
+      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */

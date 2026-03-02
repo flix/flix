@@ -138,33 +138,33 @@ object Dependencies {
       visitExp(exp)
       visitType(tpe)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, _) =>
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyDef(symUse, exps, _, itpe, tpe, eff, _) =>
+    case Expr.ApplyDef(symUse, exps, _, itpe, tpe, eff, _, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, _) =>
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, _, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(arrowTpe)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyOp(op, exps, tpe, eff, _) =>
+    case Expr.ApplyOp(op, exps, tpe, eff, _, _) =>
       visitSymUse(op)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _) =>
+    case Expr.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
@@ -189,7 +189,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, _) =>
+    case Expr.LocalDef(_, bnd, fparams, exp1, exp2, tpe, eff, _) =>
       visitBinder(bnd)
       fparams.foreach(visitFormalParam)
       visitExp(exp1)

@@ -2827,11 +2827,18 @@ object Parser2 {
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
         zeroOrMore(
-          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-          checkForItem = _ => nth(nextNonComment(0))  == TokenKind.KeywordDef,
+          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef, TokenKind.Annotation)),
+          checkForItem = _ => {
+            val first = nth(nextNonComment(0))
+            first == TokenKind.KeywordDef || first == TokenKind.Annotation
+          },
           getItem = () => {
+            // Skip past any annotations to find the `def` keyword.
+            var defOffset = nextNonComment(0)
+            while (nth(defOffset) == TokenKind.Annotation) {
+              defOffset = nextNonComment(defOffset + 1)
+            }
             // If `def` is followed by `new`, parse as JvmConstructor; otherwise JvmMethod.
-            val defOffset = nextNonComment(0)
             val afterDefOffset = nextNonComment(defOffset + 1)
             if (nth(afterDefOffset) == TokenKind.KeywordNew) jvmConstructor()
             else jvmMethod()
@@ -2862,6 +2869,7 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       // Have to eat potential comments before the `assert`.
       val mark = open()
+      Decl.annotations()
       assert(at(TokenKind.KeywordDef))
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_JAVA)
