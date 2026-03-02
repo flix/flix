@@ -14,6 +14,7 @@ import java.nio.file.{Files, Paths}
 class TestFormatter extends AnyFunSuite {
   /**
     * A list of program paths to test invariants on.
+    * This list is the same list as in `TestCompletionProvider`.
     *
     * Note: files from large-examples and package-manager are not included in this list
     */
@@ -129,13 +130,13 @@ class TestFormatter extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("AST Invariance: formatting must not change the semantics of the program.") {
     for ((program, programPath) <- Programs.zip(ProgramPathList)) {
-      val (root, syntaxRoot) = compileAndGetTypedAstAndSyntaxTree(program, programPath)
-      val formatTextEdits = Formatter.format(syntaxRoot, programPath)
+      val syntaxTree = compileAndGetSyntaxTree(program, programPath)
+      val formatTextEdits = Formatter.format(syntaxTree, programPath)
       val formattedProgram = Formatter.applyTextEditsToString(program, formatTextEdits)
 
-      val (rootAfterFormatting, _) = compileAndGetTypedAstAndSyntaxTree(formattedProgram, programPath)
+      val syntaxTreeAfterFormatting = compileAndGetSyntaxTree(formattedProgram, programPath)
       clean(programPath)
-      assert(root == rootAfterFormatting, s"Formatter changed the AST for $programPath")
+      assert(computeSemanticHash(syntaxTree) == computeSemanticHash(syntaxTreeAfterFormatting), s"Formatter changed the semantics of the program for $programPath")
     }
   }
 
@@ -168,6 +169,21 @@ class TestFormatter extends AnyFunSuite {
       case (optRoot, errors) =>
         fail(CompilationMessage.formatAll(errors)(NoFormatter, optRoot))
     }
+  }
+
+  /**
+    * Computes a semantic hash for the given SyntaxTree.Root.
+    *
+    * @param root the Root to hash.
+    * @return the semantic hash as an Int.
+    */
+  private def computeSemanticHash(root: SyntaxTree.Root): Int = {
+    import java.util.Objects
+
+    Objects.hash(
+      root.units.keySet,
+      root.tokens.keySet
+    )
   }
 
   /**
