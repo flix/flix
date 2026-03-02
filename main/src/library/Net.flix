@@ -38,13 +38,25 @@ pub mod Net {
     }
 
     ///
+    /// Represents a timeout for an HTTP operation.
+    ///
+    pub enum Timeout with Eq, ToString {
+        /// No timeout — wait indefinitely.
+        case NoTimeout
+        /// Timeout after `t` units of time.
+        case After(Int32, TimeUnit)
+    }
+
+    ///
     /// An HTTP request with method, URL, multi-valued headers, and optional body.
     ///
     pub enum Request({
-        method  = Method,
-        url     = String,
-        headers = Map[String, List[String]],
-        body    = Option[Body]
+        method         = Method,
+        url            = String,
+        headers        = Map[String, List[String]],
+        body           = Option[Body],
+        requestTimeout = Timeout,
+        connectTimeout = Timeout
     })
 
     ///

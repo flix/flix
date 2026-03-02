@@ -17,7 +17,7 @@
 ///
 /// Represents a time unit.
 ///
-enum TimeUnit with Eq {
+enum TimeUnit with Eq, ToString {
     case Days,
     case Hours,
     case Microseconds,

@@ -20,6 +20,8 @@ pub mod Net.Request {
     use Net.Request
     use Net.Request.Request
     use Net.Method
+    use Net.Timeout
+    use Net.Timeout.{NoTimeout, After}
 
     import java.nio.charset.StandardCharsets
     import java.net.URLEncoder
@@ -76,43 +78,50 @@ pub mod Net.Request {
     /// Creates a GET request to the given `url`.
     ///
     pub def get(url: String): Request =
-        Request({method = Method.Get, url = url, headers = Map.empty(), body = None})
+        Request({method = Method.Get, url = url, headers = Map.empty(), body = None,
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
 
     ///
     /// Creates a HEAD request to the given `url`.
     ///
     pub def head(url: String): Request =
-        Request({method = Method.Head, url = url, headers = Map.empty(), body = None})
+        Request({method = Method.Head, url = url, headers = Map.empty(), body = None,
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
 
     ///
     /// Creates a DELETE request to the given `url`.
     ///
     pub def delete(url: String): Request =
-        Request({method = Method.Delete, url = url, headers = Map.empty(), body = None})
+        Request({method = Method.Delete, url = url, headers = Map.empty(), body = None,
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
 
     ///
     /// Creates an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): Request =
-        Request({method = Method.Options, url = url, headers = Map.empty(), body = None})
+        Request({method = Method.Options, url = url, headers = Map.empty(), body = None,
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
 
     ///
     /// Creates a POST request to the given `url` with the given `body`.
     ///
     pub def post(url: String, body: String): Request =
-        Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body))})
+        Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
 
     ///
     /// Creates a PUT request to the given `url` with the given `body`.
     ///
     pub def put(url: String, body: String): Request =
-        Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body))})
+        Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
 
     ///
     /// Creates a PATCH request to the given `url` with the given `body`.
     ///
     pub def patch(url: String, body: String): Request =
-        Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body))})
+        Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
 
     ///
     /// Adds the header `name` with value `value` to the request `r`.
@@ -126,7 +135,7 @@ pub mod Net.Request {
             case Some(vs) => List.append(vs, value :: Nil)
             case None     => value :: Nil
         };
-        Request({method = x#method, url = x#url, headers = Map.insert(name, values, current), body = x#body})
+        Request({headers = Map.insert(name, values, current) | x})
 
     ///
     /// Merges the given headers `h` into the request `r`.
@@ -142,21 +151,21 @@ pub mod Net.Request {
             };
             Map.insert(name, List.append(existing, newValues), acc)
         }, x#headers, h);
-        Request({method = x#method, url = x#url, headers = merged, body = x#body})
+        Request({headers = merged | x})
 
     ///
     /// Sets the body of the request `r` to the given text `body`.
     ///
     pub def withBody(body: String, r: Request): Request =
         let Request(x) = r;
-        Request({method = x#method, url = x#url, headers = x#headers, body = Some(Body.Text(body))})
+        Request({body = Some(Body.Text(body)) | x})
 
     ///
     /// Sets the body of the request `r` to the given binary `body`.
     ///
     pub def withBodyBytes(body: Vector[Int8], r: Request): Request =
         let Request(x) = r;
-        Request({method = x#method, url = x#url, headers = x#headers, body = Some(Body.Bytes(body))})
+        Request({body = Some(Body.Bytes(body)) | x})
 
     ///
     /// Sets the `Authorization` header to `Bearer <token>` on the request `r`.
@@ -187,7 +196,7 @@ pub mod Net.Request {
         let encodedValue = URLEncoder.encode(value, StandardCharsets.UTF_8);
         let separator = if (String.contains(substr = "?", x#url)) "&" else "?";
         let newUrl = "${x#url}${separator}${encodedName}=${encodedValue}";
-        Request({method = x#method, url = newUrl, headers = x#headers, body = x#body})
+        Request({url = newUrl | x})
 
     ///
     /// Appends multiple query parameters to the URL of the request `r`.
@@ -196,5 +205,19 @@ pub mod Net.Request {
     ///
     pub def withQueryParams(params: Map[String, String], r: Request): Request =
         Map.foldLeftWithKey((acc, name, value) -> withQueryParam(name, value, acc), r, params)
+
+    ///
+    /// Sets the request timeout (time until response headers are received).
+    ///
+    pub def withTimeout(timeout: Timeout, r: Request): Request =
+        let Request(x) = r;
+        Request({requestTimeout = timeout | x})
+
+    ///
+    /// Sets the connect timeout (time to establish the TCP connection).
+    ///
+    pub def withConnectTimeout(timeout: Timeout, r: Request): Request =
+        let Request(x) = r;
+        Request({connectTimeout = timeout | x})
 
 }
