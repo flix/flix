@@ -35,6 +35,7 @@ pub mod Net.Https {
     import java.lang.InterruptedException
     import java.net.ConnectException
     import java.net.http.HttpClient
+    import java.net.http.{HttpClient$Redirect => Redirect}
     import java.net.http.HttpTimeoutException
     import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
     import java.net.http.HttpRequest
@@ -54,49 +55,49 @@ pub mod Net.Https {
     ///
     pub def get(url: String): Result[IoError, Response] \ Https =
         send(Request({method = Method.Get, url = url, headers = Map.empty(), body = None,
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout}))
+                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
 
     ///
     /// Sends a HEAD request to the given `url`.
     ///
     pub def head(url: String): Result[IoError, Response] \ Https =
         send(Request({method = Method.Head, url = url, headers = Map.empty(), body = None,
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout}))
+                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
 
     ///
     /// Sends a DELETE request to the given `url`.
     ///
     pub def delete(url: String): Result[IoError, Response] \ Https =
         send(Request({method = Method.Delete, url = url, headers = Map.empty(), body = None,
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout}))
+                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
 
     ///
     /// Sends an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): Result[IoError, Response] \ Https =
         send(Request({method = Method.Options, url = url, headers = Map.empty(), body = None,
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout}))
+                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
 
     ///
     /// Sends a POST request to the given `url` with the given `body`.
     ///
     pub def post(url: String, body: String): Result[IoError, Response] \ Https =
         send(Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout}))
+                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
 
     ///
     /// Sends a PUT request to the given `url` with the given `body`.
     ///
     pub def put(url: String, body: String): Result[IoError, Response] \ Https =
         send(Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout}))
+                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
 
     ///
     /// Sends a PATCH request to the given `url` with the given `body`.
     ///
     pub def patch(url: String, body: String): Result[IoError, Response] \ Https =
         send(Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout}))
+                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
 
     ///
     /// Performs the actual HTTP request using the Java HTTP client.
@@ -133,11 +134,12 @@ pub mod Net.Https {
                 case NoTimeout   => builder.build()
                 case After(t, u) => builder.timeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u)))).build()
             };
-            let client = match x#connectTimeout {
-                case NoTimeout   => HttpClient.newHttpClient()
-                case After(t, u) =>
-                    HttpClient.newBuilder().connectTimeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u)))).build()
+            let redirectPolicy = if (x#followRedirects) Redirect.NORMAL else Redirect.NEVER;
+            let clientBuilder = match x#connectTimeout {
+                case NoTimeout   => HttpClient.newBuilder().followRedirects(redirectPolicy)
+                case After(t, u) => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u))))
             };
+            let client = clientBuilder.build();
             let response = client.send(jrequest, BodyHandlers.ofByteArray());
             let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
             let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);

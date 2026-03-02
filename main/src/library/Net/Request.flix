@@ -79,49 +79,49 @@ pub mod Net.Request {
     ///
     pub def get(url: String): Request =
         Request({method = Method.Get, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///
     /// Creates a HEAD request to the given `url`.
     ///
     pub def head(url: String): Request =
         Request({method = Method.Head, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///
     /// Creates a DELETE request to the given `url`.
     ///
     pub def delete(url: String): Request =
         Request({method = Method.Delete, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///
     /// Creates an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): Request =
         Request({method = Method.Options, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///
     /// Creates a POST request to the given `url` with the given `body`.
     ///
     pub def post(url: String, body: String): Request =
         Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///
     /// Creates a PUT request to the given `url` with the given `body`.
     ///
     pub def put(url: String, body: String): Request =
         Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///
     /// Creates a PATCH request to the given `url` with the given `body`.
     ///
     pub def patch(url: String, body: String): Request =
         Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout})
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///
     /// Adds the header `name` with value `value` to the request `r`.
@@ -207,6 +207,27 @@ pub mod Net.Request {
         Map.foldLeftWithKey((acc, name, value) -> withQueryParam(name, value, acc), r, params)
 
     ///
+    /// Returns the request timeout of the request `r`.
+    ///
+    pub def requestTimeout(r: Request): Timeout = match r {
+        case Request(x) => x#requestTimeout
+    }
+
+    ///
+    /// Returns the connect timeout of the request `r`.
+    ///
+    pub def connectTimeout(r: Request): Timeout = match r {
+        case Request(x) => x#connectTimeout
+    }
+
+    ///
+    /// Returns `true` if the request `r` follows redirects.
+    ///
+    pub def followRedirects(r: Request): Bool = match r {
+        case Request(x) => x#followRedirects
+    }
+
+    ///
     /// Sets the request timeout (time until response headers are received).
     ///
     pub def withTimeout(timeout: Timeout, r: Request): Request =
@@ -219,5 +240,12 @@ pub mod Net.Request {
     pub def withConnectTimeout(timeout: Timeout, r: Request): Request =
         let Request(x) = r;
         Request({connectTimeout = timeout | x})
+
+    ///
+    /// Sets whether the request `r` should follow HTTP redirects.
+    ///
+    pub def withFollowRedirects(follow: Bool, r: Request): Request =
+        let Request(x) = r;
+        Request({followRedirects = follow | x})
 
 }

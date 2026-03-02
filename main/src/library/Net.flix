@@ -51,12 +51,13 @@ pub mod Net {
     /// An HTTP request with method, URL, multi-valued headers, and optional body.
     ///
     pub enum Request({
-        method         = Method,
-        url            = String,
-        headers        = Map[String, List[String]],
-        body           = Option[Body],
-        requestTimeout = Timeout,
-        connectTimeout = Timeout
+        method          = Method,
+        url             = String,
+        headers         = Map[String, List[String]],
+        body            = Option[Body],
+        requestTimeout  = Timeout,
+        connectTimeout  = Timeout,
+        followRedirects = Bool
     })
 
     ///
