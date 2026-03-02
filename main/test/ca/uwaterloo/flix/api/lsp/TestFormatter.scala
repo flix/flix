@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SyntaxTree
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
@@ -97,7 +98,8 @@ class TestFormatter extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Parsability–Formattability Implication: When parsable, the formatter must be able to format the program without errors.") {
     for ((program, programPath) <- Programs.zip(ProgramPathList)) {
-      val syntaxRoot = compileWithSuccess(program)
+      val syntaxRoot = compileAndGetSyntaxTree(program, programPath)
+      clean(programPath)
       Formatter.format(syntaxRoot, programPath)
     }
   }
@@ -107,25 +109,34 @@ class TestFormatter extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Idempotence: formatting once must result in the same as formatting twice.") {
     for ((program, programPath) <- Programs.zip(ProgramPathList)) {
-      val syntaxRoot = compileWithSuccess(program)
+      val syntaxRoot = compileAndGetSyntaxTree(program, programPath)
       val formatTextEditsOnce = Formatter.format(syntaxRoot, programPath)
       val formattedStringOnce = Formatter.applyTextEditsToString(program, formatTextEditsOnce)
 
       // We must compile the formatted string to get the new syntax tree, which includes the formatting changes.
       // Especially, the positions in the String/File may have changed, which will affect the text edits produced by the second formatting pass.
-      val syntaxRootAfterOnce = compileWithSuccess(formattedStringOnce)
+      val syntaxRootAfterOnce = compileAndGetSyntaxTree(formattedStringOnce, programPath)
 
       val formatTextEditsTwice = Formatter.format(syntaxRootAfterOnce, programPath)
       val formattedStringTwice = Formatter.applyTextEditsToString(formattedStringOnce, formatTextEditsTwice)
+      clean(programPath)
       assert(formattedStringOnce == formattedStringTwice, s"Formatter not idempotent for $programPath")
     }
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Invariance: formatting must not change the semantics of the program
+  // AST Invariance: formatting must not change the semantics of the program
   /////////////////////////////////////////////////////////////////////////////
-  test("Invariance: formatting must not change the semantics of the program.") {
-    throw new NotImplementedError("Invariance test not implemented yet.")
+  test("AST Invariance: formatting must not change the semantics of the program.") {
+    for ((program, programPath) <- Programs.zip(ProgramPathList)) {
+      val (root, syntaxRoot) = compileAndGetTypedAstAndSyntaxTree(program, programPath)
+      val formatTextEdits = Formatter.format(syntaxRoot, programPath)
+      val formattedProgram = Formatter.applyTextEditsToString(program, formatTextEdits)
+
+      val (rootAfterFormatting, _) = compileAndGetTypedAstAndSyntaxTree(formattedProgram, programPath)
+      clean(programPath)
+      assert(root == rootAfterFormatting, s"Formatter changed the AST for $programPath")
+    }
   }
 
   /**
@@ -135,13 +146,37 @@ class TestFormatter extends AnyFunSuite {
     *
     * @throws RuntimeException if the program cannot be compiled without errors.
     */
-  private def compileWithSuccess(program: String): SyntaxTree.Root = {
+  private def compileAndGetSyntaxTree(program: String, programPath: String): SyntaxTree.Root = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    sharedFlix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
+    // We add the program as VirtualPath to the shared Flix instance,
+    // if not the shared Flix instance will not be able to find the syntax tree corresponding to the program.
+    sharedFlix.addVirtualPath(Paths.get(programPath), program)
     sharedFlix.check() match {
       case (_, Nil) => sharedFlix.getParsedAst
       case (optRoot, errors) =>
         fail(CompilationMessage.formatAll(errors)(NoFormatter, optRoot))
     }
+  }
+
+  private def compileAndGetTypedAstAndSyntaxTree(program: String, programPath: String): (Root, SyntaxTree.Root) = {
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    // We add the program as VirtualPath to the shared Flix instance,
+    // if not the shared Flix instance will not be able to find the syntax tree corresponding to the program.
+    sharedFlix.addVirtualPath(Paths.get(programPath), program)
+    sharedFlix.check() match {
+      case (Some(root), Nil) => (root, sharedFlix.getParsedAst)
+      case (optRoot, errors) =>
+        fail(CompilationMessage.formatAll(errors)(NoFormatter, optRoot))
+    }
+  }
+
+  /**
+    * Removes the virtual path from the shared Flix instance to clean up after a test.
+    *
+    * @param path the path to remove from the shared Flix instance
+    */
+  private def clean(path: String): Unit = {
+    val virtualPath = Paths.get(path)
+    sharedFlix.remVirtualPath(virtualPath)
   }
 }
