@@ -184,6 +184,30 @@ object TypeError {
   }
 
   /**
+    * An error raised when an effect is used in a function that is explicitly declared Pure.
+    *
+    * @param effSym the symbol of the effect causing the error
+    * @param loc    the location of the function explicitly declared as {}.
+    * @param loc2   the location where the effect is used.
+    */
+  case class ArgumentGivenWrongEffect(expected: List[Symbol.EffSym], actual: Symbol.EffSym, loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6215
+
+    def summary: String = s"Unexpected effect '${actual.name}' in {} function"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""
+         |${highlight(loc2, s"'${magenta(actual.name)}' defined here", fmt)}
+         |
+         |${highlight(loc3, s"caller uses argument with ${(magenta(actual.name))}", fmt)}
+         |
+         |${highlight(loc, s"callee expects: {${(magenta(expected.foldLeft(""){case (acc, v) => v.name ++ ", " ++ acc}))}}", fmt)}
+      """.stripMargin
+    }
+  }
+
+  /**
     * An error raised when IO is used in a function that is explicitly declared Pure.
     *
     * @param loc  the location of the function explicitly declared as {}.
