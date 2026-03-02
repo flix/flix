@@ -1081,8 +1081,8 @@ mod BPlusTree.Node {
     /// `pickChild` should pick a child of `cur` if `cur` is an internal node and is not 
     /// called if `cur` is a leaf. 
     /// 
-    /// Caution: Because invalid locks trigger `restart`, `pickChild` may be called an
-    /// unknown number of times before traversal succeeds.
+    /// Caution: Because invalid locks trigger `restart`, `pickChild` and `restart` may 
+    /// be called an unknown number of times before traversal succeeds.
     ///
     /// Lock invariant: `stamp` is a valid lock on the current node.
     ///
