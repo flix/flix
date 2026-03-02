@@ -2040,28 +2040,17 @@ object Weeder2 {
 
     /**
       * Extracts JVM annotations from a JvmMethod tree node.
-      * Known Flix annotations are rejected with an error.
-      * Unknown annotations are treated as JVM annotation references.
+      * All annotations are extracted as JvmAnnotation objects;
+      * filtering of Flix annotations is done later in the Resolver.
       */
     private def pickJvmAnnotations(tree: Tree)(implicit sctx: SharedContext): List[WeededAst.JvmAnnotation] = {
-      val knownFlixAnnotations = Set(
-        "@CompileTest", "@DefaultHandler", "@Deprecated", "@DontInline",
-        "@Experimental", "@Export", "@Inline", "@Parallel", "@ParallelWhenPure",
-        "@LoweringTarget", "@Lazy", "@LazyWhenPure", "@Skip", "@Test", "@TailRec"
-      )
       val optAnn = tryPick(TreeKind.AnnotationList, tree)
       optAnn.map { annTree =>
         val tokens = pickAllTokens(annTree)
-        tokens.toList.flatMap { token =>
+        tokens.toList.map { token =>
           val loc = token.mkSourceLocation()
-          if (knownFlixAnnotations.contains(token.text)) {
-            val name = token.text.stripPrefix("@")
-            sctx.errors.add(IllegalFlixAnnotationOnJvmMethod(name, loc))
-            None
-          } else {
-            val name = token.text.stripPrefix("@")
-            Some(WeededAst.JvmAnnotation(Name.Ident(name, loc), loc))
-          }
+          val name = token.text.stripPrefix("@")
+          WeededAst.JvmAnnotation(Name.Ident(name, loc), loc)
         }
       }.getOrElse(Nil)
     }
