@@ -658,7 +658,7 @@ object Visitor {
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit a: Acceptor, c: Consumer): Unit = {
-    val JvmMethod(_, fparams, exp, retTpe, _, loc) = method
+    val JvmMethod(_, _, fparams, exp, retTpe, _, loc) = method
     if (!a.accept(loc)) {
       return
     }
