@@ -21,11 +21,17 @@ import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor, TypedAst}
 
 object Summary {
 
-  def go(root: Root): Unit = {
+  /**
+    * Prints a CSV summary of all definitions in the given root.
+    *
+    * If `stdLib` is `false`, only user-defined (real file) defs are included.
+    * If `stdLib` is `true`, only standard library (non-real file) defs are included.
+    */
+  def go(root: Root, stdLib: Boolean): Unit = {
     val myDefs = root.defs.filter {
       case (k, _) => k.loc.source.input match {
-        case Input.RealFile(_, _) => true
-        case _ => false
+        case Input.RealFile(_, _) => !stdLib // real files are user code
+        case _ => stdLib                     // everything else is standard library
       }
     }
     val numDefs = myDefs.size

@@ -77,6 +77,7 @@ object Main {
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
+      xsummaryStdLib = cmdOpts.xsummaryStdLib,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
@@ -478,6 +479,7 @@ object Main {
     xlib: LibLevel = LibLevel.All,
     xprintphases: Boolean = false,
     xsummary: Boolean = false,
+    xsummaryStdLib: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
     XPerfN: Option[Int] = None,
     XPerfFrontend: Boolean = false,
@@ -704,6 +706,10 @@ object Main {
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
+
+      // Xsummary-stdlib
+      opt[Unit]("Xsummary-stdlib").action((_, c) => c.copy(xsummaryStdLib = true)).
+        text("[experimental] prints a summary of the standard library modules.")
 
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).

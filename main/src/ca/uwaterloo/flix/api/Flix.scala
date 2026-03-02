@@ -550,12 +550,19 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Print summary?
+    // Print summary of user-defined (non-stdlib) modules?
     if (options.xsummary) {
       result.foreach(root => {
-        Summary.go(root)
+        Summary.go(root, stdLib = false)
 //        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
 //        table.getMarkdownLines.foreach(println)
+      })
+    }
+
+    // Print summary of standard library modules only?
+    if (options.xsummaryStdLib) {
+      result.foreach(root => {
+        Summary.go(root, stdLib = true)
       })
     }
 
