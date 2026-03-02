@@ -33,7 +33,7 @@ import ca.uwaterloo.flix.util.collection.SeqOps
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
@@ -93,7 +93,7 @@ object Redundancy {
     * Checks for unused definition symbols.
     */
   private def checkUnusedDefs()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, defn) <- root.defs) {
       if (deadDef(defn)) {
         result += UnusedDefSym(defn.sym)
@@ -106,7 +106,7 @@ object Redundancy {
     * Checks for unused effect symbols.
     */
   private def checkUnusedEffects()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, eff) <- root.effects) {
       if (deadEffect(eff)) {
         result += UnusedEffSym(eff.sym)
@@ -119,7 +119,7 @@ object Redundancy {
     * Checks for unused enum symbols and tags.
     */
   private def checkUnusedEnumsAndTags()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, enm) <- root.enums) {
       if (deadEnum(enm)) {
         result += UnusedEnumSym(enm.sym)
@@ -138,7 +138,7 @@ object Redundancy {
     * Checks for unused type parameters in enums.
     */
   private def checkUnusedTypeParamsEnums()(implicit root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, decl) <- root.enums) {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (sacc, (_, Case(_, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
@@ -157,7 +157,7 @@ object Redundancy {
     * Checks for unused type parameters in enums.
     */
   private def checkUnusedTypeParamsTypeAliases()(implicit root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, decl) <- root.typeAliases) {
       val usedTypeVars = decl.tpe.typeVars.map(_.sym)
       val unusedTypeParams = decl.tparams.filter {
@@ -174,7 +174,7 @@ object Redundancy {
     * Checks for unused struct symbols and tags.
     */
   private def checkUnusedStructsAndFields()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, struct) <- root.structs) {
       if (deadStruct(struct)) {
         result += UnusedStructSym(struct.sym)
@@ -188,7 +188,7 @@ object Redundancy {
     * Checks for unused type parameters in structs.
     */
   private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
-    val result = new ListBuffer[RedundancyError]
+    val result = new ArrayBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
       val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (acc, (_, field)) =>
@@ -537,34 +537,6 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      // Visit the match expression.
-      val usedMatch = visitExp(exp, env0, rc)
-
-      // Visit each match rule.
-      val usedRules = rules map {
-        case TypeMatchRule(bnd, _, body, _) =>
-          // Get the free var from the sym
-          val fvs = Set(bnd.sym)
-
-          // Extend the environment with the free variables.
-          val extendedEnv = env0 ++ fvs
-
-          // Visit the pattern, guard and body.
-          val usedBody = visitExp(body, extendedEnv, rc)
-
-          // Check for unused variable symbols.
-          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
-
-          // Check for shadowed variable symbols.
-          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
-
-          // Combine everything together.
-          (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
-      }
-
-      usedMatch ++ usedRules.reduceLeft(_ ++ _)
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
@@ -762,9 +734,6 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Without(exp, symUse, _, _, _) =>
-      sctx.effSyms.put(symUse.sym, ())
-      visitExp(exp, env0, rc)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
@@ -805,8 +774,14 @@ object Redundancy {
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) =>
+      visitExps(args, env0, rc)
+
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp, env0, rc) ++ visitExps(args, env0, rc)
+
+    case Expr.InvokeSuperMethod(_, args, _, _, _) =>
+      visitExps(args, env0, rc)
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
       visitExps(args, env0, rc)
@@ -823,8 +798,12 @@ object Redundancy {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(Used.empty) {
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      val usedConstructors = constructors.foldLeft(Used.empty) {
+        case (acc, JvmConstructor(exp, _, _, _)) =>
+          acc ++ visitExp(exp, env0, rc)
+      }
+      val usedMethods = methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           // Extend the environment with the formal parameter symbols
           val env1 = env0 ++ fparams.map(_.bnd.sym)
@@ -832,6 +811,7 @@ object Redundancy {
           val unusedFParams = findUnusedFormalParameters(fparams, used)
           acc ++ used ++ unusedFParams
       }
+      usedConstructors ++ usedMethods
 
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)

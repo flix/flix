@@ -162,12 +162,6 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
-      visitExp(exp)
-      rules.foreach { r => visitExp(r.exp) }
-      val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
-      val actual = eff
-      expectType(expected, actual, loc)
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
@@ -281,11 +275,8 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.mkDifference(exp.eff, runEff, loc), Type.Pure, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Without(exp, symUse, tpe, eff, loc) =>
-      visitExp(exp)
-      val expected = exp.eff
-      val actual = eff
-      expectType(expected, actual, loc)
+
+
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
@@ -313,9 +304,15 @@ object EffectVerifier {
       exps.foreach(visitExp)
       // TODO Java stuff
       ()
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+      ()
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO Java stuff
+      ()
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
       ()
     case Expr.GetField(field, exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -333,7 +330,8 @@ object EffectVerifier {
       visitExp(exp)
       // TODO Java stuff
       ()
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      constructors.foreach { c => visitExp(c.exp) }
       methods.foreach { m => visitExp(m.exp) }
       // TODO Java stuff
       ()

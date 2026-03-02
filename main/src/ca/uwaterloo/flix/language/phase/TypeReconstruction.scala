@@ -217,21 +217,6 @@ object TypeReconstruction {
       }
       TypedAst.Expr.Match(e1, rs, tpe, eff, loc)
 
-    case KindedAst.Expr.TypeMatch(matchExp, rules, loc) =>
-      val e1 = visitExp(matchExp)
-      val rs = rules map {
-        case KindedAst.TypeMatchRule(sym, tpe0, exp, ruleLoc) =>
-          val t = subst(tpe0)
-          val b = visitExp(exp)
-          val bnd = TypedAst.Binder(sym, t)
-          TypedAst.TypeMatchRule(bnd, t, b, ruleLoc)
-      }
-      val tpe = rs.head.exp.tpe
-      val eff = rs.foldLeft(e1.eff) {
-        case (acc, TypedAst.TypeMatchRule(_, _, b, _)) => Type.mkUnion(b.eff, acc, loc)
-      }
-      TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
-
     case KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
@@ -401,11 +386,6 @@ object TypeReconstruction {
       val eff = Type.mkUnion(Type.mkDifference(e.eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
       TypedAst.Expr.Unsafe(e, eff0, asEff0, e.tpe, eff, loc)
 
-    case KindedAst.Expr.Without(exp, symUse, loc) =>
-      val e = visitExp(exp)
-      val tpe = e.tpe
-      val eff = e.eff
-      TypedAst.Expr.Without(e, symUse, tpe, eff, loc)
 
     case KindedAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -456,6 +436,19 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }
 
+    case KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
+      val es0 = exps.map(visitExp)
+      val constructorTpe = subst(jvar)
+      val tpe = Type.getFlixType(clazz)
+      val eff = subst(evar)
+      constructorTpe match {
+        case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
+          val es = getArgumentsWithVarArgs(constructor, es0, loc)
+          TypedAst.Expr.InvokeSuperConstructor(constructor, es, tpe, eff, loc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
+      }
+
     case KindedAst.Expr.InvokeMethod(exp, _, exps, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es0 = exps.map(visitExp)
@@ -468,6 +461,19 @@ object TypeReconstruction {
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, methLoc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
+      }
+
+    case KindedAst.Expr.InvokeSuperMethod(clazz, _, exps, jvar, tvar, evar, loc) =>
+      val es0 = exps.map(visitExp)
+      val returnTpe = subst(tvar)
+      val methodTpe = subst(jvar)
+      val eff = subst(evar)
+      methodTpe match {
+        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+          val es = getArgumentsWithVarArgs(method, es0, methLoc)
+          TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, methLoc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), returnTpe, eff)
       }
 
     case KindedAst.Expr.InvokeStaticMethod(_, _, exps, jvar, tvar, evar, loc) =>
@@ -513,11 +519,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
-    case KindedAst.Expr.NewObject(name, clazz, methods, loc) =>
+    case KindedAst.Expr.NewObject(name, clazz, constructors, methods, loc) =>
       val tpe = getFlixType(clazz)
       val eff = Type.IO
-      val ms = methods map visitJvmMethod
-      TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
+      val cs = constructors.map(visitJvmConstructor)
+      val ms = methods.map(visitJvmMethod)
+      TypedAst.Expr.NewObject(name, clazz, tpe, eff, cs, ms, loc)
 
     case KindedAst.Expr.NewChannel(exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -669,6 +676,17 @@ object TypeReconstruction {
     */
   private def visitPredicateParam(pparam: KindedAst.PredicateParam)(implicit subst: SubstitutionTree): TypedAst.PredicateParam =
     TypedAst.PredicateParam(pparam.pred, subst(pparam.tpe), pparam.loc)
+
+  /**
+    * Reconstructs types in the given JVM constructor.
+    */
+  private def visitJvmConstructor(constructor: KindedAst.JvmConstructor)(implicit subst: SubstitutionTree): TypedAst.JvmConstructor = {
+    constructor match {
+      case KindedAst.JvmConstructor(exp0, tpe, eff, loc) =>
+        val exp = visitExp(exp0)
+        TypedAst.JvmConstructor(exp, tpe, eff, loc)
+    }
+  }
 
   /**
     * Reconstructs types in the given JVM method.

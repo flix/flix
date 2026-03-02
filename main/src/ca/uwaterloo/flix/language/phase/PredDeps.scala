@@ -162,10 +162,6 @@ object PredDeps {
         visitExp(b)
       }
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      visitExp(exp)
-      rules.foreach { case TypeMatchRule(_, _, b, _) => visitExp(b) }
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case RestrictableChooseRule(_, body) => visitExp(body) }
@@ -253,8 +249,6 @@ object PredDeps {
     case Expr.Unsafe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
@@ -273,8 +267,14 @@ object PredDeps {
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foreach(visitExp)
 
+    case Expr.InvokeSuperConstructor(_, args, _, _, _) =>
+      args.foreach(visitExp)
+
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp)
+      args.foreach(visitExp)
+
+    case Expr.InvokeSuperMethod(_, args, _, _, _) =>
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
@@ -292,7 +292,9 @@ object PredDeps {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, _, _) => ()
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      constructors.foreach(c => visitExp(c.exp))
+      methods.foreach(m => visitExp(m.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp)

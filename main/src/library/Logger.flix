@@ -29,31 +29,32 @@ pub eff Logger {
 pub mod Logger {
 
     use RichString.{gray, cyan, green, yellow, red, bold, text};
+    use Severity.{Warn, Fatal, Trace, Debug, Info}
 
     ///
     /// Logs the message `m` at the `Trace` level.
     ///
-    pub def trace(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Trace, Formattable.format(m))
+    pub def trace(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Trace, Formattable.format(m))
 
     ///
     /// Logs the message `m` at the `Debug` level.
     ///
-    pub def debug(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Debug, Formattable.format(m))
+    pub def debug(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Debug, Formattable.format(m))
 
     ///
     /// Logs the message `m` at the `Info` level.
     ///
-    pub def info(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Info, Formattable.format(m))
+    pub def info(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Info, Formattable.format(m))
 
     ///
     /// Logs the message `m` at the `Warn` level.
     ///
-    pub def warn(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Warn, Formattable.format(m))
+    pub def warn(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Warn, Formattable.format(m))
 
     ///
     /// Logs the message `m` at the `Fatal` level.
     ///
-    pub def fatal(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Fatal, Formattable.format(m))
+    pub def fatal(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Fatal, Formattable.format(m))
 
     ///
     /// Handles the `Logger` effect of the given function `f`.
@@ -66,11 +67,11 @@ pub mod Logger {
         } with handler Logger {
             def log(s, m, k) = {
                 let prefix = match s {
-                    case Severity.Trace => gray("[Trace]")
-                    case Severity.Debug => cyan("[Debug]")
-                    case Severity.Info  => green("[Info]")
-                    case Severity.Warn  => yellow("[Warn]")
-                    case Severity.Fatal => bold(red("[Fatal]"))
+                    case Trace => gray("[Trace]")
+                    case Debug => cyan("[Debug]")
+                    case Info  => green("[Info]")
+                    case Warn  => yellow("[Warn]")
+                    case Fatal => bold(red("[Fatal]"))
                 };
                 let output = prefix + text(" ") + m;
                 println(RichString.toString(output));

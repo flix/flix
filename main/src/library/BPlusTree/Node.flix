@@ -23,6 +23,53 @@ mod BPlusTree.Node {
     use BPlusTree.Search
 
     ///
+    /// Returns the next in-bounds `(index, node)` while traversing right.
+    ///
+    def seek(index: Int32, node: Node[k, v, r]): Option[(Int32, Node[k, v, r])] \ r =
+        if (index < node->size)
+            Some((index, node))
+        else match node->next {
+            case None => None
+            case Some(next) => seek(0, next)
+        }
+
+    ///
+    /// Compares leaf entries from left to right in lockstep.
+    ///
+    pub def sameElementsFrom(
+        i1: Int32,
+        n1: Node[k, v, r1],
+        i2: Int32,
+        n2: Node[k, v, r2]
+    ): Bool \ r1 + r2 with Order[k], Eq[v] = match (seek(i1, n1), seek(i2, n2)) {
+        case (None, None) => true
+        case (Some((j1, m1)), Some((j2, m2))) =>
+            let (k1, v1) = getKeyAndValueAt(j1, m1);
+            let (k2, v2) = getKeyAndValueAt(j2, m2);
+            if (k1 == k2 and v1 == v2)
+                sameElementsFrom(j1 + 1, m1, j2 + 1, m2)
+            else
+                false
+        case _ => false
+    }
+
+    ///
+    /// Applies the function `f` to every value in `n`.
+    ///
+    pub def transformWithKey(
+        f: k -> v -> v \ ef,
+        i: Int32,
+        n: Node[k, v, r]
+    ): Unit \ r + ef with Order[k] = match seek(i, n) {
+        case None => ()
+        case Some((index, node)) => {
+            let v1 = getKeyAndValueAt(index, node) ||> f;
+            Array.put(v1, index, node->values);
+            transformWithKey(f, index + 1, node)
+        }
+    }
+
+    ///
     /// Internal method to insert `key` and `val` in `node` at `insertionPoint`.
     /// Increments the `size` of `node`.
     ///

@@ -330,7 +330,7 @@ object SemanticTokensProvider {
     */
   private def visitEffect(effect: TypedAst.Effect): Iterator[SemanticToken] = effect match {
     case TypedAst.Effect(_, ann, _, sym, tparams, ops, _) =>
-      val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
+      val t = SemanticToken(SemanticTokenType.Effect, Nil, sym.loc)
       IteratorOps.all(
         visitAnnotations(ann),
         Iterator(t),
@@ -351,9 +351,9 @@ object SemanticTokensProvider {
       )
   }
 
-  private def visitAnnotations(annotations: Annotations) = annotations.annotations.iterator.map(visitAnnotation)
+  private def visitAnnotations(annotations: Annotations): Iterator[SemanticToken] = annotations.annotations.iterator.map(visitAnnotation)
 
-  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Modifier, Nil, annotation.loc)
+  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Decorator, Nil, annotation.loc)
 
   /**
     * Returns all semantic tokens in the given expression `exp0`.
@@ -476,15 +476,6 @@ object SemanticTokensProvider {
           acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 
-    case Expr.TypeMatch(matchExp, rules, _, _, _) =>
-      val m = visitExp(matchExp)
-      rules.foldLeft(m) {
-        case (acc, TypeMatchRule(bnd, tpe, exp, _)) =>
-          val o = getSemanticTokenType(bnd.sym, tpe)
-          val t = SemanticToken(o, Nil, bnd.sym.loc)
-          acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
-      }
-
     case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>
       val c = visitExp(exp1)
       rules.foldLeft(c) {
@@ -586,9 +577,6 @@ object SemanticTokensProvider {
     case Expr.Unsafe(exp, runEff, asEff, _, _, _) =>
       visitType(runEff) ++ asEff.map(visitType).getOrElse(Iterator()) ++ visitExp(exp)
 
-    case Expr.Without(exp, symUse, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)
-      Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp1)) {
@@ -601,7 +589,7 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expr.Handler(symUse, rules, _, _, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)
+      val t = SemanticToken(SemanticTokenType.Effect, Nil, symUse.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp, _)) =>
@@ -620,9 +608,19 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, e) => acc ++ visitExp(e)
+      }
+
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
       }
 
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
@@ -642,8 +640,10 @@ object SemanticTokensProvider {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(Iterator.empty[SemanticToken]) {
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      constructors.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, c) => acc ++ visitExp(c.exp)
+      } ++ methods.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 
@@ -809,7 +809,12 @@ object SemanticTokensProvider {
 
       case Type.Cst(cst, loc) =>
         if (isVisibleTypeConstructor(cst)) {
-          val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+          val tokenType = cst match {
+            case TypeConstructor.Pure => SemanticTokenType.Effect
+            case TypeConstructor.Effect(_, _) => SemanticTokenType.Effect
+            case _ => SemanticTokenType.Type
+          }
+          val t = SemanticToken(tokenType, Nil, loc)
           Iterator(t)
         } else {
           Iterator.empty

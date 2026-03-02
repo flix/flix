@@ -369,9 +369,10 @@ object Inliner {
       val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+      val constructors = constructors0.map(visitJvmConstructor(_, ctx0))
       val methods = methods0.map(visitJvmMethod(_, ctx0))
-      Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+      Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc)
   }
 
   /**
@@ -734,6 +735,12 @@ object Inliner {
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e1 = visitExp(exp1, ctx)
       MonoAst.HandlerRule(op, fps, e1)
+  }
+
+  private def visitJvmConstructor(constructor: MonoAst.JvmConstructor, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmConstructor = constructor match {
+    case MonoAst.JvmConstructor(exp, retTpe, eff1, loc1) =>
+      val e = visitExp(exp, ctx0)
+      MonoAst.JvmConstructor(e, retTpe, eff1, loc1)
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {

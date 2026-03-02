@@ -15,10 +15,12 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
+import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.BFSColor.{Black, Grey, White}
-import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, VarVertex}
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, RigidVarVertex, VarVertex}
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.NodeType.{IntermediateNode, SinkNode, SourceNode}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.EffConflicted
 
 import scala.annotation.tailrec
@@ -129,11 +131,35 @@ object EffectProvenance {
     case class IOVertex(loc: SourceLocation) extends Vertex
 
     /**
+      * A rigid effect variable
+      * @param sym the effect variable symbol
+      * @param loc the location of the rigid effect variable
+      */
+    case class RigidVarVertex(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Vertex
+
+    /**
       * Effect variable.
       *
       * @param sym the effect variable symbol
       */
     case class VarVertex(sym: Symbol.KindedTypeVarSym) extends Vertex
+  }
+
+  /**
+    * Represents the type of node constructed in the effect provenance graph
+    *
+    * This trait allows to differentiate between two Vertices of the same type, differently, determined by the NodeType
+    *
+    * For example an IO Vertex in a signature, e.g. f(): Unit \ IO
+    * is constructed differently than one that appears in a source node. e.g. println("42")
+    *
+    * This trait is only used when constructing the graph
+    */
+  sealed trait NodeType
+  object NodeType {
+    case object SinkNode extends NodeType
+    case object IntermediateNode extends NodeType
+    case object SourceNode extends NodeType
   }
 
 
@@ -148,7 +174,7 @@ object EffectProvenance {
     * @param constrs0 the list of type constraints to analyze
     * @return a list of conflicts if conflicts could be found, None otherwise
     */
-  def getErrors(constrs0: List[TypeConstraint]): Option[List[EffConflicted]] = {
+  def getErrors(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv): Option[List[EffConflicted]] = {
     val graph = buildGraph(constrs0)
     graph.flatMap(findErrorsInGraph)
   }
@@ -244,37 +270,43 @@ object EffectProvenance {
     * @param constraints the type constraints to analyze
     * @return Some(graph) if one or more edges could be created, otherwise None
     */
-  private def buildGraph(constraints: List[TypeConstraint]): Option[Graph] = {
+  private def buildGraph(constraints: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv): Option[Graph] = {
     var flow: List[Edge] = List()
     var v: Set[Vertex] = Set.empty
     constraints.foreach {
-      case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-        val vtpe1 = toVertex(tpe1, prov.loc)
-        val vtpe2 = toVertex(tpe2, prov.loc)
-        (vtpe1, vtpe2) match {
-          case (Nil, _) => return None
-          case (_, Nil) => return None
-          case (to :: Nil, fromVertices) =>
-            fromVertices.foreach(v += _)
-            v = v + to
-            prov match {
-              case TypeConstraint.Provenance.ExpectEffect(_, _, _) => {
-                fromVertices.foreach(from => flow = Edge(from, to, prov.loc) :: flow)
-              }
-              case TypeConstraint.Provenance.Source(_, _, _) => {
-                fromVertices.foreach(from => flow = Edge(from, to, prov.loc) :: flow)
-              }
-              case TypeConstraint.Provenance.Match(_, _, _) => {
-                fromVertices.foreach(from => flow = Edge(from, to, prov.loc) :: flow)
-              }
-              case _ => {}
-            }
-          case _ => {}
+      case TypeConstraint.Equality(tpe1, tpe2, prov) => {
+        val inf = prov match {
+          case TypeConstraint.Provenance.ExpectEffect(_, _, _) => Some((SinkNode, IntermediateNode, prov.loc))
+          case TypeConstraint.Provenance.Source(_, _, _) => Some((IntermediateNode, SourceNode, prov.loc))
+          case TypeConstraint.Provenance.Match(_, _, _) => Some((IntermediateNode, IntermediateNode, prov.loc))
+          case TypeConstraint.Provenance.ExpectType(_, _, _) => Some((IntermediateNode, SinkNode, prov.loc))
+          case _ => None
         }
+        inf.map {
+          case (nt1, nt2, loc) =>
+            val v1 = toVertex(tpe1, loc, nt1)
+            val v2 = toVertex(tpe2, loc, nt2)
+            (v1, v2) match {
+              case (Nil, _) => return None
+              case (_, Nil) => return None
+              case (toVertices, fromVertices) =>
+                v ++= fromVertices.toSet
+                v ++= toVertices.toSet
+                flow :::= createEdges(fromVertices, toVertices, prov.loc)
+            }
+        }
+      }
       case _ => ()
     }
     if (flow.isEmpty) return None
     Some(Graph(v.toList, flow))
+  }
+  private def createEdges(fromVertices: List[Vertex], toVertices: List[Vertex], loc: SourceLocation): List[Edge] = {
+    fromVertices.foldLeft(List.empty[Edge]){
+      (acc, from) => toVertices.foldLeft(acc) {
+        (acc2, to) => Edge(from, to, loc) :: acc2
+      }
+    }
   }
 
   /**
@@ -310,6 +342,8 @@ object EffectProvenance {
   private def isConflicting(v1: Vertex, v2: Vertex): Boolean = (v1, v2) match {
     case (_, VarVertex(_)) => false
     case (VarVertex(_), _) => false
+    case (RigidVarVertex(_, _), RigidVarVertex(_, _)) => v1 != v2
+    case (CstVertex(sym1, _), CstVertex(sym2, _)) => sym1 != sym2
     case (_, _) => true
   }
 
@@ -321,12 +355,36 @@ object EffectProvenance {
     * @param path the path to analyze
     * @return a list containing the error (if any)
     */
-  private def mkError(path: Path): List[EffConflicted] = (path.head, path.last) match {
-    case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
-    case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
-    case (CstVertex(sym, loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
-    case (CstVertex(sym, loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
-    case _ => Nil
+  private def mkError(path: Path): List[EffConflicted] = {
+    def kSymToEffSym(sym: Symbol.KindedTypeVarSym): Option[Symbol.EffSym] = sym.text match {
+      case VarText.Absent => None
+      case VarText.SourceText(s) => Some(Symbol.mkEffSym(s))
+    }
+    (path.head, path.last) match {
+      case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
+      case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
+      case (IOVertex(loc1), CstVertex(sym2, loc2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(sym2), Symbol.IO, loc2, loc1)))
+      case (CstVertex(sym1, loc1), IOVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Symbol.IO), sym1, loc2, loc1)))
+      case (CstVertex(sym, loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
+      case (CstVertex(sym, loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
+      case (CstVertex(sym1, loc1), CstVertex(sym2, loc2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(sym2), sym1, loc2, loc1)))
+      case (IOVertex(loc1), RigidVarVertex(sym, loc2)) =>
+        kSymToEffSym(sym) match {
+          case None => Nil
+          case Some(varSym) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(varSym), Symbol.IO, loc2, loc1)))
+        }
+      case (CstVertex(sym1, loc1), RigidVarVertex(sym2, loc2)) =>
+        kSymToEffSym(sym2) match {
+          case None => Nil
+          case Some(varSym) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(varSym), sym1, loc2, loc1)))
+        }
+      case (RigidVarVertex(sym1, loc1), RigidVarVertex(sym2, loc2)) =>
+        (kSymToEffSym(sym1), kSymToEffSym(sym2)) match {
+          case (Some(effSym), Some(effSym2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(effSym2), effSym, loc2, loc1)))
+          case _ => Nil
+        }
+      case _ => Nil
+    }
   }
 
   /**
@@ -343,14 +401,23 @@ object EffectProvenance {
     * @param constLoc the constraint location from where the type was encountered
     * @return the list of vertices representing this type
     */
-  private def toVertex(tpe: Type, constLoc: SourceLocation): List[Vertex] = tpe match {
-    case Type.Var(sym, _) => List(VarVertex(sym))
+  private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: Scope, renv: RigidityEnv): List[Vertex] = tpe match {
+    case Type.Var(sym, _) => renv.get(sym) match {
+      case Rigidity.Flexible => List(VarVertex(sym))
+      case Rigidity.Rigid => List(RigidVarVertex(sym, constLoc))
+    }
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.Pure => if (loc.isReal) List(PureExplicitVertex(loc)) else List(PureImplicitVertex(constLoc))
       case TypeConstructor.Effect(sym, _) => sym match {
-        case Symbol.IO => List(IOVertex(constLoc))
+        case Symbol.IO => vtpe match {
+          case SinkNode => List(IOVertex(loc))
+          case SourceNode | IntermediateNode => List(IOVertex(constLoc))
+        }
         case Symbol.Debug => Nil
-        case eff => List(CstVertex(eff, constLoc))
+        case eff => vtpe match {
+          case SinkNode  => List(CstVertex(eff, loc))
+          case SourceNode | IntermediateNode => List(CstVertex(eff, constLoc))
+        }
       }
       case _ => List()
     }
@@ -400,7 +467,7 @@ object EffectProvenance {
         *   Op
         */
       case (Type.Apply(Type.Cst(tc, _), Type.Var(lSym, _), _), Type.Apply(_, _, _)) =>
-        val rhs = toVertex(tpe2, constLoc)
+        val rhs = toVertex(tpe2, constLoc, vtpe)
         tc match {
           case TypeConstructor.Union => VarVertex(lSym) :: rhs
           case _ => List()
@@ -419,7 +486,7 @@ object EffectProvenance {
         *   Op
         */
       case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), Type.Var(rSym, _)) =>
-        val lhs = toVertex(nested, constLoc)
+        val lhs = toVertex(nested, constLoc, vtpe)
         tc match {
           case TypeConstructor.Union => VarVertex(rSym) :: lhs
           case _ => List()

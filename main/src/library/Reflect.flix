@@ -31,19 +31,14 @@ pub mod Reflect {
         case JvmObject(JObject)
     }
 
+    /// Returns the purity of `ef`.
+    pub def reflectEff(p: ProxyEff[ef]): Purity = %%REFLECT_EFF%%(p)
+
     /// Returns the erased runtime representation of `x`.
-    pub def reflect(x: t): JvmValue =
-        typematch x {
-            case b: Bool => JvmValue.JvmBool(b)
-            case c: Char => JvmValue.JvmChar(c)
-            case i: Int8 => JvmValue.JvmInt8(i)
-            case i: Int16 => JvmValue.JvmInt16(i)
-            case i: Int32 => JvmValue.JvmInt32(i)
-            case i: Int64 => JvmValue.JvmInt64(i)
-            case f: Float32 => JvmValue.JvmFloat32(f)
-            case f: Float64 => JvmValue.JvmFloat64(f)
-            case _: _ => JvmValue.JvmObject(unchecked_cast(x as JObject))
-        }
+    pub def reflectValue(x: t): JvmValue = %%REFLECT_VALUE%%(x)
+
+    /// Returns the erased runtime representation of `t`.
+    pub def reflectType(x: Proxy[t]): JvmType = %%REFLECT_TYPE%%(x)
 
     /// A reflected type, reflecting its erased runtime representation.
     pub enum JvmType {
@@ -58,39 +53,11 @@ pub mod Reflect {
         case JvmObject
     }
 
-    /// Returns the erased runtime representation of `t`.
-    pub def reflectType(x: Proxy[t]): JvmType =
-        typematch x {
-            case _: Proxy[Bool] => JvmType.JvmBool
-            case _: Proxy[Char] => JvmType.JvmChar
-            case _: Proxy[Int8] => JvmType.JvmInt8
-            case _: Proxy[Int16] => JvmType.JvmInt16
-            case _: Proxy[Int32] => JvmType.JvmInt32
-            case _: Proxy[Int64] => JvmType.JvmInt64
-            case _: Proxy[Float32] => JvmType.JvmFloat32
-            case _: Proxy[Float64] => JvmType.JvmFloat64
-            case _: _ => JvmType.JvmObject
-        }
-
     /// A reflected effect, either Pure (no effects) or Impure (some effects).
     pub enum Purity {
         case Pure
         case Impure
     }
-
-    /// Returns the purity of `ef`.
-    pub def reflectEffect(p: ProxyEff[ef]): Purity =
-        typematch p {
-            case _: ProxyEff[{}] => Purity.Pure
-            case _: _            => Purity.Impure
-        }
-
-    /// Returns the bool of `b`.
-    pub def reflectBool(p: ProxyBool[b]): Bool =
-        typematch p {
-            case _: ProxyBool[true] => true
-            case _: _               => false
-        }
 
     ///
     /// Represents a zero-width position within a source, identified by line and column coordinates.

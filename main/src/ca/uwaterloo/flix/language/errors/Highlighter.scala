@@ -265,6 +265,7 @@ object Highlighter {
     case SemanticTokenType.Type => Some((102, 217, 239))
     case SemanticTokenType.Enum => Some((102, 217, 239))
     case SemanticTokenType.Interface => Some((102, 217, 239))
+    case SemanticTokenType.Effect => Some((255, 140, 0))
     case SemanticTokenType.Class => Some((248, 248, 242))
     case SemanticTokenType.Variable => Some((200, 200, 194))
     case SemanticTokenType.Parameter => Some((200, 200, 194))

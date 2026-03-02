@@ -514,11 +514,6 @@ object Kinder {
         val rules = rules0.map(visitMatchRule(_, kenv0, root))
         KindedAst.Expr.Match(exp, rules, loc)
 
-      case ResolvedAst.Expr.TypeMatch(exp0, rules0, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        val rules = rules0.map(visitTypeMatchRule(_, kenv0, root))
-        KindedAst.Expr.TypeMatch(exp, rules, loc)
-
       case ResolvedAst.Expr.RestrictableChoose(star, exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         val rules = rules0.map(visitRestrictableChooseRule(_, kenv0, root))
@@ -678,9 +673,6 @@ object Kinder {
         val asEff = asEff0.map(visitType(_, Kind.Eff, kenv0, root))
         KindedAst.Expr.Unsafe(exp, eff, asEff, loc)
 
-      case ResolvedAst.Expr.Without(exp0, symUse, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        KindedAst.Expr.Without(exp, symUse, loc)
 
       case ResolvedAst.Expr.TryCatch(exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -714,6 +706,12 @@ object Kinder {
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc)
 
+      case ResolvedAst.Expr.InvokeSuperConstructor(clazz, exps0, loc) =>
+        val exps = exps0.map(visitExp(_, kenv0, root))
+        val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+        KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc)
+
       case ResolvedAst.Expr.InvokeMethod(exp0, methodName, exps0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         val exps = exps0.map(visitExp(_, kenv0, root))
@@ -721,6 +719,13 @@ object Kinder {
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc)
+
+      case ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, exps0, loc) =>
+        val exps = exps0.map(visitExp(_, kenv0, root))
+        val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+        KindedAst.Expr.InvokeSuperMethod(clazz, methodName, exps, jvar, tvar, evar, loc)
 
       case ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, exps0, loc) =>
         val exps = exps0.map(visitExp(_, kenv0, root))
@@ -748,9 +753,10 @@ object Kinder {
         val exp = visitExp(exp0, kenv0, root)
         KindedAst.Expr.PutStaticField(field, exp, loc)
 
-      case ResolvedAst.Expr.NewObject(name, clazz, methods0, loc) =>
+      case ResolvedAst.Expr.NewObject(name, clazz, constructors0, methods0, loc) =>
+        val constructors = constructors0.map(visitJvmConstructor(_, kenv0, root))
         val methods = methods0.map(visitJvmMethod(_, kenv0, root))
-        KindedAst.Expr.NewObject(name, clazz, methods, loc)
+        KindedAst.Expr.NewObject(name, clazz, constructors, methods, loc)
 
       case ResolvedAst.Expr.NewChannel(exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -866,17 +872,6 @@ object Kinder {
       val pat = visitExtPattern(pat0)
       val exp = visitExp(exp0, kenv, root)
       KindedAst.ExtMatchRule(pat, exp, loc)
-  }
-
-  /**
-    * Performs kinding on the given match rule under the given kind environment.
-    */
-  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv0: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
-    case ResolvedAst.TypeMatchRule(sym, tpe0, exp0, loc) =>
-      val kenv = inferType(tpe0, Kind.Star, kenv0, root)
-      val tpe = visitType(tpe0, Kind.Star, kenv, root)
-      val exp = visitExp(exp0, kenv, root)
-      KindedAst.TypeMatchRule(sym, tpe, exp, loc)
   }
 
   /**
@@ -1093,7 +1088,7 @@ object Kinder {
         unify(expectedKind, actualKind) match {
           case Some(kind) => sym.withKind(kind)
           case None =>
-            val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc)
+            val e = mkUnexpectedKindError(expectedKind, actualKind, loc)
             sctx.errors.add(e)
             sym.withKind(Kind.Error)
         }
@@ -1114,7 +1109,7 @@ object Kinder {
       unify(expectedKind, kind) match {
         case Some(_) => Type.Cst(cst, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1128,7 +1123,7 @@ object Kinder {
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, root)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, k, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1141,7 +1136,7 @@ object Kinder {
           unify(t.kind, expectedKind) match {
             case Some(_) => Type.Alias(cst, args, t, loc)
             case None =>
-              sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
+              sctx.errors.add(mkUnexpectedKindError(expectedKind, t.kind, loc))
               Type.freshError(Kind.Error, loc)
           }
       }
@@ -1159,7 +1154,7 @@ object Kinder {
               val arg = visitType(arg0, innerExpectedKind, kenv, root)
               Type.AssocType(cst, arg, kind, loc)
             case None =>
-              sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc))
+              sctx.errors.add(mkUnexpectedKindError(expectedKind, k0, loc))
               Type.freshError(Kind.Error, loc)
           }
       }
@@ -1171,7 +1166,7 @@ object Kinder {
           val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
           Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1180,7 +1175,14 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Enum(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          val expectedArity = Kind.kindArgs(kind).length
+          val actualArity = Kind.kindArgs(expectedKind).length
+          val error = if (expectedArity != actualArity) {
+            KindError.MismatchedArityOfEnum(sym, expectedArity, actualArity, loc)
+          } else {
+            mkUnexpectedKindError(expectedKind, kind, loc)
+          }
+          sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1189,7 +1191,7 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Effect(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1198,7 +1200,14 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Struct(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          val expectedArity = Kind.kindArgs(kind).length
+          val actualArity = Kind.kindArgs(expectedKind).length
+          val error = if (expectedArity != actualArity) {
+            KindError.MismatchedArityOfStruct(sym, expectedArity, actualArity, loc)
+          } else {
+            mkUnexpectedKindError(expectedKind, kind, loc)
+          }
+          sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1207,7 +1216,7 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.RestrictableEnum(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1236,11 +1245,11 @@ object Kinder {
           Type.freshError(Kind.Error, loc)
         // Case 3: Unexpected kind. Error.
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
 
         case Some(k) if Kind.hasError(k) =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
 
         case Some(_) => throw InternalCompilerException("unexpected non-case set kind", loc)
@@ -1252,7 +1261,7 @@ object Kinder {
       unify(t.kind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseComplement(t, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, t.kind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1274,7 +1283,7 @@ object Kinder {
       unify(actualKind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseUnion(t1, t2, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1297,7 +1306,7 @@ object Kinder {
       unify(actualKind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseIntersection(t1, t2, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1309,6 +1318,18 @@ object Kinder {
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe0.loc)
 
 
+  }
+
+  /**
+    * Creates the appropriate kind error for an unexpected kind.
+    * Returns specialized errors for Type/Eff mismatches.
+    */
+  private def mkUnexpectedKindError(expectedKind: Kind, actualKind: Kind, loc: SourceLocation): KindError = {
+    (expectedKind, actualKind) match {
+      case (Kind.Star, Kind.Eff) => KindError.UnexpectedEffect(loc)
+      case (Kind.Eff, Kind.Star) => KindError.UnexpectedType(loc)
+      case _ => KindError.UnexpectedKind(expectedKind, actualKind, loc)
+    }
   }
 
   /**
@@ -1404,6 +1425,17 @@ object Kinder {
       val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
       KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
+  }
+
+  /**
+    * Performs kinding on the given JVM constructor.
+    */
+  private def visitJvmConstructor(constructor: ResolvedAst.JvmConstructor, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.JvmConstructor = constructor match {
+    case ResolvedAst.JvmConstructor(exp0, tpe0, eff0, loc) =>
+      val exp = visitExp(exp0, kenv, root)
+      val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
+      val tpe = visitType(tpe0, Kind.Wild, kenv, root)
+      KindedAst.JvmConstructor(exp, tpe, eff, loc)
   }
 
   /**

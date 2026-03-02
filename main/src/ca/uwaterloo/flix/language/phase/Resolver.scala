@@ -613,7 +613,7 @@ object Resolver {
         val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
         // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ListBuffer.empty[ResolutionError]
+        val errors = mutable.ArrayBuffer.empty[ResolutionError]
 
         // Build the map `m` and check for [[DuplicateAssocTypeDef]].
         for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
@@ -874,7 +874,7 @@ object Resolver {
 
     case NamedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = resolveFormalParam(fparam, Wildness.AllowWild, scp0, taenv, ns0, root)
-      val scp = scp0 ++ mkFormalParamScp(List(p))
+      val scp = (scp0 ++ mkFormalParamScp(List(p))).withSuperClass(None) // super calls not allowed inside lambdas
       val e = resolveExp(exp, scp)
       ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
 
@@ -934,18 +934,6 @@ object Resolver {
 
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.Match(e, rs, loc)
-
-    case NamedAst.Expr.TypeMatch(exp, rules, loc) =>
-      val rs = rules.map {
-        case NamedAst.TypeMatchRule(sym, tpe, body, ruleLoc) =>
-          val t = resolveType(tpe, None, Wildness.AllowWild, scp0, taenv, ns0, root)
-          val scp = scp0 ++ mkVarScp(sym)
-          val b = resolveExp(body, scp)
-          ResolvedAst.TypeMatchRule(sym, t, b, ruleLoc)
-      }
-
-      val e = resolveExp(exp, scp0)
-      ResolvedAst.Expr.TypeMatch(e, rs, loc)
 
     case NamedAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = resolveExp(exp, scp0)
@@ -1163,17 +1151,6 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.Throw(e, loc)
 
-    case NamedAst.Expr.Without(exp, qname, loc) =>
-      lookupEffect(qname, scp0, ns0, root) match {
-        case Result.Ok(decl) =>
-          checkEffectIsAccessible(decl, ns0, qname.loc)
-          val symUse = EffSymUse(decl.sym, qname)
-          val e = resolveExp(exp, scp0)
-          ResolvedAst.Expr.Without(e, symUse, loc)
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
-      }
 
     case NamedAst.Expr.Handler(qname, rules, loc) =>
       visitHandler(qname, rules, scp0) match {
@@ -1200,25 +1177,52 @@ object Resolver {
           ResolvedAst.Expr.Error(error)
       }
 
+    case NamedAst.Expr.InvokeSuperConstructor(exps, loc) =>
+      val es = exps.map(resolveExp(_, scp0))
+      scp0.superClass match {
+        case Some(clazz) =>
+          ResolvedAst.Expr.InvokeSuperConstructor(clazz, es, loc)
+        case None =>
+          val error = ResolutionError.IllegalSuperCall(loc)
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
+      }
+
     case NamedAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = resolveExp(exp, scp0)
       val es = exps.map(resolveExp(_, scp0))
       ResolvedAst.Expr.InvokeMethod(e, name, es, loc)
 
+    case NamedAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      val es = exps.map(resolveExp(_, scp0))
+      scp0.superClass match {
+        case Some(clazz) =>
+          ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, es, loc)
+        case None =>
+          val error = ResolutionError.IllegalSuperCall(loc)
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
+      }
+
     case NamedAst.Expr.GetField(exp, name, loc) =>
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.GetField(e, name, loc)
 
-    case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
+    case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
-      val ms = methods.map(visitJvmMethod(_, scp0))
       //
       // Check that the type is a JVM type (after type alias erasure).
+      // Set the super class on the scope for constructor/method bodies.
       //
       UnkindedType.eraseAliases(t) match {
         case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
-          ResolvedAst.Expr.NewObject(name, clazz, ms, loc)
+          val superScp = scp0.withSuperClass(Some(clazz))
+          val cs = constructors.map(visitJvmConstructor(_, superScp))
+          val ms = methods.map(visitJvmMethod(_, superScp))
+          ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
         case _ =>
+          val cs = constructors.map(visitJvmConstructor(_, scp0))
+          val ms = methods.map(visitJvmMethod(_, scp0))
           val error = ResolutionError.IllegalNonJavaType(t, t.loc)
           sctx.errors.add(error)
           ResolvedAst.Expr.Error(error)
@@ -1615,6 +1619,17 @@ object Resolver {
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
       ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
+  }
+
+  /**
+    * Performs name resolution on the given JvmConstructor `constructor` in the namespace `ns0`.
+    */
+  private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
+    case NamedAst.JvmConstructor(exp, tpe, eff, loc) =>
+      val e = resolveExp(exp, scp0)
+      val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+      val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root))
+      ResolvedAst.JvmConstructor(e, t, p, loc)
   }
 
   /**

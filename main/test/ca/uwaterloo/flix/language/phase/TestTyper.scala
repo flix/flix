@@ -282,6 +282,111 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
   }
 
+  test("Test.RigidEffUsingOtherRigidEff.01") {
+    val input =
+      """
+        |def foo(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2): Unit \ ef1 = g()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.RigidEffUsingCstEff.01") {
+    val input =
+      """
+        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = Bar.buzz()
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.RigidEffUsingIO.01") {
+    val input =
+      """
+        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = println("42")
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.CstEffUsingOtherCstEff.01") {
+    val input =
+      """
+        |def foo(): Unit \ Foo = Bar.buzz()
+        |eff Foo
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.IOUsingCstEff.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = Bar.buzz()
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.IOUsingCstEff.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ IO = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.CstEffUsingIO.01") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ Console = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ Bar =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        | def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
   test("TestLeq01") {
     val input =
       """
@@ -971,18 +1076,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("Test.MismatchedEff.Without.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(): Unit
-        |}
-        |
-        |def foo(): Unit = E.op() without E
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
 
   test("Test.MismatchedEff.Apply.02") {
     val input =
@@ -1145,20 +1238,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def mkE(): E[Int32, Pure] \ ef = ???
         |
         |def g(): Bool = f(mkE)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("Test.UnexpectedArgument.06") {
-    val input =
-      """
-        |def takesString(_: String): Unit = ()
-        |
-        |def f(): Unit = typematch 123 {
-        |    case x: _ => takesString(x)
-        |    case _: _ => ???
-        |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)

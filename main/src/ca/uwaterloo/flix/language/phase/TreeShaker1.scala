@@ -189,9 +189,6 @@ object TreeShaker1 {
     case Expr.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      visitExp(exp) ++ visitExps(rules.map(_.exp))
-
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
@@ -216,8 +213,6 @@ object TreeShaker1 {
     case Expr.Unsafe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
@@ -231,8 +226,14 @@ object TreeShaker1 {
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       visitExps(exps)
 
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      visitExps(exps)
+
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
+
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
       visitExps(exps)
@@ -249,8 +250,8 @@ object TreeShaker1 {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      visitExps(methods.map(_.exp))
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      visitExps(constructors.map(_.exp) ++ methods.map(_.exp))
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)

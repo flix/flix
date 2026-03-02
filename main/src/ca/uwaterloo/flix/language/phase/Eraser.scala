@@ -116,6 +116,11 @@ object Eraser {
       ErasedAst.HandlerRule(op, fparams.map(visitParam), visitExp(exp))
   }
 
+  private def visitJvmConstructor(constructor: ReducedAst.JvmConstructor)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmConstructor = constructor match {
+    case ReducedAst.JvmConstructor(clo, retTpe, purity, loc) =>
+      ErasedAst.JvmConstructor(visitExp(clo), visitType(retTpe), purity, loc)
+  }
+
   private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmMethod = method match {
     case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
       // return type is not erased to maintain class signatures
@@ -182,7 +187,9 @@ object Eraser {
         case AtomicOp.Unbox => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Box => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeConstructor(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeSuperConstructor(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeMethod(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeSuperMethod(_, _) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeStaticMethod(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.GetField(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.PutField(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
@@ -225,8 +232,8 @@ object Eraser {
     case ReducedAst.Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val tw = ErasedAst.Expr.RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-      ErasedAst.Expr.NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
+    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+      ErasedAst.Expr.NewObject(name, clazz, visitType(tpe), purity, constructors.map(visitJvmConstructor), methods.map(visitJvmMethod), loc)
   }
 
   /**
@@ -400,7 +407,7 @@ object Eraser {
 
     /** Returns the entries of `m`. */
     private def toList[A, B](m: ConcurrentHashMap[(A, B), A]): List[(A, B, A)] = {
-      val res = mutable.ListBuffer.empty[(A, B, A)]
+      val res = mutable.ArrayBuffer.empty[(A, B, A)]
       m.forEach(new BiConsumer[(A, B), A] {
         override def accept(t: (A, B), u: A): Unit = res.append((t._1, t._2, u))
       })

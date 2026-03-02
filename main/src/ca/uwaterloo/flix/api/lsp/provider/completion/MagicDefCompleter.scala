@@ -30,8 +30,8 @@ object MagicDefCompleter {
     *   foo.bar
     * }}}
     *
-    * where foo is an expression that has an enum or struct type and bar is a prefix of a def
-    * in the companion module of the enum or struct.
+    * where foo is an expression that has an enum, struct, or primitive type and bar is a prefix
+    * of a def in the companion module of the type.
     *
     * For example:
     *
@@ -45,27 +45,45 @@ object MagicDefCompleter {
     * - List.filter(...)
     * - List.fold(...)
     *
+    * and similarly:
+    *
+    * {{{
+    *   let x = 42;
+    *   x.bi
+    * }}}
+    *
+    * would propose:
+    *
+    * - Int32.bitCount(x)
+    *
     * and so on.
     */
   def getCompletions(ident: Name.Ident, tpe: Type, range: Range, loc: SourceLocation, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
     val prefix = ident.name // the incomplete def name, i.e. the "bar" part.
     val baseExp = loc.text.getOrElse("") // the expression, but as a string, i.e. the "foo" part.
 
-    // Lookup defs for types (i.e. enums and structs) that have companion modules.
+    // Lookup defs for types (i.e. enums, structs, and primitives) that have companion modules.
     tpe.typeConstructor match {
-      case Some(TypeConstructor.Enum(sym, _)) => getCompletionsForSym(sym, prefix, baseExp, tpe, range, root)
-      case Some(TypeConstructor.Struct(sym, _)) => getCompletionsForSym(sym, prefix, baseExp, tpe, range, root)
-      case _ => Nil
+      case Some(TypeConstructor.Enum(sym, _)) =>
+        getCompletionsForModule(sym.namespace ::: sym.name :: Nil, prefix, baseExp, tpe, range, root)
+      case Some(TypeConstructor.Struct(sym, _)) =>
+        getCompletionsForModule(sym.namespace ::: sym.name :: Nil, prefix, baseExp, tpe, range, root)
+      case Some(tc) =>
+        primitiveCompanionModule(tc) match {
+          case Some(ns) => getCompletionsForModule(ns, prefix, baseExp, tpe, range, root)
+          case None     => Nil
+        }
+      case None => Nil
     }
   }
 
   /**
-    * Returns the relevant def completions for the given qualified symbol (an enum or struct).
+    * Returns the relevant def completions for the given module namespace.
     */
-  private def getCompletionsForSym(sym: QualifiedSym, prefix: String, baseExp: String, tpe: Type, range: Range, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
+  private def getCompletionsForModule(moduleNamespace: List[String], prefix: String, baseExp: String, tpe: Type, range: Range, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
     val matchedDefs = root.defs.values.filter {
       case defn =>
-        inCompanionMod(sym, defn) &&                            // Include only defs in the companion module.
+        defn.sym.namespace == moduleNamespace &&                // Include only defs in the companion module.
           CompletionUtils.isAvailable(defn.spec) &&             // Include only defs that are public.
           CompletionUtils.fuzzyMatch(prefix, defn.sym.text) &&  // Include only defs that fuzzy match what the user has written.
           expMatchesLastArgType(tpe, defn.spec, root)           // Include only defs whose last parameter type unifies with the expression type.
@@ -80,9 +98,23 @@ object MagicDefCompleter {
   }
 
   /**
-    * Returns `true` if the given `defn` is in the companion module of `sym`.
+    * Returns the companion module namespace for the given primitive type constructor, if any.
     */
-  private def inCompanionMod(sym: QualifiedSym, defn: TypedAst.Def): Boolean = sym.namespace ::: sym.name :: Nil == defn.sym.namespace
+  private def primitiveCompanionModule(tc: TypeConstructor): Option[List[String]] = tc match {
+    case TypeConstructor.Bool       => Some(List("Bool"))
+    case TypeConstructor.Char       => Some(List("Char"))
+    case TypeConstructor.Float32    => Some(List("Float32"))
+    case TypeConstructor.Float64    => Some(List("Float64"))
+    case TypeConstructor.BigDecimal => Some(List("BigDecimal"))
+    case TypeConstructor.Int8       => Some(List("Int8"))
+    case TypeConstructor.Int16      => Some(List("Int16"))
+    case TypeConstructor.Int32      => Some(List("Int32"))
+    case TypeConstructor.Int64      => Some(List("Int64"))
+    case TypeConstructor.BigInt     => Some(List("BigInt"))
+    case TypeConstructor.Str        => Some(List("String"))
+    case TypeConstructor.Regex      => Some(List("Regex"))
+    case _                          => None
+  }
 
   /**
     * Returns `true` if the given expression type `tpe` unifies with the last parameter type of the given `spec`.

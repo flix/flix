@@ -225,6 +225,27 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate a super call outside of a 'new' object body.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalSuperCall(loc: SourceLocation) extends ResolutionError {
+    def code: ErrorCode = ErrorCode.E3596
+
+    def summary: String = "Illegal super call outside of 'new' object body."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Illegal super call.
+         |
+         |${highlight(loc, "illegal super call", fmt)}
+         |
+         |Super calls can only appear directly inside a 'new' object body (not inside a lambda).
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a wildcard type is used in an illegal position.
     *
     * @param ident the name of the wildcard type.
