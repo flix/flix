@@ -1017,7 +1017,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given JvmMethod `method`
     */
   private def visitJvmMethod(method: TypedAst.JvmMethod): Iterator[SemanticToken] = method match {
-    case TypedAst.JvmMethod(_, fparams, exp, tpe, eff, _) =>
+    case TypedAst.JvmMethod(_, _, fparams, exp, tpe, eff, _) =>
       fparams.iterator.flatMap(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
   }
 

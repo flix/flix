@@ -247,11 +247,12 @@ object DocAstFormatter {
   }
 
   private def formatJvmMethod(m: JvmMethod)(implicit i: Indent): Doc = {
-    val JvmMethod(ident, fparams, clo, _) = m
+    val JvmMethod(ann, ident, fparams, clo, _) = m
     val fparamsf = fparams.map(aux(_, paren = false))
     val clof = aux(clo, paren = false, inBlock = true)
+    val prefix = ann.foldRight(text("def"))((a, acc) => text("@" + a) +: acc)
     group(
-      text("def") +: text(ident.name) +:
+      prefix +: text(ident.name) +:
         tuple(fparamsf) +: text("=") +\:
         clof
     )

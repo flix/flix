@@ -2030,6 +2030,7 @@ object Weeder2 {
 
     private def visitJvmMethod(tree: Tree)(implicit sctx: SharedContext): Validation[JvmMethod, CompilationMessage] = {
       expect(tree, TreeKind.Expr.JvmMethod)
+      val jvmAnns = pickJvmAnnotations(tree)
       mapN(
         pickNameIdent(tree),
         pickExpr(tree),
@@ -2037,8 +2038,25 @@ object Weeder2 {
         Types.pickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+        (ident, expr, fparams, tpe, eff) => JvmMethod(jvmAnns, ident, fparams, expr, tpe, eff, tree.loc)
       }
+    }
+
+    /**
+      * Extracts JVM annotations from a JvmMethod tree node.
+      * All annotations are extracted as JvmAnnotation objects;
+      * filtering of Flix annotations is done later in the Resolver.
+      */
+    private def pickJvmAnnotations(tree: Tree)(implicit sctx: SharedContext): List[WeededAst.JvmAnnotation] = {
+      val optAnn = tryPick(TreeKind.AnnotationList, tree)
+      optAnn.map { annTree =>
+        val tokens = pickAllTokens(annTree)
+        tokens.toList.map { token =>
+          val loc = token.mkSourceLocation()
+          val name = token.text.stripPrefix("@")
+          WeededAst.JvmAnnotation(Name.Ident(name, loc), loc)
+        }
+      }.getOrElse(Nil)
     }
 
     private def visitJvmConstructor(tree: Tree)(implicit sctx: SharedContext): Validation[JvmConstructor, CompilationMessage] = {

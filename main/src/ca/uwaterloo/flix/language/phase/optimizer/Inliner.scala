@@ -744,11 +744,11 @@ object Inliner {
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
+    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
-      MonoAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
+      MonoAst.JvmMethod(ann, ident, fps, e, retTpe, eff1, loc1)
   }
 
   /**

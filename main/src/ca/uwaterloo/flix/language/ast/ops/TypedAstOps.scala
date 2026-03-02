@@ -375,7 +375,7 @@ object TypedAstOps {
         case (acc, JvmConstructor(exp, _, _, _)) => acc ++ freeVars(exp)
       }
       methods.foldLeft(cFvs) {
-        case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
+        case (acc, JvmMethod(_, _, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
     case Expr.NewChannel(exp, _, _, _) =>

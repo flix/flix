@@ -1180,10 +1180,10 @@ object Specialization {
 
   /** Specializes `method` w.r.t. `subst`. */
   private def specializeJvmMethod(method: TypedAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: TypedAst.Root, flix: Flix): TypedAst.JvmMethod = method match {
-    case TypedAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
+    case TypedAst.JvmMethod(ann, ident, fparams0, exp0, tpe, eff, loc) =>
       val (fparams, env1) = specializeFormalParams(fparams0, subst)
       val exp = specializeExp(exp0, env0 ++ env1, subst)
-      TypedAst.JvmMethod(ident, fparams, exp, subst(tpe), subst(eff), loc)
+      TypedAst.JvmMethod(ann, ident, fparams, exp, subst(tpe), subst(eff), loc)
   }
 
   /**
