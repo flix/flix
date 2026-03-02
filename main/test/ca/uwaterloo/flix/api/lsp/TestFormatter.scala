@@ -159,18 +159,6 @@ class TestFormatter extends AnyFunSuite {
     }
   }
 
-  private def compileAndGetTypedAstAndSyntaxTree(program: String, programPath: String): (Root, SyntaxTree.Root) = {
-    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    // We add the program as VirtualPath to the shared Flix instance,
-    // if not the shared Flix instance will not be able to find the syntax tree corresponding to the program.
-    sharedFlix.addVirtualPath(Paths.get(programPath), program)
-    sharedFlix.check() match {
-      case (Some(root), Nil) => (root, sharedFlix.getParsedAst)
-      case (optRoot, errors) =>
-        fail(CompilationMessage.formatAll(errors)(NoFormatter, optRoot))
-    }
-  }
-
   /**
     * Computes a semantic hash for the given SyntaxTree.Root.
     *
