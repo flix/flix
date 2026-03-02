@@ -706,6 +706,7 @@ object Weeder2 {
         case "@LazyWhenPure" => LazyWhenPure(loc)
         case "@Skip" => Skip(loc)
         case "@Test" => Test(loc)
+        case "@test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)
         case other =>
           val name = other.stripPrefix("@")
@@ -3177,7 +3178,7 @@ object Weeder2 {
           text(op).head match {
             // ARROW FUNCTIONS
             case "->" => flatMapN(tryPickEffect(tree))(eff => {
-              val l = tree.loc.asSynthetic
+              val l = tree.loc
               val t1Revisitied = t1 match {
                 // Normally singleton tuples `((a, b))` are treated as `(a, b)`. That's fine unless we are doing an arrow type!
                 // In this case we need t1 "unflattened" so we redo the visit.
