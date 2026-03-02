@@ -16,33 +16,14 @@
 
 pub mod Net.Http {
 
-    use Net.Body
     use Net.Http
+    use Net.HttpClient
     use Net.Retry
     use Net.Request
     use Net.Request.Request
     use Net.Response
     use Net.Response.Response
-    use Net.Method
-    use Net.Timeout
-    use Net.Timeout.{NoTimeout, After}
-    use IoError.ErrorKind
     use IoError.IoError
-
-    import java.io.IOException
-    import java.io.UncheckedIOException
-    import java.lang.IllegalArgumentException
-    import java.lang.InterruptedException
-    import java.net.ConnectException
-    import java.net.http.HttpClient
-    import java.net.http.{HttpClient$Redirect => Redirect}
-    import java.net.http.HttpTimeoutException
-    import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
-    import java.net.http.HttpRequest
-    import java.net.http.{HttpRequest$BodyPublishers => BodyPublishers}
-    import java.net.URI
-    import java.time.{Duration => JDuration}
-    import java.util.{List => JList}
 
     ///
     /// Sends the given request `req` via the `Http` effect.
@@ -54,109 +35,43 @@ pub mod Net.Http {
     /// Sends a GET request to the given `url`.
     ///
     pub def get(url: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Get, url = url, headers = Map.empty(), body = None,
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
+        send(Request.get(url))
 
     ///
     /// Sends a HEAD request to the given `url`.
     ///
     pub def head(url: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Head, url = url, headers = Map.empty(), body = None,
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
+        send(Request.head(url))
 
     ///
     /// Sends a DELETE request to the given `url`.
     ///
     pub def delete(url: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Delete, url = url, headers = Map.empty(), body = None,
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
+        send(Request.delete(url))
 
     ///
     /// Sends an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Options, url = url, headers = Map.empty(), body = None,
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
+        send(Request.options(url))
 
     ///
     /// Sends a POST request to the given `url` with the given `body`.
     ///
     pub def post(url: String, body: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
+        send(Request.post(url, body))
 
     ///
     /// Sends a PUT request to the given `url` with the given `body`.
     ///
     pub def put(url: String, body: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
+        send(Request.put(url, body))
 
     ///
     /// Sends a PATCH request to the given `url` with the given `body`.
     ///
     pub def patch(url: String, body: String): Result[IoError, Response] \ Http =
-        send(Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                      requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true}))
-
-    ///
-    /// Performs the actual HTTP request using the Java HTTP client.
-    ///
-    def doRequest(req: Request): Result[IoError, Response] \ IO =
-        try {
-            let Request(x) = req;
-            let methodStr = match x#method {
-                case Method.Get     => "GET"
-                case Method.Head    => "HEAD"
-                case Method.Delete  => "DELETE"
-                case Method.Options => "OPTIONS"
-                case Method.Post    => "POST"
-                case Method.Put     => "PUT"
-                case Method.Patch   => "PATCH"
-            };
-            let bodyPublisher = match x#body {
-               case Some(Body.Text(s))  => BodyPublishers.ofString(s)
-               case Some(Body.Bytes(v)) => BodyPublishers.ofByteArray(v)
-               case None                => BodyPublishers.noBody()
-            };
-            let builder =
-               HttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
-                   |> b -> Map.foldLeftWithKey(
-                       (mb, key, values) -> List.foldLeft(
-                           (b1, v) -> b1.header(key, v),
-                           mb,
-                           values
-                       ),
-                       b,
-                       x#headers
-                   );
-            let jrequest = match x#requestTimeout {
-                case NoTimeout   => builder.build()
-                case After(t, u) => builder.timeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u)))).build()
-            };
-            let redirectPolicy = if (x#followRedirects) Redirect.NORMAL else Redirect.NEVER;
-            let clientBuilder = match x#connectTimeout {
-                case NoTimeout   => HttpClient.newBuilder().followRedirects(redirectPolicy)
-                case After(t, u) => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u))))
-            };
-            let client = clientBuilder.build();
-            let response = client.send(jrequest, BodyHandlers.ofByteArray());
-            let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
-            let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
-            let bytes = unchecked_cast(response.body() as Array[Int8, Static]);
-            Ok(Response({
-               status = response.statusCode(),
-               headers = responseHeaders,
-               body = Body.Bytes(Array.toVector(bytes))
-            }))
-        } catch {
-            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-            case ex: HttpTimeoutException     => Err(IoError(ErrorKind.Timeout, ex.getMessage()))
-            case ex: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage()))
-            case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
-            case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+        send(Request.patch(url, body))
 
     ///
     /// Handles the `Http` effect of the given function `f`.
@@ -167,7 +82,7 @@ pub mod Net.Http {
         run {
             f(x)
         } with handler Http {
-            def request(req, k) = k(doRequest(req))
+            def request(req, k) = k(HttpClient.execute((_) -> Ok(), req))
         }
 
     ///
@@ -180,17 +95,7 @@ pub mod Net.Http {
         run {
             f(x)
         } with handler Http {
-            def request(req, k) =
-                def loop(attempt) =
-                    match doRequest(req) {
-                        case Ok(resp) => k(Ok(resp))
-                        case Err(error) =>
-                            if (Retry.shouldRetry(attempt, req, error))
-                                loop(attempt + 1)
-                            else
-                                k(Err(error))
-                    };
-                loop(0)
+            def request(req, k) = k(HttpClient.executeWithRetry((_) -> Ok(), req))
         }
 
     ///

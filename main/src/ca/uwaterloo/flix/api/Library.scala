@@ -179,6 +179,7 @@ object Library {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "Net.flix" -> LocalResource.get("/src/library/Net.flix"),
     "Net/Http.flix" -> LocalResource.get("/src/library/Net/Http.flix"),
+    "Net/HttpClient.flix" -> LocalResource.get("/src/library/Net/HttpClient.flix"),
     "Net/Https.flix" -> LocalResource.get("/src/library/Net/Https.flix"),
     "Net/Request.flix" -> LocalResource.get("/src/library/Net/Request.flix"),
     "Net/Response.flix" -> LocalResource.get("/src/library/Net/Response.flix"),

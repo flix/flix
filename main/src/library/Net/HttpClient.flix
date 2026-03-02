@@ -1,0 +1,132 @@
+/*
+ * Copyright 2026 Flix Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+pub mod Net.HttpClient {
+
+    use Net.Body
+    use Net.Method
+    use Net.Retry
+    use Net.Request
+    use Net.Request.Request
+    use Net.Response
+    use Net.Response.Response
+    use Net.Timeout
+    use Net.Timeout.{NoTimeout, After}
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    import java.io.IOException
+    import java.io.UncheckedIOException
+    import java.lang.IllegalArgumentException
+    import java.lang.InterruptedException
+    import java.net.ConnectException
+    import java.net.http.HttpClient
+    import java.net.http.{HttpClient$Redirect => Redirect}
+    import java.net.http.HttpTimeoutException
+    import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
+    import java.net.http.HttpRequest
+    import java.net.http.{HttpRequest$BodyPublishers => BodyPublishers}
+    import java.net.URI
+    import java.time.{Duration => JDuration}
+    import java.util.{List => JList}
+
+    ///
+    /// Performs the actual HTTP request using the Java HTTP client.
+    ///
+    pub def doRequest(req: Request): Result[IoError, Response] \ IO =
+        try {
+            let Request(x) = req;
+            let methodStr = match x#method {
+                case Method.Get     => "GET"
+                case Method.Head    => "HEAD"
+                case Method.Delete  => "DELETE"
+                case Method.Options => "OPTIONS"
+                case Method.Post    => "POST"
+                case Method.Put     => "PUT"
+                case Method.Patch   => "PATCH"
+            };
+            let bodyPublisher = match x#body {
+               case Some(Body.Text(s))  => BodyPublishers.ofString(s)
+               case Some(Body.Bytes(v)) => BodyPublishers.ofByteArray(v)
+               case None                => BodyPublishers.noBody()
+            };
+            let builder =
+               HttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
+                   |> b -> Map.foldLeftWithKey(
+                       (mb, key, values) -> List.foldLeft(
+                           (b1, v) -> b1.header(key, v),
+                           mb,
+                           values
+                       ),
+                       b,
+                       x#headers
+                   );
+            let jrequest = match x#requestTimeout {
+                case NoTimeout   => builder.build()
+                case After(t, u) => builder.timeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u)))).build()
+            };
+            let redirectPolicy = if (x#followRedirects) Redirect.NORMAL else Redirect.NEVER;
+            let clientBuilder = match x#connectTimeout {
+                case NoTimeout   => HttpClient.newBuilder().followRedirects(redirectPolicy)
+                case After(t, u) => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u))))
+            };
+            let client = clientBuilder.build();
+            let response = client.send(jrequest, BodyHandlers.ofByteArray());
+            let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
+            let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
+            let bytes = unchecked_cast(response.body() as Array[Int8, Static]);
+            Ok(Response({
+               status = response.statusCode(),
+               headers = responseHeaders,
+               body = Body.Bytes(Array.toVector(bytes))
+            }))
+        } catch {
+            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+            case ex: HttpTimeoutException     => Err(IoError(ErrorKind.Timeout, ex.getMessage()))
+            case ex: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage()))
+            case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
+            case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+        }
+
+    ///
+    /// Validates then performs an HTTP request.
+    ///
+    pub def execute(validate: Request -> Result[IoError, Unit], req: Request): Result[IoError, Response] \ IO =
+        match validate(req) {
+            case Err(e) => Err(e)
+            case Ok()   => doRequest(req)
+        }
+
+    ///
+    /// Validates then performs an HTTP request, retrying on failure via the `Retry` effect.
+    ///
+    pub def executeWithRetry(validate: Request -> Result[IoError, Unit], req: Request): Result[IoError, Response] \ Retry + IO =
+        match validate(req) {
+            case Err(e) => Err(e)
+            case Ok()   =>
+                def loop(attempt) = match doRequest(req) {
+                    case Ok(resp)   => Ok(resp)
+                    case Err(error) =>
+                        if (Retry.shouldRetry(attempt, req, error))
+                            loop(attempt + 1)
+                        else
+                            Err(error)
+                };
+                loop(0)
+        }
+
+}
