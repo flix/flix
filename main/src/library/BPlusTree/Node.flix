@@ -1078,6 +1078,14 @@ mod BPlusTree.Node {
     /// Traverses down the tree according to `pickChild`, acquiring locks along the way.
     /// If a lock is invalid, yields and retries from the root using `restart`.
     ///
+    /// `pickChild` should pick a child of `cur` if `cur` is an internal node and is not 
+    /// called if `cur` is a leaf. 
+    ///
+    /// `restart` should restart the traversal from the root of the tree.
+    /// 
+    /// Caution: Because invalid locks trigger `restart`, `pickChild` may be called an
+    /// unknown number of times before traversal succeeds.
+    ///
     /// Lock invariant: `stamp` is a valid lock on the current node.
     ///
     def traverseToLeaf(
