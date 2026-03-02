@@ -17,7 +17,59 @@ class TestFormatter extends AnyFunSuite {
     * Note: files from large-examples and package-manager are not included in this list
     */
   private val ProgramPathList = List(
+    "examples/concurrency-and-parallelism/spawning-threads.flix",
     "examples/concurrency-and-parallelism/using-par-yield.flix",
+    "examples/concurrency-and-parallelism/using-par-yield-recursively.flix",
+    "examples/concurrency-and-parallelism/using-select-with-default.flix",
+    "examples/concurrency-and-parallelism/using-select.flix",
+    "examples/concurrency-and-parallelism/using-channels-for-message-passing.flix",
+    "examples/concurrency-and-parallelism/using-select-with-timeout.flix",
+    "examples/effects-and-handlers/advanced/collatz.flix",
+    "examples/effects-and-handlers/advanced/nqueens.flix",
+    "examples/effects-and-handlers/advanced/backtracking.flix",
+    "examples/effects-and-handlers/using-Random.flix",
+    "examples/effects-and-handlers/using-HttpWithResult.flix",
+    "examples/effects-and-handlers/using-ProcessWithResult.flix",
+    "examples/effects-and-handlers/using-FileWriteWithResult.flix",
+    "examples/effects-and-handlers/using-Console.flix",
+    "examples/effects-and-handlers/using-Logger.flix",
+    "examples/effects-and-handlers/running-multiple-effects.flix",
+    "examples/effects-and-handlers/using-Clock.flix",
+    "examples/datalog/compiler-puzzle.flix",
+    "examples/datalog/railroad-network.flix",
+    "examples/datalog/train-schedule.flix",
+    "examples/functional-style/lists-and-list-processing.flix",
+    "examples/functional-style/pure-and-impure-functions.flix",
+    "examples/functional-style/mutual-recursion-with-full-tail-call-elimination.flix",
+    "examples/functional-style/higher-order-functions.flix",
+    "examples/functional-style/effect-polymorphic-functions.flix",
+    "examples/functional-style/enums-and-parametric-polymorphism.flix",
+    "examples/functional-style/function-composition-pipelines-and-currying.flix",
+    "examples/functional-style/algebraic-data-types-and-pattern-matching.flix",
+    "examples/imperative-style/copying-characters-into-array-with-foreach.flix",
+    "examples/imperative-style/imperative-style-foreach-loops.flix",
+    "examples/imperative-style/internal-mutability-with-regions.flix",
+    "examples/imperative-style/iterating-over-lists-with-foreach.flix",
+    "examples/modules/use-from-a-module-locally.flix",
+    "examples/modules/declaring-a-module.flix",
+    "examples/modules/use-from-a-module.flix",
+    "examples/modules/companion-module-effect.flix",
+    "examples/modules/companion-module-struct.flix",
+    "examples/modules/companion-module-trait.flix",
+    "examples/modules/companion-module-enum.flix",
+    "examples/records/the-ast-typing-problem-with-polymorphic-records.flix",
+    "examples/records/polymorphic-record-update.flix",
+    "examples/records/polymorphic-record-extension-and-restriction.flix",
+    "examples/records/record-construction-and-use.flix",
+    "examples/structs/structs-and-parametric-polymorphism.flix",
+    "examples/structs/struct-person.flix",
+    "examples/structs/struct-tree-monadic.flix",
+    "examples/structs/struct-tree.flix",
+    "examples/traits/trait-with-higher-kinded-type.flix",
+    "examples/traits/trait-with-associated-effect.flix",
+    "examples/traits/deriving-traits-automatically.flix",
+    "examples/traits/trait-with-associated-type.flix",
+    "examples/traits/declaring-a-trait-with-instances.flix",
   )
 
   /**
@@ -35,7 +87,7 @@ class TestFormatter extends AnyFunSuite {
     * We first compile the stdlib so that every further compilation will be incremental.
     */
   private val sharedFlix: Flix = {
-    val flix = new Flix().setOptions(Options.Default.copy(incremental = true))
+    val flix = new Flix().setOptions(Options.Default)
     flix.check()
     flix
   }
@@ -45,16 +97,17 @@ class TestFormatter extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Idempotence: formatting once must result in the same as formatting twice.") {
     for ((program, programPath) <- Programs.zip(ProgramPathList)) {
-      val syntaxRoot = compileWithSuccess(program, programPath)
+      val syntaxRoot = compileWithSuccess(program)
       val formatTextEditsOnce = Formatter.format(syntaxRoot, programPath)
       val formattedStringOnce = Formatter.applyTextEditsToString(program, formatTextEditsOnce)
 
-      // We must compile the formatted string to get the new syntax tree!
-      val syntaxRootAfterOnce = compileWithSuccess(formattedStringOnce, programPath)
+      // We must compile the formatted string to get the new syntax tree, which includes the formatting changes.
+      // Especially, the positions in the String/File may have changed, which will affect the text edits produced by the second formatting pass.
+      val syntaxRootAfterOnce = compileWithSuccess(formattedStringOnce)
 
       val formatTextEditsTwice = Formatter.format(syntaxRootAfterOnce, programPath)
       val formattedStringTwice = Formatter.applyTextEditsToString(formattedStringOnce, formatTextEditsTwice)
-      assert(formattedStringOnce == formattedStringTwice, s"Formatter not idempotent for $programPath: got edits on second pass: $formatTextEditsTwice")
+      assert(formattedStringOnce == formattedStringTwice, s"Formatter not idempotent for $programPath")
     }
   }
 
@@ -72,10 +125,9 @@ class TestFormatter extends AnyFunSuite {
     *
     * @throws RuntimeException if the program cannot be compiled without errors.
     */
-  private def compileWithSuccess(program: String, programPath: String): SyntaxTree.Root = {
+  private def compileWithSuccess(program: String): SyntaxTree.Root = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    // Add the program under the same path string that the formatter will use to look it up.
-    sharedFlix.addVirtualPath(Paths.get(programPath), program)
+    sharedFlix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
     sharedFlix.check() match {
       case (_, Nil) => sharedFlix.getParsedAst
       case (optRoot, errors) =>
