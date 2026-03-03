@@ -483,7 +483,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordLet => true
     case TokenKind.KeywordForall => true
     case TokenKind.KeywordForeach => true
-    case TokenKind.KeywordDef => true
     case _ => false
   }
 
