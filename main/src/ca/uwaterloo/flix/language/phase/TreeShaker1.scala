@@ -96,19 +96,19 @@ object TreeShaker1 {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(bnd, exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(bnd, exps, _, _, _, _, _, _) =>
       Set(ReachableSym.DefnSym(bnd.sym)) ++ visitExps(exps)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplySig(bnd, exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(bnd, exps, _, _, _, _, _, _, _) =>
       Set(ReachableSym.SigSym(bnd.sym)) ++ visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
@@ -120,7 +120,7 @@ object TreeShaker1 {
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Region(_, _, exp, _, _, _) =>

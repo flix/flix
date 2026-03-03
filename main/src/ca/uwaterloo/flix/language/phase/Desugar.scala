@@ -548,7 +548,7 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Discard(e, loc)
 
-    case WeededAst.Expr.LocalDef(ident, fparams, dtpe, deff, exp1, exp2, loc) =>
+    case WeededAst.Expr.LocalDef(ann, ident, fparams, dtpe, deff, exp1, exp2, loc) =>
       val fps = visitFormalParams(fparams)
       val t = dtpe.map(visitType)
       val ef = deff.map(visitType)
@@ -556,7 +556,7 @@ object Desugar {
       // Ascribe has an invariant that at least t or ef must be defined
       val e1 = if (t.isDefined || ef.isDefined) Expr.Ascribe(e10, t, ef, e10.loc) else e10
       val e2 = visitExp(exp2)
-      Expr.LocalDef(ident, fps, e1, e2, loc)
+      Expr.LocalDef(ann, ident, fps, e1, e2, loc)
 
     case WeededAst.Expr.Region(ident, exp, loc) =>
       val e = visitExp(exp)
