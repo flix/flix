@@ -644,17 +644,17 @@ object PatMatch2 {
 
       case Expr.Lambda(_, body, _, _) => visitExp(body)
 
-      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.foreach(visitExp)
+      case Expr.ApplyDef(_, exps, _, _, _, _, _, _) => exps.foreach(visitExp)
 
-      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
+      case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) => exps.foreach(visitExp)
 
-      case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(visitExp)
+      case Expr.ApplyOp(_, exps, _, _, _, _) => exps.foreach(visitExp)
 
-      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.foreach(visitExp)
+      case Expr.ApplySig(_, exps, _, _, _, _, _, _, _) => exps.foreach(visitExp)
 
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
 
@@ -666,7 +666,7 @@ object PatMatch2 {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+      case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
         visitExp(exp1)
         visitExp(exp2)
 

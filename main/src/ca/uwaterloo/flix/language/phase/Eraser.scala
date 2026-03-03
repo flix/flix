@@ -122,9 +122,9 @@ object Eraser {
   }
 
   private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmMethod = method match {
-    case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+    case ReducedAst.JvmMethod(ann, ident, fparams, clo, retTpe, purity, loc) =>
       // return type is not erased to maintain class signatures
-      ErasedAst.JvmMethod(ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
+      ErasedAst.JvmMethod(ann, ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
   }
 
   private def visitExp(exp0: ReducedAst.Expr)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Expr = exp0 match {

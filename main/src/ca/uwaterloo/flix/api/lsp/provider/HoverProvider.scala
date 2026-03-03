@@ -42,7 +42,7 @@ object HoverProvider {
     case DefSymUse(sym, loc) => hoverDef(sym, loc)
     case SigSymUse(sym, loc) => hoverSig(sym, loc)
     case OpSymUse(symUse, loc) => hoverOp(symUse, loc)
-    case FormalParam(_, tpe, _, loc) => hoverType(tpe, loc)
+    case FormalParam(_, tpe, _, _, loc) => hoverType(tpe, loc)
     case TypeParam(_, sym, _) => hoverKind(sym.kind, sym.loc)
     case Pattern.Wild(tpe, loc) => hoverType(tpe, loc)
     case _ => None
