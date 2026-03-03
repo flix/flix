@@ -706,7 +706,8 @@ object Weeder2 {
         case "@LazyWhenPure" => LazyWhenPure(loc)
         case "@Skip" => Skip(loc)
         case "@Test" => Test(loc)
-        case "@TailRec" => TailRecursive(loc)
+        case "@Tailrec" => TailRecursive(loc)
+        case "@Terminates" => Terminates(loc)
         case other =>
           val name = other.stripPrefix("@")
           val error = UndefinedAnnotation(name, loc)
@@ -1378,12 +1379,15 @@ object Weeder2 {
 
     private def visitLocalDefExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LocalDef)
-      Decls.pickAnnotations(tree) match {
+      val ann = Decls.pickAnnotations(tree) match {
         case Annotations(as) =>
-          // Check for annotations
-          for (a <- as) {
-            sctx.errors.add(IllegalAnnotation(a.toString, a.loc))
+          // Only @Terminates and @Tailrec are allowed on local defs
+          for (a <- as) a match {
+            case _: Annotation.TailRecursive => () // allowed
+            case _: Annotation.Terminates    => () // allowed
+            case _                           => sctx.errors.add(IllegalAnnotation(a.toString, a.loc))
           }
+          Annotations(as.filter(a => a.isInstanceOf[Annotation.TailRecursive] || a.isInstanceOf[Annotation.Terminates]))
       }
 
       val exprs = mapN(pickExpr(tree)) {
@@ -1402,7 +1406,7 @@ object Weeder2 {
         Types.tryPickEffect(tree),
       ) {
         case ((exp1, exp2), fparams, ident, declaredTpe, declaredEff) =>
-          Expr.LocalDef(ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
+          Expr.LocalDef(ann, ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
       }
     }
 
