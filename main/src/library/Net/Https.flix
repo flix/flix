@@ -18,13 +18,16 @@ pub mod Net.Https {
 
     use Net.Https
     use Net.HttpClient
-    use Net.Retry
+    use Net.RetryOutcome
+    use Net.RetryDecision
     use Net.Request
     use Net.Request.Request
     use Net.Response
     use Net.Response.Response
     use IoError.ErrorKind
     use IoError.IoError
+
+    import java.lang.{Thread => JThread}
 
     ///
     /// Sends the given request `req` via the `Https` effect.
@@ -98,20 +101,6 @@ pub mod Net.Https {
         }
 
     ///
-    /// Handles the `Https` effect of the given function `f`.
-    ///
-    /// Re-interprets the `Https` effect using the `Retry` and `IO` effects.
-    /// Validates that request URLs use the `https://` scheme.
-    /// On retryable failures or non-success responses, raises `Retry.retryDecision` to decide whether to retry.
-    ///
-    pub def handleWithRetry(f: a -> b \ ef): a -> b \ (ef - Https) + Retry + IO = x ->
-        run {
-            f(x)
-        } with handler Https {
-            def request(req, k) = k(HttpClient.executeWithRetry(validateHttps, req))
-        }
-
-    ///
     /// Runs the `Https` effect of the given function `f`.
     ///
     /// Re-interprets the `Https` effect using the `IO` effect.
@@ -120,10 +109,35 @@ pub mod Net.Https {
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Https) + IO = handle(f)()
 
     ///
-    /// Runs the `Https` effect of the given function `f`.
+    /// Middleware that intercepts the `Https` effect, adding retry logic.
     ///
-    /// Re-interprets the `Https` effect using the `Retry` and `IO` effects.
+    /// The `strategy` function decides whether to retry and how long to wait.
+    /// Validates the `https://` scheme once before entering the retry loop.
+    /// Each `Https.request` is re-raised to an outer `Https` handler that performs the actual I/O.
     ///
-    pub def runWithRetry(f: Unit -> a \ ef): a \ (ef - Https) + Retry + IO = handleWithRetry(f)()
+    pub def withRetry(strategy: (Int32, Request, RetryOutcome) -> RetryDecision \ ef1,
+                      f: Unit -> a \ ef2): a \ ef1 + (ef2 - Https) + Https =
+        run { f() } with handler Https {
+            def request(req, k) =
+                match validateHttps(req) {
+                    case Err(e) => k(Err(e))
+                    case Ok()   =>
+                        def loop(attempt) =
+                            match Https.request(req) {
+                                case Ok(resp) if Response.isSuccess(resp) => Ok(resp)
+                                case Ok(resp) =>
+                                    match strategy(attempt, req, RetryOutcome.HttpError(resp)) {
+                                        case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(d); loop(attempt + 1) } // sleep is pure here
+                                        case RetryDecision.Stop     => Ok(resp)
+                                    }
+                                case Err(error) =>
+                                    match strategy(attempt, req, RetryOutcome.TransportError(error)) {
+                                        case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(d); loop(attempt + 1) } // sleep is pure here
+                                        case RetryDecision.Stop     => Err(error)
+                                    }
+                            };
+                        k(loop(0))
+                }
+        }
 
 }

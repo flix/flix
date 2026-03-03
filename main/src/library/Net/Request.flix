@@ -138,6 +138,13 @@ pub mod Net.Request {
         Request({headers = Map.insert(name, values, current) | x})
 
     ///
+    /// Sets the header `name` to `value` on the request `r`, replacing any existing values.
+    ///
+    pub def setHeader(name: String, value: String, r: Request): Request =
+        let Request(x) = r;
+        Request({headers = Map.insert(name, value :: Nil, x#headers) | x})
+
+    ///
     /// Merges the given headers `h` into the request `r`.
     ///
     /// For headers that already exist, the new values are appended to the existing values.
@@ -171,19 +178,19 @@ pub mod Net.Request {
     /// Sets the `Authorization` header to `Bearer <token>` on the request `r`.
     ///
     pub def withBearerToken(token: String, r: Request): Request =
-        withHeader("Authorization", "Bearer ${token}", r)
+        setHeader("Authorization", "Bearer ${token}", r)
 
     ///
     /// Sets the `Content-Type` header to `contentType` on the request `r`.
     ///
     pub def withContentType(contentType: String, r: Request): Request =
-        withHeader("Content-Type", contentType, r)
+        setHeader("Content-Type", contentType, r)
 
     ///
     /// Sets the `Accept` header to `accept` on the request `r`.
     ///
     pub def withAccept(accept: String, r: Request): Request =
-        withHeader("Accept", accept, r)
+        setHeader("Accept", accept, r)
 
     ///
     /// Appends a query parameter `name=value` to the URL of the request `r`.

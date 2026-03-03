@@ -18,9 +18,6 @@ pub mod Net.HttpClient {
 
     use Net.Body
     use Net.Method
-    use Net.Retry
-    use Net.RetryOutcome
-    use Net.RetryDecision
     use Net.Request
     use Net.Request.Request
     use Net.Response
@@ -34,7 +31,7 @@ pub mod Net.HttpClient {
     import java.io.UncheckedIOException
     import java.lang.IllegalArgumentException
     import java.lang.InterruptedException
-    import java.lang.{Thread => JThread}
+
     import java.net.ConnectException
     import java.net.http.HttpClient
     import java.net.http.{HttpClient$Redirect => Redirect}
@@ -112,31 +109,6 @@ pub mod Net.HttpClient {
         match validate(req) {
             case Err(e) => Err(e)
             case Ok()   => doRequest(req)
-        }
-
-    ///
-    /// Validates then performs an HTTP request, retrying on failure or non-success response
-    /// via the `Retry` effect. The handler decides the delay; sleep is performed here.
-    ///
-    pub def executeWithRetry(validate: Request -> Result[IoError, Unit], req: Request): Result[IoError, Response] \ Retry + IO =
-        match validate(req) {
-            case Err(e) => Err(e)
-            case Ok()   =>
-                def loop(attempt) =
-                    match doRequest(req) {
-                        case Ok(resp) if Response.isSuccess(resp) => Ok(resp)
-                        case Ok(resp) =>
-                            match Retry.retryDecision(attempt, req, RetryOutcome.HttpError(resp)) {
-                                case RetryDecision.Retry(d) => JThread.sleep(d); loop(attempt + 1)
-                                case RetryDecision.Stop     => Ok(resp)
-                            }
-                        case Err(error) =>
-                            match Retry.retryDecision(attempt, req, RetryOutcome.TransportError(error)) {
-                                case RetryDecision.Retry(d) => JThread.sleep(d); loop(attempt + 1)
-                                case RetryDecision.Stop     => Err(error)
-                            }
-                    };
-                loop(0)
         }
 
 }

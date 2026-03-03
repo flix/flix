@@ -18,12 +18,15 @@ pub mod Net.Http {
 
     use Net.Http
     use Net.HttpClient
-    use Net.Retry
+    use Net.RetryOutcome
+    use Net.RetryDecision
     use Net.Request
     use Net.Request.Request
     use Net.Response
     use Net.Response.Response
     use IoError.IoError
+
+    import java.lang.{Thread => JThread}
 
     ///
     /// Sends the given request `req` via the `Http` effect.
@@ -86,19 +89,6 @@ pub mod Net.Http {
         }
 
     ///
-    /// Handles the `Http` effect of the given function `f`.
-    ///
-    /// Re-interprets the `Http` effect using the `Retry` and `IO` effects.
-    /// On retryable failures or non-success responses, raises `Retry.retryDecision` to decide whether to retry.
-    ///
-    pub def handleWithRetry(f: a -> b \ ef): a -> b \ (ef - Http) + Retry + IO = x ->
-        run {
-            f(x)
-        } with handler Http {
-            def request(req, k) = k(HttpClient.executeWithRetry((_) -> Ok(), req))
-        }
-
-    ///
     /// Runs the `Http` effect of the given function `f`.
     ///
     /// Re-interprets the `Http` effect using the `IO` effect.
@@ -107,10 +97,30 @@ pub mod Net.Http {
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Http) + IO = handle(f)()
 
     ///
-    /// Runs the `Http` effect of the given function `f`.
+    /// Middleware that intercepts the `Http` effect, adding retry logic.
     ///
-    /// Re-interprets the `Http` effect using the `Retry` and `IO` effects.
+    /// The `strategy` function decides whether to retry and how long to wait.
+    /// Each `Http.request` is re-raised to an outer `Http` handler that performs the actual I/O.
     ///
-    pub def runWithRetry(f: Unit -> a \ ef): a \ (ef - Http) + Retry + IO = handleWithRetry(f)()
+    pub def withRetry(strategy: (Int32, Request, RetryOutcome) -> RetryDecision \ ef1,
+                      f: Unit -> a \ ef2): a \ ef1 + (ef2 - Http) + Http =
+        run { f() } with handler Http {
+            def request(req, k) =
+                def loop(attempt) =
+                    match Http.request(req) {
+                        case Ok(resp) if Response.isSuccess(resp) => Ok(resp)
+                        case Ok(resp) =>
+                            match strategy(attempt, req, RetryOutcome.HttpError(resp)) {
+                                case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(d); loop(attempt + 1) } // sleep is pure here
+                                case RetryDecision.Stop     => Ok(resp)
+                            }
+                        case Err(error) =>
+                            match strategy(attempt, req, RetryOutcome.TransportError(error)) {
+                                case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(d); loop(attempt + 1) } // sleep is pure here
+                                case RetryDecision.Stop     => Err(error)
+                            }
+                    };
+                k(loop(0))
+        }
 
 }

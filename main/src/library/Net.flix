@@ -61,7 +61,7 @@ pub mod Net {
     /// The decision returned by a retry handler.
     ///
     pub enum RetryDecision with Eq, ToString {
-        /// Retry after `delayMs` milliseconds. `executeWithRetry` will sleep this long.
+        /// Retry after `delayMs` milliseconds.
         case Retry(Int64)
         /// Do not retry; propagate the last result.
         case Stop
@@ -101,14 +101,6 @@ pub mod Net {
     ///
     pub eff Https {
         def request(req: Request): Result[IoError, Response]
-    }
-
-    ///
-    /// The effect used to decide whether a failed or non-success request should be retried,
-    /// and how long to wait before the next attempt.
-    ///
-    pub eff Retry {
-        def retryDecision(attempt: Int32, request: Request, outcome: RetryOutcome): RetryDecision
     }
 
 }

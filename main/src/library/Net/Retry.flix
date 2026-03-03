@@ -16,99 +16,85 @@
 
 pub mod Net.Retry {
 
-    use Net.Retry
     use Net.RetryOutcome
     use Net.RetryDecision
     use Net.Request
     use Net.Response
 
     ///
-    /// Handles `Retry` by never retrying.
+    /// Returns a strategy that never retries.
     ///
-    pub def noRetry(f: Unit -> a \ ef): a \ (ef - Retry) =
-        run { f() } with handler Retry {
-            def retryDecision(_, _, _, k) = k(RetryDecision.Stop)
-        }
+    pub def noRetry(): (Int32, Request, RetryOutcome) -> RetryDecision =
+        (_, _, _) -> RetryDecision.Stop
 
     ///
-    /// Handles `Retry` by retrying up to `maxRetries` times with a fixed `delayMs` delay.
+    /// Returns a strategy that retries up to `maxRetries` times with a fixed `delayMs` delay.
     ///
-    pub def linear(maxRetries: Int32, delayMs: Int64, f: Unit -> a \ ef): a \ (ef - Retry) =
-        run { f() } with handler Retry {
-            def retryDecision(attempt, _, _, k) =
-                if (attempt < maxRetries) k(RetryDecision.Retry(delayMs))
-                else k(RetryDecision.Stop)
-        }
+    pub def linear(maxRetries: Int32, delayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
+        (attempt, _, _) ->
+            if (attempt < maxRetries) RetryDecision.Retry(delayMs)
+            else RetryDecision.Stop
 
     ///
-    /// Handles `Retry` with exponential backoff.
+    /// Returns a strategy with exponential backoff.
     ///
     /// Retries up to `maxRetries` times with delays: `baseDelayMs`, `2*base`, `4*base`, …
     ///
-    pub def exponential(maxRetries: Int32, baseDelayMs: Int64, f: Unit -> a \ ef): a \ (ef - Retry) =
-        run { f() } with handler Retry {
-            def retryDecision(attempt, _, _, k) =
-                if (attempt < maxRetries)
-                    k(RetryDecision.Retry(baseDelayMs * Int64.leftShift(1i64, attempt)))
-                else k(RetryDecision.Stop)
-        }
+    pub def exponential(maxRetries: Int32, baseDelayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
+        (attempt, _, _) ->
+            if (attempt < maxRetries)
+                RetryDecision.Retry(baseDelayMs * Int64.leftShift(1i64, attempt))
+            else RetryDecision.Stop
 
     ///
-    /// Handles `Retry` by retrying up to `maxRetries` times, honouring an integer-seconds
+    /// Returns a strategy that retries up to `maxRetries` times, honouring an integer-seconds
     /// `Retry-After` response header on 429/503 responses.
     ///
     /// Falls back to `baseDelayMs` when the header is absent or unparseable.
     ///
-    pub def retryAfter(maxRetries: Int32, baseDelayMs: Int64, f: Unit -> a \ ef): a \ (ef - Retry) =
-        run { f() } with handler Retry {
-            def retryDecision(attempt, _, outcome, k) =
-                if (attempt >= maxRetries) k(RetryDecision.Stop)
-                else
-                    let delay = match outcome {
-                        case RetryOutcome.HttpError(resp) =>
-                            match Response.headerValue("retry-after", resp) {
-                                case Some(s) => match Int64.fromString(s) {
-                                    case Some(secs) => secs * 1000i64
-                                    case None       => baseDelayMs
-                                }
-                                case None => baseDelayMs
+    pub def retryAfter(maxRetries: Int32, baseDelayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
+        (attempt, _, outcome) ->
+            if (attempt >= maxRetries) RetryDecision.Stop
+            else
+                let delay = match outcome {
+                    case RetryOutcome.HttpError(resp) =>
+                        match Response.headerValue("retry-after", resp) {
+                            case Some(s) => match Int64.fromString(s) {
+                                case Some(secs) => secs * 1000i64
+                                case None       => baseDelayMs
                             }
-                        case RetryOutcome.TransportError(_) => baseDelayMs
-                    };
-                    k(RetryDecision.Retry(delay))
-        }
+                            case None => baseDelayMs
+                        }
+                    case RetryOutcome.TransportError(_) => baseDelayMs
+                };
+                RetryDecision.Retry(delay)
 
     ///
-    /// Handles `Retry` using a custom `strategy` function.
+    /// Returns a strategy that retries up to `maxRetries` times with a fixed `delayMs` delay,
+    /// but only on transport errors (connection refused, timeout, etc.).
     ///
-    /// The strategy receives the attempt number, the request, and the outcome,
-    /// and returns a `RetryDecision`.
+    /// HTTP-level errors (non-2xx responses) are never retried.
     ///
-    pub def withStrategy(strategy: (Int32, Request, RetryOutcome) -> RetryDecision \ ef1,
-                         f: Unit -> a \ ef2): a \ ef1 + (ef2 - Retry) =
-        run { f() } with handler Retry {
-            def retryDecision(attempt, req, outcome, k) = k(strategy(attempt, req, outcome))
+    pub def retryTransportOnly(maxRetries: Int32, delayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
+        (attempt, _, outcome) -> match outcome {
+            case RetryOutcome.TransportError(_) if attempt < maxRetries => RetryDecision.Retry(delayMs)
+            case _                                                       => RetryDecision.Stop
         }
 
     ///
     /// Wraps `inner` by adding uniform random jitter in `[0, maxJitterMs]` to any `Retry` delay.
     ///
-    /// The `inner` argument is any handler wrapper (e.g. `Retry.linear(3, 500i64)`).
-    ///
     pub def withJitter(maxJitterMs: Int64,
-                       inner: (Unit -> RetryDecision \ Retry) -> RetryDecision \ ef1,
-                       f: Unit -> a \ ef): a \ ef1 + (ef - Retry) + Random =
-        run { f() } with handler Retry {
-            def retryDecision(attempt, req, outcome, k) =
-                let base = inner(() -> Retry.retryDecision(attempt, req, outcome));
-                let jittered = match base {
-                    case RetryDecision.Stop     => RetryDecision.Stop
-                    case RetryDecision.Retry(d) =>
-                        let j = Int64.abs(Random.randomInt64()) `Int64.remainder` (maxJitterMs + 1i64);
-                        RetryDecision.Retry(d + j)
-                };
-                k(jittered)
-        }
+                       inner: (Int32, Request, RetryOutcome) -> RetryDecision \ ef):
+                       (Int32, Request, RetryOutcome) -> RetryDecision \ ef + Random =
+        (attempt, req, outcome) ->
+            let base = inner(attempt, req, outcome);
+            match base {
+                case RetryDecision.Stop     => RetryDecision.Stop
+                case RetryDecision.Retry(d) =>
+                    let j = Int64.abs(Random.randomInt64()) `Int64.remainder` (maxJitterMs + 1i64);
+                    RetryDecision.Retry(d + j)
+            }
 
     ///
     /// Wraps `inner` and clamps any `Retry` delay to the time remaining before
@@ -117,19 +103,16 @@ pub mod Net.Retry {
     /// Returns `Stop` if the deadline is already past.
     ///
     pub def withDeadline(deadlineMs: Int64, startMs: Int64,
-                         inner: (Unit -> RetryDecision \ Retry) -> RetryDecision \ ef1,
-                         f: Unit -> a \ ef): a \ ef1 + (ef - Retry) + Clock =
-        run { f() } with handler Retry {
-            def retryDecision(attempt, req, outcome, k) =
-                let base = inner(() -> Retry.retryDecision(attempt, req, outcome));
-                let clamped = match base {
-                    case RetryDecision.Stop     => RetryDecision.Stop
-                    case RetryDecision.Retry(d) =>
-                        let elapsed = Clock.now() - startMs;
-                        if (elapsed >= deadlineMs) RetryDecision.Stop
-                        else RetryDecision.Retry(Int64.min(d, deadlineMs - elapsed))
-                };
-                k(clamped)
-        }
+                         inner: (Int32, Request, RetryOutcome) -> RetryDecision \ ef):
+                         (Int32, Request, RetryOutcome) -> RetryDecision \ ef + Clock =
+        (attempt, req, outcome) ->
+            let base = inner(attempt, req, outcome);
+            match base {
+                case RetryDecision.Stop     => RetryDecision.Stop
+                case RetryDecision.Retry(d) =>
+                    let elapsed = Clock.now() - startMs;
+                    if (elapsed >= deadlineMs) RetryDecision.Stop
+                    else RetryDecision.Retry(Int64.min(d, deadlineMs - elapsed))
+            }
 
 }

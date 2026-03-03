@@ -19,6 +19,8 @@ pub mod Net.Response {
     use Net.Body
     use Net.Response
     use Net.Response.Response
+    use IoError.ErrorKind
+    use IoError.IoError
 
     import java.lang.{String => JString}
     import java.nio.charset.StandardCharsets
@@ -115,6 +117,13 @@ pub mod Net.Response {
     ///
     pub def isError(r: Response): Bool =
         isClientError(r) or isServerError(r)
+
+    ///
+    /// Returns `Ok(r)` if the response status is in the 2xx range, or `Err` otherwise.
+    ///
+    pub def expect(r: Response): Result[IoError, Response] =
+        if (isSuccess(r)) Ok(r)
+        else Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
 
     ///
     /// Returns the value of the `content-type` header, or `None` if not present.
