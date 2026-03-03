@@ -201,24 +201,29 @@ object EffectProvenance {
     * @return option list of errors
     */
   private def analysis(graph: Graph): Option[List[EffConflicted]] = {
+    def lookup(vertex: Vertex, lattice: MapLattice): Option[Set[(Vertex, SourceLocation)]] = {
+      lattice.foldLeft(None: Option[Set[(Vertex, SourceLocation)]]) {
+        // An ArgVertex can appear in the middle of a graph
+        // therefore we need to connect the vertices that point to the ArgVertex, with the ones that it points to
+        case (acc, (ArgVertex(effs, _), s)) => effs.foldLeft(acc) { case (acc2, e) => if (e == vertex) Some(s) else acc2 }
+        case (acc, (v, xs)) => if (v == vertex) Some(xs) else acc
+      }
+    }
+
     def helper(ml: MapLattice): MapLattice = {
       graph.edges.foldLeft(ml) {
         case (acc, Edge(from, to, loc)) =>
-          val f = acc.get(from)
-          val t = acc.get(to)
-          f match {
-            case None => t match {
-              case Some(ys) => acc + (to -> ys)
-              case None =>
-                acc + (to -> Set((from, loc)))
-
-            }
-            case Some(xs) => t match {
-              case Some(ys) => acc + (to -> (ys ++ xs))
-              case None => acc + (to -> xs)
-            }
-
+          // one constraint:
+          // [[v]] = (v1 -> v2, l) = JOIN(v)[v2 -> v1 U lookup(v1) U lookup(v2)]
+          val v1 = lookup(from, acc)
+          val v2 = lookup(to, acc)
+          val pointsTo = (v1, v2) match {
+            case (None, None) => Set((from, loc))
+            case (Some(sigmaV1), None) => sigmaV1 ++ Set((from, loc))
+            case (None, Some(sigmaV2)) => sigmaV2 ++ Set((from, loc))
+            case (Some(sigmaV1), Some(sigmaV2)) => sigmaV2 ++ sigmaV1 ++ Set((from, loc))
           }
+          acc + (to -> pointsTo)
       }
     }
 
