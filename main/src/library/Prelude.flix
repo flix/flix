@@ -191,7 +191,7 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 /// it to be pure.
 ///
 pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
-    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
         case Reflect.Purity.Pure => Purity.Pure(unchecked_cast (f as a -> b \ {}))
         case Reflect.Purity.Impure => Purity.Impure(f)
     }
@@ -203,7 +203,7 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
 /// it to be pure.
 ///
 pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
-    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
         case Reflect.Purity.Pure   => Purity2.Pure(unchecked_cast (f as a -> b -> c \ {}))
         case Reflect.Purity.Impure => Purity2.Impure(f)
     }
@@ -215,7 +215,7 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
 /// it to be pure.
 ///
 pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] =
-    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
         case Reflect.Purity.Pure   => Purity3.Pure(unchecked_cast (f as a -> b -> c -> d \ {}))
         case Reflect.Purity.Impure => Purity3.Impure(f)
     }

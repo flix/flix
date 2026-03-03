@@ -97,8 +97,8 @@ object TreeShaker2 {
     case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      visitExps(methods.map(_.clo))
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      visitExps(constructors.map(_.clo) ++ methods.map(_.clo))
 
   }
 

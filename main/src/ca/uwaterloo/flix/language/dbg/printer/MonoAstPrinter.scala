@@ -46,13 +46,19 @@ object MonoAstPrinter {
     case Expr.Cast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map(printHandlerRule))
-    case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methods.map(printJvmMethod))
+    case Expr.NewObject(name, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
+  }
+
+  /** Returns the [[DocAst.JvmConstructor]] representation of `constructor`. */
+  private def printJvmConstructor(constructor: MonoAst.JvmConstructor): DocAst.JvmConstructor = constructor match {
+    case MonoAst.JvmConstructor(exp, retTpe, _, _) =>
+      DocAst.JvmConstructor(print(exp), TypePrinter.print(retTpe))
   }
 
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: MonoAst.JvmMethod): DocAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
-      DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
+      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */

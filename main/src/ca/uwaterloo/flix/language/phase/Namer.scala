@@ -778,12 +778,12 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.Let(sym, e1, e2, loc)
 
-    case DesugaredAst.Expr.LocalDef(ident, fparams, exp1, exp2, loc) =>
+    case DesugaredAst.Expr.LocalDef(ann, ident, fparams, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.LocalDef)
       val fps = fparams.map(visitFormalParam(_))
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
+      NamedAst.Expr.LocalDef(ann, sym, fps, e1, e2, loc)
 
     case DesugaredAst.Expr.Region(ident, exp, loc) =>
       // Introduce a rigid region variable for the region.
@@ -804,11 +804,6 @@ object Namer {
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule(_))
       NamedAst.Expr.Match(e, rs, loc)
-
-    case DesugaredAst.Expr.TypeMatch(exp, rules, loc) =>
-      val e = visitExp(exp)
-      val rs = rules.map(visitTypeMatchRule)
-      NamedAst.Expr.TypeMatch(e, rs, loc)
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
@@ -920,9 +915,6 @@ object Namer {
       val asEff = asEff0.map(visitType)
       NamedAst.Expr.Unsafe(e, eff, asEff, loc)
 
-    case DesugaredAst.Expr.Without(exp, qname, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.Without(e, qname, loc)
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -946,20 +938,29 @@ object Namer {
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeConstructor(className, es, loc)
 
+    case DesugaredAst.Expr.InvokeSuperConstructor(exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.InvokeSuperConstructor(es, loc)
+
     case DesugaredAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeMethod(e, name, es, loc)
 
+    case DesugaredAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.InvokeSuperMethod(methodName, es, loc)
+
     case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.GetField(e, name, loc)
 
-    case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
+    case DesugaredAst.Expr.NewObject(tpe, constructors, methods, loc) =>
       val t = visitType(tpe)
+      val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
       val name = s"Anon$$${flix.genSym.freshId()}"
-      NamedAst.Expr.NewObject(name, t, ms, loc)
+      NamedAst.Expr.NewObject(name, t, cs, ms, loc)
 
     case DesugaredAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
@@ -1056,17 +1057,6 @@ object Namer {
       val p = visitExtPattern(pat)
       val e = visitExp(exp)
       NamedAst.ExtMatchRule(p, e, loc)
-  }
-
-  /**
-    * Performs naming on the given typematch rule `rule0`.
-    */
-  private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
-    case DesugaredAst.TypeMatchRule(ident, tpe, body, loc) =>
-      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-      val t = visitType(tpe)
-      val b = visitExp(body)
-      NamedAst.TypeMatchRule(sym, t, b, loc)
   }
 
   /**
@@ -1523,12 +1513,30 @@ object Namer {
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
   private def visitJvmMethod(method: DesugaredAst.JvmMethod)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmMethod = method match {
-    case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
+    case DesugaredAst.JvmMethod(ann, ident, fparams, exp0, tpe, eff, loc) =>
+      val a = ann.map(visitJvmAnnotation)
       val fps = fparams.map(visitFormalParam)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val e = visitExp(exp0)
-      NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
+      NamedAst.JvmMethod(a, ident, fps, e, t, ef, loc)
+  }
+
+  /**
+    * Translates the given desugared JvmAnnotation to a named JvmAnnotation.
+    */
+  private def visitJvmAnnotation(ann0: DesugaredAst.JvmAnnotation): NamedAst.JvmAnnotation =
+    NamedAst.JvmAnnotation(ann0.name, ann0.loc)
+
+  /**
+    * Translates the given weeded JvmConstructor to a named JvmConstructor.
+    */
+  private def visitJvmConstructor(constructor: DesugaredAst.JvmConstructor)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmConstructor = constructor match {
+    case DesugaredAst.JvmConstructor(exp0, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      val ef = eff.map(visitType)
+      val e = visitExp(exp0)
+      NamedAst.JvmConstructor(e, t, ef, loc)
   }
 
   /**

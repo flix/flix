@@ -66,7 +66,7 @@ object ReducedAstPrinter {
       case ReducedAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map(printJvmMethod))
+    case Expr.NewObject(name, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
   }
 
   /**
@@ -84,10 +84,18 @@ object ReducedAstPrinter {
     DocAst.Expr.Var(sym)
 
   /**
+    * Returns the [[DocAst.JvmConstructor]] representation of `constructor`.
+    */
+  private def printJvmConstructor(constructor: ReducedAst.JvmConstructor): DocAst.JvmConstructor = constructor match {
+    case ReducedAst.JvmConstructor(exp, tpe, _, _) =>
+      DocAst.JvmConstructor(print(exp), SimpleTypePrinter.print(tpe))
+  }
+
+  /**
     * Returns the [[DocAst.JvmMethod]] representation of `method`.
     */
   private def printJvmMethod(method: ReducedAst.JvmMethod): DocAst.JvmMethod = method match {
-    case ReducedAst.JvmMethod(ident, fparams, exp, tpe, _, _) =>
-      DocAst.JvmMethod(ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
+    case ReducedAst.JvmMethod(ann, ident, fparams, exp, tpe, _, _) =>
+      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams map printFormalParam, print(exp), SimpleTypePrinter.print(tpe))
   }
 }

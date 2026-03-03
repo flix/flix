@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Alexander Dybdahl Troelsen
+ * Copyright 2026 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api
+package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.api.effectlock.{TestEffectSafeUpgrade, TestSerialization, TestUseGraph}
-import ca.uwaterloo.flix.api.lsp.LspSuite
-import org.scalatest.Suites
+/**
+  * A common super-type that represents whether a formal parameter is structurally decreasing.
+  */
+sealed trait Decreasing
 
-class ApiSuite extends Suites(
-  new LspSuite,
-  new TestEffectSafeUpgrade,
-  new TestSerialization,
-  new TestUseGraph
-)
+object Decreasing {
+  /**
+    * The parameter is not observed as structurally decreasing.
+    */
+  case object NonDecreasing extends Decreasing
+
+  /**
+    * The parameter is a strict substructure at a recursive call site.
+    */
+  case object StrictlyDecreasing extends Decreasing
+}

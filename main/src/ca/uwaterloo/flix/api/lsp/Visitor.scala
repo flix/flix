@@ -343,23 +343,23 @@ object Visitor {
         visitFormalParam(fparam)
         visitExpr(exp)
 
-      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.ApplyDef(symUse, exps, _, _, _, _, _) =>
+      case Expr.ApplyDef(symUse, exps, _, _, _, _, _, _) =>
         visitDefSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyLocalDef(symUse, exps, _, _, _, _) =>
+      case Expr.ApplyLocalDef(symUse, exps, _, _, _, _, _) =>
         visitLocalDefSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyOp(op, exps, _, _, _) =>
+      case Expr.ApplyOp(op, exps, _, _, _, _) =>
         visitOpSymUse(op)
         exps.foreach(visitExpr)
 
-      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _) =>
+      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _, _) =>
         visitSigSymUse(symUse)
         exps.foreach(visitExpr)
 
@@ -375,7 +375,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.LocalDef(bnd, fparams, exp1, exp2, _, _, _) =>
+      case Expr.LocalDef(_, bnd, fparams, exp1, exp2, _, _, _) =>
         visitBinder(bnd)
         fparams.foreach(visitFormalParam)
         visitExpr(exp1)
@@ -400,10 +400,6 @@ object Visitor {
       case Expr.Match(exp, rules, _, _, _) =>
         visitExpr(exp)
         rules.foreach(visitMatchRule)
-
-      case Expr.TypeMatch(exp, rules, _, _, _) =>
-        visitExpr(exp)
-        rules.foreach(visitTypeMatchRule)
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
@@ -500,9 +496,6 @@ object Visitor {
         asEff.foreach(visitType)
         visitExpr(exp)
 
-      case Expr.Without(exp, symUse, _, _, _) =>
-        visitExpr(exp)
-        visitEffSymUse(symUse)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -522,8 +515,14 @@ object Visitor {
       case Expr.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
+      case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+        exps.foreach(visitExpr)
+
       case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
         visitExpr(exp)
+        exps.foreach(visitExpr)
+
+      case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
       case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
@@ -541,7 +540,8 @@ object Visitor {
       case Expr.PutStaticField(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.NewObject(_, _, _, _, methods, _) =>
+      case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+        constructors.foreach(cn => visitExpr(cn.exp)(a, c))
         methods.foreach(visitJvmMethod)
 
       case Expr.NewChannel(exp, _, _, _) =>
@@ -658,7 +658,7 @@ object Visitor {
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit a: Acceptor, c: Consumer): Unit = {
-    val JvmMethod(_, fparams, exp, retTpe, _, loc) = method
+    val JvmMethod(_, _, fparams, exp, retTpe, _, loc) = method
     if (!a.accept(loc)) {
       return
     }
@@ -693,7 +693,7 @@ object Visitor {
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(bnd, tpe, _, loc) = fparam
+    val FormalParam(bnd, tpe, _, _, loc) = fparam
     if (!a.accept(loc)) {
       return
     }
@@ -761,19 +761,6 @@ object Visitor {
 
       visitExtPattern(pat)
       visitExpr(exp)
-  }
-
-  private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TypeMatchRule(bnd, tpe, exp, loc) = rule
-    if (!a.accept(loc)) {
-      return
-    }
-
-    c.consumeTypeMatchRule(rule)
-
-    visitBinder(bnd)
-    visitType(tpe)
-    visitExpr(exp)
   }
 
   private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {

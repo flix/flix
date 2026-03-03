@@ -152,6 +152,57 @@ pub mod BPlusTree {
         let rootHasNoParent = Option.isEmpty(Node.parent(root));
         nodeWorks and rootHasNoParent and rootIsUnlocked
 
+    ///
+    /// Returns the number of mappings in `t` that satisfy the predicate function `f`.
+    ///
+    /// This method unsafely removes the effect `r` when spawning threads.
+    ///
+    /// Not thread-safe.
+    ///
+    @Parallel
+    pub def count(f: k -> v -> Bool, t: BPlusTree[k, v, r]): Int32 \ r with Order[k] = {
+        let c = AtomicCounter.mkCounter(t->rc, 0);
+        parForEach(k -> v -> if (f(k, v)) AtomicCounter.increment(c) else (), t);
+        AtomicCounter.get(c)
+    }
+
+    ///
+    /// Alias for `foldLeftWithKey`
+    ///
+    pub def foldWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ r + ef with Order[k] =
+        foldLeftWithKey(f, i, t)
+
+    ///
+    /// Returns `v` if `k => v` is in `t`.
+    ///
+    /// Otherwise updates `t` with a new mapping `k => d` and returns `d`.
+    ///
+    /// Atomic and thread-safe
+    ///
+    pub def getOrElsePut(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
+        computeIfAbsent(_ -> d, k, t)
+
+    ///
+    /// Returns `true` if `t1` and `t2` contain the same keys and values, regardless of
+    /// each individual tree's internal structure.
+    ///
+    pub def sameElements(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] =
+        if (size(t1) != size(t2))
+            false
+        else
+            Node.sameElementsFrom(0, Node.leftMostChild(t1->root), 0, Node.leftMostChild(t2->root))
+
+    ///
+    /// Applies the function `f` to every value in `t`.
+    ///
+    pub def transform(f: v -> v \ ef, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
+        transformWithKey(_ -> v -> f(v), t)
+
+    ///
+    /// Applies the function `f` to every value in `t`.
+    ///
+    pub def transformWithKey(f: k -> v -> v \ ef, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
+        Node.transformWithKey(f, 0, Node.leftMostChild(t->root))
 
     ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, computes `v = f()`, inserts `k => v`
@@ -251,6 +302,18 @@ pub mod BPlusTree {
         };
         t1
     }
+
+    ///
+    /// Returns an iterator over keys in `t`.
+    ///
+    pub def iteratorWithKeys(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[k, r1 + r2, r1] \ r1 + r2 = 
+        Iterator.map(match (k, _) -> k, iterator(rc1, t))
+    
+    ///
+    /// Returns an iterator over values in `t`.
+    ///
+    pub def iteratorValues(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[v, r1 + r2, r1] \ r1 + r2 = 
+        Iterator.map(match (_, v) -> v, iterator(rc1, t))
 
     ///
     /// Returns an iterator over all key-value pairs in `t`,
@@ -676,6 +739,16 @@ pub mod BPlusTree {
         Node.putWith(f, k, v, t, leaf, stamp)
 
     ///
+    /// Returns the list of mappings `k => v` in `t` where `min <= k <= max` according to 
+    /// the `Order` instance on `k`.
+    ///
+    pub def rangeQuery(min: k, max: k, t: BPlusTree[k, v, r]): List[(k, v)] \ r with Order[k] = region rc {
+        let l = MutList.empty(rc);
+        rangeQueryWith(k -> v -> MutList.push((k, v), l), min, max, t);
+        MutList.toList(l)
+    }
+
+    ///
     /// Applies `f` in ascending order to all mappings `k => v` in `t` where
     /// `min <= k <= max`.
     ///
@@ -736,7 +809,7 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def toString(t: BPlusTree[k, v, r]): String \ r with ToString[k], ToString[v] =
-        "Search: ${Vector.join(" < ", t->search)}\nTree:\n${Node.toString(0, t->rc, t->root)}"
+        Node.toString(0, t->rc, t->root)
 
     ///
     /// Write lock `t->rootLock` and return the stamp.

@@ -248,7 +248,7 @@ pub mod Int32 {
 
     ///
     /// Returns the bit of `x` at position `pos` (either 0 or 1).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int32): Int32 =
@@ -256,21 +256,21 @@ pub mod Int32 {
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def setBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseOr(x, leftShift(1, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def clearBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseAnd(x, bitwiseNot(leftShift(1, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def flipBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseXor(x, leftShift(1, pos#pos))

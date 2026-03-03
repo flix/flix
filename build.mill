@@ -1,0 +1,126 @@
+package build
+
+import mill.*
+import mill.scalalib.*
+import mill.scalalib.Assembly.*
+
+object flix extends ScalaModule {
+
+  def scalaVersion = "2.13.17"
+
+  // moduleDir resolves to <root>/flix/ (module name appended).
+  // Our sources live at <root>/main/src, so navigate up one level.
+  val root = moduleDir / os.up
+
+  def sources = Task.Sources(root / "main" / "src")
+
+  def mainClass = Some("ca.uwaterloo.flix.Main")
+
+  def mvnDeps = Seq(
+    mvn"org.java-websocket:Java-WebSocket:1.6.0",
+    mvn"org.jline:jline:3.30.6",
+    mvn"org.json4s::json4s-native:4.0.7",
+    mvn"org.ow2.asm:asm:9.8",
+    mvn"com.github.rjeschke:txtmark:0.13",
+    mvn"com.github.scopt::scopt:4.1.0",
+    mvn"org.apache.commons:commons-lang3:3.18.0",
+    mvn"io.get-coursier::coursier:2.1.24",
+    mvn"org.tomlj:tomlj:1.1.1",            // determines antlr version
+    mvn"org.antlr:antlr4-runtime:4.11.1",
+    mvn"org.slf4j:slf4j-nop:2.0.13",       // silence JLine logger
+    mvn"org.eclipse.lsp4j:org.eclipse.lsp4j:0.24.0"
+  )
+
+  def scalacOptions = Seq(
+    "-Xfatal-warnings",
+    "-Ypatmat-exhaust-depth", "400",
+    "-release", "21",
+    "-opt:inline:ca.uwaterloo.**",
+    "-Xmixin-force-forwarders:false",
+    "-Xsource:3",
+    "-Ytasty-reader"
+  )
+
+  def javacOptions = Seq("--release", "21")
+
+  // Manifest: Main-Class is set by mainClass; add Enable-Native-Access
+  def manifest = Task {
+    super.manifest().add("Enable-Native-Access" -> "ALL-UNNAMED")
+  }
+
+  // Fat JAR: exclude META-INF signatures, first-wins for duplicates
+  def assemblyRules = Seq(
+    Rule.ExcludePattern("META-INF/.*\\.(RSA|SF|DSA)")
+  ) ++ super.assemblyRules
+
+  // Include .flix, .json, .zip, ClassList.txt from main/ in the JAR.
+  // Gradle does: from('main') { include '**/*.flix' ... }
+  // We add main/ as an extra resource root so these files land in the assembly.
+  override def resources = Task.Sources(
+    root / "main" / "src" / "resources",
+    root / "main"
+  )
+
+  // ── Test Module ─────────────────────────────────────────
+  object test extends ScalaTests with TestModule.ScalaTest {
+    def sources = Task.Sources(flix.root / "main" / "test")
+
+    def mvnDeps = Seq(
+      mvn"org.scalatest::scalatest:3.2.19",
+      mvn"org.scala-lang.modules::scala-xml:2.1.0",
+    )
+
+    def forkArgs = Seq("-Xmx3g")
+    def forkWorkingDir = root
+    def testSandboxWorkingDir = false
+    def testParallelism = false
+    def forkEnv = super.forkEnv() ++ Task.env
+  }
+
+  // ── Custom Tasks ────────────────────────────────────────
+
+  /** Run: ./mill flix.testFuzzerSuite */
+  def testFuzzerSuite = Task {
+    os.proc("java", "-Xmx3g",
+      "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
+      "org.scalatest.tools.Runner",
+      "-s", "flix.fuzzers.FuzzerSuite", "-o"
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
+  }
+
+  /** Run: ./mill flix.testIDECompletion */
+  def testIDECompletion = Task {
+    os.proc("java", "-Xmx3g",
+      "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
+      "org.scalatest.tools.Runner",
+      "-s", "ca.uwaterloo.flix.api.lsp.TestCompletionProvider", "-o"
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
+  }
+
+  /** Run: ./mill flix.testPackageManager */
+  def testPackageManager = Task {
+    os.proc("java", "-Xmx3g",
+      "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
+      "org.scalatest.tools.Runner",
+      "-s", "ca.uwaterloo.flix.tools.pkg.PackageManagerSuite", "-o"
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
+  }
+
+  /** Run: ./mill flix.vscode */
+  def vscode() = Task.Command {
+    val envFile = root / ".env"
+    if (!os.exists(envFile)) {
+      throw new Exception("Create .env in the project root with:\n  VSCODE_PATH=/path/to/vscode/project")
+    }
+    val targetDir = os.read.lines(envFile)
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .filterNot(_.startsWith("#"))
+      .collectFirst { case s if s.startsWith("VSCODE_PATH=") =>
+        s.stripPrefix("VSCODE_PATH=").trim
+      }
+      .getOrElse(throw new Exception(".env must contain: VSCODE_PATH=/path/to/vscode/project"))
+    val jar = assembly().path
+    os.copy.over(jar, os.Path(targetDir) / "flix.jar")
+  }
+}

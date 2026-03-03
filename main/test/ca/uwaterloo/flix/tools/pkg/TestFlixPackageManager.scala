@@ -7,12 +7,13 @@ import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{BeforeAndAfter, DoNotDiscover}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.{File, PrintStream}
 import java.nio.file.{Files, Path}
 
+@DoNotDiscover
 class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   private val s: String = File.separator
   private implicit val formatter: Formatter = Formatter.NoFormatter

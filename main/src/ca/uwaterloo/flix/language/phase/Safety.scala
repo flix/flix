@@ -68,7 +68,6 @@ object Safety {
   /**
     * Checks the safety and well-formedness of `exp0`.
     *
-    *   - [[Expr.TypeMatch]] must end with a default case.
     *   - [[Expr.Handler]] are not defined for primitive effects.
     *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
     *   - [[Expr.UncheckedCast]] are not impossible.
@@ -98,20 +97,20 @@ object Safety {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(_, exps, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Unary(_, exp, _, _, _) =>
@@ -125,7 +124,7 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
@@ -150,18 +149,6 @@ object Safety {
         rule.guard.foreach(visitExp)
         visitExp(rule.exp)
       }
-
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      // Check whether the last case in the type match looks like `..: _`.
-      rules.lastOption match {
-        // Use top scope since the rigidity check only cares if it's a syntactically known variable.
-        case Some(TypeMatchRule(_, Type.Var(sym, _), _, _)) if renv.isFlexible(sym)(Scope.Top) =>
-          ()
-        case Some(_) | None =>
-          sctx.errors.add(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
-      }
-      visitExp(exp)
-      rules.foreach(rule => visitExp(rule.exp))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
@@ -257,8 +244,6 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
@@ -288,9 +273,17 @@ object Safety {
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
+    case Expr.InvokeSuperConstructor(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
     case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
       checkPermissions(loc.security, loc)
       visitExp(exp)
+      args.foreach(visitExp)
+
+    case Expr.InvokeSuperMethod(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
@@ -313,9 +306,10 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
+    case newObject@Expr.NewObject(_, _, _, _, constructors, methods, loc) =>
       checkPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
+      constructors.foreach(c => visitExp(c.exp))
       methods.foreach(method => visitExp(method.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>
@@ -789,19 +783,36 @@ object Safety {
     * are supposed to implement `clazz`.
     *
     * The conditions are that:
-    *   - `clazz` must be an interface or have a non-private constructor without arguments.
+    *   - `clazz` must be an interface or have a non-private constructor without arguments (unless user-defined constructors are provided).
     *   - `clazz` must be public.
+    *   - Each constructor body must be exactly a `super(...)` call.
+    *   - There can be at most one constructor.
     *   - `methods` must take the object itself (`this`) as the first argument.
     *   - `methods` must include all required signatures (e.g. abstract methods).
     *   - `methods` must not include non-existing methods.
     *   - `methods` must not let control effects escape.
     */
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, tpe0, _, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
-      // `clazz` must be an interface or have a non-private constructor without arguments.
-      if (!clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz)) {
+      // `clazz` must be an interface or have a non-private constructor without arguments
+      // (unless user-defined constructors are provided).
+      if (!clazz.isInterface && cs.isEmpty && !hasNonPrivateZeroArgConstructor(clazz)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
+      }
+
+      // Each constructor body must be exactly a `super(...)` call.
+      cs.foreach {
+        case JvmConstructor(exp, _, _, constructorLoc) =>
+          exp match {
+            case _: Expr.InvokeSuperConstructor => () // OK
+            case _ => sctx.errors.add(NewObjectConstructorMissingSuperCall(clazz, constructorLoc))
+          }
+      }
+
+      // There can be at most one constructor.
+      if (cs.length > 1) {
+        sctx.errors.add(NewObjectTooManyConstructors(clazz, loc))
       }
 
       // `clazz` must be public.
@@ -811,7 +822,7 @@ object Safety {
 
       // `methods` must take the object itself (`this`) as the first argument.
       methods.foreach {
-        case JvmMethod(ident, fparams, _, _, _, methodLoc) =>
+        case JvmMethod(_, ident, fparams, _, _, _, methodLoc) =>
           val firstParam = fparams.head
           firstParam.tpe match {
             case t if Type.eraseAliases(t) == tpe =>
@@ -857,7 +868,7 @@ object Safety {
   /** Returns a map of `methods` based on their [[MethodSignature]]. */
   private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
     methods.map {
-      case m@JvmMethod(ident, fparams, _, retTpe, _, _) =>
+      case m@JvmMethod(_, ident, fparams, _, retTpe, _, _) =>
         // Drop the first formal parameter (which always represents `this`)
         val paramTypes = fparams.tail.map(_.tpe)
         val signature = MethodSignature(ident.name, paramTypes.map(Type.eraseAliases), Type.eraseAliases(retTpe))

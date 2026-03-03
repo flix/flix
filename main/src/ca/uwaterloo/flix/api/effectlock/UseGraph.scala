@@ -73,19 +73,19 @@ object UseGraph {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _, _, _) =>
       visitExps(exps) + (sym0 -> UsedSym.DefnSym(sym))
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _, _, _, _) =>
       visitExps(exps) + (sym0 -> UsedSym.SigSym(sym))
 
     case Expr.Unary(_, exp, _, _, _) =>
@@ -97,7 +97,7 @@ object UseGraph {
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Region(_, _, exp, _, _, _) =>
@@ -116,9 +116,6 @@ object UseGraph {
       visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
     case Expr.ExtMatch(exp, rules, _, _, _) =>
-      visitExp(exp) ++ visitExps(rules.map(_.exp))
-
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
@@ -193,8 +190,6 @@ object UseGraph {
     case Expr.Unsafe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
@@ -211,8 +206,14 @@ object UseGraph {
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       visitExps(exps)
 
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      visitExps(exps)
+
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
+
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
       visitExps(exps)
@@ -229,8 +230,8 @@ object UseGraph {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      visitExps(methods.map(_.exp))
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      visitExps(constructors.map(_.exp)) ++ visitExps(methods.map(_.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>
       visitExp(exp)

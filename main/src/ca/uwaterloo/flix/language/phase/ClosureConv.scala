@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
-import ca.uwaterloo.flix.language.ast.{SimpleType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -134,14 +134,25 @@ object ClosureConv {
       }
       Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+    case Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+      val constructors = constructors0 map {
+        case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
+          exp match {
+            // A super call must occur directly inside <init>, so we cannot extract it into a closure.
+            // Just visit the args without wrapping in a closure.
+            case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(_), _, _, _, _) =>
+              val e = visitExp(exp)
+              JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
+            case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructorLoc)
+          }
+      }
       val methods = methods0 map {
-        case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+        case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
           val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
           val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
-          JvmMethod(ident, fparams, clo, retTpe, methodPurity, methodLoc)
+          JvmMethod(ann, ident, fparams, clo, retTpe, methodPurity, methodLoc)
       }
-      Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+      Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
     case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
@@ -244,9 +255,13 @@ object ClosureConv {
         acc ++ filterBoundParams(freeVars(body), fparams)
     }
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(SortedSet.empty[FreeVar]) {
-        case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      val constructorFvs = constructors.foldLeft(SortedSet.empty[FreeVar]) {
+        case (acc, JvmConstructor(exp, _, _, _)) =>
+          acc ++ freeVars(exp)
+      }
+      methods.foldLeft(constructorFvs) {
+        case (acc, JvmMethod(_, _, fparams, exp, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
 
@@ -389,9 +404,10 @@ object ClosureConv {
         }
         Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-      case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+      case Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+        val constructors = constructors0.map(visitJvmConstructor)
         val methods = methods0.map(visitJvmMethod)
-        Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+        Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
     }
 
@@ -403,10 +419,15 @@ object ClosureConv {
         }
     }
 
+    def visitJvmConstructor(constructor: JvmConstructor)(implicit flix: Flix): JvmConstructor = constructor match {
+      case JvmConstructor(exp, retTpe, purity, loc) =>
+        JvmConstructor(applySubst(exp, subst), retTpe, purity, loc)
+    }
+
     def visitJvmMethod(method: JvmMethod)(implicit flix: Flix): JvmMethod = method match {
-      case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
+      case JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
         val fparams = fparams0.map(visitFormalParam)
-        JvmMethod(ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
+        JvmMethod(ann, ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
     }
 
     visitExp(e0)
@@ -610,13 +631,18 @@ object ClosureConv {
         }
         Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-      case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-        val ms = methods.map {
-          case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+      case Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc) =>
+        val cs = constructors.map {
+          case JvmConstructor(exp, retTpe, constructorPurity, constructorLoc) =>
             val e = visit(exp)
-            JvmMethod(ident, fparams, e, retTpe, methodPurity, methodLoc)
+            JvmConstructor(e, retTpe, constructorPurity, constructorLoc)
         }
-        Expr.NewObject(name, clazz, tpe, purity, ms, loc)
+        val ms = methods.map {
+          case JvmMethod(ann, ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+            val e = visit(exp)
+            JvmMethod(ann, ident, fparams, e, retTpe, methodPurity, methodLoc)
+        }
+        Expr.NewObject(name, clazz, tpe, purity, cs, ms, loc)
     }
 
     visit(expr00)

@@ -6,8 +6,9 @@
 target
 .ensime*
 /*.flix
-/build
-/.gradle
+/.mill-*
+!/.mill-version
+!/.mill-jvm-opts
 .metals
 .vscode
 .bloop
@@ -25,3 +26,4 @@ crash_report_*.txt
 
 # local development files
 **/personal/**
+/.env

@@ -5,12 +5,14 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Formatter, Result}
+import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
 import java.nio.file.Paths
 import scala.reflect.ClassTag
 
+@DoNotDiscover
 class TestManifestParser extends AnyFunSuite {
 
   def expectError[T](result: Result[Manifest, ManifestError])(implicit classTag: ClassTag[T]): Unit = {

@@ -365,13 +365,6 @@ pub mod Fixpoint3.Interpreter {
                         unchecked_cast((Vector.get(tuplePos, minEnv): Array[Int64, r]) as Tuple),
                         unchecked_cast((Vector.get(tuplePos, maxEnv): Array[Int64, r]) as Tuple)
                     )
-            case RelOp.Project(terms, rel, Latticenal(bot, leq, lub, _)) =>
-                let relIndex = lookupIndex(rel, db);
-                let len = Vector.length(terms);
-                let tuple = evalTermsWithLat(ctx, terms);
-                let latVal = evalBoxedTerm(env, boxing, Vector.get(len - 1, terms));
-                if (latVal `leq` bot) ()
-                else BPlusTree.putWith(lub, tuple, latVal, relIndex)
             case RelOp.ProvProject(terms, rel, fullRel) =>
                 let relIndex = lookupIndex(rel, db);
                 let fullIndex = lookupIndex(fullRel, db);
