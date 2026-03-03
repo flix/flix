@@ -481,7 +481,6 @@ sealed trait TokenKind {
 
   def isOnlyFirstInALine: Boolean = this match {
     case TokenKind.KeywordLet => true
-    case TokenKind.KeywordForall => true
     case TokenKind.KeywordForeach => true
     case _ => false
   }
