@@ -36,6 +36,36 @@ sealed trait TypeError extends CompilationMessage {
 object TypeError {
 
   /**
+    * An error raised when a function expects some effects but the call site uses differing effects
+    *
+    * @param expected the list of effects expected to be present
+    * @param actual   the actual list of effects present
+    * @param loc      the location of the call site
+    * @param loc2     the location of the signature that is expected
+    * @param loc3     the location of the actual effect used
+    */
+  case class ArgumentGivenWrongEffect(expected: List[Symbol.EffSym], actual: List[Symbol.EffSym], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6218
+
+    private val effectsToString = (effs: List[Symbol.EffSym]) => {
+      if (effs.length == 1) s"'${effs.head.name}'"
+      else effs.map(_.name).mkString("{", ", ", "}")
+    }
+    def summary: String = s"Unexpected effect ${effectsToString(actual)} in ${effectsToString(expected)} function"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""
+         |${highlight(loc3, s"${magenta(effectsToString(actual))} defined here", fmt)}
+         |
+         |${highlight(loc, s"caller uses argument with ${magenta(effectsToString(actual))}", fmt)}
+         |
+         |${highlight(loc2, s"callee expects: ${magenta(effectsToString(expected))}", fmt)}
+      """.stripMargin
+    }
+  }
+
+  /**
     * Java constructor not found type error.
     *
     * @param tpes the types of the arguments.
