@@ -27,6 +27,7 @@ pub mod Net.Https {
     use IoError.ErrorKind
     use IoError.IoError
 
+    import java.lang.{System => JSystem}
     import java.lang.{Thread => JThread}
 
     ///
@@ -107,6 +108,23 @@ pub mod Net.Https {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Https) + IO = handle(f)()
+
+    ///
+    /// Middleware that intercepts the `Https` effect, enforcing a minimum interval
+    /// (in milliseconds) between consecutive HTTPS requests.
+    ///
+    pub def withMinInterval(intervalMs: Int64, f: Unit -> a \ ef): a \ (ef - Https) + Https =
+        region rc {
+            let last = Ref.fresh(rc, 0i64);
+            run { f() } with handler Https {
+                def request(req, k) =
+                    let now = JSystem.currentTimeMillis();
+                    let wait = intervalMs - (now - Ref.get(last));
+                    if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
+                    Ref.put(JSystem.currentTimeMillis(), last);
+                    k(Https.request(req))
+            }
+        }
 
     ///
     /// Middleware that intercepts the `Https` effect, adding retry logic.

@@ -25,7 +25,7 @@ object Library {
     *
     * The core library *must* be present for any program to compile.
     */
-  val CoreLibrary = List(
+  val CoreLibrary: List[(String, String)] = List(
     "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "Coerce.flix" -> LocalResource.get("/src/library/Coerce.flix"),
@@ -53,7 +53,7 @@ object Library {
     *
     * The standard library is not required to be present for at least some programs to compile.
     */
-  val StandardLibrary = List(
+  val StandardLibrary: List[(String, String)] = List(
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
     "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
@@ -181,7 +181,7 @@ object Library {
     "Net/Http.flix" -> LocalResource.get("/src/library/Net/Http.flix"),
     "Net/HttpClient.flix" -> LocalResource.get("/src/library/Net/HttpClient.flix"),
     "Net/Https.flix" -> LocalResource.get("/src/library/Net/Https.flix"),
-    "Net/Request.flix" -> LocalResource.get("/src/library/Net/Request.flix"),
+"Net/Request.flix" -> LocalResource.get("/src/library/Net/Request.flix"),
     "Net/Response.flix" -> LocalResource.get("/src/library/Net/Response.flix"),
     "Net/Retry.flix" -> LocalResource.get("/src/library/Net/Retry.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
