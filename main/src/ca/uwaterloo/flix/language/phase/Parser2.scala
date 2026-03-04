@@ -3348,6 +3348,11 @@ object Parser2 {
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)
+      } else if (eat(TokenKind.Slash)) {
+        closeWithError(open(), ParseError.ExpectedBackslashGotSlash(SyntacticContext.Unknown, previousSourceLocation()))
+        val mark = open()
+        ttype()
+        close(mark, TreeKind.Type.Effect)
       } else lhs
     }
 

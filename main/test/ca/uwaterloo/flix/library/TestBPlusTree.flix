@@ -2241,4 +2241,31 @@ mod TestBPlusTree {
         Assert.assertEq(expected = List#{(2, 20), (3, 30), (4, 40), (5, 50)}, BPlusTree.rangeQuery(2, 5, t))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def maximumKey01(): Unit \ Assert = region rc {
+        let t: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc);
+        Assert.assertNone(BPlusTree.maximumKey(t))
+    }
+
+    @Test
+    pub def maximumKey02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(2, "b", t);
+        Assert.assertEq(expected = Some((2, "b")), BPlusTree.maximumKey(t))
+    }
+
+    @Test
+    pub def maximumKey03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (i <- Range.Range(0, 51)) {
+            BPlusTree.put(i, i * 10, t)
+        };
+        Assert.assertEq(expected = Some((50, 500)), BPlusTree.maximumKey(t))
+    }
+
 }
