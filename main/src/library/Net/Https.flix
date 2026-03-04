@@ -127,6 +127,42 @@ pub mod Net.Https {
         }
 
     ///
+    /// Middleware that intercepts the `Https` effect, enforcing a token-bucket
+    /// rate limit. Allows an initial burst of `burstSize` requests, then
+    /// sustains at 1 request per `intervalMs` milliseconds.
+    ///
+    pub def withTokenBucket(burstSize: Int32, intervalMs: Int64, f: Unit -> a \ ef): a \ (ef - Https) + Https =
+        region rc {
+            let tokens   = Ref.fresh(rc, burstSize);
+            let lastTime = Ref.fresh(rc, JSystem.currentTimeMillis());
+            run { f() } with handler Https {
+                def request(req, k) =
+                    def acquire() = {
+                        let now     = JSystem.currentTimeMillis();
+                        let elapsed = now - Ref.get(lastTime);
+                        let added   = Int64.clampToInt32(min = 0, max = burstSize, elapsed / intervalMs);
+                        if (added > 0)
+                            Ref.put(Int32.min(burstSize, Ref.get(tokens) + added), tokens)
+                        else
+                            ();
+                        if (added > 0)
+                            Ref.put(Ref.get(lastTime) + Int32.toInt64(added) * intervalMs, lastTime)
+                        else
+                            ();
+                        if (Ref.get(tokens) >= 1) {
+                            Ref.put(Ref.get(tokens) - 1, tokens)
+                        } else {
+                            let wait = intervalMs - (JSystem.currentTimeMillis() - Ref.get(lastTime));
+                            if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
+                            acquire()
+                        }
+                    };
+                    acquire();
+                    k(Https.request(req))
+            }
+        }
+
+    ///
     /// Middleware that intercepts the `Https` effect, adding retry logic.
     ///
     /// The `strategy` function decides whether to retry and how long to wait.
