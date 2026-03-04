@@ -458,4 +458,13 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[ParseError.ExpectedArrowThickRGotArrowThinR](result)
   }
+
+  test("ExpectedBackslashGotSlash.01") {
+    val input =
+      """
+        |def f(): Int32 / {} = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedBackslashGotSlash](result)
+  }
 }
