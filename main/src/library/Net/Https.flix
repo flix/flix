@@ -163,6 +163,42 @@ pub mod Net.Https {
         }
 
     ///
+    /// Middleware that intercepts the `Https` effect, enforcing a sliding-window
+    /// rate limit. Allows at most `maxRequests` within any rolling `windowMs`-millisecond
+    /// window. When the limit is reached, sleeps until the oldest request expires.
+    ///
+    pub def withSlidingWindow(maxRequests: Int32, windowMs: Int64, f: Unit -> a \ ef): a \ (ef - Https) + Https =
+        region rc {
+            let timestamps = MutDeque.empty(rc);
+            run { f() } with handler Https {
+                def request(req, k) =
+                    def acquire() = {
+                        let now = JSystem.currentTimeMillis();
+                        def evict() = match MutDeque.peekFront(timestamps) {
+                            case Some(ts) if now - ts > windowMs =>
+                                discard MutDeque.popFront(timestamps);
+                                evict()
+                            case _ => ()
+                        };
+                        evict();
+                        if (MutDeque.size(timestamps) < maxRequests) {
+                            MutDeque.pushBack(now, timestamps)
+                        } else {
+                            match MutDeque.peekFront(timestamps) {
+                                case Some(oldest) =>
+                                    let wait = windowMs - (now - oldest);
+                                    if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
+                                    acquire()
+                                case None => ()
+                            }
+                        }
+                    };
+                    acquire();
+                    k(Https.request(req))
+            }
+        }
+
+    ///
     /// Middleware that intercepts the `Https` effect, adding retry logic.
     ///
     /// The `strategy` function decides whether to retry and how long to wait.
