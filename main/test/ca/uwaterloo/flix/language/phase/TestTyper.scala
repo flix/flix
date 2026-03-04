@@ -370,7 +370,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |   case Square(Int32),
         |   case Rectangle(Int32, Int32)
         |}
-        |def area(s: Shape): Int32 \ Console = match s {
+        |def area(s: Shape): Int32 \ Bar = match s {
         |   case Shape.Circle(r)       => 3 * (r * r)
         |   case Shape.Square(w)       =>
         |       println(w);
@@ -418,6 +418,75 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.PureArgumentGivenIO.01") {
+    val input =
+      """
+        |def hof1(f: Unit -> Unit): Unit = f()
+        |def hof2(f: Unit -> Unit \ ef): Unit \ ef = f()
+        |
+        |def foo(): Unit \ IO =
+        |    let f = () -> println("€");
+        |    hof1(f);
+        |    hof2(f)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
+  }
+
+  test("Test.PureArgumentGivenCstEffect.01") {
+    val input =
+      """
+        |def hof1(f: Unit -> Unit): Unit = f()
+        |def hof2(f: Unit -> Unit \ ef): Unit \ ef = f()
+        |
+        |def foo(): Unit \ IO =
+        |    let f = () -> Bar.baz();
+        |    hof1(f);
+        |    hof2(f)
+        |eff Bar {
+        |    def baz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
+  }
+
+  test("Test.CstArgumentGivenIO.01") {
+    val input =
+      """
+        |def hof1(f: Unit -> Unit \ Bar): Unit \ Bar = f()
+        |def hof2(f: Unit -> Unit \ ef): Unit \ ef = f()
+        |
+        |def foo(): Unit \ IO + Bar =
+        |    let f = () -> println("€");
+        |    hof1(f);
+        |    hof2(f)
+        |eff Bar {
+        |    def baz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
+  }
+
+  test("Test.IOArgumentGivenPure.01") {
+    val input =
+      """
+        |def hof1(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |def hof2(f: Unit -> Unit \ ef): Unit \ ef = f()
+        |
+        |def foo(): Unit \ IO + Bar =
+        |    let f = () -> ();
+        |    hof1(f);
+        |    hof2(f)
+        |eff Bar {
+        |    def baz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
   }
 
   test("TestLeq01") {
