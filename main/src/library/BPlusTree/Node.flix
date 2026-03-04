@@ -608,6 +608,19 @@ mod BPlusTree.Node {
             case true => node
         }
 
+    /// 
+    /// Returns the rightmost leaf of the tree rooted at `node`. 
+    ///
+    /// Traverses down the rightmost path of the tree, acquiring locks along the way.
+    /// If a lock is invalid, yields and retries from the root of `t`.
+    ///
+    pub def rightMostLeaf(
+        n: Node[k, v, r], 
+        stamp: Int64, 
+        t: BPlusTree[k, v, r]
+    ): (Node[k, v, r], Int64) \ r with Order[k] = 
+        traverseToLeaf(n, stamp, node -> Array.get(node->size - 1, node->children), () -> BPlusTree.rightMostLeaf(t))
+
     ///
     /// Attempt to lock the parent of `node`. Returns the stamp associated with the parent.
     /// If the parent is None return a lock on the `tree->rootLock`.
@@ -1060,6 +1073,42 @@ mod BPlusTree.Node {
                 }
             case true => (cur, stamp)
         }
+
+    ///
+    /// Traverses down the tree according to `pickChild`, acquiring locks along the way.
+    /// If a lock is invalid, yields and retries from the root using `restart`.
+    ///
+    /// `pickChild` should pick a child of `cur` if `cur` is an internal node and is not 
+    /// called if `cur` is a leaf. 
+    /// 
+    /// Caution: Because invalid locks trigger `restart`, `pickChild` and `restart` may 
+    /// be called an unknown number of times before traversal succeeds.
+    ///
+    /// Lock invariant: `stamp` is a valid lock on the current node.
+    ///
+    def traverseToLeaf(
+        cur: Node[k, v, r],
+        stamp: Int64,
+        pickChild: Node[k, v, r] -> Node[k, v, r] \ r,
+        restart: Unit -> (Node[k, v, r], Int64) \ r
+    ): (Node[k, v, r], Int64) \ r with Order[k] = match cur->isLeaf {
+        case false => {
+            let child = pickChild(cur);
+            if (not Lock.valid(stamp, cur->lock)) {
+                Lock.yieldBasedOn(cur->lock);
+                restart()
+            } else {
+                let childStamp = Lock.tryReadLock(child->lock);
+                if (not Lock.valid(stamp, cur->lock)) {
+                    Lock.yieldBasedOn(cur->lock);
+                    restart()
+                } else {
+                    traverseToLeaf(child, childStamp, pickChild, restart)
+                }
+            }
+        }
+        case true => (cur, stamp)
+    }
 
     ///
     /// Applies `f` to mappings `k => v` starting at `node->keys[index]` until
