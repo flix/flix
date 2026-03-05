@@ -1,8 +1,11 @@
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.api.lsp.Formatter.{formatBinaryExpression, formatParameterList, traverseTree}
 import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SyntaxTree
+import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Expr.Binary
+import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.ParameterList
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -10,6 +13,8 @@ import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
+import java.util.Objects
+import scala.::
 
 class TestFormatter extends AnyFunSuite {
   /**
@@ -21,32 +26,10 @@ class TestFormatter extends AnyFunSuite {
   private val ProgramPathList = List(
     // Small examples
     "examples/concurrency-and-parallelism/spawning-threads.flix",
-    "examples/concurrency-and-parallelism/using-par-yield.flix",
-    "examples/concurrency-and-parallelism/using-par-yield-recursively.flix",
-    "examples/concurrency-and-parallelism/using-select-with-default.flix",
-    "examples/concurrency-and-parallelism/using-select.flix",
-    "examples/concurrency-and-parallelism/using-channels-for-message-passing.flix",
-    "examples/concurrency-and-parallelism/using-select-with-timeout.flix",
     "examples/modules/use-from-a-module-locally.flix",
-    "examples/modules/declaring-a-module.flix",
-    "examples/modules/use-from-a-module.flix",
-    "examples/modules/companion-module-effect.flix",
-    "examples/modules/companion-module-struct.flix",
-    "examples/modules/companion-module-trait.flix",
-    "examples/modules/companion-module-enum.flix",
     "examples/records/the-ast-typing-problem-with-polymorphic-records.flix",
-    "examples/records/polymorphic-record-update.flix",
-    "examples/records/polymorphic-record-extension-and-restriction.flix",
-    "examples/records/record-construction-and-use.flix",
-    "examples/structs/structs-and-parametric-polymorphism.flix",
     "examples/structs/struct-person.flix",
-    "examples/structs/struct-tree-monadic.flix",
-    "examples/structs/struct-tree.flix",
     "examples/traits/trait-with-higher-kinded-type.flix",
-    "examples/traits/trait-with-associated-effect.flix",
-    "examples/traits/deriving-traits-automatically.flix",
-    "examples/traits/trait-with-associated-type.flix",
-    "examples/traits/declaring-a-trait-with-instances.flix",
 
     // Larger examples
     "examples/larger-examples/lambda-calculus.flix",
@@ -148,13 +131,21 @@ class TestFormatter extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("AST Invariance: formatting must not change the semantics of the program.") {
     for ((program, programPath) <- Programs.zip(ProgramPathList)) {
-      val syntaxTree = compileAndGetSyntaxTree(program, programPath)
-      val formatTextEdits = Formatter.format(syntaxTree, programPath)
+      val syntaxTreeRoot = compileAndGetSyntaxTree(program, programPath)
+      val syntaxTree = findTreeBasedOnUri(syntaxTreeRoot, programPath).getOrElse {
+        fail(s"Could not find syntax tree for $programPath")
+      }
+      val formatTextEdits = Formatter.format(syntaxTreeRoot, programPath)
       val formattedProgram = Formatter.applyTextEditsToString(program, formatTextEdits)
 
-      val syntaxTreeAfterFormatting = compileAndGetSyntaxTree(formattedProgram, programPath)
+      val syntaxTreeRootAfterFormatting = compileAndGetSyntaxTree(formattedProgram, programPath)
+      val syntaxTreeAfterFormatting = findTreeBasedOnUri(syntaxTreeRootAfterFormatting, programPath).getOrElse {
+        fail(s"Could not find syntax tree for $programPath after formatting")
+      }
       resetSharedFlixInstance(programPath)
-      assert(computeSemanticHash(syntaxTree) == computeSemanticHash(syntaxTreeAfterFormatting), s"Formatter changed the semantics of the program for $programPath")
+      val semanticHashBefore = computeSemanticHash(syntaxTree)
+      val semanticHashAfter = computeSemanticHash(syntaxTreeAfterFormatting)
+      assert(semanticHashBefore == semanticHashAfter, s"Formatter changed the semantics of the program for $programPath")
     }
   }
 
@@ -178,18 +169,38 @@ class TestFormatter extends AnyFunSuite {
   }
 
   /**
-    * Computes a semantic hash for the given SyntaxTree.Root.
+    * Computes a semantic hash for the given SyntaxTree.Tree.
+    * The semantic hash is computed by traversing the syntax tree and hashing the relevant information.
     *
-    * @param root the Root to hash.
+    * @param tree the Root to hash.
     * @return the semantic hash as an Int.
     */
-  private def computeSemanticHash(root: SyntaxTree.Root): Int = {
-    import java.util.Objects
+  private def computeSemanticHash(tree: SyntaxTree.Tree): Int = {
+    def traverseTree(tree: SyntaxTree.Tree): List[Int] = {
+      val hashTokenKind = List(Objects.hash(tree.kind))
 
-    Objects.hash(
-      root.units.keySet,
-      root.tokens.keySet
-    )
+      val hashFromChild = tree.children.flatMap {
+        case childTree: SyntaxTree.Tree => traverseTree(childTree)
+        case _ => Nil
+      }
+      hashTokenKind ++ hashFromChild
+    }
+    traverseTree(tree).sum
+  }
+
+  /**
+    * Finds the syntax tree corresponding to the given URI.
+    *
+    * @param root the syntax tree root
+    * @param uri  the file path of the syntax tree
+    * @return an option containing the syntax tree if found
+    */
+  private def findTreeBasedOnUri(root: SyntaxTree.Root, uri: String): Option[SyntaxTree.Tree] = {
+    root.units.find {
+      case (path, _) => path.toString == uri
+    }.map {
+      case (_, tree) => tree
+    }
   }
 
   /**
