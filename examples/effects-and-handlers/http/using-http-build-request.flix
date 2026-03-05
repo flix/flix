@@ -4,10 +4,8 @@ use Net.Response
 use Net.Timeout
 
 /// Demonstrates building an HTTP request with the `Request` API.
-///
 /// Uses a fluent pipeline to add query parameters, a bearer token,
-/// a custom header, and a timeout before sending the request with
-/// `Http.send`. The response status and a truncated body are printed.
+/// a custom header, and a timeout before sending with `Http.send`.
 def main(): Unit \ IO =
     run {
         let req = Request.get("https://flix.dev/api/search")
