@@ -3351,6 +3351,20 @@ object Parser2 {
     def typeAndEffect()(implicit s: State): Mark.Closed = {
       val lhs = ttype()
 
+      // Check whether the user forgot the '\' between a return type and its effect.
+      // The four token kinds that can start an effect are:
+      //   - NameUppercase: a named effect, e.g. `IO` in `Int32 \ IO`
+      //   - NameLowercase: an effect variable, e.g. `ef` in `Int32 \ ef`
+      //   - CurlyL: an effect set, e.g. `{IO}` in `Int32 \ {IO}`
+      //   - ParenL: a parenthesized effect, e.g. `(ef - IO)` in `Int32 \ (ef - IO)`
+      //
+      // Example of the error being caught:
+      //   def foo(): Int32 IO = ...   // forgot '\'; should be `Int32 \ IO`
+      //
+      // Known limitation: these same tokens can also begin a function body when the user
+      // forgot '=' (e.g. `def foo(): Int32 { x + 1 }` instead of `def foo(): Int32 = { x + 1 }`).
+      // In that case this heuristic fires a false positive and the user will see two errors:
+      // this one and the subsequent "expected '='" error from the definition parser.
       val isMissingBackslash = at(TokenKind.NameUppercase) || at(TokenKind.NameLowercase) || at(TokenKind.CurlyL) || at(TokenKind.ParenL)
 
       if (isMissingBackslash) {

@@ -309,13 +309,13 @@ object ParseError {
   case class ExpectedBackslashBetweenTypeAndEffect(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
     def code: ErrorCode = ErrorCode.E9301
-    def summary: String = s"Expected '\\' between type and effect"
+    def summary: String = s"Expected '\\' between type and effect, or '=' before function body"
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> Expected '\\' between type and effect
+      s""">> Expected '\\' between type and effect, or '=' before function body
          |
-         |${src(loc, s"Use '\\' to separate type and effect")}
+         |${src(loc, s"Use '\\' to separate type and effect, e.g. 'Int32 \\ IO'")}
          |""".stripMargin
     }
 
