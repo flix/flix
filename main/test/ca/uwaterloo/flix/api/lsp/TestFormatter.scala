@@ -1,12 +1,8 @@
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.Formatter.{formatBinaryExpression, formatParameterList, traverseTree}
-import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SyntaxTree
-import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Expr.Binary
-import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.ParameterList
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
@@ -14,7 +10,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 import java.util.Objects
-import scala.::
 
 class TestFormatter extends AnyFunSuite {
   /**
