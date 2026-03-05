@@ -10,12 +10,12 @@ def main(): Unit \ {Clock, IO} =
     run {
         println("--- Min interval ---");
         let urls = List#{"/a", "/b", "/c", "/d"};
-        List.forEach(url -> {
+        foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${Response.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
-        }, urls)
+        }
     } with Http.withMinInterval(100i64)
       with Http.withBaseUrl("https://flix.dev")
       with Http.runWithIO;
@@ -24,12 +24,12 @@ def main(): Unit \ {Clock, IO} =
     run {
         println("--- Token bucket ---");
         let urls = List#{"/a", "/b", "/c", "/d"};
-        List.forEach(url -> {
+        foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${Response.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
-        }, urls)
+        }
     } with Http.withTokenBucket(2, 100i64)
       with Http.withBaseUrl("https://flix.dev")
       with Http.runWithIO;
@@ -38,12 +38,12 @@ def main(): Unit \ {Clock, IO} =
     run {
         println("--- Sliding window ---");
         let urls = List#{"/a", "/b", "/c", "/d"};
-        List.forEach(url -> {
+        foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${Response.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
-        }, urls)
+        }
     } with Http.withSlidingWindow(2, 1000i64)
       with Http.withBaseUrl("https://flix.dev")
       with Http.runWithIO
