@@ -2,6 +2,9 @@ use Net.Http
 use Net.Request
 use Net.Response
 
+/// Sends a POST request with a JSON body and prints the response status and body.
+/// Uses `Request.post` to create the request and sets content type and accept headers to JSON.
+/// The Http effect is handled explicitly with `Http.runWithIO`.
 def main(): Unit \ IO =
     run {
         let body = "{\"name\": \"Alice\", \"age\": 30}";
