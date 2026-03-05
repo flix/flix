@@ -44,9 +44,19 @@ pub mod Net.HttpClient {
     import java.util.{List => JList}
 
     ///
+    /// Builds a default `HttpClient` with `Redirect.NORMAL` and no connect timeout.
+    ///
+    pub def newDefaultClient(): HttpClient \ IO =
+        HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
+
+    ///
     /// Performs the actual HTTP request using the Java HTTP client.
     ///
-    pub def doRequest(req: Request): Result[IoError, Response] \ IO =
+    /// Reuses `defaultClient` when the request has default client-level settings
+    /// (`connectTimeout == NoTimeout` and `followRedirects == true`).
+    /// Otherwise, builds a one-off client with the request's specific settings.
+    ///
+    pub def doRequest(defaultClient: HttpClient, req: Request): Result[IoError, Response] \ IO =
         try {
             let Request(x) = req;
             let methodStr = match x#method {
@@ -78,12 +88,19 @@ pub mod Net.HttpClient {
                 case NoTimeout   => builder.build()
                 case After(t, u) => builder.timeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u)))).build()
             };
-            let redirectPolicy = if (x#followRedirects) Redirect.NORMAL else Redirect.NEVER;
-            let clientBuilder = match x#connectTimeout {
-                case NoTimeout   => HttpClient.newBuilder().followRedirects(redirectPolicy)
-                case After(t, u) => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u))))
+            let client = {
+                let Request(x0) = req;
+                if (x0#connectTimeout == NoTimeout and x0#followRedirects == true)
+                    defaultClient
+                else {
+                    let redirectPolicy = if (x0#followRedirects) Redirect.NORMAL else Redirect.NEVER;
+                    match x0#connectTimeout {
+                        case NoTimeout   => HttpClient.newBuilder().followRedirects(redirectPolicy).build()
+                        case After(t, u) =>
+                            HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u)))).build()
+                    }
+                }
             };
-            let client = clientBuilder.build();
             let response = client.send(jrequest, BodyHandlers.ofByteArray());
             let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
             let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
@@ -105,10 +122,12 @@ pub mod Net.HttpClient {
     ///
     /// Validates then performs an HTTP request.
     ///
-    pub def execute(validate: Request -> Result[IoError, Unit], req: Request): Result[IoError, Response] \ IO =
+    pub def execute(validate: Request -> Result[IoError, Unit],
+                    defaultClient: HttpClient,
+                    req: Request): Result[IoError, Response] \ IO =
         match validate(req) {
             case Err(e) => Err(e)
-            case Ok()   => doRequest(req)
+            case Ok()   => doRequest(defaultClient, req)
         }
 
 }

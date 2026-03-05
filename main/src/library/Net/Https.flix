@@ -95,10 +95,11 @@ pub mod Net.Https {
     /// Validates that request URLs use the `https://` scheme.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Https) + IO = x ->
+        let client = HttpClient.newDefaultClient();
         run {
             f(x)
         } with handler Https {
-            def request(req, k) = k(HttpClient.execute(validateHttps, req))
+            def request(req, k) = k(HttpClient.execute(validateHttps, client, req))
         }
 
     ///

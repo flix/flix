@@ -83,10 +83,11 @@ pub mod Net.Http {
     /// Re-interprets the `Http` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Http) + IO = x ->
+        let client = HttpClient.newDefaultClient();
         run {
             f(x)
         } with handler Http {
-            def request(req, k) = k(HttpClient.execute((_) -> Ok(), req))
+            def request(req, k) = k(HttpClient.execute((_) -> Ok(), client, req))
         }
 
     ///
