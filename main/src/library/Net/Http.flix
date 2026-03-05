@@ -28,7 +28,6 @@ pub mod Net.Http {
     use IoError.ErrorKind
     use RichString.{text, bold, cyan, green, yellow, red, gray}
 
-    import java.lang.{System => JSystem}
     import java.lang.{Thread => JThread}
 
     ///
@@ -104,15 +103,15 @@ pub mod Net.Http {
     /// Middleware that intercepts the `Http` effect, enforcing a minimum interval
     /// (in milliseconds) between consecutive HTTP requests.
     ///
-    pub def withMinInterval(intervalMs: Int64, f: Unit -> a \ ef): a \ (ef - Http) + Http =
+    pub def withMinInterval(intervalMs: Int64, f: Unit -> a \ ef): a \ (ef - Http) + {Clock, Http} =
         region rc {
             let last = Ref.fresh(rc, 0i64);
             run { f() } with handler Http {
                 def request(req, k) =
-                    let now = JSystem.currentTimeMillis();
+                    let now = Clock.now();
                     let wait = intervalMs - (now - Ref.get(last));
                     if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
-                    Ref.put(JSystem.currentTimeMillis(), last);
+                    Ref.put(Clock.now(), last);
                     k(Http.request(req))
             }
         }
@@ -122,14 +121,14 @@ pub mod Net.Http {
     /// rate limit. Allows an initial burst of `burstSize` requests, then
     /// sustains at 1 request per `intervalMs` milliseconds.
     ///
-    pub def withTokenBucket(burstSize: Int32, intervalMs: Int64, f: Unit -> a \ ef): a \ (ef - Http) + Http =
+    pub def withTokenBucket(burstSize: Int32, intervalMs: Int64, f: Unit -> a \ ef): a \ (ef - Http) + {Clock, Http} =
         region rc {
             let tokens   = Ref.fresh(rc, burstSize);
-            let lastTime = Ref.fresh(rc, JSystem.currentTimeMillis());
+            let lastTime = Ref.fresh(rc, Clock.now());
             run { f() } with handler Http {
                 def request(req, k) =
                     def acquire() = {
-                        let now     = JSystem.currentTimeMillis();
+                        let now     = Clock.now();
                         let elapsed = now - Ref.get(lastTime);
                         let added   = Int64.clampToInt32(min = 0, max = burstSize, elapsed / intervalMs);
                         if (added > 0)
@@ -143,7 +142,7 @@ pub mod Net.Http {
                         if (Ref.get(tokens) >= 1) {
                             Ref.put(Ref.get(tokens) - 1, tokens)
                         } else {
-                            let wait = intervalMs - (JSystem.currentTimeMillis() - Ref.get(lastTime));
+                            let wait = intervalMs - (Clock.now() - Ref.get(lastTime));
                             if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
                             acquire()
                         }
@@ -158,13 +157,13 @@ pub mod Net.Http {
     /// rate limit. Allows at most `maxRequests` within any rolling `windowMs`-millisecond
     /// window. When the limit is reached, sleeps until the oldest request expires.
     ///
-    pub def withSlidingWindow(maxRequests: Int32, windowMs: Int64, f: Unit -> a \ ef): a \ (ef - Http) + Http =
+    pub def withSlidingWindow(maxRequests: Int32, windowMs: Int64, f: Unit -> a \ ef): a \ (ef - Http) + {Clock, Http} =
         region rc {
             let timestamps = MutDeque.empty(rc);
             run { f() } with handler Http {
                 def request(req, k) =
                     def acquire() = {
-                        let now = JSystem.currentTimeMillis();
+                        let now = Clock.now();
                         def evict() = match MutDeque.peekFront(timestamps) {
                             case Some(ts) if now - ts > windowMs =>
                                 discard MutDeque.popFront(timestamps);
@@ -201,13 +200,13 @@ pub mod Net.Http {
     /// Non-failure responses (2xx, 3xx, 4xx) reset the failure counter.
     ///
     pub def withCircuitBreaker(failureThreshold: Int32, cooldownMs: Int64,
-                               f: Unit -> a \ ef): a \ (ef - Http) + Http =
+                               f: Unit -> a \ ef): a \ (ef - Http) + {Clock, Http} =
         region rc {
             let failures  = Ref.fresh(rc, 0);
             let openSince = Ref.fresh(rc, 0i64);
             run { f() } with handler Http {
                 def request(req, k) =
-                    let now = JSystem.currentTimeMillis();
+                    let now = Clock.now();
                     let since = Ref.get(openSince);
                     if (since > 0i64 and now - since < cooldownMs)
                         // Open: reject immediately
@@ -220,7 +219,7 @@ pub mod Net.Http {
                                 let count = Ref.get(failures) + 1;
                                 Ref.put(count, failures);
                                 if (count >= failureThreshold)
-                                    Ref.put(JSystem.currentTimeMillis(), openSince)
+                                    Ref.put(Clock.now(), openSince)
                                 else
                                     ();
                                 k(result)
@@ -229,7 +228,7 @@ pub mod Net.Http {
                                     let count = Ref.get(failures) + 1;
                                     Ref.put(count, failures);
                                     if (count >= failureThreshold)
-                                        Ref.put(JSystem.currentTimeMillis(), openSince)
+                                        Ref.put(Clock.now(), openSince)
                                     else
                                         ()
                                 } else {
@@ -306,7 +305,7 @@ pub mod Net.Http {
     /// Middleware that intercepts the `Http` effect, logging each request
     /// and its corresponding response via the `Logger` effect at `Debug` level.
     ///
-    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Http) + Http + Logger =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Http) + {Http, Logger} =
         run { f() } with handler Http {
             def request(req, k) =
                 let method = String.toUpperCase("${Request.method(req)}");

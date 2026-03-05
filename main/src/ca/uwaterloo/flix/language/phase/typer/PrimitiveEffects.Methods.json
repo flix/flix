@@ -19,7 +19,6 @@
     "java.lang.Runtime::availableProcessors": "",
     "java.lang.Runtime::getRuntime": "",
     "java.lang.Runtime::version": "",
-    "java.lang.System::currentTimeMillis": "",
     "java.lang.System::lineSeparator": "",
     "java.lang.Short::longValue": "",
     "java.lang.Short::parseShort": "",
