@@ -7,13 +7,13 @@ use Net.Response
 /// A successful request resets the failure counter.
 def main(): Unit \ {Clock, IO} =
     run {
-        let urls = List#{"/a", "/b", "/c", "/d"};
-        List.forEach(url -> {
+        let urls = List#{"/a", "/b", "/c", "/d", "/e", "/f", "/g", "/h"};
+        foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${Response.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
-        }, urls)
+        }
     } with Http.withCircuitBreaker(3, 5000i64)
-      with Http.withBaseUrl("https://flix.dev")
+      with Http.withBaseUrl("https://notfound.flix.dev")
       with Http.runWithIO
