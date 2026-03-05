@@ -81,9 +81,10 @@ pub mod Net {
     })
 
     ///
-    /// An HTTP response with status code, multi-valued headers, and body.
+    /// An HTTP response with final URL, status code, multi-valued headers, and body.
     ///
     pub enum Response({
+        url     = String,
         status  = Int32,
         headers = Map[String, List[String]],
         body    = Body

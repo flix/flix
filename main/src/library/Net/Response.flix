@@ -26,6 +26,13 @@ pub mod Net.Response {
     import java.nio.charset.StandardCharsets
 
     ///
+    /// Returns the final URL of the response `r` (after any redirects).
+    ///
+    pub def url(r: Response): String = match r {
+        case Response(x) => x#url
+    }
+
+    ///
     /// Returns the status code of the response `r`.
     ///
     pub def status(r: Response): Int32 = match r {

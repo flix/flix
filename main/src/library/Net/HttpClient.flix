@@ -106,6 +106,7 @@ pub mod Net.HttpClient {
             let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
             let bytes = unchecked_cast(response.body() as Array[Int8, Static]);
             Ok(Response({
+               url = response.uri().toString(),
                status = response.statusCode(),
                headers = responseHeaders,
                body = Body.Bytes(Array.toVector(bytes))
