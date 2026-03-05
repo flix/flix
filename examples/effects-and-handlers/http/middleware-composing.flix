@@ -3,8 +3,9 @@ use Net.Retry
 use Net.Response
 
 /// Demonstrates composing multiple middleware via `with` clauses.
-/// Middleware is applied bottom-to-top: `runWithIO` executes the actual I/O,
-/// then each layer wraps the one below it.
+/// The innermost handler (first `with`) intercepts the request first,
+/// then re-raises it to the next handler, and so on until `runWithIO`
+/// performs the actual I/O.
 ///
 /// This example stacks: base URL, default headers, logging, retry,
 /// circuit breaker, and sliding-window rate limiting.
@@ -15,17 +16,21 @@ def main(): Unit \ {Clock, IO} =
     };
     run {
         let urls = List#{"/api/users", "/api/posts"};
-        List.forEach(url -> {
+        foreach (url <- urls) {
             match Http.get(url) {
                 case Ok(resp) => println("${url} -> ${Response.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
-        }, urls)
+        };
+        match Http.get("https://notfound.flix.dev/") {
+            case Ok(resp) => println("notfound -> ${Response.status(resp)}")
+            case Err(err) => println("notfound -> ${err}")
+        }
     } with Http.withBaseUrl("https://flix.dev")
       with Http.withDefaultHeaders(defaultHeaders)
-      with Http.withLogging
-      with Http.withRetry(Retry.retryTransportOnly(2, 500i64))
+      with Http.withRetry(Retry.linear(2, 100i64))
       with Http.withCircuitBreaker(3, 5000i64)
       with Http.withSlidingWindow(2, 1000i64)
+      with Http.withLogging
       with Http.runWithIO
       with Logger.runWithIO
