@@ -26,6 +26,7 @@ pub mod Net.Https {
     use Net.Response.Response
     use IoError.ErrorKind
     use IoError.IoError
+    use RichString.{text, bold, cyan, green, yellow, red, gray}
 
     import java.lang.{System => JSystem}
     import java.lang.{Thread => JThread}
@@ -262,6 +263,37 @@ pub mod Net.Https {
                     let path1 = if (String.startsWith(prefix = "/", url))
                                      url else "/${url}";
                     k(Https.request(Request({url = "${base1}${path1}" | x})))
+        }
+
+    ///
+    /// Middleware that intercepts the `Https` effect, logging each request
+    /// and its corresponding response via the `Logger` effect at `Debug` level.
+    ///
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - Https) + Https + Logger =
+        run { f() } with handler Https {
+            def request(req, k) =
+                let method = String.toUpperCase("${Request.method(req)}");
+                let url    = Request.url(req);
+                Logger.log(Severity.Debug,
+                    gray("-->") + text(" ") + bold(method) + text(" ") + cyan(url));
+                let result = Https.request(req);
+                match result {
+                    case Ok(resp) =>
+                        let status = Response.status(resp);
+                        let color  = if (status >= 200 and status <= 299)
+                                         green("${status}")
+                                     else if (status >= 400)
+                                         red("${status}")
+                                     else
+                                         yellow("${status}");
+                        Logger.log(Severity.Debug,
+                            gray("<--") + text(" ") + color + text(" ") + cyan(url))
+                    case Err(err) =>
+                        Logger.log(Severity.Debug,
+                            gray("<--") + text(" ") + red("ERR") + text(" ") + cyan(url) +
+                            text(" ") + red("${err}"))
+                };
+                k(result)
         }
 
 }
