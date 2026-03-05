@@ -2,6 +2,10 @@ use Net.Http
 use Net.Retry
 use Net.Response
 
+/// Demonstrates three retry strategies provided by `Net.Retry`:
+/// - `linear`:             fixed delay between retries.
+/// - `exponential`:        doubling delay between retries.
+/// - `retryTransportOnly`: retries only on connection failures, not HTTP errors.
 def main(): Unit \ IO =
     // Linear: retry up to 3 times with 500ms delay.
     run {

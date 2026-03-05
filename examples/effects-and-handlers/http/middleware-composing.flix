@@ -3,8 +3,11 @@ use Net.Retry
 use Net.Response
 
 /// Demonstrates composing multiple middleware via `with` clauses.
-/// Middleware is applied bottom-to-top: runWithIO executes the actual I/O,
+/// Middleware is applied bottom-to-top: `runWithIO` executes the actual I/O,
 /// then each layer wraps the one below it.
+///
+/// This example stacks: base URL, default headers, logging, retry,
+/// circuit breaker, and sliding-window rate limiting.
 def main(): Unit \ IO =
     let defaultHeaders = Map#{
         "Accept"        => List#{"application/json"},

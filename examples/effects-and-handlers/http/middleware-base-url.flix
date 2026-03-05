@@ -1,6 +1,9 @@
 use Net.Http
 use Net.Response
 
+/// Uses `withBaseUrl` to set a common prefix for request URLs.
+/// Relative paths (without "://") are prefixed with the base URL.
+/// Absolute URLs bypass the base and are sent as-is.
 def main(): Unit \ IO =
     run {
         // Relative paths are prefixed with the base URL.

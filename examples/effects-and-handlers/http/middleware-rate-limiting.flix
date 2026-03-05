@@ -1,6 +1,10 @@
 use Net.Http
 use Net.Response
 
+/// Uses `withSlidingWindow` to enforce a rate limit on HTTP requests.
+/// At most `maxRequests` are allowed within any rolling window of `windowMs`
+/// milliseconds. When the limit is reached, the handler sleeps until a slot
+/// opens up.
 def main(): Unit \ IO =
     // Sliding window: at most 2 requests per 1000ms window.
     run {
