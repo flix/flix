@@ -140,7 +140,7 @@ object TypeError {
         case end :: Nil => s"${magenta(end.name)}"
         case head :: tail => s"${magenta(head.name)}, " + printDefEffSyms(tail)
       }
-      val defString = s"{${magenta(printDefEffSyms(defEffSyms.reverse))}}"
+      val defString = s"{${magenta(printDefEffSyms(defEffSyms))}}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
          |
          |${highlight(loc, s"function declared as '$defString'", fmt)}
@@ -180,6 +180,30 @@ object TypeError {
          |it cannot be used in this function. To fix this, either change the signature to {${magenta(effSym.name)}}
          |or remove the use of '${magenta(effSym.name)}' inside the function.
          |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when an effect is used in a function that is explicitly declared Pure.
+    *
+    * @param effSym the symbol of the effect causing the error
+    * @param loc    the location of the function explicitly declared as {}.
+    * @param loc2   the location where the effect is used.
+    */
+  case class ArgumentGivenWrongEffect(expected: List[Symbol.EffSym], actual: Symbol.EffSym, loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6215
+
+    def summary: String = s"Unexpected effect '${actual.name}' in {} function"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""
+         |${highlight(loc2, s"'${magenta(actual.name)}' defined here", fmt)}
+         |
+         |${highlight(loc3, s"caller uses argument with ${(magenta(actual.name))}", fmt)}
+         |
+         |${highlight(loc, s"callee expects: {${(magenta(expected.foldLeft(""){case (acc, v) => v.name ++ ", " ++ acc}))}}", fmt)}
+      """.stripMargin
     }
   }
 
