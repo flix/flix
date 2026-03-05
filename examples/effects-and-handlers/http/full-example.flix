@@ -5,10 +5,10 @@ use Net.Response
 /// Demonstrates composing multiple HTTP middleware via `with` clauses.
 /// Stacks base URL, default headers, retry, circuit breaker,
 /// sliding-window rate limiting, and logging. Each `with` wraps the
-/// preceding block, so the last handler (`runWithIO`) is outermost
-/// and performs the actual I/O. Relative paths are resolved against
-/// the base URL; absolute URLs bypass it.
-def main(): Unit \ {Clock, IO} =
+/// preceding block. The `Http` and `Logger` effects propagate to `main`
+/// and are handled automatically via their default handlers.
+/// Relative paths are resolved against the base URL; absolute URLs bypass it.
+def main(): Unit \ { Clock, Http, Logger, IO } =
     let defaultHeaders = Map#{
         "Accept"        => List#{"application/json"},
         "Authorization" => List#{"Bearer tok123"}
@@ -31,5 +31,3 @@ def main(): Unit \ {Clock, IO} =
       with Http.withCircuitBreaker(3, 5000i64)
       with Http.withSlidingWindow(2, 1000i64)
       with Http.withLogging
-      with Http.runWithIO
-      with Logger.runWithIO

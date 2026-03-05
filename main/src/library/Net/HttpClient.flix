@@ -94,7 +94,10 @@ pub mod Net.HttpClient {
                    );
             let jrequest = match x#requestTimeout {
                 case NoTimeout   => builder.build()
-                case After(t, u) => builder.timeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u)))).build()
+                case After(t, u) =>
+                    // Widen to Int64 before multiplying to avoid Int32 overflow.
+                    let ms = Int32.toInt64(t) * Int32.toInt64(TimeUnit.toMilliseconds(u));
+                    builder.timeout(JDuration.ofMillis(ms)).build()
             };
             let client = {
                 let Request(x0) = req;
@@ -105,7 +108,9 @@ pub mod Net.HttpClient {
                     match x0#connectTimeout {
                         case NoTimeout   => HttpClient.newBuilder().followRedirects(redirectPolicy).build()
                         case After(t, u) =>
-                            HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(Int32.toInt64(t * TimeUnit.toMilliseconds(u)))).build()
+                            // Widen to Int64 before multiplying to avoid Int32 overflow.
+                            let ms = Int32.toInt64(t) * Int32.toInt64(TimeUnit.toMilliseconds(u));
+                            HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(ms)).build()
                     }
                 }
             };

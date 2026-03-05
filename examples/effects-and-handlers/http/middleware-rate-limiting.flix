@@ -5,7 +5,7 @@ use Net.Response
 /// - `withMinInterval`:   fixed minimum delay between consecutive requests.
 /// - `withTokenBucket`:   burst of requests up front, then a steady rate.
 /// - `withSlidingWindow`: at most N requests in any rolling window.
-def main(): Unit \ {Clock, IO} =
+def main(): Unit \ { Clock, Http, IO } =
     // Min interval: at least 100ms between consecutive requests.
     run {
         println("--- Min interval ---");
@@ -17,8 +17,7 @@ def main(): Unit \ {Clock, IO} =
             }
         }
     } with Http.withMinInterval(100i64)
-      with Http.withBaseUrl("https://flix.dev")
-      with Http.runWithIO;
+      with Http.withBaseUrl("https://flix.dev");
 
     // Token bucket: burst of 2, then 1 request per 100ms.
     run {
@@ -31,8 +30,7 @@ def main(): Unit \ {Clock, IO} =
             }
         }
     } with Http.withTokenBucket(2, 100i64)
-      with Http.withBaseUrl("https://flix.dev")
-      with Http.runWithIO;
+      with Http.withBaseUrl("https://flix.dev");
 
     // Sliding window: at most 2 requests per 1000ms window.
     run {
@@ -46,4 +44,3 @@ def main(): Unit \ {Clock, IO} =
         }
     } with Http.withSlidingWindow(2, 1000i64)
       with Http.withBaseUrl("https://flix.dev")
-      with Http.runWithIO

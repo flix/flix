@@ -6,7 +6,7 @@ use Net.Response
 /// - `linear`:             fixed delay between retries.
 /// - `exponential`:        doubling delay between retries.
 /// - `retryTransportOnly`: retries only on connection failures, not HTTP errors.
-def main(): Unit \ IO =
+def main(): Unit \ { Http, IO } =
     // Linear: retry up to 3 times with 100ms delay.
     run {
         println("--- Linear retry ---");
@@ -14,8 +14,7 @@ def main(): Unit \ IO =
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
-    } with Http.withRetry(Retry.linear(3, 100i64))
-      with Http.runWithIO;
+    } with Http.withRetry(Retry.linear(3, 100i64));
 
     // Exponential: retry up to 3 times with 100ms base delay.
     run {
@@ -24,8 +23,7 @@ def main(): Unit \ IO =
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
-    } with Http.withRetry(Retry.exponential(3, 100i64))
-      with Http.runWithIO;
+    } with Http.withRetry(Retry.exponential(3, 100i64));
 
     // Transport-only: only retry on connection failures, not HTTP errors.
     run {
@@ -35,4 +33,3 @@ def main(): Unit \ IO =
             case Err(err) => println("Error: ${err}")
         }
     } with Http.withRetry(Retry.retryTransportOnly(2, 100i64))
-      with Http.runWithIO

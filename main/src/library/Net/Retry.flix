@@ -43,7 +43,8 @@ pub mod Net.Retry {
     pub def exponential(maxRetries: Int32, baseDelayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
         (attempt, _, _) ->
             if (attempt < maxRetries)
-                RetryDecision.Retry(baseDelayMs * Int64.leftShift(1i64, attempt))
+                // Clamp to 62 to prevent shift overflow/wrap-around.
+                RetryDecision.Retry(baseDelayMs * Int64.leftShift(1i64, Int32.min(attempt, 62)))
             else RetryDecision.Stop
 
     ///
@@ -92,7 +93,8 @@ pub mod Net.Retry {
             match base {
                 case RetryDecision.Stop     => RetryDecision.Stop
                 case RetryDecision.Retry(d) =>
-                    let j = Int64.abs(Random.randomInt64()) `Int64.remainder` (maxJitterMs + 1i64);
+                    // Mask the sign bit instead of abs to avoid Int64.minValue() staying negative.
+                    let j = Int64.bitwiseAnd(Random.randomInt64(), Int64.maxValue()) `Int64.remainder` (maxJitterMs + 1i64);
                     RetryDecision.Retry(d + j)
             }
 

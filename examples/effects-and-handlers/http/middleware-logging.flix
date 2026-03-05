@@ -2,8 +2,7 @@ use Net.Http
 use Net.Response
 
 /// Uses `withLogging` to log each request and response via the `Logger` effect.
-/// Requires a `Logger` handler (here `Logger.runWithIO`) to print the log lines.
-def main(): Unit \ IO =
+def main(): Unit \ { Http, Logger, IO } =
     run {
         match Http.get("https://flix.dev/") {
             case Ok(resp) => println("Status: ${Response.status(resp)}")
@@ -14,5 +13,3 @@ def main(): Unit \ IO =
             case Err(err) => println("Error: ${err}")
         }
     } with Http.withLogging
-      with Http.runWithIO
-      with Logger.runWithIO

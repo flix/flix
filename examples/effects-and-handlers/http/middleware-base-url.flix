@@ -4,7 +4,7 @@ use Net.Response
 /// Uses `withBaseUrl` to set a common prefix for request URLs.
 /// Relative paths (without "://") are prefixed with the base URL.
 /// Absolute URLs bypass the base and are sent as-is.
-def main(): Unit \ IO =
+def main(): Unit \ { Http, IO } =
     run {
         // Relative paths are prefixed with the base URL.
         match Http.get("/api/users") {
@@ -21,4 +21,3 @@ def main(): Unit \ IO =
             case Err(err) => println("absolute   -> ${err}")
         }
     } with Http.withBaseUrl("https://flix.dev")
-      with Http.runWithIO

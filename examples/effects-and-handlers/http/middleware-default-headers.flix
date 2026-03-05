@@ -3,7 +3,7 @@ use Net.Response
 
 /// Uses `withDefaultHeaders` to inject headers into every request.
 /// Headers already present on a request are not overridden.
-def main(): Unit \ IO =
+def main(): Unit \ { Http, IO } =
     let defaults = Map#{
         "Accept"        => List#{"application/json"},
         "Authorization" => List#{"Bearer my-token"}
@@ -14,4 +14,3 @@ def main(): Unit \ IO =
             case Err(err) => println("Error: ${err}")
         }
     } with Http.withDefaultHeaders(defaults)
-      with Http.runWithIO

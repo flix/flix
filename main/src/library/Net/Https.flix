@@ -190,7 +190,10 @@ pub mod Net.Https {
                                     let wait = windowMs - (now - oldest);
                                     if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
                                     acquire()
-                                case None => ()
+                                case None =>
+                                    // maxRequests <= 0: sleep for the full window and retry.
+                                    unsafe IO { JThread.sleep(windowMs) };
+                                    acquire()
                             }
                         }
                     };
@@ -297,8 +300,8 @@ pub mod Net.Https {
 
     ///
     /// Middleware that intercepts the `Https` effect, prepending `base` to
-    /// request URLs that do not already contain a scheme. Absolute URLs
-    /// (containing "://") are left unchanged.
+    /// request URLs that do not already start with a scheme. Absolute URLs
+    /// (where "://" appears before the first "/") are left unchanged.
     ///
     pub def withBaseUrl(base: String, f: Unit -> a \ ef): a \ (ef - Https) + Https =
         let base1 = if (String.endsWith(suffix = "/", base))
@@ -307,7 +310,15 @@ pub mod Net.Https {
             def request(req, k) =
                 let Request(x) = req;
                 let url = x#url;
-                if (String.contains(substr = "://", url))
+                // Check that "://" appears before the first "/" to detect a scheme.
+                let hasScheme = match String.indexOf(substr = "://", url) {
+                    case Some(i) => match String.indexOf(substr = "/", url) {
+                        case Some(s) => i < s
+                        case None    => true
+                    }
+                    case None => false
+                };
+                if (hasScheme)
                     k(Https.request(req))
                 else
                     let path1 = if (String.startsWith(prefix = "/", url))
