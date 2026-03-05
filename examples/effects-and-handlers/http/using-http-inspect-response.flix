@@ -1,6 +1,12 @@
 use Net.Http
 use Net.Response
 
+/// Demonstrates inspecting an HTTP response with the `Response` API.
+///
+/// Sends a GET request and examines the response: status code,
+/// success/error classification, individual headers, content type,
+/// content length, and `Response.expect` which returns `Err` for
+/// non-2xx status codes.
 def main(): Unit \ IO =
     run {
         match Http.get("https://flix.dev/") {
