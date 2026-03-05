@@ -6,7 +6,7 @@ use Net.Timeout
 
 /// A comprehensive example exercising most of the HTTP client API surface:
 /// custom request building, response inspection, and the full middleware stack.
-def main(): Unit \ IO =
+def main(): Unit \ {Clock, IO} =
     let defaultHeaders = Map#{
         "Accept"     => List#{"application/json"},
         "User-Agent" => List#{"flix-http/1.0"}

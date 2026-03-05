@@ -8,7 +8,7 @@ use Net.Response
 ///
 /// This example stacks: base URL, default headers, logging, retry,
 /// circuit breaker, and sliding-window rate limiting.
-def main(): Unit \ IO =
+def main(): Unit \ {Clock, IO} =
     let defaultHeaders = Map#{
         "Accept"        => List#{"application/json"},
         "Authorization" => List#{"Bearer tok123"}

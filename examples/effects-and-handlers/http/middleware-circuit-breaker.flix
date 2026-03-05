@@ -5,7 +5,7 @@ use Net.Response
 /// After `failureThreshold` consecutive failures (transport errors or 5xx),
 /// the circuit opens and rejects requests for `cooldownMs` milliseconds.
 /// A successful request resets the failure counter.
-def main(): Unit \ IO =
+def main(): Unit \ {Clock, IO} =
     run {
         let urls = List#{"/a", "/b", "/c", "/d"};
         List.forEach(url -> {
