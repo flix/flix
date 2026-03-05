@@ -195,15 +195,15 @@ object Summary {
     case Expr.OpenAs(_, exp, _, _) => countCheckedEcasts(exp)
     case Expr.Use(_, _, exp, _) => countCheckedEcasts(exp)
     case Expr.Lambda(_, exp, _, _) => countCheckedEcasts(exp)
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplyOp(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.ApplyDef(_, exps, _, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyOp(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Unary(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Region(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
     case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
@@ -241,7 +241,7 @@ object Summary {
     case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.Unsafe(exp, _, _, _, _, _) => countCheckedEcasts(exp)
-    case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
+
     case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.CatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
@@ -253,6 +253,7 @@ object Summary {
     case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeSuperConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeStaticMethod(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.GetField(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutField(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
@@ -260,7 +261,7 @@ object Summary {
     case Expr.PutStaticField(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
       constructors.map { case TypedAst.JvmConstructor(exp, _, _, _) => countCheckedEcasts(exp) }.sum +
-      methods.map { case TypedAst.JvmMethod(_, _, exp, _, _, _) => countCheckedEcasts(exp) }.sum
+      methods.map { case TypedAst.JvmMethod(_, _, _, exp, _, _, _) => countCheckedEcasts(exp) }.sum
     case Expr.NewChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
@@ -537,13 +538,13 @@ object Summary {
   class Table {
 
     /** The rows collected so far */
-    private val rows: mutable.ListBuffer[List[String]] = mutable.ListBuffer.empty
+    private val rows: mutable.ArrayBuffer[List[String]] = mutable.ArrayBuffer.empty
 
     /**
       * Has the length of the longest list in rows. Each integer contains the
       * max length of any string in that column.
       */
-    private val maxLens: mutable.ListBuffer[Int] = mutable.ListBuffer.empty
+    private val maxLens: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty
 
     /** Adds a row to the builder. The rows can have different lengths */
     def addRow(row: List[String]): Unit = insertRow(rows.length, row)

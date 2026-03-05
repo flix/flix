@@ -408,7 +408,7 @@ class TestCompletionProvider extends AnyFunSuite {
   private def cutHoles(prg: String, loc: SourceLocation): List[ProgramWithHole] = {
     assert(loc.isSingleLine)
 
-    val result = mutable.ListBuffer.empty[ProgramWithHole]
+    val result = mutable.ArrayBuffer.empty[ProgramWithHole]
     val bOffset = indexOf(Position.fromBegin(loc), prg)
     val eOffset = indexOf(Position.fromEnd(loc), prg)
     val length = loc.end.colOneIndexed - loc.start.colOneIndexed
@@ -633,7 +633,7 @@ class TestCompletionProvider extends AnyFunSuite {
 
     object DefSymUseConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _, _) if symUse.loc.isReal =>
+        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _, _, _) if symUse.loc.isReal =>
           occurs += symUse
         case _ =>
       }

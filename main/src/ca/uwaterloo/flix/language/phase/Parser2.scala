@@ -1531,8 +1531,7 @@ object Parser2 {
                 // Hence we special case on whether the left token is ::. If it is,
                 // we avoid consuming any fuel.
                 // The next nth lookup will always fail, so we add fuel to account for it.
-                // The lookup for KeywordWithout will always happen so we add fuel to account for it.
-                if (left == BinaryOp.ColonColon) s.fuel += 2
+                if (left == BinaryOp.ColonColon) s.fuel += 1
                 continue = false
               case _ =>
                 val mark = openBefore(lhs)
@@ -1544,36 +1543,11 @@ object Parser2 {
           case None =>
             // Non-operator or EOF.
             // Add fuel for the same reason as above.
-            if (leftOpt.contains(BinaryOp.ColonColon)) s.fuel += 2
+            if (leftOpt.contains(BinaryOp.ColonColon)) s.fuel += 1
             continue = false
         }
       }
-      // Handle without expressions.
-      if (eat(TokenKind.KeywordWithout)) {
-        val mark = open()
-        if (at(TokenKind.CurlyL)) {
-          zeroOrMore(
-            namedTokenSet = NamedTokenSet.Effect,
-            getItem = () => nameAllowQualified(NAME_EFFECT),
-            checkForItem = NAME_EFFECT.contains,
-            breakWhen = _.isRecoverInExpr,
-            delimiterL = TokenKind.CurlyL,
-            delimiterR = TokenKind.CurlyR
-          )
-        } else if (NAME_EFFECT.contains(nth(0))) {
-          nameAllowQualified(NAME_EFFECT)
-        } else {
-          closeWithError(open(), UnexpectedToken(
-            expected = NamedTokenSet.Effect,
-            actual = Some(nth(0)),
-            sctx = sctx,
-            hint = Some(s"supply at least one effect to ${TokenKind.KeywordWithout.display}."),
-            loc = previousSourceLocation()))
-        }
-        close(mark, TreeKind.Type.EffectSet)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Without)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
+
       lhs
     }
 
@@ -2820,8 +2794,17 @@ object Parser2 {
       assert(at(TokenKind.KeywordSuper))
       val mark = open()
       expect(TokenKind.KeywordSuper)
-      arguments()
-      close(mark, TreeKind.Expr.InvokeSuperConstructor)
+      if (at(TokenKind.Dot)) {
+        // super.method(args)
+        eat(TokenKind.Dot)
+        nameUnqualified(NAME_JAVA)
+        arguments()
+        close(mark, TreeKind.Expr.InvokeSuperMethod)
+      } else {
+        // super(args)
+        arguments()
+        close(mark, TreeKind.Expr.InvokeSuperConstructor)
+      }
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
@@ -2854,11 +2837,18 @@ object Parser2 {
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
         zeroOrMore(
-          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-          checkForItem = _ => nth(nextNonComment(0))  == TokenKind.KeywordDef,
+          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef, TokenKind.Annotation)),
+          checkForItem = _ => {
+            val first = nth(nextNonComment(0))
+            first == TokenKind.KeywordDef || first == TokenKind.Annotation
+          },
           getItem = () => {
+            // Skip past any annotations to find the `def` keyword.
+            var defOffset = nextNonComment(0)
+            while (nth(defOffset) == TokenKind.Annotation) {
+              defOffset = nextNonComment(defOffset + 1)
+            }
             // If `def` is followed by `new`, parse as JvmConstructor; otherwise JvmMethod.
-            val defOffset = nextNonComment(0)
             val afterDefOffset = nextNonComment(defOffset + 1)
             if (nth(afterDefOffset) == TokenKind.KeywordNew) jvmConstructor()
             else jvmMethod()
@@ -2889,6 +2879,7 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       // Have to eat potential comments before the `assert`.
       val mark = open()
+      Decl.annotations()
       assert(at(TokenKind.KeywordDef))
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_JAVA)
@@ -3364,6 +3355,11 @@ object Parser2 {
     def typeAndEffect()(implicit s: State): Mark.Closed = {
       val lhs = ttype()
       if (eat(TokenKind.Backslash)) {
+        val mark = open()
+        ttype()
+        close(mark, TreeKind.Type.Effect)
+      } else if (eat(TokenKind.Slash)) {
+        closeWithError(open(), ParseError.ExpectedBackslashGotSlash(SyntacticContext.Unknown, previousSourceLocation()))
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)

@@ -34,15 +34,15 @@ object TypedAstPrinter {
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
-    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
-    case Expr.ApplyOp(op, exps, _, _, _) => DocAst.Expr.ApplyOp(op.sym, exps.map(print))
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
+    case Expr.ApplyOp(op, exps, _, _, _, _) => DocAst.Expr.ApplyOp(op.sym, exps.map(print))
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
+    case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Region(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Region(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
@@ -73,7 +73,7 @@ object TypedAstPrinter {
     case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.UncheckedCast(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Unsafe(exp, runEff, asEff, _, _, _) => DocAst.Expr.Unsafe(print(exp), TypePrinter.print(runEff), asEff.map(TypePrinter.print))
-    case Expr.Without(_, _, _, _, _) => DocAst.Expr.Unknown
+
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _, _, _, _, _) => DocAst.Expr.Handler(symUse.sym, rules.map(printHandlerRule))
@@ -81,6 +81,7 @@ object TypedAstPrinter {
     case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
     case Expr.InvokeSuperConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
     case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))
+    case Expr.InvokeSuperMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
     case Expr.InvokeStaticMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
     case Expr.GetField(field, exp, _, _, _) => DocAst.Expr.JavaGetField(field, print(exp))
     case Expr.PutField(field, exp1, exp2, _, _, _) => DocAst.Expr.JavaPutField(field, print(exp1), print(exp2))
@@ -117,8 +118,8 @@ object TypedAstPrinter {
     * Returns the [[DocAst.JvmMethod]] representation of `method`.
     */
   private def printJvmMethod(method: TypedAst.JvmMethod): DocAst.JvmMethod = method match {
-    case TypedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
-      DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+    case TypedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
+      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
   /**
@@ -205,7 +206,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
   private def printFormalParam(fp: TypedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val TypedAst.FormalParam(bnd, tpe, _, _) = fp
+    val TypedAst.FormalParam(bnd, tpe, _, _, _) = fp
     DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(bnd.sym), TypePrinter.print(tpe))
   }
 

@@ -41,6 +41,10 @@ instance Formattable[RichString] {
     pub def format(x: RichString): RichString = x
 }
 
+instance Eq[RichString] {
+    pub def eq(x: RichString, y: RichString): Bool = RichString.equals(x, y)
+}
+
 pub mod RichString {
 
     ///
@@ -106,6 +110,25 @@ pub mod RichString {
     pub def map(f: Span -> Span, rs: RichString): RichString = match rs {
         case RichString(spans) => RichString(Chain.map(f, spans))
     }
+    
+    ///
+    /// Returns a `Bool` according to the equality of `rs1` and `rs2`.
+    ///
+    /// Checks whether text and styling is equivalent for each individual character.
+    ///
+    pub def equals(rs1: RichString, rs2: RichString): Bool = 
+        let (RichString(chain1), RichString(chain2)) = (rs1, rs2);
+        let splitSpans = (match Span.Span({text = t, fgColor = fg, bgColor = bg, styles}) -> { 
+            String.toList(t) |> List.toChain |> Chain.map(c -> (Span.Span({text = Char.toString(c), fgColor = fg, bgColor = bg, styles = styles})))
+        });
+        let l1 = Chain.flatMap(splitSpans, chain1);
+        let l2 = Chain.flatMap(splitSpans, chain2);
+        Chain.zip(l1, l2) |> Chain.forAll((match (e1, e2) -> spanEquals(e1, e2)))
+
+    def spanEquals(s1: Span, s2: Span): Bool =
+        let Span.Span({text = t1, fgColor = fg1, bgColor = bg1, styles = style1}) = s1;
+        let Span.Span({text = t2, fgColor = fg2, bgColor = bg2, styles = style2}) = s2;
+        t1 == t2 and fg1 == fg2 and bg1 == bg2 and style1 == style2
 
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given foreground color `c`.

@@ -343,23 +343,23 @@ object Visitor {
         visitFormalParam(fparam)
         visitExpr(exp)
 
-      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.ApplyDef(symUse, exps, _, _, _, _, _) =>
+      case Expr.ApplyDef(symUse, exps, _, _, _, _, _, _) =>
         visitDefSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyLocalDef(symUse, exps, _, _, _, _) =>
+      case Expr.ApplyLocalDef(symUse, exps, _, _, _, _, _) =>
         visitLocalDefSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyOp(op, exps, _, _, _) =>
+      case Expr.ApplyOp(op, exps, _, _, _, _) =>
         visitOpSymUse(op)
         exps.foreach(visitExpr)
 
-      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _) =>
+      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _, _) =>
         visitSigSymUse(symUse)
         exps.foreach(visitExpr)
 
@@ -375,7 +375,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.LocalDef(bnd, fparams, exp1, exp2, _, _, _) =>
+      case Expr.LocalDef(_, bnd, fparams, exp1, exp2, _, _, _) =>
         visitBinder(bnd)
         fparams.foreach(visitFormalParam)
         visitExpr(exp1)
@@ -496,9 +496,6 @@ object Visitor {
         asEff.foreach(visitType)
         visitExpr(exp)
 
-      case Expr.Without(exp, symUse, _, _, _) =>
-        visitExpr(exp)
-        visitEffSymUse(symUse)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -523,6 +520,9 @@ object Visitor {
 
       case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
         visitExpr(exp)
+        exps.foreach(visitExpr)
+
+      case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
       case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
@@ -658,7 +658,7 @@ object Visitor {
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit a: Acceptor, c: Consumer): Unit = {
-    val JvmMethod(_, fparams, exp, retTpe, _, loc) = method
+    val JvmMethod(_, _, fparams, exp, retTpe, _, loc) = method
     if (!a.accept(loc)) {
       return
     }
@@ -693,7 +693,7 @@ object Visitor {
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(bnd, tpe, _, loc) = fparam
+    val FormalParam(bnd, tpe, _, _, loc) = fparam
     if (!a.accept(loc)) {
       return
     }

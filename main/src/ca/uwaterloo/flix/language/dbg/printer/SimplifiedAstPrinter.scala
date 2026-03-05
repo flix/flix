@@ -76,8 +76,8 @@ object SimplifiedAstPrinter {
           DocAst.JvmConstructor(print(exp), SimpleTypePrinter.print(retTpe))
       }
       val ms = methods.map {
-        case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
-          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), SimpleTypePrinter.print(retTpe))
+        case SimplifiedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
+          DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), SimpleTypePrinter.print(retTpe))
       }
       DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), cs, ms)
   }

@@ -613,7 +613,7 @@ object Resolver {
         val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
         // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ListBuffer.empty[ResolutionError]
+        val errors = mutable.ArrayBuffer.empty[ResolutionError]
 
         // Build the map `m` and check for [[DuplicateAssocTypeDef]].
         for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, symUse, _, _, loc1) <- xs) {
@@ -874,7 +874,7 @@ object Resolver {
 
     case NamedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = resolveFormalParam(fparam, Wildness.AllowWild, scp0, taenv, ns0, root)
-      val scp = scp0 ++ mkFormalParamScp(List(p))
+      val scp = (scp0 ++ mkFormalParamScp(List(p))).withSuperClass(None) // super calls not allowed inside lambdas
       val e = resolveExp(exp, scp)
       ResolvedAst.Expr.Lambda(p, e, allowSubeffecting = true, loc)
 
@@ -908,13 +908,13 @@ object Resolver {
       val e2 = resolveExp(exp2, scp)
       ResolvedAst.Expr.Let(sym, e1, e2, loc)
 
-    case NamedAst.Expr.LocalDef(sym, fparams0, exp1, exp2, loc) =>
+    case NamedAst.Expr.LocalDef(ann, sym, fparams0, exp1, exp2, loc) =>
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
-      val scp1 = scp0 ++ mkLocalDefScp(sym, fparams) ++ mkFormalParamScp(fparams)
+      val scp1 = scp0 ++ mkLocalDefScp(ann, sym, fparams) ++ mkFormalParamScp(fparams)
       val e1 = resolveExp(exp1, scp1)
-      val scp2 = scp0 ++ mkLocalDefScp(sym, fparams)
+      val scp2 = scp0 ++ mkLocalDefScp(ann, sym, fparams)
       val e2 = resolveExp(exp2, scp2)
-      ResolvedAst.Expr.LocalDef(sym, fparams, e1, e2, loc)
+      ResolvedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, loc)
 
     case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
@@ -1151,17 +1151,6 @@ object Resolver {
       val e = resolveExp(exp, scp0)
       ResolvedAst.Expr.Throw(e, loc)
 
-    case NamedAst.Expr.Without(exp, qname, loc) =>
-      lookupEffect(qname, scp0, ns0, root) match {
-        case Result.Ok(decl) =>
-          checkEffectIsAccessible(decl, ns0, qname.loc)
-          val symUse = EffSymUse(decl.sym, qname)
-          val e = resolveExp(exp, scp0)
-          ResolvedAst.Expr.Without(e, symUse, loc)
-        case Result.Err(error) =>
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
-      }
 
     case NamedAst.Expr.Handler(qname, rules, loc) =>
       visitHandler(qname, rules, scp0) match {
@@ -1189,14 +1178,31 @@ object Resolver {
       }
 
     case NamedAst.Expr.InvokeSuperConstructor(exps, loc) =>
-      // The class is not known here; it will be injected by the enclosing NewObject case.
       val es = exps.map(resolveExp(_, scp0))
-      ResolvedAst.Expr.InvokeSuperConstructor(classOf[Object], es, loc)
+      scp0.superClass match {
+        case Some(clazz) =>
+          ResolvedAst.Expr.InvokeSuperConstructor(clazz, es, loc)
+        case None =>
+          val error = ResolutionError.IllegalSuperCall(loc)
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
+      }
 
     case NamedAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = resolveExp(exp, scp0)
       val es = exps.map(resolveExp(_, scp0))
       ResolvedAst.Expr.InvokeMethod(e, name, es, loc)
+
+    case NamedAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      val es = exps.map(resolveExp(_, scp0))
+      scp0.superClass match {
+        case Some(clazz) =>
+          ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, es, loc)
+        case None =>
+          val error = ResolutionError.IllegalSuperCall(loc)
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
+      }
 
     case NamedAst.Expr.GetField(exp, name, loc) =>
       val e = resolveExp(exp, scp0)
@@ -1206,15 +1212,16 @@ object Resolver {
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
       //
       // Check that the type is a JVM type (after type alias erasure).
-      // Extract the class first so we can inject it into super calls in constructor bodies.
+      // Set the super class on the scope for constructor/method bodies.
       //
       UnkindedType.eraseAliases(t) match {
         case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
-          val cs = constructors.map(visitJvmConstructor(_, scp0, Some(clazz)))
-          val ms = methods.map(visitJvmMethod(_, scp0))
+          val superScp = scp0.withSuperClass(Some(clazz))
+          val cs = constructors.map(visitJvmConstructor(_, superScp))
+          val ms = methods.map(visitJvmMethod(_, superScp))
           ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
         case _ =>
-          val cs = constructors.map(visitJvmConstructor(_, scp0, None))
+          val cs = constructors.map(visitJvmConstructor(_, scp0))
           val ms = methods.map(visitJvmMethod(_, scp0))
           val error = ResolutionError.IllegalNonJavaType(t, t.loc)
           sctx.errors.add(error)
@@ -1605,36 +1612,43 @@ object Resolver {
     * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
     */
   private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmMethod = method match {
-    case NamedAst.JvmMethod(ident, fparams0, exp, tpe, eff, loc) =>
+    case NamedAst.JvmMethod(ann0, ident, fparams0, exp, tpe, eff, loc) =>
+      val ann = ann0.flatMap(resolveJvmAnnotation(_, scp0))
       val fparams = fparams0.map(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       val scp = scp0 ++ mkFormalParamScp(fparams)
       val e = resolveExp(exp, scp)
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp, taenv, ns0, root))
-      ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
+      ResolvedAst.JvmMethod(ann, ident, fparams, e, t, p, loc)
+  }
+
+  /**
+    * Resolves an unresolved JVM annotation to a resolved JVM annotation.
+    */
+  private def resolveJvmAnnotation(ann: NamedAst.JvmAnnotation, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, sctx: SharedContext, flix: Flix): Option[JvmAnnotation] = {
+    lookupJvmClass2(ann.name, ns0, scp0) match {
+      case Result.Ok(clazz) =>
+        if (clazz.isAnnotation) {
+          Some(JvmAnnotation(clazz, ann.loc))
+        } else {
+          sctx.errors.add(ResolutionError.IllegalNonJavaAnnotation(ann.name.name, ann.loc))
+          None
+        }
+      case Result.Err(_) =>
+        sctx.errors.add(ResolutionError.UndefinedJvmAnnotation(ann.name.name, ann.loc))
+        None
+    }
   }
 
   /**
     * Performs name resolution on the given JvmConstructor `constructor` in the namespace `ns0`.
-    * `superClass` is the Java class being extended in the enclosing `new` expression, used to resolve `super(...)` calls.
     */
-  private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope, superClass: Option[Class[?]])(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
+  private def visitJvmConstructor(constructor: NamedAst.JvmConstructor, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.JvmConstructor = constructor match {
     case NamedAst.JvmConstructor(exp, tpe, eff, loc) =>
-      val e0 = resolveExp(exp, scp0)
-      val e = superClass.map(clazz => injectSuperClass(e0, clazz)).getOrElse(e0)
+      val e = resolveExp(exp, scp0)
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
       val p = eff.map(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root))
       ResolvedAst.JvmConstructor(e, t, p, loc)
-  }
-
-  /**
-    * Injects the given `clazz` into the `InvokeSuperConstructor` expression.
-    * The Safety phase will ensure that constructor bodies cannot contain any other expression.
-    */
-  private def injectSuperClass(exp: ResolvedAst.Expr, clazz: Class[?]): ResolvedAst.Expr = exp match {
-    case ResolvedAst.Expr.InvokeSuperConstructor(_, exps, loc) =>
-      ResolvedAst.Expr.InvokeSuperConstructor(clazz, exps, loc)
-    case other => other
   }
 
   /**
@@ -2106,7 +2120,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Op) => decl
       case decl@Resolution.Var(_) => decl
-      case decl@Resolution.LocalDef(_, _) => decl
+      case decl@Resolution.LocalDef(_, _, _) => decl
     } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
         if (isDefAccessible(defn, ns0)) {
@@ -2133,7 +2147,7 @@ object Resolver {
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
         ResolvedQName.RestrictableTag(caze)
       // TODO NS-REFACTOR check accessibility
-      case Resolution.LocalDef(sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
+      case Resolution.LocalDef(_, sym, fparams) :: _ => ResolvedQName.LocalDef(sym, fparams)
       case Resolution.Var(sym) :: _ => ResolvedQName.Var(sym)
       case _ =>
         val error = ResolutionError.UndefinedName(qname, AnchorPosition.mkImportOrUseAnchor(ns0), scp0, qname.loc)
@@ -3318,8 +3332,8 @@ object Resolver {
   /**
     * Creates an LocalScope from the given local def symbol and formal parameters.
     */
-  private def mkLocalDefScp(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): LocalScope = {
-    LocalScope.singleton(sym.text, Resolution.LocalDef(sym, fparams))
+  private def mkLocalDefScp(ann: Annotations, sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): LocalScope = {
+    LocalScope.singleton(sym.text, Resolution.LocalDef(ann, sym, fparams))
   }
 
   /**

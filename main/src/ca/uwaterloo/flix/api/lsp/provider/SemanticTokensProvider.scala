@@ -411,26 +411,26 @@ object SemanticTokensProvider {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
-    case Expr.ApplyLocalDef(LocalDefSymUse(_, loc), exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(LocalDefSymUse(_, loc), exps, _, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
-    case Expr.ApplyOp(op, exps, _, _, _) =>
+    case Expr.ApplyOp(op, exps, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 
-    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
@@ -448,7 +448,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -577,9 +577,6 @@ object SemanticTokensProvider {
     case Expr.Unsafe(exp, runEff, asEff, _, _, _) =>
       visitType(runEff) ++ asEff.map(visitType).getOrElse(Iterator()) ++ visitExp(exp)
 
-    case Expr.Without(exp, symUse, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Effect, Nil, symUse.qname.loc)
-      Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp1)) {
@@ -619,6 +616,11 @@ object SemanticTokensProvider {
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, e) => acc ++ visitExp(e)
+      }
+
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
       }
 
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
@@ -951,7 +953,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
-    case FormalParam(bnd, tpe, _, _) =>
+    case FormalParam(bnd, tpe, _, _, _) =>
       val bndToken = if (!bnd.sym.loc.isSynthetic) {
         val o = getSemanticTokenType(bnd.sym, tpe)
         val t = SemanticToken(o, Nil, bnd.sym.loc)
@@ -1015,7 +1017,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given JvmMethod `method`
     */
   private def visitJvmMethod(method: TypedAst.JvmMethod): Iterator[SemanticToken] = method match {
-    case TypedAst.JvmMethod(_, fparams, exp, tpe, eff, _) =>
+    case TypedAst.JvmMethod(_, _, fparams, exp, tpe, eff, _) =>
       fparams.iterator.flatMap(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
   }
 

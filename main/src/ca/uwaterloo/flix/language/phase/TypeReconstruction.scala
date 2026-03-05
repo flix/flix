@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
+import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
 
@@ -72,7 +73,7 @@ object TypeReconstruction {
     case KindedAst.FormalParam(sym, tpe0, src, loc) =>
       val tpe = subst(tpe0)
       val bnd = TypedAst.Binder(sym, tpe)
-      TypedAst.FormalParam(bnd, tpe, src, loc)
+      TypedAst.FormalParam(bnd, tpe, src, Decreasing.NonDecreasing, loc)
   }
 
   /**
@@ -114,31 +115,31 @@ object TypeReconstruction {
     case KindedAst.Expr.ApplyClo(exp1, exp2, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), subst(evar), ApplyPosition.NonTail, loc)
 
     case KindedAst.Expr.ApplyDef(symUse, exps, targs, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       val tas = targs.map(subst.apply)
-      TypedAst.Expr.ApplyDef(symUse, es, tas, subst(itvar), subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplyDef(symUse, es, tas, subst(itvar), subst(tvar), subst(evar), ApplyPosition.NonTail, loc)
 
     case KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       val at = subst(arrowTvar)
       val t = subst(tvar)
       val ef = subst(evar)
-      TypedAst.Expr.ApplyLocalDef(symUse, es, at, t, ef, loc)
+      TypedAst.Expr.ApplyLocalDef(symUse, es, at, t, ef, ApplyPosition.NonTail, loc)
 
     case KindedAst.Expr.ApplyOp(symUse, exps, tvar, evar, loc) =>
       val es = exps.map(visitExp(_))
       val tpe = subst(tvar)
       val eff = subst(evar)
-      TypedAst.Expr.ApplyOp(symUse, es, tpe, eff, loc)
+      TypedAst.Expr.ApplyOp(symUse, es, tpe, eff, ApplyPosition.NonTail, loc)
 
     case KindedAst.Expr.ApplySig(symUse, exps, targ, targs, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       val ta = subst(targ)
       val tas = targs.map(subst.apply)
-      TypedAst.Expr.ApplySig(symUse, es, ta, tas, subst(itvar), subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplySig(symUse, es, ta, tas, subst(itvar), subst(tvar), subst(evar), ApplyPosition.NonTail, loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>
       val p = visitFormalParam(fparam, subst)
@@ -184,7 +185,7 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
+    case KindedAst.Expr.LocalDef(ann, sym, fparams, exp1, exp2, loc) =>
       val fps = fparams.map(visitFormalParam(_, subst))
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -192,7 +193,7 @@ object TypeReconstruction {
       val eff = e2.eff
       val boundType = Type.mkUncurriedArrowWithEffect(fps.map(_.tpe), e1.tpe, e1.eff, SourceLocation.Unknown)
       val bnd = TypedAst.Binder(sym, boundType)
-      TypedAst.Expr.LocalDef(bnd, fps, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.LocalDef(ann, bnd, fps, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
       // Use the appropriate branch for the scope.
@@ -386,11 +387,6 @@ object TypeReconstruction {
       val eff = Type.mkUnion(Type.mkDifference(e.eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
       TypedAst.Expr.Unsafe(e, eff0, asEff0, e.tpe, eff, loc)
 
-    case KindedAst.Expr.Without(exp, symUse, loc) =>
-      val e = visitExp(exp)
-      val tpe = e.tpe
-      val eff = e.eff
-      TypedAst.Expr.Without(e, symUse, tpe, eff, loc)
 
     case KindedAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -466,6 +462,19 @@ object TypeReconstruction {
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, methLoc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
+      }
+
+    case KindedAst.Expr.InvokeSuperMethod(clazz, _, exps, jvar, tvar, evar, loc) =>
+      val es0 = exps.map(visitExp)
+      val returnTpe = subst(tvar)
+      val methodTpe = subst(jvar)
+      val eff = subst(evar)
+      methodTpe match {
+        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+          val es = getArgumentsWithVarArgs(method, es0, methLoc)
+          TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, methLoc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), returnTpe, eff)
       }
 
     case KindedAst.Expr.InvokeStaticMethod(_, _, exps, jvar, tvar, evar, loc) =>
@@ -685,10 +694,10 @@ object TypeReconstruction {
     */
   private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: SubstitutionTree): TypedAst.JvmMethod = {
     method match {
-      case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
+      case KindedAst.JvmMethod(ann, ident, fparams0, exp0, tpe, eff, loc) =>
         val fparams = fparams0.map(visitFormalParam(_, subst))
         val exp = visitExp(exp0)
-        TypedAst.JvmMethod(ident, fparams, exp, tpe, eff, loc)
+        TypedAst.JvmMethod(ann, ident, fparams, exp, tpe, eff, loc)
     }
   }
 

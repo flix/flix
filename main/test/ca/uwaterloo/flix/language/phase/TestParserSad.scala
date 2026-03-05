@@ -459,6 +459,15 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError.ExpectedArrowThickRGotArrowThinR](result)
   }
 
+  test("ExpectedBackslashGotSlash.01") {
+    val input =
+      """
+        |def f(): Int32 / {} = 42
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedBackslashGotSlash](result)
+  }
+
   test("ExpectedSemicolon.01") {
     val input =
       """

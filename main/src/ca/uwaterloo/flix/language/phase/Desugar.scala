@@ -548,7 +548,7 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Discard(e, loc)
 
-    case WeededAst.Expr.LocalDef(ident, fparams, dtpe, deff, exp1, exp2, loc) =>
+    case WeededAst.Expr.LocalDef(ann, ident, fparams, dtpe, deff, exp1, exp2, loc) =>
       val fps = visitFormalParams(fparams)
       val t = dtpe.map(visitType)
       val ef = deff.map(visitType)
@@ -556,7 +556,7 @@ object Desugar {
       // Ascribe has an invariant that at least t or ef must be defined
       val e1 = if (t.isDefined || ef.isDefined) Expr.Ascribe(e10, t, ef, e10.loc) else e10
       val e2 = visitExp(exp2)
-      Expr.LocalDef(ident, fps, e1, e2, loc)
+      Expr.LocalDef(ann, ident, fps, e1, e2, loc)
 
     case WeededAst.Expr.Region(ident, exp, loc) =>
       val e = visitExp(exp)
@@ -697,9 +697,6 @@ object Desugar {
       val asEff = asEff0.map(visitType)
       Expr.Unsafe(e, eff, asEff, loc)
 
-    case WeededAst.Expr.Without(exp, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.Without(e, eff, loc)
 
     case WeededAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -732,6 +729,10 @@ object Desugar {
       val e = visitExp(exp)
       val es = visitExps(exps)
       Expr.InvokeMethod(e, name, es, loc)
+
+    case WeededAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeSuperMethod(methodName, es, loc)
 
     case WeededAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
@@ -957,13 +958,20 @@ object Desugar {
     * Desugars the given [[WeededAst.JvmMethod]] `method0`.
     */
   private def visitJvmMethod(method0: WeededAst.JvmMethod)(implicit flix: Flix): DesugaredAst.JvmMethod = method0 match {
-    case WeededAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
+    case WeededAst.JvmMethod(ann, ident, fparams, exp, tpe, eff, loc) =>
+      val a = ann.map(visitJvmAnnotation)
       val fps = visitFormalParams(fparams)
       val e = visitExp(exp)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      DesugaredAst.JvmMethod(ident, fps, e, t, ef, loc)
+      DesugaredAst.JvmMethod(a, ident, fps, e, t, ef, loc)
   }
+
+  /**
+    * Desugars the given [[WeededAst.JvmAnnotation]] `ann0`.
+    */
+  private def visitJvmAnnotation(ann0: WeededAst.JvmAnnotation): DesugaredAst.JvmAnnotation =
+    DesugaredAst.JvmAnnotation(ann0.name, ann0.loc)
 
   /**
     * Desugars the given [[WeededAst.JvmConstructor]] `constructor0`.

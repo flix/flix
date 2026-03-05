@@ -778,12 +778,12 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.Let(sym, e1, e2, loc)
 
-    case DesugaredAst.Expr.LocalDef(ident, fparams, exp1, exp2, loc) =>
+    case DesugaredAst.Expr.LocalDef(ann, ident, fparams, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.LocalDef)
       val fps = fparams.map(visitFormalParam(_))
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
+      NamedAst.Expr.LocalDef(ann, sym, fps, e1, e2, loc)
 
     case DesugaredAst.Expr.Region(ident, exp, loc) =>
       // Introduce a rigid region variable for the region.
@@ -915,9 +915,6 @@ object Namer {
       val asEff = asEff0.map(visitType)
       NamedAst.Expr.Unsafe(e, eff, asEff, loc)
 
-    case DesugaredAst.Expr.Without(exp, qname, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.Without(e, qname, loc)
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -949,6 +946,10 @@ object Namer {
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeMethod(e, name, es, loc)
+
+    case DesugaredAst.Expr.InvokeSuperMethod(methodName, exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.InvokeSuperMethod(methodName, es, loc)
 
     case DesugaredAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
@@ -1512,13 +1513,20 @@ object Namer {
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
   private def visitJvmMethod(method: DesugaredAst.JvmMethod)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmMethod = method match {
-    case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
+    case DesugaredAst.JvmMethod(ann, ident, fparams, exp0, tpe, eff, loc) =>
+      val a = ann.map(visitJvmAnnotation)
       val fps = fparams.map(visitFormalParam)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val e = visitExp(exp0)
-      NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
+      NamedAst.JvmMethod(a, ident, fps, e, t, ef, loc)
   }
+
+  /**
+    * Translates the given desugared JvmAnnotation to a named JvmAnnotation.
+    */
+  private def visitJvmAnnotation(ann0: DesugaredAst.JvmAnnotation): NamedAst.JvmAnnotation =
+    NamedAst.JvmAnnotation(ann0.name, ann0.loc)
 
   /**
     * Translates the given weeded JvmConstructor to a named JvmConstructor.

@@ -39,7 +39,7 @@ object DocAst {
 
   case class JvmConstructor(clo: Expr, tpe: Type)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[Expr.AscriptionTpe], clo: Expr, tpe: Type)
+  case class JvmMethod(ann: List[String], ident: Name.Ident, fparams: List[Expr.AscriptionTpe], clo: Expr, tpe: Type)
 
 
   sealed trait Expr
@@ -283,8 +283,6 @@ object DocAst {
     def Box(d: Expr): Expr =
       Keyword("box", d)
 
-    def Without(d: Expr, sym: Symbol.EffSym): Expr =
-      Binary(d, "without", AsIs(sym.toString))
 
     def Cst(cst: Constant): Expr =
       printer.ConstantPrinter.print(cst)

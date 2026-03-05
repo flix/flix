@@ -706,7 +706,8 @@ object Weeder2 {
         case "@LazyWhenPure" => LazyWhenPure(loc)
         case "@Skip" => Skip(loc)
         case "@Test" => Test(loc)
-        case "@TailRec" => TailRecursive(loc)
+        case "@Tailrec" => TailRecursive(loc)
+        case "@Terminates" => Terminates(loc)
         case other =>
           val name = other.stripPrefix("@")
           val error = UndefinedAnnotation(name, loc)
@@ -907,7 +908,7 @@ object Weeder2 {
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
-        case TreeKind.Expr.Without => visitWithoutExpr(tree)
+
         case TreeKind.Expr.Run => visitRunExpr(tree)
         case TreeKind.Expr.Handler => visitHandlerExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
@@ -917,6 +918,7 @@ object Weeder2 {
         case TreeKind.Expr.InvokeConstructor => visitInvokeConstructorExpr(tree)
         case TreeKind.Expr.InvokeSuperConstructor => visitInvokeSuperConstructorExpr(tree)
         case TreeKind.Expr.InvokeMethod => visitInvokeMethodExpr(tree)
+        case TreeKind.Expr.InvokeSuperMethod => visitInvokeSuperMethodExpr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
@@ -1377,12 +1379,15 @@ object Weeder2 {
 
     private def visitLocalDefExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LocalDef)
-      Decls.pickAnnotations(tree) match {
+      val ann = Decls.pickAnnotations(tree) match {
         case Annotations(as) =>
-          // Check for annotations
-          for (a <- as) {
-            sctx.errors.add(IllegalAnnotation(a.toString, a.loc))
+          // Only @Terminates and @Tailrec are allowed on local defs
+          for (a <- as) a match {
+            case _: Annotation.TailRecursive => () // allowed
+            case _: Annotation.Terminates    => () // allowed
+            case _                           => sctx.errors.add(IllegalAnnotation(a.toString, a.loc))
           }
+          Annotations(as.filter(a => a.isInstanceOf[Annotation.TailRecursive] || a.isInstanceOf[Annotation.Terminates]))
       }
 
       val exprs = mapN(pickExpr(tree)) {
@@ -1401,7 +1406,7 @@ object Weeder2 {
         Types.tryPickEffect(tree),
       ) {
         case ((exp1, exp2), fparams, ident, declaredTpe, declaredEff) =>
-          Expr.LocalDef(ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
+          Expr.LocalDef(ann, ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
       }
     }
 
@@ -1825,28 +1830,6 @@ object Weeder2 {
       }
     }
 
-    private def visitWithoutExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Without)
-      val effects = mapN(pick(TreeKind.Type.EffectSet, tree)) {
-        effectSetTree =>
-          val effects = pickAll(TreeKind.QName, effectSetTree).map(visitQName)
-          // Handle empty here where we have access to `effectSetTree.loc`
-          if (effects.isEmpty) {
-            sctx.errors.add(NeedAtleastOne(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, effectSetTree.loc))
-          }
-          effects
-      }
-      mapN(pickExpr(tree), effects) {
-        case (expr, effect :: effects0) =>
-          val base = Expr.Without(expr, effect, tree.loc)
-          effects0.foldLeft(base) {
-            case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
-          }
-        case (_, Nil) =>
-          // Fall back on Expr.Error
-          Expr.Error(NeedAtleastOne(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
-      }
-    }
 
     private def visitRunExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Run)
@@ -1998,6 +1981,15 @@ object Weeder2 {
       }
     }
 
+    private def visitInvokeSuperMethodExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeSuperMethod)
+      val method = pickNameIdent(tree)
+      val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
+      mapN(method, argsExps) {
+        case (m, as) => Expr.InvokeSuperMethod(m, as, tree.loc)
+      }
+    }
+
     private def visitGetFieldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.GetField)
       val baseExp = pickExpr(tree)
@@ -2038,6 +2030,7 @@ object Weeder2 {
 
     private def visitJvmMethod(tree: Tree)(implicit sctx: SharedContext): Validation[JvmMethod, CompilationMessage] = {
       expect(tree, TreeKind.Expr.JvmMethod)
+      val jvmAnns = pickJvmAnnotations(tree)
       mapN(
         pickNameIdent(tree),
         pickExpr(tree),
@@ -2045,8 +2038,25 @@ object Weeder2 {
         Types.pickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+        (ident, expr, fparams, tpe, eff) => JvmMethod(jvmAnns, ident, fparams, expr, tpe, eff, tree.loc)
       }
+    }
+
+    /**
+      * Extracts JVM annotations from a JvmMethod tree node.
+      * All annotations are extracted as JvmAnnotation objects;
+      * filtering of Flix annotations is done later in the Resolver.
+      */
+    private def pickJvmAnnotations(tree: Tree)(implicit sctx: SharedContext): List[WeededAst.JvmAnnotation] = {
+      val optAnn = tryPick(TreeKind.AnnotationList, tree)
+      optAnn.map { annTree =>
+        val tokens = pickAllTokens(annTree)
+        tokens.toList.map { token =>
+          val loc = token.mkSourceLocation()
+          val name = token.text.stripPrefix("@")
+          WeededAst.JvmAnnotation(Name.Ident(name, loc), loc)
+        }
+      }.getOrElse(Nil)
     }
 
     private def visitJvmConstructor(tree: Tree)(implicit sctx: SharedContext): Validation[JvmConstructor, CompilationMessage] = {

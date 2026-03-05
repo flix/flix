@@ -1076,18 +1076,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("Test.MismatchedEff.Without.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(): Unit
-        |}
-        |
-        |def foo(): Unit = E.op() without E
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
 
   test("Test.MismatchedEff.Apply.02") {
     val input =
