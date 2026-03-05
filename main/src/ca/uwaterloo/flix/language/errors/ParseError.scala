@@ -348,17 +348,28 @@ object ParseError {
     * @param sctx      The syntactic context.
     * @param loc       The source location.
     */
-  case class ExpectedBackslashBetweenTypeAndEffect(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+  case class ExpectedBackslashBetweenTypeAndEffect(sctx: SyntacticContext, loc: SourceLocation, canSuggestEquals: Boolean) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
     def code: ErrorCode = ErrorCode.E9301
-    def summary: String = s"Expected '\\' between type and effect, or '=' before function body"
+    def summary: String =
+      if (canSuggestEquals) s"Expected '\\' between type and effect, or '=' before function body"
+      else s"Expected '\\' between type and effect"
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> Expected '\\' between type and effect, or '=' before function body
-         |
-         |${src(loc, s"Use '\\' to separate type and effect, e.g. 'Int32 \\ IO'")}
-         |""".stripMargin
+      val hint =
+        if (canSuggestEquals) s"Use '\\' to separate type and effect, or '=' before function body"
+        else s"Use '\\' to separate type and effect, e.g. 'Int32 \\ IO'"
+      if (canSuggestEquals)
+        s""">> Expected '\\' between type and effect, or '=' before function body
+           |
+           |${src(loc, hint)}
+           |""".stripMargin
+      else
+        s""">> Expected '\\' between type and effect
+           |
+           |${src(loc, hint)}
+           |""".stripMargin
     }
 
   }

@@ -1087,7 +1087,7 @@ object Parser2 {
       }
       parameters()
       expect(TokenKind.Colon)
-      Type.typeAndEffect()
+      Type.typeAndEffect(canSuggestEquals = true)
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -2174,7 +2174,7 @@ object Parser2 {
       nameUnqualified(NAME_FUNCTION)
       Decl.parameters()
       if (eat(TokenKind.Colon)) {
-        Type.typeAndEffect()
+        Type.typeAndEffect(canSuggestEquals = true)
       }
       expect(TokenKind.Equal)
       statement(rhsIsOptional = false)
@@ -3342,7 +3342,7 @@ object Parser2 {
   }
 
   private object Type {
-    def typeAndEffect()(implicit s: State): Mark.Closed = {
+    def typeAndEffect(canSuggestEquals: Boolean = false)(implicit s: State): Mark.Closed = {
       val lhs = ttype()
       // Check whether the user forgot the '\' between a return type and its effect.
       // The four token kinds that can start an effect are:
@@ -3358,11 +3358,12 @@ object Parser2 {
       // forgot '=' (e.g. `def foo(): Int32 { x + 1 }` instead of `def foo(): Int32 = { x + 1 }`).
       // In that case this heuristic fires a false positive and the user will see two errors:
       // this one and the subsequent "expected '='" error from the definition parser.
+      // canSuggestEquals is true only when called from a definition return type position.
       val isMissingBackslash = at(TokenKind.NameUppercase) || at(TokenKind.NameLowercase) || at(TokenKind.CurlyL) || at(TokenKind.ParenL)
 
       if (isMissingBackslash) {
         val betweenLoc = mkSourceLocation(previousSourceLocation().end, currentSourceLocation().start)
-        val error = ParseError.ExpectedBackslashBetweenTypeAndEffect(SyntacticContext.Unknown, betweenLoc)
+        val error = ParseError.ExpectedBackslashBetweenTypeAndEffect(SyntacticContext.Unknown, betweenLoc, canSuggestEquals)
         closeWithError(open(), error)
       }
 
