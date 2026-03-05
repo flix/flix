@@ -7,24 +7,24 @@ use Net.Response
 /// - `exponential`:        doubling delay between retries.
 /// - `retryTransportOnly`: retries only on connection failures, not HTTP errors.
 def main(): Unit \ IO =
-    // Linear: retry up to 3 times with 500ms delay.
+    // Linear: retry up to 3 times with 100ms delay.
     run {
         println("--- Linear retry ---");
         match Http.get("https://notfound.flix.dev/") {
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
-    } with Http.withRetry(Retry.linear(3, 500i64))
+    } with Http.withRetry(Retry.linear(3, 100i64))
       with Http.runWithIO;
 
-    // Exponential: retry up to 3 times with 200ms base delay.
+    // Exponential: retry up to 3 times with 100ms base delay.
     run {
         println("--- Exponential retry ---");
         match Http.get("https://notfound.flix.dev/") {
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
-    } with Http.withRetry(Retry.exponential(3, 200i64))
+    } with Http.withRetry(Retry.exponential(3, 100i64))
       with Http.runWithIO;
 
     // Transport-only: only retry on connection failures, not HTTP errors.
@@ -34,5 +34,5 @@ def main(): Unit \ IO =
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
-    } with Http.withRetry(Retry.retryTransportOnly(2, 1000i64))
+    } with Http.withRetry(Retry.retryTransportOnly(2, 100i64))
       with Http.runWithIO

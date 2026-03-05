@@ -31,6 +31,7 @@ pub mod Net.HttpClient {
     import java.io.UncheckedIOException
     import java.lang.IllegalArgumentException
     import java.lang.InterruptedException
+    import java.lang.{Throwable => JThrowable}
 
     import java.net.ConnectException
     import java.net.http.HttpClient
@@ -48,6 +49,13 @@ pub mod Net.HttpClient {
     ///
     pub def newDefaultClient(): HttpClient \ IO =
         HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
+
+    ///
+    /// Returns the exception message, or a fallback if `getMessage()` returns null.
+    ///
+    def messageOf(ex: JThrowable): String \ IO =
+        let msg = ex.getMessage();
+        if (Object.isNull(msg)) ex.getClass().getName() else msg
 
     ///
     /// Performs the actual HTTP request using the Java HTTP client.
@@ -112,12 +120,12 @@ pub mod Net.HttpClient {
                body = Body.Bytes(Array.toVector(bytes))
             }))
         } catch {
-            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-            case ex: HttpTimeoutException     => Err(IoError(ErrorKind.Timeout, ex.getMessage()))
-            case ex: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage()))
-            case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
-            case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, messageOf(checked_cast(ex))))
+            case ex: HttpTimeoutException     => Err(IoError(ErrorKind.Timeout, messageOf(checked_cast(ex))))
+            case ex: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, messageOf(checked_cast(ex))))
+            case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, messageOf(checked_cast(ex))))
+            case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
+            case ex: IOException              => Err(IoError(ErrorKind.Other, messageOf(checked_cast(ex))))
         }
 
     ///
