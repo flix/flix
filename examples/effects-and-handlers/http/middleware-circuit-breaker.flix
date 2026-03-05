@@ -15,5 +15,5 @@ def main(): Unit \ IO =
             }
         }, urls)
     } with Http.withCircuitBreaker(3, 5000i64)
-      with Http.withBaseUrl("http://example.com")
+      with Http.withBaseUrl("https://flix.dev")
       with Http.runWithIO

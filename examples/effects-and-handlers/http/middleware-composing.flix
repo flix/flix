@@ -21,7 +21,7 @@ def main(): Unit \ IO =
                 case Err(err) => println("${url} -> ${err}")
             }
         }, urls)
-    } with Http.withBaseUrl("http://example.com")
+    } with Http.withBaseUrl("https://flix.dev")
       with Http.withDefaultHeaders(defaultHeaders)
       with Http.withLogging
       with Http.withRetry(Retry.retryTransportOnly(2, 500i64))

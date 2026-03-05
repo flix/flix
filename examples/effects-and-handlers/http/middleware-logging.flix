@@ -5,7 +5,7 @@ use Net.Response
 /// Requires a `Logger` handler (here `Logger.runWithIO`) to print the log lines.
 def main(): Unit \ IO =
     run {
-        match Http.get("http://example.com/") {
+        match Http.get("https://flix.dev/") {
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }

@@ -5,7 +5,7 @@ use Net.Response
 def main(): Unit \ IO =
     run {
         let body = "{\"name\": \"Alice\", \"age\": 30}";
-        let req = Request.post("http://example.com/api/users", body)
+        let req = Request.post("https://flix.dev/api/users", body)
                     |> Request.withContentType("application/json")
                     |> Request.withAccept("application/json");
         match Http.send(req) {

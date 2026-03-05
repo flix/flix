@@ -16,9 +16,9 @@ def main(): Unit \ IO =
             case Err(err) => println("/api/posts -> ${err}")
         };
         // Absolute URLs bypass the base.
-        match Http.get("http://example.com/other") {
+        match Http.get("https://flix.dev/other") {
             case Ok(resp) => println("absolute   -> ${Response.status(resp)}")
             case Err(err) => println("absolute   -> ${err}")
         }
-    } with Http.withBaseUrl("http://example.com")
+    } with Http.withBaseUrl("https://flix.dev")
       with Http.runWithIO

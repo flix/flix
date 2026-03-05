@@ -3,7 +3,7 @@ use Net.Response
 
 def main(): Unit \ IO =
     run {
-        match Http.get("http://example.com/") {
+        match Http.get("https://flix.dev/") {
             case Ok(resp) =>
                 println("Status:         ${Response.status(resp)}");
                 println("Is success?     ${Response.isSuccess(resp)}");

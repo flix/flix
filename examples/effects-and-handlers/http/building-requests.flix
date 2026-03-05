@@ -5,7 +5,7 @@ use Net.Timeout
 
 def main(): Unit \ IO =
     run {
-        let req = Request.get("http://example.com/api/search")
+        let req = Request.get("https://flix.dev/api/search")
                     |> Request.withQueryParam("q", "flix lang")
                     |> Request.withQueryParams(Map#{"page" => "1", "limit" => "10"})
                     |> Request.withBearerToken("my-secret-token")

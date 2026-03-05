@@ -10,7 +10,7 @@ def main(): Unit \ IO =
     // Linear: retry up to 3 times with 500ms delay.
     run {
         println("--- Linear retry ---");
-        match Http.get("http://example.com/") {
+        match Http.get("https://flix.dev/") {
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
@@ -20,7 +20,7 @@ def main(): Unit \ IO =
     // Exponential: retry up to 3 times with 200ms base delay.
     run {
         println("--- Exponential retry ---");
-        match Http.get("http://example.com/") {
+        match Http.get("https://flix.dev/") {
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
@@ -30,7 +30,7 @@ def main(): Unit \ IO =
     // Transport-only: only retry on connection failures, not HTTP errors.
     run {
         println("--- Transport-only retry ---");
-        match Http.get("http://example.com/") {
+        match Http.get("https://flix.dev/") {
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }

@@ -38,7 +38,7 @@ def main(): Unit \ IO =
             case Ok(resp) => println("/api/posts -> ${Response.status(resp)}")
             case Err(err) => println("/api/posts -> ${err}")
         }
-    } with Http.withBaseUrl("http://example.com")             // prepend base URL to relative paths
+    } with Http.withBaseUrl("https://flix.dev")             // prepend base URL to relative paths
       with Http.withDefaultHeaders(defaultHeaders)            // inject Accept and User-Agent into every request
       with Http.withLogging                                   // log each request/response via the Logger effect
       with Http.withRetry(Retry.exponential(3, 200i64))       // retry up to 3 times with exponential backoff

@@ -9,7 +9,7 @@ def main(): Unit \ IO =
         "Authorization" => List#{"Bearer my-token"}
     };
     run {
-        match Http.get("http://example.com/api/users") {
+        match Http.get("https://flix.dev/api/users") {
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
