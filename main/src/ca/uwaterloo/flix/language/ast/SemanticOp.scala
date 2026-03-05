@@ -665,4 +665,14 @@ object SemanticOp {
 
   }
 
+  sealed trait ReflectOp extends SemanticOp
+
+  object ReflectOp {
+    case object ReflectEff extends ReflectOp with UnaryOp
+
+    case object ReflectType extends ReflectOp with UnaryOp
+
+    case object ReflectValue extends ReflectOp with UnaryOp
+  }
+
 }

@@ -162,6 +162,9 @@ object OpPrinter {
          Int16Op.Shr |
          Int32Op.Shr |
          Int64Op.Shr => shr
+    case ReflectOp.ReflectEff => "reflectEff"
+    case ReflectOp.ReflectType => "reflectType"
+    case ReflectOp.ReflectValue => "reflectValue"
   }
 
   /**
@@ -205,6 +208,7 @@ object OpPrinter {
     case (AtomicOp.Tuple, _) => Tuple(ds)
     case (AtomicOp.ArrayLit, _) => ArrayLit(ds)
     case (AtomicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
+    case (AtomicOp.InvokeSuperConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
     case (AtomicOp.InvokeStaticMethod(method), _) => JavaInvokeStaticMethod(method, ds)
     case (AtomicOp.RecordExtend(label), List(d1, d2)) => RecordExtend(label, d1, d2)
     case (AtomicOp.ArrayNew, List(d1, d2)) => ArrayNew(d1, d2)
@@ -213,6 +217,7 @@ object OpPrinter {
     case (AtomicOp.PutField(field), List(d1, d2)) => JavaPutField(field, d1, d2)
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
+    case (AtomicOp.InvokeSuperMethod(method, _), d :: rs) => JavaInvokeMethod(method, d, rs)
     // fall back if non other applies
     case (op1, ds1) => App(Meta(op1.toString), ds1)
   }

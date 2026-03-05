@@ -144,19 +144,6 @@ object DocAstFormatter {
             sep(breakWith(" "), branchesF)
           )
         )
-      case TypeMatch(d, branches) =>
-        val scrutineeF = aux(d, paren = false)
-        val branchesF = branches.map { case (pat, tpe, body) =>
-          val patF = aux(pat, paren = false)
-          val tpeF = formatType(tpe, paren = false)
-          val bodyF = aux(body, paren = false, inBlock = true)
-          text("case") +: patF +: text(":") +: tpeF +: text("=>") |:: breakIndent(bodyF)
-        }
-        group(
-          text("typematch") +: scrutineeF +: curlyOpen(
-            sep(breakWith(" "), branchesF)
-          )
-        )
       case Dot(d1, d2) =>
         aux(d1) |:: text(".") |:: aux(d2)
       case DoubleDot(d1, d2) =>
@@ -232,9 +219,10 @@ object DocAstFormatter {
         group(
           text("handler") +: text(eff.toString) +: curly(rs)
         )
-      case NewObject(_, clazz, _, methods) =>
+      case NewObject(_, clazz, _, constructors, methods) =>
+        val allFormatted = constructors.map(formatJvmConstructor) ++ methods.map(formatJvmMethod)
         group(text("new") +: formatJavaClass(clazz) +: curly(
-          semiSepOpt(methods.map(formatJvmMethod))
+          semiSepOpt(allFormatted)
         ))
       case Native(clazz) =>
         formatJavaClass(clazz)
@@ -248,12 +236,23 @@ object DocAstFormatter {
   private def formatJavaClass(clazz: Class[?]): Doc =
     text(clazz.getName)
 
-  private def formatJvmMethod(m: JvmMethod)(implicit i: Indent): Doc = {
-    val JvmMethod(ident, fparams, clo, _) = m
-    val fparamsf = fparams.map(aux(_, paren = false))
+  private def formatJvmConstructor(c: JvmConstructor)(implicit i: Indent): Doc = {
+    val JvmConstructor(clo, _) = c
     val clof = aux(clo, paren = false, inBlock = true)
     group(
-      text("def") +: text(ident.name) +:
+      text("def") +: text("new") +:
+        text("=") +\:
+        clof
+    )
+  }
+
+  private def formatJvmMethod(m: JvmMethod)(implicit i: Indent): Doc = {
+    val JvmMethod(ann, ident, fparams, clo, _) = m
+    val fparamsf = fparams.map(aux(_, paren = false))
+    val clof = aux(clo, paren = false, inBlock = true)
+    val prefix = ann.foldRight(text("def"))((a, acc) => text("@" + a) +: acc)
+    group(
+      prefix +: text(ident.name) +:
         tuple(fparamsf) +: text("=") +\:
         clof
     )

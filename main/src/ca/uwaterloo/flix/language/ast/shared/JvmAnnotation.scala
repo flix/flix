@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2025 Flix authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-package ca.uwaterloo.flix.util
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
-import org.scalatest.Suites
-
-class UtilSuite extends Suites(
-  new TestGraph,
-  new TestListMap,
-  new TestNel,
-  new TestResult,
-  new TestSeqOps,
-  new TestValidation,
-)
+/**
+  * Represents a resolved JVM annotation (after name resolution).
+  * Used from ResolvedAst through JvmAst.
+  */
+case class JvmAnnotation(clazz: java.lang.Class[?], loc: SourceLocation)

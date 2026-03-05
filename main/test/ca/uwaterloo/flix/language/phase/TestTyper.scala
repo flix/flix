@@ -1076,18 +1076,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("Test.MismatchedEff.Without.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(): Unit
-        |}
-        |
-        |def foo(): Unit = E.op() without E
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
 
   test("Test.MismatchedEff.Apply.02") {
     val input =
@@ -1250,20 +1238,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def mkE(): E[Int32, Pure] \ ef = ???
         |
         |def g(): Bool = f(mkE)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("Test.UnexpectedArgument.06") {
-    val input =
-      """
-        |def takesString(_: String): Unit = ()
-        |
-        |def f(): Unit = typematch 123 {
-        |    case x: _ => takesString(x)
-        |    case _: _ => ???
-        |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)

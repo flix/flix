@@ -85,27 +85,27 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       visitExp(exp)
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, _, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(Type.eraseTopAliases(exp1.tpe).arrowEffectType :: exp1.eff :: exp2.eff :: Nil, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyDef(_, exps, _, itpe, _, eff, loc) =>
+    case Expr.ApplyDef(_, exps, _, itpe, _, eff, _, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyLocalDef(_, exps, arrowTpe, _, eff, loc) =>
+    case Expr.ApplyLocalDef(_, exps, arrowTpe, _, eff, _, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(arrowTpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(op, exps, tpe, eff, _, loc) =>
       exps.foreach(visitExp)
       // TODO effect stuff
       ()
-    case Expr.ApplySig(_, exps, _, _, itpe, _, eff, loc) =>
+    case Expr.ApplySig(_, exps, _, _, itpe, _, eff, _, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
@@ -127,7 +127,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.LocalDef(_, _, exp1, exp2, _, eff, loc) =>
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = exp2.eff
@@ -159,12 +159,6 @@ object EffectVerifier {
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => r.guard.foreach(visitExp); visitExp(r.exp) }
-      val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
-      val actual = eff
-      expectType(expected, actual, loc)
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
-      visitExp(exp)
-      rules.foreach { r => visitExp(r.exp) }
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
@@ -281,11 +275,8 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.mkDifference(exp.eff, runEff, loc), Type.Pure, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Without(exp, symUse, tpe, eff, loc) =>
-      visitExp(exp)
-      val expected = exp.eff
-      val actual = eff
-      expectType(expected, actual, loc)
+
+
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
@@ -313,9 +304,15 @@ object EffectVerifier {
       exps.foreach(visitExp)
       // TODO Java stuff
       ()
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+      ()
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO Java stuff
+      ()
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
       ()
     case Expr.GetField(field, exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -333,7 +330,8 @@ object EffectVerifier {
       visitExp(exp)
       // TODO Java stuff
       ()
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
+      constructors.foreach { c => visitExp(c.exp) }
       methods.foreach { m => visitExp(m.exp) }
       // TODO Java stuff
       ()

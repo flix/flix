@@ -210,7 +210,11 @@ object SyntaxTree {
 
       case object InvokeConstructor extends Expr
 
+      case object InvokeSuperConstructor extends Expr
+
       case object InvokeMethod extends Expr
+
+      case object InvokeSuperMethod extends Expr
 
       case object FixpointConstraint extends Expr
 
@@ -261,6 +265,8 @@ object SyntaxTree {
       case object InstanceOf extends Expr
 
       case object Intrinsic extends Expr
+
+      case object JvmConstructor extends Expr
 
       case object JvmMethod extends Expr
 
@@ -364,10 +370,6 @@ object SyntaxTree {
 
       case object Tuple extends Expr
 
-      case object TypeMatch extends Expr
-
-      case object TypeMatchRuleFragment extends Expr
-
       case object Unary extends Expr
 
       case object UncheckedCast extends Expr
@@ -378,7 +380,6 @@ object SyntaxTree {
 
       case object Use extends Expr
 
-      case object Without extends Expr
 
     }
 

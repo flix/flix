@@ -227,18 +227,24 @@ object LambdaLift {
       }
       LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+      val constructors = constructors0.map(visitJvmConstructor)
       val methods = methods0.map(visitJvmMethod)
-      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
   }
 
+  private def visitJvmConstructor(constructor: SimplifiedAst.JvmConstructor)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmConstructor = constructor match {
+    case SimplifiedAst.JvmConstructor(exp, retTpe, purity, loc) =>
+      LiftedAst.JvmConstructor(visitExp(exp), retTpe, purity, loc)
+  }
+
   private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
-    case SimplifiedAst.JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
+    case SimplifiedAst.JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
       val fparams = fparams0 map visitFormalParam
-      LiftedAst.JvmMethod(ident, fparams, visitExp(exp), retTpe, purity, loc)
+      LiftedAst.JvmMethod(ann, ident, fparams, visitExp(exp), retTpe, purity, loc)
   }
 
 

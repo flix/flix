@@ -138,33 +138,33 @@ object Dependencies {
       visitExp(exp)
       visitType(tpe)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, _) =>
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyDef(symUse, exps, _, itpe, tpe, eff, _) =>
+    case Expr.ApplyDef(symUse, exps, _, itpe, tpe, eff, _, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, _) =>
+    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, _, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(arrowTpe)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyOp(op, exps, tpe, eff, _) =>
+    case Expr.ApplyOp(op, exps, tpe, eff, _, _) =>
       visitSymUse(op)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _) =>
+    case Expr.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
@@ -189,7 +189,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, _) =>
+    case Expr.LocalDef(_, bnd, fparams, exp1, exp2, tpe, eff, _) =>
       visitBinder(bnd)
       fparams.foreach(visitFormalParam)
       visitExp(exp1)
@@ -223,12 +223,6 @@ object Dependencies {
     case Expr.Match(exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitMatchRule)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.TypeMatch(exp, rules, tpe, eff, _) =>
-      visitExp(exp)
-      rules.foreach(visitTypeMatchRule)
       visitType(tpe)
       visitType(eff)
 
@@ -374,11 +368,6 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Without(exp, symUse, tpe, eff, _) =>
-      visitExp(exp)
-      visitSymUse(symUse)
-      visitType(tpe)
-      visitType(eff)
 
     case Expr.TryCatch(exp, rules, tpe, eff, _) =>
       visitExp(exp)
@@ -410,8 +399,18 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.InvokeSuperConstructor(_, exps, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.InvokeMethod(_, exp, exps, tpe, eff, _) =>
       visitExp(exp)
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.InvokeSuperMethod(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
@@ -441,10 +440,12 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.NewObject(_, _, tpe, eff, methods, _) =>
+    case Expr.NewObject(_, _, tpe, eff, constructors, methods, _) =>
       visitType(tpe)
       visitType(eff)
+      constructors.foreach(visitJvmConstructor)
       methods.foreach(visitJvmMethod)
+
 
     case Expr.NewChannel(exp, tpe, eff, _) =>
       visitExp(exp)
@@ -660,12 +661,6 @@ object Dependencies {
     visitType(pattern.tpe)
   }
 
-  private def visitTypeMatchRule(matchRule: TypedAst.TypeMatchRule)(implicit sctx: SharedContext): Unit = {
-    visitBinder(matchRule.bnd)
-    visitType(matchRule.tpe)
-    visitExp(matchRule.exp)
-  }
-
   private def visitRestrictableChooseRule(rule: TypedAst.RestrictableChooseRule)(implicit sctx: SharedContext): Unit = {
     visitExp(rule.exp)
     visitRestrictableChoosePattern(rule.pat)
@@ -699,6 +694,12 @@ object Dependencies {
     visitSymUse(handlerRule.op)
     visitExp(handlerRule.exp)
     handlerRule.fparams.foreach(visitFormalParam)
+  }
+
+  private def visitJvmConstructor(constructor: TypedAst.JvmConstructor)(implicit sctx: SharedContext): Unit = {
+    visitType(constructor.retTpe)
+    visitType(constructor.eff)
+    visitExp(constructor.exp)
   }
 
   private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit sctx: SharedContext): Unit = {

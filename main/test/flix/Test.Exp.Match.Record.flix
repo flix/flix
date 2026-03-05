@@ -13,12 +13,6 @@ mod Test.Exp.Match.Record {
     }
 
     @Test
-    def emptyRecord02(): Unit \ Assert = match { } {
-        case { } => success("matched empty record")
-        case _   => fail("unexpected match on wildcard")
-    }
-
-    @Test
     def recordLabelValue01(): Unit \ Assert = match { a = 1 } {
         case { a } => assertEq(expected = 1, a)
     }
@@ -204,6 +198,39 @@ mod Test.Exp.Match.Record {
     def exhaustiveness06(): Unit \ Assert = match { a = { a = { }, b = A.B }, b = A.A } {
         case { a = { a = { } | _ } | _ } => success("matched")
     }
+
+    @Test
+    def exhaustiveness07(): Unit \ Assert = match { x = true } {
+        case { x = true } => success("matched true")
+        case { x = false } => success("matched false")
+    }
+
+    @Test
+    def exhaustiveness08(): Unit \ Assert = match { x = true } {
+        case { x = _ } => success("matched wildcard")
+    }
+
+    @Test
+    def exhaustiveness09(): Unit \ Assert =
+        let r: {c = A} = { c = A.A };
+        match r {
+            case { c = A.A } => success("matched A")
+            case { c = A.B } => fail("unexpected match on B")
+        }
+
+    @Test
+    def exhaustiveness10(): Unit \ Assert = match { a = true, b = false } {
+        case { a = true, b = _ } => success("matched a=true")
+        case { b = _, a = false } => success("matched a=false")
+    }
+
+    @Test
+    def exhaustiveness11(): Unit \ Assert =
+        let r: {a = Bool | _} = { a = true, b = 42 };
+        match r {
+            case { a = true | _ } => success("matched true")
+            case { a = false | _ } => fail("unexpected match on false")
+        }
 
     @Test
     def extensionLabels01(): Unit \ Assert = match { a = true, b = true } {
