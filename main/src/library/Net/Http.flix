@@ -227,4 +227,24 @@ pub mod Net.Http {
                 k(Http.request(Request({headers = merged | x})))
         }
 
+    ///
+    /// Middleware that intercepts the `Http` effect, prepending `base` to
+    /// request URLs that do not already contain a scheme. Absolute URLs
+    /// (containing "://") are left unchanged.
+    ///
+    pub def withBaseUrl(base: String, f: Unit -> a \ ef): a \ (ef - Http) + Http =
+        let base1 = if (String.endsWith(suffix = "/", base))
+                         String.dropRight(1, base) else base;
+        run { f() } with handler Http {
+            def request(req, k) =
+                let Request(x) = req;
+                let url = x#url;
+                if (String.contains(substr = "://", url))
+                    k(Http.request(req))
+                else
+                    let path1 = if (String.startsWith(prefix = "/", url))
+                                     url else "/${url}";
+                    k(Http.request(Request({url = "${base1}${path1}" | x})))
+        }
+
 }
