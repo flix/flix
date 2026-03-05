@@ -343,6 +343,27 @@ object ParseError {
   }
 
   /**
+    * An error raised to indicate that a Backslash was forgotten between Type and Effect.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedBackslashBetweenTypeAndEffect(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E9301
+    def summary: String = s"Expected '\\' between type and effect, or '=' before function body"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '\\' between type and effect, or '=' before function body
+         |
+         |${src(loc, s"Use '\\' to separate type and effect, e.g. 'Int32 \\ IO'")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
     * An error raised to indicate an unexpected token was found.
     *
     * @param expected Names of the tokens that are expected at the location.
