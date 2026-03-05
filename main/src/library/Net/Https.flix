@@ -201,6 +201,57 @@ pub mod Net.Https {
         }
 
     ///
+    /// Middleware that intercepts the `Https` effect, implementing a circuit breaker.
+    ///
+    /// Tracks consecutive failures (transport errors and 5xx server errors).
+    /// After `failureThreshold` consecutive failures, the circuit opens and
+    /// immediately rejects requests for `cooldownMs` milliseconds.
+    /// After the cooldown, one probe request is allowed through (half-open state).
+    /// A successful probe closes the circuit; a failed probe restarts the cooldown.
+    ///
+    /// Non-failure responses (2xx, 3xx, 4xx) reset the failure counter.
+    ///
+    pub def withCircuitBreaker(failureThreshold: Int32, cooldownMs: Int64,
+                               f: Unit -> a \ ef): a \ (ef - Https) + Https =
+        region rc {
+            let failures  = Ref.fresh(rc, 0);
+            let openSince = Ref.fresh(rc, 0i64);
+            run { f() } with handler Https {
+                def request(req, k) =
+                    let now = JSystem.currentTimeMillis();
+                    let since = Ref.get(openSince);
+                    if (since > 0i64 and now - since < cooldownMs)
+                        k(Err(IoError(ErrorKind.Other, "Circuit breaker is open")))
+                    else {
+                        let result = Https.request(req);
+                        match result {
+                            case Err(_) =>
+                                let count = Ref.get(failures) + 1;
+                                Ref.put(count, failures);
+                                if (count >= failureThreshold)
+                                    Ref.put(JSystem.currentTimeMillis(), openSince)
+                                else
+                                    ();
+                                k(result)
+                            case Ok(resp) =>
+                                if (Response.isServerError(resp)) {
+                                    let count = Ref.get(failures) + 1;
+                                    Ref.put(count, failures);
+                                    if (count >= failureThreshold)
+                                        Ref.put(JSystem.currentTimeMillis(), openSince)
+                                    else
+                                        ()
+                                } else {
+                                    Ref.put(0, failures);
+                                    Ref.put(0i64, openSince)
+                                };
+                                k(result)
+                        }
+                    }
+            }
+        }
+
+    ///
     /// Middleware that intercepts the `Https` effect, adding retry logic.
     ///
     /// The `strategy` function decides whether to retry and how long to wait.
