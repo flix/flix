@@ -214,4 +214,17 @@ pub mod Net.Http {
                 k(loop(0))
         }
 
+    ///
+    /// Middleware that intercepts the `Http` effect, injecting default headers
+    /// into every request. Headers already present on the request are not overridden.
+    ///
+    pub def withDefaultHeaders(defaults: Map[String, List[String]],
+                               f: Unit -> a \ ef): a \ (ef - Http) + Http =
+        run { f() } with handler Http {
+            def request(req, k) =
+                let Request(x) = req;
+                let merged = Map.unionWith((reqVals, _) -> reqVals, x#headers, defaults);
+                k(Http.request(Request({headers = merged | x})))
+        }
+
 }
