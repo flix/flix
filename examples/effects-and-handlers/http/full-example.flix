@@ -2,13 +2,19 @@ use Net.Http
 use Net.Retry
 use Net.Response
 
-/// Demonstrates composing multiple middleware via `with` clauses.
-/// The innermost handler (first `with`) intercepts the request first,
-/// then re-raises it to the next handler, and so on until `runWithIO`
-/// performs the actual I/O.
+/// Demonstrates composing multiple HTTP middleware via `with` clauses.
 ///
-/// This example stacks: base URL, default headers, logging, retry,
-/// circuit breaker, and sliding-window rate limiting.
+/// Each `with` wraps the preceding block, so the last handler listed
+/// (`runWithIO`) is the outermost — it performs the actual I/O.
+/// A request travels outward through the stack: `withBaseUrl` prepends
+/// the base URL, `withDefaultHeaders` merges in default headers,
+/// `withRetry` adds automatic retries with a linear back-off,
+/// `withCircuitBreaker` short-circuits after repeated failures,
+/// `withSlidingWindow` rate-limits requests, and `withLogging` logs
+/// each request/response via the `Logger` effect.
+///
+/// The example sends GET requests to relative paths (resolved against
+/// `https://flix.dev`) and to an absolute URL that bypasses the base URL.
 def main(): Unit \ {Clock, IO} =
     let defaultHeaders = Map#{
         "Accept"        => List#{"application/json"},
