@@ -484,4 +484,16 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val error = check(input, Options.TestWithLibNix)
     expectError[ParseError.ExpectedSemicolon](error)
   }
+
+  test("ExpectedSemicolon.03") {
+    val input =
+      """
+        |def foo(): Int32 =
+        |    let x = 1
+        |    let y = x
+        |    y
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
 }

@@ -1439,12 +1439,13 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      } else if (nth(0).isOnlyFirstInALine) {
-        // The token can only appear as the first token in a line, so we assume the user forgot a semi-colon.
-        // We create the error and continue parsing as if the semi-colon was present.
+      } else if (nth(0).alwaysStartStatement) {
+        // This token can only appear as a follow token after an expression within a statement,
+        // so we assume the user forgot a semicolon.
+        // We create the error and continue parsing as if the semicolon was present.
         val isReal = true
         val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
-        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc))
+        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)

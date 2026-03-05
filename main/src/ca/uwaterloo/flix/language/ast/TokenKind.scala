@@ -479,8 +479,14 @@ sealed trait TokenKind {
     case _ => false
   }
 
-  def isOnlyFirstInALine: Boolean = this match {
-    case TokenKind.KeywordLet => true
+  /**
+    * Returns `true` if this token always starts a new statement, i.e., a token that can only
+    * appear at the start of a statement (after a semicolon). If such a token is encountered
+    * without a preceding semicolon, we assume the semicolon was forgotten.
+    *
+    */
+  def alwaysStartStatement: Boolean = this match {
+    case TokenKind.KeywordLet     => true
     case TokenKind.KeywordForeach => true
     case _ => false
   }
