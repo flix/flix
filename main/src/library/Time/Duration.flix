@@ -19,6 +19,20 @@
 ///
 pub enum Duration(Int64) with Eq, Order, Hash
 
+instance Add[Duration] {
+    pub def add(x: Duration, y: Duration): Duration =
+        let Duration.Duration(x1) = x;
+        let Duration.Duration(y1) = y;
+        Duration.Duration(x1 + y1)
+}
+
+instance Sub[Duration] {
+    pub def sub(x: Duration, y: Duration): Duration =
+        let Duration.Duration(x1) = x;
+        let Duration.Duration(y1) = y;
+        Duration.Duration(x1 - y1)
+}
+
 instance ToString[Duration] {
     pub def toString(d: Duration): String =
         let Duration.Duration(nanos) = d;
@@ -54,18 +68,8 @@ instance ToString[Duration] {
                 "${sign}${abs}ns"
 }
 
-instance Add[Duration] {
-    pub def add(x: Duration, y: Duration): Duration =
-        let Duration.Duration(x1) = x;
-        let Duration.Duration(y1) = y;
-        Duration.Duration(x1 + y1)
-}
-
-instance Sub[Duration] {
-    pub def sub(x: Duration, y: Duration): Duration =
-        let Duration.Duration(x1) = x;
-        let Duration.Duration(y1) = y;
-        Duration.Duration(x1 - y1)
+instance Formattable[Duration] {
+    pub def format(d: Duration): RichString = RichString.fromString(ToString.toString(d))
 }
 
 pub mod Duration {
