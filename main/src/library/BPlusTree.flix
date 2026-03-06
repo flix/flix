@@ -710,10 +710,21 @@ pub mod BPlusTree {
     ///
     /// Returns `None` if `t` is empty.
     ///
-    /// Not thread-safe.
+    /// Thread-safe.
     ///
-    pub def minimumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r =
-        Node.minimumKey(t->root)
+    pub def minimumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
+        let (leaf, leafStamp) = leftMostLeaf(t);
+        let result = match Node.size(leaf) {
+            case 0 => None
+            case _ => Some(Node.getKeyAndValueAt(0, leaf))
+        };
+        if (Lock.valid(leafStamp, Node.getLock(leaf))) {
+            result
+        } else {
+            Lock.yieldBasedOn(Node.getLock(leaf));
+            minimumKey(t)
+        }
+    }
 
     /// 
     /// Optionally returns `k => v` where `k` is the largest key in `t` according to the 
@@ -735,6 +746,16 @@ pub mod BPlusTree {
             Lock.yieldBasedOn(Node.getLock(leaf));
             maximumKey(t)
         }
+    }
+
+    ///
+    /// Returns the leftmost leaf of `t` and its lock stamp. 
+    ///
+    /// The leftmost leaf contains the minimum key in the tree.
+    ///
+    def leftMostLeaf(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] = {
+        let (node, stamp) = getLockedRoot(t);
+        Node.leftMostLeaf(node, stamp, t)
     }
 
     ///

@@ -608,6 +608,19 @@ mod BPlusTree.Node {
             case true => node
         }
 
+    ///
+    /// Returns the leftmost leaf of the tree rooted at `node`.
+    ///
+    /// Traverses down the leftmost path of the tree, acquiring locks along the way. 
+    /// If a lock is invalid, yields and retries from the root of `t`.
+    ///
+    pub def leftMostLeaf(
+        n: Node[k, v, r], 
+        stamp: Int64, 
+        t: BPlusTree[k, v, r]
+    ): (Node[k, v, r], Int64) \ r with Order[k] = 
+        traverseToLeaf(n, stamp, node -> Array.get(0, node->children), () -> BPlusTree.leftMostLeaf(t))
+
     /// 
     /// Returns the rightmost leaf of the tree rooted at `node`. 
     ///
@@ -660,19 +673,6 @@ mod BPlusTree.Node {
                 stamp
             }
     }
-
-    ///
-    /// Optionally returns `k => v` where `k` is the minimum key.
-    ///
-    /// Not thread-safe.
-    ///
-    pub def minimumKey(t: Node[k, v, r]): Option[(k, v)] \ r =
-        let leftMost = leftMostChild(t);
-        if (size(leftMost) == 0) {
-            None
-        } else {
-            Some((Array.get(0, leftMost->keys), Array.get(0, leftMost->values)))
-        }
 
     ///
     /// Create a new leaf node.
