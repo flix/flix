@@ -27,6 +27,8 @@ pub mod Net.Https {
     use Net.RetryDecision
     use Net.RetryOutcome
     use RichString.{text, bold, cyan, green, yellow, red, gray}
+    use Time.Duration
+    use Time.Duration.toMillis
 
     import java.lang.{Thread => JThread}
 
@@ -112,10 +114,10 @@ pub mod Net.Https {
 
     ///
     /// Middleware that intercepts the `Https` effect, enforcing a minimum interval
-    /// (in milliseconds) between consecutive HTTPS requests.
+    /// between consecutive HTTPS requests.
     ///
-    pub def withMinInterval(ims: {intervalMs = Int32}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
-        let intervalMs = Int32.toInt64(ims#intervalMs);
+    pub def withMinInterval(ims: {interval = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+        let intervalMs = toMillis(ims#interval);
         region rc {
             let last = Ref.fresh(rc, 0i64);
             run { f() } with handler Https {
@@ -131,11 +133,11 @@ pub mod Net.Https {
     ///
     /// Middleware that intercepts the `Https` effect, enforcing a token-bucket
     /// rate limit. Allows an initial burst of `burstSize` requests, then
-    /// sustains at 1 request per `intervalMs` milliseconds.
+    /// sustains at 1 request per `interval`.
     ///
-    pub def withTokenBucket(bs: {burstSize = Int32}, ims: {intervalMs = Int32}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+    pub def withTokenBucket(bs: {burstSize = Int32}, ims: {interval = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
         let burstSize = bs#burstSize;
-        let intervalMs = Int32.toInt64(ims#intervalMs);
+        let intervalMs = toMillis(ims#interval);
         region rc {
             let tokens   = Ref.fresh(rc, burstSize);
             let lastTime = Ref.fresh(rc, Clock.now());
@@ -168,12 +170,12 @@ pub mod Net.Https {
 
     ///
     /// Middleware that intercepts the `Https` effect, enforcing a sliding-window
-    /// rate limit. Allows at most `maxRequests` within any rolling `windowMs`-millisecond
-    /// window. When the limit is reached, sleeps until the oldest request expires.
+    /// rate limit. Allows at most `maxRequests` within any rolling `window`.
+    /// When the limit is reached, sleeps until the oldest request expires.
     ///
-    pub def withSlidingWindow(mr: {maxRequests = Int32}, wms: {windowMs = Int32}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+    pub def withSlidingWindow(mr: {maxRequests = Int32}, wms: {window = Duration}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
         let maxRequests = mr#maxRequests;
-        let windowMs = Int32.toInt64(wms#windowMs);
+        let windowMs = toMillis(wms#window);
         region rc {
             let timestamps = MutDeque.empty(rc);
             run { f() } with handler Https {
@@ -212,16 +214,16 @@ pub mod Net.Https {
     ///
     /// Tracks consecutive failures (transport errors and 5xx server errors).
     /// After `failureThreshold` consecutive failures, the circuit opens and
-    /// immediately rejects requests for `cooldownMs` milliseconds.
+    /// immediately rejects requests for `cooldown`.
     /// After the cooldown, one probe request is allowed through (half-open state).
     /// A successful probe closes the circuit; a failed probe restarts the cooldown.
     ///
     /// Non-failure responses (2xx, 3xx, 4xx) reset the failure counter.
     ///
-    pub def withCircuitBreaker(ft: {failureThreshold = Int32}, cdm: {cooldownMs = Int32},
+    pub def withCircuitBreaker(ft: {failureThreshold = Int32}, cdm: {cooldown = Duration},
                                f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
         let failureThreshold = ft#failureThreshold;
-        let cooldownMs = Int32.toInt64(cdm#cooldownMs);
+        let cooldownMs = toMillis(cdm#cooldown);
         region rc {
             let failures  = Ref.fresh(rc, 0);
             let openSince = Ref.fresh(rc, 0i64);
@@ -279,12 +281,12 @@ pub mod Net.Https {
                                 case Ok(resp) if Response.isSuccess(resp) => Ok(resp)
                                 case Ok(resp) =>
                                     match strategy(attempt, req, RetryOutcome.HttpError(resp)) {
-                                        case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(d); loop(attempt + 1) } // sleep is pure here
+                                        case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
                                         case RetryDecision.Stop     => Ok(resp)
                                     }
                                 case Err(error) =>
                                     match strategy(attempt, req, RetryOutcome.TransportError(error)) {
-                                        case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(d); loop(attempt + 1) } // sleep is pure here
+                                        case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
                                         case RetryDecision.Stop     => Err(error)
                                     }
                             };

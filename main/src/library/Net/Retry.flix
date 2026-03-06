@@ -20,6 +20,8 @@ pub mod Net.Retry {
     use Net.Response
     use Net.RetryDecision
     use Net.RetryOutcome
+    use Time.Duration
+    use Time.Duration.{nanoseconds, milliseconds, seconds, toMillis, toNanos}
 
     ///
     /// Returns a strategy that never retries.
@@ -28,38 +30,38 @@ pub mod Net.Retry {
         (_, _, _) -> RetryDecision.Stop
 
     ///
-    /// Returns a strategy that retries up to `maxRetries` times with a fixed `delayMs` delay.
+    /// Returns a strategy that retries up to `maxRetries` times with a fixed `delay`.
     ///
-    pub def linear(mr: {maxRetries = Int32}, dm: {delayMs = Int32}): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def linear(mr: {maxRetries = Int32}, dm: {delay = Duration}): (Int32, Request, RetryOutcome) -> RetryDecision =
         let maxRetries = mr#maxRetries;
-        let delayMs = Int32.toInt64(dm#delayMs);
+        let delay = dm#delay;
         (attempt, _, _) ->
-            if (attempt < maxRetries) RetryDecision.Retry(delayMs)
+            if (attempt < maxRetries) RetryDecision.Retry(delay)
             else RetryDecision.Stop
 
     ///
     /// Returns a strategy with exponential backoff.
     ///
-    /// Retries up to `maxRetries` times with delays: `baseDelayMs`, `2*base`, `4*base`, …
+    /// Retries up to `maxRetries` times with delays: `baseDelay`, `2*base`, `4*base`, …
     ///
-    pub def exponential(mr: {maxRetries = Int32}, bdm: {baseDelayMs = Int32}): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def exponential(mr: {maxRetries = Int32}, bdm: {baseDelay = Duration}): (Int32, Request, RetryOutcome) -> RetryDecision =
         let maxRetries = mr#maxRetries;
-        let baseDelayMs = Int32.toInt64(bdm#baseDelayMs);
+        let baseNanos = toNanos(bdm#baseDelay);
         (attempt, _, _) ->
             if (attempt < maxRetries)
                 // Clamp to 62 to prevent shift overflow/wrap-around.
-                RetryDecision.Retry(baseDelayMs * Int64.leftShift(1i64, Int32.min(attempt, 62)))
+                RetryDecision.Retry(nanoseconds(baseNanos * Int64.leftShift(1i64, Int32.min(attempt, 62))))
             else RetryDecision.Stop
 
     ///
     /// Returns a strategy that retries up to `maxRetries` times, honouring an integer-seconds
     /// `Retry-After` response header on 429/503 responses.
     ///
-    /// Falls back to `baseDelayMs` when the header is absent or unparseable.
+    /// Falls back to `baseDelay` when the header is absent or unparseable.
     ///
-    pub def retryAfter(mr: {maxRetries = Int32}, bdm: {baseDelayMs = Int32}): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def retryAfter(mr: {maxRetries = Int32}, bdm: {baseDelay = Duration}): (Int32, Request, RetryOutcome) -> RetryDecision =
         let maxRetries = mr#maxRetries;
-        let baseDelayMs = Int32.toInt64(bdm#baseDelayMs);
+        let baseDelay = bdm#baseDelay;
         (attempt, _, outcome) ->
             if (attempt >= maxRetries) RetryDecision.Stop
             else
@@ -67,57 +69,57 @@ pub mod Net.Retry {
                     case RetryOutcome.HttpError(resp) =>
                         match Response.headerValue("retry-after", resp) {
                             case Some(s) => match Int64.fromString(s) {
-                                case Some(secs) => secs * 1000i64
-                                case None       => baseDelayMs
+                                case Some(secs) => seconds(secs)
+                                case None       => baseDelay
                             }
-                            case None => baseDelayMs
+                            case None => baseDelay
                         }
-                    case RetryOutcome.TransportError(_) => baseDelayMs
+                    case RetryOutcome.TransportError(_) => baseDelay
                 };
                 RetryDecision.Retry(delay)
 
     ///
-    /// Returns a strategy that retries up to `maxRetries` times with a fixed `delayMs` delay,
+    /// Returns a strategy that retries up to `maxRetries` times with a fixed `delay`,
     /// but only on transport errors (connection refused, timeout, etc.).
     ///
     /// HTTP-level errors (non-2xx responses) are never retried.
     ///
-    pub def retryTransportOnly(mr: {maxRetries = Int32}, dm: {delayMs = Int32}): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def retryTransportOnly(mr: {maxRetries = Int32}, dm: {delay = Duration}): (Int32, Request, RetryOutcome) -> RetryDecision =
         let maxRetries = mr#maxRetries;
-        let delayMs = Int32.toInt64(dm#delayMs);
+        let delay = dm#delay;
         (attempt, _, outcome) -> match outcome {
-            case RetryOutcome.TransportError(_) if attempt < maxRetries => RetryDecision.Retry(delayMs)
+            case RetryOutcome.TransportError(_) if attempt < maxRetries => RetryDecision.Retry(delay)
             case _                                                       => RetryDecision.Stop
         }
 
     ///
-    /// Wraps `inner` by adding uniform random jitter in `[0, maxJitterMs]` to any `Retry` delay.
+    /// Wraps `inner` by adding uniform random jitter in `[0, maxJitter]` to any `Retry` delay.
     ///
-    pub def withJitter(mjm: {maxJitterMs = Int32},
+    pub def withJitter(mjm: {maxJitter = Duration},
                        inner: (Int32, Request, RetryOutcome) -> RetryDecision \ ef):
                        (Int32, Request, RetryOutcome) -> RetryDecision \ ef + Random =
-        let maxJitterMs = Int32.toInt64(mjm#maxJitterMs);
+        let maxJitterNanos = toNanos(mjm#maxJitter);
         (attempt, req, outcome) ->
             let base = inner(attempt, req, outcome);
             match base {
                 case RetryDecision.Stop     => RetryDecision.Stop
                 case RetryDecision.Retry(d) =>
                     // Mask the sign bit instead of abs to avoid Int64.minValue() staying negative.
-                    let j = Int64.bitwiseAnd(Random.randomInt64(), Int64.maxValue()) `Int64.remainder` (maxJitterMs + 1i64);
-                    RetryDecision.Retry(d + j)
+                    let j = Int64.bitwiseAnd(Random.randomInt64(), Int64.maxValue()) `Int64.remainder` (maxJitterNanos + 1i64);
+                    RetryDecision.Retry(d + nanoseconds(j))
             }
 
     ///
-    /// Wraps `inner` and clamps any `Retry` delay to the time remaining before
-    /// `startMs + deadlineMs`.
+    /// Wraps `inner` and clamps any `Retry` delay to the time remaining before the `deadline`.
     ///
+    /// `startMs` should be the result of `Clock.now()` captured before entering the retry loop.
     /// Returns `Stop` if the deadline is already past.
     ///
-    pub def withDeadline(dlm: {deadlineMs = Int32}, sm: {startMs = Int32},
+    pub def withDeadline(dlm: {deadline = Duration}, sm: {startMs = Int64},
                          inner: (Int32, Request, RetryOutcome) -> RetryDecision \ ef):
                          (Int32, Request, RetryOutcome) -> RetryDecision \ ef + Clock =
-        let deadlineMs = Int32.toInt64(dlm#deadlineMs);
-        let startMs = Int32.toInt64(sm#startMs);
+        let deadlineMs = toMillis(dlm#deadline);
+        let startMs = sm#startMs;
         (attempt, req, outcome) ->
             let base = inner(attempt, req, outcome);
             match base {
@@ -125,7 +127,7 @@ pub mod Net.Retry {
                 case RetryDecision.Retry(d) =>
                     let elapsed = Clock.now() - startMs;
                     if (elapsed >= deadlineMs) RetryDecision.Stop
-                    else RetryDecision.Retry(Int64.min(d, deadlineMs - elapsed))
+                    else RetryDecision.Retry(milliseconds(Int64.min(toMillis(d), deadlineMs - elapsed)))
             }
 
 }

@@ -1,5 +1,6 @@
 use Net.Http
 use Net.Response
+use Time.Duration.{milliseconds, seconds}
 
 /// Demonstrates three rate-limiting strategies provided by `Net.Http`:
 /// - `withMinInterval`:   fixed minimum delay between consecutive requests.
@@ -16,7 +17,7 @@ def main(): Unit \ { Clock, Http, IO } =
                 case Err(err) => println("${url} -> ${err}")
             }
         }
-    } with Http.withMinInterval(intervalMs = 100)
+    } with Http.withMinInterval(interval = milliseconds(100i64))
       with Http.withBaseUrl("https://flix.dev");
 
     // Token bucket: burst of 2, then 1 request per 100ms.
@@ -29,7 +30,7 @@ def main(): Unit \ { Clock, Http, IO } =
                 case Err(err) => println("${url} -> ${err}")
             }
         }
-    } with Http.withTokenBucket(burstSize = 2, intervalMs = 100)
+    } with Http.withTokenBucket(burstSize = 2, interval = milliseconds(100i64))
       with Http.withBaseUrl("https://flix.dev");
 
     // Sliding window: at most 2 requests per 1000ms window.
@@ -42,5 +43,5 @@ def main(): Unit \ { Clock, Http, IO } =
                 case Err(err) => println("${url} -> ${err}")
             }
         }
-    } with Http.withSlidingWindow(maxRequests = 2, windowMs = 1000)
+    } with Http.withSlidingWindow(maxRequests = 2, window = seconds(1i64))
       with Http.withBaseUrl("https://flix.dev")

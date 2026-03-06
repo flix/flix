@@ -26,6 +26,7 @@ pub mod Net.HttpClient {
     use Net.Response.Response
     use Net.Timeout
     use Net.Timeout.{NoTimeout, After}
+    use Time.Duration.toMillis
 
     import java.io.IOException
     import java.io.UncheckedIOException
@@ -92,11 +93,8 @@ pub mod Net.HttpClient {
                        x#headers
                    );
             let jrequest = match x#requestTimeout {
-                case NoTimeout   => builder.build()
-                case After(t, u) =>
-                    // Widen to Int64 before multiplying to avoid Int32 overflow.
-                    let ms = Int32.toInt64(t) * Int32.toInt64(TimeUnit.toMilliseconds(u));
-                    builder.timeout(JDuration.ofMillis(ms)).build()
+                case NoTimeout  => builder.build()
+                case After(d)   => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
             };
             let client = {
                 let Request(x0) = req;
@@ -105,11 +103,8 @@ pub mod Net.HttpClient {
                 else {
                     let redirectPolicy = if (x0#followRedirects) Redirect.NORMAL else Redirect.NEVER;
                     match x0#connectTimeout {
-                        case NoTimeout   => HttpClient.newBuilder().followRedirects(redirectPolicy).build()
-                        case After(t, u) =>
-                            // Widen to Int64 before multiplying to avoid Int32 overflow.
-                            let ms = Int32.toInt64(t) * Int32.toInt64(TimeUnit.toMilliseconds(u));
-                            HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(ms)).build()
+                        case NoTimeout => HttpClient.newBuilder().followRedirects(redirectPolicy).build()
+                        case After(d)  => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(toMillis(d))).build()
                     }
                 }
             };

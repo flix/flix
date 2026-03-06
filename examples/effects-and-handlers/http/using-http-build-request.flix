@@ -2,6 +2,7 @@ use Net.Http
 use Net.Request
 use Net.Response
 use Net.Timeout
+use Time.Duration.seconds
 
 /// Demonstrates building an HTTP request with the `Request` API.
 /// Uses a fluent pipeline to add query parameters, a bearer token,
@@ -12,7 +13,7 @@ def main(): Unit \ { Http, IO } =
                 |> Request.withQueryParams(Map#{"page" => "1", "per_page" => "25", "sort" => "relevance"})
                 |> Request.withBearerToken("ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789")
                 |> Request.withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                |> Request.withTimeout(Timeout.After(5, TimeUnit.Seconds));
+                |> Request.withTimeout(Timeout.After(seconds(5i64)));
     match Http.send(req) {
         case Ok(resp) =>
             println("Status: ${Response.status(resp)}");

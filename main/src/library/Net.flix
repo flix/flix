@@ -16,6 +16,8 @@
 
 pub mod Net {
 
+    use Time.Duration
+
     ///
     /// An enum representing an HTTP method.
     ///
@@ -43,8 +45,8 @@ pub mod Net {
     pub enum Timeout with Eq, ToString {
         /// No timeout — wait indefinitely.
         case NoTimeout
-        /// Timeout after `t` units of time.
-        case After(Int32, TimeUnit)
+        /// Timeout after the given duration.
+        case After(Duration)
     }
 
     ///
@@ -61,8 +63,8 @@ pub mod Net {
     /// The decision returned by a retry handler.
     ///
     pub enum RetryDecision with Eq, ToString {
-        /// Retry after `delayMs` milliseconds.
-        case Retry(Int64)
+        /// Retry after the given duration.
+        case Retry(Duration)
         /// Do not retry; propagate the last result.
         case Stop
     }

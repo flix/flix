@@ -1,9 +1,10 @@
 use Net.Http
 use Net.Response
+use Time.Duration.seconds
 
 /// Uses `withCircuitBreaker` to protect against cascading failures.
 /// After `failureThreshold` consecutive failures (transport errors or 5xx),
-/// the circuit opens and rejects requests for `cooldownMs` milliseconds.
+/// the circuit opens and rejects requests for the `cooldown` duration.
 /// A successful request resets the failure counter.
 def main(): Unit \ { Clock, Http, IO } =
     run {
@@ -14,5 +15,5 @@ def main(): Unit \ { Clock, Http, IO } =
                 case Err(err) => println("${url} -> ${err}")
             }
         }
-    } with Http.withCircuitBreaker(failureThreshold = 3, cooldownMs = 5000)
+    } with Http.withCircuitBreaker(failureThreshold = 3, cooldown = seconds(5i64))
       with Http.withBaseUrl("https://notfound.flix.dev")
