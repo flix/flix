@@ -1,5 +1,12 @@
 # Changelog
 
+Version 0.69.0:
+- Compiler: Added tail recursion and termination checker (thanks Magnus!)
+- Compiler: Improved Java interoperability for new object creation (thanks Magnus!)
+- Compiler: Improved resilient parsing (thanks Mikkel!)
+- VSCode: Added inlay hints for missing effects (thanks Alexander and Samuel!)
+- VSCode: Added support for magic def completions on primitives (thanks Magnus!)
+
 Version 0.68.0:
 - Compiler: Added syntax highlighting to error messages (thanks Magnus!)
 - Compiler: Significantly improved error messages across the board (thanks Magnus!)
