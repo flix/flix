@@ -74,6 +74,20 @@ instance Formattable[Duration] {
 
 pub mod Duration {
 
+    /// Returns the zero duration.
+    pub def zero(): Duration = Duration.Duration(0i64)
+
+    /// Returns a duration of `n` in the given time unit `u`.
+    pub def of(n: Int64, u: TimeUnit): Duration = match u {
+        case TimeUnit.Days         => hours(n * 24i64),
+        case TimeUnit.Hours        => hours(n),
+        case TimeUnit.Microseconds => microseconds(n),
+        case TimeUnit.Milliseconds => milliseconds(n),
+        case TimeUnit.Minutes      => minutes(n),
+        case TimeUnit.Nanoseconds  => nanoseconds(n),
+        case TimeUnit.Seconds      => seconds(n)
+    }
+
     /// Returns a duration of `n` nanoseconds.
     pub def nanoseconds(n: Int64): Duration = Duration.Duration(n)
 
@@ -136,8 +150,5 @@ pub mod Duration {
     pub def isNegative(d: Duration): Bool =
         let Duration.Duration(n) = d;
         n < 0i64
-
-    /// Returns the zero duration.
-    pub def zero(): Duration = Duration.Duration(0i64)
 
 }
