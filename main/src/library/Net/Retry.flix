@@ -49,8 +49,10 @@ pub mod Net.Retry {
         let baseNanos = toNanos(bdm#baseDelay);
         (attempt, _, _) ->
             if (attempt < maxRetries)
-                // Clamp to 62 to prevent shift overflow/wrap-around.
-                RetryDecision.Retry(nanoseconds(baseNanos * Int64.leftShift(1i64, Int32.min(attempt, 62))))
+                // Clamp shift to 62 to prevent shift overflow, then cap the product at Int64.maxValue to prevent multiplication wrap-around.
+                let delay = baseNanos * Int64.leftShift(1i64, Int32.min(attempt, 62));
+                let clamped = if (delay <= 0i64) Int64.maxValue() else delay;
+                RetryDecision.Retry(nanoseconds(clamped))
             else RetryDecision.Stop
 
     ///
@@ -69,7 +71,8 @@ pub mod Net.Retry {
                     case RetryOutcome.HttpError(resp) =>
                         match Response.headerValue("retry-after", resp) {
                             case Some(s) => match Int64.fromString(s) {
-                                case Some(secs) => seconds(Int64.toInt32(secs))
+                                // Clamp to Int32 range to guard against absurd Retry-After values from untrusted servers.
+                            case Some(secs) => seconds(Int64.clampToInt32(min = 0, max = Int32.maxValue(), secs))
                                 case None       => baseDelay
                             }
                             case None => baseDelay
@@ -127,7 +130,9 @@ pub mod Net.Retry {
                 case RetryDecision.Retry(d) =>
                     let elapsed = Clock.now() - startMs;
                     if (elapsed >= deadlineMs) RetryDecision.Stop
-                    else RetryDecision.Retry(milliseconds(Int64.toInt32(Int64.min(toMillis(d), deadlineMs - elapsed))))
+                    else
+                        let ms = Int64.min(toMillis(d), deadlineMs - elapsed);
+                        RetryDecision.Retry(milliseconds(Int64.clampToInt32(min = 0, max = Int32.maxValue(), ms)))
             }
 
 }
