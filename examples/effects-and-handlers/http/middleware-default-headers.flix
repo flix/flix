@@ -6,7 +6,7 @@ use Net.Response
 def main(): Unit \ { Http, IO } =
     let defaults = Map#{
         "Accept"        => List#{"application/json"},
-        "Authorization" => List#{"Bearer my-token"}
+        "Authorization" => List#{"Bearer ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789"}
     };
     run {
         match Http.get("https://flix.dev/api/users") {
