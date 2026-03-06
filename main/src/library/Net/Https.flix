@@ -16,16 +16,16 @@
 
 pub mod Net.Https {
 
-    use Net.Https
+    use IoError.ErrorKind
+    use IoError.IoError
     use Net.HttpClient
-    use Net.RetryOutcome
-    use Net.RetryDecision
+    use Net.Https
     use Net.Request
     use Net.Request.Request
     use Net.Response
     use Net.Response.Response
-    use IoError.ErrorKind
-    use IoError.IoError
+    use Net.RetryDecision
+    use Net.RetryOutcome
     use RichString.{text, bold, cyan, green, yellow, red, gray}
 
     import java.lang.{Thread => JThread}

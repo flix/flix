@@ -17,14 +17,14 @@
 pub mod Net.Request {
 
     use Net.Body
+    use Net.Method
     use Net.Request
     use Net.Request.Request
-    use Net.Method
     use Net.Timeout
     use Net.Timeout.{NoTimeout, After}
 
-    import java.nio.charset.StandardCharsets
     import java.net.URLEncoder
+    import java.nio.charset.StandardCharsets
 
     ///
     /// Returns the HTTP method of the request `r`.
@@ -65,13 +65,6 @@ pub mod Net.Request {
             case Some(Body.Bytes(v)) => Some(v)
             case _                   => None
         }
-    }
-
-    ///
-    /// Returns the raw body of the request `r`.
-    ///
-    pub def bodyRaw(r: Request): Option[Body] = match r {
-        case Request(x) => x#body
     }
 
     ///

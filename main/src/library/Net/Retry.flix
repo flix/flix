@@ -16,10 +16,10 @@
 
 pub mod Net.Retry {
 
-    use Net.RetryOutcome
-    use Net.RetryDecision
     use Net.Request
     use Net.Response
+    use Net.RetryDecision
+    use Net.RetryOutcome
 
     ///
     /// Returns a strategy that never retries.

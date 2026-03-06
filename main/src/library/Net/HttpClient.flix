@@ -16,6 +16,8 @@
 
 pub mod Net.HttpClient {
 
+    use IoError.ErrorKind
+    use IoError.IoError
     use Net.Body
     use Net.Method
     use Net.Request
@@ -24,23 +26,20 @@ pub mod Net.HttpClient {
     use Net.Response.Response
     use Net.Timeout
     use Net.Timeout.{NoTimeout, After}
-    use IoError.ErrorKind
-    use IoError.IoError
 
     import java.io.IOException
     import java.io.UncheckedIOException
     import java.lang.IllegalArgumentException
     import java.lang.InterruptedException
     import java.lang.{Throwable => JThrowable}
-
     import java.net.ConnectException
+    import java.net.URI
     import java.net.http.HttpClient
     import java.net.http.{HttpClient$Redirect => Redirect}
-    import java.net.http.HttpTimeoutException
-    import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
     import java.net.http.HttpRequest
     import java.net.http.{HttpRequest$BodyPublishers => BodyPublishers}
-    import java.net.URI
+    import java.net.http.HttpTimeoutException
+    import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
     import java.time.{Duration => JDuration}
     import java.util.{List => JList}
 

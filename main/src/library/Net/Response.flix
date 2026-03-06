@@ -16,11 +16,11 @@
 
 pub mod Net.Response {
 
+    use IoError.ErrorKind
+    use IoError.IoError
     use Net.Body
     use Net.Response
     use Net.Response.Response
-    use IoError.ErrorKind
-    use IoError.IoError
 
     import java.lang.{String => JString}
     import java.nio.charset.StandardCharsets
