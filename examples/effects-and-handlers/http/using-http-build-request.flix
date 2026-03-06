@@ -8,10 +8,10 @@ use Net.Timeout
 /// a custom header, and a timeout before sending with `Http.send`.
 def main(): Unit \ { Http, IO } =
     let req = Request.get("https://flix.dev/api/search")
-                |> Request.withQueryParam("q", "flix lang")
-                |> Request.withQueryParams(Map#{"page" => "1", "limit" => "10"})
-                |> Request.withBearerToken("my-secret-token")
-                |> Request.withHeader("X-Custom", "hello")
+                |> Request.withQueryParam("q", "flix programming language")
+                |> Request.withQueryParams(Map#{"page" => "1", "per_page" => "25", "sort" => "relevance"})
+                |> Request.withBearerToken("ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789")
+                |> Request.withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                 |> Request.withTimeout(Timeout.After(5, TimeUnit.Seconds));
     match Http.send(req) {
         case Ok(resp) =>
