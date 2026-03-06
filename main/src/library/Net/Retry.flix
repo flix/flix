@@ -69,7 +69,7 @@ pub mod Net.Retry {
                     case RetryOutcome.HttpError(resp) =>
                         match Response.headerValue("retry-after", resp) {
                             case Some(s) => match Int64.fromString(s) {
-                                case Some(secs) => seconds(secs)
+                                case Some(secs) => seconds(Int64.toInt32(secs))
                                 case None       => baseDelay
                             }
                             case None => baseDelay
@@ -127,7 +127,7 @@ pub mod Net.Retry {
                 case RetryDecision.Retry(d) =>
                     let elapsed = Clock.now() - startMs;
                     if (elapsed >= deadlineMs) RetryDecision.Stop
-                    else RetryDecision.Retry(milliseconds(Int64.min(toMillis(d), deadlineMs - elapsed)))
+                    else RetryDecision.Retry(milliseconds(Int64.toInt32(Int64.min(toMillis(d), deadlineMs - elapsed))))
             }
 
 }

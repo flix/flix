@@ -28,7 +28,7 @@ def main(): Unit \ { Clock, Http, Logger, IO } =
         }
     } with Http.withBaseUrl("https://flix.dev")
       with Http.withDefaultHeaders(defaultHeaders)
-      with Http.withRetry(Retry.linear(maxRetries = 2, delay = milliseconds(100i64)))
-      with Http.withCircuitBreaker(failureThreshold = 3, cooldown = seconds(5i64))
-      with Http.withSlidingWindow(maxRequests = 2, window = seconds(1i64))
+      with Http.withRetry(Retry.linear(maxRetries = 2, delay = milliseconds(100)))
+      with Http.withCircuitBreaker(failureThreshold = 3, cooldown = seconds(5))
+      with Http.withSlidingWindow(maxRequests = 2, window = seconds(1))
       with Http.withLogging

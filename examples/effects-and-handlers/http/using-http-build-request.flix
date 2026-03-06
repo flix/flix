@@ -13,7 +13,7 @@ def main(): Unit \ { Http, IO } =
                 |> Request.withQueryParams(Map#{"page" => "1", "per_page" => "25", "sort" => "relevance"})
                 |> Request.withBearerToken("ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789")
                 |> Request.withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                |> Request.withTimeout(Timeout.After(seconds(5i64)));
+                |> Request.withTimeout(Timeout.After(seconds(5)));
     match Http.send(req) {
         case Ok(resp) =>
             println("Status: ${Response.status(resp)}");
