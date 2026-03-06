@@ -225,18 +225,18 @@ pub mod Net.Request {
     }
 
     ///
-    /// Sets the request timeout (time until response headers are received).
-    ///
-    pub def withTimeout(timeout: Timeout, r: Request): Request =
-        let Request(x) = r;
-        Request({requestTimeout = timeout | x})
-
-    ///
     /// Sets the connect timeout (time to establish the TCP connection).
     ///
     pub def withConnectTimeout(timeout: Timeout, r: Request): Request =
         let Request(x) = r;
         Request({connectTimeout = timeout | x})
+
+    ///
+    /// Sets the request timeout (time until response headers are received).
+    ///
+    pub def withTimeout(timeout: Timeout, r: Request): Request =
+        let Request(x) = r;
+        Request({requestTimeout = timeout | x})
 
     ///
     /// Sets whether the request `r` should follow HTTP redirects.
