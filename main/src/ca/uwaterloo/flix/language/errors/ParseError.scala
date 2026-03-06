@@ -342,6 +342,30 @@ object ParseError {
 
   }
 
+
+  /**
+    * An error raised to indicate that a semicolon was expected.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    * @param found     The token that was found instead.
+    */
+  case class ExpectedSemicolon(sctx: SyntacticContext, loc: SourceLocation, found: TokenKind) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3190
+
+    def summary: String = s"Expected ';' but found '$found'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected ';' but found '$found'
+         |
+         |${src(loc, s"Expected ';' here")}
+         |""".stripMargin
+    }
+
+  }
+
   /**
     * An error raised to indicate an unexpected token was found.
     *
