@@ -53,6 +53,7 @@ mod Test.Kind {}
 mod Test.Lit {}
 mod Test.Predicate {}
 mod Test.Stratification {}
+mod Test.Terminator {}
 mod Test.Term {}
 mod Test.Term.Lit {}
 mod Test.Term.Lit.Var {}

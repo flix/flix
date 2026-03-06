@@ -490,7 +490,7 @@ object Kinder {
         val exp2 = visitExp(exp20, kenv0, root)
         KindedAst.Expr.Let(sym, exp1, exp2, loc)
 
-      case ResolvedAst.Expr.LocalDef(sym, fparams0, exp10, exp20, loc) =>
+      case ResolvedAst.Expr.LocalDef(ann, sym, fparams0, exp10, exp20, loc) =>
         // we must infer the formal parameters because the may contain wildcard types
         // which would not appear in the function's kenv
         val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, root))
@@ -499,7 +499,7 @@ object Kinder {
         val exp1 = visitExp(exp10, kenv1, root)
         // We visit exp2 outside the new kenv since it's not in the def's scope
         val exp2 = visitExp(exp20, kenv0, root)
-        KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc)
+        KindedAst.Expr.LocalDef(ann, sym, fparams, exp1, exp2, loc)
 
       case ResolvedAst.Expr.Region(sym, regSym, exp0, loc) =>
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -1419,12 +1419,12 @@ object Kinder {
     * Performs kinding on the given JVM method.
     */
   private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.JvmMethod = method match {
-    case ResolvedAst.JvmMethod(_, fparams0, exp0, tpe0, eff0, loc) =>
+    case ResolvedAst.JvmMethod(ann0, _, fparams0, exp0, tpe0, eff0, loc) =>
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val exp = visitExp(exp0, kenv, root)
       val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
-      KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
+      KindedAst.JvmMethod(ann0, method.ident, fparams, exp, tpe, eff, loc)
   }
 
   /**

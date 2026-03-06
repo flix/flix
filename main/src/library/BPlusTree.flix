@@ -304,6 +304,18 @@ pub mod BPlusTree {
     }
 
     ///
+    /// Returns an iterator over keys in `t`.
+    ///
+    pub def iteratorWithKeys(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[k, r1 + r2, r1] \ r1 + r2 = 
+        Iterator.map(match (k, _) -> k, iterator(rc1, t))
+    
+    ///
+    /// Returns an iterator over values in `t`.
+    ///
+    pub def iteratorValues(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[v, r1 + r2, r1] \ r1 + r2 = 
+        Iterator.map(match (_, v) -> v, iterator(rc1, t))
+
+    ///
     /// Returns an iterator over all key-value pairs in `t`,
     ///
     /// Not thread-safe.
@@ -693,12 +705,68 @@ pub mod BPlusTree {
         BPlusTree.forEach(k -> v -> BPlusTree.putWith(f, k, v, dst), src)
 
     ///
-    /// Optionally returns `k => v` where `k` is the minimum key.
+    /// Optionally returns `k => v` where `k` is the smallest key in `t` according to the 
+    /// `Order` instance on `k`.
     ///
-    /// Not thread-safe.
+    /// Returns `None` if `t` is empty.
     ///
-    pub def minimumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r =
-        Node.minimumKey(t->root)
+    /// Thread-safe.
+    ///
+    pub def minimumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
+        let (leaf, leafStamp) = leftMostLeaf(t);
+        let result = match Node.size(leaf) {
+            case 0 => None
+            case _ => Some(Node.getKeyAndValueAt(0, leaf))
+        };
+        if (Lock.valid(leafStamp, Node.getLock(leaf))) {
+            result
+        } else {
+            Lock.yieldBasedOn(Node.getLock(leaf));
+            minimumKey(t)
+        }
+    }
+
+    /// 
+    /// Optionally returns `k => v` where `k` is the largest key in `t` according to the 
+    /// `Order` instance on `k`.
+    ///
+    /// Returns `None` if `t` is empty.
+    ///
+    /// Thread-safe.
+    ///
+    pub def maximumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
+        let (leaf, leafStamp) = rightMostLeaf(t);
+        let result = match Node.size(leaf) {
+            case 0 => None
+            case n => Some(Node.getKeyAndValueAt(n - 1, leaf))
+        };
+        if (Lock.valid(leafStamp, Node.getLock(leaf))) {
+            result
+        } else {
+            Lock.yieldBasedOn(Node.getLock(leaf));
+            maximumKey(t)
+        }
+    }
+
+    ///
+    /// Returns the leftmost leaf of `t` and its lock stamp. 
+    ///
+    /// The leftmost leaf contains the minimum key in the tree.
+    ///
+    def leftMostLeaf(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] = {
+        let (node, stamp) = getLockedRoot(t);
+        Node.leftMostLeaf(node, stamp, t)
+    }
+
+    ///
+    /// Returns the rightmost leaf of `t` and its lock stamp. 
+    ///
+    /// The rightmost leaf contains the maximum key in the tree.
+    ///
+    def rightMostLeaf(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] = {
+        let (node, stamp) = getLockedRoot(t);
+        Node.rightMostLeaf(node, stamp, t)
+    }
 
     ///
     /// Returns the arity of `t`.
@@ -725,6 +793,16 @@ pub mod BPlusTree {
     def putWithInternal(f: v -> v -> v \ ef, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k] =
         let (leaf, stamp) = findLeaf(k, t);
         Node.putWith(f, k, v, t, leaf, stamp)
+
+    ///
+    /// Returns the list of mappings `k => v` in `t` where `min <= k <= max` according to 
+    /// the `Order` instance on `k`.
+    ///
+    pub def rangeQuery(min: k, max: k, t: BPlusTree[k, v, r]): List[(k, v)] \ r with Order[k] = region rc {
+        let l = MutList.empty(rc);
+        rangeQueryWith(k -> v -> MutList.push((k, v), l), min, max, t);
+        MutList.toList(l)
+    }
 
     ///
     /// Applies `f` in ascending order to all mappings `k => v` in `t` where
@@ -787,7 +865,7 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def toString(t: BPlusTree[k, v, r]): String \ r with ToString[k], ToString[v] =
-        "Search: ${Vector.join(" < ", t->search)}\nTree:\n${Node.toString(0, t->rc, t->root)}"
+        Node.toString(0, t->rc, t->root)
 
     ///
     /// Write lock `t->rootLock` and return the stamp.

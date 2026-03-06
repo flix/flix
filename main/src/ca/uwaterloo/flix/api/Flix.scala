@@ -514,7 +514,7 @@ class Flix {
             val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
             errors ++= stratificationErrors
 
-            val (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier, cachedTyperAst, changeSet)
+            val (afterPatMatch, patMatchErrors) = PatMatch2.run(afterStratifier, cachedTyperAst, changeSet)
             errors ++= patMatchErrors
 
             val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
@@ -523,7 +523,10 @@ class Flix {
             val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
             errors ++= safetyErrors
 
-            val (afterDependencies, _) = Dependencies.run(afterRedundancy, cachedTyperAst, changeSet)
+            val (afterTerminator, terminationErrors) = Terminator.run(afterRedundancy, cachedTyperAst, changeSet)
+            errors ++= terminationErrors
+
+            val (afterDependencies, _) = Dependencies.run(afterTerminator, cachedTyperAst, changeSet)
 
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer

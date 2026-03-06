@@ -97,20 +97,20 @@ object Safety {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(_, exps, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Unary(_, exp, _, _, _) =>
@@ -124,7 +124,7 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
@@ -822,7 +822,7 @@ object Safety {
 
       // `methods` must take the object itself (`this`) as the first argument.
       methods.foreach {
-        case JvmMethod(ident, fparams, _, _, _, methodLoc) =>
+        case JvmMethod(_, ident, fparams, _, _, _, methodLoc) =>
           val firstParam = fparams.head
           firstParam.tpe match {
             case t if Type.eraseAliases(t) == tpe =>
@@ -868,7 +868,7 @@ object Safety {
   /** Returns a map of `methods` based on their [[MethodSignature]]. */
   private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
     methods.map {
-      case m@JvmMethod(ident, fparams, _, retTpe, _, _) =>
+      case m@JvmMethod(_, ident, fparams, _, retTpe, _, _) =>
         // Drop the first formal parameter (which always represents `this`)
         val paramTypes = fparams.tail.map(_.tpe)
         val signature = MethodSignature(ident.name, paramTypes.map(Type.eraseAliases), Type.eraseAliases(retTpe))
