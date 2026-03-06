@@ -145,10 +145,7 @@ pub mod Net.Request {
     pub def withHeaders(h: Map[String, List[String]], r: Request): Request =
         let Request(x) = r;
         let merged = Map.foldLeftWithKey((acc, name, newValues) -> {
-            let existing = match Map.get(name, acc) {
-                case Some(vs) => vs
-                case None     => Nil
-            };
+            let existing = Map.getWithDefault(name, Nil, acc);
             Map.insert(name, List.append(existing, newValues), acc)
         }, x#headers, h);
         Request({headers = merged | x})
@@ -207,17 +204,17 @@ pub mod Net.Request {
         Map.foldLeftWithKey((acc, name, value) -> withQueryParam(name, value, acc), r, params)
 
     ///
-    /// Returns the request timeout of the request `r`.
-    ///
-    pub def requestTimeout(r: Request): Timeout = match r {
-        case Request(x) => x#requestTimeout
-    }
-
-    ///
     /// Returns the connect timeout of the request `r`.
     ///
     pub def connectTimeout(r: Request): Timeout = match r {
         case Request(x) => x#connectTimeout
+    }
+
+    ///
+    /// Returns the request timeout of the request `r`.
+    ///
+    pub def requestTimeout(r: Request): Timeout = match r {
+        case Request(x) => x#requestTimeout
     }
 
     ///
