@@ -49,12 +49,6 @@ pub mod Net.Https {
         send(Request.head(url))
 
     ///
-    /// Sends a DELETE request to the given `url`.
-    ///
-    pub def delete(url: String): Result[IoError, Response] \ Https =
-        send(Request.delete(url))
-
-    ///
     /// Sends an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): Result[IoError, Response] \ Https =
@@ -77,6 +71,12 @@ pub mod Net.Https {
     ///
     pub def patch(url: String, body: String): Result[IoError, Response] \ Https =
         send(Request.patch(url, body))
+
+    ///
+    /// Sends a DELETE request to the given `url`.
+    ///
+    pub def delete(url: String): Result[IoError, Response] \ Https =
+        send(Request.delete(url))
 
     ///
     /// Validates that the given request URL uses the `https://` scheme.

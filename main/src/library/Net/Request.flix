@@ -82,13 +82,6 @@ pub mod Net.Request {
                  requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///
-    /// Creates a DELETE request to the given `url`.
-    ///
-    pub def delete(url: String): Request =
-        Request({method = Method.Delete, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
-
-    ///
     /// Creates an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): Request =
@@ -114,6 +107,13 @@ pub mod Net.Request {
     ///
     pub def patch(url: String, body: String): Request =
         Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
+                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
+
+    ///
+    /// Creates a DELETE request to the given `url`.
+    ///
+    pub def delete(url: String): Request =
+        Request({method = Method.Delete, url = url, headers = Map.empty(), body = None,
                  requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
     ///

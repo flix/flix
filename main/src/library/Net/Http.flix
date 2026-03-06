@@ -49,12 +49,6 @@ pub mod Net.Http {
         send(Request.head(url))
 
     ///
-    /// Sends a DELETE request to the given `url`.
-    ///
-    pub def delete(url: String): Result[IoError, Response] \ Http =
-        send(Request.delete(url))
-
-    ///
     /// Sends an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): Result[IoError, Response] \ Http =
@@ -77,6 +71,12 @@ pub mod Net.Http {
     ///
     pub def patch(url: String, body: String): Result[IoError, Response] \ Http =
         send(Request.patch(url, body))
+
+    ///
+    /// Sends a DELETE request to the given `url`.
+    ///
+    pub def delete(url: String): Result[IoError, Response] \ Http =
+        send(Request.delete(url))
 
     ///
     /// Handles the `Http` effect of the given function `f`.

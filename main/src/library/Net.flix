@@ -22,11 +22,11 @@ pub mod Net {
     pub enum Method with Eq, ToString {
         case Get
         case Head
-        case Delete
         case Options
         case Post
         case Put
         case Patch
+        case Delete
     }
 
     ///

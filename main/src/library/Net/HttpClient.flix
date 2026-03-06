@@ -69,11 +69,11 @@ pub mod Net.HttpClient {
             let methodStr = match x#method {
                 case Method.Get     => "GET"
                 case Method.Head    => "HEAD"
-                case Method.Delete  => "DELETE"
                 case Method.Options => "OPTIONS"
                 case Method.Post    => "POST"
                 case Method.Put     => "PUT"
                 case Method.Patch   => "PATCH"
+                case Method.Delete  => "DELETE"
             };
             let bodyPublisher = match x#body {
                case Some(Body.Text(s))  => BodyPublishers.ofString(s)
