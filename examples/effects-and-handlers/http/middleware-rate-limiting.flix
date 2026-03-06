@@ -16,7 +16,7 @@ def main(): Unit \ { Clock, Http, IO } =
                 case Err(err) => println("${url} -> ${err}")
             }
         }
-    } with Http.withMinInterval(100i64)
+    } with Http.withMinInterval(intervalMs = 100)
       with Http.withBaseUrl("https://flix.dev");
 
     // Token bucket: burst of 2, then 1 request per 100ms.
@@ -29,7 +29,7 @@ def main(): Unit \ { Clock, Http, IO } =
                 case Err(err) => println("${url} -> ${err}")
             }
         }
-    } with Http.withTokenBucket(2, 100i64)
+    } with Http.withTokenBucket(burstSize = 2, intervalMs = 100)
       with Http.withBaseUrl("https://flix.dev");
 
     // Sliding window: at most 2 requests per 1000ms window.
@@ -42,5 +42,5 @@ def main(): Unit \ { Clock, Http, IO } =
                 case Err(err) => println("${url} -> ${err}")
             }
         }
-    } with Http.withSlidingWindow(2, 1000i64)
+    } with Http.withSlidingWindow(maxRequests = 2, windowMs = 1000)
       with Http.withBaseUrl("https://flix.dev")

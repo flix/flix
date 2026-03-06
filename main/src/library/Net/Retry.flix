@@ -30,7 +30,9 @@ pub mod Net.Retry {
     ///
     /// Returns a strategy that retries up to `maxRetries` times with a fixed `delayMs` delay.
     ///
-    pub def linear(maxRetries: Int32, delayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def linear(maxRetries: {maxRetries = Int32}, delayMs: {delayMs = Int32}): (Int32, Request, RetryOutcome) -> RetryDecision =
+        let maxRetries = maxRetries#maxRetries;
+        let delayMs = Int32.toInt64(delayMs#delayMs);
         (attempt, _, _) ->
             if (attempt < maxRetries) RetryDecision.Retry(delayMs)
             else RetryDecision.Stop
@@ -40,7 +42,9 @@ pub mod Net.Retry {
     ///
     /// Retries up to `maxRetries` times with delays: `baseDelayMs`, `2*base`, `4*base`, …
     ///
-    pub def exponential(maxRetries: Int32, baseDelayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def exponential(maxRetries: {maxRetries = Int32}, baseDelayMs: {baseDelayMs = Int32}): (Int32, Request, RetryOutcome) -> RetryDecision =
+        let maxRetries = maxRetries#maxRetries;
+        let baseDelayMs = Int32.toInt64(baseDelayMs#baseDelayMs);
         (attempt, _, _) ->
             if (attempt < maxRetries)
                 // Clamp to 62 to prevent shift overflow/wrap-around.
@@ -53,7 +57,9 @@ pub mod Net.Retry {
     ///
     /// Falls back to `baseDelayMs` when the header is absent or unparseable.
     ///
-    pub def retryAfter(maxRetries: Int32, baseDelayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def retryAfter(maxRetries: {maxRetries = Int32}, baseDelayMs: {baseDelayMs = Int32}): (Int32, Request, RetryOutcome) -> RetryDecision =
+        let maxRetries = maxRetries#maxRetries;
+        let baseDelayMs = Int32.toInt64(baseDelayMs#baseDelayMs);
         (attempt, _, outcome) ->
             if (attempt >= maxRetries) RetryDecision.Stop
             else
@@ -76,7 +82,9 @@ pub mod Net.Retry {
     ///
     /// HTTP-level errors (non-2xx responses) are never retried.
     ///
-    pub def retryTransportOnly(maxRetries: Int32, delayMs: Int64): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def retryTransportOnly(maxRetries: {maxRetries = Int32}, delayMs: {delayMs = Int32}): (Int32, Request, RetryOutcome) -> RetryDecision =
+        let maxRetries = maxRetries#maxRetries;
+        let delayMs = Int32.toInt64(delayMs#delayMs);
         (attempt, _, outcome) -> match outcome {
             case RetryOutcome.TransportError(_) if attempt < maxRetries => RetryDecision.Retry(delayMs)
             case _                                                       => RetryDecision.Stop
@@ -85,9 +93,10 @@ pub mod Net.Retry {
     ///
     /// Wraps `inner` by adding uniform random jitter in `[0, maxJitterMs]` to any `Retry` delay.
     ///
-    pub def withJitter(maxJitterMs: Int64,
+    pub def withJitter(maxJitterMs: {maxJitterMs = Int32},
                        inner: (Int32, Request, RetryOutcome) -> RetryDecision \ ef):
                        (Int32, Request, RetryOutcome) -> RetryDecision \ ef + Random =
+        let maxJitterMs = Int32.toInt64(maxJitterMs#maxJitterMs);
         (attempt, req, outcome) ->
             let base = inner(attempt, req, outcome);
             match base {
@@ -104,9 +113,11 @@ pub mod Net.Retry {
     ///
     /// Returns `Stop` if the deadline is already past.
     ///
-    pub def withDeadline(deadlineMs: Int64, startMs: Int64,
+    pub def withDeadline(deadlineMs: {deadlineMs = Int32}, startMs: {startMs = Int32},
                          inner: (Int32, Request, RetryOutcome) -> RetryDecision \ ef):
                          (Int32, Request, RetryOutcome) -> RetryDecision \ ef + Clock =
+        let deadlineMs = Int32.toInt64(deadlineMs#deadlineMs);
+        let startMs = Int32.toInt64(startMs#startMs);
         (attempt, req, outcome) ->
             let base = inner(attempt, req, outcome);
             match base {

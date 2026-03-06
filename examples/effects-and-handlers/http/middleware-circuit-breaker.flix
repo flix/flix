@@ -14,5 +14,5 @@ def main(): Unit \ { Clock, Http, IO } =
                 case Err(err) => println("${url} -> ${err}")
             }
         }
-    } with Http.withCircuitBreaker(3, 5000i64)
+    } with Http.withCircuitBreaker(failureThreshold = 3, cooldownMs = 5000)
       with Http.withBaseUrl("https://notfound.flix.dev")

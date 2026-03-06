@@ -14,7 +14,7 @@ def main(): Unit \ { Http, IO } =
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
-    } with Http.withRetry(Retry.linear(3, 100i64));
+    } with Http.withRetry(Retry.linear(maxRetries = 3, delayMs = 100));
 
     // Exponential: retry up to 3 times with 100ms base delay.
     run {
@@ -23,7 +23,7 @@ def main(): Unit \ { Http, IO } =
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
-    } with Http.withRetry(Retry.exponential(3, 100i64));
+    } with Http.withRetry(Retry.exponential(maxRetries = 3, baseDelayMs = 100));
 
     // Transport-only: only retry on connection failures, not HTTP errors.
     run {
@@ -32,4 +32,4 @@ def main(): Unit \ { Http, IO } =
             case Ok(resp) => println("Status: ${Response.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
-    } with Http.withRetry(Retry.retryTransportOnly(2, 100i64))
+    } with Http.withRetry(Retry.retryTransportOnly(maxRetries = 2, delayMs = 100))

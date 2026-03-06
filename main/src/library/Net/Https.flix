@@ -114,7 +114,8 @@ pub mod Net.Https {
     /// Middleware that intercepts the `Https` effect, enforcing a minimum interval
     /// (in milliseconds) between consecutive HTTPS requests.
     ///
-    pub def withMinInterval(intervalMs: Int64, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+    pub def withMinInterval(intervalMs: {intervalMs = Int32}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+        let intervalMs = Int32.toInt64(intervalMs#intervalMs);
         region rc {
             let last = Ref.fresh(rc, 0i64);
             run { f() } with handler Https {
@@ -132,7 +133,9 @@ pub mod Net.Https {
     /// rate limit. Allows an initial burst of `burstSize` requests, then
     /// sustains at 1 request per `intervalMs` milliseconds.
     ///
-    pub def withTokenBucket(burstSize: Int32, intervalMs: Int64, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+    pub def withTokenBucket(burstSize: {burstSize = Int32}, intervalMs: {intervalMs = Int32}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+        let burstSize = burstSize#burstSize;
+        let intervalMs = Int32.toInt64(intervalMs#intervalMs);
         region rc {
             let tokens   = Ref.fresh(rc, burstSize);
             let lastTime = Ref.fresh(rc, Clock.now());
@@ -168,7 +171,9 @@ pub mod Net.Https {
     /// rate limit. Allows at most `maxRequests` within any rolling `windowMs`-millisecond
     /// window. When the limit is reached, sleeps until the oldest request expires.
     ///
-    pub def withSlidingWindow(maxRequests: Int32, windowMs: Int64, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+    pub def withSlidingWindow(maxRequests: {maxRequests = Int32}, windowMs: {windowMs = Int32}, f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+        let maxRequests = maxRequests#maxRequests;
+        let windowMs = Int32.toInt64(windowMs#windowMs);
         region rc {
             let timestamps = MutDeque.empty(rc);
             run { f() } with handler Https {
@@ -213,8 +218,10 @@ pub mod Net.Https {
     ///
     /// Non-failure responses (2xx, 3xx, 4xx) reset the failure counter.
     ///
-    pub def withCircuitBreaker(failureThreshold: Int32, cooldownMs: Int64,
+    pub def withCircuitBreaker(failureThreshold: {failureThreshold = Int32}, cooldownMs: {cooldownMs = Int32},
                                f: Unit -> a \ ef): a \ (ef - Https) + {Clock, Https} =
+        let failureThreshold = failureThreshold#failureThreshold;
+        let cooldownMs = Int32.toInt64(cooldownMs#cooldownMs);
         region rc {
             let failures  = Ref.fresh(rc, 0);
             let openSince = Ref.fresh(rc, 0i64);
