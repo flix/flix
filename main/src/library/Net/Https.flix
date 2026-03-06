@@ -347,8 +347,10 @@ pub mod Net.Https {
                                          red("${status}")
                                      else
                                          yellow("${status}");
+                        let size = Vector.length(Response.bodyBytes(resp));
                         Logger.log(Severity.Debug,
-                            gray("<--") + text(" ") + color + text(" ") + cyan(url))
+                            gray("<--") + text(" ") + color + text(" ") + cyan(url) +
+                            gray(" (${size} bytes)"))
                     case Err(err) =>
                         Logger.log(Severity.Debug,
                             gray("<--") + text(" ") + red("ERR") + text(" ") + cyan(url) +
