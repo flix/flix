@@ -26,46 +26,7 @@ pub mod Net.Request {
     import java.net.URLEncoder
     import java.nio.charset.StandardCharsets
 
-    ///
-    /// Returns the HTTP method of the request `r`.
-    ///
-    pub def method(r: Request): Method = match r {
-        case Request(x) => x#method
-    }
-
-    ///
-    /// Returns the URL of the request `r`.
-    ///
-    pub def url(r: Request): String = match r {
-        case Request(x) => x#url
-    }
-
-    ///
-    /// Returns the headers of the request `r`.
-    ///
-    pub def headers(r: Request): Map[String, List[String]] = match r {
-        case Request(x) => x#headers
-    }
-
-    ///
-    /// Returns the text body of the request `r`, or `None` if absent or binary.
-    ///
-    pub def body(r: Request): Option[String] = match r {
-        case Request(x) => match x#body {
-            case Some(Body.Text(s)) => Some(s)
-            case _                  => None
-        }
-    }
-
-    ///
-    /// Returns the binary body of the request `r`, or `None` if absent or text.
-    ///
-    pub def bodyBytes(r: Request): Option[Vector[Int8]] = match r {
-        case Request(x) => match x#body {
-            case Some(Body.Bytes(v)) => Some(v)
-            case _                   => None
-        }
-    }
+    // --- Constructors ---
 
     ///
     /// Creates a GET request to the given `url`.
@@ -116,6 +77,72 @@ pub mod Net.Request {
         Request({method = Method.Delete, url = url, headers = Map.empty(), body = None,
                  requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
 
+    // --- Getters ---
+
+    ///
+    /// Returns the HTTP method of the request `r`.
+    ///
+    pub def method(r: Request): Method = match r {
+        case Request(x) => x#method
+    }
+
+    ///
+    /// Returns the URL of the request `r`.
+    ///
+    pub def url(r: Request): String = match r {
+        case Request(x) => x#url
+    }
+
+    ///
+    /// Returns the headers of the request `r`.
+    ///
+    pub def headers(r: Request): Map[String, List[String]] = match r {
+        case Request(x) => x#headers
+    }
+
+    ///
+    /// Returns the text body of the request `r`, or `None` if absent or binary.
+    ///
+    pub def body(r: Request): Option[String] = match r {
+        case Request(x) => match x#body {
+            case Some(Body.Text(s)) => Some(s)
+            case _                  => None
+        }
+    }
+
+    ///
+    /// Returns the binary body of the request `r`, or `None` if absent or text.
+    ///
+    pub def bodyBytes(r: Request): Option[Vector[Int8]] = match r {
+        case Request(x) => match x#body {
+            case Some(Body.Bytes(v)) => Some(v)
+            case _                   => None
+        }
+    }
+
+    ///
+    /// Returns the request timeout of the request `r`.
+    ///
+    pub def requestTimeout(r: Request): Timeout = match r {
+        case Request(x) => x#requestTimeout
+    }
+
+    ///
+    /// Returns the connect timeout of the request `r`.
+    ///
+    pub def connectTimeout(r: Request): Timeout = match r {
+        case Request(x) => x#connectTimeout
+    }
+
+    ///
+    /// Returns `true` if the request `r` follows redirects.
+    ///
+    pub def followRedirects(r: Request): Bool = match r {
+        case Request(x) => x#followRedirects
+    }
+
+    // --- Modifiers: Headers ---
+
     ///
     /// Adds the header `name` with value `value` to the request `r`.
     ///
@@ -151,20 +178,6 @@ pub mod Net.Request {
         Request({headers = merged | x})
 
     ///
-    /// Sets the body of the request `r` to the given text `body`.
-    ///
-    pub def withBody(body: String, r: Request): Request =
-        let Request(x) = r;
-        Request({body = Some(Body.Text(body)) | x})
-
-    ///
-    /// Sets the body of the request `r` to the given binary `body`.
-    ///
-    pub def withBodyBytes(body: Vector[Int8], r: Request): Request =
-        let Request(x) = r;
-        Request({body = Some(Body.Bytes(body)) | x})
-
-    ///
     /// Sets the `Authorization` header to `Bearer <token>` on the request `r`.
     ///
     pub def withBearerToken(token: String, r: Request): Request =
@@ -181,6 +194,24 @@ pub mod Net.Request {
     ///
     pub def withAccept(accept: String, r: Request): Request =
         setHeader("Accept", accept, r)
+
+    // --- Modifiers: Body ---
+
+    ///
+    /// Sets the body of the request `r` to the given text `body`.
+    ///
+    pub def withBody(body: String, r: Request): Request =
+        let Request(x) = r;
+        Request({body = Some(Body.Text(body)) | x})
+
+    ///
+    /// Sets the body of the request `r` to the given binary `body`.
+    ///
+    pub def withBodyBytes(body: Vector[Int8], r: Request): Request =
+        let Request(x) = r;
+        Request({body = Some(Body.Bytes(body)) | x})
+
+    // --- Modifiers: Query Parameters ---
 
     ///
     /// Appends a query parameter `name=value` to the URL of the request `r`.
@@ -203,33 +234,7 @@ pub mod Net.Request {
     pub def withQueryParams(params: Map[String, String], r: Request): Request =
         Map.foldLeftWithKey((acc, name, value) -> withQueryParam(name, value, acc), r, params)
 
-    ///
-    /// Returns the connect timeout of the request `r`.
-    ///
-    pub def connectTimeout(r: Request): Timeout = match r {
-        case Request(x) => x#connectTimeout
-    }
-
-    ///
-    /// Returns the request timeout of the request `r`.
-    ///
-    pub def requestTimeout(r: Request): Timeout = match r {
-        case Request(x) => x#requestTimeout
-    }
-
-    ///
-    /// Returns `true` if the request `r` follows redirects.
-    ///
-    pub def followRedirects(r: Request): Bool = match r {
-        case Request(x) => x#followRedirects
-    }
-
-    ///
-    /// Sets the connect timeout (time to establish the TCP connection).
-    ///
-    pub def withConnectTimeout(timeout: Timeout, r: Request): Request =
-        let Request(x) = r;
-        Request({connectTimeout = timeout | x})
+    // --- Modifiers: Timeouts & Redirects ---
 
     ///
     /// Sets the request timeout (time until response headers are received).
@@ -237,6 +242,13 @@ pub mod Net.Request {
     pub def withTimeout(timeout: Timeout, r: Request): Request =
         let Request(x) = r;
         Request({requestTimeout = timeout | x})
+
+    ///
+    /// Sets the connect timeout (time to establish the TCP connection).
+    ///
+    pub def withConnectTimeout(timeout: Timeout, r: Request): Request =
+        let Request(x) = r;
+        Request({connectTimeout = timeout | x})
 
     ///
     /// Sets whether the request `r` should follow HTTP redirects.
