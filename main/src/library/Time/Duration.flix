@@ -79,7 +79,7 @@ pub mod Duration {
 
     /// Returns a duration of `n` in the given time unit `u`.
     pub def of(n: Int64, u: TimeUnit): Duration = match u {
-        case TimeUnit.Days         => hours(n * 24i64),
+        case TimeUnit.Days         => days(n),
         case TimeUnit.Hours        => hours(n),
         case TimeUnit.Microseconds => microseconds(n),
         case TimeUnit.Milliseconds => milliseconds(n),
@@ -105,6 +105,9 @@ pub mod Duration {
 
     /// Returns a duration of `n` hours.
     pub def hours(n: Int64): Duration = Duration.Duration(n * 3_600_000_000_000i64)
+
+    /// Returns a duration of `n` days.
+    pub def days(n: Int64): Duration = Duration.Duration(n * 86_400_000_000_000i64)
 
     /// Returns the total number of nanoseconds in `d`.
     pub def toNanos(d: Duration): Int64 =
@@ -135,6 +138,11 @@ pub mod Duration {
     pub def toHours(d: Duration): Int64 =
         let Duration.Duration(n) = d;
         n / 3_600_000_000_000i64
+
+    /// Returns the total number of days in `d` (truncated).
+    pub def toDays(d: Duration): Int64 =
+        let Duration.Duration(n) = d;
+        n / 86_400_000_000_000i64
 
     /// Returns `true` if `d` is zero.
     pub def isZero(d: Duration): Bool =
