@@ -37,14 +37,14 @@ pub mod Abort {
     ///
     /// Aborts the current computation with the given error message `m` enriched with a JVM stack trace.
     ///
-    pub def abortWithTrace(m: a): Void \ (Abort + Formattable.Aef[a]) with Formattable[a] =
+    pub def abortWithTrace(m: String): Void \ Abort =
         let trace = unsafe IO {
             let elems = Thread.currentThread().getStackTrace();
             formatStackTrace(elems, 3)
         };
         let nl = RichString.fromString(String.lineSeparator());
         let header = RichString.bold(RichString.white("Stack Trace:"));
-        Abort.abort(Formattable.format(m) + nl + header + nl + trace)
+        Abort.abort(RichString.fromString(m) + nl + header + nl + trace)
 
     ///
     /// Handles the `Abort` effect of the given function `f` by printing the error message and exiting.

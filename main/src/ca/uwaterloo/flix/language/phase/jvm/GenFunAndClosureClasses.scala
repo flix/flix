@@ -88,6 +88,7 @@ object GenFunAndClosureClasses {
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
     visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, null)
+    visitor.visitSource(defn.loc.source.name, null)
 
     compileConstructor(functionInterface, visitor)
 
@@ -148,6 +149,7 @@ object GenFunAndClosureClasses {
     val frameInterface = BackendObjType.Frame
     visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+    visitor.visitSource(defn.loc.source.name, null)
 
     // Fields
     for ((x, i) <- defn.lparams.zipWithIndex) {
@@ -229,6 +231,7 @@ object GenFunAndClosureClasses {
     val frameInterface = BackendObjType.Frame
     visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+    visitor.visitSource(defn.loc.source.name, null)
 
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
@@ -274,6 +277,7 @@ object GenFunAndClosureClasses {
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     implicit val m: MethodVisitor = visitor.visitMethod(modifiers, method.name, method.d.toDescriptor, null, null)
     m.visitCode()
+    BytecodeInstructions.addLoc(defn.loc)
 
     // used for self-recursive tail calls
     val enterLabel = new Label()
@@ -352,6 +356,7 @@ object GenFunAndClosureClasses {
     }
 
     m.visitCode()
+    BytecodeInstructions.addLoc(defn.loc)
     loadParamsOf(lparams)
 
     // used for self-recursive tail calls
