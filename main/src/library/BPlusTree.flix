@@ -465,8 +465,12 @@ pub mod BPlusTree {
         emptyWithArityAndSearch(rc, 64, search)
 
     ///
-    /// Returns the leaf in `t` containing key `k` and leaves it locked. If no node contains
-    /// `k`, the rightmost node with values strictly less than `k` is returned.
+    /// Returns the leaf in `t` containing key `k` together with an optimistic stamp on that leaf.
+    ///
+    /// If no node contains `k`, the rightmost node with values strictly less than `k` is returned.
+    ///
+    /// The returned stamp must still be validated or upgraded before relying on data read from the
+    /// returned leaf.
     ///
     def findLeaf(k: k, t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] = {
         let search = BPlusTree.search(t);
@@ -513,7 +517,10 @@ pub mod BPlusTree {
         Node.traverseRightUnconditional(f, 0, minLeaf)
 
     ///
-    /// Returns the root of the `t` and a stamp on the lock of the returned node.
+    /// Returns the current root of `t` together with an optimistic stamp on that root node.
+    ///
+    /// The root pointer is validated before returning, but the returned node stamp is still only
+    /// optimistic and must be validated by the caller before trusting reads derived from `rootNode`.
     ///
     def getLockedRoot(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r =
         let rootPointerStamp = Lock.tryReadLock(t->rootLock);
@@ -849,7 +856,7 @@ pub mod BPlusTree {
     }
 
     ///
-    /// Returns the leftmost leaf of `t` and its lock stamp.
+    /// Returns the leftmost leaf of `t` and an optimistic stamp on that leaf.
     ///
     /// The leftmost leaf contains the minimum key in the tree.
     ///
@@ -857,7 +864,7 @@ pub mod BPlusTree {
         fromLockedRoot(t, node -> stamp -> Node.leftMostLeaf(node, stamp, t))
 
     ///
-    /// Returns the rightmost leaf of `t` and its lock stamp.
+    /// Returns the rightmost leaf of `t` and an optimistic stamp on that leaf.
     ///
     /// The rightmost leaf contains the maximum key in the tree.
     ///

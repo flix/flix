@@ -125,7 +125,7 @@ mod BPlusTree.Node {
     ///
     /// Lock invariant:
     ///
-    /// - On invocation, the thread has a lock on `node`.
+    /// - On invocation, `stamp` is an optimistic stamp on `node->lock`.
     ///
     pub def adjustWithKey(f: k -> v -> v \ ef, key: k, stamp: Int64, t: BPlusTree[k, v, r], node: Node[k, v, r]): Unit \ ef + r with Order[k] = {
         let index = binarySearch(key, BPlusTree.search(t), node);
@@ -633,7 +633,8 @@ mod BPlusTree.Node {
         }
 
     ///
-    /// Returns the leftmost leaf of the tree rooted at `node`.
+    /// Returns the leftmost leaf of the tree rooted at `node` together with an optimistic stamp
+    /// on that leaf.
     ///
     /// Traverses down the leftmost path of the tree, acquiring locks along the way.
     /// If a lock is invalid, yields and retries from the root of `t`.
@@ -646,7 +647,8 @@ mod BPlusTree.Node {
         traverseToLeaf(n, stamp, firstChild, () -> BPlusTree.leftMostLeaf(t))
 
     ///
-    /// Returns the rightmost leaf of the tree rooted at `node`.
+    /// Returns the rightmost leaf of the tree rooted at `node` together with an optimistic stamp
+    /// on that leaf.
     ///
     /// Traverses down the rightmost path of the tree, acquiring locks along the way.
     /// If a lock is invalid, yields and retries from the root of `t`.
@@ -1123,7 +1125,10 @@ mod BPlusTree.Node {
     /// Caution: Because invalid locks trigger `restart`, `pickChild` and `restart` may
     /// be called an unknown number of times before traversal succeeds.
     ///
-    /// Lock invariant: `stamp` is a valid lock on the current node.
+    /// `stamp` should be an optimistic stamp on `cur`.
+    ///
+    /// The returned stamp is an optimistic stamp on the returned leaf. Callers must still
+    /// validate or upgrade it before relying on data read from that leaf.
     ///
     pub def traverseToLeaf(
         cur: Node[k, v, r],
