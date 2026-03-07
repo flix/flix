@@ -123,7 +123,7 @@ pub mod Net.Https {
                 def request(req, k) =
                     let now = Clock.now();
                     let wait = intervalMs - (now - Ref.get(last));
-                    if (wait > 0i64) unsafe IO { HttpClient.sleep(wait) } else ();
+                    if (wait > 0i64) { unsafe IO { HttpClient.sleep(wait) } };
                     Ref.put(Clock.now(), last);
                     k(Https.request(req))
             }
@@ -154,7 +154,7 @@ pub mod Net.Https {
                             Ref.put(Ref.get(tokens) - 1, tokens)
                         } else {
                             let wait = intervalMs - (Clock.now() - Ref.get(lastTime));
-                            if (wait > 0i64) unsafe IO { HttpClient.sleep(wait) } else ();
+                            if (wait > 0i64) { unsafe IO { HttpClient.sleep(wait) } };
                             acquire()
                         }
                     };
@@ -190,7 +190,7 @@ pub mod Net.Https {
                             match MutDeque.peekFront(timestamps) {
                                 case Some(oldest) =>
                                     let wait = windowMs - (now - oldest);
-                                    if (wait > 0i64) unsafe IO { HttpClient.sleep(wait) } else ();
+                                    if (wait > 0i64) { unsafe IO { HttpClient.sleep(wait) } };
                                     acquire()
                                 case None =>
                                     // maxRequests <= 0: sleep for the full window and retry.
@@ -234,19 +234,17 @@ pub mod Net.Https {
                             case Err(_) =>
                                 let count = Ref.get(failures) + 1;
                                 Ref.put(count, failures);
-                                if (count >= failureThreshold)
+                                if (count >= failureThreshold) {
                                     Ref.put(Clock.now(), openSince)
-                                else
-                                    ();
+                                };
                                 k(result)
                             case Ok(resp) =>
                                 if (HttpResponse.isServerError(resp)) {
                                     let count = Ref.get(failures) + 1;
                                     Ref.put(count, failures);
-                                    if (count >= failureThreshold)
+                                    if (count >= failureThreshold) {
                                         Ref.put(Clock.now(), openSince)
-                                    else
-                                        ()
+                                    }
                                 } else {
                                     Ref.put(0, failures);
                                     Ref.put(0i64, openSince)
