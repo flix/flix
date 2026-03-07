@@ -30,7 +30,20 @@ pub eff Abort {
 
 pub mod Abort {
 
+    import java.lang.Thread
+    import java.lang.StackTraceElement
     import java.lang.System
+
+    ///
+    /// Aborts the current computation with the given error message `m` enriched with a JVM stack trace.
+    ///
+    pub def abortWithTrace(m: a): Void \ (Abort + Formattable.Aef[a]) with Formattable[a] =
+        let trace = unsafe IO {
+            let elems = Thread.currentThread().getStackTrace();
+            formatStackTrace(elems, 3)
+        };
+        let nl = RichString.fromString(String.lineSeparator());
+        Abort.abort(Formattable.format(m) + nl + trace)
 
     ///
     /// Handles the `Abort` effect of the given function `f` by printing the error message and exiting.
@@ -82,5 +95,19 @@ pub mod Abort {
     /// Returns `Err(m)`  if the computation aborts with error message `m`.
     ///
     pub def runWithResult(f: Unit -> a \ ef): Result[RichString, a] \ (ef - Abort) = handleWithResult(f)()
+
+    ///
+    /// Formats a JVM stack trace as a gray RichString.
+    ///
+    def formatStackTrace(trace: Array[StackTraceElement, Static], skip: Int32): RichString \ IO =
+        let nl = RichString.fromString(String.lineSeparator());
+        let frames = Array.toList(trace) |> List.drop(skip);
+        RichString.joinWith(elem -> {
+            let className  = elem.getClassName();
+            let methodName = elem.getMethodName();
+            let fileName   = Object.toOption(elem.getFileName()) |> Option.getWithDefault("Unknown Source");
+            let lineNumber = elem.getLineNumber();
+            RichString.gray("    at ${className}.${methodName}(${fileName}:${lineNumber})")
+        }, nl, frames)
 
 }
