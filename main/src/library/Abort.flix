@@ -40,11 +40,11 @@ pub mod Abort {
     pub def abortWithTrace(m: String): Void \ Abort =
         let trace = unsafe IO {
             let elems = Thread.currentThread().getStackTrace();
-            formatStackTrace(elems, 3)
+            formatStackTrace(Array.toList(elems), 3)
         };
         let nl = RichString.fromString(String.lineSeparator());
-        let header = RichString.bold(RichString.white("Stack Trace:"));
-        Abort.abort(RichString.fromString(m) + nl + header + nl + trace)
+        let header = RichString.white("Stack Trace:");
+        Abort.abort(RichString.bold(RichString.red(RichString.fromString(m))) + nl + header + nl + trace)
 
     ///
     /// Handles the `Abort` effect of the given function `f` by printing the error message and exiting.
@@ -58,7 +58,7 @@ pub mod Abort {
             f(x)
         } with handler Abort {
             def abort(m, _k) = {
-                System.err.println(RichString.toString(m));
+                System.out.println(RichString.toString(m));
                 unchecked_cast(System.exit(1) as b)
             }
         }
@@ -100,26 +100,42 @@ pub mod Abort {
     ///
     /// Formats a JVM stack trace as a gray RichString.
     ///
-    def formatStackTrace(trace: Array[StackTraceElement, Static], skip: Int32): RichString \ IO =
-        let nl = RichString.fromString(String.lineSeparator());
-        let frames = Array.toList(trace) |> List.drop(skip) |> List.zipWithIndex;
+    def formatStackTrace(trace: List[StackTraceElement], skip: Int32): RichString \ IO =
+        use RichString.{fromString, joinWith, cyan, gray, bold, yellow};
+        let nl = fromString(String.lineSeparator());
+        let frames = List.drop(skip, trace) |> List.zipWithIndex;
         let maxIdx = List.length(frames) - 1;
         let width  = String.length("${maxIdx}");
-        RichString.joinWith(match (idx, elem) -> {
+        joinWith(match (idx, elem) -> {
             let className  = elem.getClassName();
             let methodName = elem.getMethodName();
             let fileName   = Object.toOption(elem.getFileName()) |> Option.getWithDefault("Unknown Source");
             let lineNumber = elem.getLineNumber();
-            let index    = RichString.cyan("#${String.padLeft(width, ' ', "${idx}")}");
-            let location = RichString.gray("(${fileName}:${lineNumber})");
+            let index    = cyan("#${String.padLeft(width, ' ', "${idx}")}");
+            let location = gray("(${fileName}:${lineNumber})");
             if (isUserFrame(className))
-                RichString.fromString("  ") + index + RichString.fromString(" ") +
-                    RichString.fromString("${className}.") + RichString.bold(RichString.yellow(methodName)) +
-                    location
+                let (classPrefix, funcName) = splitClassName(className);
+                fromString("  ") + index + fromString(" ") +
+                    fromString(classPrefix) +
+                    bold(yellow(funcName)) +
+                    fromString(".${methodName}") + location
             else
-                RichString.fromString("  ") + index + RichString.fromString(" ") +
-                    RichString.gray("${className}.${methodName}") + location
+                fromString("  ") + index + fromString(" ") +
+                    gray("${className}.${methodName}") + location
         }, nl, frames)
+
+    ///
+    /// Splits a user-frame class name into the prefix (up to and including `Def$`)
+    /// and the Flix function name (after `Def$`).
+    ///
+    def splitClassName(className: String): (String, String) =
+        let prefix = "Def$";
+        match String.indexOfRight(substr = prefix, className) {
+            case Some(idx) =>
+                let splitAt = idx + String.length(prefix);
+                (String.sliceLeft(end = splitAt, className), String.sliceRight(start = splitAt, className))
+            case None      => ("", className)
+        }
 
     ///
     /// Returns `true` if the given `className` represents a user-defined Flix function.
