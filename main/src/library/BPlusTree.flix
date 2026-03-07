@@ -119,6 +119,57 @@ pub mod BPlusTree {
     pub enum Lock[_: Region](JStampedLock)
 
     ///
+    /// The Node struct defines the tree, having either children or values depending on
+    /// whether the node is internal or a leaf, respectively. The following invariants
+    /// hold for Node: `parent` is `None` for the root and `Some(p)` for all other nodes
+    /// where `p` is the parent node. `next` is `None` for internal nodes and the
+    /// rightmost leaf node and `Some(p)` for all leaf nodes where `p` is the node
+    /// directly to the right. `isLeaf` is true if the node is a leaf and false
+    /// otherwise.
+    ///
+    /// If `isLeaf == true`
+    ///
+    ///     `children` is of size 0
+    ///
+    ///     `keys` and `values` have the same size (which is the `arity` of the
+    ///     tree)
+    ///
+    ///     `keys[i]` should store the key for the value stored at `values[i]`
+    ///
+    ///     `size` is the number of keys/values currently stored in the leaf
+    ///
+    /// If `isLeaf == false`
+    ///
+    ///      `values` is of size 0
+    ///
+    ///      `children` is of size `arity` and `keys` have size `arity - 1`
+    ///
+    ///      `keys[i]` stores the smallest key in the subtree `children[i+1]`
+    ///
+    ///      `size` is the number of children currently stored in the leaf
+    ///
+    /// Lock invariants:
+    ///
+    ///     `lock` is the lock associated with the node. When it is held, no other thread may
+    ///     modify the node's contents. The only exception to the previous rule is that the
+    ///     `parent` pointer is owned by the `lock` on the parent For the root node with
+    ///     parent None the parent pointer is owned by the `rootLock` on the tree. When going
+    ///     up the tree locks are forcefully acquired. When going down the tree if a lock
+    ///     cannot be acquired immediately all current locks will be released and the attempt
+    ///     restarted after the wanted lock has been released by the holder.
+    ///
+    pub struct Node[k, v, r] {
+        keys:       Array[k, r],
+        children:   Array[Node[k, v, r], r],
+        values:     Array[v, r],
+        lock:       Lock[r],
+        mut size:   Int32,
+        mut parent: Option[Node[k, v, r]],
+        mut next:   Option[Node[k, v, r]],
+        isLeaf:     Bool
+    }
+
+    ///
     /// Updates `t` with `k => f(v)` if `k => v` is in `t`.
     ///
     /// Otherwise, `t` is unchanged.
@@ -199,7 +250,8 @@ pub mod BPlusTree {
         transformWithKey(_ -> v -> f(v), t)
 
     ///
-    /// Applies the function `f` to every value in `t`.
+    /// Applies the function `f` to every mapping `k => v` in `t`, replacing it with
+    /// `k => f(k, v)`.
     ///
     pub def transformWithKey(f: k -> v -> v \ ef, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
         Node.transformWithKey(f, 0, Node.leftMostChild(t->root))
@@ -306,13 +358,17 @@ pub mod BPlusTree {
     ///
     /// Returns an iterator over keys in `t`.
     ///
-    pub def iteratorWithKeys(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[k, r1 + r2, r1] \ r1 + r2 = 
+    /// Not thread-safe.
+    ///
+    pub def iteratorWithKeys(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[k, r1 + r2, r1] \ r1 + r2 =
         Iterator.map(match (k, _) -> k, iterator(rc1, t))
-    
+
     ///
     /// Returns an iterator over values in `t`.
     ///
-    pub def iteratorValues(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[v, r1 + r2, r1] \ r1 + r2 = 
+    /// Not thread-safe.
+    ///
+    pub def iteratorValues(rc1: Region[r1], t: BPlusTree[k, v, r2]): Iterator[v, r1 + r2, r1] \ r1 + r2 =
         Iterator.map(match (_, v) -> v, iterator(rc1, t))
 
     ///
@@ -377,17 +433,19 @@ pub mod BPlusTree {
         emptyWithSearch(rc, unchecked_cast(null as Vector[Int32]))
 
     ///
-    /// Returns a fresh empty BPlusTree tree with arity `m` (the maximum keys/values per node).
+    /// Returns a fresh empty BPlusTree with arity `m`. A node may have at most `m`
+    /// children and `m - 1` keys.
     /// The arity must be at least 3.
     ///
     pub def emptyWithArity(rc: Region[r], m: Int32): BPlusTree[k, v, r] \ r =
         emptyWithArityAndSearch(rc, m `Int32.max` 3, unchecked_cast(null as Vector[Int32]))
 
     ///
-    /// Returns a fresh empty BPlusTree tree of arity `m` (the maximum keys/values per node).
+    /// Returns a fresh empty BPlusTree with arity `m`. A node may have at most `m`
+    /// children and `m - 1` keys.
     /// The arity must be at least 3.
     ///
-    /// `search` decided the comparison order for the stored vectors.
+    /// `search` decides the comparison order for the stored vectors.
     ///
     pub def emptyWithArityAndSearch(rc: Region[r], m: Int32, search: Search): BPlusTree[k, v, r] \ r =
         let node = Node.mkLeaf(rc, Array.empty(rc, m), Array.empty(rc, m), 0, None, None);
@@ -603,10 +661,7 @@ pub mod BPlusTree {
             parForEach(f2, t)
 
     ///
-    /// Updates the tree `t` with the mapping `k => v`. Replaces any
-    /// existing mapping.
-    ///
-    /// Updates both the key and value of the mapping.
+    /// Updates the tree `t` with the mapping `k => v`, replacing any existing mapping.
     ///
     /// Thread-safe.
     ///
@@ -614,8 +669,8 @@ pub mod BPlusTree {
         fixRoot(putInternal(k, v, t), t)
 
     ///
-    /// Updates the tree `t` with the mapping `k => v`. Replaces any
-    /// existing mapping, `k2 => v2`, if `decider(k, v, k2, v2) == true`.
+    /// Updates the tree `t` with the mapping `k => v`, replacing any existing mapping,
+    /// `k2 => v2`, if `decider(k, v, k2, v2) == true`.
     ///
     /// Thread-safe and atomic.
     ///
@@ -686,7 +741,7 @@ pub mod BPlusTree {
         }
 
     ///
-    /// Merge `src` into `dst` modyfing `dst` in a left-biased manner.
+    /// Merge `src` into `dst`, modifying `dst` in a left-biased manner.
     ///
     /// That is, key collisions are resolved by taking the mapping from `src`.
     ///
@@ -696,8 +751,8 @@ pub mod BPlusTree {
         BPlusTree.forEach(k -> v -> BPlusTree.put(k, v, dst), src)
 
     ///
-    /// Merges `src` into `dst` modyfing `dst`. If `k => v1` is in `src` and `k => v2` is
-    /// in `dst`, updates `dst` to with `k => f(v1, v2)`.
+    /// Merges `src` into `dst`, modifying `dst`. If `k => v1` is in `src` and `k => v2` is
+    /// in `dst`, updates `dst` with `k => f(v1, v2)`.
     ///
     /// Not thread-safe.
     ///
@@ -705,7 +760,7 @@ pub mod BPlusTree {
         BPlusTree.forEach(k -> v -> BPlusTree.putWith(f, k, v, dst), src)
 
     ///
-    /// Optionally returns `k => v` where `k` is the smallest key in `t` according to the 
+    /// Optionally returns `k => v` where `k` is the smallest key in `t` according to the
     /// `Order` instance on `k`.
     ///
     /// Returns `None` if `t` is empty.
@@ -726,8 +781,8 @@ pub mod BPlusTree {
         }
     }
 
-    /// 
-    /// Optionally returns `k => v` where `k` is the largest key in `t` according to the 
+    ///
+    /// Optionally returns `k => v` where `k` is the largest key in `t` according to the
     /// `Order` instance on `k`.
     ///
     /// Returns `None` if `t` is empty.
@@ -749,7 +804,7 @@ pub mod BPlusTree {
     }
 
     ///
-    /// Returns the leftmost leaf of `t` and its lock stamp. 
+    /// Returns the leftmost leaf of `t` and its lock stamp.
     ///
     /// The leftmost leaf contains the minimum key in the tree.
     ///
@@ -759,7 +814,7 @@ pub mod BPlusTree {
     }
 
     ///
-    /// Returns the rightmost leaf of `t` and its lock stamp. 
+    /// Returns the rightmost leaf of `t` and its lock stamp.
     ///
     /// The rightmost leaf contains the maximum key in the tree.
     ///
@@ -774,7 +829,7 @@ pub mod BPlusTree {
     pub def arity(t: BPlusTree[k, v, r]): Int32 = t->arity
 
     ///
-    /// Updates `t` with `k => f(k, v, v1)` if `k => v1` is in `t`.
+    /// Updates `t` with `k => f(v, v1)` if `k => v1` is in `t`.
     ///
     /// Otherwise, updates `t` with `k => v`.
     ///
@@ -795,8 +850,10 @@ pub mod BPlusTree {
         Node.putWith(f, k, v, t, leaf, stamp)
 
     ///
-    /// Returns the list of mappings `k => v` in `t` where `min <= k <= max` according to 
+    /// Returns the list of mappings `k => v` in `t` where `min <= k <= max` according to
     /// the `Order` instance on `k`.
+    ///
+    /// Not thread-safe.
     ///
     pub def rangeQuery(min: k, max: k, t: BPlusTree[k, v, r]): List[(k, v)] \ r with Order[k] = region rc {
         let l = MutList.empty(rc);
@@ -839,7 +896,7 @@ pub mod BPlusTree {
     /// # SAFETY:
     /// This accesses the runtime environment, which is an effect.
     /// It is assumed that this function is only used in contexts
-    /// where this effect is not observable outside of the RedBlackTree module.
+    /// where this effect is not observable outside of the BPlusTree module.
     ///
     def threads(): Int32 = {
         // Note: We use a multiple of the number of physical cores for better performance.
@@ -874,60 +931,9 @@ pub mod BPlusTree {
         Lock.writeLock(t->rootLock)
 
     ///
-    /// Write lock `t->rootLock` and return the stamp.
+    /// Unlock the root write lock of `t`.
     ///
     def unlockRootPointer(stamp: Int64, t: BPlusTree[k, v, r]): Unit \ r =
         Lock.unlockWrite(stamp, t->rootLock)
-
-    ///
-    /// The Node struct defines the tree, having either children or values depending on
-    /// whether the node is internal or a leaf, respectively. The following invariants
-    /// hold for Node: `parent` is `None` for the root and `Some(p)` for all other nodes
-    /// where `p` is the parent node. `next` is `None` for internal nodes and the
-    /// rightmost leaf node and `Some(p)` for all leaf nodes where `p` is the node
-    /// directly to the right. `isLeaf` is true if the node is a leaf and false
-    /// otherwise.
-    ///
-    /// If `isLeaf == true`
-    ///
-    ///     `children` is of size 0
-    ///
-    ///     `keys` and `values` have the same size (which is the `arity` of the
-    ///     tree)
-    ///
-    ///     `keys[i]` should store the key for the value stored at `values[i]`
-    ///
-    ///     `size` is the number of keys/values currently stored in the leaf
-    ///
-    /// If `isLeaf == false`
-    ///
-    ///      `values` is of size 0
-    ///
-    ///      `children` is of size `arity` and `keys` have size `arity - 1`
-    ///
-    ///      `keys[i]` stores the smallest key in the subtree `children[i+1]`
-    ///
-    ///      `size` is the number of children currently stored in the leaf
-    ///
-    /// Lock invariants:
-    ///
-    ///     `lock` is the lock associated with the node. When it is held, no other thread may
-    ///     modify the node's contents. The only exception to the previous rule is that the
-    ///     `parent` pointer is owned by the `lock` on the parent For the root node with
-    ///     parent None the parent pointer is owned by the `rootLock` on the tree. When going
-    ///     up the tree locks are forcefully acquired. When going down the tree if a lock
-    ///     cannot be acquired immediately all current locks will be released and the attempt
-    ///     restarted after the wanted lock has been released by the holder.
-    ///
-    pub struct Node[k, v, r] {
-        keys:       Array[k, r],
-        children:   Array[Node[k, v, r], r],
-        values:     Array[v, r],
-        lock:       Lock[r],
-        mut size:   Int32,
-        mut parent: Option[Node[k, v, r]],
-        mut next:   Option[Node[k, v, r]],
-        isLeaf:     Bool
-    }
 
 }
