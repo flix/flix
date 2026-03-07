@@ -14,7 +14,7 @@ mod TestLogger {
         let res = run {
             Logger.log(s, m);
             ""
-        } with runWithConsole
+        } with runWithStdOut
         with consoleHandlerStub;
         let expected = "${RichString.toString(RichString.bold(RichString.red("[Fatal]")))} Testing a simple string";
         Assert.assertEq(expected="Logging to Console: " + expected, res)
