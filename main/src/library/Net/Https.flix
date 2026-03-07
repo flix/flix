@@ -30,7 +30,6 @@ pub mod Net.Https {
     use Time.Duration
     use Time.Duration.toMillis
 
-    import java.lang.{Thread => JThread}
 
     ///
     /// Sends the given request `req` via the `Https` effect.
@@ -124,7 +123,7 @@ pub mod Net.Https {
                 def request(req, k) =
                     let now = Clock.now();
                     let wait = intervalMs - (now - Ref.get(last));
-                    if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
+                    if (wait > 0i64) unsafe IO { HttpClient.sleep(wait) } else ();
                     Ref.put(Clock.now(), last);
                     k(Https.request(req))
             }
@@ -159,7 +158,7 @@ pub mod Net.Https {
                             Ref.put(Ref.get(tokens) - 1, tokens)
                         } else {
                             let wait = intervalMs - (Clock.now() - Ref.get(lastTime));
-                            if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
+                            if (wait > 0i64) unsafe IO { HttpClient.sleep(wait) } else ();
                             acquire()
                         }
                     };
@@ -195,11 +194,11 @@ pub mod Net.Https {
                             match MutDeque.peekFront(timestamps) {
                                 case Some(oldest) =>
                                     let wait = windowMs - (now - oldest);
-                                    if (wait > 0i64) unsafe IO { JThread.sleep(wait) } else ();
+                                    if (wait > 0i64) unsafe IO { HttpClient.sleep(wait) } else ();
                                     acquire()
                                 case None =>
                                     // maxRequests <= 0: sleep for the full window and retry.
-                                    unsafe IO { JThread.sleep(windowMs) };
+                                    unsafe IO { HttpClient.sleep(windowMs) };
                                     acquire()
                             }
                         }
@@ -281,12 +280,12 @@ pub mod Net.Https {
                                 case Ok(resp) if Response.isSuccess(resp) => Ok(resp)
                                 case Ok(resp) =>
                                     match strategy(attempt, req, RetryOutcome.HttpError(resp)) {
-                                        case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
+                                        case RetryDecision.Retry(d) => unsafe IO { HttpClient.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
                                         case RetryDecision.Stop     => Ok(resp)
                                     }
                                 case Err(error) =>
                                     match strategy(attempt, req, RetryOutcome.TransportError(error)) {
-                                        case RetryDecision.Retry(d) => unsafe IO { JThread.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
+                                        case RetryDecision.Retry(d) => unsafe IO { HttpClient.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
                                         case RetryDecision.Stop     => Err(error)
                                     }
                             };

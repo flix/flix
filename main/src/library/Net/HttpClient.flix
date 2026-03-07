@@ -30,6 +30,7 @@ pub mod Net.HttpClient {
     import java.io.UncheckedIOException
     import java.lang.IllegalArgumentException
     import java.lang.InterruptedException
+    import java.lang.{Thread => JThread}
     import java.lang.{Throwable => JThrowable}
     import java.net.ConnectException
     import java.net.URI
@@ -47,6 +48,12 @@ pub mod Net.HttpClient {
     ///
     pub def newDefaultClient(): HttpClient \ IO =
         HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
+
+    ///
+    /// Sleeps the current thread for `ms` milliseconds.
+    ///
+    pub def sleep(ms: Int64): Unit \ IO =
+        JThread.sleep(ms)
 
     ///
     /// Returns the exception message, or a fallback if `getMessage()` returns null.
