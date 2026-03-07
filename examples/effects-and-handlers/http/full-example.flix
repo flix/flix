@@ -1,6 +1,6 @@
 use Net.Http
 use Net.Retry
-use Net.Response
+use Net.HttpResponse
 use Time.Duration.{milliseconds, seconds}
 
 /// Demonstrates composing multiple HTTP middleware via `with` clauses.
@@ -18,12 +18,12 @@ def main(): Unit \ { Clock, Http, Logger, IO } =
         let urls = List#{"/api/users", "/api/posts"};
         foreach (url <- urls) {
             match Http.get(url) {
-                case Ok(resp) => println("${url} -> ${Response.status(resp)}")
+                case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
         };
         match Http.get("https://notfound.flix.dev/") {
-            case Ok(resp) => println("notfound -> ${Response.status(resp)}")
+            case Ok(resp) => println("notfound -> ${HttpResponse.status(resp)}")
             case Err(err) => println("notfound -> ${err}")
         }
     } with Http.withBaseUrl("https://flix.dev")

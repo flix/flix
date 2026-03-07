@@ -20,10 +20,10 @@ pub mod Net.Https {
     use IoError.IoError
     use Net.HttpClient
     use Net.Https
-    use Net.Request
-    use Net.Request.Request
-    use Net.Response
-    use Net.Response.Response
+    use Net.HttpRequest
+    use Net.HttpRequest.HttpRequest
+    use Net.HttpResponse
+    use Net.HttpResponse.HttpResponse
     use Net.RetryDecision
     use Net.RetryOutcome
     use RichString.{text, bold, cyan, green, yellow, red, gray}
@@ -34,56 +34,56 @@ pub mod Net.Https {
     ///
     /// Sends the given request `req` via the `Https` effect.
     ///
-    pub def send(req: Request): Result[IoError, Response] \ Https =
+    pub def send(req: HttpRequest): Result[IoError, HttpResponse] \ Https =
         Https.request(req)
 
     ///
     /// Sends a GET request to the given `url`.
     ///
-    pub def get(url: String): Result[IoError, Response] \ Https =
-        send(Request.get(url))
+    pub def get(url: String): Result[IoError, HttpResponse] \ Https =
+        send(HttpRequest.get(url))
 
     ///
     /// Sends a HEAD request to the given `url`.
     ///
-    pub def head(url: String): Result[IoError, Response] \ Https =
-        send(Request.head(url))
+    pub def head(url: String): Result[IoError, HttpResponse] \ Https =
+        send(HttpRequest.head(url))
 
     ///
     /// Sends an OPTIONS request to the given `url`.
     ///
-    pub def options(url: String): Result[IoError, Response] \ Https =
-        send(Request.options(url))
+    pub def options(url: String): Result[IoError, HttpResponse] \ Https =
+        send(HttpRequest.options(url))
 
     ///
     /// Sends a POST request to the given `url` with the given `body`.
     ///
-    pub def post(url: String, body: String): Result[IoError, Response] \ Https =
-        send(Request.post(url, body))
+    pub def post(url: String, body: String): Result[IoError, HttpResponse] \ Https =
+        send(HttpRequest.post(url, body))
 
     ///
     /// Sends a PUT request to the given `url` with the given `body`.
     ///
-    pub def put(url: String, body: String): Result[IoError, Response] \ Https =
-        send(Request.put(url, body))
+    pub def put(url: String, body: String): Result[IoError, HttpResponse] \ Https =
+        send(HttpRequest.put(url, body))
 
     ///
     /// Sends a PATCH request to the given `url` with the given `body`.
     ///
-    pub def patch(url: String, body: String): Result[IoError, Response] \ Https =
-        send(Request.patch(url, body))
+    pub def patch(url: String, body: String): Result[IoError, HttpResponse] \ Https =
+        send(HttpRequest.patch(url, body))
 
     ///
     /// Sends a DELETE request to the given `url`.
     ///
-    pub def delete(url: String): Result[IoError, Response] \ Https =
-        send(Request.delete(url))
+    pub def delete(url: String): Result[IoError, HttpResponse] \ Https =
+        send(HttpRequest.delete(url))
 
     ///
     /// Validates that the given request URL uses the `https://` scheme.
     ///
-    def validateHttps(req: Request): Result[IoError, Unit] =
-        let Request(x) = req;
+    def validateHttps(req: HttpRequest): Result[IoError, Unit] =
+        let HttpRequest(x) = req;
         if (String.startsWith({prefix = "https://"}, x#url))
             Ok()
         else
@@ -244,7 +244,7 @@ pub mod Net.Https {
                                     ();
                                 k(result)
                             case Ok(resp) =>
-                                if (Response.isServerError(resp)) {
+                                if (HttpResponse.isServerError(resp)) {
                                     let count = Ref.get(failures) + 1;
                                     Ref.put(count, failures);
                                     if (count >= failureThreshold)
@@ -268,7 +268,7 @@ pub mod Net.Https {
     /// Validates the `https://` scheme once before entering the retry loop.
     /// Each `Https.request` is re-raised to an outer `Https` handler that performs the actual I/O.
     ///
-    pub def withRetry(strategy: (Int32, Request, RetryOutcome) -> RetryDecision \ ef1,
+    pub def withRetry(strategy: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef1,
                       f: Unit -> a \ ef2): a \ ef1 + (ef2 - Https) + Https =
         run { f() } with handler Https {
             def request(req, k) =
@@ -277,7 +277,7 @@ pub mod Net.Https {
                     case Ok()   =>
                         def loop(attempt) =
                             match Https.request(req) {
-                                case Ok(resp) if Response.isSuccess(resp) => Ok(resp)
+                                case Ok(resp) if HttpResponse.isSuccess(resp) => Ok(resp)
                                 case Ok(resp) =>
                                     match strategy(attempt, req, RetryOutcome.HttpError(resp)) {
                                         case RetryDecision.Retry(d) => unsafe IO { HttpClient.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
@@ -301,9 +301,9 @@ pub mod Net.Https {
                                f: Unit -> a \ ef): a \ (ef - Https) + Https =
         run { f() } with handler Https {
             def request(req, k) =
-                let Request(x) = req;
+                let HttpRequest(x) = req;
                 let merged = Map.unionWith((reqVals, _) -> reqVals, x#headers, defaults);
-                k(Https.request(Request({headers = merged | x})))
+                k(Https.request(HttpRequest({headers = merged | x})))
         }
 
     ///
@@ -316,7 +316,7 @@ pub mod Net.Https {
                          String.dropRight(1, base) else base;
         run { f() } with handler Https {
             def request(req, k) =
-                let Request(x) = req;
+                let HttpRequest(x) = req;
                 let url = x#url;
                 // Check that "://" appears before the first "/" to detect a scheme.
                 let hasScheme = match String.indexOf(substr = "://", url) {
@@ -331,7 +331,7 @@ pub mod Net.Https {
                 else
                     let path1 = if (String.startsWith(prefix = "/", url))
                                      url else "/${url}";
-                    k(Https.request(Request({url = "${base1}${path1}" | x})))
+                    k(Https.request(HttpRequest({url = "${base1}${path1}" | x})))
         }
 
     ///
@@ -341,21 +341,21 @@ pub mod Net.Https {
     pub def withLogging(f: Unit -> a \ ef): a \ (ef - Https) + {Https, Logger} =
         run { f() } with handler Https {
             def request(req, k) =
-                let method = String.toUpperCase("${Request.method(req)}");
-                let url    = Request.url(req);
+                let method = String.toUpperCase("${HttpRequest.method(req)}");
+                let url    = HttpRequest.url(req);
                 Logger.log(Severity.Debug,
                     gray("-->") + text(" ") + bold(method) + text(" ") + cyan(url));
                 let result = Https.request(req);
                 match result {
                     case Ok(resp) =>
-                        let status = Response.status(resp);
+                        let status = HttpResponse.status(resp);
                         let color  = if (status >= 200 and status <= 299)
                                          green("${status}")
                                      else if (status >= 400)
                                          red("${status}")
                                      else
                                          yellow("${status}");
-                        let size = Vector.length(Response.bodyBytes(resp));
+                        let size = Vector.length(HttpResponse.bodyBytes(resp));
                         Logger.log(Severity.Debug,
                             gray("<--") + text(" ") + color + text(" ") + cyan(url) +
                             gray(" (${size} bytes)"))

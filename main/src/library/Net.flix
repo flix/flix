@@ -46,7 +46,7 @@ pub mod Net {
         /// A transport-level failure (connection refused, timeout, etc.).
         case TransportError(IoError)
         /// A response was received but its status code warrants a retry (e.g. 429, 503).
-        case HttpError(Response)
+        case HttpError(HttpResponse)
     }
 
     ///
@@ -62,7 +62,7 @@ pub mod Net {
     ///
     /// An HTTP request with method, URL, multi-valued headers, and optional body.
     ///
-    pub enum Request({
+    pub enum HttpRequest({
         method          = Method,
         url             = String,
         headers         = Map[String, List[String]],
@@ -75,7 +75,7 @@ pub mod Net {
     ///
     /// An HTTP response with final URL, status code, multi-valued headers, and body.
     ///
-    pub enum Response({
+    pub enum HttpResponse({
         url     = String,
         status  = Int32,
         headers = Map[String, List[String]],
@@ -86,14 +86,14 @@ pub mod Net {
     /// The effect used to send HTTP requests (both http:// and https://).
     ///
     pub eff Http {
-        def request(req: Request): Result[IoError, Response]
+        def request(req: HttpRequest): Result[IoError, HttpResponse]
     }
 
     ///
     /// The effect used to send HTTPS-only requests.
     ///
     pub eff Https {
-        def request(req: Request): Result[IoError, Response]
+        def request(req: HttpRequest): Result[IoError, HttpResponse]
     }
 
 }

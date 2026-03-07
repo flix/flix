@@ -1,5 +1,5 @@
 use Net.Http
-use Net.Response
+use Net.HttpResponse
 use Time.Duration.{milliseconds, seconds}
 
 /// Demonstrates three rate-limiting strategies provided by `Net.Http`:
@@ -13,7 +13,7 @@ def main(): Unit \ { Clock, Http, IO } =
         let urls = List#{"/a", "/b", "/c", "/d"};
         foreach (url <- urls) {
             match Http.get(url) {
-                case Ok(resp) => println("${url} -> ${Response.status(resp)}")
+                case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
         }
@@ -26,7 +26,7 @@ def main(): Unit \ { Clock, Http, IO } =
         let urls = List#{"/a", "/b", "/c", "/d"};
         foreach (url <- urls) {
             match Http.get(url) {
-                case Ok(resp) => println("${url} -> ${Response.status(resp)}")
+                case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
         }
@@ -39,7 +39,7 @@ def main(): Unit \ { Clock, Http, IO } =
         let urls = List#{"/a", "/b", "/c", "/d"};
         foreach (url <- urls) {
             match Http.get(url) {
-                case Ok(resp) => println("${url} -> ${Response.status(resp)}")
+                case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
         }

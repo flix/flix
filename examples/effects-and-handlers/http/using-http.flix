@@ -1,5 +1,5 @@
 use Net.Http
-use Net.Response
+use Net.HttpResponse
 
 /// Sends a GET request over HTTP and prints the response body.
 /// The Http effect supports both http and https URLs.
@@ -7,6 +7,6 @@ use Net.Response
 /// The Http effect has a default handler, so no explicit `runWithIO` is needed.
 def main(): Unit \ { Http, IO } =
     match Http.get("http://example.com/") {
-        case Ok(resp) => println(Response.body(resp))
+        case Ok(resp) => println(HttpResponse.body(resp))
         case Err(err) => println(err)
     }

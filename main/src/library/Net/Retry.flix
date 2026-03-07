@@ -16,8 +16,8 @@
 
 pub mod Net.Retry {
 
-    use Net.Request
-    use Net.Response
+    use Net.HttpRequest
+    use Net.HttpResponse
     use Net.RetryDecision
     use Net.RetryOutcome
     use Time.Duration
@@ -26,13 +26,13 @@ pub mod Net.Retry {
     ///
     /// Returns a strategy that never retries.
     ///
-    pub def noRetry(): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def noRetry(): (Int32, HttpRequest, RetryOutcome) -> RetryDecision =
         (_, _, _) -> RetryDecision.Stop
 
     ///
     /// Returns a strategy that retries up to `maxRetries` times with a fixed `delay`.
     ///
-    pub def linear(mr: {maxRetries = Int32}, dm: {delay = Duration}): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def linear(mr: {maxRetries = Int32}, dm: {delay = Duration}): (Int32, HttpRequest, RetryOutcome) -> RetryDecision =
         let maxRetries = mr#maxRetries;
         let delay = dm#delay;
         (attempt, _, _) ->
@@ -44,7 +44,7 @@ pub mod Net.Retry {
     ///
     /// Retries up to `maxRetries` times with delays: `baseDelay`, `2*base`, `4*base`, …
     ///
-    pub def exponential(mr: {maxRetries = Int32}, bdm: {baseDelay = Duration}): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def exponential(mr: {maxRetries = Int32}, bdm: {baseDelay = Duration}): (Int32, HttpRequest, RetryOutcome) -> RetryDecision =
         let maxRetries = mr#maxRetries;
         let baseNanos = toNanos(bdm#baseDelay);
         (attempt, _, _) ->
@@ -61,7 +61,7 @@ pub mod Net.Retry {
     ///
     /// Falls back to `baseDelay` when the header is absent or unparseable.
     ///
-    pub def retryAfter(mr: {maxRetries = Int32}, bdm: {baseDelay = Duration}): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def retryAfter(mr: {maxRetries = Int32}, bdm: {baseDelay = Duration}): (Int32, HttpRequest, RetryOutcome) -> RetryDecision =
         let maxRetries = mr#maxRetries;
         let baseDelay = bdm#baseDelay;
         (attempt, _, outcome) ->
@@ -69,7 +69,7 @@ pub mod Net.Retry {
             else
                 let delay = match outcome {
                     case RetryOutcome.HttpError(resp) =>
-                        match Response.headerValue("retry-after", resp) {
+                        match HttpResponse.headerValue("retry-after", resp) {
                             case Some(s) => match Int64.fromString(s) {
                                 // Clamp to Int32 range to guard against absurd Retry-After values from untrusted servers.
                             case Some(secs) => seconds(Int64.clampToInt32(min = 0, max = Int32.maxValue(), secs))
@@ -87,7 +87,7 @@ pub mod Net.Retry {
     ///
     /// HTTP-level errors (non-2xx responses) are never retried.
     ///
-    pub def retryTransportOnly(mr: {maxRetries = Int32}, dm: {delay = Duration}): (Int32, Request, RetryOutcome) -> RetryDecision =
+    pub def retryTransportOnly(mr: {maxRetries = Int32}, dm: {delay = Duration}): (Int32, HttpRequest, RetryOutcome) -> RetryDecision =
         let maxRetries = mr#maxRetries;
         let delay = dm#delay;
         (attempt, _, outcome) -> match outcome {
@@ -99,8 +99,8 @@ pub mod Net.Retry {
     /// Wraps `inner` by adding uniform random jitter in `[0, maxJitter]` to any `Retry` delay.
     ///
     pub def withJitter(mjm: {maxJitter = Duration},
-                       inner: (Int32, Request, RetryOutcome) -> RetryDecision \ ef):
-                       (Int32, Request, RetryOutcome) -> RetryDecision \ ef + Random =
+                       inner: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef):
+                       (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef + Random =
         let maxJitterNanos = toNanos(mjm#maxJitter);
         (attempt, req, outcome) ->
             let base = inner(attempt, req, outcome);
@@ -119,8 +119,8 @@ pub mod Net.Retry {
     /// Returns `Stop` if the deadline is already past.
     ///
     pub def withDeadline(dlm: {deadline = Duration}, sm: {startMs = Int64},
-                         inner: (Int32, Request, RetryOutcome) -> RetryDecision \ ef):
-                         (Int32, Request, RetryOutcome) -> RetryDecision \ ef + Clock =
+                         inner: (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef):
+                         (Int32, HttpRequest, RetryOutcome) -> RetryDecision \ ef + Clock =
         let deadlineMs = toMillis(dlm#deadline);
         let startMs = sm#startMs;
         (attempt, req, outcome) ->

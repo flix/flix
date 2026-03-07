@@ -20,10 +20,10 @@ pub mod Net.HttpClient {
     use IoError.IoError
     use Net.Body
     use Net.Method
-    use Net.Request
-    use Net.Request.Request
-    use Net.Response
-    use Net.Response.Response
+    use Net.HttpRequest
+    use Net.HttpRequest.HttpRequest
+    use Net.HttpResponse
+    use Net.HttpResponse.HttpResponse
     use Time.Duration.toMillis
 
     import java.io.IOException
@@ -39,7 +39,7 @@ pub mod Net.HttpClient {
     import java.nio.charset.StandardCharsets
     import java.net.http.HttpClient
     import java.net.http.{HttpClient$Redirect => Redirect}
-    import java.net.http.HttpRequest
+    import java.net.http.{HttpRequest => JHttpRequest}
     import java.net.http.{HttpRequest$BodyPublishers => BodyPublishers}
     import java.net.http.HttpTimeoutException
     import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
@@ -90,9 +90,9 @@ pub mod Net.HttpClient {
     /// (`connectTimeout == None` and `followRedirects == true`).
     /// Otherwise, builds a one-off client with the request's specific settings.
     ///
-    pub def doRequest(defaultClient: HttpClient, req: Request): Result[IoError, Response] \ IO =
+    pub def doRequest(defaultClient: HttpClient, req: HttpRequest): Result[IoError, HttpResponse] \ IO =
         try {
-            let Request(x) = req;
+            let HttpRequest(x) = req;
             let methodStr = match x#method {
                 case Method.Get     => "GET"
                 case Method.Head    => "HEAD"
@@ -108,7 +108,7 @@ pub mod Net.HttpClient {
                case None                => BodyPublishers.noBody()
             };
             let builder =
-               HttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
+               JHttpRequest.newBuilder(URI.create(x#url)).method(methodStr, bodyPublisher)
                    |> b -> Map.foldLeftWithKey(
                        (mb, key, values) -> List.foldLeft(
                            (b1, v) -> b1.header(key, v),
@@ -123,7 +123,7 @@ pub mod Net.HttpClient {
                 case Some(d)    => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
             };
             let client = {
-                let Request(x0) = req;
+                let HttpRequest(x0) = req;
                 if (x0#connectTimeout == None and x0#followRedirects == true)
                     defaultClient
                 else {
@@ -138,7 +138,7 @@ pub mod Net.HttpClient {
             let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
             let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
             let bytes = unchecked_cast(response.body() as Array[Int8, Static]);
-            Ok(Response({
+            Ok(HttpResponse({
                url = response.uri().toString(),
                status = response.statusCode(),
                headers = responseHeaders,
@@ -156,9 +156,9 @@ pub mod Net.HttpClient {
     ///
     /// Validates then performs an HTTP request.
     ///
-    pub def execute(validate: Request -> Result[IoError, Unit],
+    pub def execute(validate: HttpRequest -> Result[IoError, Unit],
                     defaultClient: HttpClient,
-                    req: Request): Result[IoError, Response] \ IO =
+                    req: HttpRequest): Result[IoError, HttpResponse] \ IO =
         match validate(req) {
             case Err(e) => Err(e)
             case Ok()   => doRequest(defaultClient, req)

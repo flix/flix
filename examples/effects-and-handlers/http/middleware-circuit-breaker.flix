@@ -1,5 +1,5 @@
 use Net.Http
-use Net.Response
+use Net.HttpResponse
 use Time.Duration.seconds
 
 /// Uses `withCircuitBreaker` to protect against cascading failures.
@@ -11,7 +11,7 @@ def main(): Unit \ { Clock, Http, IO } =
         let urls = List#{"/a", "/b", "/c", "/d", "/e", "/f", "/g", "/h"};
         foreach (url <- urls) {
             match Http.get(url) {
-                case Ok(resp) => println("${url} -> ${Response.status(resp)}")
+                case Ok(resp) => println("${url} -> ${HttpResponse.status(resp)}")
                 case Err(err) => println("${url} -> ${err}")
             }
         }

@@ -14,34 +14,34 @@
  * limitations under the License.
  */
 
-pub mod Net.Response {
+pub mod Net.HttpResponse {
 
     use IoError.ErrorKind
     use IoError.IoError
     use Net.Body
     use Net.HttpClient
-    use Net.Response
-    use Net.Response.Response
+    use Net.HttpResponse
+    use Net.HttpResponse.HttpResponse
 
     ///
     /// Returns the final URL of the response `r` (after any redirects).
     ///
-    pub def url(r: Response): String = match r {
-        case Response(x) => x#url
+    pub def url(r: HttpResponse): String = match r {
+        case HttpResponse(x) => x#url
     }
 
     ///
     /// Returns the status code of the response `r`.
     ///
-    pub def status(r: Response): Int32 = match r {
-        case Response(x) => x#status
+    pub def status(r: HttpResponse): Int32 = match r {
+        case HttpResponse(x) => x#status
     }
 
     ///
     /// Returns the headers of the response `r`.
     ///
-    pub def headers(r: Response): Map[String, List[String]] = match r {
-        case Response(x) => x#headers
+    pub def headers(r: HttpResponse): Map[String, List[String]] = match r {
+        case HttpResponse(x) => x#headers
     }
 
     ///
@@ -49,8 +49,8 @@ pub mod Net.Response {
     ///
     /// If the body is binary, it is decoded as UTF-8.
     ///
-    pub def body(r: Response): String = match r {
-        case Response(x) => match x#body {
+    pub def body(r: HttpResponse): String = match r {
+        case HttpResponse(x) => match x#body {
             case Body.Text(s)  => s
             case Body.Bytes(v) => HttpClient.bytesToString(v)
         }
@@ -61,8 +61,8 @@ pub mod Net.Response {
     ///
     /// If the body is text, it is encoded as UTF-8.
     ///
-    pub def bodyBytes(r: Response): Vector[Int8] = match r {
-        case Response(x) => match x#body {
+    pub def bodyBytes(r: HttpResponse): Vector[Int8] = match r {
+        case HttpResponse(x) => match x#body {
             case Body.Bytes(v) => v
             case Body.Text(s)  => HttpClient.stringToBytes(s)
         }
@@ -71,13 +71,13 @@ pub mod Net.Response {
     ///
     /// Returns the list of values for the header with the given `name`, or `None` if not present.
     ///
-    pub def header(name: String, r: Response): Option[List[String]] =
+    pub def header(name: String, r: HttpResponse): Option[List[String]] =
         Map.get(name, headers(r))
 
     ///
     /// Returns the first value of the header with the given `name`, or `None` if not present.
     ///
-    pub def headerValue(name: String, r: Response): Option[String] =
+    pub def headerValue(name: String, r: HttpResponse): Option[String] =
         match header(name, r) {
             case Some(v :: _) => Some(v)
             case _            => None
@@ -86,59 +86,59 @@ pub mod Net.Response {
     ///
     /// Returns `true` if the response status is 200 OK.
     ///
-    pub def isOk(r: Response): Bool = status(r) == 200
+    pub def isOk(r: HttpResponse): Bool = status(r) == 200
 
     ///
     /// Returns `true` if the response status is in the 2xx range.
     ///
-    pub def isSuccess(r: Response): Bool =
+    pub def isSuccess(r: HttpResponse): Bool =
         let s = status(r);
         200 <= s and s <= 299
 
     ///
     /// Returns `true` if the response status is in the 3xx range.
     ///
-    pub def isRedirect(r: Response): Bool =
+    pub def isRedirect(r: HttpResponse): Bool =
         let s = status(r);
         300 <= s and s <= 399
 
     ///
     /// Returns `true` if the response status is in the 4xx range.
     ///
-    pub def isClientError(r: Response): Bool =
+    pub def isClientError(r: HttpResponse): Bool =
         let s = status(r);
         400 <= s and s <= 499
 
     ///
     /// Returns `true` if the response status is in the 5xx range.
     ///
-    pub def isServerError(r: Response): Bool =
+    pub def isServerError(r: HttpResponse): Bool =
         let s = status(r);
         500 <= s and s <= 599
 
     ///
     /// Returns `true` if the response status is in the 4xx or 5xx range.
     ///
-    pub def isError(r: Response): Bool =
+    pub def isError(r: HttpResponse): Bool =
         isClientError(r) or isServerError(r)
 
     ///
     /// Returns `Ok(r)` if the response status is in the 2xx range, or `Err` otherwise.
     ///
-    pub def expect(r: Response): Result[IoError, Response] =
+    pub def expect(r: HttpResponse): Result[IoError, HttpResponse] =
         if (isSuccess(r)) Ok(r)
         else Err(IoError(ErrorKind.Other, "Unexpected HTTP status: ${status(r)}"))
 
     ///
     /// Returns the value of the `content-type` header, or `None` if not present.
     ///
-    pub def contentType(r: Response): Option[String] =
+    pub def contentType(r: HttpResponse): Option[String] =
         headerValue("content-type", r)
 
     ///
     /// Returns the value of the `content-length` header parsed as an `Int64`, or `None` if not present or not a valid number.
     ///
-    pub def contentLength(r: Response): Option[Int64] =
+    pub def contentLength(r: HttpResponse): Option[Int64] =
         match headerValue("content-length", r) {
             case Some(v) => Int64.fromString(v)
             case None    => None

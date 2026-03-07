@@ -1,6 +1,6 @@
 use Net.Http
 use Net.Retry
-use Net.Response
+use Net.HttpResponse
 use Time.Duration.milliseconds
 
 /// Demonstrates three retry strategies provided by `Net.Retry`:
@@ -12,7 +12,7 @@ def main(): Unit \ { Http, IO } =
     run {
         println("--- Linear retry ---");
         match Http.get("https://notfound.flix.dev/") {
-            case Ok(resp) => println("Status: ${Response.status(resp)}")
+            case Ok(resp) => println("Status: ${HttpResponse.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
     } with Http.withRetry(Retry.linear(maxRetries = 3, delay = milliseconds(100)));
@@ -21,7 +21,7 @@ def main(): Unit \ { Http, IO } =
     run {
         println("--- Exponential retry ---");
         match Http.get("https://notfound.flix.dev/") {
-            case Ok(resp) => println("Status: ${Response.status(resp)}")
+            case Ok(resp) => println("Status: ${HttpResponse.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
     } with Http.withRetry(Retry.exponential(maxRetries = 3, baseDelay = milliseconds(100)));
@@ -30,7 +30,7 @@ def main(): Unit \ { Http, IO } =
     run {
         println("--- Transport-only retry ---");
         match Http.get("https://notfound.flix.dev/") {
-            case Ok(resp) => println("Status: ${Response.status(resp)}")
+            case Ok(resp) => println("Status: ${HttpResponse.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
     } with Http.withRetry(Retry.retryTransportOnly(maxRetries = 2, delay = milliseconds(100)))

@@ -1,5 +1,5 @@
 use Net.Http
-use Net.Response
+use Net.HttpResponse
 
 /// Uses `withDefaultHeaders` to inject headers into every request.
 /// Headers already present on a request are not overridden.
@@ -10,7 +10,7 @@ def main(): Unit \ { Http, IO } =
     };
     run {
         match Http.get("https://flix.dev/api/users") {
-            case Ok(resp) => println("Status: ${Response.status(resp)}")
+            case Ok(resp) => println("Status: ${HttpResponse.status(resp)}")
             case Err(err) => println("Error: ${err}")
         }
     } with Http.withDefaultHeaders(defaults)
