@@ -19,11 +19,9 @@ pub mod Net.Response {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.Body
+    use Net.HttpClient
     use Net.Response
     use Net.Response.Response
-
-    import java.lang.{String => JString}
-    import java.nio.charset.StandardCharsets
 
     ///
     /// Returns the final URL of the response `r` (after any redirects).
@@ -54,7 +52,7 @@ pub mod Net.Response {
     pub def body(r: Response): String = match r {
         case Response(x) => match x#body {
             case Body.Text(s)  => s
-            case Body.Bytes(v) => unchecked_cast(new JString(v, StandardCharsets.UTF_8) as _ \ {})
+            case Body.Bytes(v) => HttpClient.bytesToString(v)
         }
     }
 
@@ -66,8 +64,7 @@ pub mod Net.Response {
     pub def bodyBytes(r: Response): Vector[Int8] = match r {
         case Response(x) => match x#body {
             case Body.Bytes(v) => v
-            case Body.Text(s)  => unchecked_cast(
-                Array.toVector(s.getBytes(StandardCharsets.UTF_8)) as _ \ {})
+            case Body.Text(s)  => HttpClient.stringToBytes(s)
         }
     }
 

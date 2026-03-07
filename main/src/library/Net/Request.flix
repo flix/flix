@@ -17,13 +17,11 @@
 pub mod Net.Request {
 
     use Net.Body
+    use Net.HttpClient
     use Net.Method
     use Net.Request
     use Net.Request.Request
     use Time.Duration
-
-    import java.net.URLEncoder
-    import java.nio.charset.StandardCharsets
 
     // --- Constructors ---
 
@@ -219,8 +217,8 @@ pub mod Net.Request {
     ///
     pub def withQueryParam(name: String, value: String, r: Request): Request =
         let Request(x) = r;
-        let encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8);
-        let encodedValue = URLEncoder.encode(value, StandardCharsets.UTF_8);
+        let encodedName = HttpClient.urlEncode(name);
+        let encodedValue = HttpClient.urlEncode(value);
         let separator = if (String.contains(substr = "?", x#url)) "&" else "?";
         let newUrl = "${x#url}${separator}${encodedName}=${encodedValue}";
         Request({url = newUrl | x})

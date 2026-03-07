@@ -32,8 +32,11 @@ pub mod Net.HttpClient {
     import java.lang.InterruptedException
     import java.lang.{Thread => JThread}
     import java.lang.{Throwable => JThrowable}
+    import java.lang.{String => JString}
     import java.net.ConnectException
     import java.net.URI
+    import java.net.URLEncoder
+    import java.nio.charset.StandardCharsets
     import java.net.http.HttpClient
     import java.net.http.{HttpClient$Redirect => Redirect}
     import java.net.http.HttpRequest
@@ -54,6 +57,24 @@ pub mod Net.HttpClient {
     ///
     pub def sleep(ms: Int64): Unit \ IO =
         JThread.sleep(ms)
+
+    ///
+    /// Returns the URL-encoded form of the string `s`.
+    ///
+    pub def urlEncode(s: String): String =
+        URLEncoder.encode(s, StandardCharsets.UTF_8)
+
+    ///
+    /// Decodes the byte vector `v` as a UTF-8 string.
+    ///
+    pub def bytesToString(v: Vector[Int8]): String =
+        unchecked_cast(new JString(v, StandardCharsets.UTF_8) as _ \ {})
+
+    ///
+    /// Encodes the string `s` as a UTF-8 byte vector.
+    ///
+    pub def stringToBytes(s: String): Vector[Int8] =
+        unchecked_cast(Array.toVector(s.getBytes(StandardCharsets.UTF_8)) as _ \ {})
 
     ///
     /// Returns the exception message, or a fallback if `getMessage()` returns null.
