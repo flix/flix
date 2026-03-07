@@ -237,14 +237,18 @@ pub mod BPlusTree {
     /// Returns `true` if `t1` and `t2` contain the same keys and values, regardless of
     /// each individual tree's internal structure.
     ///
+    /// Not thread-safe.
+    ///
     pub def sameElements(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] =
         if (size(t1) != size(t2))
             false
         else
-            Node.sameElementsFrom(0, Node.leftMostChild(t1->root), 0, Node.leftMostChild(t2->root))
+            Node.sameElementsFromLeaf(0, Node.leftMostLeafUnconditional(t1->root), 0, Node.leftMostLeafUnconditional(t2->root))
 
     ///
     /// Applies the function `f` to every value in `t`.
+    ///
+    /// Not thread-safe.
     ///
     pub def transform(f: v -> v \ ef, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
         transformWithKey(_ -> v -> f(v), t)
@@ -253,8 +257,10 @@ pub mod BPlusTree {
     /// Applies the function `f` to every mapping `k => v` in `t`, replacing it with
     /// `k => f(k, v)`.
     ///
+    /// Not thread-safe.
+    ///
     pub def transformWithKey(f: k -> v -> v \ ef, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
-        Node.transformWithKey(f, 0, Node.leftMostChild(t->root))
+        Node.transformWithKeyFromLeaf(f, 0, Node.leftMostLeafUnconditional(t->root))
 
     ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, computes `v = f()`, inserts `k => v`
@@ -270,14 +276,11 @@ pub mod BPlusTree {
             case Some(v) => v
             case None =>
                 let lock = Node.getLock(leaf);
-                let writeStamp = Lock.tryConvertToWrite(stamp, lock);
-                if (not Lock.valid(writeStamp, lock)) {
-                    computeIfAbsent(f, k, t)
-                } else {
+                Lock.withWriteLockOrElse(stamp, lock, writeStamp -> {
                     let v = f();
                     fixRoot(Node.insertIntoLeaf(k, v, leaf, writeStamp, t), t);
                     v
-                }
+                }, () -> computeIfAbsent(f, k, t))
         }
 
     ///
@@ -294,7 +297,7 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def exists(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r =
-        Node.exists(f, 0, Node.leftMostChild(t->root))
+        Node.existsFromLeaf(f, 0, Node.leftMostLeafUnconditional(t->root))
 
     ///
     /// Alias for `findLeft`.
@@ -310,7 +313,7 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def findLeft(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Option[(k, v)] \ ef + r =
-        Node.findLeft(f, 0, Node.leftMostChild(t->root))
+        Node.findLeftFromLeaf(f, 0, Node.leftMostLeafUnconditional(t->root))
 
     ///
     /// Increments the stored size of `t`.
@@ -327,12 +330,7 @@ pub mod BPlusTree {
     pub def memberOfPair(k: k, v: v, t: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         let res = Node.leafMemberOfPair(k, v, t->search, leaf);
-        if (Lock.valid(stamp, Node.getLock(leaf))) {
-            res
-        } else {
-            Lock.yieldBasedOn(Node.getLock(leaf));
-            memberOfPair(k, v, t)
-        }
+        Lock.ifValidElse(stamp, Node.getLock(leaf), () -> res, () -> memberOfPair(k, v, t))
 
     ///
     /// Returns a `BPlusTree` with mappings `k => f(v)` for every `k => v` in `t`.
@@ -377,7 +375,7 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def iterator(rc1: Region[r1], t: BPlusTree[k, v, r]): Iterator[(k, v), r + r1, r1] \ r + r1 = {
-        let nodeRef = Ref.fresh(rc1, Node.leftMostChild(t->root));
+        let nodeRef = Ref.fresh(rc1, Node.leftMostLeafUnconditional(t->root));
         let indexRef = Ref.fresh(rc1, 0);
         def next() = {
             let node = Ref.get(nodeRef);
@@ -470,9 +468,11 @@ pub mod BPlusTree {
     /// Returns the leaf in `t` containing key `k` and leaves it locked. If no node contains
     /// `k`, the rightmost node with values strictly less than `k` is returned.
     ///
-    def findLeaf(k: k, t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
+    def findLeaf(k: k, t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] = {
+        let search = BPlusTree.search(t);
         let (node, stamp) = getLockedRoot(t);
-        Node.traverseDown(k, node, stamp, t)
+        Node.traverseToLeaf(node, stamp, n -> Node.childForKey(k, search, n), () -> BPlusTree.findLeaf(k, t))
+    }
 
     ///
     /// Updates the root of `t` if `newRoot` is `Some(...)`. Unlocks `t->rootLock` using the stamp.
@@ -507,7 +507,7 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def forEach(f: k -> v -> Unit \ ef, t: BPlusTree[k, v, r]): Unit \ ef + r =
-        let minLeaf = Node.leftMostChild(t->root);
+        let minLeaf = Node.leftMostLeafUnconditional(t->root);
         Node.traverseRightUnconditional(f, 0, minLeaf)
 
     ///
@@ -517,11 +517,35 @@ pub mod BPlusTree {
         let rootPointerStamp = Lock.tryReadLock(t->rootLock);
         let rootNode = t->root;
         let nodeStamp = Lock.tryReadLock(Node.getLock(rootNode));
-        if (Lock.valid(rootPointerStamp, t->rootLock)) {
-            (rootNode, nodeStamp)
-        } else {
-            Lock.yieldBasedOn(t->rootLock);
-            getLockedRoot(t)
+        Lock.ifValidElse(rootPointerStamp, t->rootLock, () -> (rootNode, nodeStamp), () -> getLockedRoot(t))
+
+    ///
+    /// Runs `descend` from the locked root of `t`.
+    ///
+    def fromLockedRoot(
+        t: BPlusTree[k, v, r],
+        descend: Node[k, v, r] -> Int64 -> (Node[k, v, r], Int64) \ r
+    ): (Node[k, v, r], Int64) \ r with Order[k] = {
+        let (node, stamp) = getLockedRoot(t);
+        descend(node, stamp)
+    }
+
+    ///
+    /// Returns the first mapping in `leaf`, if any.
+    ///
+    def firstEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r =
+        match Node.size(leaf) {
+            case 0 => None
+            case _ => Some(Node.getKeyAndValueAt(0, leaf))
+        }
+
+    ///
+    /// Returns the last mapping in `leaf`, if any.
+    ///
+    def lastEntryInLeaf(leaf: Node[k, v, r]): Option[(k, v)] \ r =
+        match Node.size(leaf) {
+            case 0 => None
+            case n => Some(Node.getKeyAndValueAt(n - 1, leaf))
         }
 
     ///
@@ -628,7 +652,7 @@ pub mod BPlusTree {
         if (threadNum <= 1) {
             forEach(f, t)
         } else {
-            let minLeaf = Node.leftMostChild(t->root);
+            let minLeaf = Node.leftMostLeafUnconditional(t->root);
             unsafe IO as r {
                 Vector.range(0, threadNum) |>
                 Vector.forEach(i -> {
@@ -709,13 +733,7 @@ pub mod BPlusTree {
     pub def isEmpty(t: BPlusTree[k, v, r]): Bool \ r =
         let (root, stamp) = BPlusTree.getLockedRoot(t);
         let res = Node.isEmpty(root);
-        if (Lock.valid(stamp, Node.getLock(root))) {
-            res
-        } else {
-            // Restart
-            Lock.yieldBasedOn(Node.getLock(root));
-            isEmpty(t)
-        }
+        Lock.ifValidElse(stamp, Node.getLock(root), () -> res, () -> isEmpty(t))
 
     ///
     /// Returns `true` if and only if `t` contains at least one mapping.
@@ -733,12 +751,7 @@ pub mod BPlusTree {
     pub def memberOf(k: k, t: BPlusTree[k, v, r]): Bool \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         let res = Node.leafMemberOf(k, t->search, leaf);
-        if (not Lock.valid(stamp, Node.getLock(leaf))) {
-            Lock.yieldBasedOn(Node.getLock(leaf));
-            memberOf(k, t)
-        } else {
-            res
-        }
+        Lock.ifValidElse(stamp, Node.getLock(leaf), () -> res, () -> memberOf(k, t))
 
     ///
     /// Merge `src` into `dst`, modifying `dst` in a left-biased manner.
@@ -815,16 +828,8 @@ pub mod BPlusTree {
     ///
     pub def minimumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
         let (leaf, leafStamp) = leftMostLeaf(t);
-        let result = match Node.size(leaf) {
-            case 0 => None
-            case _ => Some(Node.getKeyAndValueAt(0, leaf))
-        };
-        if (Lock.valid(leafStamp, Node.getLock(leaf))) {
-            result
-        } else {
-            Lock.yieldBasedOn(Node.getLock(leaf));
-            minimumKey(t)
-        }
+        let result = firstEntryInLeaf(leaf);
+        Lock.ifValidElse(leafStamp, Node.getLock(leaf), () -> result, () -> minimumKey(t))
     }
 
     ///
@@ -837,16 +842,8 @@ pub mod BPlusTree {
     ///
     pub def maximumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
         let (leaf, leafStamp) = rightMostLeaf(t);
-        let result = match Node.size(leaf) {
-            case 0 => None
-            case n => Some(Node.getKeyAndValueAt(n - 1, leaf))
-        };
-        if (Lock.valid(leafStamp, Node.getLock(leaf))) {
-            result
-        } else {
-            Lock.yieldBasedOn(Node.getLock(leaf));
-            maximumKey(t)
-        }
+        let result = lastEntryInLeaf(leaf);
+        Lock.ifValidElse(leafStamp, Node.getLock(leaf), () -> result, () -> maximumKey(t))
     }
 
     ///
@@ -854,20 +851,16 @@ pub mod BPlusTree {
     ///
     /// The leftmost leaf contains the minimum key in the tree.
     ///
-    def leftMostLeaf(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] = {
-        let (node, stamp) = getLockedRoot(t);
-        Node.leftMostLeaf(node, stamp, t)
-    }
+    def leftMostLeaf(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
+        fromLockedRoot(t, node -> stamp -> Node.leftMostLeaf(node, stamp, t))
 
     ///
     /// Returns the rightmost leaf of `t` and its lock stamp.
     ///
     /// The rightmost leaf contains the maximum key in the tree.
     ///
-    def rightMostLeaf(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] = {
-        let (node, stamp) = getLockedRoot(t);
-        Node.rightMostLeaf(node, stamp, t)
-    }
+    def rightMostLeaf(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
+        fromLockedRoot(t, node -> stamp -> Node.rightMostLeaf(node, stamp, t))
 
     ///
     /// Returns the arity of `t`.
