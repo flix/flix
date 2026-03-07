@@ -20,8 +20,7 @@ pub mod Net.Request {
     use Net.Method
     use Net.Request
     use Net.Request.Request
-    use Net.Timeout
-    use Net.Timeout.{NoTimeout, After}
+    use Time.Duration
 
     import java.net.URLEncoder
     import java.nio.charset.StandardCharsets
@@ -33,49 +32,49 @@ pub mod Net.Request {
     ///
     pub def get(url: String): Request =
         Request({method = Method.Get, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
+                 requestTimeout = None, connectTimeout = None, followRedirects = true})
 
     ///
     /// Creates a HEAD request to the given `url`.
     ///
     pub def head(url: String): Request =
         Request({method = Method.Head, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
+                 requestTimeout = None, connectTimeout = None, followRedirects = true})
 
     ///
     /// Creates an OPTIONS request to the given `url`.
     ///
     pub def options(url: String): Request =
         Request({method = Method.Options, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
+                 requestTimeout = None, connectTimeout = None, followRedirects = true})
 
     ///
     /// Creates a POST request to the given `url` with the given `body`.
     ///
     pub def post(url: String, body: String): Request =
         Request({method = Method.Post, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
+                 requestTimeout = None, connectTimeout = None, followRedirects = true})
 
     ///
     /// Creates a PUT request to the given `url` with the given `body`.
     ///
     pub def put(url: String, body: String): Request =
         Request({method = Method.Put, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
+                 requestTimeout = None, connectTimeout = None, followRedirects = true})
 
     ///
     /// Creates a PATCH request to the given `url` with the given `body`.
     ///
     pub def patch(url: String, body: String): Request =
         Request({method = Method.Patch, url = url, headers = Map.empty(), body = Some(Body.Text(body)),
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
+                 requestTimeout = None, connectTimeout = None, followRedirects = true})
 
     ///
     /// Creates a DELETE request to the given `url`.
     ///
     pub def delete(url: String): Request =
         Request({method = Method.Delete, url = url, headers = Map.empty(), body = None,
-                 requestTimeout = NoTimeout, connectTimeout = NoTimeout, followRedirects = true})
+                 requestTimeout = None, connectTimeout = None, followRedirects = true})
 
     // --- Getters ---
 
@@ -123,14 +122,14 @@ pub mod Net.Request {
     ///
     /// Returns the request timeout of the request `r`.
     ///
-    pub def requestTimeout(r: Request): Timeout = match r {
+    pub def requestTimeout(r: Request): Option[Duration] = match r {
         case Request(x) => x#requestTimeout
     }
 
     ///
     /// Returns the connect timeout of the request `r`.
     ///
-    pub def connectTimeout(r: Request): Timeout = match r {
+    pub def connectTimeout(r: Request): Option[Duration] = match r {
         case Request(x) => x#connectTimeout
     }
 
@@ -239,16 +238,16 @@ pub mod Net.Request {
     ///
     /// Sets the request timeout (time until response headers are received).
     ///
-    pub def withTimeout(timeout: Timeout, r: Request): Request =
+    pub def withTimeout(d: Duration, r: Request): Request =
         let Request(x) = r;
-        Request({requestTimeout = timeout | x})
+        Request({requestTimeout = Some(d) | x})
 
     ///
     /// Sets the connect timeout (time to establish the TCP connection).
     ///
-    pub def withConnectTimeout(timeout: Timeout, r: Request): Request =
+    pub def withConnectTimeout(d: Duration, r: Request): Request =
         let Request(x) = r;
-        Request({connectTimeout = timeout | x})
+        Request({connectTimeout = Some(d) | x})
 
     ///
     /// Sets whether the request `r` should follow HTTP redirects.

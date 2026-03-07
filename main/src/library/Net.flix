@@ -40,16 +40,6 @@ pub mod Net {
     }
 
     ///
-    /// Represents a timeout for an HTTP operation.
-    ///
-    pub enum Timeout with Eq, ToString {
-        /// No timeout — wait indefinitely.
-        case NoTimeout
-        /// Timeout after the given duration.
-        case After(Duration)
-    }
-
-    ///
     /// Describes why a retry is being considered.
     ///
     pub enum RetryOutcome {
@@ -77,8 +67,8 @@ pub mod Net {
         url             = String,
         headers         = Map[String, List[String]],
         body            = Option[Body],
-        requestTimeout  = Timeout,
-        connectTimeout  = Timeout,
+        requestTimeout  = Option[Duration],
+        connectTimeout  = Option[Duration],
         followRedirects = Bool
     })
 

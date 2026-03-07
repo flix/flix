@@ -24,8 +24,6 @@ pub mod Net.HttpClient {
     use Net.Request.Request
     use Net.Response
     use Net.Response.Response
-    use Net.Timeout
-    use Net.Timeout.{NoTimeout, After}
     use Time.Duration.toMillis
 
     import java.io.IOException
@@ -61,7 +59,7 @@ pub mod Net.HttpClient {
     /// Performs the actual HTTP request using the Java HTTP client.
     ///
     /// Reuses `defaultClient` when the request has default client-level settings
-    /// (`connectTimeout == NoTimeout` and `followRedirects == true`).
+    /// (`connectTimeout == None` and `followRedirects == true`).
     /// Otherwise, builds a one-off client with the request's specific settings.
     ///
     pub def doRequest(defaultClient: HttpClient, req: Request): Result[IoError, Response] \ IO =
@@ -93,18 +91,18 @@ pub mod Net.HttpClient {
                        x#headers
                    );
             let jrequest = match x#requestTimeout {
-                case NoTimeout  => builder.build()
-                case After(d)   => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
+                case None       => builder.build()
+                case Some(d)    => builder.timeout(JDuration.ofMillis(toMillis(d))).build()
             };
             let client = {
                 let Request(x0) = req;
-                if (x0#connectTimeout == NoTimeout and x0#followRedirects == true)
+                if (x0#connectTimeout == None and x0#followRedirects == true)
                     defaultClient
                 else {
                     let redirectPolicy = if (x0#followRedirects) Redirect.NORMAL else Redirect.NEVER;
                     match x0#connectTimeout {
-                        case NoTimeout => HttpClient.newBuilder().followRedirects(redirectPolicy).build()
-                        case After(d)  => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(toMillis(d))).build()
+                        case None    => HttpClient.newBuilder().followRedirects(redirectPolicy).build()
+                        case Some(d) => HttpClient.newBuilder().followRedirects(redirectPolicy).connectTimeout(JDuration.ofMillis(toMillis(d))).build()
                     }
                 }
             };
