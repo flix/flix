@@ -43,7 +43,8 @@ pub mod Abort {
             formatStackTrace(elems, 3)
         };
         let nl = RichString.fromString(String.lineSeparator());
-        Abort.abort(Formattable.format(m) + nl + trace)
+        let header = RichString.bold(RichString.white("Stack Trace:"));
+        Abort.abort(Formattable.format(m) + nl + header + nl + trace)
 
     ///
     /// Handles the `Abort` effect of the given function `f` by printing the error message and exiting.
@@ -101,13 +102,32 @@ pub mod Abort {
     ///
     def formatStackTrace(trace: Array[StackTraceElement, Static], skip: Int32): RichString \ IO =
         let nl = RichString.fromString(String.lineSeparator());
-        let frames = Array.toList(trace) |> List.drop(skip);
-        RichString.joinWith(elem -> {
+        let frames = Array.toList(trace) |> List.drop(skip) |> List.zipWithIndex;
+        let maxIdx = List.length(frames) - 1;
+        let width  = String.length("${maxIdx}");
+        RichString.joinWith(match (idx, elem) -> {
             let className  = elem.getClassName();
             let methodName = elem.getMethodName();
             let fileName   = Object.toOption(elem.getFileName()) |> Option.getWithDefault("Unknown Source");
             let lineNumber = elem.getLineNumber();
-            RichString.gray("    at ${className}.${methodName}(${fileName}:${lineNumber})")
+            let index    = RichString.cyan("#${String.padLeft(width, ' ', "${idx}")}");
+            let location = RichString.gray("(${fileName}:${lineNumber})");
+            if (isUserFrame(className))
+                RichString.fromString("  ") + index + RichString.fromString(" ") +
+                    RichString.fromString("${className}.") + RichString.bold(RichString.yellow(methodName)) +
+                    location
+            else
+                RichString.fromString("  ") + index + RichString.fromString(" ") +
+                    RichString.gray("${className}.${methodName}") + location
         }, nl, frames)
+
+    ///
+    /// Returns `true` if the given `className` represents a user-defined Flix function.
+    ///
+    /// Flix compiles user functions to JVM classes named `Def$functionName` or `Namespace.Def$functionName`.
+    ///
+    def isUserFrame(className: String): Bool =
+        String.startsWith(prefix = "Def$", className) or
+        String.contains(substr = ".Def$", className)
 
 }
