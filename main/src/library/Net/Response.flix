@@ -96,28 +96,28 @@ pub mod Net.Response {
     ///
     pub def isSuccess(r: Response): Bool =
         let s = status(r);
-        s >= 200 and s <= 299
+        200 <= s and s <= 299
 
     ///
     /// Returns `true` if the response status is in the 3xx range.
     ///
     pub def isRedirect(r: Response): Bool =
         let s = status(r);
-        s >= 300 and s <= 399
+        300 <= s and s <= 399
 
     ///
     /// Returns `true` if the response status is in the 4xx range.
     ///
     pub def isClientError(r: Response): Bool =
         let s = status(r);
-        s >= 400 and s <= 499
+        400 <= s and s <= 499
 
     ///
     /// Returns `true` if the response status is in the 5xx range.
     ///
     pub def isServerError(r: Response): Bool =
         let s = status(r);
-        s >= 500 and s <= 599
+        500 <= s and s <= 599
 
     ///
     /// Returns `true` if the response status is in the 4xx or 5xx range.
