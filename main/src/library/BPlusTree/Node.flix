@@ -78,6 +78,26 @@ mod BPlusTree.Node {
     }
 
     ///
+    /// Folds over the leaf chain that starts at `node`, from left to right.
+    ///
+    /// The input node must be a leaf.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def foldLeftWithKeyFromLeaf(
+        f: b -> k -> v -> b \ ef,
+        acc: b,
+        index: Int32,
+        node: Node[k, v, r]
+    ): b \ ef + r = match seek(index, node) {
+        case None => acc
+        case Some((i, n)) => {
+            let (k, v) = getKeyAndValueAt(i, n);
+            foldLeftWithKeyFromLeaf(f, f(acc, k, v), i + 1, n)
+        }
+    }
+
+    ///
     /// Internal method to insert `key` and `val` in `node` at `insertionPoint`.
     /// Increments the `size` of `node`.
     ///

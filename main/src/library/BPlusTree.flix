@@ -491,7 +491,8 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def foldLeft(f: b -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
-        List.foldLeft(f, i, valuesOf(t))
+        let minLeaf = Node.leftMostLeafUnconditional(t->root);
+        Node.foldLeftWithKeyFromLeaf(acc -> _ -> v -> f(acc, v), i, 0, minLeaf)
 
     ///
     /// Applies `f` to a start value `i` and all mappings `k => v` in `t` going from left to right.
@@ -499,7 +500,8 @@ pub mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def foldLeftWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
-        List.foldLeft(b -> match (k, v) -> f(b, k, v), i, toList(t))
+        let minLeaf = Node.leftMostLeafUnconditional(t->root);
+        Node.foldLeftWithKeyFromLeaf(f, i, 0, minLeaf)
 
     ///
     /// Applies `f` to all mappings `k => v` in `t`.
