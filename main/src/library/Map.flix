@@ -211,6 +211,17 @@ pub mod Map {
     pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(d, get(k, m))
 
     ///
+    /// Returns the value associated with key `k` in map `m`.
+    ///
+    /// Aborts if the key is not present.
+    ///
+    pub def getOrAbort(k: k, m: Map[k, v]): v \ Abort with Order[k] =
+        match Map.get(k, m) {
+            case None    => Abort.abortWithTrace("Map.getOrAbort(): key not found")
+            case Some(v) => v
+        }
+
+    ///
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
     pub def memberOf(k: k, m: Map[k, v]): Bool with Order[k] =
