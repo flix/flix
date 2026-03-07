@@ -135,14 +135,10 @@ pub mod Net.Http {
                         let now     = Clock.now();
                         let elapsed = now - Ref.get(lastTime);
                         let added   = Int64.clampToInt32(min = 0, max = burstSize, elapsed / intervalMs);
-                        if (added > 0)
-                            Ref.put(Int32.min(burstSize, Ref.get(tokens) + added), tokens)
-                        else
-                            ();
-                        if (added > 0)
+                        if (added > 0) {
+                            Ref.put(Int32.min(burstSize, Ref.get(tokens) + added), tokens);
                             Ref.put(Ref.get(lastTime) + Int32.toInt64(added) * intervalMs, lastTime)
-                        else
-                            ();
+                        };
                         if (Ref.get(tokens) >= 1) {
                             Ref.put(Ref.get(tokens) - 1, tokens)
                         } else {
