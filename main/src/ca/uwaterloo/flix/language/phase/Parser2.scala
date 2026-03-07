@@ -2282,16 +2282,9 @@ object Parser2 {
           case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
           case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
           case TokenKind.Eof =>
-            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, sctx, loc = currentSourceLocation())
-            return Result.Err(closeWithError(mark, error))
+            continue = false
           case t if t.isFirstInDecl =>
-            // Advance past the erroneous region to the next stable token
-            // (the start of the declaration).
-            for (_ <- 0 until lookAhead) {
-              advance()
-            }
-            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
-            return Result.Err(closeWithError(mark, error))
+            continue = false
           case _ => lookAhead += 1
         }
       }

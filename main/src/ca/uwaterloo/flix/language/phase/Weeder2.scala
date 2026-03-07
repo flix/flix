@@ -1426,8 +1426,9 @@ object Weeder2 {
         case (expr, Nil) =>
           val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           sctx.errors.add(error)
-          // Fall back on Expr.Error.
-          Validation.Success(Expr.Error(error))
+          // Preserve the scrutinee so name resolution can process it.
+          val dummyRule = MatchRule(Pattern.Wild(tree.loc.asSynthetic), None, Expr.Error(error), tree.loc.asSynthetic)
+          Validation.Success(Expr.Match(expr, dummyRule :: Nil, tree.loc))
         case (expr, rules) => Validation.Success(Expr.Match(expr, rules, tree.loc))
       }
     }
