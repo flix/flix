@@ -611,27 +611,27 @@ mod BPlusTree.Node {
     ///
     /// Returns the leftmost leaf of the tree rooted at `node`.
     ///
-    /// Traverses down the leftmost path of the tree, acquiring locks along the way. 
+    /// Traverses down the leftmost path of the tree, acquiring locks along the way.
     /// If a lock is invalid, yields and retries from the root of `t`.
     ///
     pub def leftMostLeaf(
-        n: Node[k, v, r], 
-        stamp: Int64, 
+        n: Node[k, v, r],
+        stamp: Int64,
         t: BPlusTree[k, v, r]
-    ): (Node[k, v, r], Int64) \ r with Order[k] = 
+    ): (Node[k, v, r], Int64) \ r with Order[k] =
         traverseToLeaf(n, stamp, node -> Array.get(0, node->children), () -> BPlusTree.leftMostLeaf(t))
 
-    /// 
-    /// Returns the rightmost leaf of the tree rooted at `node`. 
+    ///
+    /// Returns the rightmost leaf of the tree rooted at `node`.
     ///
     /// Traverses down the rightmost path of the tree, acquiring locks along the way.
     /// If a lock is invalid, yields and retries from the root of `t`.
     ///
     pub def rightMostLeaf(
-        n: Node[k, v, r], 
-        stamp: Int64, 
+        n: Node[k, v, r],
+        stamp: Int64,
         t: BPlusTree[k, v, r]
-    ): (Node[k, v, r], Int64) \ r with Order[k] = 
+    ): (Node[k, v, r], Int64) \ r with Order[k] =
         traverseToLeaf(n, stamp, node -> Array.get(node->size - 1, node->children), () -> BPlusTree.rightMostLeaf(t))
 
     ///
@@ -801,6 +801,39 @@ mod BPlusTree.Node {
                 None
             }
         }
+
+    ///
+    /// Inserts the mapping `key => f(key, val, val1)` if `key => val1` is in `node`.
+    /// Otherwise, inserts `key => val` into `node`.
+    ///
+    /// Returns `Some(newRoot, stamp)` if the root was split.
+    ///
+    /// Thread-safe.
+    ///
+    pub def putWithKey(
+        f: k -> v -> v -> v \ ef,
+        key: k,
+        val: v,
+        tree: BPlusTree[k, v, r],
+        stamp: Int64,
+        node: Node[k, v, r]
+    ): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k] = {
+        let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
+        if (not Lock.valid(writeStamp, node->lock)) {
+            Lock.yieldBasedOn(node->lock);
+            BPlusTree.putWithKeyInternal(f, key, val, tree)
+        } else {
+            let index = binarySearch(key, BPlusTree.search(tree), node);
+            if (index < 0) {
+                insertIntoLeafPropagate(key, val, index, node, writeStamp, tree)
+            } else {
+                let v1 = Array.get(index, node->values);
+                Array.put(f(key, val, v1), index, node->values);
+                Lock.unlockWrite(writeStamp, node->lock);
+                None
+            }
+        }
+    }
 
     ///
     /// Applies `f` in ascending order to all mappings `k => v` in the tree
@@ -1078,10 +1111,10 @@ mod BPlusTree.Node {
     /// Traverses down the tree according to `pickChild`, acquiring locks along the way.
     /// If a lock is invalid, yields and retries from the root using `restart`.
     ///
-    /// `pickChild` should pick a child of `cur` if `cur` is an internal node and is not 
-    /// called if `cur` is a leaf. 
-    /// 
-    /// Caution: Because invalid locks trigger `restart`, `pickChild` and `restart` may 
+    /// `pickChild` should pick a child of `cur` if `cur` is an internal node and is not
+    /// called if `cur` is a leaf.
+    ///
+    /// Caution: Because invalid locks trigger `restart`, `pickChild` and `restart` may
     /// be called an unknown number of times before traversal succeeds.
     ///
     /// Lock invariant: `stamp` is a valid lock on the current node.

@@ -747,7 +747,7 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def merge(src: BPlusTree[k, v, r], dst: BPlusTree[k, v, r]): Unit \ r with Order[k] =
+    pub def merge(src: BPlusTree[k, v, r1], dst: BPlusTree[k, v, r2]): Unit \ r1 + r2 with Order[k] =
         BPlusTree.forEach(k -> v -> BPlusTree.put(k, v, dst), src)
 
     ///
@@ -756,8 +756,54 @@ pub mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def mergeWith(f: v -> v -> v \ ef, src: BPlusTree[k, v, r], dst: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
+    pub def mergeWith(f: v -> v -> v \ ef, src: BPlusTree[k, v, r1], dst: BPlusTree[k, v, r2]): Unit \ r1 + r2 + ef with Order[k] =
         BPlusTree.forEach(k -> v -> BPlusTree.putWith(f, k, v, dst), src)
+
+    ///
+    /// Merges `src` into `dst`, modifying `dst` in-place. If `k => v1` is in `src` and
+    /// `k => v2` is in `dst`, then `dst` is updated with `k => f(k, v1, v2)`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def mergeWithKey(f: k -> v -> v -> v \ ef, src: BPlusTree[k, v, r1], dst: BPlusTree[k, v, r2]): Unit \ r1 + r2 + ef with Order[k] =
+        forEach(k -> v -> BPlusTree.putWithKey(f, k, v, dst), src)
+
+    ///
+    /// Returns true if `t1` is a submap of `t2`, i.e. for every key in `t1`, `t2`
+    /// contains the same key with the same value.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def isSubmapOf(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] = region rc {
+        if (size(t1) > size(t2)) {
+            false
+        } else {
+            // Future optimization: when t1 is much smaller than t2, it might be faster to iterate
+            // over t1 and check membership in t2 instead of iterating over both trees in parallel
+            let i1 = iterator(rc, t1);
+            let i2 = iterator(rc, t2);
+            def checkRemaining(m1, m2) = match (m1, m2) {
+                case (Some((k1, v1)), Some((k2, v2))) => {
+                    if (k1 < k2) false
+                    else if (k1 > k2) checkRemaining(m1, Iterator.next(i2))
+                    else if (v1 != v2) false
+                    else checkRemaining(Iterator.next(i1), Iterator.next(i2))
+                }
+                case (Some(_), None) => false
+                case (None, _) => true
+            };
+            checkRemaining(Iterator.next(i1), Iterator.next(i2))
+        }
+    }
+
+    ///
+    /// Returns true if `t1` is a proper submap of `t2`, i.e. `t1` is a submap of `t2` and
+    /// there exists a key in `t2` that is not in `t1`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def isProperSubmapOf(t1: BPlusTree[k, v, r1], t2: BPlusTree[k, v, r2]): Bool \ r1 + r2 with Order[k], Eq[v] =
+        size(t1) < size(t2) and isSubmapOf(t1, t2)
 
     ///
     /// Optionally returns `k => v` where `k` is the smallest key in `t` according to the
@@ -848,6 +894,28 @@ pub mod BPlusTree {
     def putWithInternal(f: v -> v -> v \ ef, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k] =
         let (leaf, stamp) = findLeaf(k, t);
         Node.putWith(f, k, v, t, leaf, stamp)
+
+    ///
+    /// Updates `t` with the mapping `k => f(k, v, v1)` if `k => v1` is in `t`.
+    ///
+    /// Otherwise, updates `t` with the mapping `k => v`.
+    ///
+    /// Thread-safe.
+    ///
+    pub def putWithKey(f: k -> v -> v -> v \ ef, k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
+        fixRoot(putWithKeyInternal(f, k, v, t), t)
+
+    ///
+    /// Internal method to update the mapping as described by `putWithKey`.
+    ///
+    /// Called when restarting.
+    ///
+    /// Thread-safe.
+    ///
+    pub def putWithKeyInternal(f: k -> v -> v -> v \ ef, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k] = {
+        let (leaf, stamp) = findLeaf(k, t);
+        Node.putWithKey(f, k, v, t, stamp, leaf)
+    }
 
     ///
     /// Returns the list of mappings `k => v` in `t` where `min <= k <= max` according to
