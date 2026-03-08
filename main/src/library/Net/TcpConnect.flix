@@ -14,40 +14,33 @@
  *  limitations under the License.
  */
 
-use Net.IpAddr
-
-///
-/// The effect used to connect to a TCP server.
-///
-eff TcpConnectWithResult {
-    def connect(ip: IpAddr, port: Int16): Result[IoError, TcpSocket]
-}
-
-pub mod TcpConnectWithResult {
+pub mod Net.TcpConnect {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.IpAddr
+    use Net.TcpSocket
+    use Net.TcpSocket.TcpSocket
 
     import java.net.InetAddress
     import java.net.Socket
     import java.io.IOException
 
     ///
-    /// Handles the `TcpConnectWithResult` effect of the given function `f`.
+    /// Handles the `TcpConnect` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpConnectWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `TcpConnect` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpConnectWithResult + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - TcpConnect) + IO = x ->
         run {
             f(x)
-        } with handler TcpConnectWithResult {
+        } with handler TcpConnect {
             def connect(ip, port, k) = {
                 try {
                     let inet: InetAddress = InetAddress.getByAddress(IpAddr.toBytes(ip));
                     let socket = new Socket(inet, Int16.toInt32(port));
                     let inputStream = socket.getInputStream();
                     let outputStream = socket.getOutputStream();
-                    k(Ok(TcpSocket.TcpSocket(socket, inputStream, outputStream)))
+                    k(Ok(TcpSocket(socket, inputStream, outputStream)))
                 } catch {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
@@ -55,11 +48,11 @@ pub mod TcpConnectWithResult {
         }
 
     ///
-    /// Runs the `TcpConnectWithResult` effect of the given function `f`.
+    /// Runs the `TcpConnect` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpConnectWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `TcpConnect` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpConnectWithResult) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpConnect) + IO = handle(f)()
 
 }
