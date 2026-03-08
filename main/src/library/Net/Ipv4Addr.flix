@@ -14,37 +14,19 @@
  *  limitations under the License.
  */
 
-///
-/// Represents a V4 Ip Address.
-///
-enum Ipv4Addr with Eq { // 32 bits
-    case Ipv4Addr(Int8, Int8, Int8, Int8)
-}
-
-instance FromString[Ipv4Addr] {
-    pub def fromString(x: String): Option[Ipv4Addr] = Ipv4Addr.fromString(x)
-}
-
-instance ToString[Ipv4Addr] {
-    pub def toString(x: Ipv4Addr): String = Ipv4Addr.toString(x)
-}
-
-instance Formattable[Ipv4Addr] {
-    pub def format(x: Ipv4Addr): RichString = RichString.fromString(ToString.toString(x))
-}
-
-pub mod Ipv4Addr {
+pub mod Net.Ipv4Addr {
     import java.net.InetAddress
     import java.net.UnknownHostException
     import java.lang.NumberFormatException
 
-    use Ipv4Addr.Ipv4Addr
+    use Net.Ipv4Addr
+    use Net.Ipv6Addr
 
     ///
     /// Returns the Ipv4 localhost address.
     ///
     pub def localhost(): Ipv4Addr =
-        Ipv4Addr(127i8, 0i8, 0i8, 1i8)
+        Ipv4Addr.Ipv4Addr(127i8, 0i8, 0i8, 1i8)
 
     ///
     /// Convert `x` from Ipv4 to Ipv6.
@@ -64,7 +46,7 @@ pub mod Ipv4Addr {
             |> List.traverse(parseInt8NoLeading0);
         match bytes {
             case Some(b1::b2::b3::b4::Nil) => {
-                Some(Ipv4Addr(b1, b2, b3, b4))
+                Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
             }
             case _ => None
         }
@@ -106,4 +88,3 @@ pub mod Ipv4Addr {
         ) yield i8
 
 }
-

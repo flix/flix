@@ -14,33 +14,14 @@
  *  limitations under the License.
  */
 
-///
-/// Represents a Socket Address.
-///
-enum SocketAddr with Eq {
-    case V4(SocketAddrV4)
-    case V6(SocketAddrV6)
-}
+pub mod Net.SocketAddr {
 
-instance FromString[SocketAddr] {
-    pub def fromString(x: String): Option[SocketAddr] = SocketAddr.fromString(x)
-}
-
-instance ToString[SocketAddr] {
-    pub def toString(x: SocketAddr): String = match x {
-        case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ToString.toString(ip)}:${port}"
-        case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ToString.toString(ip)}]:${port}"
-    }
-}
-
-instance Formattable[SocketAddr] {
-    pub def format(x: SocketAddr): RichString = RichString.fromString(ToString.toString(x))
-}
-
-pub mod SocketAddr {
-
-    use SocketAddrV4.SocketAddrV4
-    use SocketAddrV6.SocketAddrV6
+    use Net.IpAddr
+    use Net.Ipv4Addr
+    use Net.Ipv6Addr
+    use Net.SocketAddr
+    use Net.SocketAddrV4
+    use Net.SocketAddrV6
 
     ///
     /// Attempts to parse the given String `x` as a `SocketAddr`.
@@ -57,16 +38,16 @@ pub mod SocketAddr {
     /// Return the port of the SocketAddr `s`.
     ///
     pub def port(s: SocketAddr): Int32 = match s {
-        case SocketAddr.V4(SocketAddrV4(_, p)) => p
-        case SocketAddr.V6(SocketAddrV6(_, p)) => p
+        case SocketAddr.V4(SocketAddrV4.SocketAddrV4(_, p)) => p
+        case SocketAddr.V6(SocketAddrV6.SocketAddrV6(_, p)) => p
     }
 
     ///
     /// Return the IpAddr of the SocketAddr `s`.
     ///
     pub def ip(s: SocketAddr): IpAddr = match s {
-        case SocketAddr.V4(SocketAddrV4(ip, _)) => IpAddr.V4(ip)
-        case SocketAddr.V6(SocketAddrV6(ip, _)) => IpAddr.V6(ip)
+        case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, _)) => IpAddr.V4(ip)
+        case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, _)) => IpAddr.V6(ip)
     }
 
 
@@ -79,7 +60,7 @@ pub mod SocketAddr {
             (ip, port) <- separateIpPort(ipPort);
             v4 <- Ipv4Addr.fromString(ip);
             p <- parsePort(port)
-        ) yield SocketAddr.V4(SocketAddrV4(v4, p))
+        ) yield SocketAddr.V4(SocketAddrV4.SocketAddrV4(v4, p))
 
     ///
     /// Attempts to parse the given string `x` as a `SocketAddr.V6`.
@@ -90,7 +71,7 @@ pub mod SocketAddr {
             (ip, port) <- separateIpPort(ipPort);
             v6 <- Ipv6Addr.fromString(ip);
             p <- parsePort(port)
-        ) yield SocketAddr.V6(SocketAddrV6(v6, p))
+        ) yield SocketAddr.V6(SocketAddrV6.SocketAddrV6(v6, p))
 
     ///
     /// Attempts to parse the given String `x` as a Socket port.
@@ -107,4 +88,3 @@ pub mod SocketAddr {
     }
 
 }
-

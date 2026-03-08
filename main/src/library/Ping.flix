@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+use Net.IpAddr
+
 ///
 /// The effect used to determine if an address is reachable.
 ///
@@ -24,6 +26,7 @@ eff Ping {
 pub mod Ping {
     use IoError.ErrorKind
     use IoError.IoError
+    use Net.IpAddr
 
     import java.io.IOException
     import java.lang.IllegalArgumentException

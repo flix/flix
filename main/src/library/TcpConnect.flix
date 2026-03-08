@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+use Net.IpAddr
+
 ///
 /// The effect used to connect to a TCP server.
 ///
@@ -24,6 +26,7 @@ eff TcpConnect {
 pub mod TcpConnect {
     use IoError.ErrorKind
     use IoError.IoError
+    use Net.IpAddr
 
     import java.net.InetAddress
     import java.net.Socket
