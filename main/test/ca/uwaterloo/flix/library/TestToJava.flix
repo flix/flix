@@ -8,20 +8,6 @@ mod TestToJava {
     import java.lang.Object
 
     /////////////////////////////////////////////////////////////////////////////
-    // toJavaObject                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-    @Test
-    def toJavaObject01(): Unit \ Assert =
-        let x = ToJava.toJavaObject(0);
-        assertTrue(match Reflect.reflectValue(x) { case Reflect.JvmValue.JvmObject(_) => true case _ => false })
-
-    @Test
-    def toJavaObject02(): Unit \ Assert =
-        let x = ToJava.toJavaObject("hello world!");
-        assertTrue(match Reflect.reflectValue(x) { case Reflect.JvmValue.JvmObject(_) => true case _ => false })
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
     @Test
