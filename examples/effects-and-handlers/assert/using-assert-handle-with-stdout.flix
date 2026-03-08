@@ -1,4 +1,4 @@
-use Assert.{assertEq, runWithStdOut}
+use Assert.assertEq
 
 /// Demonstrates the `runWithStdOut` handler which prints assertion failures
 /// to stdout but allows execution to continue.
@@ -7,4 +7,4 @@ def main(): Unit \ IO =
         assertEq(expected = 4, 2 + 2);
         assertEq(expected = 10, 3 + 3);
         println("Execution continued after failing assertion.")
-    } with runWithStdOut
+    } with Assert.runWithStdOut
