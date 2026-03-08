@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{Map => JMap}
 
 ///
 /// The Map type.
@@ -129,17 +128,6 @@ instance Iterable[Map[k, v]] {
 instance ForEach[Map[k, v]] {
     type Elm = (k, v)
     pub def forEach(f: ((k, v)) -> Unit \ ef, t: Map[k, v]): Unit \ ef = Map.forEach(k -> v -> f((k, v)), t)
-}
-
-instance ToJava[Map[k, v]] with Order[k] {
-    type Out = JMap[k, v]
-    type Aef = IO
-    pub def toJava(m: Map[k, v]): JMap[k, v] \ IO = Adaptor.toMap(m)
-}
-
-instance ToFlix[Map[k, v]] with Order[k] {
-    type In = JMap[k, v]
-    pub def toFlix(m: JMap[k, v]): Map[k, v] = Adaptor.fromMap(m)
 }
 
 pub mod Map {

@@ -14,8 +14,6 @@
  *  limitations under the License.
  */
 
-import java.util.{List => JList}
-import java.util.{Iterator => JIterator}
 
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
@@ -131,23 +129,9 @@ instance Iterable[Vector[a]] {
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r = Vector.iterator(rc, v)
 }
 
-instance ToJava[Vector[a]] {
-    type Out = JList[a]
-    type Aef = IO
-    pub def toJava(v: Vector[a]): JList[a] \ IO = Adaptor.toList(v)
-}
-
 instance ForEach[Vector[a]] {
     type Elm = a
     pub def forEach(f: a -> Unit \ ef, v: Vector[a]): Unit \ ef = Vector.forEach(f, v)
-}
-
-instance ToFlix[Vector[a]] {
-    type In = JList[a]
-    pub def toFlix(l: JList[a]): Vector[a] = region rc {
-        let iter = unsafe IO { l.iterator() };
-        iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
-    }
 }
 
 pub mod Vector {

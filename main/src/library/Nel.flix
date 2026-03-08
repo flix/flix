@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{List => JList}
 
 ///
 /// The NonEmptyList type.
@@ -132,12 +131,6 @@ instance Iterable[Nel[a]] {
 instance ForEach[Nel[a]] {
     type Elm = a
     pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = Nel.forEach(f, l)
-}
-
-instance ToJava[Nel[a]] {
-    type Out = JList[a]
-    type Aef = IO
-    pub def toJava(l: Nel[a]): JList[a] \ IO = Adaptor.toList(l)
 }
 
 pub mod Nel {

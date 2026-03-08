@@ -22,6 +22,9 @@ import java.lang.Integer
 import java.lang.Long
 import java.lang.Short
 import java.math.BigInteger
+import java.util.{List => JList}
+import java.util.{Map => JMap}
+import java.util.{Set => JSet}
 
 ///
 /// A trait for marshaling values to Flix objects.
@@ -80,4 +83,35 @@ instance ToFlix[Char] {
 instance ToFlix[String] {
     type In = String
     pub def toFlix(s: String): String = s
+}
+
+instance ToFlix[List[a]] {
+    type In = JList[a]
+    pub def toFlix(l: JList[a]): List[a] = Adaptor.fromList(l)
+}
+
+instance ToFlix[Chain[a]] {
+    type In = JList[a]
+    pub def toFlix(l: JList[a]): Chain[a] = region rc {
+        let it = unsafe IO { l.iterator() };
+        it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
+    }
+}
+
+instance ToFlix[Vector[a]] {
+    type In = JList[a]
+    pub def toFlix(l: JList[a]): Vector[a] = region rc {
+        let iter = unsafe IO { l.iterator() };
+        iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    }
+}
+
+instance ToFlix[Set[a]] with Order[a] {
+    type In = JSet[a]
+    pub def toFlix(s: JSet[a]): Set[a] = Adaptor.fromSet(s)
+}
+
+instance ToFlix[Map[k, v]] with Order[k] {
+    type In = JMap[k, v]
+    pub def toFlix(m: JMap[k, v]): Map[k, v] = Adaptor.fromMap(m)
 }
