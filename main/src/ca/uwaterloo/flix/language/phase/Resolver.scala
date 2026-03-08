@@ -1214,13 +1214,13 @@ object Resolver {
       // Check that the type is a JVM type (after type alias erasure).
       // Set the super class on the scope for constructor/method bodies.
       //
-      UnkindedType.eraseAliases(t) match {
-        case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
+      extractNativeClass(UnkindedType.eraseAliases(t)) match {
+        case Some(clazz) =>
           val superScp = scp0.withSuperClass(Some(clazz))
           val cs = constructors.map(visitJvmConstructor(_, superScp))
           val ms = methods.map(visitJvmMethod(_, superScp))
           ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
-        case _ =>
+        case None =>
           val cs = constructors.map(visitJvmConstructor(_, scp0))
           val ms = methods.map(visitJvmMethod(_, scp0))
           val error = ResolutionError.IllegalNonJavaType(t, t.loc)
@@ -3345,6 +3345,15 @@ object Resolver {
     * Creates an LocalScope from the given type variable symbol.
     */
   private def mkTypeVarScp(sym: Symbol.RegionSym): LocalScope = LocalScope.singleton(sym.text, Resolution.Region(sym))
+
+  /**
+    * Extracts the Java class from a (possibly applied) native unkinded type.
+    */
+  private def extractNativeClass(tpe: UnkindedType): Option[Class[?]] = tpe match {
+    case UnkindedType.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
+    case UnkindedType.Apply(t1, _, _) => extractNativeClass(t1)
+    case _ => None
+  }
 
   /**
     * Converts the class into a Flix type.
