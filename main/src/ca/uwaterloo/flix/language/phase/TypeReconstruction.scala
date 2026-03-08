@@ -457,7 +457,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
           val es = getArgumentsWithVarArgs(method, es0, methLoc)
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, methLoc)
         case _ =>
@@ -470,7 +470,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
           val es = getArgumentsWithVarArgs(method, es0, methLoc)
           TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, methLoc)
         case _ =>
@@ -483,7 +483,7 @@ object TypeReconstruction {
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
           val es = getArgumentsWithVarArgs(method, es0, methLoc)
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, methLoc)
         case _ =>

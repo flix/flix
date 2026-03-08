@@ -280,7 +280,7 @@ object TypeConstructor {
   /**
    * A type constructor that represents the type of a Java method.
    */
-  case class JvmMethod(method: Method) extends TypeConstructor {
+  case class JvmMethod(method: Method, receiverType: Option[Type] = None) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }
 

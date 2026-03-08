@@ -6,180 +6,180 @@ mod Test.Exp.Jvm.Generic.InvokeMethod {
     import java.lang.Object
     import java.util.ArrayList
     import java.util.HashMap
-    import java.util.LinkedList
     import java.util.HashSet
+    import java.util.LinkedList
     import java.util.TreeMap
 
     @Test
-    def testArrayListAdd01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        assertTrue(list.add("hello"))
+    def testArrayListAdd01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        assertTrue(l.add("hello"))
 
     @Test
-    def testArrayListSize01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("a");
-        list.add("b");
-        list.add("c");
-        assertEq(expected = 3, list.size())
+    def testArrayListSize01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("a");
+        l.add("b");
+        l.add("c");
+        assertEq(expected = 3, l.size())
 
     @Test
-    def testArrayListIsEmpty01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        assertTrue(list.isEmpty())
+    def testArrayListIsEmpty01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        assertTrue(l.isEmpty())
 
     @Test
-    def testArrayListIsEmpty02(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("hello");
-        assertTrue(not list.isEmpty())
+    def testArrayListIsEmpty02(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        assertTrue(not l.isEmpty())
 
     @Test
-    def testArrayListGet01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("hello");
-        let result = unchecked_cast(list.get(0) as String);
-        assertEq(expected = "hello", result)
+    def testArrayListGet01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        let r: String = l.get(0);
+        assertEq(expected = "hello", r)
 
     @Test
-    def testArrayListContains01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("hello");
-        let obj: Object = checked_cast("hello");
-        assertTrue(list.contains(obj))
+    def testArrayListContains01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        let o: Object = checked_cast("hello");
+        assertTrue(l.contains(o))
 
     @Test
-    def testArrayListContains02(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("hello");
-        let obj: Object = checked_cast("missing");
-        assertTrue(not list.contains(obj))
+    def testArrayListContains02(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        let o: Object = checked_cast("missing");
+        assertTrue(not l.contains(o))
 
     @Test
-    def testArrayListRemove01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("hello");
-        list.add("world");
-        list.remove(0);
-        assertEq(expected = 1, list.size())
+    def testArrayListRemove01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        l.add("world");
+        l.remove(0);
+        assertEq(expected = 1, l.size())
 
     @Test
-    def testArrayListClear01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("hello");
-        list.add("world");
-        list.clear();
-        assertTrue(list.isEmpty())
+    def testArrayListClear01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        l.add("world");
+        l.clear();
+        assertTrue(l.isEmpty())
 
     @Test
-    def testArrayListSet01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("old");
-        list.set(0, "new");
-        let result = unchecked_cast(list.get(0) as String);
-        assertEq(expected = "new", result)
+    def testArrayListSet01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("old");
+        l.set(0, "new");
+        let r: String = l.get(0);
+        assertEq(expected = "new", r)
 
     @Test
-    def testHashMapPut01(): Unit \ Assert + IO =
-        let map: HashMap[String, JInteger] = new HashMap();
-        map.put("key", JInteger.valueOf(42i32));
-        assertEq(expected = 1, map.size())
+    def testHashMapPut01(): Unit \ {Assert, IO} =
+        let m: HashMap[String, JInteger] = new HashMap();
+        m.put("key", JInteger.valueOf(42i32));
+        assertEq(expected = 1, m.size())
 
     @Test
-    def testHashMapGet01(): Unit \ Assert + IO =
-        let map: HashMap[String, JInteger] = new HashMap();
-        map.put("key", JInteger.valueOf(42i32));
-        let result = unchecked_cast(map.get("key") as JInteger);
-        assertEq(expected = 42, result.intValue())
+    def testHashMapGet01(): Unit \ {Assert, IO} =
+        let m: HashMap[String, JInteger] = new HashMap();
+        m.put("key", JInteger.valueOf(42i32));
+        let r: JInteger = m.get("key");
+        assertEq(expected = 42, r.intValue())
 
     @Test
-    def testHashMapContainsKey01(): Unit \ Assert + IO =
-        let map: HashMap[String, JInteger] = new HashMap();
-        map.put("key", JInteger.valueOf(1i32));
-        let obj: Object = checked_cast("key");
-        assertTrue(map.containsKey(obj))
+    def testHashMapContainsKey01(): Unit \ {Assert, IO} =
+        let m: HashMap[String, JInteger] = new HashMap();
+        m.put("key", JInteger.valueOf(1i32));
+        let o: Object = checked_cast("key");
+        assertTrue(m.containsKey(o))
 
     @Test
-    def testHashMapContainsKey02(): Unit \ Assert + IO =
-        let map: HashMap[String, JInteger] = new HashMap();
-        map.put("key", JInteger.valueOf(1i32));
-        let obj: Object = checked_cast("missing");
-        assertTrue(not map.containsKey(obj))
+    def testHashMapContainsKey02(): Unit \ {Assert, IO} =
+        let m: HashMap[String, JInteger] = new HashMap();
+        m.put("key", JInteger.valueOf(1i32));
+        let o: Object = checked_cast("missing");
+        assertTrue(not m.containsKey(o))
 
     @Test
-    def testHashMapRemove01(): Unit \ Assert + IO =
-        let map: HashMap[String, JInteger] = new HashMap();
-        map.put("key", JInteger.valueOf(1i32));
-        let obj: Object = checked_cast("key");
-        map.remove(obj);
-        assertEq(expected = 0, map.size())
+    def testHashMapRemove01(): Unit \ {Assert, IO} =
+        let m: HashMap[String, JInteger] = new HashMap();
+        m.put("key", JInteger.valueOf(1i32));
+        let o: Object = checked_cast("key");
+        m.remove(o);
+        assertEq(expected = 0, m.size())
 
     @Test
-    def testHashMapIsEmpty01(): Unit \ Assert + IO =
-        let map: HashMap[String, JInteger] = new HashMap();
-        assertTrue(map.isEmpty())
+    def testHashMapIsEmpty01(): Unit \ {Assert, IO} =
+        let m: HashMap[String, JInteger] = new HashMap();
+        assertTrue(m.isEmpty())
 
     @Test
-    def testHashMapSize01(): Unit \ Assert + IO =
-        let map: HashMap[String, JInteger] = new HashMap();
-        map.put("a", JInteger.valueOf(1i32));
-        map.put("b", JInteger.valueOf(2i32));
-        map.put("c", JInteger.valueOf(3i32));
-        assertEq(expected = 3, map.size())
+    def testHashMapSize01(): Unit \ {Assert, IO} =
+        let m: HashMap[String, JInteger] = new HashMap();
+        m.put("a", JInteger.valueOf(1i32));
+        m.put("b", JInteger.valueOf(2i32));
+        m.put("c", JInteger.valueOf(3i32));
+        assertEq(expected = 3, m.size())
 
     @Test
-    def testLinkedListAdd01(): Unit \ Assert + IO =
-        let list: LinkedList[String] = new LinkedList();
-        list.add("elem");
-        assertEq(expected = 1, list.size())
+    def testLinkedListAdd01(): Unit \ {Assert, IO} =
+        let l: LinkedList[String] = new LinkedList();
+        l.add("elem");
+        assertEq(expected = 1, l.size())
 
     @Test
-    def testLinkedListAddFirst01(): Unit \ Assert + IO =
-        let list: LinkedList[String] = new LinkedList();
-        list.add("second");
-        list.addFirst("first");
-        let result = unchecked_cast(list.getFirst() as String);
-        assertEq(expected = "first", result)
+    def testLinkedListAddFirst01(): Unit \ {Assert, IO} =
+        let l: LinkedList[String] = new LinkedList();
+        l.add("second");
+        l.addFirst("first");
+        let r: String = l.getFirst();
+        assertEq(expected = "first", r)
 
     @Test
-    def testHashSetAdd01(): Unit \ Assert + IO =
-        let set: HashSet[String] = new HashSet();
-        assertTrue(set.add("elem"));
-        assertTrue(not set.add("elem"))
+    def testHashSetAdd01(): Unit \ {Assert, IO} =
+        let s: HashSet[String] = new HashSet();
+        assertTrue(s.add("elem"));
+        assertTrue(not s.add("elem"))
 
     @Test
-    def testHashSetContains01(): Unit \ Assert + IO =
-        let set: HashSet[String] = new HashSet();
-        set.add("elem");
-        let obj: Object = checked_cast("elem");
-        assertTrue(set.contains(obj))
+    def testHashSetContains01(): Unit \ {Assert, IO} =
+        let s: HashSet[String] = new HashSet();
+        s.add("elem");
+        let o: Object = checked_cast("elem");
+        assertTrue(s.contains(o))
 
     @Test
-    def testHashSetSize01(): Unit \ Assert + IO =
-        let set: HashSet[String] = new HashSet();
-        set.add("a");
-        set.add("b");
-        set.add("c");
-        assertEq(expected = 3, set.size())
+    def testHashSetSize01(): Unit \ {Assert, IO} =
+        let s: HashSet[String] = new HashSet();
+        s.add("a");
+        s.add("b");
+        s.add("c");
+        assertEq(expected = 3, s.size())
 
     @Test
-    def testTreeMapPut01(): Unit \ Assert + IO =
-        let map: TreeMap[String, JInteger] = new TreeMap();
-        map.put("key", JInteger.valueOf(42i32));
-        assertEq(expected = 1, map.size())
+    def testTreeMapPut01(): Unit \ {Assert, IO} =
+        let m: TreeMap[String, JInteger] = new TreeMap();
+        m.put("key", JInteger.valueOf(42i32));
+        assertEq(expected = 1, m.size())
 
     @Test
-    def testTreeMapGet01(): Unit \ Assert + IO =
-        let map: TreeMap[String, JInteger] = new TreeMap();
-        map.put("key", JInteger.valueOf(42i32));
-        let result = unchecked_cast(map.get("key") as JInteger);
-        assertEq(expected = 42, result.intValue())
+    def testTreeMapGet01(): Unit \ {Assert, IO} =
+        let m: TreeMap[String, JInteger] = new TreeMap();
+        m.put("key", JInteger.valueOf(42i32));
+        let r: JInteger = m.get("key");
+        assertEq(expected = 42, r.intValue())
 
     @Test
-    def testArrayListToString01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("hello");
-        let str = list.toString();
-        assertTrue(not str.isEmpty())
+    def testArrayListToString01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        let s = l.toString();
+        assertTrue(not s.isEmpty())
 
 }

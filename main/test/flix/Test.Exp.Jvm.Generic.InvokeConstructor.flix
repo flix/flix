@@ -2,15 +2,15 @@ mod Test.Exp.Jvm.Generic.InvokeConstructor {
 
     use Assert.{assertEq, assertTrue}
 
+    import java.io.File
     import java.lang.{Integer => JInteger}
     import java.lang.Object
-    import java.io.File
     import java.util.ArrayList
     import java.util.HashMap
-    import java.util.LinkedList
     import java.util.HashSet
-    import java.util.TreeMap
     import java.util.LinkedHashMap
+    import java.util.LinkedList
+    import java.util.TreeMap
 
     // Compile tests: verify generic constructors type-check
 
@@ -65,59 +65,59 @@ mod Test.Exp.Jvm.Generic.InvokeConstructor {
     // Runtime tests: construct and use generic collections
 
     @Test
-    def testArrayListAddAfterConstruct01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("hello");
-        assertEq(expected = 1, list.size())
+    def testArrayListAddAfterConstruct01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        assertEq(expected = 1, l.size())
 
     @Test
-    def testArrayListAddAfterConstruct02(): Unit \ Assert + IO =
-        let list: ArrayList[JInteger] = new ArrayList();
-        list.add(JInteger.valueOf(42i32));
-        assertEq(expected = 1, list.size())
+    def testArrayListAddAfterConstruct02(): Unit \ {Assert, IO} =
+        let l: ArrayList[JInteger] = new ArrayList();
+        l.add(JInteger.valueOf(42i32));
+        assertEq(expected = 1, l.size())
 
     @Test
-    def testHashMapPutAfterConstruct01(): Unit \ Assert + IO =
-        let map: HashMap[String, JInteger] = new HashMap();
-        map.put("key", JInteger.valueOf(1i32));
-        assertEq(expected = 1, map.size())
+    def testHashMapPutAfterConstruct01(): Unit \ {Assert, IO} =
+        let m: HashMap[String, JInteger] = new HashMap();
+        m.put("key", JInteger.valueOf(1i32));
+        assertEq(expected = 1, m.size())
 
     @Test
-    def testLinkedListAddAfterConstruct01(): Unit \ Assert + IO =
-        let list: LinkedList[String] = new LinkedList();
-        list.add("hello");
-        assertEq(expected = 1, list.size())
+    def testLinkedListAddAfterConstruct01(): Unit \ {Assert, IO} =
+        let l: LinkedList[String] = new LinkedList();
+        l.add("hello");
+        assertEq(expected = 1, l.size())
 
     @Test
-    def testHashSetAddAfterConstruct01(): Unit \ Assert + IO =
-        let set: HashSet[String] = new HashSet();
-        set.add("hello");
-        assertEq(expected = 1, set.size())
+    def testHashSetAddAfterConstruct01(): Unit \ {Assert, IO} =
+        let s: HashSet[String] = new HashSet();
+        s.add("hello");
+        assertEq(expected = 1, s.size())
 
     @Test
-    def testTreeMapPutAfterConstruct01(): Unit \ Assert + IO =
-        let map: TreeMap[String, String] = new TreeMap();
-        map.put("key", "value");
-        assertEq(expected = 1, map.size())
+    def testTreeMapPutAfterConstruct01(): Unit \ {Assert, IO} =
+        let m: TreeMap[String, String] = new TreeMap();
+        m.put("key", "value");
+        assertEq(expected = 1, m.size())
 
     @CompileTest
     def testNestedGenericConstructor01(): ArrayList[ArrayList[String]] \ IO =
         new ArrayList()
 
     @Test
-    def testConstructorTypeInference01(): Unit \ Assert + IO =
-        let x: ArrayList[String] = new ArrayList();
-        x.add("hello");
-        assertEq(expected = 1, x.size())
+    def testConstructorTypeInference01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("hello");
+        assertEq(expected = 1, l.size())
 
     @Test
-    def testConstructorMultipleInstances01(): Unit \ Assert + IO =
-        let strings: ArrayList[String] = new ArrayList();
-        let ints: ArrayList[JInteger] = new ArrayList();
-        strings.add("hello");
-        ints.add(JInteger.valueOf(42i32));
-        assertEq(expected = 1, strings.size());
-        assertEq(expected = 1, ints.size())
+    def testConstructorMultipleInstances01(): Unit \ {Assert, IO} =
+        let l1: ArrayList[String] = new ArrayList();
+        let l2: ArrayList[JInteger] = new ArrayList();
+        l1.add("hello");
+        l2.add(JInteger.valueOf(42i32));
+        assertEq(expected = 1, l1.size());
+        assertEq(expected = 1, l2.size())
 
     @CompileTest
     def testArrayListNativeTypeArg01(): ArrayList[File] \ IO =
@@ -128,10 +128,10 @@ mod Test.Exp.Jvm.Generic.InvokeConstructor {
         new HashMap()
 
     @Test
-    def testArrayListCapacityConstructor01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList(10);
-        list.add("hello");
-        assertEq(expected = 1, list.size())
+    def testArrayListCapacityConstructor01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList(10);
+        l.add("hello");
+        assertEq(expected = 1, l.size())
 
     @CompileTest
     def testLinkedHashMapConstructor02(): LinkedHashMap[JInteger, String] \ IO =
