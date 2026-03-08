@@ -51,6 +51,38 @@ pub mod BPlusTree.Lock {
         unsafe IO as r { l.isWriteLocked() or l.isReadLocked() }
 
     ///
+    /// Executes `onValid` if `stamp` is still valid on `lock`.
+    ///
+    /// Otherwise continues with `onInvalid` without yielding.
+    ///
+    pub def ifValidElseNoYield(
+        stamp: Int64,
+        lock: Lock[r],
+        onValid: Unit -> a \ ef1,
+        onInvalid: Unit -> a \ ef2
+    ): a \ ef1 + ef2 + r =
+        if (valid(stamp, lock))
+            onValid()
+        else
+            onInvalid()
+
+    ///
+    /// Executes `onValid` if `stamp` is still valid on `lock`.
+    ///
+    /// Otherwise yields and continues with `onInvalid`.
+    ///
+    pub def ifValidElse(
+        stamp: Int64,
+        lock: Lock[r],
+        onValid: Unit -> a \ ef1,
+        onInvalid: Unit -> a \ ef2
+    ): a \ ef1 + ef2 + r =
+        ifValidElseNoYield(stamp, lock, onValid, () -> {
+            yieldBasedOn(lock);
+            onInvalid()
+        })
+
+    ///
     /// Returns a fresh lock.
     ///
     pub def mkLock(_: Region[r]): Lock[r] \ r =
@@ -64,6 +96,21 @@ pub mod BPlusTree.Lock {
     pub def tryConvertToWrite(stamp: Int64, lock: Lock[r]): Int64 \ r =
         let Lock(l) = lock;
         unsafe IO as r { l.tryConvertToWriteLock(stamp) }
+
+    ///
+    /// Attempts to upgrade `stamp` to a write lock and executes `onWrite`
+    /// with the resulting write stamp if successful.
+    ///
+    /// Otherwise yields and continues with `onInvalid`.
+    ///
+    pub def withWriteLockOrElse(
+        stamp: Int64,
+        lock: Lock[r],
+        onWrite: Int64 -> a \ ef1,
+        onInvalid: Unit -> a \ ef2
+    ): a \ ef1 + ef2 + r =
+        let writeStamp = tryConvertToWrite(stamp, lock);
+        ifValidElse(writeStamp, lock, () -> onWrite(writeStamp), onInvalid)
 
     ///
     /// Return an optimistic stamp on `lock` which can be used in `valid` to
