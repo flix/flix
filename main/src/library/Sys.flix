@@ -62,6 +62,18 @@ pub mod Sys {
     }
 
     ///
+    /// An effect used to exit the JVM.
+    ///
+    pub eff Exit {
+
+        ///
+        /// Immediately exits the JVM with the specified `exitCode`.
+        ///
+        def exit(exitCode: Int32): Void
+
+    }
+
+    ///
     /// An effect used to start a process outside the JVM.
     ///
     pub eff Process {
