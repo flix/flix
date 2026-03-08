@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+use Net.IpAddr
+
 ///
 /// The effect used to bind a TCP server.
 ///
@@ -24,6 +26,7 @@ eff TcpBind {
 pub mod TcpBind {
     use IoError.ErrorKind
     use IoError.IoError
+    use Net.IpAddr
 
     import java.io.IOException
     import java.lang.IllegalArgumentException
