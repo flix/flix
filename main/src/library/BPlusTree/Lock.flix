@@ -55,6 +55,10 @@ pub mod BPlusTree.Lock {
     ///
     /// Otherwise continues with `onInvalid` without yielding.
     ///
+    /// Caution: callers often use `onInvalid` to restart a larger operation. In such
+    /// cases, effectful callbacks passed here may be invoked an unexpected number of
+    /// times across retries.
+    ///
     pub def ifValidElseNoYield(
         stamp: Int64,
         lock: Lock[r],
@@ -70,6 +74,10 @@ pub mod BPlusTree.Lock {
     /// Executes `onValid` if `stamp` is still valid on `lock`.
     ///
     /// Otherwise yields and continues with `onInvalid`.
+    ///
+    /// Caution: callers often use `onInvalid` to restart a larger operation. In such
+    /// uses, effectful callbacks passed here may be invoked an unexpected number of
+    /// times across retries.
     ///
     pub def ifValidElse(
         stamp: Int64,
@@ -102,6 +110,10 @@ pub mod BPlusTree.Lock {
     /// with the resulting write stamp if successful.
     ///
     /// Otherwise yields and continues with `onInvalid`.
+    ///
+    /// Caution: callers often use `onInvalid` to restart a larger operation. In such
+    /// uses, effectful callbacks passed here may be invoked an unexpected number of
+    /// times across retries.
     ///
     pub def withWriteLockOrElse(
         stamp: Int64,

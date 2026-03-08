@@ -38,7 +38,7 @@ mod BPlusTree.Node {
     ///
     /// The input nodes must be leaves.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Reads the live leaf chains of both inputs.
     ///
     pub def sameElementsFromLeaf(
         i1: Int32,
@@ -62,7 +62,7 @@ mod BPlusTree.Node {
     ///
     /// The input node must be a leaf.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Mutates the live leaf chain that starts at `n`.
     ///
     pub def transformWithKeyFromLeaf(
         f: k -> v -> v \ ef,
@@ -82,7 +82,7 @@ mod BPlusTree.Node {
     ///
     /// The input node must be a leaf.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live leaf chain that starts at `node`.
     ///
     pub def foldLeftWithKeyFromLeaf(
         f: b -> k -> v -> b \ ef,
@@ -125,7 +125,7 @@ mod BPlusTree.Node {
     ///
     /// Lock invariant:
     ///
-    /// - On invocation, the thread has a lock on `node`.
+    /// - On invocation, `stamp` is an optimistic stamp on `node->lock`.
     ///
     pub def adjustWithKey(f: k -> v -> v \ ef, key: k, stamp: Int64, t: BPlusTree[k, v, r], node: Node[k, v, r]): Unit \ ef + r with Order[k] = {
         let index = binarySearch(key, BPlusTree.search(t), node);
@@ -294,7 +294,7 @@ mod BPlusTree.Node {
     ///
     /// Compute the height of the tree rooted in `node`.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live tree rooted at `node`.
     ///
     pub def computeHeight(node: Node[k, v, r]): Int32 \ r =
         // Every leaf is at the same height, so just use the left most path.
@@ -341,7 +341,7 @@ mod BPlusTree.Node {
     ///
     /// The input node must be a leaf.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live leaf chain that starts at `node`.
     ///
     pub def findLeftFromLeaf(
         f: k -> v -> Bool \ ef,
@@ -366,7 +366,7 @@ mod BPlusTree.Node {
     ///
     /// The input node must be a leaf.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live leaf chain that starts at `node`.
     ///
     pub def existsFromLeaf(
         f: k -> v -> Bool \ ef,
@@ -565,7 +565,7 @@ mod BPlusTree.Node {
     ///
     /// Returns `true` if `node` is empty.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Reads the live node without synchronization.
     ///
     pub def isEmpty(node: Node[k, v, r]): Bool \ r = node->size == 0
 
@@ -623,7 +623,7 @@ mod BPlusTree.Node {
     ///
     /// Returns the left-most leaf node rooted in `node`.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live tree rooted at `node`.
     ///
     pub def leftMostLeafUnconditional(node: Node[k, v, r]): Node[k, v, r] \ r =
         match node->isLeaf {
@@ -633,7 +633,8 @@ mod BPlusTree.Node {
         }
 
     ///
-    /// Returns the leftmost leaf of the tree rooted at `node`.
+    /// Returns the leftmost leaf of the tree rooted at `node` together with an optimistic stamp
+    /// on that leaf.
     ///
     /// Traverses down the leftmost path of the tree, acquiring locks along the way.
     /// If a lock is invalid, yields and retries from the root of `t`.
@@ -646,7 +647,8 @@ mod BPlusTree.Node {
         traverseToLeaf(n, stamp, firstChild, () -> BPlusTree.leftMostLeaf(t))
 
     ///
-    /// Returns the rightmost leaf of the tree rooted at `node`.
+    /// Returns the rightmost leaf of the tree rooted at `node` together with an optimistic stamp
+    /// on that leaf.
     ///
     /// Traverses down the rightmost path of the tree, acquiring locks along the way.
     /// If a lock is invalid, yields and retries from the root of `t`.
@@ -870,7 +872,7 @@ mod BPlusTree.Node {
     /// Applies `f` in ascending order to all mappings `k => v` in the tree
     /// rooted in `node` where `min <= k <= max`.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live leaf chain in range order.
     ///
     pub def rangeQueryWith(
         f: k -> v -> Unit \ r0,
@@ -1091,7 +1093,7 @@ mod BPlusTree.Node {
     /// Returns a string representation of the given Node `node` starting with
     /// `indent` spaces.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live tree rooted at `node`.
     ///
     pub def toString(indent: Int32, rc: Region[r], node: Node[k, v, r]): String \ r with ToString[k], ToString[v] =
         let indentString = String.repeat(indent, " ");
@@ -1123,7 +1125,10 @@ mod BPlusTree.Node {
     /// Caution: Because invalid locks trigger `restart`, `pickChild` and `restart` may
     /// be called an unknown number of times before traversal succeeds.
     ///
-    /// Lock invariant: `stamp` is a valid lock on the current node.
+    /// `stamp` should be an optimistic stamp on `cur`.
+    ///
+    /// The returned stamp is an optimistic stamp on the returned leaf. Callers must still
+    /// validate or upgrade it before relying on data read from that leaf.
     ///
     pub def traverseToLeaf(
         cur: Node[k, v, r],
@@ -1145,7 +1150,7 @@ mod BPlusTree.Node {
     /// Applies `f` to mappings `k => v` starting at `node->keys[index]` until
     /// `node->keys[index] > max`. Uses the `next` pointer to traverse to the next node.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live leaf chain.
     ///
     def traverseRight(
         f: k -> v -> Unit \ ef,
@@ -1168,7 +1173,7 @@ mod BPlusTree.Node {
     ///
     /// Apply `f` to all mappings in `node` and all nodes to the right of `node`.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live leaf chain.
     ///
     pub def traverseRightUnconditional(
         f: k -> v -> Unit \ ef,
@@ -1186,7 +1191,7 @@ mod BPlusTree.Node {
     ///
     /// Apply `f` to every `stepSize` mapping in `node` and continues in right of `node`.
     ///
-    /// Not thread-safe.
+    /// Not thread-safe: Traverses the live leaf chain.
     ///
     pub def traverseRightUnconditionalInc(
         f: k -> v -> Unit \ ef,
