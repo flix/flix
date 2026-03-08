@@ -26,7 +26,7 @@ eff PingWithResult {
 pub mod PingWithResult {
     use IoError.ErrorKind
     use IoError.IoError
-    use Net.IpAddr;
+    use Net.IpAddr
 
     import java.io.IOException
     import java.lang.IllegalArgumentException

@@ -1,7 +1,7 @@
 mod TestSocketAddr {
 
     use Assert.{assertEq, assertNone, fail};
-    use Net.SocketAddr;
+    use Net.SocketAddr
 
     @Test
     def fromString01(): Unit \ Assert =

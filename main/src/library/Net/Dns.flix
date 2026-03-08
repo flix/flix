@@ -17,7 +17,7 @@
 pub mod Net.Dns {
     use IoError.ErrorKind
     use IoError.IoError
-    use Net.IpAddr;
+    use Net.IpAddr
 
     import java.io.IOException
     import java.lang.IllegalArgumentException
@@ -25,14 +25,14 @@ pub mod Net.Dns {
     import java.net.UnknownHostException
 
     ///
-    /// Handles the `Net.Dns` effect of the given function `f`.
+    /// Handles the `Dns` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Net.Dns` effect using the `IO` effect.
+    /// In other words, re-interprets the `Dns` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Net.Dns) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Dns) + IO = x ->
         run {
             f(x)
-        } with handler Net.Dns {
+        } with handler Dns {
             def lookup(host, k) = {
                 try {
                     let address = InetAddress.getByName(host);
@@ -64,11 +64,11 @@ pub mod Net.Dns {
         }
 
     ///
-    /// Handles the `Net.Dns` effect of the given function `f`.
+    /// Handles the `Dns` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Net.Dns` effect using the `IO` effect.
+    /// In other words, re-interprets the `Dns` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ ef - Net.Dns + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - Dns + IO = handle(f)()
 
 }

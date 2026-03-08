@@ -26,7 +26,7 @@ eff TcpConnect {
 pub mod TcpConnect {
     use IoError.ErrorKind
     use IoError.IoError
-    use Net.IpAddr;
+    use Net.IpAddr
 
     import java.net.InetAddress
     import java.net.Socket

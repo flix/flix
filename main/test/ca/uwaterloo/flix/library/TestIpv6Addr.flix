@@ -1,7 +1,7 @@
 mod TestIpv6Addr {
 
     use Assert.{assertEq, assertNone};
-    use Net.Ipv6Addr;
+    use Net.Ipv6Addr
 
     @Test
     def fromString01(): Unit \ Assert =

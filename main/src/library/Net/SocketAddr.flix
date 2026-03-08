@@ -19,8 +19,8 @@ pub mod Net.SocketAddr {
     use Net.IpAddr
     use Net.IpAddr.V4
     use Net.IpAddr.V6
-    use Net.Ipv4Addr;
-    use Net.Ipv6Addr;
+    use Net.Ipv4Addr
+    use Net.Ipv6Addr
     use Net.SocketAddr
     use Net.SocketAddrV4.SocketAddrV4
     use Net.SocketAddrV6.SocketAddrV6
