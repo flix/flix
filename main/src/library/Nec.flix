@@ -151,9 +151,9 @@ instance ForEach[Nec[a]] {
 }
 
 instance ToJava[Nec[a]] {
-    type Out = JList
+    type Out = JList[a]
     type Aef = IO
-    pub def toJava(l: Nec[a]): JList \ IO = Adaptor.toList(l)
+    pub def toJava(l: Nec[a]): JList[a] \ IO = Adaptor.toList(l)
 }
 
 pub mod Nec {

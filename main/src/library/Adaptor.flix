@@ -53,7 +53,7 @@ pub mod Adaptor {
     ///
     /// Returns the given Java Optional as a Flix Option.
     ///
-    pub def fromOptional(_: Proxy[a], o: Optional): Option[a] =
+    pub def fromOptional(o: Optional[a]): Option[a] =
         if (o.isPresent()) {
             let o1 = o.get();
             Some(unchecked_cast(o1 as a))
@@ -63,7 +63,7 @@ pub mod Adaptor {
     ///
     /// Returns the given Java `Map.Entry` as a Flix tuple.
     ///
-    pub def fromMapEntry(_: Proxy[k], _: Proxy[v], e: Entry): (k, v) =
+    pub def fromMapEntry(e: Entry[k, v]): (k, v) =
         let k1 = e.getKey();
         let v1 = e.getValue();
         (unchecked_cast(k1 as k), unchecked_cast(v1 as v))
@@ -72,7 +72,7 @@ pub mod Adaptor {
     ///
     /// Returns all elements in the given Java List as a Flix List.
     ///
-    pub def fromList(l: JList): List[a] = region rc {
+    pub def fromList(l: JList[a]): List[a] = region rc {
         def iterator(x) = unsafe IO { x.iterator() };
         iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toList
     }
@@ -80,33 +80,33 @@ pub mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java List.
     ///
-    pub def fromListToIterator(rc: Region[r], prx: Proxy[a], l: JList): Iterator[a, r, r] \ r =
+    pub def fromListToIterator(rc: Region[r], l: JList[a]): Iterator[a, r, r] \ r =
         def iterator(x) = unsafe IO as r { x.iterator() };
-        iterator(l) |> fromIterator(rc, prx)
+        iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a]))
 
     ///
     /// Returns all elements in the given Java Set as a Flix Set.
     ///
     /// WARNING: The Flix Set will use the ordering defined on `a`.
     ///
-    pub def fromSet(l: JSet): Set[a] with Order[a] = region rc {
+    pub def fromSet(s: JSet[a]): Set[a] with Order[a] = region rc {
         def iterator(x) = unsafe IO { x.iterator() };
-        iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toSet
+        iterator(s) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toSet
     }
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Set.
     ///
-    pub def fromSetToIterator(rc: Region[r], prx: Proxy[a], s: JSet): Iterator[a, r, r] \ r =
+    pub def fromSetToIterator(rc: Region[r], s: JSet[a]): Iterator[a, r, r] \ r =
         def iterator(x) = unsafe IO as r { x.iterator() };
-        iterator(s) |> fromIterator(rc, prx)
+        iterator(s) |> fromIterator(rc, (Proxy.Proxy: Proxy[a]))
 
     ///
     /// Returns all key-value pairs in the given Java Map as a Flix Map.
     ///
     /// WARNING: The Flix Map will use the ordering defined on `k`.
     ///
-    pub def fromMap(m: JMap): Map[k, v] with Order[k] = region rc {
+    pub def fromMap(m: JMap[k, v]): Map[k, v] with Order[k] = region rc {
         def step(acc, entry) = {
             let (k, v) = entry;
             Map.insert(k, v, acc)
@@ -117,7 +117,7 @@ pub mod Adaptor {
     ///
     /// Returns a Flix Iterator of the key-value pairs in the given Java Map.
     ///
-    pub def fromMapToIterator(rc: Region[r], m: JMap): Iterator[(k, v), r, r] \ r =
+    pub def fromMapToIterator(rc: Region[r], m: JMap[k, v]): Iterator[(k, v), r, r] \ r =
         def entrySet(x) = unsafe IO as r { x.entrySet() };
         def iterator(x) = unsafe IO as r { x.iterator() };
         def hasNext(x) = unsafe IO as r { x.hasNext() };
@@ -127,7 +127,7 @@ pub mod Adaptor {
         let getNext = () -> match hasNext(iter) {
             case true  => {
                 let entry = {let obj = next(iter); unchecked_cast(obj as Entry)};
-                let (k, v) = fromMapEntry((Proxy.Proxy: Proxy[k]), (Proxy.Proxy: Proxy[v]), entry);
+                let (k, v) = fromMapEntry(unchecked_cast(entry as Entry[k, v]));
                 Some((k, v))
             }
             case false => None
@@ -152,22 +152,22 @@ pub mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java Stream.
     ///
-    pub def fromStreamToIterator(rc: Region[r], proxy: Proxy[a], strm: Stream): Iterator[a, r, r] \ r =
+    pub def fromStreamToIterator(rc: Region[r], strm: Stream[a]): Iterator[a, r, r] \ r =
         let baseStream: BaseStream = checked_cast(strm);
         let iter = unsafe IO as r { baseStream.iterator() };
-        Adaptor.fromIterator(rc, proxy, iter)
+        Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a]), iter)
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Collection.
     ///
-    pub def fromCollectionToIterator(rc: Region[r], proxy: Proxy[a], col: Collection): Iterator[a, r, r] \ r =
+    pub def fromCollectionToIterator(rc: Region[r], col: Collection[a]): Iterator[a, r, r] \ r =
         let iter = unsafe IO as r { col.iterator() };
-        Adaptor.fromIterator(rc, proxy, iter)
+        Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a]), iter)
 
     ///
     /// Returns the `o` as a new Java `Optional`.
     ///
-    pub def toOptional(o: Option[a]): Optional \ IO =
+    pub def toOptional(o: Option[a]): Optional[a] \ IO =
         match o {
             case None    => Optional.empty()
             case Some(a) => Optional.of(unchecked_cast(a as Object))
@@ -176,14 +176,14 @@ pub mod Adaptor {
     ///
     /// Returns the key-value pair `p` as a new Java `Map.Entry`.
     ///
-    pub def toMapEntry(p: (k, v)): Entry \ IO =
+    pub def toMapEntry(p: (k, v)): Entry[k, v] \ IO =
         let (k, v) = p;
         JMap.entry(unchecked_cast(k as Object), unchecked_cast(v as Object))
 
     ///
     /// Alias for `toArrayList`.
     ///
-    pub def toList(ma: m[a]): JList \ (IO + Foldable.Aef[m]) with Foldable[m] =
+    pub def toList(ma: m[a]): JList[a] \ (IO + Foldable.Aef[m]) with Foldable[m] =
         checked_cast(toArrayList(ma))
 
     ///
@@ -191,7 +191,7 @@ pub mod Adaptor {
     ///
     /// Creates a fresh `ArrayList` and copies all elements in `ma` into it.
     ///
-    pub def toArrayList(ma: m[a]): ArrayList \ (IO + Foldable.Aef[m]) with Foldable[m] =
+    pub def toArrayList(ma: m[a]): ArrayList[a] \ (IO + Foldable.Aef[m]) with Foldable[m] =
         let alist = new ArrayList();
         Foldable.forEach(x -> discard alist.add(unchecked_cast(x as Object)), ma);
         alist
@@ -201,7 +201,7 @@ pub mod Adaptor {
     ///
     /// Creates a fresh `LinkedList` and copies all elements in `ma` into it.
     ///
-    pub def toLinkedList(ma: m[a]): LinkedList \ (IO + Foldable.Aef[m]) with Foldable[m] =
+    pub def toLinkedList(ma: m[a]): LinkedList[a] \ (IO + Foldable.Aef[m]) with Foldable[m] =
         let llist = new LinkedList();
         Foldable.forEach(x -> discard llist.add(unchecked_cast(x as Object)), ma);
         llist
@@ -209,12 +209,12 @@ pub mod Adaptor {
     ///
     /// Alias for `toTreeSet`.
     ///
-    pub def toSet(ma: m[a]): JSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] = checked_cast(toTreeSet(ma))
+    pub def toSet(ma: m[a]): JSet[a] \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] = checked_cast(toTreeSet(ma))
 
     ///
     /// Returns the elements of the given foldable `ma` as a new `TreeSet`.
     ///
-    pub def toTreeSet(ma: m[a]): TreeSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
+    pub def toTreeSet(ma: m[a]): TreeSet[a] \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
         let tset = new TreeSet();
         Foldable.forEach(x -> discard tset.add(unchecked_cast(x as Object)), ma);
         tset
@@ -222,14 +222,14 @@ pub mod Adaptor {
     ///
     /// Alias for `toTreeMap`.
     ///
-    pub def toMap(m: Map[k, v]): JMap \ IO with Order[k] = checked_cast(toTreeMap(m))
+    pub def toMap(m: Map[k, v]): JMap[k, v] \ IO with Order[k] = checked_cast(toTreeMap(m))
 
     ///
     /// Returns all key-value pairs of the given map `m` as a new `TreeMap`.
     ///
     /// The `TreeMap` uses a `Comparator` constructed from the `Order` on `k`.
     ///
-    pub def toTreeMap(m: Map[k, v]): TreeMap \ IO with Order[k] =
+    pub def toTreeMap(m: Map[k, v]): TreeMap[k, v] \ IO with Order[k] =
         let tmap = new TreeMap();
         Map.forEach((k, v) -> discard tmap.put(unchecked_cast(k as Object), unchecked_cast(v as Object)), m);
         tmap

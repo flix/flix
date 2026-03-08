@@ -439,6 +439,11 @@ object TypeReduction2 {
     * Builds a mapping from Java type variable names (e.g., `"E"`, `"K"`, `"V"`) to Flix types,
     * using the receiver's type arguments for class-level type parameters and fresh variables
     * for method-level type parameters.
+    *
+    * Class-level type arguments that are themselves type variables (e.g., from `HttpResponse[?v]`)
+    * are excluded from the substitution. This prevents returning unconstrained type variables that
+    * become `AnyType` when the result is used in a context (like `unchecked_cast`) that doesn't
+    * constrain the type. Excluded variables fall back to the erased return type via `getOrElse`.
     */
   private def buildTypeVarSubstitution(method: Method, receiverType: Option[Type],
       loc: SourceLocation, scope: Scope)(implicit flix: Flix): Map[String, Type] = {
@@ -449,11 +454,15 @@ object TypeReduction2 {
       case Some(tpe) =>
         val typeArgs = tpe.typeArguments
         if (classParamNames.length == typeArgs.length)
-          classParamNames.zip(typeArgs).toMap
-        else // raw type or mismatch: fresh vars
-          classParamNames.map(name => name -> Type.freshVar(Kind.Star, loc)(scope, flix)).toMap
-      case None => // static method
-        classParamNames.map(name => name -> Type.freshVar(Kind.Star, loc)(scope, flix)).toMap
+          // Only include concrete type arguments; exclude type variables to avoid
+          // propagating unconstrained vars that become AnyType.
+          classParamNames.zip(typeArgs).collect {
+            case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
+          }.toMap
+        else
+          Map.empty
+      case None =>
+        Map.empty
     }
     // Method-level type param names (e.g., "T" from <T> Collections.emptyList()).
     val methodParamNames: Array[String] = method.getTypeParameters.map(_.getName)
