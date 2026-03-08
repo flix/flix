@@ -94,15 +94,15 @@ object TypeReduction2 {
       reduce(tpe, scope, renv) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          Type.getFlixType(constructor.getDeclaringClass)
+          getFlixTypeWithFreshVars(constructor.getDeclaringClass, loc, scope)
 
         case Type.Cst(TypeConstructor.JvmMethod(method), _) =>
           progress.markProgress()
-          Type.getFlixType(method.getReturnType)
+          getFlixTypeWithFreshVars(method.getReturnType, loc, scope)
 
         case Type.Cst(TypeConstructor.JvmField(field), _) =>
           progress.markProgress()
-          Type.getFlixType(field.getType)
+          getFlixTypeWithFreshVars(field.getType, loc, scope)
 
         case t => Type.JvmToType(t, loc)
       }
@@ -264,6 +264,13 @@ object TypeReduction2 {
     case Type.Cst(TypeConstructor.Regex, _) => classOf[java.util.regex.Pattern]
     case Type.Cst(TypeConstructor.Native(clazz), _) => clazz
 
+    // Parameterized Java types (e.g. ArrayList[String])
+    case Type.Apply(_, _, _) if isNativeBase(tpe) =>
+      tpe.baseType match {
+        case Type.Cst(TypeConstructor.Native(clazz), _) => clazz
+        case _ => classOf[Object]
+      }
+
     // Arrays
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType, _), _, _) =>
       val t = getJavaType(elmType)
@@ -319,7 +326,12 @@ object TypeReduction2 {
     case Type.JvmToType(_, _) => false
     case Type.JvmToEff(_, _) => false
     case Type.UnresolvedJvmType(_, _) => false
-    case Type.Apply(t1, t2, _) => isKnown(t1) && isKnown(t2)
+    case Type.Apply(t1, t2, _) =>
+      t1 match {
+        case Type.Cst(TypeConstructor.Native(_), _) => true
+        case Type.Apply(_, _, _) if isNativeBase(t1) => isKnown(t1)
+        case _ => isKnown(t1) && isKnown(t2)
+      }
     case Type.Alias(_, _, t, _) => isKnown(t)
     case Type.AssocType(_, _, _, _) => false
   }
@@ -382,5 +394,20 @@ object TypeReduction2 {
       */
     case object UnresolvedTypes extends JavaMethodResolution
 
+  }
+
+  /** Returns `true` if the base type of a chain of applications is a `Native` constructor. */
+  private def isNativeBase(tpe: Type): Boolean = tpe match {
+    case Type.Cst(TypeConstructor.Native(_), _) => true
+    case Type.Apply(t1, _, _) => isNativeBase(t1)
+    case _ => false
+  }
+
+  /** Like `getFlixTypeApplied` but uses fresh type variables instead of `Object`. */
+  private def getFlixTypeWithFreshVars(clazz: Class[?], loc: SourceLocation, scope: Scope)(implicit flix: Flix): Type = {
+    val base = Type.getFlixType(clazz)
+    val n = clazz.getTypeParameters.length
+    if (n > 0) Type.mkApply(base, List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix)), loc)
+    else base
   }
 }

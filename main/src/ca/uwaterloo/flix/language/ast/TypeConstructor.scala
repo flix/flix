@@ -267,7 +267,7 @@ object TypeConstructor {
     * A type constructor that represent the type of JVM classes.
     */
   case class Native(clazz: Class[?]) extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.mkArrow(clazz.getTypeParameters.length)
   }
 
   /**

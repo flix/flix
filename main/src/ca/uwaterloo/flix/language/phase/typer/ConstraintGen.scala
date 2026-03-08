@@ -911,7 +911,14 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = Type.getFlixType(clazz)
+        val numTypeParams = clazz.getTypeParameters.length
+        val clazzTpe = if (numTypeParams > 0) {
+          val baseTpe = Type.mkNative(clazz, loc)
+          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+          Type.mkApply(baseTpe, typeArgs, loc)
+        } else {
+          Type.getFlixType(clazz)
+        }
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -924,7 +931,14 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = Type.getFlixType(clazz)
+        val numTypeParams = clazz.getTypeParameters.length
+        val clazzTpe = if (numTypeParams > 0) {
+          val baseTpe = Type.mkNative(clazz, loc)
+          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+          Type.mkApply(baseTpe, typeArgs, loc)
+        } else {
+          Type.getFlixType(clazz)
+        }
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -948,7 +962,7 @@ object ConstraintGen {
 
       case Expr.InvokeSuperMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = Type.getFlixType(clazz)
+        val clazzTpe = Type.getFlixTypeApplied(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
@@ -983,8 +997,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = Type.getFlixType(field.getType)
-        val classType = Type.getFlixType(clazz)
+        val fieldType = Type.getFlixTypeApplied(field.getType)
+        val classType = Type.getFlixTypeApplied(clazz)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = classType, actual = tpe1, exp1.loc)
@@ -995,7 +1009,7 @@ object ConstraintGen {
 
       case Expr.GetStaticField(field, _) =>
         val isFinal = Modifier.isFinal(field.getModifiers)
-        val fieldType = Type.getFlixType(field.getType)
+        val fieldType = Type.getFlixTypeApplied(field.getType)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
         val resTpe = fieldType
         val resEff = fieldReadEff
@@ -1003,15 +1017,22 @@ object ConstraintGen {
 
       case Expr.PutStaticField(field, exp, loc) =>
         val (valueTyp, eff) = visitExp(exp)
-        c.expectType(expected = Type.getFlixType(field.getType), actual = valueTyp, exp.loc)
+        c.expectType(expected = Type.getFlixTypeApplied(field.getType), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, constructors, methods, _) =>
+      case Expr.NewObject(_, clazz, constructors, methods, loc) =>
         constructors.foreach(visitJvmConstructor)
         methods.foreach(visitJvmMethod)
-        val resTpe = Type.getFlixType(clazz)
+        val numTypeParams = clazz.getTypeParameters.length
+        val resTpe = if (numTypeParams > 0) {
+          val baseTpe = Type.mkNative(clazz, loc)
+          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+          Type.mkApply(baseTpe, typeArgs, loc)
+        } else {
+          Type.getFlixType(clazz)
+        }
         val resEff = Type.IO
         (resTpe, resEff)
 
