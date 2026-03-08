@@ -18,6 +18,10 @@ pub mod Net {
 
     use Time.Duration
 
+    import java.io.InputStream
+    import java.io.OutputStream
+    import java.net.Socket
+
     ///
     /// An enum representing an HTTP method.
     ///
@@ -199,6 +203,25 @@ pub mod Net {
     }
 
     ///
+    /// Represents a TCP socket.
+    ///
+    pub enum TcpSocket(Socket, InputStream, OutputStream)
+
+    instance Readable[TcpSocket] {
+        type Elm = Int8
+        type Aef = IO
+        pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
+            TcpSocket.read(buffer, socket)
+    }
+
+    instance Writable[TcpSocket] {
+        type Elm = Int8
+        type Aef = IO
+        pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
+            TcpSocket.write(buffer, socket)
+    }
+
+    ///
     /// The effect used to resolve domain names to IP addresses.
     ///
     pub eff Dns {
@@ -225,6 +248,13 @@ pub mod Net {
     ///
     pub eff Ping {
         def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
+    }
+
+    ///
+    /// The effect used to connect to a TCP server.
+    ///
+    pub eff TcpConnect {
+        def connect(ip: IpAddr, port: Int16): Result[IoError, TcpSocket]
     }
 
 }

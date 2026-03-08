@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+use Net.TcpSocket
+
 ///
 /// The effect used to accept a TCP server connection.
 ///
@@ -24,6 +26,7 @@ eff TcpAcceptWithResult {
 pub mod TcpAcceptWithResult {
     use IoError.ErrorKind
     use IoError.IoError
+    use Net.TcpSocket
 
     import java.io.IOException
     import java.net.SocketTimeoutException
