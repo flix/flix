@@ -48,6 +48,9 @@ object flix extends ScalaModule {
     super.manifest().add("Enable-Native-Access" -> "ALL-UNNAMED")
   }
 
+  // Fat JAR: create a proper non-executable JAR
+  override def prependShellScript: T[String] = ""
+
   // Fat JAR: exclude META-INF signatures, first-wins for duplicates
   def assemblyRules = Seq(
     Rule.ExcludePattern("META-INF/.*\\.(RSA|SF|DSA)")
