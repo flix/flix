@@ -21,15 +21,13 @@ pub mod Net.Ipv6Addr {
     import java.net.UnknownHostException
 
     use Net.Ipv4Addr
-    use Net.Ipv4Addr.Ipv4Addr
     use Net.Ipv6Addr
-    use Net.Ipv6Addr.Ipv6Addr
 
     ///
     /// Attempt to convert `x` from Ipv6 to Ipv4.
     ///
     pub def tryToIpv4(x: Ipv6Addr): Option[Ipv4Addr] = match x {
-        case Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, -1i8, -1i8, b1, b2, b3, b4) => Some(Ipv4Addr(b1, b2, b3, b4))
+        case Ipv6Addr.Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, -1i8, -1i8, b1, b2, b3, b4) => Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
         case _ => None
     }
 
@@ -37,7 +35,7 @@ pub mod Net.Ipv6Addr {
     /// Returns the Ipv6 localhost address.
     ///
     pub def localhost(): Ipv6Addr =
-        Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 1i8)
+        Ipv6Addr.Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 1i8)
 
 
     ///
@@ -48,7 +46,7 @@ pub mod Net.Ipv6Addr {
     pub def fromString(s: String): Option[Ipv6Addr] =
         match s |> cleanIpv6String |> parseIpv6List {
             case Some(b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil) =>
-                Some(Ipv6Addr(
+                Some(Ipv6Addr.Ipv6Addr(
                   b1,  b2,  b3,  b4,
                   b5,  b6,  b7,  b8,
                   b9,  b10, b11, b12,
@@ -61,7 +59,7 @@ pub mod Net.Ipv6Addr {
     /// Returns a String representation of the given Ipv6Addr `x`.
     ///
     pub def toString(x: Ipv6Addr): String =
-        let Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) = x;
+        let Ipv6Addr.Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) = x;
         "${byteToHex(b1, b2)}:${byteToHex(b3, b4)}:${byteToHex(b5, b6)}:${byteToHex(b7, b8)}:${byteToHex(b9, b10)}:${byteToHex(b11, b12)}:${byteToHex(b13, b14)}:${byteToHex(b15, b16)}"
 
     ///

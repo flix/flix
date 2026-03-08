@@ -20,22 +20,20 @@ pub mod Net.Ipv4Addr {
     import java.lang.NumberFormatException
 
     use Net.Ipv4Addr
-    use Net.Ipv4Addr.Ipv4Addr
     use Net.Ipv6Addr
-    use Net.Ipv6Addr.Ipv6Addr
 
     ///
     /// Returns the Ipv4 localhost address.
     ///
     pub def localhost(): Ipv4Addr =
-        Ipv4Addr(127i8, 0i8, 0i8, 1i8)
+        Ipv4Addr.Ipv4Addr(127i8, 0i8, 0i8, 1i8)
 
     ///
     /// Convert `x` from Ipv4 to Ipv6.
     ///
     pub def toIpv6(x: Ipv4Addr): Ipv6Addr =
         let Ipv4Addr.Ipv4Addr(b1, b2, b3, b4) = x;
-        Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, -1i8, -1i8, b1, b2, b3, b4)
+        Ipv6Addr.Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, -1i8, -1i8, b1, b2, b3, b4)
 
     ///
     /// Attempts to parse the given String `s` as an `Ipv4Addr`.
@@ -48,7 +46,7 @@ pub mod Net.Ipv4Addr {
             |> List.traverse(parseInt8NoLeading0);
         match bytes {
             case Some(b1::b2::b3::b4::Nil) => {
-                Some(Ipv4Addr(b1, b2, b3, b4))
+                Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
             }
             case _ => None
         }

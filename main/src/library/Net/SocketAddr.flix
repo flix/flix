@@ -17,13 +17,11 @@
 pub mod Net.SocketAddr {
 
     use Net.IpAddr
-    use Net.IpAddr.V4
-    use Net.IpAddr.V6
     use Net.Ipv4Addr
     use Net.Ipv6Addr
     use Net.SocketAddr
-    use Net.SocketAddrV4.SocketAddrV4
-    use Net.SocketAddrV6.SocketAddrV6
+    use Net.SocketAddrV4
+    use Net.SocketAddrV6
 
     ///
     /// Attempts to parse the given String `x` as a `SocketAddr`.
@@ -40,16 +38,16 @@ pub mod Net.SocketAddr {
     /// Return the port of the SocketAddr `s`.
     ///
     pub def port(s: SocketAddr): Int32 = match s {
-        case SocketAddr.V4(SocketAddrV4(_, p)) => p
-        case SocketAddr.V6(SocketAddrV6(_, p)) => p
+        case SocketAddr.V4(SocketAddrV4.SocketAddrV4(_, p)) => p
+        case SocketAddr.V6(SocketAddrV6.SocketAddrV6(_, p)) => p
     }
 
     ///
     /// Return the IpAddr of the SocketAddr `s`.
     ///
     pub def ip(s: SocketAddr): IpAddr = match s {
-        case SocketAddr.V4(SocketAddrV4(ip, _)) => V4(ip)
-        case SocketAddr.V6(SocketAddrV6(ip, _)) => V6(ip)
+        case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, _)) => IpAddr.V4(ip)
+        case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, _)) => IpAddr.V6(ip)
     }
 
 
@@ -62,7 +60,7 @@ pub mod Net.SocketAddr {
             (ip, port) <- separateIpPort(ipPort);
             v4 <- Ipv4Addr.fromString(ip);
             p <- parsePort(port)
-        ) yield SocketAddr.V4(SocketAddrV4(v4, p))
+        ) yield SocketAddr.V4(SocketAddrV4.SocketAddrV4(v4, p))
 
     ///
     /// Attempts to parse the given string `x` as a `SocketAddr.V6`.
@@ -73,7 +71,7 @@ pub mod Net.SocketAddr {
             (ip, port) <- separateIpPort(ipPort);
             v6 <- Ipv6Addr.fromString(ip);
             p <- parsePort(port)
-        ) yield SocketAddr.V6(SocketAddrV6(v6, p))
+        ) yield SocketAddr.V6(SocketAddrV6.SocketAddrV6(v6, p))
 
     ///
     /// Attempts to parse the given String `x` as a Socket port.
