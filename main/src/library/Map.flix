@@ -132,14 +132,14 @@ instance ForEach[Map[k, v]] {
 }
 
 instance ToJava[Map[k, v]] with Order[k] {
-    type Out = JMap
+    type Out = JMap[k, v]
     type Aef = IO
-    pub def toJava(m: Map[k, v]): JMap \ IO = Adaptor.toMap(m)
+    pub def toJava(m: Map[k, v]): JMap[k, v] \ IO = Adaptor.toMap(m)
 }
 
 instance ToFlix[Map[k, v]] with Order[k] {
-    type In = JMap
-    pub def toFlix(m: JMap): Map[k, v] = Adaptor.fromMap(m)
+    type In = JMap[k, v]
+    pub def toFlix(m: JMap[k, v]): Map[k, v] = Adaptor.fromMap(m)
 }
 
 pub mod Map {

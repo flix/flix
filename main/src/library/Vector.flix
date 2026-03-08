@@ -132,9 +132,9 @@ instance Iterable[Vector[a]] {
 }
 
 instance ToJava[Vector[a]] {
-    type Out = JList
+    type Out = JList[a]
     type Aef = IO
-    pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
+    pub def toJava(v: Vector[a]): JList[a] \ IO = Adaptor.toList(v)
 }
 
 instance ForEach[Vector[a]] {
@@ -143,8 +143,8 @@ instance ForEach[Vector[a]] {
 }
 
 instance ToFlix[Vector[a]] {
-    type In = JList
-    pub def toFlix(l: JList): Vector[a] = region rc {
+    type In = JList[a]
+    pub def toFlix(l: JList[a]): Vector[a] = region rc {
         let iter = unsafe IO { l.iterator() };
         iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }

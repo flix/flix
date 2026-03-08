@@ -114,14 +114,14 @@ instance ForEach[Set[a]] {
 }
 
 instance ToJava[Set[a]] with Order[a] {
-    type Out = JSet
+    type Out = JSet[a]
     type Aef = IO
-    pub def toJava(s: Set[a]): JSet \ IO = Adaptor.toSet(s)
+    pub def toJava(s: Set[a]): JSet[a] \ IO = Adaptor.toSet(s)
 }
 
 instance ToFlix[Set[a]] with Order[a] {
-    type In = JSet
-    pub def toFlix(s: JSet): Set[a] = Adaptor.fromSet(s)
+    type In = JSet[a]
+    pub def toFlix(s: JSet[a]): Set[a] = Adaptor.fromSet(s)
 }
 
 pub mod Set {

@@ -147,14 +147,14 @@ instance ForEach[List[a]] {
 }
 
 instance ToJava[List[a]] {
-    type Out = JList
+    type Out = JList[a]
     type Aef = IO
-    pub def toJava(l: List[a]): JList \ IO = Adaptor.toList(l)
+    pub def toJava(l: List[a]): JList[a] \ IO = Adaptor.toList(l)
 }
 
 instance ToFlix[List[a]] {
-    type In = JList
-    pub def toFlix(l: JList): List[a] = Adaptor.fromList(l)
+    type In = JList[a]
+    pub def toFlix(l: JList[a]): List[a] = Adaptor.fromList(l)
 }
 
 pub mod List {
