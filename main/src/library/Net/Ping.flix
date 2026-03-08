@@ -14,16 +14,7 @@
  *  limitations under the License.
  */
 
-use Net.IpAddr
-
-///
-/// The effect used to determine if an address is reachable.
-///
-eff PingWithResult {
-    def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
-}
-
-pub mod PingWithResult {
+pub mod Net.Ping {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.IpAddr
@@ -34,14 +25,14 @@ pub mod PingWithResult {
     import java.net.UnknownHostException
 
     ///
-    /// Handles the `PingWithResult` effect of the given function `f`.
+    /// Handles the `Ping` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `Ping` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - PingWithResult) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Ping) + IO = x ->
         run {
             f(x)
-        } with handler PingWithResult {
+        } with handler Ping {
             def isReachable(host, timeout, u, k) = {
                 try {
                     let ms = TimeUnit.toMilliseconds(u);
@@ -57,12 +48,11 @@ pub mod PingWithResult {
         }
 
     ///
-    /// Runs the `PingWithResult` effect of the given function `f`.
+    /// Runs the `Ping` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `Ping` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - PingWithResult) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Ping) + IO = handle(f)()
 
 }
-
