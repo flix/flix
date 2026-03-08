@@ -1,7 +1,7 @@
 def main(): Unit \ IO =
     run {
-        match ProcessWithResult.exec("ls", Nil) {
+        match Process.exec("ls", Nil) {
             case Result.Ok(_)    => ()
             case Result.Err(err) => println("Unable to execute process: ${err}")
         }
-    } with ProcessWithResult.runWithIO
+    } with Process.runWithIO

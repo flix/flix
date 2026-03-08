@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Maksim Gusev
+ *  Copyright 2024 Magnus Madsen, Maksim Gusev
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,53 +14,14 @@
  *  limitations under the License.
  */
 
-///
-/// An effect used to start a process outside the JVM.
-///
-eff ProcessWithResult {
-
-    ///
-    /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`.
-    ///
-    def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): Result[IoError, ProcessHandle]
-
-    ///
-    /// Returns the exit value of the process.
-    ///
-    def exitValue(ph: ProcessHandle): Result[IoError, Int32]
-
-    ///
-    /// Returns status of the process, if it alive or not.
-    ///
-    def isAlive(ph: ProcessHandle): Result[IoError, Bool]
-
-    ///
-    /// Returns the PID of the process.
-    ///
-    def pid(ph: ProcessHandle): Result[IoError, Int64]
-
-    ///
-    /// Stops the process.
-    ///
-    def stop(ph: ProcessHandle): Result[IoError, Unit]
-
-    ///
-    /// Waits for process to finish.
-    ///
-    def waitFor(ph: ProcessHandle): Result[IoError, Int32]
-
-    ///
-    /// Waits a specified amount of time for the process to finish
-    ///
-    def waitForTimeout(ph: ProcessHandle, time: Int64, tUnit: TimeUnit): Result[IoError, Bool]
-
-}
-
-pub mod ProcessWithResult {
+pub mod Sys.Process {
 
     use IoError.ErrorKind
     use IoError.IoError
-    use ProcessHandle.ProcessHandle
+    use Sys.ProcessHandle.ProcessHandle
+    use Sys.StdIn.StdIn
+    use Sys.StdOut.StdOut
+    use Sys.StdErr.StdErr
 
     import java.lang.IllegalArgumentException
     import java.lang.IllegalThreadStateException
@@ -75,30 +36,30 @@ pub mod ProcessWithResult {
     ///
     /// Executes the command `cmd` with the arguments `args`.
     ///
-    pub def exec(cmd: String, args: List[String]): Result[IoError, ProcessHandle] \ ProcessWithResult =
-        ProcessWithResult.execWithCwdAndEnv(cmd, args, None, Map.empty())
+    pub def exec(cmd: String, args: List[String]): Result[IoError, Sys.ProcessHandle] \ Sys.Process =
+        Sys.Process.execWithCwdAndEnv(cmd, args, None, Map.empty())
 
     ///
     /// Executes the command `cmd` with the arguments `args`, by the path `cwd`.
     ///
-    pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): Result[IoError, ProcessHandle] \ ProcessWithResult =
-        ProcessWithResult.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
+    pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): Result[IoError, Sys.ProcessHandle] \ Sys.Process =
+        Sys.Process.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
 
     ///
     /// Executes the command `cmd` with the arguments `args` and with the environmental `env`.
     ///
-    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): Result[IoError, ProcessHandle] \ ProcessWithResult =
-        ProcessWithResult.execWithCwdAndEnv(cmd, args, None, env)
+    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): Result[IoError, Sys.ProcessHandle] \ Sys.Process =
+        Sys.Process.execWithCwdAndEnv(cmd, args, None, env)
 
     ///
-    /// Handles the `ProcessWithResult` effect of the given function `f`.
+    /// Handles the `Process` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `ProcessWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - ProcessWithResult) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Sys.Process) + IO = x ->
         run {
             f(x)
-        } with handler ProcessWithResult {
+        } with handler Sys.Process {
             def execWithCwdAndEnv(cmd, args, cwdPath, env, k) = region rc {
                 let res = try {
                     let arr = List.toArray(rc, cmd :: args);
@@ -112,7 +73,7 @@ pub mod ProcessWithResult {
                         case None => ()
                     };
                     let process = pb.start();
-                    Ok(ProcessHandle.ProcessHandle(process))
+                    Ok(ProcessHandle(process))
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -145,6 +106,30 @@ pub mod ProcessWithResult {
                 } catch {
                     case ex: UnsupportedOperationException => k(Err(IoError(ErrorKind.Unsupported, ex.getMessage())))
                     case ex: IOException                   => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
+            def stdin(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(StdIn(jProc.getOutputStream())))
+                } catch {
+                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
+            def stdout(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(StdOut(jProc.getInputStream())))
+                } catch {
+                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
+            def stderr(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(StdErr(jProc.getErrorStream())))
+                } catch {
+                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def stop(ph, k) =
@@ -184,7 +169,6 @@ pub mod ProcessWithResult {
     /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ProcessWithResult) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Sys.Process) + IO = handle(f)()
 
 }
-

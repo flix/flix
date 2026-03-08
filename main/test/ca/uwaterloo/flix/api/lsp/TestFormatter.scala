@@ -61,7 +61,7 @@ class TestFormatter extends AnyFunSuite {
     "examples/effects-and-handlers/advanced/collatz.flix",
     "examples/effects-and-handlers/advanced/nqueens.flix",
     "examples/effects-and-handlers/using-Random.flix",
-    "examples/effects-and-handlers/using-ProcessWithResult.flix",
+    "examples/effects-and-handlers/using-Process.flix",
     "examples/effects-and-handlers/using-FileWriteWithResult.flix",
     "examples/effects-and-handlers/using-Console.flix",
     "examples/effects-and-handlers/using-Logger.flix",
