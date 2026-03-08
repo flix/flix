@@ -176,8 +176,8 @@ sealed trait Completion {
         kind = CompletionItemKind.Function
       )
 
-    case Completion.DefCompletion(decl, range, priority, ap, qualified, inScope, ectx) =>
-      val qualifiedName = decl.sym.toString
+    case Completion.DefCompletion(decl, namespace, range, priority, ap, qualified, inScope, ectx) =>
+      val qualifiedName = if (namespace.nonEmpty) s"$namespace.${decl.sym.name}" else decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
       val snippet = LspUtil.mkSpecSnippet(label, decl.spec, ectx)
       val description = if (!qualified) {
@@ -703,7 +703,7 @@ object Completion {
     * @param inScope   indicate whether to the def is inScope.
     * @param ectx      the expression context.
     */
-  case class DefCompletion(decl: TypedAst.Def, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
+  case class DefCompletion(decl: TypedAst.Def, namespace: String, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
     override def toString: String = s"DefCompletion(${decl.sym}, $priority, $range)"
   }
 
