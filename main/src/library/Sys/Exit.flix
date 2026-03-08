@@ -14,19 +14,9 @@
  *  limitations under the License.
  */
 
-///
-/// An effect used to exit the JVM.
-///
-eff Exit {
+pub mod Sys.Exit {
 
-    ///
-    /// Immediately exits the JVM with the specified `exitCode`.
-    ///
-    def exit(exitCode: Int32): Void
-
-}
-
-pub mod Exit {
+    use Sys.Exit
 
     import java.lang.System
 
