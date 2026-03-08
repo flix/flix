@@ -1,6 +1,7 @@
 mod TestSocketAddr {
 
     use Assert.{assertEq, assertNone, fail};
+    use Net.SocketAddr;
 
     @Test
     def fromString01(): Unit \ Assert =
@@ -87,4 +88,3 @@ mod TestSocketAddr {
         assertNone(SocketAddr.fromString("[2345:0425:2CA1:0000:0000:0567:5673:23B5:1234]:8080"))
 
 }
-

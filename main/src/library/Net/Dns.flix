@@ -14,17 +14,10 @@
  *  limitations under the License.
  */
 
-///
-/// an effect for resolving a domain name to an ip address
-///
-eff DnsWithResult {
-    def lookup(host: String): Result[IoError, IpAddr]
-    def lookupAll(host: String): Result[IoError, List[IpAddr]]
-}
-
-pub mod DnsWithResult {
+pub mod Net.Dns {
     use IoError.ErrorKind
     use IoError.IoError
+    use Net.IpAddr;
 
     import java.io.IOException
     import java.lang.IllegalArgumentException
@@ -32,14 +25,14 @@ pub mod DnsWithResult {
     import java.net.UnknownHostException
 
     ///
-    /// Handles the `DnsWithResult` effect of the given function `f`.
+    /// Handles the `Net.Dns` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `DnsWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `Net.Dns` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - DnsWithResult) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Net.Dns) + IO = x ->
         run {
             f(x)
-        } with handler DnsWithResult {
+        } with handler Net.Dns {
             def lookup(host, k) = {
                 try {
                     let address = InetAddress.getByName(host);
@@ -71,12 +64,11 @@ pub mod DnsWithResult {
         }
 
     ///
-    /// Handles the `DnsWithResult` effect of the given function `f`.
+    /// Handles the `Net.Dns` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `DnsWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `Net.Dns` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ ef - DnsWithResult + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - Net.Dns + IO = handle(f)()
 
 }
-

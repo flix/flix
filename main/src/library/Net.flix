@@ -83,6 +83,130 @@ pub mod Net {
     })
 
     ///
+    /// Represents a V4 Ip Address.
+    ///
+    pub enum Ipv4Addr with Eq { // 32 bits
+        case Ipv4Addr(Int8, Int8, Int8, Int8)
+    }
+
+    instance FromString[Ipv4Addr] {
+        pub def fromString(x: String): Option[Ipv4Addr] = Ipv4Addr.fromString(x)
+    }
+
+    instance ToString[Ipv4Addr] {
+        pub def toString(x: Ipv4Addr): String = Ipv4Addr.toString(x)
+    }
+
+    instance Formattable[Ipv4Addr] {
+        pub def format(x: Ipv4Addr): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
+    /// Represents a V6 Ip Address.
+    ///
+    pub enum Ipv6Addr with Eq {
+        case Ipv6Addr( // 128 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8, // 32 bits
+          Int8, Int8, Int8, Int8  // 32 bits
+        )
+    }
+
+    instance FromString[Ipv6Addr] {
+        pub def fromString(x: String): Option[Ipv6Addr] = Ipv6Addr.fromString(x)
+    }
+
+    instance ToString[Ipv6Addr] {
+        pub def toString(x: Ipv6Addr): String = Ipv6Addr.toString(x)
+    }
+
+    instance Formattable[Ipv6Addr] {
+        pub def format(x: Ipv6Addr): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
+    /// Represents an IP address.
+    ///
+    pub enum IpAddr with Eq, ToString {
+        case V4(Ipv4Addr),
+        case V6(Ipv6Addr)
+    }
+
+    instance FromString[IpAddr] {
+        pub def fromString(x: String): Option[IpAddr] = IpAddr.fromString(x)
+    }
+
+    instance Formattable[IpAddr] {
+        pub def format(x: IpAddr): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
+    /// Represents an Ipv4 Socket Address.
+    ///
+    pub enum SocketAddrV4 with Eq {
+        case SocketAddrV4(Ipv4Addr, Int32)
+    }
+
+    instance ToString[SocketAddrV4] {
+        pub def toString(x: SocketAddrV4): String =
+            let SocketAddrV4.SocketAddrV4(ip, port) = x;
+            "${ToString.toString(ip)}:${port}"
+    }
+
+    instance Formattable[SocketAddrV4] {
+        pub def format(x: SocketAddrV4): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
+    /// Represents an Ipv6 Socket Address.
+    ///
+    pub enum SocketAddrV6 with Eq {
+        case SocketAddrV6(Ipv6Addr, Int32)
+    }
+
+    instance ToString[SocketAddrV6] {
+        pub def toString(x: SocketAddrV6): String =
+            let SocketAddrV6.SocketAddrV6(ip, port) = x;
+            "[${ToString.toString(ip)}]:${port}"
+    }
+
+    instance Formattable[SocketAddrV6] {
+        pub def format(x: SocketAddrV6): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
+    /// Represents a Socket Address.
+    ///
+    pub enum SocketAddr with Eq {
+        case V4(SocketAddrV4)
+        case V6(SocketAddrV6)
+    }
+
+    instance FromString[SocketAddr] {
+        pub def fromString(x: String): Option[SocketAddr] = SocketAddr.fromString(x)
+    }
+
+    instance ToString[SocketAddr] {
+        pub def toString(x: SocketAddr): String = match x {
+            case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ToString.toString(ip)}:${port}"
+            case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ToString.toString(ip)}]:${port}"
+        }
+    }
+
+    instance Formattable[SocketAddr] {
+        pub def format(x: SocketAddr): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
+    /// The effect used to resolve domain names to IP addresses.
+    ///
+    pub eff Dns {
+        def lookup(host: String): Result[IoError, IpAddr]
+        def lookupAll(host: String): Result[IoError, List[IpAddr]]
+    }
+
+    ///
     /// The effect used to send HTTP requests (both http:// and https://).
     ///
     pub eff Http {

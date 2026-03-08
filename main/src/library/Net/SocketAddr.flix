@@ -14,33 +14,16 @@
  *  limitations under the License.
  */
 
-///
-/// Represents a Socket Address.
-///
-enum SocketAddr with Eq {
-    case V4(SocketAddrV4)
-    case V6(SocketAddrV6)
-}
+pub mod Net.SocketAddr {
 
-instance FromString[SocketAddr] {
-    pub def fromString(x: String): Option[SocketAddr] = SocketAddr.fromString(x)
-}
-
-instance ToString[SocketAddr] {
-    pub def toString(x: SocketAddr): String = match x {
-        case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ToString.toString(ip)}:${port}"
-        case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ToString.toString(ip)}]:${port}"
-    }
-}
-
-instance Formattable[SocketAddr] {
-    pub def format(x: SocketAddr): RichString = RichString.fromString(ToString.toString(x))
-}
-
-pub mod SocketAddr {
-
-    use SocketAddrV4.SocketAddrV4
-    use SocketAddrV6.SocketAddrV6
+    use Net.IpAddr
+    use Net.IpAddr.V4
+    use Net.IpAddr.V6
+    use Net.Ipv4Addr;
+    use Net.Ipv6Addr;
+    use Net.SocketAddr
+    use Net.SocketAddrV4.SocketAddrV4
+    use Net.SocketAddrV6.SocketAddrV6
 
     ///
     /// Attempts to parse the given String `x` as a `SocketAddr`.
@@ -65,8 +48,8 @@ pub mod SocketAddr {
     /// Return the IpAddr of the SocketAddr `s`.
     ///
     pub def ip(s: SocketAddr): IpAddr = match s {
-        case SocketAddr.V4(SocketAddrV4(ip, _)) => IpAddr.V4(ip)
-        case SocketAddr.V6(SocketAddrV6(ip, _)) => IpAddr.V6(ip)
+        case SocketAddr.V4(SocketAddrV4(ip, _)) => V4(ip)
+        case SocketAddr.V6(SocketAddrV6(ip, _)) => V6(ip)
     }
 
 
@@ -107,4 +90,3 @@ pub mod SocketAddr {
     }
 
 }
-
