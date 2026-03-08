@@ -18,67 +18,67 @@ mod Test.Exp.Jvm.Generic.NewObject {
     // Comparator tests
 
     @Test
-    def testComparatorString01(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorString01(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)
         };
-        assertTrue(comp.compare("a", "b") < 0)
+        assertTrue(c.compare("a", "b") < 0)
 
     @Test
-    def testComparatorString02(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorString02(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s2.compareTo(s1)
         };
-        assertTrue(comp.compare("a", "b") > 0)
+        assertTrue(c.compare("a", "b") > 0)
 
     @Test
-    def testComparatorInteger01(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorInteger01(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let i1 = unchecked_cast(t as JInteger);
                 let i2 = unchecked_cast(u as JInteger);
                 i1.compareTo(i2)
         };
-        assertTrue(comp.compare(JInteger.valueOf(1i32), JInteger.valueOf(2i32)) < 0)
+        assertTrue(c.compare(JInteger.valueOf(1i32), JInteger.valueOf(2i32)) < 0)
 
     @Test
-    def testComparatorWithTreeMap01(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorWithTreeMap01(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s2.compareTo(s1)
         };
-        let map: TreeMap[String, String] = new TreeMap(comp);
-        map.put("a", "1");
-        map.put("b", "2");
-        map.put("c", "3");
-        let first = unchecked_cast(map.firstKey() as String);
-        assertEq(expected = "c", first)
+        let m: TreeMap[String, String] = new TreeMap(c);
+        m.put("a", "1");
+        m.put("b", "2");
+        m.put("c", "3");
+        let r: String = m.firstKey();
+        assertEq(expected = "c", r)
 
     @Test
-    def testComparatorRaw01(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorRaw01(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, _t: Object, _u: Object): Int32 = 0
         };
-        assertEq(expected = 0, comp.compare("foo", "bar"))
+        assertEq(expected = 0, c.compare("foo", "bar"))
 
     @Test
-    def testRunnableWithGenericCapture01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
+    def testRunnableWithGenericCapture01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
         let r = new Runnable {
             def $run(_this: Runnable): Unit \ IO =
-                list.add("captured");
+                l.add("captured");
                 ()
         };
         r.$run();
-        assertEq(expected = 1, list.size())
+        assertEq(expected = 1, l.size())
 
     @CompileTest
     def testComparatorCompile01(): Comparator[String] \ IO =
@@ -99,40 +99,40 @@ mod Test.Exp.Jvm.Generic.NewObject {
         }
 
     @Test
-    def testComparatorCompare01(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorCompare01(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)
         };
-        assertEq(expected = 0, comp.compare("hello", "hello"))
+        assertEq(expected = 0, c.compare("hello", "hello"))
 
     @Test
-    def testComparatorCompareReverse01(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorCompareReverse01(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s2.compareTo(s1)
         };
-        assertTrue(comp.compare("a", "b") > 0)
+        assertTrue(c.compare("a", "b") > 0)
 
     @Test
-    def testComparatorUsedInSort01(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorUsedInSort01(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s2.compareTo(s1)
         };
-        let list: ArrayList[String] = new ArrayList();
-        list.add("a");
-        list.add("c");
-        list.add("b");
-        JCollections.sort(list, comp);
-        let first = unchecked_cast(list.get(0) as String);
-        assertEq(expected = "c", first)
+        let l: ArrayList[String] = new ArrayList();
+        l.add("a");
+        l.add("c");
+        l.add("b");
+        JCollections.sort(l, c);
+        let r: String = l.get(0);
+        assertEq(expected = "c", r)
 
     @CompileTest
     def testCallableString01(): Callable[String] \ IO =
@@ -153,59 +153,59 @@ mod Test.Exp.Jvm.Generic.NewObject {
     def testIterableCompile01(): JIterable[String] \ IO =
         new JIterable {
             def iterator(_this: JIterable): JIterator \ IO =
-                let list: ArrayList[String] = new ArrayList();
-                list.iterator()
+                let l: ArrayList[String] = new ArrayList();
+                l.iterator()
         }
 
     @CompileTest
     def testComparableCompile01(): JComparable[String] \ IO =
         new JComparable {
             def compareTo(_this: JComparable, o: Object): Int32 =
-                let str = unchecked_cast(o as String);
-                "hello".compareTo(str)
+                let s = unchecked_cast(o as String);
+                "hello".compareTo(s)
         }
 
     @Test
-    def testComparatorCapture01(): Unit \ Assert + IO =
-        let offset = 1;
-        let comp = new Comparator {
+    def testComparatorCapture01(): Unit \ {Assert, IO} =
+        let n = 1;
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let i1 = unchecked_cast(t as JInteger);
                 let i2 = unchecked_cast(u as JInteger);
-                i1.compareTo(i2) + offset - offset
+                i1.compareTo(i2) + n - n
         };
-        assertTrue(comp.compare(JInteger.valueOf(1i32), JInteger.valueOf(2i32)) < 0)
+        assertTrue(c.compare(JInteger.valueOf(1i32), JInteger.valueOf(2i32)) < 0)
 
     @Test
-    def testSerializableStillWorks01(): Unit \ Assert + IO =
-        let anon = new Serializable { };
-        assertTrue(anon.toString().startsWith("Anon"))
+    def testSerializableStillWorks01(): Unit \ {Assert, IO} =
+        let a = new Serializable { };
+        assertTrue(a.toString().startsWith("Anon"))
 
     @Test
-    def testComparatorWithTreeMapOrdering01(): Unit \ Assert + IO =
-        let comp = new Comparator {
+    def testComparatorWithTreeMapOrdering01(): Unit \ {Assert, IO} =
+        let c = new Comparator {
             def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)
         };
-        let map: TreeMap[String, String] = new TreeMap(comp);
-        map.put("c", "3");
-        map.put("a", "1");
-        map.put("b", "2");
-        let first = unchecked_cast(map.firstKey() as String);
-        assertEq(expected = "a", first)
+        let m: TreeMap[String, String] = new TreeMap(c);
+        m.put("c", "3");
+        m.put("a", "1");
+        m.put("b", "2");
+        let r: String = m.firstKey();
+        assertEq(expected = "a", r)
 
     @Test
-    def testRunnableCapturingGeneric01(): Unit \ Assert + IO =
-        let list: ArrayList[String] = new ArrayList();
-        list.add("before");
+    def testRunnableCapturingGeneric01(): Unit \ {Assert, IO} =
+        let l: ArrayList[String] = new ArrayList();
+        l.add("before");
         let r = new Runnable {
             def $run(_this: Runnable): Unit \ IO =
-                list.add("after");
+                l.add("after");
                 ()
         };
         r.$run();
-        assertEq(expected = 2, list.size())
+        assertEq(expected = 2, l.size())
 
 }
