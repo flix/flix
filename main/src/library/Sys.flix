@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Magnus Madsen, Maksim Gusev
+ *  Copyright 2026 Flix Authors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -65,16 +65,58 @@ pub mod Sys {
     /// An effect used to start a process outside the JVM.
     ///
     pub eff Process {
+
+        ///
+        /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environment `env`.
+        ///
         def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): Result[IoError, ProcessHandle]
+
+        ///
+        /// Returns the exit value of the process `ph`.
+        ///
         def exitValue(ph: ProcessHandle): Result[IoError, Int32]
+
+        ///
+        /// Returns whether the process `ph` is alive.
+        ///
         def isAlive(ph: ProcessHandle): Result[IoError, Bool]
+
+        ///
+        /// Returns the PID of the process `ph`.
+        ///
         def pid(ph: ProcessHandle): Result[IoError, Int64]
+
+        ///
+        /// Returns the stdin stream of the process `ph`.
+        ///
         def stdin(ph: ProcessHandle): Result[IoError, StdIn]
+
+        ///
+        /// Returns the stdout stream of the process `ph`.
+        ///
         def stdout(ph: ProcessHandle): Result[IoError, StdOut]
+
+        ///
+        /// Returns the stderr stream of the process `ph`.
+        ///
         def stderr(ph: ProcessHandle): Result[IoError, StdErr]
+
+        ///
+        /// Stops the process `ph`.
+        ///
         def stop(ph: ProcessHandle): Result[IoError, Unit]
+
+        ///
+        /// Waits for the process `ph` to finish and returns its exit value.
+        ///
         def waitFor(ph: ProcessHandle): Result[IoError, Int32]
+
+        ///
+        /// Waits at most `time` (in the given `tUnit`) for the process `ph` to finish.
+        /// Returns `true` if the process exited, `false` if the timeout elapsed.
+        ///
         def waitForTimeout(ph: ProcessHandle, time: Int64, tUnit: TimeUnit): Result[IoError, Bool]
+
     }
 
 }

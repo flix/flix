@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Magnus Madsen, Maksim Gusev
+ *  Copyright 2026 Flix Authors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ pub mod Sys.Process {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use Sys.Process
+    use Sys.ProcessHandle
     use Sys.ProcessHandle.ProcessHandle
     use Sys.StdIn.StdIn
     use Sys.StdOut.StdOut
@@ -29,6 +31,7 @@ pub mod Sys.Process {
     import java.lang.UnsupportedOperationException
     import java.io.IOException
     import java.lang.ProcessBuilder
+    import java.lang.{ProcessHandle => JProcessHandle}
     import java.lang.Runtime
     import java.io.{File => JFile}
     import java.util.concurrent.{TimeUnit => JTimeUnit}
@@ -36,30 +39,30 @@ pub mod Sys.Process {
     ///
     /// Executes the command `cmd` with the arguments `args`.
     ///
-    pub def exec(cmd: String, args: List[String]): Result[IoError, Sys.ProcessHandle] \ Sys.Process =
-        Sys.Process.execWithCwdAndEnv(cmd, args, None, Map.empty())
+    pub def exec(cmd: String, args: List[String]): Result[IoError, ProcessHandle] \ Process =
+        Process.execWithCwdAndEnv(cmd, args, None, Map.empty())
 
     ///
     /// Executes the command `cmd` with the arguments `args`, by the path `cwd`.
     ///
-    pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): Result[IoError, Sys.ProcessHandle] \ Sys.Process =
-        Sys.Process.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
+    pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): Result[IoError, ProcessHandle] \ Process =
+        Process.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
 
     ///
     /// Executes the command `cmd` with the arguments `args` and with the environmental `env`.
     ///
-    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): Result[IoError, Sys.ProcessHandle] \ Sys.Process =
-        Sys.Process.execWithCwdAndEnv(cmd, args, None, env)
+    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): Result[IoError, ProcessHandle] \ Process =
+        Process.execWithCwdAndEnv(cmd, args, None, env)
 
     ///
     /// Handles the `Process` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Sys.Process) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Process) + IO = x ->
         run {
             f(x)
-        } with handler Sys.Process {
+        } with handler Process {
             def execWithCwdAndEnv(cmd, args, cwdPath, env, k) = region rc {
                 let res = try {
                     let arr = List.toArray(rc, cmd :: args);
@@ -83,8 +86,8 @@ pub mod Sys.Process {
 
             def exitValue(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(jProc.exitValue()))
+                    let ProcessHandle(p) = ph;
+                    k(Ok(p.exitValue()))
                 } catch {
                     case ex: IllegalThreadStateException  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                     case ex: IOException                  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
@@ -92,16 +95,16 @@ pub mod Sys.Process {
 
             def isAlive(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(jProc.isAlive()))
+                    let ProcessHandle(p) = ph;
+                    k(Ok(p.isAlive()))
                 } catch {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def pid(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
-                    let pid = jProc.pid();
+                    let ProcessHandle(p) = ph;
+                    let pid = p.pid();
                     k(Ok(pid))
                 } catch {
                     case ex: UnsupportedOperationException => k(Err(IoError(ErrorKind.Unsupported, ex.getMessage())))
@@ -110,40 +113,40 @@ pub mod Sys.Process {
 
             def stdin(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(StdIn(jProc.getOutputStream())))
+                    let ProcessHandle(p) = ph;
+                    k(Ok(StdIn(p.getOutputStream())))
                 } catch {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def stdout(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(StdOut(jProc.getInputStream())))
+                    let ProcessHandle(p) = ph;
+                    k(Ok(StdOut(p.getInputStream())))
                 } catch {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def stderr(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(StdErr(jProc.getErrorStream())))
+                    let ProcessHandle(p) = ph;
+                    k(Ok(StdErr(p.getErrorStream())))
                 } catch {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def stop(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(jProc.destroy()))
+                    let ProcessHandle(p) = ph;
+                    k(Ok(p.destroy()))
                 } catch {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def waitFor(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
-                    let exitVal = jProc.waitFor();
+                    let ProcessHandle(p) = ph;
+                    let exitVal = p.waitFor();
                     k(Ok(exitVal))
                 } catch {
                     case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
@@ -153,8 +156,8 @@ pub mod Sys.Process {
             def waitForTimeout(ph, time, unit, k) =
                 try {
                     let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
-                    let ProcessHandle(jProc) = ph;
-                    let exitVal = jProc.waitFor(timeMS, JTimeUnit.MILLISECONDS);
+                    let ProcessHandle(p) = ph;
+                    let exitVal = p.waitFor(timeMS, JTimeUnit.MILLISECONDS);
                     k(Ok(exitVal))
                 } catch {
                     case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
@@ -169,6 +172,6 @@ pub mod Sys.Process {
     /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Sys.Process) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Process) + IO = handle(f)()
 
 }
