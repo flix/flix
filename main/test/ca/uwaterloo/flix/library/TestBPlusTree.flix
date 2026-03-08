@@ -1203,6 +1203,125 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // putWithKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def putWithKey01(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(5, 10, t);
+        BPlusTree.putWithKey((k, v, v1) -> k + v + v1, 5, 4, t);
+        assertTrue(BPlusTree.memberOfPair(5, 19, t))
+    }
+
+    @Test
+    def putWithKey02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.putWithKey((k, v, v1) -> "${k}" + v1 + v, 5, "a", t);
+        assertEq(expected = Some("a"), BPlusTree.get(5, t))
+    }
+
+    @Test
+    def putWithKey03(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(5, 12, tree);
+        BPlusTree.putWithKey(k -> v1 -> v2 -> k + v1 + v2, 5, 3, tree);
+        assertTrue(BPlusTree.memberOfPair(5, 20, tree));
+        assertFalse(BPlusTree.memberOfPair(5, 12, tree));
+        assertFalse(BPlusTree.memberOfPair(5, 3, tree))
+    }
+
+    @Test
+    def putWithKey04(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        let called = Ref.fresh(rc, false);
+        let effectfulFunction = _ -> _ -> _ -> {
+            Ref.put(true, called);
+            999
+        };
+        BPlusTree.putWithKey(effectfulFunction, 1, 2, tree);
+        assertTrue(BPlusTree.memberOfPair(1, 2, tree));
+        assertFalse(Ref.get(called))
+    }
+
+    @Test
+    def putWithKey05(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        let key1 = PutIfEnum.PutIfEnum(1, 2);
+        let key2 = PutIfEnum.PutIfEnum(1, 7);
+        BPlusTree.put(key1, 2, tree);
+        BPlusTree.putWithKey(k -> v1 -> v2 -> match k {
+            case PutIfEnum.PutIfEnum(_, y) => y + v1 + v2
+        }, key2, 4, tree);
+        assertEq(expected = Some(13), BPlusTree.get(key1, tree))
+    }
+
+    @Test
+    def putWithKey06(): Unit \ Assert + IO = region rc {
+        let tree = BPlusTree.empty(rc);
+        let keys = List.range(0, totalInsertNumInt32());
+        List.forEach(i -> BPlusTree.put(PutIfEnum.PutIfEnum(i, 0), 0, tree), keys);
+        let _: Unit = region rc2 {
+            (spawn unchecked_cast((
+                keys |>
+                    List.forEach(i ->
+                        BPlusTree.putWithKey(k -> _ -> old -> match k {
+                            case PutIfEnum.PutIfEnum(x, y) => Int32.max(old, x + y)
+                        }, PutIfEnum.PutIfEnum(i, 1), -1, tree)
+                    ): _ \ rc) as _ \ IO) @ rc2);
+            (spawn unchecked_cast((
+                keys |>
+                    List.forEach(i ->
+                        BPlusTree.putWithKey(k -> _ -> old -> match k {
+                            case PutIfEnum.PutIfEnum(x, y) => Int32.max(old, x + y)
+                        }, PutIfEnum.PutIfEnum(i, 2), -1, tree)
+            ): _ \ rc) as _ \ IO) @ rc2)
+        };
+        assertTrue((keys |> List.forAll(i -> Some(i + 2) == BPlusTree.get(PutIfEnum.PutIfEnum(i, 0), tree))) and BPlusTree.assertTreeInvariant(tree))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mergeWithKey                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def mergeWithKey01(): Unit \ Assert = region rc {
+        let src = BPlusTree.emptyWithArity(rc, 3);
+        let dst = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(2, 5, src);
+        BPlusTree.put(3, 7, src);
+        BPlusTree.put(2, 11, dst);
+        BPlusTree.put(4, 13, dst);
+        BPlusTree.mergeWithKey((k, v1, v2) -> k + v1 + v2, src, dst);
+        assertEq(expected = Map#{2 => 18, 3 => 7, 4 => 13}, BPlusTree.toMap(dst))
+    }
+
+    @Test
+    def mergeWithKey02(): Unit \ Assert = region rc {
+        let src = BPlusTree.empty(rc);
+        let dst = BPlusTree.empty(rc);
+        let called = Ref.fresh(rc, false);
+        let effectfulFunction = _ -> _ -> _ -> {
+            Ref.put(true, called);
+            999
+        };
+        BPlusTree.put(1, 2, src);
+        BPlusTree.mergeWithKey(effectfulFunction, src, dst);
+        assertEq(expected = Some(2), BPlusTree.get(1, dst));
+        assertFalse(Ref.get(called))
+    }
+
+    @Test
+    def mergeWithKey03(): Unit \ Assert = region rc {
+        let src = BPlusTree.empty(rc);
+        let dst = BPlusTree.empty(rc);
+        BPlusTree.put(5, "a", src);
+        BPlusTree.put(5, "b", dst);
+        BPlusTree.mergeWithKey((k, v1, v2) -> "${k}" + v1 + v2, src, dst);
+        assertEq(expected = Some("5ab"), BPlusTree.get(5, dst))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2006,6 +2125,192 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // isSubmapOf                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def isSubmapOf01(): Unit \ Assert = region rc {
+        let t1: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        let t2: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 4);
+        assertTrue(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isSubmapOf02(): Unit \ Assert = region rc {
+        let t1: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 3);
+        foreach (i <- Range.Range(1, 6)) {
+            BPlusTree.put(i, i * 10, t2)
+        };
+        assertTrue(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isSubmapOf03(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 4);
+        BPlusTree.put(1, 10, t1);
+        BPlusTree.put(3, 30, t1);
+        BPlusTree.put(1, 10, t2);
+        BPlusTree.put(2, 20, t2);
+        BPlusTree.put(3, 30, t2);
+        BPlusTree.put(4, 40, t2);
+        assertTrue(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isSubmapOf04(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t1);
+        BPlusTree.put(2, 99, t1);
+        BPlusTree.put(1, 10, t2);
+        BPlusTree.put(2, 20, t2);
+        assertFalse(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isSubmapOf05(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t1);
+        BPlusTree.put(3, 30, t1);
+        BPlusTree.put(1, 10, t2);
+        BPlusTree.put(2, 20, t2);
+        BPlusTree.put(4, 40, t2);
+        assertFalse(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isSubmapOf06(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 3);
+        foreach (i <- Range.Range(1, 5)) {
+            BPlusTree.put(i, i * 10, t1)
+        };
+        BPlusTree.put(1, 10, t2);
+        BPlusTree.put(2, 20, t2);
+        assertFalse(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isSubmapOf07(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 11);
+        foreach (i <- Range.Range(1, 251)) {
+            BPlusTree.put(i, i * 10, t1);
+            BPlusTree.put(i, i * 10, t2)
+        };
+        foreach (i <- Range.Range(251, 401)) {
+            BPlusTree.put(i, i * 10, t2)
+        };
+        assertTrue(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isSubmapOf08(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 4);
+        let t2 = BPlusTree.emptyWithArity(rc, 13);
+        foreach (i <- Range.Range(1, 251)) {
+            BPlusTree.put(i, i * 10, t1);
+            BPlusTree.put(i, i * 10, t2)
+        };
+        foreach (i <- Range.Range(251, 401)) {
+            BPlusTree.put(i, i * 10, t2)
+        };
+        BPlusTree.put(175, 1751, t2);
+        assertFalse(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isSubmapOf09(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(5, 50, t1);
+        BPlusTree.put(1, 10, t2);
+        assertFalse(BPlusTree.isSubmapOf(t1, t2))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isProperSubmapOf                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def isProperSubmapOf01(): Unit \ Assert = region rc {
+        let t1: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        let t2: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        assertFalse(BPlusTree.isProperSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isProperSubmapOf02(): Unit \ Assert = region rc {
+        let t1: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t2);
+        assertTrue(BPlusTree.isProperSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isProperSubmapOf03(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 4);
+        foreach (i <- Range.Range(1, 6)) {
+            BPlusTree.put(i, i * 10, t1);
+            BPlusTree.put(i, i * 10, t2)
+        };
+        assertFalse(BPlusTree.isProperSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isProperSubmapOf04(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t1);
+        BPlusTree.put(3, 30, t1);
+        BPlusTree.put(1, 10, t2);
+        BPlusTree.put(2, 20, t2);
+        BPlusTree.put(3, 30, t2);
+        assertTrue(BPlusTree.isProperSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isProperSubmapOf05(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 10, t1);
+        BPlusTree.put(2, 20, t1);
+        BPlusTree.put(1, 10, t2);
+        BPlusTree.put(2, 99, t2);
+        BPlusTree.put(3, 30, t2);
+        assertFalse(BPlusTree.isProperSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isProperSubmapOf06(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 11);
+        foreach (i <- Range.Range(1, 251)) {
+            BPlusTree.put(i, i * 10, t1);
+            BPlusTree.put(i, i * 10, t2)
+        };
+        foreach (i <- Range.Range(251, 401)) {
+            BPlusTree.put(i, i * 10, t2)
+        };
+        assertTrue(BPlusTree.isProperSubmapOf(t1, t2))
+    }
+
+    @Test
+    def isProperSubmapOf07(): Unit \ Assert = region rc {
+        let t1 = BPlusTree.emptyWithArity(rc, 3);
+        let t2 = BPlusTree.emptyWithArity(rc, 11);
+        foreach (i <- Range.Range(1, 251)) {
+            BPlusTree.put(i, i * 10, t1);
+            BPlusTree.put(i, i * 10, t2)
+        };
+        assertFalse(BPlusTree.isProperSubmapOf(t1, t2))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // getOrElsePut                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2149,7 +2454,7 @@ mod TestBPlusTree {
         Assert.assertNone(Iterator.next(it))
     }
 
-    @Test 
+    @Test
     def testIteratorKeys03(): Unit \ Assert = region rc {
         let t = BPlusTree.empty(rc);
         foreach (i <- Range.Range(1, 11)) {
@@ -2170,7 +2475,7 @@ mod TestBPlusTree {
         let it = BPlusTree.iteratorValues(rc, t);
         Assert.assertNone(Iterator.next(it))
     }
-    
+
     @Test
     def iteratorValues02(): Unit \ Assert = region rc {
         let t = BPlusTree.empty(rc);
@@ -2182,7 +2487,7 @@ mod TestBPlusTree {
         Assert.assertNone(Iterator.next(it))
     }
 
-    @Test 
+    @Test
     def testIteratorValues03(): Unit \ Assert = region rc {
         let t = BPlusTree.empty(rc);
         foreach (i <- Range.Range(1, 11)) {
