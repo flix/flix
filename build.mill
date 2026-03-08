@@ -53,7 +53,42 @@ object flix extends ScalaModule {
 
   // Fat JAR: exclude META-INF signatures, first-wins for duplicates
   def assemblyRules = Seq(
-    Rule.ExcludePattern("META-INF/.*\\.(RSA|SF|DSA)")
+    Rule.ExcludePattern("META-INF/.*\\.(RSA|SF|DSA)"),
+
+    // ── Test files (saves ~5 MB) ────────────────────────────
+    // The resources directive includes main/ which brings in main/test/.
+    // These .flix and .scala test files are not needed at runtime.
+    Rule.ExcludePattern("test/.*"),
+
+    // ── Scala source files (saves ~4 MB) ────────────────────
+    // The resources directive includes main/src/ for .flix library files,
+    // but also pulls in .scala compiler sources. Only ClassList.txt and
+    // .flix files are needed at runtime; the compiled .class files are
+    // already in the JAR.
+    Rule.ExcludePattern("src/ca/.*\\.scala"),
+
+    // ── zstd-jni native libraries (saves ~15 MB) ────────────
+    // Coursier bundles zstd-jni native binaries for every OS/arch.
+    // These are optional: coursier falls back to a Java implementation.
+    // The v0.66.1 release JAR never included them.
+    Rule.ExcludePattern("linux/.*"),
+    Rule.ExcludePattern("win/.*"),
+    Rule.ExcludePattern("darwin/.*"),
+    Rule.ExcludePattern("freebsd/.*"),
+
+    // ── Coursier transitive dependencies (saves ~4 MB) ──────
+    // Coursier pulls in Maven build infrastructure (Plexus) and
+    // compression libraries that are not needed at runtime.
+    // Plexus: Maven dependency injection / archiver framework.
+    Rule.ExcludePattern("org/codehaus/plexus/.*"),
+    // commons-compress/io/codec: used by plexus-archiver, not by coursier itself.
+    Rule.ExcludePattern("org/apache/commons/compress/.*"),
+    Rule.ExcludePattern("org/apache/commons/io/.*"),
+    Rule.ExcludePattern("org/apache/commons/codec/.*"),
+    // aircompressor: Java zstd/lz4 implementation, optional for coursier.
+    Rule.ExcludePattern("io/airlift/compress/.*"),
+    // xbean-reflect: dependency injection helper for Plexus.
+    Rule.ExcludePattern("org/apache/xbean/.*")
   ) ++ super.assemblyRules
 
   // Include .flix, .json, .zip, ClassList.txt from main/ in the JAR.
