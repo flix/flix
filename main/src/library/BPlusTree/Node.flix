@@ -1093,7 +1093,7 @@ mod BPlusTree.Node {
     /// Returns a string representation of the given Node `node` starting with
     /// `indent` spaces.
     ///
-    /// Not thread-safe: Traverses the live tree rooted at `node` without synchronization.
+    /// Not thread-safe: Traverses the live tree rooted at `node`.
     ///
     pub def toString(indent: Int32, rc: Region[r], node: Node[k, v, r]): String \ r with ToString[k], ToString[v] =
         let indentString = String.repeat(indent, " ");
