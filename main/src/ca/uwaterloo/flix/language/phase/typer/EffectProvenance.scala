@@ -415,10 +415,10 @@ object EffectProvenance {
           }
 
           val errOpt = (v: (Vertex, SourceLocation)) => v match {
-            case (IOVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), Symbol.IO, aLoc, loc, prov.getOrElse(provLoc))))
-            case (CstVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), sym, aLoc, loc, provLoc)))
+            case (IOVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.IO), aLoc, loc, prov.getOrElse(provLoc)))) // TODO: I just wrapped stuff in List()
+            case (CstVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(sym), aLoc, loc, provLoc)))
             case (RigidVarVertex(sym, loc), provLoc) => kSymToEffSym(sym).map(
-              effSym => TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), effSym, aLoc, loc, provLoc))
+              effSym => TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(effSym), aLoc, loc, provLoc))
             )
             case _ => None
           }
