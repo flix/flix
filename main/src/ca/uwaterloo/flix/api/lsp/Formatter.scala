@@ -96,7 +96,7 @@ object Formatter {
     * @param edits the list of text edits to apply
     * @return the updated source string after applying the edits
     */
-  private def applyTextEditsToString(src: String, edits: List[TextEdit]): String = {
+  def applyTextEditsToString(src: String, edits: List[TextEdit]): String = {
     val sortedEdits = edits.sortBy(e => (e.range.start.line, e.range.start.character)).reverse
     val sb = new StringBuilder(src)
     val lineOffsets = computeLineOffsets(src) // start index of each line

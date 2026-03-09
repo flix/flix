@@ -103,7 +103,7 @@ object ConstraintGen {
 
         // If no effect specified, we assume the function is pure
         val declaredEff = subst(defn.spec.eff.getOrElse(Type.Pure))
-        val declaredResultType = subst(defn.spec.tpe)
+        val declaredResultType = generalizeVoid(subst(defn.spec.tpe))
         val declaredArgumentTypes = defn.spec.fparams.map(_.tpe).map(subst.apply)
         val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc2)
 

@@ -28,6 +28,7 @@ eff AnalysisFailure {
 
 mod AnalysisFailure{
     use Json.JsonError.JsonError
+    use Sys.Exit
     use Exit.exit
 
     ///

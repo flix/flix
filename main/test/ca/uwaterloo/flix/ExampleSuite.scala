@@ -25,6 +25,7 @@ class ExampleSuite extends FlixSuite(incremental = true) {
 
   mkTestDir("examples/effects-and-handlers")
   mkTestDir("examples/effects-and-handlers/advanced")
+  mkTestDir("examples/effects-and-handlers/http")
 
   mkTestDir("examples/fixpoints")
 

@@ -34,6 +34,35 @@ sealed trait TypeError extends CompilationMessage {
 }
 
 object TypeError {
+  /**
+    * An error raised when a function expects some effects but the call site uses differing effects
+    *
+    * @param expected the list of effects expected to be present
+    * @param actual   the actual list of effects present
+    * @param loc      the location of the call site
+    * @param loc2     the location of the signature that is expected
+    * @param loc3     the location of the actual effect used
+    */
+  case class ArgumentGivenWrongEffect(expected: List[Symbol.EffSym], actual: List[Symbol.EffSym], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
+    def code: ErrorCode = ErrorCode.E6218
+
+    private val effectsToString = (effs: List[Symbol.EffSym]) => {
+      if (effs.length == 1) s"'${effs.head.name}'"
+      else effs.map(_.name).mkString("{", ", ", "}")
+    }
+    def summary: String = s"Unexpected effect ${effectsToString(actual)} in ${effectsToString(expected)} function"
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s"""
+         |${highlight(loc3, s"${magenta(effectsToString(actual))} defined here", fmt)}
+         |
+         |${highlight(loc, s"caller uses argument with ${magenta(effectsToString(actual))}", fmt)}
+         |
+         |${highlight(loc2, s"callee expects: ${magenta(effectsToString(expected))}", fmt)}
+      """.stripMargin
+    }
+  }
 
   /**
     * Java constructor not found type error.
@@ -180,30 +209,6 @@ object TypeError {
          |it cannot be used in this function. To fix this, either change the signature to {${magenta(effSym.name)}}
          |or remove the use of '${magenta(effSym.name)}' inside the function.
          |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised when an effect is used in a function that is explicitly declared Pure.
-    *
-    * @param effSym the symbol of the effect causing the error
-    * @param loc    the location of the function explicitly declared as {}.
-    * @param loc2   the location where the effect is used.
-    */
-  case class ArgumentGivenWrongEffect(expected: List[Symbol.EffSym], actual: Symbol.EffSym, loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
-    def code: ErrorCode = ErrorCode.E6215
-
-    def summary: String = s"Unexpected effect '${actual.name}' in {} function"
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s"""
-         |${highlight(loc2, s"'${magenta(actual.name)}' defined here", fmt)}
-         |
-         |${highlight(loc3, s"caller uses argument with ${(magenta(actual.name))}", fmt)}
-         |
-         |${highlight(loc, s"callee expects: {${(magenta(expected.foldLeft(""){case (acc, v) => v.name ++ ", " ++ acc}))}}", fmt)}
-      """.stripMargin
     }
   }
 

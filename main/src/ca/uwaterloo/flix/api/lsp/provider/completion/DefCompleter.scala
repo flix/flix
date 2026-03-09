@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.api.lsp.{Position, Range}
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Def, Mod}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
@@ -33,18 +33,47 @@ object DefCompleter {
     val ectx = ExprContext.getExprContext(uri, pos)
 
     if (qn.namespace.nonEmpty) {
-      root.defs.values.collect {
-        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = true) =>
-          DefCompletion(decl, range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
-      }
+      fullyQualifiedCompletion(qn, range, ap, ectx) ++ partiallyQualifiedCompletions(qn, range, ap, scp, ectx)
     } else {
       root.defs.values.collect {
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = false) =>
           val s = inScope(decl, scp)
           val priority = if (s) Priority.High(0) else Priority.Lower(0)
-          DefCompletion(decl, range, priority, ap, qualified = false, inScope = s, ectx)
+          DefCompletion(decl, "", range, priority, ap, qualified = false, inScope = s, ectx)
       }
     }
+  }
+
+  /**
+    * Returns a List of Completion for Def for fully qualified names.
+    */
+  private def fullyQualifiedCompletion(qn: Name.QName, range: Range, ap: AnchorPosition, ectx: ExprContext)(implicit root: Root): Iterable[Completion] = {
+    root.defs.values.collect {
+      case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = true) =>
+        DefCompletion(decl, "", range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
+    }
+  }
+
+  /**
+    * Returns a List of Completion for Def for partially qualified names.
+    *
+    * Example:
+    *   - If `Net.Http.get` is fully qualified, then `Http.get` is partially qualified
+    */
+  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: Root): Iterable[Completion] = {
+    val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
+      case Some(Resolution.Declaration(Mod(_, _, name, _, _, _))) => name.toString
+      case _ => return Nil
+    }
+    val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
+    val fullyQualifiedModule = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
+    val moduleNamespace = fullyQualifiedModule.split('.').toList
+    for {
+      decl <- root.defs.values
+      if CompletionUtils.isAvailable(decl.spec)
+      if decl.sym.namespace == moduleNamespace
+      if CompletionUtils.matchesName(decl.sym, qn, qualified = false)
+    } yield DefCompletion(decl, qn.namespace.toString, range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
   }
 
   /**
