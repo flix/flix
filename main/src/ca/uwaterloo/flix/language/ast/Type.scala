@@ -1402,12 +1402,12 @@ object Type {
       Some(classOf[java.util.regex.Pattern])
     case Type.Cst(TypeConstructor.Native(clazz), _) =>
       Some(clazz)
-    case Type.Apply(_, _, _) =>
+    case _ =>
+      // Peel off type applications (e.g., ArrayList[String]) and check the base type.
       tpe.baseType match {
         case Type.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
         case _ => None
       }
-    case _ => None
   }
 
   /**
