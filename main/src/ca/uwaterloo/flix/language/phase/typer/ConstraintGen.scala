@@ -911,15 +911,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        // Build the constructor's result type, using fresh type variables for generic classes.
-        val numTypeParams = clazz.getTypeParameters.length
-        val clazzTpe = if (numTypeParams > 0) {
-          val baseTpe = Type.mkNative(clazz, loc)
-          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
-          Type.mkApply(baseTpe, typeArgs, loc)
-        } else {
-          Type.getFlixType(clazz)
-        }
+        val clazzTpe = mkConstructorType(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -932,15 +924,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        // Build the super constructor's result type, using fresh type variables for generic classes.
-        val numTypeParams = clazz.getTypeParameters.length
-        val clazzTpe = if (numTypeParams > 0) {
-          val baseTpe = Type.mkNative(clazz, loc)
-          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
-          Type.mkApply(baseTpe, typeArgs, loc)
-        } else {
-          Type.getFlixType(clazz)
-        }
+        val clazzTpe = mkConstructorType(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -1462,6 +1446,18 @@ object ConstraintGen {
     }
     val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
     (instantiatedFields.toMap, tpe, regionOpt)
+  }
+
+  /** Builds the result type for a constructor call, using fresh type variables for generic classes. */
+  private def mkConstructorType(clazz: Class[?], loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type = {
+    val numTypeParams = clazz.getTypeParameters.length
+    if (numTypeParams > 0) {
+      val baseTpe = Type.mkNative(clazz, loc)
+      val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+      Type.mkApply(baseTpe, typeArgs, loc)
+    } else {
+      Type.getFlixType(clazz)
+    }
   }
 
   /** Returns a fresh variable with a synthetic location. */

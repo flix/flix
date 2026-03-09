@@ -327,11 +327,10 @@ object TypeReduction2 {
     case Type.JvmToEff(_, _) => false
     case Type.UnresolvedJvmType(_, _) => false
     case Type.Apply(t1, t2, _) =>
+      // Native type applications are always known because Java erases generics at runtime,
+      // so the type arguments do not affect method/field resolution.
       t1 match {
-        // Native type applications are always known because Java erases generics at runtime,
-        // so the type arguments do not affect method/field resolution.
         case Type.Cst(TypeConstructor.Native(_), _) => true
-        case Type.Apply(_, _, _) if isNativeBase(t1) => isKnown(t1)
         case _ => isKnown(t1) && isKnown(t2)
       }
     case Type.Alias(_, _, t, _) => isKnown(t)
