@@ -329,10 +329,7 @@ object TypeReduction2 {
     case Type.Apply(t1, t2, _) =>
       // Native type applications are always known because Java erases generics at runtime,
       // so the type arguments do not affect method/field resolution.
-      t1 match {
-        case Type.Cst(TypeConstructor.Native(_), _) => true
-        case _ => isKnown(t1) && isKnown(t2)
-      }
+      isNativeBase(tpe) || (isKnown(t1) && isKnown(t2))
     case Type.Alias(_, _, t, _) => isKnown(t)
     case Type.AssocType(_, _, _, _) => false
   }
