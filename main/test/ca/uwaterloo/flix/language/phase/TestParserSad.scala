@@ -505,4 +505,27 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val error = check(input, Options.TestWithLibNix)
     expectError[ParseError.ExpectedSemicolon](error)
   }
+
+  test("ExpectedSemicolon.04") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    2
+        |    bar
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error, allowUnknown = true)
+  }
+
+  test("MissingBinaryOperator.01") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    2 bar
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBinaryOperator](error, allowUnknown = true)
+  }
 }

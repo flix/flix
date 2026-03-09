@@ -1276,55 +1276,65 @@ object Weeder2 {
       val op0 = pick(TreeKind.Operator, tree)
       flatMapN(op0, traverse(exprs)(visitExpr)) {
         case (op, e1 :: e2 :: Nil) =>
-          def mkApply(name: String): Expr.Apply = Expr.Apply(
-            Expr.Ambiguous(Name.mkQName(name, op.loc), op.loc), List(e1, e2),
-            tree.loc
-          )
+          if (op.children.isEmpty) {
+            // Synthetic empty operator inserted by the parser for a missing binary operator.
+            // Highlight the space between the two expressions.
+            val betweenLoc = SourceLocation(isReal = true, e1.loc.source, e1.loc.end, e2.loc.start)
+            val error = ParseError.MissingBinaryOperator(SyntacticContext.Expr.OtherExpr, betweenLoc)
+            sctx.errors.add(error)
+            Validation.Success(Expr.Error(error))
+          } else {
+            def mkApply(name: String): Expr.Apply = Expr.Apply(
+              Expr.Ambiguous(Name.mkQName(name, op.loc), op.loc), List(e1, e2),
+              tree.loc
+            )
 
-          tryPickQName(op) match {
-            case Some(name) =>
-              // Infix Operator.
-              val opExpr = Expr.Ambiguous(name, op.loc)
-              Validation.Success(Expr.Infix(e1, opExpr, e2, tree.loc))
-            case None =>
-              // Single Token Operator.
-              op.children.head match {
-                // Standard operators.
-                case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
-                  Validation.Success(mkApply(tokenOperatorToName(kind).get))
+            tryPickQName(op) match {
+              case Some(name) =>
+                // Infix Operator.
+                val opExpr = Expr.Ambiguous(name, op.loc)
+                Validation.Success(Expr.Infix(e1, opExpr, e2, tree.loc))
+              case None =>
+                // Single Token Operator.
+                op.children.head match {
+                  // Standard operators.
+                  case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
+                    Validation.Success(mkApply(tokenOperatorToName(kind).get))
 
-                // Special cases that create different AST nodes
-                case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
-                case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
-                case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-                case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
-                case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
-                  tryPickQName(exprs(1)) match {
-                    case Some(qname) =>
-                      if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
-                      else {
-                        val error = IllegalQualifiedName(exprs(1).loc)
+                  // Special cases that create different AST nodes
+                  case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
+                  case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
+                  case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
+                  case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
+                  case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
+                    tryPickQName(exprs(1)) match {
+                      case Some(qname) =>
+                        if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                        else {
+                          val error = IllegalQualifiedName(exprs(1).loc)
+                          sctx.errors.add(error)
+                          Validation.Success(Expr.Error(error))
+                        }
+                      case None =>
+                        val error = UnexpectedToken(
+                          NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
+                          None,
+                          SyntacticContext.Expr.OtherExpr,
+                          hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
+                          loc = exprs(1).loc
+                        )
                         sctx.errors.add(error)
                         Validation.Success(Expr.Error(error))
-                      }
-                    case None =>
-                      val error = UnexpectedToken(
-                        NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
-                        None,
-                        SyntacticContext.Expr.OtherExpr,
-                        hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
-                        loc = exprs(1).loc
-                      )
-                      sctx.errors.add(error)
-                      Validation.Success(Expr.Error(error))
-                  }
-                case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
-                  val ident = Name.Ident(token.text, op.loc)
-                  Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
-                case _ =>
-                  throw InternalCompilerException(s"Expr.Binary operator not recognized", tree.loc)
-              }
+                    }
+                  case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+                    val ident = Name.Ident(token.text, op.loc)
+                    Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
+                  case _ =>
+                    throw InternalCompilerException(s"Expr.Binary operator not recognized", tree.loc)
+                }
+            }
           }
+
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
     }
