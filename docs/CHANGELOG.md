@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.69.1:
+- Library: Add `Abort.abortWithTrace` (thanks Magnus!)
+
 Version 0.69.0:
 - Compiler: Added tail recursion and termination checker (thanks Magnus!)
 - Compiler: Improved Java interoperability for new object creation (thanks Magnus!)

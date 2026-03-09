@@ -16,17 +16,19 @@
 
 pub mod Time.Duration {
 
+    use Time.TimeUnit
+
     /// Returns the zero duration.
     pub def zero(): Time.Duration = Time.Duration.Duration(0i64)
 
     /// Returns a duration of `n` in the given time unit `u`.
-    pub def of(n: Int64, u: TimeUnit): Time.Duration = match u {
+    pub def of(n: Int32, u: TimeUnit): Time.Duration = match u {
         case TimeUnit.Days         => days(n),
         case TimeUnit.Hours        => hours(n),
         case TimeUnit.Microseconds => microseconds(n),
         case TimeUnit.Milliseconds => milliseconds(n),
         case TimeUnit.Minutes      => minutes(n),
-        case TimeUnit.Nanoseconds  => nanoseconds(n),
+        case TimeUnit.Nanoseconds  => nanoseconds(Int32.toInt64(n)),
         case TimeUnit.Seconds      => seconds(n)
     }
 
@@ -34,22 +36,22 @@ pub mod Time.Duration {
     pub def nanoseconds(n: Int64): Time.Duration = Time.Duration.Duration(n)
 
     /// Returns a duration of `n` microseconds.
-    pub def microseconds(n: Int64): Time.Duration = Time.Duration.Duration(n * 1_000i64)
+    pub def microseconds(n: Int32): Time.Duration = Time.Duration.Duration(Int32.toInt64(n) * 1_000i64)
 
     /// Returns a duration of `n` milliseconds.
-    pub def milliseconds(n: Int64): Time.Duration = Time.Duration.Duration(n * 1_000_000i64)
+    pub def milliseconds(n: Int32): Time.Duration = Time.Duration.Duration(Int32.toInt64(n) * 1_000_000i64)
 
     /// Returns a duration of `n` seconds.
-    pub def seconds(n: Int64): Time.Duration = Time.Duration.Duration(n * 1_000_000_000i64)
+    pub def seconds(n: Int32): Time.Duration = Time.Duration.Duration(Int32.toInt64(n) * 1_000_000_000i64)
 
     /// Returns a duration of `n` minutes.
-    pub def minutes(n: Int64): Time.Duration = Time.Duration.Duration(n * 60_000_000_000i64)
+    pub def minutes(n: Int32): Time.Duration = Time.Duration.Duration(Int32.toInt64(n) * 60_000_000_000i64)
 
     /// Returns a duration of `n` hours.
-    pub def hours(n: Int64): Time.Duration = Time.Duration.Duration(n * 3_600_000_000_000i64)
+    pub def hours(n: Int32): Time.Duration = Time.Duration.Duration(Int32.toInt64(n) * 3_600_000_000_000i64)
 
     /// Returns a duration of `n` days.
-    pub def days(n: Int64): Time.Duration = Time.Duration.Duration(n * 86_400_000_000_000i64)
+    pub def days(n: Int32): Time.Duration = Time.Duration.Duration(Int32.toInt64(n) * 86_400_000_000_000i64)
 
     /// Returns the total number of nanoseconds in `d`.
     pub def toNanos(d: Time.Duration): Int64 =

@@ -22,11 +22,13 @@ eff Clock {
     ///
     /// Returns a measure of time since the epoch in the given time unit `u`.
     ///
-    def currentTime(u: TimeUnit): Int64
+    def currentTime(u: Time.TimeUnit): Int64
 
 }
 
 pub mod Clock {
+
+    use Time.TimeUnit
 
     import java.lang.System
     import java.util.concurrent.{TimeUnit => JTimeUnit}
