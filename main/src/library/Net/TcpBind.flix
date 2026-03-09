@@ -14,54 +14,47 @@
  *  limitations under the License.
  */
 
-use Net.IpAddr
-
-///
-/// The effect used to bind a TCP server.
-///
-eff TcpBindWithResult {
-    def bind(ip: IpAddr, port: Int16): Result[IoError, TcpServer]
-}
-
-pub mod TcpBindWithResult {
-    import java.net.InetAddress
-    import java.net.ServerSocket
+pub mod Net.TcpBind {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.IpAddr
+    use Net.TcpServer
+    use Net.TcpServer.TcpServer
 
+    import java.net.InetAddress
+    import java.net.ServerSocket
     import java.io.IOException
     import java.lang.IllegalArgumentException
 
     ///
-    /// Handles the `Tcp` effect of the given function `f`.
+    /// Handles the `TcpBind` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpBindWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `TcpBind` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpBindWithResult + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - TcpBind) + IO = x ->
         run {
             f(x)
-        } with handler TcpBindWithResult {
-            def bind(ip, port, resume) = {
+        } with handler TcpBind {
+            def bind(ip, port, k) = {
                 try {
                     let inet: InetAddress = InetAddress.getByAddress(IpAddr.toBytes(ip));
                     let maxQueueLength = 50;
                     let socket = new ServerSocket(Int16.toInt32(port), maxQueueLength, inet);
-                    let server = TcpServer.TcpServer(socket);
-                    resume(Ok(server))
+                    let server = TcpServer(socket);
+                    k(Ok(server))
                 } catch {
-                    case ex: IllegalArgumentException => resume(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: IOException              => resume(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }
 
     ///
-    /// Runs the `TcpBindWithResult` effect of the given function `f`.
+    /// Runs the `TcpBind` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpBindWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `TcpBind` effect using the `IO` effect.
     ///
     @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpBindWithResult) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpBind) + IO = handle(f)()
 
 }

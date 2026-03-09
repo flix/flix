@@ -14,43 +14,36 @@
  *  limitations under the License.
  */
 
-use Net.TcpSocket
-
-///
-/// The effect used to accept a TCP server connection.
-///
-eff TcpAccept {
-    def accept(server: TcpServer): TcpSocket
-}
-
-pub mod TcpAccept {
+pub mod Net.TcpAccept {
     use IoError.ErrorKind
     use IoError.IoError
+    use Net.TcpServer
+    use Net.TcpServer.TcpServer
     use Net.TcpSocket
+    use Net.TcpSocket.TcpSocket
 
     import java.io.IOException
     import java.net.SocketTimeoutException
-    import java.nio.channels.IllegalBlockingModeException
 
     ///
     /// Handles the `TcpAccept` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `TcpAccept` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - TcpAccept + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - TcpAccept) + IO = x ->
         run {
-            Ok(f(x))
+            f(x)
         } with handler TcpAccept {
-            def accept(server, resume) = {
+            def accept(server, k) = {
                 try {
-                    let TcpServer.TcpServer(serverSocket) = server;
+                    let TcpServer(serverSocket) = server;
                     let socket = serverSocket.accept();
                     let inputStream = socket.getInputStream();
                     let outputStream = socket.getOutputStream();
-                    resume(TcpSocket.TcpSocket(socket, inputStream, outputStream))
+                    k(Ok(TcpSocket(socket, inputStream, outputStream)))
                 } catch {
-                    case ex: SocketTimeoutException => Err(IoError(ErrorKind.Timeout, ex.getMessage()))
-                    case ex: IOException            => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: SocketTimeoutException => k(Err(IoError(ErrorKind.Timeout, ex.getMessage())))
+                    case ex: IOException            => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }
@@ -60,6 +53,7 @@ pub mod TcpAccept {
     ///
     /// In other words, re-interprets the `TcpAccept` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - TcpAccept + IO = handle(f)()
+    @DefaultHandler
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - TcpAccept) + IO = handle(f)()
 
 }
