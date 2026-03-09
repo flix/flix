@@ -301,6 +301,27 @@ object ParseError {
   }
 
   /**
+    * An error raised to indicate that a Backslash was expected, but got a Slash.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class ExpectedBackslashGotSlash(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3795
+    def summary: String = s"Expected '\\' got '/'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected '\\' got '/'
+         |
+         |${src(loc, s"Use '\\' instead of '/'")}
+         |""".stripMargin
+    }
+
+  }
+
+  /**
     * An error raised to indicate that a Thick Right Arrow was expected, but got a Thin Right Arrow
     *
     * @param sctx      The syntactic context.
@@ -316,6 +337,30 @@ object ParseError {
       s""">> Expected '=>' got '->'
          |
          |${src(loc, s"Use '=>' instead of '->'")}
+         |""".stripMargin
+    }
+
+  }
+
+
+  /**
+    * An error raised to indicate that a semicolon was expected.
+    *
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    * @param found     The token that was found instead.
+    */
+  case class ExpectedSemicolon(sctx: SyntacticContext, loc: SourceLocation, found: TokenKind) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E3190
+
+    def summary: String = s"Expected ';' but found '$found'"
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Expected ';' but found '$found'
+         |
+         |${src(loc, s"Expected ';' here")}
          |""".stripMargin
     }
 

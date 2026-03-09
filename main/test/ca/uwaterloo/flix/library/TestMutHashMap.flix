@@ -381,6 +381,29 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // getOrAbort                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getOrAbort01(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, "one", m);
+        let r = run {
+            MutHashMap.getOrAbort(1, m)
+        } with Abort.runWithResult;
+        assertEq(expected = Ok("one"), r)
+    }
+
+    @Test
+    def getOrAbort02(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, _] = MutHashMap.empty(rc);
+        let r = run {
+            MutHashMap.getOrAbort(1, m)
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // putWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
