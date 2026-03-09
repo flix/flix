@@ -1,3 +1,5 @@
+use Time.TimeUnit
+
 def main(): Unit \ IO =
     run {
         let timestamp = Clock.currentTime(TimeUnit.Milliseconds);
