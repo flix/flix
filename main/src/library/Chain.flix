@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{Iterator => JIterator}
-import java.util.{List => JList}
 
 ///
 /// The Chain type.
@@ -130,20 +128,6 @@ instance Iterable[Chain[a]] {
 instance ForEach[Chain[a]] {
     type Elm = a
     pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = Chain.forEach(f, c)
-}
-
-instance ToJava[Chain[a]] {
-    type Out = JList
-    type Aef = IO
-    pub def toJava(c: Chain[a]): JList \ IO = Adaptor.toList(c)
-}
-
-instance ToFlix[Chain[a]] {
-    type In = JList
-    pub def toFlix(l: JList): Chain[a] = region rc {
-        let it = unsafe IO { l.iterator() };
-        it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
-    }
 }
 
 pub mod Chain {

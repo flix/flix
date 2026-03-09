@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{List => JList}
 
 ///
 /// The List type.
@@ -146,16 +145,6 @@ instance ForEach[List[a]] {
     pub def forEach(f: a -> Unit \ ef, t: List[a]): Unit \ ef = List.forEach(f, t)
 }
 
-instance ToJava[List[a]] {
-    type Out = JList
-    type Aef = IO
-    pub def toJava(l: List[a]): JList \ IO = Adaptor.toList(l)
-}
-
-instance ToFlix[List[a]] {
-    type In = JList
-    pub def toFlix(l: JList): List[a] = Adaptor.fromList(l)
-}
 
 pub mod List {
 

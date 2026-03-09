@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Type.getFlixType
+import ca.uwaterloo.flix.language.ast.Type.getFlixTypeApplied
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -427,7 +427,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.getFlixType(clazz)
+      val tpe = Type.getFlixTypeApplied(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -440,7 +440,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.getFlixType(clazz)
+      val tpe = Type.getFlixTypeApplied(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -457,7 +457,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
           val es = getArgumentsWithVarArgs(method, es0, methLoc)
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, methLoc)
         case _ =>
@@ -470,7 +470,7 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
           val es = getArgumentsWithVarArgs(method, es0, methLoc)
           TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, methLoc)
         case _ =>
@@ -483,7 +483,7 @@ object TypeReconstruction {
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
           val es = getArgumentsWithVarArgs(method, es0, methLoc)
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, methLoc)
         case _ =>
@@ -510,7 +510,7 @@ object TypeReconstruction {
       TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.GetStaticField(field, loc) =>
-      val tpe = getFlixType(field.getType)
+      val tpe = getFlixTypeApplied(field.getType, loc)
       val eff = Type.IO
       TypedAst.Expr.GetStaticField(field, tpe, eff, loc)
 
@@ -521,7 +521,7 @@ object TypeReconstruction {
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.NewObject(name, clazz, constructors, methods, loc) =>
-      val tpe = getFlixType(clazz)
+      val tpe = getFlixTypeApplied(clazz, loc)
       val eff = Type.IO
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
