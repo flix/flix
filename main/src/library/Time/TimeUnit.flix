@@ -16,10 +16,12 @@
 
 pub mod Time.TimeUnit {
 
+    use Time.TimeUnit
+
     ///
     /// Returns the number of milliseconds for timeunit `u`
     ///
-    pub def toMilliseconds(u: TimeUnit): Int32 = match u {
+    pub def toMilliseconds(u: Time.TimeUnit): Int32 = match u {
            case TimeUnit.Days         => 24 * 60 * 60 * 1_000,
            case TimeUnit.Hours        => 60 * 60 * 1_000,
            case TimeUnit.Microseconds => 1 / 1_000,
