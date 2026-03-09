@@ -248,7 +248,7 @@ pub mod Net {
     /// The effect used to determine if an address is reachable.
     ///
     pub eff Ping {
-        def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
+        def isReachable(host: IpAddr, timeout: Int32, u: Time.TimeUnit): Result[IoError, Bool]
     }
 
     ///

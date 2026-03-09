@@ -21,6 +21,19 @@ pub mod Time {
     ///
     pub enum Duration(Int64) with Eq, Order, Hash
 
+    ///
+    /// Represents a time unit.
+    ///
+    pub enum TimeUnit with Eq, ToString {
+        case Days,
+        case Hours,
+        case Microseconds,
+        case Milliseconds,
+        case Minutes,
+        case Nanoseconds,
+        case Seconds
+    }
+
 }
 
 instance Add[Time.Duration] {

@@ -127,7 +127,7 @@ pub mod Sys {
         /// Waits at most `time` (in the given `tUnit`) for the process `ph` to finish.
         /// Returns `true` if the process exited, `false` if the timeout elapsed.
         ///
-        def waitForTimeout(ph: ProcessHandle, time: Int64, tUnit: TimeUnit): Result[IoError, Bool]
+        def waitForTimeout(ph: ProcessHandle, time: Int64, tUnit: Time.TimeUnit): Result[IoError, Bool]
 
     }
 

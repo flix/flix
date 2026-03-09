@@ -155,7 +155,7 @@ pub mod Sys.Process {
 
             def waitForTimeout(ph, time, unit, k) =
                 try {
-                    let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
+                    let timeMS = time * Int32.toInt64(Time.TimeUnit.toMilliseconds(unit));
                     let ProcessHandle(p) = ph;
                     let exitVal = p.waitFor(timeMS, JTimeUnit.MILLISECONDS);
                     k(Ok(exitVal))

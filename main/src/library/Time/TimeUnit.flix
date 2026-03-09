@@ -1,0 +1,32 @@
+/*
+ * Copyright 2024 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+pub mod Time.TimeUnit {
+
+    ///
+    /// Returns the number of milliseconds for timeunit `u`
+    ///
+    pub def toMilliseconds(u: Time.TimeUnit): Int32 = match u {
+           case Time.TimeUnit.Days         => 24 * 60 * 60 * 1_000,
+           case Time.TimeUnit.Hours        => 60 * 60 * 1_000,
+           case Time.TimeUnit.Microseconds => 1 / 1_000,
+           case Time.TimeUnit.Milliseconds => 1,
+           case Time.TimeUnit.Minutes      => 60 * 1_000,
+           case Time.TimeUnit.Nanoseconds  => 1 / 1_000_000,
+           case Time.TimeUnit.Seconds      => 1_000
+        }
+
+}
