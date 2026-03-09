@@ -94,15 +94,15 @@ object TypeReduction2 {
       reduce(tpe, scope, renv) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          getFlixTypeWithFreshVars(constructor.getDeclaringClass, loc, scope)
+          getFlixTypeWithFreshVars(constructor.getDeclaringClass, scope, loc)
 
         case Type.Cst(TypeConstructor.JvmMethod(method, receiverType), _) =>
           progress.markProgress()
-          resolveMethodReturnType(method, receiverType, loc, scope)
+          resolveMethodReturnType(method, receiverType, scope, loc)
 
         case Type.Cst(TypeConstructor.JvmField(field), _) =>
           progress.markProgress()
-          getFlixTypeWithFreshVars(field.getType, loc, scope)
+          getFlixTypeWithFreshVars(field.getType, scope, loc)
 
         case t => Type.JvmToType(t, loc)
       }
@@ -328,6 +328,8 @@ object TypeReduction2 {
     case Type.UnresolvedJvmType(_, _) => false
     case Type.Apply(t1, t2, _) =>
       t1 match {
+        // Native type applications are always known because Java erases generics at runtime,
+        // so the type arguments do not affect method/field resolution.
         case Type.Cst(TypeConstructor.Native(_), _) => true
         case Type.Apply(_, _, _) if isNativeBase(t1) => isKnown(t1)
         case _ => isKnown(t1) && isKnown(t2)
@@ -404,7 +406,7 @@ object TypeReduction2 {
   }
 
   /** Like `getFlixTypeApplied` but uses fresh type variables instead of `Object`. */
-  private def getFlixTypeWithFreshVars(clazz: Class[?], loc: SourceLocation, scope: Scope)(implicit flix: Flix): Type = {
+  private def getFlixTypeWithFreshVars(clazz: Class[?], scope: Scope, loc: SourceLocation)(implicit flix: Flix): Type = {
     val base = Type.getFlixType(clazz)
     val n = clazz.getTypeParameters.length
     if (n > 0) Type.mkApply(base, List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix)), loc)
@@ -414,24 +416,32 @@ object TypeReduction2 {
   /**
     * Resolves the return type of `method`, using generic type information when available.
     *
-    * Only resolves type variable returns (e.g., `E` from `ArrayList.get`) by mapping them
-    * to the receiver's concrete type arguments. For all other return types (concrete classes,
-    * parameterized types like `List<String>`, etc.), falls back to the erased `getReturnType`
-    * behavior to preserve backward compatibility with existing code that relies on fresh type
-    * variables for invariant Java generic types.
+    * When the method's generic return type is a type variable, builds a substitution from
+    * the receiver's type arguments and applies it to determine the concrete return type.
+    * For all other return types (concrete classes, parameterized types, etc.), falls back
+    * to the erased `getReturnType` with fresh type variables.
+    *
+    * Example 1: `ArrayList[String].get(int)` -- the generic return type is `E`.
+    *   The receiver `ArrayList[String]` maps `E -> String`, so the result is `String`.
+    *
+    * Example 2: `HashMap[String, Int32].get(Object)` -- the generic return type is `V`.
+    *   The receiver `HashMap[String, Int32]` maps `K -> String, V -> Int32`, so the result is `Int32`.
+    *
+    * Example 3: `String.length()` -- the return type is `int` (not a type variable).
+    *   Falls back to `getFlixTypeWithFreshVars(int)` which yields `Int32`.
     */
   private def resolveMethodReturnType(method: Method, receiverType: Option[Type],
-      loc: SourceLocation, scope: Scope)(implicit flix: Flix): Type = {
+      scope: Scope, loc: SourceLocation)(implicit flix: Flix): Type = {
     method.getGenericReturnType match {
       case tv: TypeVariable[_] =>
         // Return type is a type variable (e.g., E from ArrayList<E>.get()).
         // Build a substitution from the receiver's type arguments and look up the variable.
-        val substMap = buildTypeVarSubstitution(method, receiverType, loc, scope)
-        substMap.getOrElse(tv.getName, getFlixTypeWithFreshVars(method.getReturnType, loc, scope))
+        val substMap = buildTypeVarSubstitution(method, receiverType, scope, loc)
+        substMap.getOrElse(tv.getName, getFlixTypeWithFreshVars(method.getReturnType, scope, loc))
       case _ =>
         // Non-type-variable return (Class, ParameterizedType, etc.).
         // Use erased return type with fresh vars for backward compatibility.
-        getFlixTypeWithFreshVars(method.getReturnType, loc, scope)
+        getFlixTypeWithFreshVars(method.getReturnType, scope, loc)
     }
   }
 
@@ -440,13 +450,16 @@ object TypeReduction2 {
     * using the receiver's type arguments for class-level type parameters and fresh variables
     * for method-level type parameters.
     *
+    * Example: For `HashMap[String, Int32].get(Object)`, where `HashMap<K, V>` declares
+    * type parameters `K` and `V`, this produces the mapping `{"K" -> String, "V" -> Int32}`.
+    *
     * Class-level type arguments that are themselves type variables (e.g., from `HttpResponse[?v]`)
     * are excluded from the substitution. This prevents returning unconstrained type variables that
     * become `AnyType` when the result is used in a context (like `unchecked_cast`) that doesn't
     * constrain the type. Excluded variables fall back to the erased return type via `getOrElse`.
     */
   private def buildTypeVarSubstitution(method: Method, receiverType: Option[Type],
-      loc: SourceLocation, scope: Scope)(implicit flix: Flix): Map[String, Type] = {
+      scope: Scope, loc: SourceLocation)(implicit flix: Flix): Map[String, Type] = {
     // Class-level type param names (e.g., "E" from ArrayList<E>).
     // Extract names eagerly to avoid existential type inference issues.
     val classParamNames: Array[String] = method.getDeclaringClass.getTypeParameters.map(_.getName)
