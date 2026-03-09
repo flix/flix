@@ -210,7 +210,7 @@ object EffectProvenance {
       }
     }
 
-    def helper(ml: MapLattice): MapLattice = {
+    def reachingDefinitions(ml: MapLattice): MapLattice = {
       graph.edges.foldLeft(ml) {
         case (acc, Edge(from, to, loc)) =>
           // one constraint:
@@ -228,9 +228,9 @@ object EffectProvenance {
     }
 
     // Naive fixed-point algorithm
-    var fp = helper(Map.empty: MapLattice)
-    while (fp != helper(fp)) {
-      fp = helper(fp)
+    var fp = reachingDefinitions(Map.empty: MapLattice)
+    while (fp != reachingDefinitions(fp)) {
+      fp = reachingDefinitions(fp)
     }
     // Solving the gathered constraints i.e.
     val res = fp.foldLeft(List.empty[EffConflicted]) {
@@ -327,7 +327,7 @@ object EffectProvenance {
     *
     * A conflict occurs when there is a mismatch on the left hand side and the set that it maps to.
     *
-    * @param sink from the map lattice. The vertex which maps to a set of vertices
+    * @param sink     from the map lattice. The vertex which maps to a set of vertices
     * @param incoming the set of vertices that reach the sink
     * @return a list containing the error(s) (if any)
     */
@@ -351,10 +351,8 @@ object EffectProvenance {
     }
 
     def complexError(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)], symList: List[Symbol.EffSym], lhsLoc: SourceLocation) = {
-      val used = forwardPass(lhs, rhs)
-      // all of the used effects must be in the signature:
-      val defined = backwardsPass(lhs, rhs)
-      val e1: List[EffConflicted] = if (used.nonEmpty) used.flatMap {
+      val unused = forwardPass(lhs, rhs)
+      val e1: List[EffConflicted] = if (unused.nonEmpty) unused.flatMap {
         case IOVertex(loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(Symbol.IO, loc)))
         case CstVertex(sym, loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(sym, loc)))
         case RigidVarVertex(sym, loc) => kSymToEffSym(sym).map(
@@ -362,7 +360,10 @@ object EffectProvenance {
         )
         case _ => None
       } else Nil
-      val e2: List[EffConflicted] = if (defined.nonEmpty) defined.flatMap {
+
+      // all of the used effects must be in the signature:
+      val undefined = backwardsPass(lhs, rhs)
+      val e2: List[EffConflicted] = if (undefined.nonEmpty) undefined.flatMap {
         case (IOVertex(loc), _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Symbol.IO, lhsLoc, loc)))
         case (CstVertex(sym, loc), _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, sym, lhsLoc, loc)))
         case (RigidVarVertex(sym, loc), _) => kSymToEffSym(sym).map(
@@ -409,16 +410,18 @@ object EffectProvenance {
         case RigidVarVertex(_, _) :: Nil => Nil
         case VarVertex(_) :: Nil => Nil
         case _ =>
-          val prov = ys match {
-            case (_, loc) :: _ => Some(loc)
+          val ordYs = ys.sortBy(e => e._2)
+          val prov = ordYs.last match {
+            case (_, loc) => Some(loc)
             case _ => None
           }
 
           val errOpt = (v: (Vertex, SourceLocation)) => v match {
-            case (IOVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), Symbol.IO, aLoc, loc, prov.getOrElse(provLoc))))
-            case (CstVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), sym, aLoc, loc, provLoc)))
+            case (PureImplicitVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.mkEffSym("Pure")), prov.getOrElse(provLoc), aLoc, provLoc)))
+            case (IOVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.IO), prov.getOrElse(provLoc), aLoc, loc)))
+            case (CstVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(sym), prov.getOrElse(provLoc), aLoc, loc)))
             case (RigidVarVertex(sym, loc), provLoc) => kSymToEffSym(sym).map(
-              effSym => TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), effSym, aLoc, loc, provLoc))
+              effSym => TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(effSym), loc, aLoc, provLoc))
             )
             case _ => None
           }
@@ -426,9 +429,11 @@ object EffectProvenance {
           // checks if arguments are used on the right hand side
           val a = !xs.forall(e => ys.exists(i => sameType(e, i._1)))
           // checks if the right hand side are used in the arguments
-          val b = !ys.forall(i => xs.exists(e => sameType(e, i._1)))
-
-
+          val b = !ys.forall {
+            // Ignore flexible variables
+            case (VarVertex(_), _) => true
+            case i => xs.exists(e => sameType(e, i._1))
+          }
           if (a || b) ys.flatMap(errOpt) else Nil
       }
       case (s@SignatureVertex(xs, sigLoc), ys) => xs match {
@@ -436,7 +441,7 @@ object EffectProvenance {
         case x :: Nil => mkError(x, ys.toSet)
         case _ => complexError(xs, ys, s.symbols(), sigLoc)
       }
-      case (x, ys) => ys.flatMap { case (y, _) => simpleErrors(x, y) }
+      case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, _) => simpleErrors(x, y) }
       case _ => Nil
     }
   }
@@ -471,8 +476,8 @@ object EffectProvenance {
           }
           case Symbol.Debug => Nil
           case eff => vtpe match {
-            case SinkNode | ArgNode => List(CstVertex(eff, loc))
-            case SourceNode | IntermediateNode => List(CstVertex(eff, constLoc))
+            case SinkNode | SourceNode | ArgNode => List(CstVertex(eff, loc))
+            case IntermediateNode => List(CstVertex(eff, constLoc))
           }
         }
         case _ => List()
