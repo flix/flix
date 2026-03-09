@@ -264,7 +264,12 @@ object TypeConstructor {
   case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, kind: Kind) extends TypeConstructor
 
   /**
-    * A type constructor that represent the type of JVM classes.
+    * A type constructor that represents the type of JVM classes.
+    *
+    * The kind depends on the number of type parameters of the class:
+    * - `Native(classOf[String])` has kind `Star` (no type parameters).
+    * - `Native(classOf[ArrayList])` has kind `Star -> Star` (one type parameter).
+    * - `Native(classOf[HashMap])` has kind `Star -> Star -> Star` (two type parameters).
     */
   case class Native(clazz: Class[?]) extends TypeConstructor {
     def kind: Kind = Kind.mkArrow(clazz.getTypeParameters.length)
@@ -278,9 +283,15 @@ object TypeConstructor {
   }
 
   /**
-   * A type constructor that represents the type of a Java method.
-   */
-  case class JvmMethod(method: Method, receiverType: Option[Type] = None) extends TypeConstructor {
+    * A type constructor that represents the type of a Java method.
+    *
+    * The `receiverType` is the Flix type of the object on which the method is invoked.
+    * It is used to resolve generic return types by mapping Java type variables to
+    * the receiver's concrete type arguments. For object methods, `receiverType` is
+    * `Some(tpe)` where `tpe` is the receiver's type (e.g., `ArrayList[String]`).
+    * For static methods, `receiverType` is `None` since there is no receiver.
+    */
+  case class JvmMethod(method: Method, receiverType: Option[Type]) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }
 

@@ -1211,10 +1211,11 @@ object Resolver {
     case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
       //
-      // Check that the type is a JVM type (after type alias erasure).
-      // Set the super class on the scope for constructor/method bodies.
+      // Extract the native class from the erased type. We erase type aliases first
+      // because the type may be wrapped in an alias (e.g., `type JList = ##java.util.ArrayList`),
+      // and we need to look through that to find the underlying `Native` type constructor.
       //
-      extractNativeClass(UnkindedType.eraseAliases(t)) match {
+      getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
         case Some(clazz) =>
           val superScp = scp0.withSuperClass(Some(clazz))
           val cs = constructors.map(visitJvmConstructor(_, superScp))
@@ -3347,11 +3348,15 @@ object Resolver {
   private def mkTypeVarScp(sym: Symbol.RegionSym): LocalScope = LocalScope.singleton(sym.text, Resolution.Region(sym))
 
   /**
-    * Extracts the Java class from a (possibly applied) native unkinded type.
+    * Looks up the Java class from a (possibly applied) native unkinded type by
+    * traversing type applications to find the base `Native` type constructor.
+    *
+    * Example: `UnkindedType.Cst(Native(classOf[String]))` returns `Some(classOf[String])`.
+    * Example: `UnkindedType.Apply(Cst(Native(classOf[ArrayList])), Cst(Native(classOf[String])))` returns `Some(classOf[ArrayList])`.
     */
-  private def extractNativeClass(tpe: UnkindedType): Option[Class[?]] = tpe match {
+  private def getNativeClassFromType(tpe: UnkindedType): Option[Class[?]] = tpe match {
     case UnkindedType.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
-    case UnkindedType.Apply(t1, _, _) => extractNativeClass(t1)
+    case UnkindedType.Apply(t1, _, _) => getNativeClassFromType(t1)
     case _ => None
   }
 

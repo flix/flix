@@ -880,7 +880,7 @@ object Safety {
   private def getInstanceMethods(clazz: Class[?]): Map[MethodSignature, java.lang.reflect.Method] = {
     val methods = JvmUtils.getInstanceMethods(clazz)
     methods.map(m => {
-      val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixTypeApplied), Type.getFlixTypeApplied(m.getReturnType))
+      val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixTypeApplied(_, SourceLocation.Unknown)), Type.getFlixTypeApplied(m.getReturnType, SourceLocation.Unknown))
       signature -> m
     }).toMap
   }
