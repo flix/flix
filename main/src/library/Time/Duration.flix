@@ -16,18 +16,20 @@
 
 pub mod Time.Duration {
 
+    use Time.TimeUnit
+
     /// Returns the zero duration.
     pub def zero(): Time.Duration = Time.Duration.Duration(0i64)
 
     /// Returns a duration of `n` in the given time unit `u`.
-    pub def of(n: Int32, u: Time.TimeUnit): Time.Duration = match u {
-        case Time.TimeUnit.Days         => days(n),
-        case Time.TimeUnit.Hours        => hours(n),
-        case Time.TimeUnit.Microseconds => microseconds(n),
-        case Time.TimeUnit.Milliseconds => milliseconds(n),
-        case Time.TimeUnit.Minutes      => minutes(n),
-        case Time.TimeUnit.Nanoseconds  => nanoseconds(Int32.toInt64(n)),
-        case Time.TimeUnit.Seconds      => seconds(n)
+    pub def of(n: Int32, u: TimeUnit): Time.Duration = match u {
+        case TimeUnit.Days         => days(n),
+        case TimeUnit.Hours        => hours(n),
+        case TimeUnit.Microseconds => microseconds(n),
+        case TimeUnit.Milliseconds => milliseconds(n),
+        case TimeUnit.Minutes      => minutes(n),
+        case TimeUnit.Nanoseconds  => nanoseconds(Int32.toInt64(n)),
+        case TimeUnit.Seconds      => seconds(n)
     }
 
     /// Returns a duration of `n` nanoseconds.

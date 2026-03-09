@@ -16,6 +16,8 @@
 
 pub mod Channel {
 
+    use Time.TimeUnit
+
     import java.lang.{Thread => JThread}
 
     ///
@@ -47,8 +49,8 @@ pub mod Channel {
     ///
     /// Returns a channel that receives the `Unit` message after `duration` in the given time `unit`.
     ///
-    pub def timeout(duration: Int32, unit: Time.TimeUnit): Receiver[Unit] \ {Chan, IO} =
-        let millis =  Int32.toInt64(duration * Time.TimeUnit.toMilliseconds(unit));
+    pub def timeout(duration: Int32, unit: TimeUnit): Receiver[Unit] \ {Chan, IO} =
+        let millis =  Int32.toInt64(duration * TimeUnit.toMilliseconds(unit));
         let (tx, rx) = Channel.buffered(1);
         spawn { JThread.sleep(millis); send((), tx) } @ Static;
         rx

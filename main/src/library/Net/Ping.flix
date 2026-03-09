@@ -18,6 +18,7 @@ pub mod Net.Ping {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.IpAddr
+    use Time.TimeUnit
 
     import java.io.IOException
     import java.lang.IllegalArgumentException
@@ -35,7 +36,7 @@ pub mod Net.Ping {
         } with handler Ping {
             def isReachable(host, timeout, u, k) = {
                 try {
-                    let ms = Time.TimeUnit.toMilliseconds(u);
+                    let ms = TimeUnit.toMilliseconds(u);
                     let timeoutMs = ms * timeout;
                     let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
                     k(Ok(addr.isReachable(timeoutMs)))

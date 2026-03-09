@@ -19,14 +19,14 @@ pub mod Time.TimeUnit {
     ///
     /// Returns the number of milliseconds for timeunit `u`
     ///
-    pub def toMilliseconds(u: Time.TimeUnit): Int32 = match u {
-           case Time.TimeUnit.Days         => 24 * 60 * 60 * 1_000,
-           case Time.TimeUnit.Hours        => 60 * 60 * 1_000,
-           case Time.TimeUnit.Microseconds => 1 / 1_000,
-           case Time.TimeUnit.Milliseconds => 1,
-           case Time.TimeUnit.Minutes      => 60 * 1_000,
-           case Time.TimeUnit.Nanoseconds  => 1 / 1_000_000,
-           case Time.TimeUnit.Seconds      => 1_000
+    pub def toMilliseconds(u: TimeUnit): Int32 = match u {
+           case TimeUnit.Days         => 24 * 60 * 60 * 1_000,
+           case TimeUnit.Hours        => 60 * 60 * 1_000,
+           case TimeUnit.Microseconds => 1 / 1_000,
+           case TimeUnit.Milliseconds => 1,
+           case TimeUnit.Minutes      => 60 * 1_000,
+           case TimeUnit.Nanoseconds  => 1 / 1_000_000,
+           case TimeUnit.Seconds      => 1_000
         }
 
 }

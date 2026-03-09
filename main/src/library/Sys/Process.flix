@@ -19,6 +19,7 @@ pub mod Sys.Process {
     use IoError.ErrorKind
     use IoError.IoError
     use Sys.Process
+    use Time.TimeUnit
     use Sys.ProcessHandle
     use Sys.ProcessHandle.ProcessHandle
     use Sys.StdIn.StdIn
@@ -155,7 +156,7 @@ pub mod Sys.Process {
 
             def waitForTimeout(ph, time, unit, k) =
                 try {
-                    let timeMS = time * Int32.toInt64(Time.TimeUnit.toMilliseconds(unit));
+                    let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
                     let ProcessHandle(p) = ph;
                     let exitVal = p.waitFor(timeMS, JTimeUnit.MILLISECONDS);
                     k(Ok(exitVal))
