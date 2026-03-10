@@ -141,6 +141,7 @@ instance ToJava[Nel[a]] {
 }
 
 pub mod Nel {
+    use Math.Shuffle
 
     ///
     /// Returns a string representation of the given non-empty list `l`.

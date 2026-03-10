@@ -16,10 +16,12 @@
 
 pub mod Net.Retry {
 
+    use Math.Random
     use Net.HttpRequest
     use Net.HttpResponse
     use Net.RetryDecision
     use Net.RetryOutcome
+    use Time.Clock
     use Time.Duration
     use Time.Duration.{nanoseconds, milliseconds, seconds, toMillis, toNanos}
 

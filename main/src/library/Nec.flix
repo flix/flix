@@ -157,6 +157,7 @@ instance ToJava[Nec[a]] {
 }
 
 pub mod Nec {
+    use Math.Shuffle
     use ViewLeft.{OneLeft, SomeLeft}
     use ViewRight.{OneRight, SomeRight}
 

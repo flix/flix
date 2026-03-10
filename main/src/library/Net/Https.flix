@@ -27,6 +27,7 @@ pub mod Net.Https {
     use Net.RetryDecision
     use Net.RetryOutcome
     use RichString.{text, bold, cyan, green, yellow, red, gray}
+    use Time.Clock
     use Time.Duration
     use Time.Duration.toMillis
 

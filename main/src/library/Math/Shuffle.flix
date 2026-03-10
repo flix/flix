@@ -14,22 +14,9 @@
  * limitations under the License.
  */
 
-///
-/// An effect used to shuffle collections.
-///
-eff Shuffle {
+pub mod Math.Shuffle {
 
-    ///
-    /// Returns a permutation of integers from 0 to `len - 1`.
-    ///
-    /// The permutation is represented as a vector where each position
-    /// contains a unique integer in the range [0, len).
-    ///
-    def permutation(len: Int32): Vector[Int32]
-
-}
-
-pub mod Shuffle {
+    use Math.Shuffle
 
     import java.util.{Random => JRandom}
 

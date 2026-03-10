@@ -1,5 +1,6 @@
 use Net.Http
 use Net.HttpResponse
+use Time.Clock
 use Time.Duration.seconds
 
 /// Uses `withCircuitBreaker` to protect against cascading failures.
