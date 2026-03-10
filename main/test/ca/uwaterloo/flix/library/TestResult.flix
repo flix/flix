@@ -70,6 +70,24 @@ mod TestResult {
     def getWithDefault02(): Unit \ Assert = assertEq(expected = 2, Result.getWithDefault(2, Err(false)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // getOrAbort                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getOrAbort01(): Unit \ Assert =
+        let r = run {
+            Result.getOrAbort(Ok(42))
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(42), r)
+
+    @Test
+    def getOrAbort02(): Unit \ Assert =
+        let r = run {
+            Result.getOrAbort((Err("bad"): Result[String, Int32]))
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+
+    /////////////////////////////////////////////////////////////////////////////
     // withDefault                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @Test
