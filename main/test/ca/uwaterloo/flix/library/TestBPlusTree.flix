@@ -1,5 +1,6 @@
 mod TestBPlusTree {
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse, fail};
+    use Math.Random
     import java.lang.Object
     import java.util.Objects
     use Array.sameElements

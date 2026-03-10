@@ -1,3 +1,5 @@
+use Math.Random
+
 def main(): Unit \ IO =
     run {
         let flip = Random.randomBool();

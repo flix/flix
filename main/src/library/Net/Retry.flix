@@ -16,6 +16,7 @@
 
 pub mod Net.Retry {
 
+    use Math.Random
     use Net.HttpRequest
     use Net.HttpResponse
     use Net.RetryDecision
