@@ -1,5 +1,6 @@
 use Net.Http
 use Net.HttpResponse
+use Time.Clock
 use Time.Duration.{milliseconds, seconds}
 
 /// Demonstrates three rate-limiting strategies provided by `Net.Http`:
