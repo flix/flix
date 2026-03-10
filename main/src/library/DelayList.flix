@@ -133,6 +133,7 @@ instance ForEach[DelayList[a]] {
 }
 
 pub mod DelayList {
+    use Math.Shuffle
 
     ///
     /// Returns a string representation of `l`.

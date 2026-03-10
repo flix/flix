@@ -55,6 +55,7 @@ instance Formattable[MutDeque[a, r]] with Formattable[a] {
 }
 
 pub mod MutDeque {
+    use Math.Shuffle
 
     ///
     /// Constant denoting the minimum allowed capacity of the backing array.
