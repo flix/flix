@@ -21,6 +21,31 @@ pub mod Time {
     ///
     pub enum Duration(Int64) with Eq, Order, Hash
 
+    ///
+    /// Represents a time unit.
+    ///
+    pub enum TimeUnit with Eq, ToString {
+        case Days,
+        case Hours,
+        case Microseconds,
+        case Milliseconds,
+        case Minutes,
+        case Nanoseconds,
+        case Seconds
+    }
+
+    ///
+    /// An effect used to sleep the current thread.
+    ///
+    pub eff Sleep {
+
+        ///
+        /// Sleeps the current thread for the given duration `d`.
+        ///
+        def sleep(d: Duration): Unit
+
+    }
+
 }
 
 instance Add[Time.Duration] {
