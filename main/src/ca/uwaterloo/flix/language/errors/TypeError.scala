@@ -34,6 +34,7 @@ sealed trait TypeError extends CompilationMessage {
 }
 
 object TypeError {
+
   /**
     * An error raised when a function argument has an incompatible effect with what the function signature requires.
     *
@@ -57,19 +58,19 @@ object TypeError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Mismatched effect: expected ${magenta(effectsToString(expected))}, but got ${red(effectsToString(actual))}.
+      s""">> Mismatched effect(s): expected ${magenta(effectsToString(expected))}, but got ${red(effectsToString(actual))}.
          |
-         |${highlight(loc2, s"argument expected effect ${magenta(effectsToString(expected))}", fmt)}
+         |${highlight(loc2, s"function expected argument with effect(s) ${magenta(effectsToString(expected))}", fmt)}
          |
-         |${highlight(loc3, s"actual effect ${red(effectsToString(actual))} defined here", fmt)}
+         |${highlight(loc, s"function argument with effect(s) ${red(effectsToString(actual))} was passed", fmt)}
          |
-         |${highlight(loc, s"argument with ${red(effectsToString(actual))} passed here", fmt)}
+         |${highlight(loc3, s"the culprit", fmt)}
          |
-         |${underline("Explanation:")} A function with effect ${magenta(effectsToString(expected))} cannot accept an argument
-         |that carries effect ${red(effectsToString(actual))}. Either:
+         |${underline("Explanation:")} A function with effect(s) ${magenta(effectsToString(expected))} cannot accept an argument
+         |that carries effect(s) ${red(effectsToString(actual))}. Either:
          |
-         |  (a) Change the argument to use effect ${magenta(effectsToString(expected))}, or
-         |  (b) Update the function signature to accept effect ${red(effectsToString(actual))}.
+         |  (a) Change the argument to use effect(s) ${magenta(effectsToString(expected))}, or
+         |  (b) Update the function signature to accept effect(s) ${red(effectsToString(actual))}.
          |""".stripMargin
     }
   }
