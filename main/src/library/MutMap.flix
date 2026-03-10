@@ -210,6 +210,14 @@ pub mod MutMap {
         Map.getWithDefault(k, d, m->inner)
 
     ///
+    /// Returns the value associated with key `k` in the mutable map `m`.
+    ///
+    /// Aborts if the key is not present.
+    ///
+    pub def getOrAbort(k: k, m: MutMap[k, v, r]): v \ (Abort + r) with Order[k] =
+        Map.getOrAbort(k, m->inner)
+
+    ///
     /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.
     ///
     pub def put(k: k, v: v, m: MutMap[k, v, r]): Unit \ r with Order[k] =

@@ -186,6 +186,17 @@ pub mod MutHashMap {
         Option.getWithDefault(default, get(k, m))
 
     ///
+    /// Returns the value associated with key `k` in the mutable hash map `m`.
+    ///
+    /// Aborts if the key is not present.
+    ///
+    pub def getOrAbort(k: k, m: MutHashMap[k, v, r]): v \ (Abort + r) with Eq[k], Hash[k] =
+        match MutHashMap.get(k, m) {
+            case None    => Abort.abortWithTrace("MutHashMap.getOrAbort(): key not found")
+            case Some(v) => v
+        }
+
+    ///
     /// Converts hash code to a valid bucket index.
     ///
     def indexOfBucket(hash: Int32, numBuckets: Int32): Int32 =

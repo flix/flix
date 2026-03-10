@@ -128,6 +128,29 @@ mod TestMutMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // getOrAbort                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getOrAbort01(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 42, m);
+        let r = run {
+            MutMap.getOrAbort(1, m)
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(42), r)
+    }
+
+    @Test
+    def getOrAbort02(): Unit \ Assert = region rc {
+        let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
+        let r = run {
+            MutMap.getOrAbort(1, m)
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // putAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

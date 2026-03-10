@@ -193,6 +193,31 @@ mod TestMap {
         assertEq(expected = -2, Map.getWithDefault(-2, 34, Map#{2 => 1, 3 => 17, -2 => -2}))
 
     /////////////////////////////////////////////////////////////////////////////
+    // getOrAbort                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getOrAbort01(): Unit \ Assert =
+        let r = run {
+            Map.getOrAbort(1, Map#{1 => 42})
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(42), r)
+
+    @Test
+    def getOrAbort02(): Unit \ Assert =
+        let r = run {
+            Map.getOrAbort(2, (Map#{}: Map[Int32, Int32]))
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+
+    @Test
+    def getOrAbort03(): Unit \ Assert =
+        let r = run {
+            Map.getOrAbort(2, Map#{1 => 10, 2 => 30, 3 => 50})
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(30), r)
+
+    /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
