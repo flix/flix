@@ -57,9 +57,9 @@ pub mod Random {
     ///
     /// Handles the `Random` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Random` effect using the `NonDet` and `IO` effects.
+    /// In other words, re-interprets the `Random` effect using the `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Random) + {NonDet, IO} =
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Random) + IO =
         x -> {
             let rnd = new JRandom(); // Reuse Random instance.
             run {
@@ -77,9 +77,10 @@ pub mod Random {
     ///
     /// Runs the `Random` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Random` effect using the `NonDet` and `IO` effects.
+    /// In other words, re-interprets the `Random` effect using the `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Random) + {NonDet, IO} = handle(f)()
+    @DefaultHandler
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Random) + IO = handle(f)()
 
     ///
     /// Runs the `Random` effect of the given function `f` from an initial seed.
