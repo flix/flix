@@ -35,6 +35,18 @@ pub mod Time {
     }
 
     ///
+    /// An effect used to access the current (real-world) time.
+    ///
+    pub eff Clock {
+
+        ///
+        /// Returns a measure of time since the epoch in the given time unit `u`.
+        ///
+        def currentTime(u: TimeUnit): Int64
+
+    }
+
+    ///
     /// An effect used to sleep the current thread.
     ///
     pub eff Sleep {

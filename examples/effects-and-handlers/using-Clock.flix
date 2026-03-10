@@ -1,3 +1,4 @@
+use Time.Clock
 use Time.TimeUnit
 
 def main(): Unit \ IO =
