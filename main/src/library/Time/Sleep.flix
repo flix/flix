@@ -128,4 +128,23 @@ pub mod Time.Sleep {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `Sleep` effect, adding random jitter to each
+    /// sleep duration. The `factor` controls the maximum jitter fraction, e.g. `0.2`
+    /// means each sleep duration is randomly adjusted by up to ±20%.
+    ///
+    pub def withJitter(factor: Float64, f: Unit -> a \ ef): a \ (ef - Sleep) + {Sleep, Random} =
+        run {
+            f()
+        } with handler Sleep {
+            def sleep(d, k) = {
+                let nanos = Int64.toFloat64(Duration.toNanos(d));
+                let r = Random.randomFloat64() * 2.0f64 * factor - factor;
+                let jittered = nanos * (1.0f64 + r);
+                let clamped = Float64.clampToInt64(min = 0i64, max = Int64.maxValue(), nanValue = 0i64, jittered);
+                Sleep.sleep(Duration.nanoseconds(clamped));
+                k()
+            }
+        }
+
 }
