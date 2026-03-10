@@ -10,5 +10,5 @@ def main(): Unit \ { Logger, Random, Sleep, IO } =
         Sleep.sleep(seconds(2));
         Sleep.sleep(seconds(3));
         println("Done!")
-    } with Sleep.withJitter(0.2f64)
+    } with Sleep.withJitter(0.2)
       with Sleep.withLogging
