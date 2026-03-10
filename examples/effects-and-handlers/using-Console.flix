@@ -1,3 +1,5 @@
+use Sys.Console
+
 def main(): Unit \ IO =
     run {
         Console.println("Please enter your name: ");

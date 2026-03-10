@@ -82,7 +82,7 @@ object Library {
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
     "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
     "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
-    "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
+    "Sys/Console.flix" -> LocalResource.get("/src/library/Sys/Console.flix"),
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
     "DecodingReader.flix" -> LocalResource.get("/src/library/DecodingReader.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),

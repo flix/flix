@@ -28,6 +28,7 @@ pub eff Logger {
 
 pub mod Logger {
 
+    use Sys.Console
     use RichString.{gray, cyan, green, yellow, red, bold, text};
     use Severity.{Warn, Fatal, Trace, Debug, Info}
 
