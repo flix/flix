@@ -103,21 +103,6 @@ object CodeActionProvider {
         command = None
       ))
 
-    case ParseError.ExpectedBackslashBetweenTypeAndEffect(_, loc, canSuggestEquals) if overlaps(range, loc) =>
-      val backslashAction = CodeAction(
-        title = "Insert '\\' between type and effect",
-        kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ "))))),
-        command = None
-      )
-      val equalsAction = CodeAction(
-        title = "Insert '=' before function body",
-        kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " = "))))),
-        command = None
-      )
-      if (canSuggestEquals) List(backslashAction, equalsAction) else List(backslashAction)
-
     case _ => Nil
   }
 
