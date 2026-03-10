@@ -192,8 +192,9 @@ class TestFormatter extends AnyFunSuite {
     * @return an option containing the syntax tree if found
     */
   private def findTreeBasedOnUri(root: SyntaxTree.Root, uri: String): Option[SyntaxTree.Tree] = {
+    val normalizedUri = Paths.get(uri).normalize().toString
     root.units.find {
-      case (path, _) => path.toString == uri
+      case (path, _) => path.toString == normalizedUri
     }.map {
       case (_, tree) => tree
     }
