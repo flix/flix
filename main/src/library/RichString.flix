@@ -47,6 +47,8 @@ instance Eq[RichString] {
 
 pub mod RichString {
 
+    use Sys.Env
+
     ///
     /// Represents a color with RGB components or the terminal's default color.
     ///
