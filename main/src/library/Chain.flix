@@ -147,6 +147,7 @@ instance ToFlix[Chain[a]] {
 }
 
 pub mod Chain {
+    use Math.Shuffle
     use ViewLeft.{NoneLeft, SomeLeft}
     use ViewRight.{NoneRight, SomeRight}
 

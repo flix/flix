@@ -1,7 +1,8 @@
 mod TestDelayList {
 
-    use DelayList.{ENil, ECons, LCons, LList}
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse}
+    use DelayList.{ENil, ECons, LCons, LList}
+    use Math.Shuffle
 
     def toDelayList(l: List[a]): DelayList[a] = match l {
         case Nil     => DelayList.ENil

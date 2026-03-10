@@ -16,6 +16,8 @@ pub eff Interface {
 
 mod Interface {
 
+    use Sys.Console
+
     ///
     /// Recursive helper function to read and return only valid moves.
     ///

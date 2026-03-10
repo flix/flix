@@ -1,6 +1,7 @@
 use Net.Http
 use Net.Retry
 use Net.HttpResponse
+use Time.Clock
 use Time.Duration.{milliseconds, seconds}
 
 /// Demonstrates composing multiple HTTP middleware via `with` clauses.

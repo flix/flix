@@ -151,6 +151,7 @@ instance ToFlix[Vector[a]] {
 }
 
 pub mod Vector {
+    use Math.Shuffle
 
     ///
     /// Perform a binary search for `x` on the sorted vector `v` and returns the position of `x`.

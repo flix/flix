@@ -158,6 +158,7 @@ instance ToFlix[List[a]] {
 }
 
 pub mod List {
+    use Math.Shuffle
 
     ///
     /// Renders the list `l` to a String.
