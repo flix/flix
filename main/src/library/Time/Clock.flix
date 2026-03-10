@@ -14,20 +14,9 @@
  *  limitations under the License.
  */
 
-///
-/// An effect used to access the current (real-world) time.
-///
-eff Clock {
+pub mod Time.Clock {
 
-    ///
-    /// Returns a measure of time since the epoch in the given time unit `u`.
-    ///
-    def currentTime(u: Time.TimeUnit): Int64
-
-}
-
-pub mod Clock {
-
+    use Time.Clock
     use Time.TimeUnit
 
     import java.lang.System
