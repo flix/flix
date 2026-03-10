@@ -118,7 +118,7 @@ pub mod Time.Sleep {
     /// Middleware that intercepts the `Sleep` effect, capping each sleep duration
     /// to the given `cap`.
     ///
-    pub def withMaxDuration(cap: Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
+    pub def withMaxSleep(cap: Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
         run {
             f()
         } with handler Sleep {
@@ -129,10 +129,31 @@ pub mod Time.Sleep {
         }
 
     ///
+    /// Middleware that intercepts the `Sleep` effect, capping the total cumulative
+    /// sleep duration to the given `budget`. Once the budget is exhausted, all
+    /// further sleeps become no-ops.
+    ///
+    pub def withMaxTotalSleep(budget: Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
+        region rc {
+            let remaining: Ref[Duration, _] = Ref.fresh(rc, budget);
+            run {
+                f()
+            } with handler Sleep {
+                def sleep(d, k) = {
+                    let r = Ref.get(remaining);
+                    let actual = Order.min(d, r);
+                    Ref.put(r - actual, remaining);
+                    Sleep.sleep(actual);
+                    k()
+                }
+            }
+        }
+
+    ///
     /// Middleware that intercepts the `Sleep` effect, ensuring each sleep duration
     /// is at least the given `floor`.
     ///
-    pub def withMinDuration(floor: Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
+    pub def withMinSleep(floor: Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
         run {
             f()
         } with handler Sleep {
