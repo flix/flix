@@ -210,6 +210,7 @@ object Library {
     "Sys/Process.flix" -> LocalResource.get("/src/library/Sys/Process.flix"),
     "Time.flix" -> LocalResource.get("/src/library/Time.flix"),
     "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
+    "Time/Sleep.flix" -> LocalResource.get("/src/library/Time/Sleep.flix"),
     "Time/TimeUnit.flix" -> LocalResource.get("/src/library/Time/TimeUnit.flix"),
     "ToFlix.flix" -> LocalResource.get("/src/library/ToFlix.flix"),
     "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
