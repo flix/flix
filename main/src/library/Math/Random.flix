@@ -31,12 +31,8 @@ pub mod Math.Random {
             run {
                 f(x)
             } with handler Random {
-                def randomBool(k)       = k(rnd.nextBoolean())
-                def randomFloat32(k)    = k(rnd.nextFloat())
                 def randomFloat64(k)    = k(rnd.nextDouble())
-                def randomInt32(k)      = k(rnd.nextInt())
                 def randomInt64(k)      = k(rnd.nextLong())
-                def randomGaussian(k)   = k(rnd.nextGaussian())
             }
         }
 
@@ -60,12 +56,8 @@ pub mod Math.Random {
             run {
                 f(x)
             } with handler Random {
-                def randomBool(k)     = k(unsafe IO { rnd.nextBoolean() })
-                def randomFloat32(k)  = k(unsafe IO { rnd.nextFloat() })
                 def randomFloat64(k)  = k(unsafe IO { rnd.nextDouble() })
-                def randomInt32(k)    = k(unsafe IO { rnd.nextInt() })
                 def randomInt64(k)    = k(unsafe IO { rnd.nextLong() })
-                def randomGaussian(k) = k(unsafe IO { rnd.nextGaussian() })
             }
         }
 
