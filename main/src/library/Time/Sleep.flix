@@ -16,8 +16,8 @@
 
 pub mod Time.Sleep {
 
-    use Time.Sleep
     use Time.Duration
+    use Time.Sleep
     use RichString.{text, gray}
 
     import java.lang.{Thread => JThread}
@@ -60,7 +60,7 @@ pub mod Time.Sleep {
     ///
     /// Returns a pair of the result and the list of durations in call order.
     ///
-    pub def withCollect(f: Unit -> a \ ef): (a, List[Time.Duration]) \ (ef - Sleep) =
+    pub def withCollect(f: Unit -> a \ ef): (a, List[Duration]) \ (ef - Sleep) =
         run {
             (f(), List.empty())
         } with handler Sleep {
@@ -70,10 +70,8 @@ pub mod Time.Sleep {
         }
 
     ///
-    /// Runs the given function `f` logging each sleep duration via the `Logger` effect
-    /// and re-raising the `Sleep` effect.
-    ///
-    /// Must be composed with a terminal handler (e.g. `runWithIO`).
+    /// Middleware that intercepts the `Sleep` effect, logging each sleep duration
+    /// via the `Logger` effect and re-raising the `Sleep` effect.
     ///
     pub def withLogging(f: Unit -> a \ ef): a \ (ef - Sleep) + {Sleep, Logger} =
         run {
@@ -87,9 +85,8 @@ pub mod Time.Sleep {
         }
 
     ///
-    /// Runs the given function `f` scaling each sleep duration by the given `factor`.
-    ///
-    /// The effect is re-raised and must be composed with a terminal handler (e.g. `runWithIO`).
+    /// Middleware that intercepts the `Sleep` effect, scaling each sleep duration
+    /// by the given `factor`.
     ///
     pub def withScale(factor: Float64, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
         run {
@@ -104,11 +101,10 @@ pub mod Time.Sleep {
         }
 
     ///
-    /// Runs the given function `f` capping each sleep duration to the given `cap`.
+    /// Middleware that intercepts the `Sleep` effect, capping each sleep duration
+    /// to the given `cap`.
     ///
-    /// The effect is re-raised and must be composed with a terminal handler (e.g. `runWithIO`).
-    ///
-    pub def withMaxDuration(cap: Time.Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
+    pub def withMaxDuration(cap: Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
         run {
             f()
         } with handler Sleep {
@@ -119,11 +115,10 @@ pub mod Time.Sleep {
         }
 
     ///
-    /// Runs the given function `f` ensuring each sleep duration is at least the given `floor`.
+    /// Middleware that intercepts the `Sleep` effect, ensuring each sleep duration
+    /// is at least the given `floor`.
     ///
-    /// The effect is re-raised and must be composed with a terminal handler (e.g. `runWithIO`).
-    ///
-    pub def withMinDuration(floor: Time.Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
+    pub def withMinDuration(floor: Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
         run {
             f()
         } with handler Sleep {
