@@ -1439,7 +1439,7 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      } else if (nth(0).alwaysStartStatement) {
+      } else if (nth(0).notBinaryOperator) {
         // This token can only appear as a follow token after an expression within a statement,
         // so we assume the user forgot a semicolon.
         // We create the error and continue parsing as if the semicolon was present.
