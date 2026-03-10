@@ -34,6 +34,18 @@ pub mod Time {
         case Seconds
     }
 
+    ///
+    /// An effect used to sleep the current thread.
+    ///
+    pub eff Sleep {
+
+        ///
+        /// Sleeps the current thread for the given duration `d`.
+        ///
+        def sleep(d: Duration): Unit
+
+    }
+
 }
 
 instance Add[Time.Duration] {

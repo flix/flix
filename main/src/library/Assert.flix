@@ -29,6 +29,7 @@ pub eff Assert {
 
 pub mod Assert {
 
+    use Sys.Console
     use RichString.{blue, red, text, yellow};
     import java.lang.AssertionError;
 

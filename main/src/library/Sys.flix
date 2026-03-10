@@ -217,4 +217,36 @@ pub mod Sys {
 
     }
 
+    ///
+    /// An effect used to interact with the console.
+    ///
+    pub eff Console {
+
+        ///
+        /// Reads a single line from the console.
+        ///
+        def readln(): String
+
+        ///
+        /// Prints the given string `s` to the standard out.
+        ///
+        def print(s: String): Unit
+
+        ///
+        /// Prints the given string `s` to the standard err.
+        ///
+        def eprint(s: String): Unit
+
+        ///
+        /// Prints the given string `s` to the standard out followed by a new line.
+        ///
+        def println(s: String): Unit
+
+        ///
+        /// Prints the given string `s` to the standard err followed by a new line.
+        ///
+        def eprintln(s: String): Unit
+
+    }
+
 }
