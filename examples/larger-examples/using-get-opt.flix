@@ -3,6 +3,7 @@ use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg}
 use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
 
 use GetOpt.{getOpt, usageInfo}
+use Sys.Env
 
 /// Define a datatype representing all flags and options.
 enum Flag with ToString {
