@@ -1,3 +1,5 @@
+use Sys.Env
+
 ///
 /// Define a function that decides whether pairs of railroad stations in `links` are safely connected.
 ///

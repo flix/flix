@@ -14,6 +14,9 @@ eff Config {
 }
 
 mod Config {
+
+    use Sys.Env
+
     ///
     /// Gets an environment variable.
     ///

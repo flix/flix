@@ -2,6 +2,7 @@ mod TestNel {
 
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse};
     use Hash.hash
+    use Math.Shuffle
     use Nel.Nel
 
     /////////////////////////////////////////////////////////////////////////////
