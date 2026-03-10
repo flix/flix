@@ -1,3 +1,5 @@
+use Sys.Console
+
 ///
 /// The core gameplay loop called repeatedly until the game ends.
 ///

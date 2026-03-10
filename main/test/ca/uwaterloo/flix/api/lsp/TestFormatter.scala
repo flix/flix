@@ -66,7 +66,6 @@ class TestFormatter extends AnyFunSuite {
     "examples/effects-and-handlers/process/process-exec-and-read-output.flix",
     "examples/effects-and-handlers/process/process-wait-and-exit-value.flix",
     "examples/effects-and-handlers/using-FileWriteWithResult.flix",
-    "examples/effects-and-handlers/using-Console.flix",
     "examples/effects-and-handlers/using-Logger.flix",
     "examples/effects-and-handlers/running-multiple-effects.flix",
     "examples/effects-and-handlers/using-Clock.flix",
