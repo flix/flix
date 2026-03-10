@@ -56,6 +56,20 @@ pub mod Time.Sleep {
         }
 
     ///
+    /// Middleware that intercepts the `Sleep` effect, replacing each sleep duration
+    /// with the given constant `duration`, ignoring the original duration.
+    ///
+    pub def withConstant(duration: Duration, f: Unit -> a \ ef): a \ (ef - Sleep) + Sleep =
+        run {
+            f()
+        } with handler Sleep {
+            def sleep(_d, k) = {
+                Sleep.sleep(duration);
+                k()
+            }
+        }
+
+    ///
     /// Runs the given function `f` collecting all sleep durations into a list.
     ///
     /// Returns a pair of the result and the list of durations in call order.
