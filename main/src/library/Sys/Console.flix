@@ -21,6 +21,81 @@ pub mod Sys.Console {
     import java.lang.System
 
     ///
+    /// Prints prompt `p`, reads a line, and returns `default` if the input is empty or whitespace.
+    ///
+    pub def readlnWithDefault(p: a, default: String): String \ Console + Formattable.Aef[a] with Formattable[a] =
+        Console.print(prompt(p));
+        let input = Console.readln();
+        let trimmed = String.trim(input);
+        if (String.isEmpty(trimmed)) default else trimmed
+
+    ///
+    /// Prints prompt `p`, reads a line, and applies `f` to the input.
+    ///
+    /// If `f` returns `Err(msg)`, prints `msg` to stderr and re-prompts.
+    /// If `f` returns `Ok(v)`, returns `v`.
+    ///
+    pub def readlnWith(p: a, f: String -> Result[String, b]): b \ Console + Formattable.Aef[a] with Formattable[a] =
+        Console.print(prompt(p));
+        let input = Console.readln();
+        match f(input) {
+            case Ok(v)    => v
+            case Err(msg) =>
+                Console.eprintln(msg);
+                readlnWith(p, f)
+        }
+
+    ///
+    /// Prints prompt `p` with a yes/no hint and reads a boolean answer.
+    ///
+    /// Appends `[Y/n]` if `default#default` is `true`, or `[y/N]` if `false`.
+    /// Empty input returns `default#default`. Recognizes "y", "yes", "n", "no" (case-insensitive).
+    /// Any other input returns `default#default`.
+    ///
+    pub def confirm(p: a, default: {default = Bool}): Bool \ Console + Formattable.Aef[a] with Formattable[a] =
+        let hint = if (default#default) " [Y/n] " else " [y/N] ";
+        Console.print(prompt(p) + hint);
+        let input = String.toLowerCase(String.trim(Console.readln()));
+        if (String.isEmpty(input))
+            default#default
+        else if (input == "y" or input == "yes")
+            true
+        else if (input == "n" or input == "no")
+            false
+        else
+            default#default
+
+    ///
+    /// Prints prompt `p` followed by a numbered list of `options`, then reads a selection.
+    ///
+    /// Returns `Some(element)` if the user enters a valid number, `None` otherwise.
+    ///
+    pub def pick(p: a, choices: List[b]): Option[b] \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
+        Console.println(prompt(p));
+        List.zipWithIndex(choices) |> List.forEach(match (i, opt) ->
+            Console.println("  ${i + 1}) ${prompt(opt)}")
+        );
+        Console.print("> ");
+        let input = String.trim(Console.readln());
+        match Int32.fromString(input) {
+            case Some(n) =>
+                if (n >= 1 and n <= List.length(choices))
+                    List.head(List.drop(n - 1, choices))
+                else
+                    None
+            case None => None
+        }
+
+    ///
+    /// Like `pick`, but re-prompts until the user makes a valid selection.
+    ///
+    pub def pickWith(p: a, choices: List[b]): b \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
+        match pick(p, choices) {
+            case Some(v) => v
+            case None    => pickWith(p, choices)
+        }
+
+    ///
     /// Handles the `Console` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
@@ -43,5 +118,11 @@ pub mod Sys.Console {
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Console) + IO = handle(f)()
+
+    ///
+    /// Returns the string representation of the formattable value `p`.
+    ///
+    def prompt(p: a): String \ Formattable.Aef[a] with Formattable[a] =
+        RichString.toString(Formattable.format(p))
 
 }
