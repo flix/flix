@@ -189,7 +189,7 @@ object Library {
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "OutOfBounds.flix" -> LocalResource.get("/src/library/OutOfBounds.flix"),
     "Peekable.flix" -> LocalResource.get("/src/library/Peekable.flix"),
-    "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
+    "Math/Random.flix" -> LocalResource.get("/src/library/Math/Random.flix"),
     "Range.flix" -> LocalResource.get("/src/library/Range.flix"),
     "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),

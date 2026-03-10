@@ -16,6 +16,7 @@
 
 pub mod Time.Sleep {
 
+    use Math.Random
     use Time.Duration
     use Time.Sleep
     use RichString.{text, gray}

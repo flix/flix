@@ -1,3 +1,4 @@
+use Math.Random
 use Time.Duration.{seconds}
 use Time.Sleep
 
