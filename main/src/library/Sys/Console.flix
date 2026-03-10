@@ -72,18 +72,17 @@ pub mod Sys.Console {
     ///
     pub def pick(p: a, choices: List[b]): Option[b] \ Console + Formattable.Aef[a] + Formattable.Aef[b] with Formattable[a], Formattable[b] =
         Console.println(prompt(p));
-        List.zipWithIndex(choices) |> List.forEach(match (i, opt) ->
-            Console.println("  ${i + 1}) ${prompt(opt)}")
-        );
+        foreach ((i, opt) <- ForEach.withIndex(choices))
+            Console.println("  ${i + 1}) ${prompt(opt)}");
         Console.print("> ");
         let input = String.trim(Console.readln());
         match Int32.fromString(input) {
+            case None    => None
             case Some(n) =>
-                if (n >= 1 and n <= List.length(choices))
+                if (1 <= n and n <= List.length(choices))
                     List.head(List.drop(n - 1, choices))
                 else
                     None
-            case None => None
         }
 
     ///
