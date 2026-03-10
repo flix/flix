@@ -16,6 +16,8 @@
 
 pub mod Sys {
 
+    use Time.TimeUnit
+
     import java.lang.{Process => JProcess}
     import java.io.InputStream
     import java.io.OutputStream

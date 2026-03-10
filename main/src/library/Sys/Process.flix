@@ -19,6 +19,7 @@ pub mod Sys.Process {
     use IoError.ErrorKind
     use IoError.IoError
     use Sys.Process
+    use Time.TimeUnit
     use Sys.ProcessHandle
     use Sys.ProcessHandle.ProcessHandle
     use Sys.StdIn.StdIn

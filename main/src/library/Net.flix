@@ -17,6 +17,7 @@
 pub mod Net {
 
     use Time.Duration
+    use Time.TimeUnit
 
     import java.io.InputStream
     import java.io.OutputStream

@@ -1,4 +1,4 @@
-def main(): Unit \ {NonDet, IO} =
+def main(): Unit \ IO =
     run {
         let flip = Random.randomBool();
         if (flip)
