@@ -485,7 +485,7 @@ sealed trait TokenKind {
     * without a preceding semicolon, we assume the semicolon was forgotten.
     *
     */
-  def alwaysStartStatement: Boolean = this match {
+  def NotBinaryOperator: Boolean = this match {
     case TokenKind.KeywordLet     => true
     case TokenKind.KeywordForeach => true
     case _ => false
