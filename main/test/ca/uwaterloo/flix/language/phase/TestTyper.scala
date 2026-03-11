@@ -102,6 +102,16 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
   }
 
+  test("Test.ExplicitlyPureUsingIO.06") {
+    val input =
+      """
+        |def f(h: Unit -> Unit \ {}): Unit \ {}  =
+        |    h(println(""))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
   test("Test.ImplicitlyPureUsingIO.01") {
     val input =
       """
@@ -228,6 +238,17 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.04") {
+    val input =
+      """
+        |def f(h: Unit -> Unit \ ef): Unit \ {}  =
+        |    let m = h;
+        |    m()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
   }
 
@@ -454,6 +475,20 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ArgumentGivenWrongEffect](result)
   }
 
+  test("Test.PureArgumentGivenIO.02") {
+    val input =
+      """
+        |def p(_: Unit -> Unit): Unit = ()
+        |
+        |def f(): Unit \ {}  =
+        |    let f = x -> println(x);
+        |    let g = x -> f(x);
+        |    p(f >> g)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
+  }
+
   test("Test.CstArgumentGivenIO.01") {
     val input =
       """
@@ -487,6 +522,18 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
+  }
+
+  test("Test.PureArgumentGivenEffect.01") {
+    val input =
+      """
+        |def p(_: Unit -> Unit): Unit = ()
+        |
+        |def f(h: Unit -> Unit \ ef): Unit \ {}  =
+        |    p(h)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ArgumentGivenWrongEffect](result)
   }
 
