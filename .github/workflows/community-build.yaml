@@ -42,6 +42,7 @@ jobs:
           - "flix/datalog2"
           - "flix/test-pkg-trust-plain"
           - "flix/test-pkg-trust-unchecked-cast"
+          - "JonathanStarup/Flix-ANSI-Terminal"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
           - "magnus-madsen/bibblitz"
