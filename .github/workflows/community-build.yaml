@@ -38,6 +38,7 @@ jobs:
       fail-fast: false
       matrix:
         repo:
+          - "flix/chalk"
           - "flix/datalog2"
           - "flix/test-pkg-trust-plain"
           - "flix/test-pkg-trust-unchecked-cast"
