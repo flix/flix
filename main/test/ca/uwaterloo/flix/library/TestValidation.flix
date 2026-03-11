@@ -1,490 +1,798 @@
-/*
- * Copyright 2020 Magnus Madsen, Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
- 
-namespace Validation {
+mod TestValidation {
 
-    use Hash.hash;
+    use Assert.{assertEq, assertTrue, assertFalse, fail}
+    use Hash.hash
+    use Nec.{cons, singleton}
+    use Validation.{Success, Failure}
+
+    def necOf2(x: a, y: a): Nec[a] = cons(x, singleton(y))
+
+    def necOf3(w: a, x: a, y: a): Nec[a] = cons(w, cons(x, singleton(y)))
+
+    def necOf4(v: a, w: a, x: a, y: a): Nec[a] = cons(v, cons(w, cons(x, singleton(y))))
+
+    def necOf5(u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(u, cons(v, cons(w, cons(x, singleton(y)))))
+
+    def necOf6(t: a, u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(t, cons(u, cons(v, cons(w, cons(x, singleton(y))))))
+
+    def necOf7(s: a, t: a, u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(s, cons(t, cons(u, cons(v, cons(w, cons(x, singleton(y)))))))
+
+    def necOf8(r: a, s: a, t: a, u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(r, cons(s, cons(t, cons(u, cons(v, cons(w, cons(x, singleton(y))))))))
+
+    def necOf9(q: a, r: a, s: a, t: a, u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(q, cons(r, cons(s, cons(t, cons(u, cons(v, cons(w, cons(x, singleton(y)))))))))
+
+    def necOf10(p: a, q: a, r: a, s: a, t: a, u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(p, cons(q, cons(r, cons(s, cons(t, cons(u, cons(v, cons(w, cons(x, singleton(y))))))))))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Functor.map                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def functor_map01(): Unit \ Assert =
+        assertEq(expected = Success(123), (Functor.map(x -> x, Success(123)): Validation[Int32, Int32]))
+
+    @Test
+    def functor_map02(): Unit \ Assert =
+        assertEq(expected = Success(124), (Functor.map(x -> x + 1, Success(123)): Validation[Int32, Int32]))
+
+    @Test
+    def functor_map03(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(123)), (Functor.map(x -> x, Failure(singleton(123))): Validation[Int32, Int32]))
+
+    @Test
+    def functor_map04(): Unit \ Assert =
+        assertEq(expected = Success(248), (Success(123): Validation[Int32, Int32]) |> Functor.map(x -> x + 1) |> Functor.map(x -> x * 2))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Applicative.ap                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def applicative_ap01(): Unit \ Assert =
+        assertEq(expected = Success(124), (Applicative.ap(Success(x -> x + 1), Success(123)): Validation[Int32, Int32]))
+
+    @Test
+    def applicative_ap02(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(42)), Applicative.ap(Success(x -> x + 1), Failure(singleton(42))))
 
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def ap01(): Bool = ap(Success(x -> x + 1), Success(123)): Validation[_, Unit] == Success(124)
+    @Test
+    def ap01(): Unit \ Assert =
+        assertEq(expected = Success(124), (Validation.ap(Success(x -> x + 1), Success(123)): Validation[Int32, Int32]))
 
-    @test
-    def ap02(): Bool = ap(Success(x -> x + 1), Failure(Nel(42, Nil))) == Failure(Nel(42, Nil))
+    @Test
+    def ap02(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(42)), Validation.ap(Success(x -> x + 1), Failure(singleton(42))))
 
-    @test
-    def ap03(): Bool = ap(Failure(Nel(42, Nil)), Success(123)): Validation[Unit, _] == Failure(Nel(42, Nil))
+    @Test
+    def ap03(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(42)), (Validation.ap(Failure(singleton(42)), Success(123)): Validation[Int32, Int32]))
 
-    @test
-    def ap04(): Bool = ap(Failure(Nel(123, Nil)), (Failure(Nel(456, Nil)))): Validation[Unit, _] == Failure(Nel(123, 456 :: Nil))
+    @Test
+    def ap04(): Unit \ Assert =
+        assertEq(expected = Failure(necOf2(123, 456)), (Validation.ap(Failure(singleton(123)), (Failure(singleton(456)))): Validation[Int32, Int32]))
 
-    @test
-    def ap05(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, Nil)))): Validation[Unit, _] == Failure(Nel(1, 2 :: 3 :: Nil))
+    @Test
+    def ap05(): Unit \ Assert =
+        assertEq(expected = Failure(necOf3(1, 2, 3)), (Validation.ap(Failure(necOf2(1, 2)), (Failure(singleton(3)))): Validation[Int32, Int32]))
 
-    @test
-    def ap06(): Bool = ap(Failure(Nel(1, Nil)), (Failure(Nel(2, 3 :: Nil)))): Validation[Unit, _] == Failure(Nel(1, 2 :: 3 :: Nil))
+    @Test
+    def ap06(): Unit \ Assert =
+        assertEq(expected = Failure(necOf3(1, 2, 3)), (Validation.ap(Failure(singleton(1)), (Failure(necOf2(2, 3)))): Validation[Int32, Int32]))
 
-    @test
-    def ap07(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, 4 :: Nil)))): Validation[Unit, _] == Failure(Nel(1, 2 :: 3 :: 4 :: Nil))
+    @Test
+    def ap07(): Unit \ Assert =
+        assertEq(expected = Failure(necOf4(1, 2, 3, 4)), (Validation.ap(Failure(necOf2(1, 2)), (Failure(necOf2(3, 4)))): Validation[Int32, Int32]))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def product01(): Unit \ Assert =
+        let p = Validation.product(Failure(singleton(1)), (Failure(singleton(2))));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = necOf2(1, 2), v)
+        }
+
+    @Test
+    def product02(): Unit \ Assert =
+        let p = Validation.product(Failure(singleton(1)), Success(2));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = singleton(1), v)
+        }
+
+    @Test
+    def product03(): Unit \ Assert =
+        let p = Validation.product(Success(1), Failure(singleton(2)));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = singleton(2), v)
+        }
+
+    @Test
+    def product04(): Unit \ Assert =
+        let p = Validation.product(Success(1), Success(2));
+        match p {
+            case Success(v) => assertEq(expected = (1, 2), v)
+            case Failure(_) => fail("Expected Success but got Failure")
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product3                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def product301(): Unit \ Assert =
+        let p = Validation.product3(Success(1), Success(2), Success(3));
+        match p {
+            case Success(v) => assertEq(expected = (1, 2, 3), v)
+            case Failure(_) => fail("Expected Success but got Failure")
+        }
+
+    @Test
+    def product302(): Unit \ Assert =
+        let p = Validation.product3(Success(1), Failure(singleton(2)), Success(3));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = singleton(2), v)
+        }
+
+    @Test
+    def product303(): Unit \ Assert =
+        let p = Validation.product3(Failure(singleton(1)), Success(2), Failure(singleton(3)));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = necOf2(1, 3), v)
+        }
+
+    @Test
+    def product304(): Unit \ Assert =
+        let p = Validation.product3(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = necOf3(1, 2, 3), v)
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product4                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def product401(): Unit \ Assert =
+        let p = Validation.product4(Success(1), Success(2), Success(3), Success(4));
+        match p {
+            case Success(v) => assertEq(expected = (1, 2, 3, 4), v)
+            case Failure(_) => fail("Expected Success but got Failure")
+        }
+
+    @Test
+    def product402(): Unit \ Assert =
+        let p = Validation.product4(Success(1), Failure(singleton(2)), Success(3), Success(4));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = singleton(2), v)
+        }
+
+    @Test
+    def product403(): Unit \ Assert =
+        let p = Validation.product4(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = necOf2(1, 3), v)
+        }
+
+    @Test
+    def product404(): Unit \ Assert =
+        let p = Validation.product4(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = necOf4(1, 2, 3, 4), v)
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product5                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def product501(): Unit \ Assert =
+        let p = Validation.product5(Success(1), Success(2), Success(3), Success(4), Success(5));
+        match p {
+            case Success(v) => assertEq(expected = (1, 2, 3, 4, 5), v)
+            case Failure(_) => fail("Expected Success but got Failure")
+        }
+
+    @Test
+    def product502(): Unit \ Assert =
+        let p = Validation.product5(Success(1), Failure(singleton(2)), Success(3), Success(4), Success(5));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = singleton(2), v)
+        }
+
+    @Test
+    def product503(): Unit \ Assert =
+        let p = Validation.product5(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4), Failure(singleton(5)));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = necOf3(1, 3, 5), v)
+        }
+
+    @Test
+    def product504(): Unit \ Assert =
+        let p = Validation.product5(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)), Failure(singleton(5)));
+        match p {
+            case Success(_) => fail("Expected Failure but got Success")
+            case Failure(v) => assertEq(expected = necOf5(1, 2, 3, 4, 5), v)
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def getWithDefault01(): Bool = getWithDefault(Success(123), 456) == 123
+    @Test
+    def getWithDefault01(): Unit \ Assert =
+        assertEq(expected = 123, Validation.getWithDefault(456, Success(123)))
 
-    @test
-    def getWithDefault02(): Bool = getWithDefault(Failure(Nel(42, Nil)), 456) == 456
+    @Test
+    def getWithDefault02(): Unit \ Assert =
+        assertEq(expected = 456, Validation.getWithDefault(456, Failure(singleton(42))))
 
     /////////////////////////////////////////////////////////////////////////////
     // withDefault                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def withDefault01(): Bool = withDefault(Success(1), Success(2)): Validation[_, Unit] == Success(1)
+    @Test
+    def withDefault01(): Unit \ Assert =
+        assertEq(expected = Success(1), (Validation.withDefault(default = Success(2), Success(1)): Validation[Int32, Int32]))
 
-    @test
-    def withDefault02(): Bool = withDefault(Success(1), Failure(Nel(1, Nil))) == Success(1)
+    @Test
+    def withDefault02(): Unit \ Assert =
+        assertEq(expected = Success(1), Validation.withDefault(default = Failure(singleton(1)), Success(1)))
 
-    @test
-    def withDefault03(): Bool = withDefault(Failure(Nel(1, Nil)), Success(2)) == Success(2)
+    @Test
+    def withDefault03(): Unit \ Assert =
+        assertEq(expected = Success(2), Validation.withDefault(default = Success(2), Failure(singleton(1))))
 
-    @test
-    def withDefault04(): Bool = withDefault(Failure(Nel(1, Nil)), Failure(Nel(2, Nil))): Validation[Unit, _] == Failure(Nel(2, Nil))
+    @Test
+    def withDefault04(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(2)), (Validation.withDefault(default = Failure(singleton(2)), Failure(singleton(1))): Validation[Int32, Int32]))
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def exists01(): Bool = exists(x -> x == 123, (Success(123))) == true
+    @Test
+    def exists01(): Unit \ Assert =
+        assertTrue(Validation.exists(x -> x == 123, (Success(123))))
 
-    @test
-    def exists02(): Bool = exists(x -> x != 123, (Success(123))) == false
+    @Test
+    def exists02(): Unit \ Assert =
+        assertFalse(Validation.exists(x -> x != 123, (Success(123))))
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forall01(): Bool = exists(x -> x == 123, (Success(123))) == true
+    @Test
+    def forAll01(): Unit \ Assert =
+        assertTrue(Validation.exists(x -> x == 123, (Success(123))))
 
-    @test
-    def forall02(): Bool = exists(x -> x != 123, (Success(123))) == false
+    @Test
+    def forAll02(): Unit \ Assert =
+        assertFalse(Validation.exists(x -> x != 123, (Success(123))))
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def map01(): Bool = map(x -> x, Success(123)): Validation[_, Unit] == Success(123)
+    @Test
+    def map01(): Unit \ Assert =
+        assertEq(expected = Success(123), (Validation.map(x -> x, Success(123)): Validation[Int32, Int32]))
 
-    @test
-    def map02(): Bool = map(x -> x + 1, Success(123)): Validation[_, Unit] == Success(124)
+    @Test
+    def map02(): Unit \ Assert =
+        assertEq(expected = Success(124), (Validation.map(x -> x + 1, Success(123)): Validation[Int32, Int32]))
 
-    @test
-    def map03(): Bool = map(x -> x, Failure(Nel(123, Nil))): Validation[Unit, _] == Failure(Nel(123, Nil))
+    @Test
+    def map03(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(123)), (Validation.map(x -> x, Failure(singleton(123))): Validation[Int32, Int32]))
 
-    @test
-    def map04(): Bool = (Success(123): Validation[_, Unit]) |> map(x -> x + 1) |> map(x -> x * 2)  == Success(248)
+    @Test
+    def map04(): Unit \ Assert =
+        assertEq(expected = Success(248), (Success(123): Validation[Int32, Int32]) |> Validation.map(x -> x + 1) |> Validation.map(x -> x * 2))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequence01(): Bool = sequence(Success(1) :: Nil): Validation[_, Unit] == Success(1 :: Nil)
+    @Test
+    def sequence01(): Unit \ Assert =
+        assertEq(expected = Success(1 :: Nil), (Validation.sequence(Success(1) :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def sequence02(): Bool = sequence(Success(1) :: Success(2) :: Nil): Validation[_, Unit] == Success(1 :: 2 :: Nil)
+    @Test
+    def sequence02(): Unit \ Assert =
+        assertEq(expected = Success(1 :: 2 :: Nil), (Validation.sequence(Success(1) :: Success(2) :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def sequence03(): Bool = sequence(Success(1) :: Success(2) :: Success(3) :: Nil): Validation[_, Unit] == Success(1 :: 2 :: 3 :: Nil)
+    @Test
+    def sequence03(): Unit \ Assert =
+        assertEq(expected = Success(1 :: 2 :: 3 :: Nil), (Validation.sequence(Success(1) :: Success(2) :: Success(3) :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def sequence04(): Bool = sequence(Failure(Nel(1, Nil)) :: Nil): Validation[List[Unit], _] == Failure(Nel(1, Nil))
+    @Test
+    def sequence04(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(1)), (Validation.sequence(Failure(singleton(1)) :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def sequence05(): Bool = sequence(Failure(Nel(1, Nil)) :: Failure(Nel(2, Nil)) :: Nil): Validation[List[Unit], _] == Failure(Nel(1, 2 :: Nil))
+    @Test
+    def sequence05(): Unit \ Assert =
+        assertEq(expected = Failure(necOf2(1, 2)), (Validation.sequence(Failure(singleton(1)) :: Failure(singleton(2)) :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def sequence06(): Bool = sequence(Success(1) :: Failure(Nel(42, Nil)) :: Nil) == Failure(Nel(42, Nil))
+    @Test
+    def sequence06(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(42)), Validation.sequence(Success(1) :: Failure(singleton(42)) :: Nil))
 
-    @test
-    def sequence07(): Bool = sequence(Failure(Nel(42, Nil)) :: Success(1) :: Nil) == Failure(Nel(42, Nil))
+    @Test
+    def sequence07(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(42)), Validation.sequence(Failure(singleton(42)) :: Success(1) :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverse01(): Bool = traverse(x -> Success(x + 1), 1 :: Nil): Validation[_, Unit] == Success(2 :: Nil)
+    @Test
+    def traverse01(): Unit \ Assert =
+        assertEq(expected = Success(2 :: Nil), (Validation.traverse(x -> Success(x + 1), 1 :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def traverse02(): Bool = traverse(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[_, Unit] == Success(2 :: 3 :: Nil)
+    @Test
+    def traverse02(): Unit \ Assert =
+        assertEq(expected = Success(2 :: 3 :: Nil), (Validation.traverse(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def traverse03(): Bool = traverse(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[_, Unit] == Success(2 :: 3 :: 4 :: Nil)
+    @Test
+    def traverse03(): Unit \ Assert =
+        assertEq(expected = Success(2 :: 3 :: 4 :: Nil), (Validation.traverse(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def traverse04(): Bool = traverse(x -> Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil): Validation[List[Unit], _] == Failure(Nel(1, 2 :: 3 :: Nil))
+    @Test
+    def traverse04(): Unit \ Assert =
+        assertEq(expected = Failure(necOf3(1, 2, 3)), (Validation.traverse(x -> Failure(singleton(x)), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def traverse05(): Bool = traverse(x -> Failure(Nel(x, x :: Nil)), 1 :: 2 :: 3 :: Nil): Validation[List[Unit], _] == Failure(Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil))
+    @Test
+    def traverse05(): Unit \ Assert =
+        assertEq(expected = Failure(necOf6(1, 1, 2, 2, 3, 3)), (Validation.traverse(x -> Failure(necOf2(x, x)), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]]))
 
-    @test
-    def traverse06(): Bool = traverse(x -> if (x != 2) Success(x + 1) else Failure(Nel(42, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(42, Nil))
+    @Test
+    def traverse06(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(42)), Validation.traverse(x -> if (x != 2) Success(x + 1) else Failure(singleton(42)), 1 :: 2 :: 3 :: Nil))
 
-    @test
-    def traverse07(): Bool = traverse(x -> if (x == 2) Success(x + 1) else Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 3 :: Nil))
+    @Test
+    def traverse07(): Unit \ Assert =
+        assertEq(expected = Failure(necOf2(1, 3)), Validation.traverse(x -> if (x == 2) Success(x + 1) else Failure(singleton(x)), 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverseX                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverseX01(): Bool = traverseX(x -> Success(x + 1), 1 :: Nil): Validation[_, Unit] == Success()
+    @Test
+    def traverseX01(): Unit \ Assert =
+        assertEq(expected = Success(), (Validation.traverseX(x -> Success(x + 1), 1 :: Nil): Validation[Int32, Unit]))
 
-    @test
-    def traverseX02(): Bool = traverseX(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[_, Unit] == Success()
+    @Test
+    def traverseX02(): Unit \ Assert =
+        assertEq(expected = Success(), (Validation.traverseX(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[Int32, Unit]))
 
-    @test
-    def traverseX03(): Bool = traverseX(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[_, Unit] == Success()
+    @Test
+    def traverseX03(): Unit \ Assert =
+        assertEq(expected = Success(), (Validation.traverseX(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[Int32, Unit]))
 
-    @test
-    def traverseX04(): Bool = traverseX(x -> Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 2 :: 3 :: Nil))
+    @Test
+    def traverseX04(): Unit \ Assert =
+        assertEq(expected = Failure(necOf3(1, 2, 3)), Validation.traverseX(x -> Failure(singleton(x)), 1 :: 2 :: 3 :: Nil))
 
-    @test
-    def traverseX05(): Bool = traverseX(x -> Failure(Nel(x, x :: Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil))
+    @Test
+    def traverseX05(): Unit \ Assert =
+        assertEq(expected = Failure(necOf6(1, 1, 2, 2, 3, 3)), Validation.traverseX(x -> Failure(necOf2(x, x)), 1 :: 2 :: 3 :: Nil))
 
-    @test
-    def traverseX06(): Bool = traverseX(x -> if (x != 2) Success(x + 1) else Failure(Nel(42, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(42, Nil))
+    @Test
+    def traverseX06(): Unit \ Assert =
+        assertEq(expected = Failure(singleton(42)), Validation.traverseX(x -> if (x != 2) Success(x + 1) else Failure(singleton(42)), 1 :: 2 :: 3 :: Nil))
 
-    @test
-    def traverseX07(): Bool = traverseX(x -> if (x == 2) Success(x + 1) else Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 3 :: Nil))
+    @Test
+    def traverseX07(): Unit \ Assert =
+        assertEq(expected = Failure(necOf2(1, 3)), Validation.traverseX(x -> if (x == 2) Success(x + 1) else Failure(singleton(x)), 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // toOption                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toOption01(): Bool = (Success(123) |> toOption) == Some(123)
+    @Test
+    def toOption01(): Unit \ Assert =
+        assertEq(expected = Some(123), (Success(123) |> Validation.toOption))
 
-    @test
-    def toOption02(): Bool = (Failure(Nel(42, Nil)) |> toOption): Option[Int32] == None
+    @Test
+    def toOption02(): Unit \ Assert =
+        assertEq(expected = None, ((Failure(singleton(42)) |> Validation.toOption): Option[Int32]))
 
     /////////////////////////////////////////////////////////////////////////////
     // toResult                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toResult01(): Bool = (Success(123) |> toResult): Result[_, Nel[Unit]] == Ok(123)
+    @Test
+    def toResult01(): Unit \ Assert =
+        assertEq(expected = Ok(123), ((Success(123) |> Validation.toResult): Result[Nec[Int32], Int32]))
 
-    @test
-    def toResult02(): Bool = (Failure(Nel(42, Nil)) |> toResult): Result[Unit, _] == Err(Nel(42, Nil))
+    @Test
+    def toResult02(): Unit \ Assert =
+        assertEq(expected = Err(singleton(42)), ((Failure(singleton(42)) |> Validation.toResult): Result[Nec[Int32], Int32]))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool = (Success(123) |> toList) == 123 :: Nil
-
-    @test
-    def toList02(): Bool = ((Failure(Nel(42, Nil)): Validation[Unit, _]) |> toList) == Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// lift2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift201(): Bool = Validation.lift2((x1,x2) -> x1 + x2, Success(123), Success(1)): Validation[_, Unit] == Success(124)
-
-@test
-def lift202(): Bool = Validation.lift2((x1,x2) -> x1 + x2, Success(123), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift203(): Bool = Validation.lift2((x1,x2) -> x1 + x2, Failure(Nel("e1", Nil)), Success(1)) == Failure(Nel("e1", Nil))
-
-@test
-def lift204(): Bool = Validation.lift2((x1,x2) -> x1 + x2, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// lift3                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift301(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Success(2)): Validation[_, Unit] == Success(126)
-
-@test
-def lift302(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift303(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Failure(Nel("e1", Nil)), Success(2)) == Failure(Nel("e1", Nil))
-
-@test
-def lift304(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Failure(Nel("e1", Nil)), Success(1), Success(2)) == Failure(Nel("e1", Nil))
-
-@test
-def lift305(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil))) == Failure(Nel("e1", "e2" :: Nil))
-
-@test
-def lift306(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Failure(Nel("e1", Nil)), Success(1), Failure(Nel("e2", Nil))) == Failure(Nel("e1", "e2" :: Nil))
-
-@test
-def lift307(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// lift4                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift401(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Success(3)): Validation[_, Unit] == Success(129)
-
-@test
-def lift402(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift403(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Failure(Nel("e1", Nil)), Success(3)) == Failure(Nel("e1", Nil))
-
-@test
-def lift404(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Failure(Nel("e1", Nil)), Success(2), Success(3)) == Failure(Nel("e1", Nil))
-
-@test
-def lift405(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Failure(Nel("e1", Nil)), Success(1), Success(2), Success(3)) == Failure(Nel("e1", Nil))
-
-@test
-def lift406(): Bool = Validation.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// lift5                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift501(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Success(4)): Validation[_, Unit] == Success(133)
-
-@test
-def lift502(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift503(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Failure(Nel("e1", Nil)), Success(4)) == Failure(Nel("e1", Nil))
-
-@test
-def lift504(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Failure(Nel("e1", Nil)), Success(3), Success(4)) == Failure(Nel("e1", Nil))
-
-@test
-def lift505(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Failure(Nel("e1", Nil)), Success(2), Success(3), Success(4)) == Failure(Nel("e1", Nil))
-
-@test
-def lift506(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Failure(Nel("e1", Nil)), Success(1), Success(2), Success(3), Success(4)) == Failure(Nel("e1", Nil))
-
-@test
-def lift507(): Bool = Validation.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)), Failure(Nel("e5", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: "e5" :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// lift6                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift601(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5)): Validation[_, Unit] == Success(138)
-
-@test
-def lift602(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift603(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Failure(Nel("e1", Nil)), Success(5)) == Failure(Nel("e1", Nil))
-
-@test
-def lift604(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Failure(Nel("e1", Nil)), Success(4), Success(5)) == Failure(Nel("e1", Nil))
-
-@test
-def lift605(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Failure(Nel("e1", Nil)), Success(3), Success(4), Success(5)) == Failure(Nel("e1", Nil))
-
-@test
-def lift606(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Failure(Nel("e1", Nil)), Success(2), Success(3), Success(4), Success(5)) == Failure(Nel("e1", Nil))
-
-@test
-def lift607(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Failure(Nel("e1", Nil)), Success(1), Success(2), Success(3), Success(4), Success(5)) == Failure(Nel("e1", Nil))
-
-@test
-def lift608(): Bool = Validation.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)), Failure(Nel("e5", Nil)), Failure(Nel("e6", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: "e5" :: "e6" :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// lift7                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift701(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)): Validation[_, Unit] == Success(144)
-
-@test
-def lift702(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift703(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(Nel("e1", Nil)), Success(6)) == Failure(Nel("e1", Nil))
-
-@test
-def lift704(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Failure(Nel("e1", Nil)), Success(5), Success(6)) == Failure(Nel("e1", Nil))
-
-@test
-def lift705(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Failure(Nel("e1", Nil)), Success(4), Success(5), Success(6)) == Failure(Nel("e1", Nil))
-
-@test
-def lift706(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Failure(Nel("e1", Nil)), Success(3), Success(4), Success(5), Success(6)) == Failure(Nel("e1", Nil))
-
-@test
-def lift707(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Failure(Nel("e1", Nil)), Success(2), Success(3), Success(4), Success(5), Success(6)) == Failure(Nel("e1", Nil))
-
-@test
-def lift708(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Failure(Nel("e1", Nil)), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)) == Failure(Nel("e1", Nil))
-
-@test
-def lift709(): Bool = Validation.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)), Failure(Nel("e5", Nil)), Failure(Nel("e6", Nil)), Failure(Nel("e7", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: "e5" :: "e6" :: "e7" :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// lift8                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift801(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)): Validation[_, Unit] == Success(151)
-
-@test
-def lift802(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift803(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(Nel("e1", Nil)), Success(7)) == Failure(Nel("e1", Nil))
-
-@test
-def lift804(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(Nel("e1", Nil)), Success(6), Success(7)) == Failure(Nel("e1", Nil))
-
-@test
-def lift805(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Failure(Nel("e1", Nil)), Success(5), Success(6), Success(7)) == Failure(Nel("e1", Nil))
-
-@test
-def lift806(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Failure(Nel("e1", Nil)), Success(4), Success(5), Success(6), Success(7)) == Failure(Nel("e1", Nil))
-
-@test
-def lift807(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Failure(Nel("e1", Nil)), Success(3), Success(4), Success(5), Success(6), Success(7)) == Failure(Nel("e1", Nil))
-
-@test
-def lift808(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Failure(Nel("e1", Nil)), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)) == Failure(Nel("e1", Nil))
-
-@test
-def lift809(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Failure(Nel("e1", Nil)), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)) == Failure(Nel("e1", Nil))
-
-@test
-def lift810(): Bool = Validation.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)), Failure(Nel("e5", Nil)), Failure(Nel("e6", Nil)), Failure(Nel("e7", Nil)), Failure(Nel("e8", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: "e5" :: "e6" :: "e7" :: "e8" :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// lift9                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift901(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)): Validation[_, Unit] == Success(159)
-
-@test
-def lift902(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift903(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Failure(Nel("e1", Nil)), Success(8)) == Failure(Nel("e1", Nil))
-
-@test
-def lift904(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(Nel("e1", Nil)), Success(7), Success(8)) == Failure(Nel("e1", Nil))
-
-@test
-def lift905(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(Nel("e1", Nil)), Success(6), Success(7), Success(8)) == Failure(Nel("e1", Nil))
-
-@test
-def lift906(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Failure(Nel("e1", Nil)), Success(5), Success(6), Success(7), Success(8)) == Failure(Nel("e1", Nil))
-
-@test
-def lift907(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Failure(Nel("e1", Nil)), Success(4), Success(5), Success(6), Success(7), Success(8)) == Failure(Nel("e1", Nil))
-
-@test
-def lift908(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Failure(Nel("e1", Nil)), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)) == Failure(Nel("e1", Nil))
-
-@test
-def lift909(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Failure(Nel("e1", Nil)), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)) == Failure(Nel("e1", Nil))
-
-@test
-def lift910(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Failure(Nel("e1", Nil)), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)) == Failure(Nel("e1", Nil))
-
-@test
-def lift911(): Bool = Validation.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)), Failure(Nel("e5", Nil)), Failure(Nel("e6", Nil)), Failure(Nel("e7", Nil)), Failure(Nel("e8", Nil)), Failure(Nel("e9", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: "e5" :: "e6" :: "e7" :: "e8" :: "e9" :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// lift10                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def lift1001(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)): Validation[_, Unit] == Success(168)
-
-@test
-def lift1002(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Failure(Nel("e1", Nil))) == Failure(Nel("e1", Nil))
-
-@test
-def lift1003(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Failure(Nel("e1", Nil)), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1004(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Failure(Nel("e1", Nil)), Success(8), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1005(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(Nel("e1", Nil)), Success(7), Success(8), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1006(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(Nel("e1", Nil)), Success(6), Success(7), Success(8), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1007(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Failure(Nel("e1", Nil)), Success(5), Success(6), Success(7), Success(8), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1008(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Failure(Nel("e1", Nil)), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1009(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Failure(Nel("e1", Nil)), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1010(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Failure(Nel("e1", Nil)), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1011(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(Nel("e1", Nil)), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)) == Failure(Nel("e1", Nil))
-
-@test
-def lift1012(): Bool = Validation.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil)), Failure(Nel("e3", Nil)), Failure(Nel("e4", Nil)), Failure(Nel("e5", Nil)), Failure(Nel("e6", Nil)), Failure(Nel("e7", Nil)), Failure(Nel("e8", Nil)), Failure(Nel("e9", Nil)), Failure(Nel("e10", Nil)): Validation[Int32, String]) == Failure(Nel("e1", "e2" :: "e3" :: "e4" :: "e5" :: "e6" :: "e7" :: "e8" :: "e9" :: "e10" :: Nil))
+    @Test
+    def toList01(): Unit \ Assert =
+        assertEq(expected = 123 :: Nil, (Success(123) |> Validation.toList))
+
+    @Test
+    def toList02(): Unit \ Assert =
+        assertEq(expected = Nil, ((Failure(singleton(42)): Validation[Int32, Int32]) |> Validation.toList))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map2                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map201(): Unit \ Assert =
+        assertEq(expected = Success(124), (Validation.map2((x1,x2) -> x1 + x2, Success(123), Success(1)): Validation[String, Int32]))
+
+    @Test
+    def map202(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map2((x1,x2) -> x1 + x2, Success(123), Failure(singleton("e1"))))
+
+    @Test
+    def map203(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map2((x1,x2) -> x1 + x2, Failure(singleton("e1")), Success(1)))
+
+    @Test
+    def map204(): Unit \ Assert =
+        assertEq(expected = Failure(necOf2("e1", "e2")), Validation.map2((x1,x2) -> x1 + x2, Failure(singleton("e1")), (Failure(singleton("e2")): Validation[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map3                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map301(): Unit \ Assert =
+        assertEq(expected = Success(126), (Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Success(2)): Validation[String, Int32]))
+
+    @Test
+    def map302(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Failure(singleton("e1"))))
+
+    @Test
+    def map303(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Failure(singleton("e1")), Success(2)))
+
+    @Test
+    def map304(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Failure(singleton("e1")), Success(1), Success(2)))
+
+    @Test
+    def map305(): Unit \ Assert =
+        assertEq(expected = Failure(necOf2("e1", "e2")), Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Failure(singleton("e1")), Failure(singleton("e2"))))
+
+    @Test
+    def map306(): Unit \ Assert =
+        assertEq(expected = Failure(necOf2("e1", "e2")), Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Failure(singleton("e1")), Success(1), Failure(singleton("e2"))))
+
+    @Test
+    def map307(): Unit \ Assert =
+        assertEq(expected = Failure(necOf3("e1", "e2", "e3")), Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Failure(singleton("e1")), Failure(singleton("e2")), (Failure(singleton("e3")): Validation[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map4                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map401(): Unit \ Assert =
+        assertEq(expected = Success(129), (Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Success(3)): Validation[String, Int32]))
+
+    @Test
+    def map402(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Failure(singleton("e1"))))
+
+    @Test
+    def map403(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Failure(singleton("e1")), Success(3)))
+
+    @Test
+    def map404(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Failure(singleton("e1")), Success(2), Success(3)))
+
+    @Test
+    def map405(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Failure(singleton("e1")), Success(1), Success(2), Success(3)))
+
+    @Test
+    def map406(): Unit \ Assert =
+        assertEq(expected = Failure(necOf4("e1", "e2", "e3", "e4")), Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), (Failure(singleton("e4")): Validation[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map5                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map501(): Unit \ Assert =
+        assertEq(expected = Success(133), (Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Success(4)): Validation[String, Int32]))
+
+    @Test
+    def map502(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Failure(singleton("e1"))))
+
+    @Test
+    def map503(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Failure(singleton("e1")), Success(4)))
+
+    @Test
+    def map504(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Failure(singleton("e1")), Success(3), Success(4)))
+
+    @Test
+    def map505(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Failure(singleton("e1")), Success(2), Success(3), Success(4)))
+
+    @Test
+    def map506(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4)))
+
+    @Test
+    def map507(): Unit \ Assert =
+        assertEq(expected = Failure(necOf5("e1", "e2", "e3", "e4", "e5")), Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), (Failure(singleton("e5")): Validation[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map6                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map601(): Unit \ Assert =
+        assertEq(expected = Success(138), (Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5)): Validation[String, Int32]))
+
+    @Test
+    def map602(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(singleton("e1"))))
+
+    @Test
+    def map603(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Failure(singleton("e1")), Success(5)))
+
+    @Test
+    def map604(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Failure(singleton("e1")), Success(4), Success(5)))
+
+    @Test
+    def map605(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Failure(singleton("e1")), Success(3), Success(4), Success(5)))
+
+    @Test
+    def map606(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Failure(singleton("e1")), Success(2), Success(3), Success(4), Success(5)))
+
+    @Test
+    def map607(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5)))
+
+    @Test
+    def map608(): Unit \ Assert =
+        assertEq(expected = Failure(necOf6("e1", "e2", "e3", "e4", "e5", "e6")), Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), (Failure(singleton("e6")): Validation[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map7                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map701(): Unit \ Assert =
+        assertEq(expected = Success(144), (Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)): Validation[String, Int32]))
+
+    @Test
+    def map702(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(singleton("e1"))))
+
+    @Test
+    def map703(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(singleton("e1")), Success(6)))
+
+    @Test
+    def map704(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Failure(singleton("e1")), Success(5), Success(6)))
+
+    @Test
+    def map705(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Failure(singleton("e1")), Success(4), Success(5), Success(6)))
+
+    @Test
+    def map706(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Failure(singleton("e1")), Success(3), Success(4), Success(5), Success(6)))
+
+    @Test
+    def map707(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Failure(singleton("e1")), Success(2), Success(3), Success(4), Success(5), Success(6)))
+
+    @Test
+    def map708(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)))
+
+    @Test
+    def map709(): Unit \ Assert =
+        assertEq(expected = Failure(necOf7("e1", "e2", "e3", "e4", "e5", "e6", "e7")), Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), (Failure(singleton("e7")): Validation[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map8                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map801(): Unit \ Assert =
+        assertEq(expected = Success(151), (Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)): Validation[String, Int32]))
+
+    @Test
+    def map802(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Failure(singleton("e1"))))
+
+    @Test
+    def map803(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(singleton("e1")), Success(7)))
+
+    @Test
+    def map804(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(singleton("e1")), Success(6), Success(7)))
+
+    @Test
+    def map805(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Failure(singleton("e1")), Success(5), Success(6), Success(7)))
+
+    @Test
+    def map806(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Failure(singleton("e1")), Success(4), Success(5), Success(6), Success(7)))
+
+    @Test
+    def map807(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Failure(singleton("e1")), Success(3), Success(4), Success(5), Success(6), Success(7)))
+
+    @Test
+    def map808(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Failure(singleton("e1")), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)))
+
+    @Test
+    def map809(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)))
+
+    @Test
+    def map810(): Unit \ Assert =
+        assertEq(expected = Failure(necOf8("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8")), Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), (Failure(singleton("e8")): Validation[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map9                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map901(): Unit \ Assert =
+        assertEq(expected = Success(159), (Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)): Validation[String, Int32]))
+
+    @Test
+    def map902(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Failure(singleton("e1"))))
+
+    @Test
+    def map903(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Failure(singleton("e1")), Success(8)))
+
+    @Test
+    def map904(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(singleton("e1")), Success(7), Success(8)))
+
+    @Test
+    def map905(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(singleton("e1")), Success(6), Success(7), Success(8)))
+
+    @Test
+    def map906(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Failure(singleton("e1")), Success(5), Success(6), Success(7), Success(8)))
+
+    @Test
+    def map907(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Failure(singleton("e1")), Success(4), Success(5), Success(6), Success(7), Success(8)))
+
+    @Test
+    def map908(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Failure(singleton("e1")), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)))
+
+    @Test
+    def map909(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Failure(singleton("e1")), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)))
+
+    @Test
+    def map910(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)))
+
+    @Test
+    def map911(): Unit \ Assert =
+        assertEq(expected = Failure(necOf9("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9")), Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), Failure(singleton("e8")), (Failure(singleton("e9")): Validation[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map10                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map1001(): Unit \ Assert =
+        assertEq(expected = Success(168), (Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)): Validation[String, Int32]))
+
+    @Test
+    def map1002(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Failure(singleton("e1"))))
+
+    @Test
+    def map1003(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Failure(singleton("e1")), Success(9)))
+
+    @Test
+    def map1004(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Failure(singleton("e1")), Success(8), Success(9)))
+
+    @Test
+    def map1005(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(singleton("e1")), Success(7), Success(8), Success(9)))
+
+    @Test
+    def map1006(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(singleton("e1")), Success(6), Success(7), Success(8), Success(9)))
+
+    @Test
+    def map1007(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Failure(singleton("e1")), Success(5), Success(6), Success(7), Success(8), Success(9)))
+
+    @Test
+    def map1008(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Failure(singleton("e1")), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)))
+
+    @Test
+    def map1009(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Failure(singleton("e1")), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)))
+
+    @Test
+    def map1010(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Failure(singleton("e1")), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)))
+
+    @Test
+    def map1011(): Unit \ Assert =
+        assertEq(expected = Failure(singleton("e1")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)))
+
+    @Test
+    def map1012(): Unit \ Assert =
+        assertEq(expected = Failure(necOf10("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10")), Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), Failure(singleton("e8")), Failure(singleton("e9")), (Failure(singleton("e10")): Validation[String, Int32])))
 
     /////////////////////////////////////////////////////////////////////////////
     // hash                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def hash01(): Bool = hash(Success(()): Validation[_, Unit]) == hash(Success(()): Validation[_, Unit])
+    @Test
+    def hash01(): Unit \ Assert =
+        assertEq(expected = hash((Success(()): Validation[Unit, Unit])), hash((Success(()): Validation[Unit, Unit])))
 
-    @test
-    def hash02(): Bool = hash(Success(()): Validation[_, Unit]) != hash(Failure(Nel((), () :: Nil)): Validation[Unit, _])
+    @Test
+    def hash02(): Unit \ Assert =
+        assertTrue(hash((Success(()): Validation[Unit, Unit])) != hash((Failure(necOf2((), ())): Validation[Unit, Unit])))
 
-    @test
-    def hash03(): Bool = hash(Success(1, 2): Validation[_, Unit]) == hash(Success(1, 2): Validation[_, Unit])
+    @Test
+    def hash03(): Unit \ Assert =
+        assertEq(expected = hash((Success((1, 2)): Validation[Unit, (Int32, Int32)])), hash((Success((1, 2)): Validation[Unit, (Int32, Int32)])))
 
-    @test
-    def hash04(): Bool = hash(Success(1, 2, 3): Validation[_, Unit]) != hash(Success(1, 3, 2): Validation[_, Unit])
+    @Test
+    def hash04(): Unit \ Assert =
+        assertTrue(hash((Success((1, 2, 3)): Validation[Unit, (Int32, Int32, Int32)])) != hash((Success((1, 3, 2)): Validation[Unit, (Int32, Int32, Int32)])))
 
-    @test
-    def hash05(): Bool = hash(Success(Nel(1, Nil)): Validation[_, Int32]) != hash(Failure(Nel(1, Nil)): Validation[Nel[Int32], _])
+    @Test
+    def hash05(): Unit \ Assert =
+        assertTrue(hash((Success(singleton(1)): Validation[Int32, Nec[Int32]])) != hash((Failure(singleton(1)): Validation[Int32, Nec[Int32]])))
 
 }

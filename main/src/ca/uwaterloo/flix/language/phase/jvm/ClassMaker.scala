@@ -16,127 +16,123 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Abstract.{IsAbstract, NotAbstract}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.{IsInterface, NotInterface}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
+import ca.uwaterloo.flix.language.ast.shared.JvmAnnotation
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import org.objectweb.asm.{ClassWriter, Opcodes}
+import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
 
-// TODO: There are further things you can constrain, fx. final classes have implicitly final methods.
+// TODO: There are further things you can constrain and assert, e.g. final classes have implicitly final methods.
 sealed trait ClassMaker {
-  /**
-    * Creates a static field.
-    */
-  def mkStaticField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final): Unit = {
-    makeField(fieldName, fieldType, v, f, IsStatic)
-  }
-
-  /**
-    * Creates a static constructor.
-    */
-  def mkStaticConstructor(ins: InstructionSet): Unit =
-    makeMethod(Some(ins), JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, IsDefault, NotFinal, IsStatic, NotAbstract)
-
-  /**
-    * Creates a static constructor.
-    */
-  def mkStaticMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Final): Unit = {
-    makeMethod(Some(ins), methodName, d, v, f, IsStatic, NotAbstract)
+  def mkStaticConstructor(c: StaticConstructorMethod, ins: MethodVisitor => Unit): Unit = {
+    makeMethod(Nil, Some(ins), c.name, c.d, IsDefault, NotFinal, IsStatic, NotAbstract)
   }
 
   /**
     * Closes the class maker.
     * This should be the last function called on the class maker.
     */
-  def closeClassMaker: Array[Byte] = {
+  def closeClassMaker(): Array[Byte] = {
     visitor.visitEnd()
     visitor.toByteArray
   }
 
   protected val visitor: ClassWriter
 
-  protected def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final, s: Static): Unit = {
-    val m = v.toInt + f.toInt + s.toInt
+  protected def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final, vol: Volatility, s: Static): Unit = {
+    val m = v.toInt + f.toInt + s.toInt + vol.toInt
     val field = visitor.visitField(m, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
-  protected def makeMethod(i: Option[InstructionSet], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
+  def mkField(field: Field, v: Visibility, f: Final, vol: Volatility): Unit = field match {
+    case InstanceField(_, name, tpe) => makeField(name, tpe, v, f, vol, NotStatic)
+    case StaticField(_, name, tpe) => makeField(name, tpe, v, f, vol, IsStatic)
+  }
+
+  protected def makeMethod(ann: List[JvmAnnotation], i: Option[MethodVisitor => Unit], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
     val m = v.toInt + f.toInt + s.toInt + a.toInt
     val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
+    for (a <- ann) {
+      val descriptor = JvmName.ofClass(a.clazz).toDescriptor
+      val retention = a.clazz.getAnnotation(classOf[java.lang.annotation.Retention])
+      val visible = retention != null && retention.value() == java.lang.annotation.RetentionPolicy.RUNTIME
+      val av = mv.visitAnnotation(descriptor, visible)
+      av.visitEnd()
+    }
     i match {
       case None => ()
       case Some(ins) =>
         mv.visitCode()
-        ins(new BytecodeInstructions.F(mv))
+        ins(mv)
         mv.visitMaxs(999, 999)
     }
     mv.visitEnd()
   }
 
   protected def makeAbstractMethod(methodName: String, d: MethodDescriptor): Unit = {
-    makeMethod(None, methodName, d, IsPublic, NotFinal, NotStatic, IsAbstract)
+    makeMethod(Nil, None, methodName, d, IsPublic, NotFinal, NotStatic, IsAbstract)
   }
 }
 
 object ClassMaker {
+
   class InstanceClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final): Unit = {
-      makeField(fieldName, fieldType, v, f, NotStatic)
+    def mkStaticMethod(m: StaticMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
+      makeMethod(Nil, Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
     }
 
-    def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
-      makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
+    def mkConstructor(c: ConstructorMethod, v: Visibility, ins: MethodVisitor => Unit): Unit = {
+      makeMethod(Nil, Some(ins), JvmName.ConstructorMethod, c.d, v, NotFinal, NotStatic, NotAbstract)
     }
 
-    def mkObjectConstructor(v: Visibility): Unit = {
-      val ins = thisLoad() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
-      mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
-    }
-
-    def mkMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Final): Unit = {
-      makeMethod(Some(ins), methodName, d, v, f, NotStatic, NotAbstract)
+    def mkMethod(ann: List[JvmAnnotation], m: InstanceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
+      makeMethod(ann, Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
   }
 
   class AbstractClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final): Unit = {
-      makeField(fieldName, fieldType, v, f, NotStatic)
+    def mkConstructor(c: ConstructorMethod, v: Visibility, ins: MethodVisitor => Unit): Unit = {
+      makeMethod(Nil, Some(ins), c.name, c.d, v, NotFinal, NotStatic, NotAbstract)
     }
 
-    def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
-      makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
+    def mkStaticMethod(m: StaticMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
+      makeMethod(Nil, Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
     }
 
-    def mkObjectConstructor(v: Visibility): Unit = {
-      val ins = thisLoad() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
-      mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
+    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
+      makeMethod(Nil, Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
 
-    def mkMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Final): Unit = {
-      makeMethod(Some(ins), methodName, d, v, f, NotStatic, NotAbstract)
-    }
-
-    def mkAbstractMethod(methodName: String, d: MethodDescriptor): Unit = {
-      makeAbstractMethod(methodName, d)
+    def mkAbstractMethod(m: AbstractMethod): Unit = {
+      makeAbstractMethod(m.name, m.d)
     }
   }
 
   class InterfaceMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkAbstractMethod(methodName: String, d: MethodDescriptor): Unit = {
-      makeAbstractMethod(methodName, d)
+    def mkInterfaceMethod(m: InterfaceMethod): Unit = {
+      makeAbstractMethod(m.name, m.d)
+    }
+
+    def mkStaticInterfaceMethod(m: StaticInterfaceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
+      makeMethod(Nil, Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
+    }
+
+    def mkDefaultMethod(m: DefaultMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
+      makeMethod(Nil, Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
   }
 
@@ -155,7 +151,7 @@ object ClassMaker {
   private def mkClassWriter(name: JvmName, v: Visibility, f: Final, a: Abstract, i: Interface, superClass: JvmName, interfaces: List[JvmName])(implicit flix: Flix): ClassWriter = {
     val cw = AsmOps.mkClassWriter()
     val m = v.toInt + f.toInt + a.toInt + i.toInt
-    cw.visit(AsmOps.JavaVersion, m, name.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
+    cw.visit(CompilerConstants.JvmTargetVersion, m, name.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
     cw.visitSource(name.toInternalName, null)
     cw
   }
@@ -203,6 +199,19 @@ object ClassMaker {
     case object NotStatic extends Static
   }
 
+  sealed trait Volatility {
+    val toInt: Int = this match {
+      case IsVolatile => Opcodes.ACC_VOLATILE
+      case NotVolatile => 0
+    }
+  }
+
+  object Volatility {
+    case object IsVolatile extends Volatility
+
+    case object NotVolatile extends Volatility
+  }
+
   sealed trait Abstract {
     val toInt: Int = this match {
       case Abstract.IsAbstract => Opcodes.ACC_ABSTRACT
@@ -229,17 +238,54 @@ object ClassMaker {
     case object NotInterface extends Interface
   }
 
-  sealed case class InstanceField(clazz: JvmName, name: String, tpe: BackendType) {
-    def mkField(cm: InstanceClassMaker, v: Visibility, f: Final): Unit =
-      cm.mkField(name, tpe, v, f)
+  sealed trait Field {
+    def clazz: JvmName
 
-    def mkField(cm: AbstractClassMaker, v: Visibility, f: Final): Unit =
-      cm.mkField(name, tpe, v, f)
+    def name: String
 
-    def putField(): InstructionSet =
-      PUTFIELD(clazz, name, tpe)
-
-    def getField(): InstructionSet =
-      GETFIELD(clazz, name, tpe)
+    def tpe: BackendType
   }
+
+  sealed case class InstanceField(clazz: JvmName, name: String, tpe: BackendType) extends Field
+
+  sealed case class StaticField(clazz: JvmName, name: String, tpe: BackendType) extends Field
+
+  sealed trait Method {
+    def clazz: JvmName
+
+    def name: String
+
+    def d: MethodDescriptor
+  }
+
+  sealed case class ConstructorMethod(clazz: JvmName, args: List[BackendType]) extends Method {
+    override def name: String = JvmName.ConstructorMethod
+
+    override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
+  }
+
+  case class StaticConstructorMethod(clazz: JvmName) extends Method {
+    override def name: String = JvmName.StaticConstructorMethod
+
+    override def d: MethodDescriptor = MethodDescriptor.NothingToVoid
+  }
+
+  sealed case class InstanceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
+    def implementation(clazz: JvmName): InstanceMethod = InstanceMethod(clazz, name, d)
+  }
+
+  sealed case class DefaultMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
+
+  sealed case class InterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
+    def implementation(clazz: JvmName): InstanceMethod = InstanceMethod(clazz, name, d)
+  }
+
+  sealed case class AbstractMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
+    def implementation(clazz: JvmName): InstanceMethod = InstanceMethod(clazz, name, d)
+  }
+
+  sealed case class StaticMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
+
+  sealed case class StaticInterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
+
 }

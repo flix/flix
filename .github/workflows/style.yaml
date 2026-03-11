@@ -1,0 +1,34 @@
+name: Style
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+# Checks in this workflow should be cheap,
+# since they run whenever a PR is edited
+jobs:
+  check-pr-data:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    env:
+      # matches the semantic commit messages
+      regex: "^(chore|ci|docs|feat|fix|perf|refactor|style|test): "
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v5
+
+      - name: Check commit message for semantic tag
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # The PR title is used automatically as the commit message,
+          # so we require it to be styled as a semantic commit
+          script: >
+            const title = context.payload.pull_request.title;
+            if (title.match(process.env.regex) === null) {
+              throw new Error("Invalid commit message '" + title + "'.")
+            }
+
+      - name: Check for author name in AUTHORS.md
+        # Looks for the string "(https://github.com/<github_id>)"
+        run: grep -q "(https://github.com/${{ github.event.pull_request.user.login }})" AUTHORS.md

@@ -1,0 +1,5 @@
+{
+  "packages": {
+    "java.util.random": "NonDet, IO"
+  }
+}

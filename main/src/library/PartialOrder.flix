@@ -14,10 +14,12 @@
  *  limitations under the License.
  */
 
+use Bool.{==>}
+
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
 ///
-pub class PartialOrder[a] {
+pub lawful trait PartialOrder[a] {
 
     ///
     /// Returns `true` if `x` is smaller or equal to `y`.
@@ -28,32 +30,33 @@ pub class PartialOrder[a] {
     ///
     /// Reflexivity: An element `x` is lower or equal to itself.
     ///
-    law reflexivity: forall(x: a). PartialOrder.lessEqual(x, x)
+    law reflexivity: forall(x: a) PartialOrder.lessEqual(x, x)
 
     ///
     /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
     ///
-    law transitivity: forall(x: a, y: a, z: a). (PartialOrder.lessEqual(x, y) and PartialOrder.lessEqual(y, z)) ==> PartialOrder.lessEqual(x, z)
+    law transitivity: forall(x: a, y: a, z: a) (PartialOrder.lessEqual(x, y) and PartialOrder.lessEqual(y, z)) ==> PartialOrder.lessEqual(x, z)
 }
 
 instance PartialOrder[Int8] {
-    pub def lessEqual(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
+    pub def lessEqual(x: Int8, y: Int8): Bool = %%INT8_LE%%(x, y)
 }
 
 instance PartialOrder[Int16] {
-    pub def lessEqual(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
+    pub def lessEqual(x: Int16, y: Int16): Bool = %%INT16_LE%%(x, y)
 }
 
 instance PartialOrder[Int32] {
-    pub def lessEqual(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
+    pub def lessEqual(x: Int32, y: Int32): Bool = %%INT32_LE%%(x, y)
 }
 
 instance PartialOrder[Int64] {
-    pub def lessEqual(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
+    pub def lessEqual(x: Int64, y: Int64): Bool = %%INT64_LE%%(x, y)
 }
 
 instance PartialOrder[BigInt] {
-    pub def lessEqual(x: BigInt, y: BigInt): Bool = $BIGINT_LE$(x, y)
+    pub def lessEqual(x: BigInt, y: BigInt): Bool =
+        x.compareTo(y) <= 0
 }
 
 instance PartialOrder[(a1, a2)] with PartialOrder[a1], PartialOrder[a2] {

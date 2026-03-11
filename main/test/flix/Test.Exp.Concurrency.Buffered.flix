@@ -1,199 +1,257 @@
-namespace Test/Exp/Concurrency/Buffered {
+mod Test.Exp.Concurrency.Buffered {
 
-    @test
-    def testBufferedChannel01(): Bool & Impure =
-        let c = chan Unit 1;
-        c <- ();
-        () == <- c
+    use Assert.assertEq
 
-    @test
-    def testBufferedChannel02(): Bool & Impure =
-        let c = chan Bool 1;
-        c <- true;
-        true == <- c
+    @Test
+    def testBufferedChannel01(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send((), tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = (), r)
+    }
 
-    @test
-    def testBufferedChannel03(): Bool & Impure =
-        let c = chan Float32 1;
-        c <- 123.456f32;
-        123.456f32 == <- c
+    @Test
+    def testBufferedChannel02(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(true, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = true, r)
+    }
 
-    @test
-    def testBufferedChannel04(): Bool & Impure =
-        let c = chan Float64 1;
-        c <- 123.456f64;
-        123.456f64 == <- c
+    @Test
+    def testBufferedChannel03(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(123.456f32, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = 123.456f32, r)
+    }
 
-    @test
-    def testBufferedChannel05(): Bool & Impure =
-        let c = chan Int8 1;
-        c <- 42i8;
-        42i8 == <- c
+    @Test
+    def testBufferedChannel04(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(123.456f64, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = 123.456f64, r)
+    }
 
-    @test
-    def testBufferedChannel06(): Bool & Impure =
-        let c = chan Int16 1;
-        c <- 42i16;
-        42i16 == <- c
+    @Test
+    def testBufferedChannel05(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(42i8, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = 42i8, r)
+    }
 
-    @test
-    def testBufferedChannel07(): Bool & Impure =
-        let c = chan Int32 1;
-        c <- 42i32;
-        42i32 == <- c
+    @Test
+    def testBufferedChannel06(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(42i16, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = 42i16, r)
+    }
 
-    @test
-    def testBufferedChannel08(): Bool & Impure =
-        let c = chan Int64 1;
-        c <- 42i64;
-        42i64 == <- c
+    @Test
+    def testBufferedChannel07(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(42i32, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = 42i32, r)
+    }
 
-    @test
-    def testBufferedChannel09(): Bool & Impure =
-        let c = chan BigInt 1;
-        c <- 42ii;
-        42ii == <- c
+    @Test
+    def testBufferedChannel08(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(42i64, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = 42i64, r)
+    }
 
-    @test
-    def testBufferedChannel10(): Bool & Impure =
-        let c = chan String 1;
-        c <- "Hello World!";
-        "Hello World!" == <- c
+    @Test
+    def testBufferedChannel09(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(42ii, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = 42ii, r)
+    }
 
-    @test
-    def testBufferedChannel11(): Bool & Impure =
-        let c = chan Option[Int] 1;
-        c <- None;
-        None == <- c
+    @Test
+    def testBufferedChannel10(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send("Hello World!", tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = "Hello World!", r)
+    }
 
-    @test
-    def testBufferedChannel12(): Bool & Impure =
-        let c = chan Option[Int] 1;
-        c <- Some(123);
-        Some(123) == <- c
+    @Test
+    def testBufferedChannel11(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx): (Sender[Option[Int32]], Receiver[Option[Int32]]) = Channel.buffered(1);
+        Channel.send(None, tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = None, r)
+    }
 
-    @test
-    def testBufferedChannel13(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
-        c <- Ok(123);
-        Ok(123) == <- c
+    @Test
+    def testBufferedChannel12(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(Some(123), tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = Some(123), r)
+    }
 
-    @test
-    def testBufferedChannel14(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
-        c <- Err("Goodbye World!");
-        Err("Goodbye World!") == <- c
+    @Test
+    def testBufferedChannel13(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx): (Sender[Result[String, Int32]], Receiver[Result[String, Int32]]) = Channel.buffered(1);
+        Channel.send(Ok(123), tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = Ok(123), r)
+    }
 
-    @test
-    def testBufferedChannel15(): Bool & Impure =
-        let c = chan Array[Int] 1;
-        c <- [1, 2, 3];
-        2 == (<- c)[1]
+    @Test
+    def testBufferedChannel14(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx, rx): (Sender[Result[String, Int32]], Receiver[Result[String, Int32]]) = Channel.buffered(1);
+        Channel.send(Err("Goodbye World!"), tx);
+        let r = Channel.recv(rx);
+        assertEq(expected = Err("Goodbye World!"), r)
+    }
 
-    @test
-    def testBufferedChannel16(): Bool & Impure =
-        let c1 = chan Channel[Int] 1;
-        let c2 = chan Int 1;
-        c1 <- c2;
-        c2 <- 42;
-        42 == <- <- c1
+    @Test
+    def testBufferedChannel15(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        Channel.send(Array#{1, 2, 3} @ rc, tx);
+        let r = Array.get(1, Channel.recv(rx));
+        assertEq(expected = 2, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn01(): Bool & Impure =
-        let c = chan Unit 1;
-        spawn c <- ();
-        () == <- c
+    @Test
+    def testBufferedChannel16(): Unit \ (Assert + Chan + NonDet) = {
+        let (tx1, rx1) = Channel.buffered(1);
+        let (tx2, rx2) = Channel.buffered(1);
+        Channel.send(rx2, tx1);
+        Channel.send(42, tx2);
+        let r = Channel.recv(Channel.recv(rx1));
+        assertEq(expected = 42, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn02(): Bool & Impure =
-        let c = chan Bool 1;
-        spawn c <- true;
-        true == <- c
+    @Test
+    def testBufferedChannelWithSpawn01(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send((), tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = (), r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn03(): Bool & Impure =
-        let c = chan Float32 1;
-        spawn c <- 123.456f32;
-        123.456f32 == <- c
+    @Test
+    def testBufferedChannelWithSpawn02(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(true, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = true, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn04(): Bool & Impure =
-        let c = chan Float64 1;
-        spawn c <- 123.456f64;
-        123.456f64 == <- c
+    @Test
+    def testBufferedChannelWithSpawn03(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(123.456f32, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = 123.456f32, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn05(): Bool & Impure =
-        let c = chan Int8 1;
-        spawn c <- 42i8;
-        42i8 == <- c
+    @Test
+    def testBufferedChannelWithSpawn04(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(123.456f64, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = 123.456f64, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn06(): Bool & Impure =
-        let c = chan Int16 1;
-        spawn c <- 42i16;
-        42i16 == <- c
+    @Test
+    def testBufferedChannelWithSpawn05(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(42i8, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = 42i8, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn07(): Bool & Impure =
-        let c = chan Int32 1;
-        spawn c <- 42i32;
-        42i32 == <- c
+    @Test
+    def testBufferedChannelWithSpawn06(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(42i16, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = 42i16, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn08(): Bool & Impure =
-        let c = chan Int64 1;
-        spawn c <- 42i64;
-        42i64 == <- c
+    @Test
+    def testBufferedChannelWithSpawn07(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(42i32, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = 42i32, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn09(): Bool & Impure =
-        let c = chan BigInt 1;
-        spawn c <- 42ii;
-        42ii == <- c
+    @Test
+    def testBufferedChannelWithSpawn08(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(42i64, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = 42i64, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn10(): Bool & Impure =
-        let c = chan String 1;
-        spawn c <- "Hello World!";
-        "Hello World!" == <- c
+    @Test
+    def testBufferedChannelWithSpawn09(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(42ii, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = 42ii, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn11(): Bool & Impure =
-        let c = chan Option[Int] 1;
-        spawn c <- None;
-        None == <- c
+    @Test
+    def testBufferedChannelWithSpawn10(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send("Hello World!", tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = "Hello World!", r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn12(): Bool & Impure =
-        let c = chan Option[Int] 1;
-        spawn c <- Some(123);
-        Some(123) == <- c
+    @Test
+    def testBufferedChannelWithSpawn11(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx): (Sender[Option[Int32]], Receiver[Option[Int32]]) = Channel.buffered(1);
+        spawn Channel.send(None, tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = None, r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn13(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
-        spawn c <- Ok(123);
-        Ok(123) == <- c
+    @Test
+    def testBufferedChannelWithSpawn12(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx) = Channel.buffered(1);
+        spawn Channel.send(Some(123), tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = Some(123), r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn14(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
-        spawn c <- Err("Goodbye World!");
-        Err("Goodbye World!") == <- c
+    @Test
+    def testBufferedChannelWithSpawn13(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx): (Sender[Result[String, Int32]], Receiver[Result[String, Int32]]) = Channel.buffered(1);
+        spawn Channel.send(Ok(123), tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = Ok(123), r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn15(): Bool & Impure =
-        let c = chan Array[Int] 1;
-        spawn c <- [1, 2, 3];
-        2 == (<- c)[1]
+    @Test
+    def testBufferedChannelWithSpawn14(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx, rx): (Sender[Result[String, Int32]], Receiver[Result[String, Int32]]) = Channel.buffered(1);
+        spawn Channel.send(Err("Goodbye World!"), tx) @ rc;
+        let r = Channel.recv(rx);
+        assertEq(expected = Err("Goodbye World!"), r)
+    }
 
-    @test
-    def testBufferedChannelWithSpawn16(): Bool & Impure =
-        let c1 = chan Channel[Int] 1;
-        let c2 = chan Int 1;
-        spawn c1 <- c2;
-        spawn c2 <- 42;
-        42 == <- <- c1
+    @Test
+    def testBufferedChannelWithSpawn15(): Unit \ (Assert + Chan + NonDet) = region rc {
+        let (tx1, rx1) = Channel.buffered(1);
+        let (tx2, rx2) = Channel.buffered(1);
+        spawn Channel.send(rx2, tx1) @ rc;
+        spawn Channel.send(42, tx2) @ rc;
+        let r = Channel.recv(Channel.recv(rx1));
+        assertEq(expected = 42, r)
+    }
 
 }

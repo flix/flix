@@ -1,0 +1,1452 @@
+mod Test.Exp.Regions {
+    import java.lang.NullPointerException
+
+    use Assert.{assertEq, assertTrue}
+
+    // Uses references and regions (e.g. could just duplicate most test cases for both).
+    // Test cases that use 0, 1, 2, and 3 nested regions.
+    // Test cases that use 0, 1, 2, 3 data structures nested inside each other (e.g. array inside array inside array).
+    // Test cases that mix both multiple regions and multiple data structures.
+
+    @Test
+    def testRegions1Region01(): Unit \ Assert =
+        region rc {
+            let a = Array.repeat(rc, 8, 1);
+            assertEq(expected = 1, Array.get(0, a))
+        }
+
+    @Test
+    def testRegions1Region02(): Unit \ Assert =
+        region rc {
+            let l = MutList.empty(rc);
+            MutList.push(1, l);
+            assertEq(expected = Some(1), MutList.pop(l))
+        }
+
+    @Test
+    def testRegions1Region03(): Unit \ Assert =
+        region rc {
+            let m = MutMap.empty(rc);
+            MutMap.put(1, 1, m);
+            assertEq(expected = Some(1), MutMap.get(1, m))
+        }
+
+    @Test
+    def testRegions1Region1Nested01(): Unit \ Assert =
+        region rc {
+            let a = Array.repeat(rc, 8, MutMap.empty(rc));
+            MutMap.put(1, 1, Array.get(0, a));
+            assertEq(expected = Some(1), MutMap.get(1, Array.get(0, a)))
+        }
+
+    @Test
+    def testRegions1Region1Nested02(): Unit \ Assert =
+        region rc {
+            let l = MutList.empty(rc);
+            MutList.push(Array.repeat(rc, 8, 1), l);
+            match MutList.pop(l) {
+                case Some(a) => assertTrue(a `Array.sameElements` Array.repeat(rc, 8, 1))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region1Nested03(): Unit \ Assert =
+        region rc {
+            let m = MutMap.empty(rc);
+            let l = MutList.empty(rc);
+            MutList.push(1, l);
+            MutMap.put(1, l, m);
+            match MutMap.get(1, m) {
+                case Some(x) => assertTrue(x `MutList.sameElements` l)
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region1Nested04(): Unit \ Assert =
+        region rc {
+            let a = Array.repeat(rc, 8, MutMap.empty(rc));
+            MutMap.put(1, 1, Array.get(0, a));
+            assertEq(expected = Some(1), MutMap.get(1, Array.get(0, a)))
+        }
+
+    @Test
+    def testRegions1Region1Nested05(): Unit \ Assert =
+        region rc {
+            let l = MutList.empty(rc);
+            MutList.push(Array.repeat(rc, 8, 1), l);
+            match MutList.pop(l) {
+                case Some(a) => assertTrue(a `Array.sameElements` Array.repeat(rc, 8, 1))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region1Nested06(): Unit \ Assert =
+        region rc {
+            let m = MutMap.empty(rc);
+            let l = MutList.empty(rc);
+            MutList.push(1, l);
+            MutMap.put(1, l, m);
+            match MutMap.get(1, m) {
+                case Some(x) => assertTrue(x `MutList.sameElements` l)
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region2Nested01(): Unit \ Assert =
+        region rc {
+            let a = Array.repeat(rc, 8, MutMap.empty(rc));
+            let l = MutList.empty(rc);
+            MutList.push(1, l);
+            MutMap.put(1, l, Array.get(0, a));
+            match MutMap.get(1, Array.get(0, a)) {
+                case Some(k) => assertEq(expected = Some(1), MutList.pop(k))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region2Nested02(): Unit \ Assert =
+        region rc {
+            let l = MutList.empty(rc);
+            let a = Array.repeat(rc, 8, MutMap.empty(rc));
+            MutMap.put(1, 1, Array.get(0, a));
+            MutList.push(a, l);
+            match MutList.pop(l) {
+                case Some(b) => assertEq(expected = Some(1), MutMap.get(1, Array.get(0, b)))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region2Nested03(): Unit \ Assert =
+        region rc {
+            let m = MutMap.empty(rc);
+            let l = MutList.empty(rc);
+            MutList.push(Array.repeat(rc, 8, 1), l);
+            MutMap.put(1, l, m);
+            match MutMap.get(1, m) {
+                case Some(k) => match MutList.pop(k) {
+                    case Some(a) => assertEq(expected = 1, Array.get(0, a))
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region3Nested01(): Unit \ Assert =
+        region rc {
+            let a = Array.repeat(rc, 8, MutMap.empty(rc));
+            let l = MutList.empty(rc);
+            MutList.push(Array.repeat(rc, 8, 1), l);
+            MutMap.put(1, l, Array.get(0, a));
+            match MutMap.get(1, Array.get(0, a)) {
+                case Some(k) => match MutList.pop(k) {
+                    case Some(b) => assertEq(expected = 1, Array.get(0, b))
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region3Nested02(): Unit \ Assert =
+        region rc {
+            let l = MutList.empty(rc);
+            let a = Array.repeat(rc, 8, MutMap.empty(rc));
+            let l1 = MutList.empty(rc);
+            MutList.push(1, l1);
+            MutMap.put(1, l1, Array.get(0, a));
+            MutList.push(a, l);
+            match MutList.pop(l) {
+                case Some(b) => match MutMap.get(1, Array.get(0, b)) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.pop(k))
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region3Nested03(): Unit \ Assert =
+        region rc {
+            let m = MutMap.empty(rc);
+            let l = MutList.empty(rc);
+            let a = Array.repeat(rc, 8, MutMap.empty(rc));
+            MutMap.put(1, 1, Array.get(0, a));
+            MutList.push(a, l);
+            MutMap.put(1, l, m);
+            match MutMap.get(1, m) {
+                case Some(k) => match MutList.pop(k) {
+                    case Some(b) => assertEq(expected = Some(1), MutMap.get(1, Array.get(0, b)))
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions2Regions01(): Unit \ Assert =
+        region rc1 {
+            let a1 = Array.repeat(rc1, 8, 1);
+            assertEq(expected = 1, Array.get(0, a1));
+            assertEq(expected = 1,
+            region rc2 {
+                let a2 = Array.repeat(rc2, 8, 1);
+                Array.get(0, a2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions02(): Unit \ Assert =
+        region rc1 {
+            let l1 = MutList.empty(rc1);
+            MutList.push(1, l1);
+            assertEq(expected = Some(1), MutList.pop(l1));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let l2 = MutList.empty(rc2);
+                MutList.push(1, l2);
+                MutList.pop(l2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions03(): Unit \ Assert =
+        region rc1 {
+            let m1 = MutMap.empty(rc1);
+            MutMap.put(1, 1, m1);
+            assertEq(expected = Some(1), MutMap.get(1, m1));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let m2 = MutMap.empty(rc2);
+                MutMap.put(1, 1, m2);
+                MutMap.get(1, m2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions04(): Unit \ Assert =
+        region rc1 {
+            let a1 = Array.repeat(rc1, 8, 1);
+            assertEq(expected = 1, Array.get(0, a1));
+            assertEq(expected = 1,
+            region rc2 {
+                let a2 = Array.repeat(rc2, 8, 1);
+                Array.get(0, a2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions05(): Unit \ Assert =
+        region rc1 {
+            let l1 = MutList.empty(rc1);
+            MutList.push(1, l1);
+            assertEq(expected = Some(1), MutList.pop(l1));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let l2 = MutList.empty(rc2);
+                MutList.push(1, l2);
+                MutList.pop(l2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions06(): Unit \ Assert =
+        region rc1 {
+            let m1 = MutMap.empty(rc1);
+            MutMap.put(1, 1, m1);
+            assertEq(expected = Some(1), MutMap.get(1, m1));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let m2 = MutMap.empty(rc2);
+                MutMap.put(1, 1, m2);
+                MutMap.get(1, m2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions07(): Unit \ Assert =
+        region rc1 {
+            let a1 = Array.repeat(rc1, 8, 1);
+            assertEq(expected = 1, Array.get(0, a1));
+            assertEq(expected = 1,
+            region rc2 {
+                let a2 = Array.repeat(rc2, 8, 1);
+                Array.get(0, a2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions08(): Unit \ Assert =
+        region rc1 {
+            let l1 = MutList.empty(rc1);
+            MutList.push(1, l1);
+            assertEq(expected = Some(1), MutList.pop(l1));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let l2 = MutList.empty(rc2);
+                MutList.push(1, l2);
+                MutList.pop(l2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions09(): Unit \ Assert =
+        region rc1 {
+            let m1 = MutMap.empty(rc1);
+            MutMap.put(1, 1, m1);
+            assertEq(expected = Some(1), MutMap.get(1, m1));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let m2 = MutMap.empty(rc2);
+                MutMap.put(1, 1, m2);
+                MutMap.get(1, m2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions10(): Unit \ Assert =
+        region rc1 {
+            let a1 = Array.repeat(rc1, 8, 1);
+            assertEq(expected = 1, Array.get(0, a1));
+            assertEq(expected = 1,
+            region rc2 {
+                let a2 = Array.repeat(rc2, 8, 1);
+                Array.get(0, a2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions11(): Unit \ Assert =
+        region rc1 {
+            let l1 = MutList.empty(rc1);
+            MutList.push(1, l1);
+            assertEq(expected = Some(1), MutList.pop(l1));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let l2 = MutList.empty(rc2);
+                MutList.push(1, l2);
+                MutList.pop(l2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions12(): Unit \ Assert =
+        region rc1 {
+            let m1 = MutMap.empty(rc1);
+            MutMap.put(1, 1, m1);
+            assertEq(expected = Some(1), MutMap.get(1, m1));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let m2 = MutMap.empty(rc2);
+                MutMap.put(1, 1, m2);
+                MutMap.get(1, m2)
+            })
+        }
+
+    @Test
+    def testRegions2Regions13(): Unit \ Assert =
+        region rc1 {
+            let a1 = Array.repeat(rc1, 8, 1);
+            region rc2 {
+                let a2 = Array.repeat(rc2, 8, 1);
+                assertEq(expected = 1, Array.get(0, a1));
+                assertEq(expected = 1, Array.get(0, a2))
+            }
+        }
+
+    @Test
+    def testRegions2Regions14(): Unit \ Assert =
+        region rc1 {
+            let l1: MutList[Int32, _] = MutList.empty(rc1);
+
+            region rc2 {
+                let l2 = MutList.empty(rc2);
+                MutList.push(1, l1);
+                MutList.push(1, l2);
+                assertEq(expected = Some(1), MutList.pop(l1));
+                assertEq(expected = Some(1), MutList.pop(l2))
+            }
+        }
+
+    @Test
+    def testRegions2Regions15(): Unit \ Assert =
+        region rc1 {
+            let m1: MutMap[Int32, Int32, _] = MutMap.empty(rc1);
+            region rc2 {
+                let m2 = MutMap.empty(rc2);
+                MutMap.put(1, 1, m1);
+                MutMap.put(1, 1, m2);
+                assertEq(expected = Some(1), MutMap.get(1, m1));
+                assertEq(expected = Some(1), MutMap.get(1, m2))
+            }
+        }
+
+    @Test
+    def testRegions2Regions1Nested01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Array[MutMap[Int32, Int32, rc2], rc1] = Array.repeat(rc1, 8, MutMap.empty(rc2));
+                MutMap.put(1, 1, Array.get(0, a));
+                assertEq(expected = Some(1), MutMap.get(1, Array.get(0, a)))
+            }
+        }
+
+    @Test
+    def testRegions2Regions1Nested02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: MutList[Array[Int32, rc2], rc1] = MutList.empty(rc1);
+                MutList.push(Array.repeat(rc2, 8, 1), l);
+                match MutList.pop(l) {
+                    case Some(a) => assertEq(expected = 1, Array.get(0, a))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions1Nested03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let m: MutMap[Int32, MutList[Int32, rc2], rc1] = MutMap.empty(rc1);
+                let l = MutList.empty(rc2);
+                MutList.push(1, l);
+                MutMap.put(1, l, m);
+                match MutMap.get(1, m) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.pop(k))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions1Nested04(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Array[MutMap[Int32, Int32, rc1], rc2] = Array.repeat(rc2, 8, MutMap.empty(rc1));
+                MutMap.put(1, 1, Array.get(0, a));
+                assertEq(expected = Some(1), MutMap.get(1, Array.get(0, a)))
+            }
+        }
+
+    @Test
+    def testRegions2Regions1Nested05(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: MutList[Array[Int32, rc1], rc2] = MutList.empty(rc2);
+                MutList.push(Array.repeat(rc1, 8, 1), l);
+                match MutList.pop(l) {
+                    case Some(a) => assertEq(expected = 1, Array.get(0, a))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions1Nested06(): Unit \ Assert =
+        region rc1 {
+            let l = MutList.empty(rc1);
+            region rc2 {
+                let m: MutMap[Int32, MutList[Int32, rc1], rc2] = MutMap.empty(rc2);
+                MutList.push(1, l);
+                MutMap.put(1, l, m);
+                match MutMap.get(1, m) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k))
+                    case _       => unreachable!()
+                }
+            };
+            assertEq(expected = Some(1), MutList.nth(0, l))
+        }
+
+    @Test
+    def testRegions2Regions2Nested01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Array[MutMap[Int32, MutList[Int32, rc1], rc2], rc2] = Array.repeat(rc2, 8, MutMap.empty(rc2));
+                let l = MutList.empty(rc1);
+                MutList.push(1, l);
+                MutMap.put(1, l, Array.get(0, a));
+                match MutMap.get(1, Array.get(0, a)) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions2Nested02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: MutList[Array[MutMap[Int32, Int32, rc2], rc1], rc2] = MutList.empty(rc2);
+                let a = Array.repeat(rc1, 8, MutMap.empty(rc2));
+                MutList.push(a, l);
+                MutMap.put(1, 1, Array.get(0, a)); // Mutate a[0], the MutList `l` above should also be updated by this
+                match MutList.pop(l) {
+                    case Some(b) => assertEq(expected = Some(1), MutMap.get(1, Array.get(0, b)))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions2Nested03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let m: MutMap[Int32, MutList[Array[Int32, rc2], rc2], rc1] = MutMap.empty(rc1);
+                let l = MutList.empty(rc2);
+                MutList.push(Array.repeat(rc2, 8, 1), l);
+                MutMap.put(1, l, m);
+                match MutMap.get(1, m) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k) |> Option.flatMap(Array.nth(0)))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions2Regions3Nested01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Array[MutMap[Int32, MutList[Array[Int32, rc1], rc1], rc2], rc2] = Array.repeat(rc2, 8, MutMap.empty(rc2));
+                let l = MutList.empty(rc1);
+                MutList.push(Array.repeat(rc1, 8, 1), l);
+                MutMap.put(1, l, Array.get(0, a));
+                match MutMap.get(1, Array.get(0, a)) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k) |> Option.flatMap(Array.nth(0)))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions3Nested02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: MutList[Array[MutMap[Int32, MutList[Int32, rc2], rc2], rc1], rc2] = MutList.empty(rc2);
+                let a = Array.repeat(rc1, 8, MutMap.empty(rc2));
+                MutList.push(a, l);
+                let l2 = MutList.empty(rc2);
+                MutMap.put(1, l2, Array.get(0, a)); // Mutate a[0], the MutList `l` above should also be updated by this
+                MutList.push(1, l2);
+                match MutList.pop(l) {
+                    case Some(b) => match MutMap.get(1, Array.get(0, b)) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k))
+                        case _       => unreachable!()
+                    }
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions3Nested03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let m: MutMap[Int32, MutList[Array[MutMap[Int32, Int32, rc2], rc2], rc1], rc1] = MutMap.empty(rc1);
+                let l = MutList.empty(rc1);
+                let a = Array.repeat(rc2, 8, MutMap.empty(rc2));
+                MutList.push(a, l);
+                MutMap.put(1, 1, Array.get(0, a)); // Mutate the innermost nested MutMap
+                MutMap.put(1, l, m);
+                match MutMap.get(1, m) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k) |> Option.flatMap(Array.nth(0))
+                                                      |> Option.flatMap(MutMap.get(1)))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions01(): Unit \ Assert =
+        region rc1 {
+            let a = Array.repeat(rc1, 8, 1);
+            region rc2 {
+                let l: MutList[Int32, _] = MutList.empty(rc2);
+                region _ {
+                    let m = MutMap.empty(rc1);
+                    MutList.push(1, l);
+                    MutMap.put(1, 1, m);
+                    assertTrue(Array.get(0, a) == 1 and MutList.pop(l) == Some(1) and MutMap.get(1, m) == Some(1))
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions02(): Unit \ Assert =
+        region rc1 {
+            let a = Array.repeat(rc1, 8, 1);
+            region rc2 {
+                let l: MutList[Int32, _] = MutList.empty(rc2);
+                region rc3 {
+                    let m = MutMap.empty(rc3);
+                    MutList.push(1, l);
+                    MutMap.put(1, 1, m);
+                    assertTrue(Array.get(0, a) == 1 and MutList.pop(l) == Some(1) and MutMap.get(1, m) == Some(1))
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions03(): Unit \ Assert =
+        region rc1 {
+            let a = Array.repeat(rc1, 8, 1);
+            region _ {
+                let l: MutList[Int32, _] = MutList.empty(rc1);
+                region rc3 {
+                    let m = MutMap.empty(rc3);
+                    MutList.push(1, l);
+                    MutMap.put(1, 1, m);
+                    assertTrue(Array.get(0, a) == 1 and MutList.pop(l) == Some(1) and MutMap.get(1, m) == Some(1))
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions04(): Unit \ Assert =
+        region rc1 {
+            let a = Array.repeat(rc1, 8, 1);
+            region rc2 {
+                let l: MutList[Int32, _] = MutList.empty(rc2);
+                region rc3 {
+                    let m = MutMap.empty(rc3);
+                    MutList.push(1, l);
+                    MutMap.put(1, 1, m);
+                    assertTrue(Array.get(0, a) == 1 and MutList.pop(l) == Some(1) and MutMap.get(1, m) == Some(1))
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions1Nested01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Array[MutList[Int32, rc1], rc2] = Array.repeat(rc2, 8, MutList.empty(rc1));
+                region _ {
+                    MutList.push(1, Array.get(0, a));
+                    assertTrue(MutList.pop(Array.get(0, a)) == Some(1))
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions1Nested02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: MutList[MutMap[Int32, Int32, rc1], rc2] = MutList.empty(rc2);
+                region _ {
+                    let m = MutMap.empty(rc1);
+                    MutList.push(m, l);
+                    MutMap.put(1, 1, m);
+                    assertTrue(match MutList.pop(l) {
+                        case Some(n) => MutMap.get(1, n) == Some(1)
+                        case _       => unreachable!()
+                    })
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions1Nested03(): Unit \ Assert =
+        region _ {
+            region rc2 {
+                region rc3 {
+                    let m: MutMap[Int32, MutList[Int32, rc3], rc2] = MutMap.empty(rc2);
+                    let l = MutList.empty(rc3);
+                    MutList.push(1, l);
+                    MutMap.put(1, l, m);
+                    match MutMap.get(1, m) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.pop(k))
+                        case _       => unreachable!()
+                    };
+                    assertEq(expected = None, MutList.pop(l))
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions2Nested01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let a: Array[MutMap[Int32, MutList[Int32, rc3], rc2], rc1] = Array.empty(rc1, 8);
+                    let m = MutMap.empty(rc2);
+                    let l = MutList.empty(rc3);
+                    MutList.push(1, l);
+                    MutMap.put(1, l, m);
+                    Array.put(m, 0, a);
+                    assertTrue(match MutMap.get(1, Array.get(0, a)) {
+                        case Some(k) => MutList.pop(k) == Some(1)
+                        case _       => unreachable!()
+                    } and MutList.pop(l) == None)
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions2Nested02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let l: MutList[Array[MutMap[Int32, Int32, rc1], rc2], rc3] = MutList.empty(rc3);
+                    let a = Array.repeat(rc2, 8, MutMap.empty(rc1));
+                    MutList.push(a, l);
+                    MutMap.put(1, 1, Array.get(0, a));
+                    assertTrue(match MutList.pop(l) {
+                        case Some(b) => MutMap.get(1, Array.get(0, b)) == Some(1)
+                        case _       => unreachable!()
+                    })
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions2Nested03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let m: MutMap[Int32, MutList[Array[Int32, rc1], rc3], rc2] = MutMap.empty(rc2);
+                    let l = MutList.empty(rc3);
+                    MutMap.put(1, l, m);
+                    MutList.push(Array.repeat(rc1, 8, 1), l);
+                    match MutMap.get(1, m) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k) |> Option.flatMap(Array.nth(0)))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions3Nested01(): Unit \ Assert =
+        region rc1 {
+            let l: MutList[Array[Int32, rc1], _] = MutList.empty(rc1);
+            region rc2 {
+                region rc3 {
+                    let a: Array[MutMap[Int32, MutList[Array[Int32, rc1], rc1], rc2], rc3] = Array.repeat(rc3, 8, MutMap.empty(rc2));
+                    MutMap.put(1, l, Array.get(0, a));
+                    MutList.push(Array.repeat(rc1, 8, 1), l);
+                    match MutMap.get(1, Array.get(0, a)) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k) |> Option.flatMap(Array.nth(0)))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions3Nested02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let l: MutList[Array[MutMap[Int32, MutList[Int32, rc2], rc3], rc1], rc2] = MutList.empty(rc2);
+                    let a = Array.repeat(rc1, 8, MutMap.empty(rc3));
+                    let l2 = MutList.empty(rc2);
+                    MutList.push(a, l);
+                    MutMap.put(1, l2, Array.get(0, a));
+                    MutList.push(1, l2);
+                    match MutList.pop(l) {
+                        case Some(b) => match MutMap.get(1, Array.get(0, b)) {
+                            case Some(k) => assertEq(expected = Some(1), MutList.pop(k))
+                            case _       => unreachable!()
+                        }
+                        case _       => unreachable!()
+                    };
+                    assertEq(expected = None, MutList.pop(l2))
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions3Nested03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let m: MutMap[Int32, MutList[Array[MutMap[Int32, Int32, rc1], rc3], rc1], rc2] = MutMap.empty(rc2);
+                    let l = MutList.empty(rc1);
+                    let a = Array.repeat(rc3, 8, MutMap.empty(rc1));
+                    MutMap.put(1, l, m);
+                    MutList.push(a, l);
+                    MutMap.put(1, 1, Array.get(0, a));
+                    match MutMap.get(1, m) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) |> Option.flatMap(MutMap.get(1)))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    @Test
+    def testRegions1RegionReferences03(): Unit \ Assert =
+        region rc {
+            let a = Array.repeat(rc, 8, Ref.fresh(rc, 1));
+            assertEq(expected = 1, Ref.get(Array.get(0, a)))
+        }
+
+    @Test
+    def testRegions1RegionReferences04(): Unit \ Assert =
+        region rc {
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            MutList.push(1, Ref.get(l));
+            assertEq(expected = Some(1), MutList.pop(Ref.get(l)))
+        }
+
+    @Test
+    def testRegions1RegionReferences05(): Unit \ Assert =
+        region rc {
+            let m = Ref.fresh(rc, MutMap.empty(rc));
+            MutMap.put(1, 1, Ref.get(m));
+            assertEq(expected = Some(1), MutMap.get(1, Ref.get(m)))
+        }
+
+    @Test
+    def testRegions1Region1NestedReferences01(): Unit \ Assert =
+        region rc {
+            let a = Ref.fresh(rc, Array.repeat(rc, 8, MutMap.empty(rc)));
+            MutMap.put(1, 1, Array.get(0, Ref.get(a)));
+            assertEq(expected = Some(1), MutMap.get(1, Array.get(0, Ref.get(a))))
+        }
+
+    @Test
+    def testRegions1Region1NestedReferences02(): Unit \ Assert =
+        region rc {
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            MutList.push(Ref.fresh(rc, Array.repeat(rc, 8, 1)), Ref.get(l));
+            match MutList.pop(Ref.get(l)) {
+                case Some(a) => assertTrue((Ref.get(a)) `Array.sameElements` Array.repeat(rc, 8, 1))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region1NestedReferences03(): Unit \ Assert =
+        region rc {
+            let m = MutMap.empty(rc);
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            MutList.push(1, Ref.get(l));
+            MutMap.put(1, l, m);
+            match MutMap.get(1, m) {
+                case Some(x) => assertTrue(Ref.get(x) `MutList.sameElements` Ref.get(l))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region1NestedReferences04(): Unit \ Assert =
+        region rc {
+            let a = Ref.fresh(rc, Array.repeat(rc, 8, Ref.fresh(rc, MutMap.empty(rc))));
+            MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a))));
+            assertEq(expected = Some(1), MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))))
+        }
+
+    @Test
+    def testRegions1Region1NestedReferences05(): Unit \ Assert =
+        region rc {
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            MutList.push(Array.repeat(rc, 8, 1), Ref.get(l));
+            match MutList.pop(Ref.get(l)) {
+                case Some(a) => assertTrue(a `Array.sameElements` Array.repeat(rc, 8, 1))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region2NestedReferences01(): Unit \ Assert =
+        region rc {
+            let a = Ref.fresh(rc, Array.repeat(rc, 8, Ref.fresh(rc, MutMap.empty(rc))));
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            MutList.push(1, Ref.get(l));
+            MutMap.put(1, l, Ref.get(Array.get(0, Ref.get(a))));
+            match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
+                case Some(k) => assertEq(expected = Some(1), MutList.pop(Ref.get(k)))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region2NestedReferences02(): Unit \ Assert =
+        region rc {
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            let a = Ref.fresh(rc, Array.repeat(rc, 8, Ref.fresh(rc, MutMap.empty(rc))));
+            MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a))));
+            MutList.push(a, Ref.get(l));
+            match MutList.pop(Ref.get(l)) {
+                case Some(b) => assertEq(expected = Some(1), MutMap.get(1, Ref.get(Array.get(0, Ref.get(b)))))
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region2NestedReferences03(): Unit \ Assert =
+        region rc {
+            let m = Ref.fresh(rc, MutMap.empty(rc));
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            MutList.push(Ref.fresh(rc, Array.repeat(rc, 8, 1)), Ref.get(l));
+            MutMap.put(1, l, Ref.get(m));
+            match MutMap.get(1, Ref.get(m)) {
+                case Some(k) => match MutList.pop(Ref.get(k)) {
+                    case Some(a) => assertEq(expected = 1, Array.get(0, Ref.get(a)))
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region3NestedReferences01(): Unit \ Assert =
+        region rc {
+            let a = Ref.fresh(rc, Array.repeat(rc, 8, Ref.fresh(rc, MutMap.empty(rc))));
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            MutList.push(Ref.fresh(rc, Array.repeat(rc, 8, 1)), Ref.get(l));
+            MutMap.put(1, l, Ref.get(Array.get(0, Ref.get(a))));
+            match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
+                case Some(k) => match MutList.pop(Ref.get(k)) {
+                    case Some(b) => assertEq(expected = 1, Array.get(0, Ref.get(b)))
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region3NestedReferences02(): Unit \ Assert =
+        region rc {
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            let a = Ref.fresh(rc, Array.repeat(rc, 8, Ref.fresh(rc, MutMap.empty(rc))));
+            let l1 = Ref.fresh(rc, MutList.empty(rc));
+            MutList.push(1, Ref.get(l1));
+            MutMap.put(1, l1, Ref.get(Array.get(0, Ref.get(a))));
+            MutList.push(a, Ref.get(l));
+            match MutList.pop(Ref.get(l)) {
+                case Some(b) => match MutMap.get(1, Ref.get(Array.get(0, Ref.get(b)))) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.pop(Ref.get(k)))
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions1Region3NestedReferences03(): Unit \ Assert =
+        region rc {
+            let m = Ref.fresh(rc, MutMap.empty(rc));
+            let l = Ref.fresh(rc, MutList.empty(rc));
+            let a = Ref.fresh(rc, Array.repeat(rc, 8, Ref.fresh(rc, MutMap.empty(rc))));
+            MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a))));
+            MutList.push(a, Ref.get(l));
+            MutMap.put(1, l, Ref.get(m));
+            match MutMap.get(1, Ref.get(m)) {
+                case Some(k) => match MutList.pop(Ref.get(k)) {
+                    case Some(b) => assertEq(expected = Some(1), MutMap.get(1, Ref.get(Array.get(0, Ref.get(b)))))
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @Test
+    def testRegions2RegionsReferences01(): Unit \ Assert =
+        region rc1 {
+            let a1 = Ref.fresh(rc1, Array.repeat(rc1, 8, 1));
+            assertEq(expected = 1, Array.get(0, Ref.get(a1)));
+            assertEq(expected = 1,
+            region rc2 {
+                let a2 = Ref.fresh(rc1, Array.repeat(rc2, 8, 1));
+                Array.get(0, Ref.get(a2))
+            })
+        }
+
+    @Test
+    def testRegions2RegionsReferences02(): Unit \ Assert =
+        region rc1 {
+            let l1 = Ref.fresh(rc1, MutList.empty(rc1));
+            MutList.push(1, Ref.get(l1));
+            assertEq(expected = Some(1), MutList.pop(Ref.get(l1)));
+            assertEq(expected = Some(1),
+            region rc2 {
+                let l2 = Ref.fresh(rc2, MutList.empty(rc2));
+                MutList.push(1, Ref.get(l2));
+                MutList.pop(Ref.get(l2))
+            })
+        }
+
+    @Test
+    def testRegions2RegionsReferences03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l1 = Ref.fresh(rc1, MutList.empty(rc1));
+                let l2 = Ref.fresh(rc2, MutList.empty(rc2));
+                MutList.push(1, Ref.get(l1));
+                MutList.push(1, Ref.get(l2));
+                assertEq(expected = Some(1), MutList.pop(Ref.get(l1)));
+                assertEq(expected = Some(1), MutList.pop(Ref.get(l2)))
+            }
+        }
+
+    @Test
+    def testRegions2RegionsReferences04(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let m1 = Ref.fresh(rc2, MutMap.empty(rc1));
+                let m2 = Ref.fresh(rc1, MutMap.empty(rc2));
+                MutMap.put(1, 1, Ref.get(m1));
+                MutMap.put(1, 1, Ref.get(m2));
+                assertEq(expected = Some(1), MutMap.get(1, Ref.get(m1)));
+                assertEq(expected = Some(1), MutMap.get(1, Ref.get(m2)))
+            }
+        }
+
+    @Test
+    def testRegions2RegionsReferences05(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a1 = Ref.fresh(rc2, Array.repeat(rc1, 8, 1));
+                let a2 = Ref.fresh(rc2, Array.repeat(rc2, 8, 1));
+                assertEq(expected = 1, Array.get(0, Ref.get(a1)));
+                assertEq(expected = 1, Array.get(0, Ref.get(a2)))
+            }
+        }
+
+    @Test
+    def testRegions2RegionsReferences06(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l1 = Ref.fresh(rc1, MutList.empty(rc1));
+                let l2 = Ref.fresh(rc1, MutList.empty(rc2));
+                MutList.push(1, Ref.get(l1));
+                MutList.push(1, Ref.get(l2));
+                assertEq(expected = Some(1), MutList.pop(Ref.get(l1)));
+                assertEq(expected = Some(1), MutList.pop(Ref.get(l2)))
+            }
+        }
+
+    @Test
+    def testRegions2Regions1NestedReferences01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Ref[Array[Ref[MutMap[Int32, Int32, rc2], rc1], rc1], rc2] = Ref.fresh(rc2, Array.repeat(rc1, 8, Ref.fresh(rc1, MutMap.empty(rc2))));
+                MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a))));
+                assertEq(expected = Some(1), MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))))
+            }
+        }
+
+    @Test
+    def testRegions2Regions1NestedReferences02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: Ref[MutList[Ref[Array[Int32, rc2], rc1], rc1], rc1] = Ref.fresh(rc1, MutList.empty(rc1));
+                MutList.push(Ref.fresh(rc1, Array.repeat(rc2, 8, 1)), Ref.get(l));
+                match MutList.pop(Ref.get(l)) {
+                    case Some(a) => assertEq(expected = 1, Array.get(0, Ref.get(a)))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions1NestedReferences03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let m: Ref[Ref[MutMap[Int32, Ref[MutList[Int32, rc2], rc1], rc1], rc1], rc2] = Ref.fresh(rc2, Ref.fresh(rc1, MutMap.empty(rc1)));
+                let l = Ref.fresh(rc1, MutList.empty(rc2));
+                MutList.push(1, Ref.get(l));
+                MutMap.put(1, l, Ref.get(Ref.get(m)));
+                match MutMap.get(1, Ref.get(Ref.get(m))) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.pop(Ref.get(k)))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions1NestedReferences04(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Ref[Array[Ref[MutMap[Int32, Int32, rc1], rc2], rc2], rc2] = Ref.fresh(rc2, Array.repeat(rc2, 8, Ref.fresh(rc2, MutMap.empty(rc1))));
+                MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a))));
+                assertEq(expected = Some(1), MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))))
+            }
+        }
+
+    @Test
+    def testRegions2Regions2NestedReferences01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, rc1], rc1], rc2], rc2], rc2], rc2] = Ref.fresh(rc2, Array.repeat(rc2, 8, Ref.fresh(rc2, MutMap.empty(rc2))));
+                let l = Ref.fresh(rc1, MutList.empty(rc1));
+                MutList.push(1, Ref.get(l));
+                MutMap.put(1, l, Ref.get(Array.get(0, Ref.get(a))));
+                match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions2NestedReferences02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, rc2], rc1], rc2], rc1], rc2], rc1] = Ref.fresh(rc1, MutList.empty(rc2));
+                let a = Ref.fresh(rc1, Array.repeat(rc2, 8, Ref.fresh(rc1, MutMap.empty(rc2))));
+                MutList.push(a, Ref.get(l));
+                MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a)))); // Mutate a[0], the MutList `l` above should also be updated by this
+                match MutList.pop(Ref.get(l)) {
+                    case Some(b) => assertEq(expected = Some(1), MutMap.get(1, Ref.get(Array.get(0, Ref.get(b)))))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions2NestedReferences03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, rc2], rc2], rc1], rc2], rc1], rc2] = Ref.fresh(rc2, MutMap.empty(rc1));
+                let l = Ref.fresh(rc2, MutList.empty(rc1));
+                MutList.push(Ref.fresh(rc2, Array.repeat(rc2, 8, 1)), Ref.get(l));
+                MutMap.put(1, l, Ref.get(m));
+                match MutMap.get(1, Ref.get(m)) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions3NestedReferences01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, rc1], rc1], rc1], rc1], rc2], rc2], rc2], rc2] = Ref.fresh(rc2, Array.repeat(rc2, 8, Ref.fresh(rc2, MutMap.empty(rc2))));
+                let l = Ref.fresh(rc1, MutList.empty(rc1));
+                MutList.push(Ref.fresh(rc1, Array.repeat(rc1, 8, 1)), Ref.get(l));
+                MutMap.put(1, l, Ref.get(Array.get(0, Ref.get(a))));
+                match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions3NestedReferences02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, rc2], rc1], rc2], rc1], rc1], rc2], rc2], rc1] = Ref.fresh(rc1, MutList.empty(rc2));
+                let a = Ref.fresh(rc2, Array.repeat(rc1, 8, Ref.fresh(rc1, MutMap.empty(rc2))));
+                MutList.push(a, Ref.get(l));
+                let l2 = Ref.fresh(rc1, MutList.empty(rc2));
+                MutMap.put(1, l2, Ref.get(Array.get(0, Ref.get(a)))); // Mutate a[0], the MutList `l` above should also be updated by this
+                MutList.push(1, Ref.get(l2));
+                match MutList.pop(Ref.get(l)) {
+                    case Some(b) => match MutMap.get(1, Ref.get(Array.get(0, Ref.get(b)))) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)))
+                        case _       => unreachable!()
+                    }
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @Test
+    def testRegions2Regions3NestedReferences03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, rc2], rc1], rc2], rc1], rc1], rc2], rc1], rc2] = Ref.fresh(rc2, MutMap.empty(rc1));
+                let l = Ref.fresh(rc2, MutList.empty(rc1));
+                let a = Ref.fresh(rc1, Array.repeat(rc2, 8, Ref.fresh(rc1, MutMap.empty(rc2))));
+                MutList.push(a, Ref.get(l));
+                MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a)))); // Mutate the innermost nested MutMap
+                MutMap.put(1, l, Ref.get(m));
+                match MutMap.get(1, Ref.get(m)) {
+                    case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
+                                                               |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(m1))))
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3RegionsReferences01(): Unit \ Assert =
+        region rc1 {
+            let a = Ref.fresh(rc1, Array.repeat(rc1, 8, 1));
+            region rc2 {
+                let l: Ref[MutList[Int32, _], _] = Ref.fresh(rc1, MutList.empty(rc2));
+                region _ {
+                    let m = Ref.fresh(rc2, MutMap.empty(rc2));
+                    MutList.push(1, Ref.get(l));
+                    MutMap.put(1, 1, Ref.get(m));
+                    assertEq(expected = 1, Array.get(0, Ref.get(a)));
+                    assertEq(expected = Some(1), MutList.pop(Ref.get(l)));
+                    assertEq(expected = Some(1), MutMap.get(1, Ref.get(m)))
+                }
+            }
+        }
+
+    @Test
+    def testRegions3RegionsReferences02(): Unit \ Assert =
+        region rc1 {
+            let a = Ref.fresh(rc1, Array.repeat(rc1, 8, 1));
+            region rc2 {
+                let l: Ref[MutList[Int32, _], _] = Ref.fresh(rc2, MutList.empty(rc2));
+                region rc3 {
+                    let m = Ref.fresh(rc3, MutMap.empty(rc3));
+                    MutList.push(1, Ref.get(l));
+                    MutMap.put(1, 1, Ref.get(m));
+                    assertEq(expected = 1, Array.get(0, Ref.get(a)));
+                    assertEq(expected = Some(1), MutList.pop(Ref.get(l)));
+                    assertEq(expected = Some(1), MutMap.get(1, Ref.get(m)))
+                }
+            }
+        }
+
+    @Test
+    def testRegions3RegionsReferences03(): Unit \ Assert =
+        region rc1 {
+            let a = Ref.fresh(rc1, Array.repeat(rc1, 8, 1));
+            region rc2 {
+                let l: Ref[MutList[Int32, _], _] = Ref.fresh(rc1, MutList.empty(rc2));
+                region rc3 {
+                    let m = Ref.fresh(rc1, MutMap.empty(rc3));
+                    MutList.push(1, Ref.get(l));
+                    MutMap.put(1, 1, Ref.get(m));
+                    assertEq(expected = 1, Array.get(0, Ref.get(a)));
+                    assertEq(expected = Some(1), MutList.pop(Ref.get(l)));
+                    assertEq(expected = Some(1), MutMap.get(1, Ref.get(m)))
+                }
+            }
+        }
+
+    @Test
+    def testRegions3RegionsReferences04(): Unit \ Assert =
+        region rc1 {
+            let a = Ref.fresh(rc1, Array.repeat(rc1, 8, 1));
+            region rc2 {
+                let l: Ref[MutList[Int32, _], _] = Ref.fresh(rc2, MutList.empty(rc2));
+                region rc3 {
+                    let m = Ref.fresh(rc3, MutMap.empty(rc3));
+                    MutList.push(1, Ref.get(l));
+                    MutMap.put(1, 1, Ref.get(m));
+                    assertEq(expected = 1, Array.get(0, Ref.get(a)));
+                    assertEq(expected = Some(1), MutList.pop(Ref.get(l)));
+                    assertEq(expected = Some(1), MutMap.get(1, Ref.get(m)))
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions1NestedReferences01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let a: Ref[Array[Ref[MutList[Int32, rc1], rc2], rc2], rc2] = Ref.fresh(rc2, Array.repeat(rc2, 8, Ref.fresh(rc2, MutList.empty(rc1))));
+                region _ {
+                    MutList.push(1, Ref.get(Array.get(0, Ref.get(a))));
+                    assertEq(expected = Some(1), MutList.pop(Ref.get(Array.get(0, Ref.get(a)))))
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions1NestedReferences02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: Ref[MutList[Ref[MutMap[Int32, Int32, rc1], rc2], rc2], rc1] = Ref.fresh(rc1, MutList.empty(rc2));
+                region _ {
+                    let m = Ref.fresh(rc2, MutMap.empty(rc1));
+                    MutList.push(m, Ref.get(l));
+                    MutMap.put(1, 1, Ref.get(m));
+                    match MutList.pop(Ref.get(l)) {
+                        case Some(n) => assertEq(expected = Some(1), MutMap.get(1, Ref.get(n)))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    // BUG: See #12248
+    @Test @Skip
+    def testRegions3Regions1NestedReferences03(): Unit \ Assert =
+        region _ {
+            region rc2 {
+                region rc3 {
+                    let m: Ref[MutMap[Int32, Ref[MutList[Int32, rc3], rc3], rc2], rc2] = Ref.fresh(rc2, MutMap.empty(rc2));
+                    let l = Ref.fresh(rc3, MutList.empty(rc3));
+                    MutList.push(1, Ref.get(l));
+                    MutMap.put(1, l, Ref.get(m));
+                    match MutMap.get(1, Ref.get(m)) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.pop(Ref.get(k)))
+                        case _       => unreachable!()
+                    };
+                    assertEq(expected = None, MutList.pop(Ref.get(l)))
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions2NestedReferences01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, rc3], rc1], rc2], rc3], rc1], rc2] = Ref.fresh(rc2, Array.empty(rc1, 8));
+                    let m = Ref.fresh(rc3, MutMap.empty(rc2));
+                    let l = Ref.fresh(rc1, MutList.empty(rc3));
+                    MutList.push(1, Ref.get(l));
+                    MutMap.put(1, l, Ref.get(m));
+                    Array.put(m, 0, Ref.get(a));
+                    match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.pop(Ref.get(k)))
+                        case _       => unreachable!()
+                    };
+                    assertEq(expected = None, MutList.pop(Ref.get(l)))
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions2NestedReferences02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, rc1], rc3], rc2], rc1], rc3], rc2] = Ref.fresh(rc2, MutList.empty(rc3));
+                    let a = Ref.fresh(rc1, Array.repeat(rc2, 8, Ref.fresh(rc3, MutMap.empty(rc1))));
+                    MutList.push(a, Ref.get(l));
+                    MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a))));
+                    match MutList.pop(Ref.get(l)) {
+                        case Some(b) => assertEq(expected = Some(1), MutMap.get(1, Ref.get(Array.get(0, Ref.get(b)))))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions2NestedReferences03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, rc1], rc2], rc3], rc1], rc2], rc3] = Ref.fresh(rc3, MutMap.empty(rc2));
+                    let l = Ref.fresh(rc1, MutList.empty(rc3));
+                    MutMap.put(1, l, Ref.get(m));
+                    MutList.push(Ref.fresh(rc2, Array.repeat(rc1, 8, 1)), Ref.get(l));
+                    match MutMap.get(1, Ref.get(m)) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions3NestedReferences01(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                let l: Ref[MutList[Ref[Array[Int32, rc1], rc1], _], _] = Ref.fresh(rc2, MutList.empty(rc1));
+                region rc3 {
+                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, rc1], rc1], rc1], rc2], rc2], rc3], rc3], rc1] = Ref.fresh(rc1, Array.repeat(rc3, 8, Ref.fresh(rc3, MutMap.empty(rc2))));
+                    MutMap.put(1, l, Ref.get(Array.get(0, Ref.get(a))));
+                    MutList.push(Ref.fresh(rc1, Array.repeat(rc1, 8, 1)), Ref.get(l));
+                    match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions3NestedReferences02(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, rc2], rc2], rc3], rc3], rc1], rc1], rc2], rc2] = Ref.fresh(rc2, MutList.empty(rc2));
+                    let a = Ref.fresh(rc1, Array.repeat(rc1, 8, Ref.fresh(rc3, MutMap.empty(rc3))));
+                    let l2 = Ref.fresh(rc2, MutList.empty(rc2));
+                    MutList.push(a, Ref.get(l));
+                    MutMap.put(1, l2, Ref.get(Array.get(0, Ref.get(a))));
+                    MutList.push(1, Ref.get(l2));
+                    match MutList.pop(Ref.get(l)) {
+                        case Some(b) => match MutMap.get(1, Ref.get(Array.get(0, Ref.get(b)))) {
+                            case Some(k) => assertEq(expected = Some(1), MutList.pop(Ref.get(k)))
+                            case _       => unreachable!()
+                        }
+                        case _       => unreachable!()
+                    };
+                    assertEq(expected = None, MutList.pop(Ref.get(l2)))
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions3NestedReferences03(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, rc1], rc3], rc3], rc2], rc1], rc1], rc2], rc1] = Ref.fresh(rc1, MutMap.empty(rc2));
+                    let l = Ref.fresh(rc1, MutList.empty(rc1));
+                    let a = Ref.fresh(rc2, Array.repeat(rc3, 8, Ref.fresh(rc3, MutMap.empty(rc1))));
+                    MutMap.put(1, l, Ref.get(m));
+                    MutList.push(a, Ref.get(l));
+                    MutMap.put(1, 1, Ref.get(Array.get(0, Ref.get(a))));
+                    match MutMap.get(1, Ref.get(m)) {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
+                                                                   |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(m1))))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    @Test
+    def testRegions3Regions3NestedReferences04(): Unit \ Assert =
+        region rc1 {
+            region rc2 {
+                region rc3 {
+                    let m: Ref[Ref[Ref[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Ref[Ref[Ref[Ref[MutMap[Int32, Int32, rc1], rc3], rc2], rc1], rc3], rc3], rc2], rc1], rc1], rc2], rc1], rc3], rc2], rc3] =
+                        Ref.fresh(rc3, Ref.fresh(rc2, Ref.fresh(rc3, Ref.fresh(rc1, MutMap.empty(rc2)))));
+                    let l = Ref.fresh(rc1, MutList.empty(rc1));
+                    let a = Ref.fresh(rc2, Array.repeat(rc3, 8, Ref.fresh(rc3, Ref.fresh(rc1, Ref.fresh(rc2, Ref.fresh(rc3, MutMap.empty(rc1)))))));
+                    MutMap.put(1, l, Ref.get(Ref.get(Ref.get(Ref.get(m)))));
+                    MutList.push(a, Ref.get(l));
+                    MutMap.put(1, 1, Ref.get(Ref.get(Ref.get(Ref.get(Array.get(0, Ref.get(a)))))));
+                    match MutMap.get(1, Ref.get(Ref.get(Ref.get(Ref.get(m)))))                    {
+                        case Some(k) => assertEq(expected = Some(1), MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
+                                                                   |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(Ref.get(Ref.get(Ref.get(m1)))))))
+                        case _       => unreachable!()
+                    }
+                }
+            }
+        }
+
+    @Test
+    def testRegionsAndTryCatch(): Unit \ Assert + IO = {
+        region rc {
+            let res = Ref.fresh(rc, false);
+            try {
+                throw new NullPointerException("test");
+                Ref.put(false, res)
+            } catch {
+                case _: NullPointerException => Ref.put(true, res)
+            };
+            assertTrue(Ref.get(res))
+        }
+    }
+
+}

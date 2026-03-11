@@ -16,15 +16,15 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for weeding errors.
   */
 sealed trait WeederError extends CompilationMessage {
-  val kind = "Syntax Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.WeederError
 }
 
 object WeederError {
@@ -32,29 +32,24 @@ object WeederError {
   /**
     * An error raised to indicate that the annotation `name` was used multiple times.
     *
-    * @param name the name of the attribute.
+    * @param name the name of the annotation.
     * @param loc1 the location of the first annotation.
     * @param loc2 the location of the second annotation.
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Multiple occurrences of the annotation '$name'."
+    def code: ErrorCode = ErrorCode.E8465
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Multiple occurrences of the annotation '${red("@" + name)}'.
+    def summary: String = s"Duplicate annotation '@$name'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Duplicate annotation '${red("@" + name)}'.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${code(loc2, "the second occurrence was here.")}
-         |
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Remove one of the two annotations."
-    })
 
     def loc: SourceLocation = loc1
 
@@ -68,24 +63,19 @@ object WeederError {
     * @param loc2 the location of the second parameter.
     */
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Multiple declarations of the formal parameter '$name'."
+    def code: ErrorCode = ErrorCode.E8576
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Multiple declarations of the formal parameter '${red(name)}'.
+    def summary: String = s"Duplicate formal parameter: '$name'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Duplicate formal parameter '${red(name)}'.
          |
-         |${code(loc1, "the first declaration was here.")}
+         |${src(loc1, "first declaration")}
          |
-         |${code(loc2, "the second declaration was here.")}
-         |
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
-    })
 
     def loc: SourceLocation = loc1
 
@@ -99,203 +89,475 @@ object WeederError {
     * @param loc2 the location of the second modifier.
     */
   case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E8687
+
     def summary: String = s"Duplicate modifier '$name'."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Multiple occurrences of the modifier '${red(name)}'.
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Duplicate modifier '${red(name)}'.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${code(loc2, "the second occurrence was here.")}
+         |${src(loc2, "duplicate")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
 
     def loc: SourceLocation = loc1
   }
 
   /**
-    * An error raised to indicate that the tag `name` was declared multiple times.
+    * An error raised to indicate a struct contains duplicate fields
     *
-    * @param enumName the name of the enum.
-    * @param tag      the name of the tag.
-    * @param loc1     the location of the first tag.
-    * @param loc2     the location of the second tag.
+    * @param structName the name of the struct
+    * @param fieldName  the name of the field
+    * @param field1Loc  the location of the first field
+    * @param field2Loc  the location of the second field
+    * @param loc        the location of the struct declaration
     */
-  case class DuplicateTag(enumName: String, tag: Name.Tag, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Duplicate tag: '$tag'."
+  case class DuplicateStructField(structName: String, fieldName: String, field1Loc: SourceLocation, field2Loc: SourceLocation, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E8798
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Multiple declarations of the tag '${red(tag.name)}' in the enum '${cyan(enumName)}'.
+    def summary: String = s"Duplicate struct field: '$fieldName'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Duplicate struct field '${red(fieldName)}' in '${magenta(structName)}'.
          |
-         |${code(loc1, "the first declaration was here.")}
+         |${src(field1Loc, "first occurrence")}
          |
-         |${code(loc2, "the second declaration was here.")}
+         |${src(field2Loc, "duplicate")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a loop does not contain any fragments.
+    *
+    * @param loc the location of the for-loop with no fragments.
+    */
+  case class EmptyForFragment(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E8809
+
+    def summary: String = "Empty loop: missing collection comprehension."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Empty loop: missing collection comprehension.
+         |
+         |${src(loc, "empty loop")}
+         |
+         |${underline("Explanation:")} A loop must contain a collection comprehension.
+         |A minimal loop is written as follows:
+         |
+         |    foreach (x <- xs) yield x
          |
          |""".stripMargin
     }
+  }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
-    })
+  /**
+    * An error raised to indicate an empty interpolated expression (`"${}"`)
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E8912
 
-    def loc: SourceLocation = loc1
+    def summary: String = "Empty interpolated expression."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Empty interpolated expression.
+         |
+         |${src(loc, "missing expression")}
+         |""".stripMargin
+    }
 
   }
 
   /**
-    * An error raised to indicate an illegal array length.
+    * An error raised to indicate that a record pattern has the illegal shape `{ | r }`.
     *
-    * @param loc the location where the illegal array length occurs.
+    * @param loc the location where the error occurred.
     */
-  case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal array length"
+  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9023
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal array length.
+    def summary: String = "Empty record pattern: missing field."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Empty record pattern: missing field.
          |
-         |${code(loc, "illegal array length.")}
+         |${src(loc, "record pattern must specify at least one field")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised to indicate an illegal field name.
+    * An error raised to indicate an empty type parameter list.
     *
-    * @param loc the location where the illegal field name occurs.
+    * @param loc the location of the list.
     */
-  case class IllegalFieldName(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal field name"
+  case class EmptyTypeParamList(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3014
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
+    def summary: String = "Empty type parameter list."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Empty type parameter list.
          |
-         |>> Illegal field name.
-         |
-         |${code(loc, "illegal field name.")}
+         |${src(loc, "empty list")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised to indicate that the formal parameter lacks a type declaration.
+    * An error raised to indicate an unexpected annotation.
     *
-    * @param name the name of the parameter.
-    * @param loc  the location of the formal parameter.
+    * @param name the name of the annotation.
+    * @param loc  the location of the annotation.
     */
-  case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "The formal parameter must have a declared type."
+  case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9134
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
+    def summary: String = s"Unexpected annotation '$name'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected annotation '${red(name)}'.
          |
-         |>> The formal parameter '${red(name)}' must have a declared type.
-         |
-         |${code(loc, "has no declared type.")}
+         |${src(loc, "annotation not allowed here")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Explicitly declare the type of the formal parameter."
-    })
-
   }
 
   /**
-    * An error raised to indicate that a float is out of bounds.
+    * An error raised to indicate an illegal BigDecimal pattern.
     *
-    * @param loc the location where the illegal float occurs.
+    * @param loc the location where the illegal BigDecimal pattern occurs.
     */
-  case class IllegalFloat(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal float."
+  case class IllegalBigDecimalPattern(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1349
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal float.
+    def summary: String = "Unexpected BigDecimal pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected BigDecimal pattern.
          |
-         |${code(loc, "illegal float.")}
+         |${src(loc, "BigDecimal not allowed here")}
          |
+         |${underline("Explanation:")} BigDecimal values cannot be used in pattern matching.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that the literal is within bounds."
-    })
-
   }
 
   /**
-    * An error raised to indicate that an int is out of bounds.
+    * An error raised to indicate an illegal constant pattern.
     *
-    * @param loc the location where the illegal int occurs.
+    * @param loc the location where the constant pattern occurs.
     */
-  case class IllegalInt(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal int."
+  case class IllegalConstantPattern(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1452
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal int.
+    def summary: String = "Unexpected constant pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected constant pattern.
          |
-         |${code(loc, "illegal int.")}
+         |${src(loc, "constant not allowed here")}
          |
+         |${underline("Explanation:")} Constants are not allowed in let-bindings or lambda parameters.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that the literal is within bounds."
-    })
-
   }
 
   /**
-    * An error raised to indicate an illegal intrinsic.
+    * An error raised to indicate that type parameters are present on an effect or operation.
     *
-    * @param loc the location where the illegal intrinsic occurs.
+    * @param loc the location where the error occurred.
     */
-  case class IllegalIntrinsic(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal intrinsic"
+  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9245
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal intrinsic.
+    def summary: String = "Unexpected effect type parameters."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect type parameters.
          |
-         |${code(loc, "illegal intrinsic.")}
+         |${src(loc, "type parameters on effects are not yet supported")}
          |""".stripMargin
     }
+  }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
+  /**
+    * An error raised to indicate an operation which itself has an effect.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectfulOperation(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9356
+
+    def summary: String = "Unexpected effect on operation."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected effect on operation.
+         |
+         |${src(loc, "unexpected effect")}
+         |
+         |${underline("Explanation:")} Effect operations may not themselves have effects.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate illegal syntax: empty tuple type.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalEmptyTupleType(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1563
+
+    def summary: String = "Unexpected empty tuple type."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected empty tuple type.
+         |
+         |${src(loc, "empty tuple type")}
+         |
+         |${underline("Explanation:")} Use '${cyan("Unit")}' instead of an empty tuple type '${red("()")}'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an enum using both singleton and multiton syntaxes.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEnum(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9467
+
+    def summary: String = "Unexpected enum format."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected enum format.
+         |
+         |${src(loc, "mixed singleton and case syntax")}
+         |
+         |${underline("Explanation:")} Only one enum form may be used.
+         |If you only need one case, use the singleton syntax:
+         |
+         |    enum E(Int32)
+         |
+         |If you need multiple cases, use the case syntax:
+         |
+         |    enum E {
+         |        case C1(Int32)
+         |        case C2(Bool)
+         |    }
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an ill-formed equality constraint.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9578
+
+    def summary: String = "Malformed equality constraint."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed equality constraint.
+         |
+         |${src(loc, "malformed constraint")}
+         |
+         |${underline("Explanation:")} Equality constraints must have the form: Trait.Assoc[var] ~ Type.
+         |For example:
+         |
+         |    Readable.Elm[t] ~ Int8
+         |    Foldable.Aef[t] ~ Pure
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an invalid escape sequence.
+    *
+    * @param char the invalid escape character.
+    * @param loc  the location where the error occurred.
+    */
+  case class IllegalEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9689
+
+    def summary: String = s"Invalid escape sequence '\\$char'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Invalid escape sequence '${red("\\" + char)}'.
+         |
+         |${src(loc, "invalid escape sequence")}
+         |
+         |${underline("Explanation:")} The valid escape sequences are:
+         |
+         |    \\n    newline
+         |    \\r    carriage return
+         |    \\t    tab
+         |    \\\\    backslash
+         |    \\'    single quote
+         |    \\"    double quote
+         |    \\$$    dollar sign
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal extensible variant pattern.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalExtPattern(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9792
+
+    def summary: String = "Unexpected extensible variant pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected extensible variant pattern.
+         |
+         |${src(loc, "unexpected pattern")}
+         |
+         |${underline("Explanation:")} Only wildcards and variables are allowed in extensible patterns.
+         |
+         |    case A(x, _, z) => ...  // OK
+         |    case A(1, 2, 3) => ...  // not OK
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a negative atom is marked as fixed.
+    *
+    * @param loc the location where the illegal fixed atom occurs.
+    */
+  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9803
+
+    def summary: String = "Unexpected 'fix' on negative atom."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected 'fix' on negative atom.
+         |
+         |${src(loc, "unexpected 'fix'")}
+         |
+         |${underline("Explanation:")} Negative atoms are implicitly fixed.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a ForA-loop contains other ForFragments than Generators.
+    *
+    * @param loc the location of the for-loop in which the for-fragment appears.
+    */
+  case class IllegalForAFragment(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0125
+
+    def summary: String = "Unexpected forA fragment: only generators allowed."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected forA fragment: only generators allowed.
+         |
+         |${src(loc, "unexpected fragment")}
+         |
+         |${underline("Explanation:")} A forA loop may only contain generators (x <- xs).
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a loop does not iterate over any collection.
+    *
+    * @param loc the location of the for-loop in which the for-fragment appears.
+    */
+  case class IllegalForFragment(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E9914
+
+    def summary: String = "Unexpected for-fragment: loop must start with a generator."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected for-fragment: loop must start with a generator.
+         |
+         |${src(loc, "unexpected for-fragment")}
+         |
+         |${underline("Explanation:")} A loop must start with a generator (x <- xs).
+         |For example:
+         |
+         |    foreach (x <- xs) yield x
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal ascription on a formal parameter.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0236
+
+    def summary: String = "Unexpected type ascription on effect handler parameter."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected type ascription on effect handler parameter.
+         |
+         |${src(loc, "unexpected type ascription")}
+         |
+         |${underline("Explanation:")} Type ascriptions are not permitted on effect handler parameters.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a provenance query was executed on a lattice relation, which is not supported.
+    *
+    * @param loc the location of the illegal lattice atom.
+    */
+  case class IllegalLatticeProvenance(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0347
+
+    def summary: String = "Unexpected lattice in provenance query."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected lattice in provenance query.
+         |
+         |${src(loc, "lattice")}
+         |
+         |${underline("Explanation:")} Provenance on lattices is not supported.
+         |""".stripMargin
+    }
   }
 
   /**
@@ -304,21 +566,39 @@ object WeederError {
     * @param loc the location where the illegal modifier occurs.
     */
   case class IllegalModifier(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal modifier."
+    def code: ErrorCode = ErrorCode.E0458
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal modifier.
+    def summary: String = "Unexpected modifier."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected modifier.
          |
-         |${code(loc, "illegal modifier.")}
+         |${src(loc, "modifier not allowed here")}
          |""".stripMargin
     }
+  }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
+  /**
+    * An error raised to indicate a non-public signature in a trait.
+    *
+    * @param ident the name of the signature.
+    * @param loc   the location where the error occurred.
+    */
+  case class IllegalNonPublicSignature(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0783
+
+    def summary: String = s"Missing 'pub' modifier on '${ident.name}'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing 'pub' modifier on '${red(ident.name)}'.
+         |
+         |${src(loc, "non-public signature")}
+         |
+         |${underline("Explanation:")} All signatures in a trait must be public.
+         |""".stripMargin
+    }
   }
 
   /**
@@ -327,67 +607,367 @@ object WeederError {
     * @param loc the location where the illegal pattern occurs.
     */
   case class IllegalNullPattern(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal null pattern"
+    def code: ErrorCode = ErrorCode.E0569
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal null pattern.
+    def summary: String = "Unexpected null pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected null pattern.
          |
-         |${code(loc, "illegal null pattern.")}
+         |${src(loc, "null cannot be used as a pattern")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised to indicate an illegal jvm field or method name.
+    * An error raised to indicate more than one trait parameter was declared.
     *
-    * @param loc the location of the name.
+    * @param loc the location where the error occurs.
     */
-  case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal jvm field or method name."
+  case class IllegalNumberOfTraitParameters(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1238
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal jvm field or method name.
+    def summary: String = "Mismatched number of trait parameters."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Mismatched number of trait parameters.
          |
-         |${code(loc, "illegal name.")}
+         |${src(loc, "exactly one parameter required")}
+         |
+         |${underline("Explanation:")} A trait must have exactly one type parameter.
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised to indicate an illegal wildcard in an expression.
+    * An error raised to indicate an illegal predicate arity.
     *
-    * @param loc the location where the illegal wildcard occurs.
+    * @param loc the location where the error occurs.
     */
-  case class IllegalWildcard(loc: SourceLocation) extends WeederError {
-    def summary: String = "Wildcard not allowed here."
+  case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0672
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Wildcard not allowed here.
+    def summary: String = "Malformed predicate arity."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed predicate arity.
          |
-         |${code(loc, "illegal wildcard.")}
+         |${src(loc, "arity must be a positive integer")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the extension of a record pattern is malformed.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalRecordExtensionPattern(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0905
+
+    def summary: String = "Unexpected record extension pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected record extension pattern.
+         |
+         |${src(loc, "unexpected extension")}
+         |
+         |${underline("Explanation:")} A record extension must be either a variable or wildcard.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a record literal contained an operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalRecordOperation(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1016
+
+    def summary: String = "Unexpected record operation in record literal."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected record operation in record literal.
+         |
+         |${src(loc, "unexpected operation")}
+         |
+         |${underline("Explanation:")} Record literals may not contain record extensions or restrictions.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal regex pattern.
+    *
+    * @param loc the location where the illegal regex pattern occurs.
+    */
+  case class IllegalRegexPattern(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1127
+
+    def summary: String = "Unexpected regex pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected regex pattern.
+         |
+         |${src(loc, "regex not allowed here")}
+         |
+         |${underline("Explanation:")} Regex cannot be used as a pattern. Use an 'if' guard instead:
+         |
+         |    case s if Regex.isMatch(regex"...", s) => ...
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a qualified extensible variant pattern.
+    *
+    * @param qname the offending qualified name.
+    */
+  case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
+    def code: ErrorCode = ErrorCode.E0894
+
+    def summary: String = "Unexpected qualified extensible variant pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected qualified extensible variant pattern.
+         |
+         |${src(loc, "qualified pattern not allowed")}
+         |
+         |${underline("Explanation:")} Extensible variants cannot be qualified. Use '${cyan("B")}' instead of '${red("A.B")}'.
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
+    def loc: SourceLocation = qname.loc
+  }
+
+  /**
+    * An error raised to indicate an illegal qualified name.
+    *
+    * @param loc the location of the illegal qualified name.
+    */
+  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1896
+
+    def summary: String = "Unexpected qualified name."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected qualified name.
+         |
+         |${src(loc, "qualified name not allowed here")}
+         |
+         |${underline("Explanation:")} Java names must be imported, e.g. 'import java.lang.Object'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal trait constraint parameter.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalTraitConstraintParameter(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1674
+
+    def summary: String = s"Unexpected type constraint parameter."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected type constraint parameter.
+         |
+         |${src(loc, "unexpected parameter")}
+         |
+         |${underline("Explanation:")} Type constraint parameters must only contain type variables.
+         |
+         |    def foo(x: a): ... with ToString[a]         // OK
+         |    def foo(x: a): ... with ToString[Int32]     // not OK
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal unary plus operator.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalUnaryPlus(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3236
+
+    def summary: String = "Unexpected unary '+'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected unary '${red("+")}'.
+         |
+         |${src(loc, "unary '+' not supported")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param fromName the original name.
+    * @param toName   the alias.
+    * @param loc      the location where the error occurred.
+    */
+  case class IllegalUse(fromName: String, toName: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1785
+
+    def summary: String = s"Mismatched alias casing: '$fromName' and '$toName'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Mismatched alias casing: '${red(fromName)}' and '${red(toName)}'.
+         |
+         |${src(loc, "mismatched casing")}
+         |
+         |${underline("Explanation:")} An alias must match the casing of the name it replaces.
+         |
+         |    use List.{Nil => Empty}       // OK: both uppercase
+         |    use List.{isEmpty => empty}   // OK: both lowercase
+         |    use List.{Nil => empty}       // not OK: mismatched casing
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a function is annotated with both `@Inline` and `@DontInline`.
+    *
+    * @param inlineLoc     the source location of the `@Inline` annotation.
+    * @param dontInlineLoc the source location of the `@DontInline` annotation.
+    */
+  case class InlineAndDontInline(inlineLoc: SourceLocation, dontInlineLoc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E1907
+
+    def summary: String = "Mismatched annotations: '@Inline' and '@DontInline'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Mismatched annotations: '${red("@Inline")}' and '${red("@DontInline")}'.
+         |
+         |${src(inlineLoc, "@Inline")}
+         |
+         |${src(dontInlineLoc, "@DontInline")}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = inlineLoc.min(dontInlineLoc)
+  }
+
+  /**
+    * An error raised to indicate a non-single character literal.
+    *
+    * @param chars the characters in the character literal.
+    * @param loc   the location where the error occurred.
+    */
+  case class MalformedChar(chars: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2018
+
+    def summary: String = "Malformed character literal."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed character literal.
+         |
+         |${src(loc, "expected single character")}
+         |
+         |${underline("Explanation:")} A character literal must contain exactly one character.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a float is out of bounds.
+    *
+    * @param loc the location where the illegal float occurs.
+    */
+  case class MalformedFloat(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2129
+
+    def summary: String = "Malformed float literal."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed float literal.
+         |
+         |${src(loc, "value out of bounds")}
+         |
+         |${underline("Explanation:")} The literal is outside the representable range.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an int is out of bounds.
+    *
+    * @param loc the location where the illegal int occurs.
+    */
+  case class MalformedInt(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2232
+
+    def summary: String = "Malformed int literal."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed int literal.
+         |
+         |${src(loc, "value out of bounds")}
+         |
+         |${underline("Explanation:")} The literal is outside the representable range.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a malformed regular expression.
+    *
+    * @param pat the invalid regular expression.
+    * @param err the error message.
+    * @param loc the location where the error occurred.
+    */
+  case class MalformedRegex(pat: String, err: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2343
+
+    def summary: String = s"Malformed regular expression."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed regular expression.
+         |
+         |${src(loc, err)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a malformed unicode escape sequence.
+    *
+    * @param escapeCode the escape sequence
+    * @param loc        the location where the error occurred.
+    */
+  case class MalformedUnicodeEscapeSequence(escapeCode: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2454
+
+    def summary: String = s"Malformed unicode escape sequence."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Malformed unicode escape sequence.
+         |
+         |${src(loc, "malformed sequence")}
+         |
+         |${underline("Explanation:")} Unicode escapes must be of the form '\\uXXXX' where X is hexadecimal.
+         |""".stripMargin
+    }
   }
 
   /**
@@ -398,21 +978,100 @@ object WeederError {
     * @param loc      the location where mismatch occurs.
     */
   case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
+    def code: ErrorCode = ErrorCode.E2565
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Mismatched arity: expected: $expected, actual: $actual.
+    def summary: String = s"Mismatched arity: expected $expected, actual $actual."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Mismatched arity: expected ${cyan(expected.toString)}, actual ${red(actual.toString)}.
          |
-         |${code(loc, "mismatched arity.")}
+         |${src(loc, "mismatched arity")}
          |""".stripMargin
     }
+  }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
+  /**
+    * An error raised to indicate type params where some (but not all) are explicitly kinded.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class MismatchedKindAnnotations(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2678
+
+    def summary: String = "Mismatched kind annotations."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Mismatched kind annotations.
+         |
+         |${src(loc, "inconsistent annotations")}
+         |
+         |${underline("Explanation:")} Either all or none of the type parameters must have kind annotations.
+         |
+         |    enum E[a, b]              // OK
+         |    enum E[a: Type, b: Type]  // OK
+         |    enum E[a, b: Type]        // not OK
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an argument list is missing a kind.
+    *
+    * @param loc the location of the argument list.
+    */
+  case class MissingArgumentList(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2781
+
+    def summary: String = "Missing argument list."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing argument list.
+         |
+         |${src(loc, "argument list required")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a type parameter is missing a kind.
+    *
+    * @param loc the location of the type parameter.
+    */
+  case class MissingKindAscription(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2903
+
+    def summary: String = "Missing kind ascription."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing kind ascription.
+         |
+         |${src(loc, "kind required")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the formal parameter lacks a type declaration.
+    *
+    * @param name the name of the parameter.
+    * @param loc  the location of the formal parameter.
+    */
+  case class MissingTypeAscription(name: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E2892
+
+    def summary: String = s"Missing type ascription on '$name'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing type ascription on '${red(name)}'.
+         |
+         |${src(loc, "type required")}
+         |""".stripMargin
+    }
   }
 
   /**
@@ -423,27 +1082,49 @@ object WeederError {
     * @param loc2 the location of the second use of the variable.
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Multiple occurrences of '$name' in pattern."
+    def code: ErrorCode = ErrorCode.E3125
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Multiple occurrences of '${red(name)}'  in pattern.
+    def summary: String = s"Non-linear pattern: '$name' occurs multiple times."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Non-linear pattern: '${red(name)}' occurs multiple times.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${src(loc1, "first occurrence")}
          |
-         |${code(loc2, "the second occurrence was here.")}
+         |${src(loc2, "second occurrence")}
          |
+         |${underline("Explanation:")} A variable may only occur once in a pattern.
+         |Use a guard instead:
+         |
+         |    case (x, x) => ...             // not OK
+         |    case (x, y) if x == y => ...   // OK
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} A variable may only occur once in a pattern."
-    })
-
     def loc: SourceLocation = loc1 min loc2
+  }
 
+  /**
+    * An error raised to indicate a non-unary associated type.
+    *
+    * @param n   the number of parameters of the associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3236
+
+    def summary: String = s"Non-unary associated type: expected 1 parameter, found $n."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Non-unary associated type: expected ${cyan("1")} parameter, found ${red(n.toString)}.
+         |
+         |${src(loc, "too many parameters")}
+         |
+         |${underline("Explanation:")} Associated types must have exactly one type parameter.
+         |""".stripMargin
+    }
   }
 
   /**
@@ -453,224 +1134,127 @@ object WeederError {
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Undefined annotation $name"
+    def code: ErrorCode = ErrorCode.E3347
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Undefined annotation '${red(name)}'.
+    def summary: String = s"Undefined annotation '$name'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Undefined annotation '${red(name)}'.
          |
-         |${code(loc, "undefined annotation.")}
+         |${src(loc, "undefined annotation")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised to indicate an illegal private declaration.
+    * An error raised to indicate an undefined or misapplied intrinsic.
     *
-    * @param ident the name of the declaration.
-    * @param loc   the location where the error occurred.
+    * @param loc the location where the error occurs.
     */
-  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Illegal private declaration '${ident.name}'."
+  case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3458
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal private declaration '${red(ident.name)}'.
+    def summary: String = "Undefined or misapplied intrinsic."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Undefined or misapplied intrinsic.
          |
-         |${code(loc, "illegal private declaration")}
-         |
+         |${src(loc, "undefined or misapplied intrinsic.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Mark the declaration as 'pub'."
-    })
-
   }
 
   /**
-    * An error raised to indicate an illegal type constraint parameter.
+    * An error raised to indicate an unexpected binary type operator.
     *
-    * @param loc the location where the error occurred.
+    * @param op  the unexpected operator.
+    * @param loc the location of the operator.
     */
-  case class IllegalTypeConstraintParameter(loc: SourceLocation) extends WeederError {
-    def summary: String = s"Illegal type constraint parameter."
+  case class UnexpectedBinaryTypeOperator(op: String, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3561
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Illegal type constraint parameter.
+    def summary: String = s"Unexpected binary type operator '$op'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected binary type operator '${red(op)}'.
          |
-         |${code(loc, "illegal type constraint parameter")}
+         |${src(loc, "unknown binary type operator")}
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Type constraint parameters must be composed only of type variables."
-    })
 
   }
 
   /**
-    * An error raised to indicate type params where some (but not all) are explicitly kinded.
+    * An error raised to indicate an invalid function call in a select rule.
     *
-    * @param loc the location where the error occurred.
+    * @param qname the name of the function being called
     */
-  case class InconsistentTypeParameters(loc: SourceLocation) extends WeederError {
-    def summary: String = "Either all or none of the type parameters must be annotated with a kind."
+  case class UnexpectedSelectChannelRuleFunction(qname: Name.QName) extends WeederError {
+    val loc: SourceLocation = qname.loc
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Inconsistent type parameters.
+    def code: ErrorCode = ErrorCode.E3672
+
+    def summary: String = s"Unexpected channel function '$qname'."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unexpected channel function '${red(qname.toString)}'.
          |
-         |${code(loc, "inconsistent type parameters")}
+         |${src(loc, "unexpected function")}
          |
+         |${underline("Explanation:")} Select rules must use 'Channel.recv' or 'recv' to receive from a channel.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
-    })
-
   }
 
   /**
-    * An error raised to indicate type params that are not kinded.
+    * An error raised to indicate an unqualified use.
     *
-    * @param loc the location where the error occurred.
+    * @param qn  the qualified name.
+    * @param loc the location where the unqualified use occurs.
     */
-  case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
-    def summary: String = "Type parameters here must be annotated with a kind."
+  case class UnqualifiedUse(qn: Name.QName, loc: SourceLocation) extends WeederError {
+    def code: ErrorCode = ErrorCode.E3783
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Unkinded type parameters.
+    def summary: String = "Unqualified use."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unqualified use.
          |
-         |${code(loc, "unkinded type parameters")}
+         |${src(loc, "must be qualified")}
          |
+         |${underline("Explanation:")} A use must be qualified, e.g. 'use Foo.bar'.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Type parameters here must be annotated with a kind."
-    })
-
   }
 
   /**
-    * An error raised to indicate a malformed unicode escape sequence.
+    * An error raised to indicate an unsupported restrictable choice rule pattern.
     *
-    * @param code the escape sequence
-    * @param loc  the location where the error occurred.
+    * @param star whether the choose is of the star kind.
+    * @param loc  the location where the error occurs.
     */
-  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Malformed unicode escape sequence '$code'."
+  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError {
+    private val operationName: String = if (star) "choose*" else "choose"
 
-    def message(formatter: Formatter): String = {
-      import formatter.{line, code => fmtcode}
-      s"""${line(kind, source.format)}
-         |>> Malformed unicode escape sequence.
+    def code: ErrorCode = ErrorCode.E3894
+
+    def summary: String = s"Unsupported $operationName pattern."
+
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Unsupported ${red(operationName)} pattern.
          |
-         |${fmtcode(loc, "malformed unicode escape sequence")}
+         |${src(loc, "unsupported pattern")}
          |
+         |${underline("Explanation:")} Only enum patterns with variables are allowed in $operationName.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
-    })
-
   }
 
-  /**
-    * An error raised to indicate an invalid escape sequence.
-    *
-    * @param char the invalid escape character.
-    * @param loc  the location where the error occurred.
-    */
-  case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Invalid escape sequence '\\$char'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Invalid escape sequence.
-         |
-         |${code(loc, "invalid escape sequence")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\${', '\\n', and '\\r'."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate a non-single character literal.
-    *
-    * @param chars the characters in the character literal.
-    * @param loc   the location where the error occurred.
-    */
-  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "Non-single-character literal."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Non-single-character literal.
-         |
-         |${code(loc, "non-single-character literal")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} A character literal must consist of a single character."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate an empty interpolated expression (`"${}"`)
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
-    def summary: String = "Empty interpolated expression."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Empty interpolated expression.
-         |
-         |${code(loc, "empty interpolated expression")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
-    })
-
-  }
 }

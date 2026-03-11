@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2021 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +17,53 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Type}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Stratification
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import java.util.Objects
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 object UllmansAlgorithm {
 
-
   /**
     * Represents a dependency between two predicate symbols.
     */
-  sealed trait DependencyEdge
+  sealed trait DependencyEdge {
+    def head: Name.Pred
+
+    def body: Name.Pred
+
+    override def hashCode(): Int = this match {
+      case _: DependencyEdge.Weak => 5 * Objects.hash(head, body)
+      case _: DependencyEdge.Strong => 7 * Objects.hash(head, body)
+    }
+
+    override def equals(that: Any): Boolean = (this, that) match {
+      case (DependencyEdge.Weak(head1, body1, _), DependencyEdge.Weak(head2, body2, _)) =>
+        head1 == head2 && body1 == body2
+      case (DependencyEdge.Strong(head1, body1, _), DependencyEdge.Strong(head2, body2, _)) =>
+        head1 == head2 && body1 == body2
+      case _ => false
+    }
+  }
 
   object DependencyEdge {
 
     /**
-      * Represents a positive labelled edge.
+      * Represents an edge between `body` and `head` which means that the strata
+      * of `head` must be higher than or equal to the strata of `body`.
       */
-    case class Positive(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
+    case class Weak(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
 
     /**
-      * Represents a negative labelled edge.
+      * Represents an edge between `body` and `head` which means that the strata
+      * of `head` must be strictly higher than the strata of `body`.
       */
-    case class Negative(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
+    case class Strong(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
   }
 
   /**
@@ -54,7 +76,7 @@ object UllmansAlgorithm {
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
+  def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Result[Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicates to their (maximum) stratum number.
     //
@@ -67,7 +89,8 @@ object UllmansAlgorithm {
     //
     // The number of strata is bounded by the number of predicates which is bounded by the number of edges.
     //
-    // Hence if we ever compute a stratum higher than this number then there is a negative cycle.
+    // Hence if we ever compute a stratum higher than this number then there is a strict cycle, i.e a cycle
+    // with at least one strong edge.
     //
     val maxStratum = g.size
 
@@ -75,10 +98,10 @@ object UllmansAlgorithm {
     // Repeatedly examine the dependency edges.
     //
     // We always consider two cases:
-    //   1. A positive body predicate requires its head predicate to be in its stratum or any higher stratum.
-    //   2. A negative body predicate requires its head predicate to be in a strictly higher stratum.
+    //   1. A weak body predicate requires its head predicate to be in its stratum or any higher stratum.
+    //   2. A strong body predicate requires its head predicate to be in a strictly higher stratum.
     //
-    // If we ever create more strata than there are dependency edges then there is a negative cycle and we abort.
+    // If we ever create more strata than there are dependency edges then there is a strong cycle and we abort.
     //
     var changed = true
     while (changed) {
@@ -87,7 +110,7 @@ object UllmansAlgorithm {
       // Examine each dependency edge in turn.
       for (edge <- g) {
         edge match {
-          case DependencyEdge.Positive(headSym, bodySym, _) =>
+          case DependencyEdge.Weak(headSym, bodySym, _) =>
             // Case 1: The stratum of the head must be in the same or a higher stratum as the body.
             val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
             val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
@@ -98,7 +121,7 @@ object UllmansAlgorithm {
               changed = true
             }
 
-          case DependencyEdge.Negative(headSym, bodySym, edgeLoc) =>
+          case currentEdge@DependencyEdge.Strong(headSym, bodySym, _) =>
             // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
             val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
             val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
@@ -109,9 +132,9 @@ object UllmansAlgorithm {
               stratumOf.put(headSym, newHeadStratum)
               changed = true
 
-              // Check if we have found a negative cycle.
+              // Check if we have found a strong cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), tpe, loc).toFailure
+                return Result.Err(StratificationError(findStrongCycle(currentEdge, g), tpe, loc))
               }
             }
         }
@@ -119,58 +142,89 @@ object UllmansAlgorithm {
     }
 
     // We are done. Successfully return the computed stratification.
-    Ast.Stratification(stratumOf.toMap).toSuccess
+    Result.Ok(Stratification(stratumOf.toMap))
   }
 
   /**
-    * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
+    * Returns a path that forms a strong cycle, initially attempting to find
+    * a cycle around the `firstCheck` edge.
     */
-  def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
+  private def findStrongCycle(firstCheck: DependencyEdge.Strong, g: DependencyGraph): List[(Name.Pred, SourceLocation)] = {
     // Computes a map from predicates to their successors.
     val succ = mutable.Map.empty[Name.Pred, Set[(Name.Pred, SourceLocation)]]
     for (edge <- g) {
       edge match {
-        case DependencyEdge.Positive(head, body, loc) =>
+        case DependencyEdge.Weak(head, body, loc) =>
           val s = succ.getOrElse(body, Set.empty)
           succ.put(body, s + ((head, loc)))
-        case DependencyEdge.Negative(head, body, loc) =>
+        case DependencyEdge.Strong(head, body, loc) =>
           val s = succ.getOrElse(body, Set.empty)
           succ.put(body, s + ((head, loc)))
       }
     }
 
-    // We perform a DFS using recursion to find the cycle.
+    // Find one of the shortest paths from `start` to `goal`
+    def bfs(src: Name.Pred, dst: Name.Pred): Option[mutable.Map[Name.Pred, (Name.Pred, SourceLocation)]] = {
+      // A map from predicates to one of their immediate
+      // predecessors in the BFS.
+      val pred = mutable.Map.empty[Name.Pred, (Name.Pred, SourceLocation)]
+      // A set of previously seen predicates.
+      val seen = mutable.Set.empty[Name.Pred]
+      // the tasklist for bfs
+      val tasklist = mutable.Queue.empty[Name.Pred]
+      seen.add(src)
+      tasklist.enqueue(src)
 
-    // A map from predicates to their immediate predecessor in the DFS.
-    val pred = mutable.Map.empty[Name.Pred, (Name.Pred, SourceLocation)]
-
-    // A set of previously seen predicates.
-    val seen = mutable.Set.empty[Name.Pred]
-
-    // Recursively visit the given predicate.
-    def visit(curr: Name.Pred): Unit = {
-      // Update the set of previously seen nodes.
-      seen.add(curr)
-
-      // Recursively visit each unseen child.
-      for ((succ, loc) <- succ.getOrElse(curr, Set.empty)) {
-        if (!seen.contains(succ)) {
-          pred.update(succ, (curr, loc))
-          visit(succ)
+      while (tasklist.nonEmpty) {
+        val current = tasklist.dequeue()
+        if (current == dst) return Some(pred)
+        succ.getOrElse(current, Set.empty).foreach {
+          case (next, ruleLoc) =>
+            if (!seen.contains(next)) {
+              pred.update(next, (current, ruleLoc))
+              seen.add(next)
+              tasklist.enqueue(next)
+            }
         }
       }
+      None
     }
 
-    // Compute the predecessor map.
-    visit(dst)
+    // Recursively constructs a path from `endPoint` and backwards through the graph.
+    def unroll(from: Name.Pred, to: Name.Pred, pred: mutable.Map[Name.Pred, (Name.Pred, SourceLocation)]): List[(Name.Pred, SourceLocation)] = {
+      @tailrec
+      def unrollHelper(s: Name.Pred, acc: List[(Name.Pred, SourceLocation)]): List[(Name.Pred, SourceLocation)] = {
+        if (s == to) return acc
+        pred.getOrElse(s, throw InternalCompilerException("Stratification cycle malformed", s.loc)) match {
+          case (prev, loc) => unrollHelper(prev, (prev, loc) :: acc)
+        }
+      }
 
-    // Recursively constructs a path from `src` and backwards through the graph.
-    def unroll(curr: Name.Pred): List[(Name.Pred, SourceLocation)] = pred.get(curr) match {
-      case None => Nil
-      case Some((prev, loc)) => (prev, loc) :: unroll(prev)
+      unrollHelper(from, Nil).reverse
     }
 
-    // Assemble the full path.
-    (src, loc) :: unroll(src) ::: (src, loc) :: Nil
+    // For each strong edge, `x -> y`, in `edges` it is checked if `y` can
+    // reach `x`. The first such cycle is returned. If none are found, an
+    // `InternalCompilerException` is thrown.
+    @tailrec
+    def checkCycles(edges: List[DependencyEdge]): List[(Name.Pred, SourceLocation)] = edges match {
+      case edge :: next => edge match {
+        case DependencyEdge.Weak(_, _, _) => checkCycles(next)
+        case DependencyEdge.Strong(head, body, loc) =>
+          bfs(head, body) match {
+            case None => checkCycles(next)
+            case Some(pred) =>
+              // we found a cycle and can report it
+              (body, loc) :: unroll(body, head, pred) ::: (body, loc) :: Nil
+          }
+      }
+      case Nil => throw InternalCompilerException("Stratification error without a strong cycle", SourceLocation.Unknown)
+    }
+
+    // We do not know where the cycle is but often it includes the edge
+    // `firstCheck` since that edge brought ullman over the limit so
+    // we try to find that cycle first and then check every other strong edge.
+    checkCycles(firstCheck :: g.toList)
   }
+
 }

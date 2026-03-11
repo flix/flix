@@ -20,7 +20,7 @@ pub enum Comparison with Eq, ToString {
     case GreaterThan
 }
 
-namespace Comparison {
+pub mod Comparison {
 
     ///
     /// Converts a `Comparison` value to an integer.
@@ -29,10 +29,10 @@ namespace Comparison {
     /// `0` if `c` is `EqualTo`.
     /// `+1` if `c` is `GreaterThan`.
     ///
-    pub def toInt(c: Comparison): Int32 = match c {
+    pub def toInt32(c: Comparison): Int32 = match c {
         case LessThan => -1
         case EqualTo => 0
-        case GreaterThan => +1
+        case GreaterThan => 1
     }
 
     ///
@@ -42,7 +42,7 @@ namespace Comparison {
     /// `EqualTo` if `i == 0`.
     /// `GreaterThan` if `i > 0`.
     ///
-    pub def fromInt(i: Int32): Comparison =
+    pub def fromInt32(i: Int32): Comparison =
         if (i < 0) LessThan
         else if (i == 0) EqualTo
         else GreaterThan

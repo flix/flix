@@ -16,58 +16,36 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Source
 
 /**
   * A class representing the result of a compilation.
   *
-  * @param root the abstract syntax tree of the program.
-  * @param defs the definitions in the program.
-  * @param codeSize the number of bytes the compiler generated.
+  * @param main      the reflected main function, if present.
+  * @param tests     the tests in the program.
+  * @param sources   the sources of the program.
+  * @param totalTime the total compilation time, excluding class writing/loading.
+  * @param codeSize   the number of bytes the compiler generated.
   */
-class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Map[Symbol.DefnSym, () => AnyRef], val codeSize: Int)(implicit flix: Flix) {
+class CompilationResult(main: Option[Array[String] => Unit],
+                        tests: Map[Symbol.DefnSym, TestFn],
+                        sources: Map[Source, SourceLocation],
+                        val totalTime: Long,
+                        val codeSize: Int
+                       ) {
 
-  /**
-    * Returns the root AST.
-    */
-  def getRoot: Root = root
+  /** Optionally returns the main function. */
+  def getMain: Option[Array[String] => Unit] =
+    main
 
-  /**
-    * Optionally returns the main function.
-    */
-  def getMain: Option[Array[String] => Int] = main
+  /** Returns all the test functions in the program. */
+  def getTests: Map[Symbol.DefnSym, TestFn] =
+    tests
 
-  /**
-    * Returns all the benchmark functions in the program.
-    */
-  def getBenchmarks: Map[Symbol.DefnSym, () => AnyRef] = {
-    defs filter {
-      case (sym, _) => root.defs(sym).ann.isBenchmark
-    }
-  }
-
-  /**
-    * Returns all the test functions in the program.
-    */
-  def getTests: Map[Symbol.DefnSym, () => AnyRef] = {
-    defs filter {
-      case (sym, _) => root.defs(sym).ann.isTest
-    }
-  }
-
-  /**
-    * Returns the total number of lines of compiled code.
-    */
-  def getTotalLines: Int = getRoot.sources.foldLeft(0) {
+  /** Returns the total number of lines of compiled code. */
+  def getTotalLines: Int = sources.foldLeft(0) {
     case (acc, (_, sl)) => acc + sl.endLine
   }
 
-  /**
-    * Returns the total compilation time in nanoseconds.
-    */
-  def getTotalTime: Long = flix.phaseTimers.foldLeft(0L) {
-    case (acc, phase) => acc + phase.time
-  }
 }

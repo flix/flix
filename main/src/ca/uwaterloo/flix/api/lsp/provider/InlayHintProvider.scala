@@ -1,0 +1,272 @@
+/*
+ * Copyright 2022 Nicola Dardanis
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ca.uwaterloo.flix.api.lsp.provider
+
+import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
+import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, TextEdit, Visitor}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst.{ApplyPosition, Expr, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.shared.{Decreasing, SymUse}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.errors.TypeError
+
+import scala.collection.mutable
+
+/**
+  * Provides inlay hints for effects in the Flix language.
+  */
+object InlayHintProvider {
+
+  /**
+    * Whether to enable effect hints.
+    */
+  private val EnableEffectHints: Boolean = false
+
+  /**
+    * Returns a list of inlay hints for the given URI and range.
+    *
+    * @param uri   The URI of the file.
+    * @param range The range within the file to get inlay hints for.
+    * @param root  The root of the typed AST.
+    * @return A list of inlay hints.
+    */
+  def getInlayHints(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[InlayHint] = {
+    if (EnableEffectHints) {
+      val opSymUses: List[(SymUse.OpSymUse, SourceLocation)] = getOpSymUses(uri)
+      val opEffSyms: List[(Symbol.EffSym, SourceLocation)] = opSymUses.map {
+        case (opSymUse, loc) =>
+          (opSymUse.sym.eff, loc)
+      }
+      val defSymUses: List[(SymUse.DefSymUse, SourceLocation)] = getDefSymUses(uri)
+      val defEffSyms: List[(Symbol.EffSym, SourceLocation)] = defSymUses.flatMap {
+        case (defSymUse, loc) =>
+          root.defs(defSymUse.sym).spec.eff.effects.zip(loc :: Nil)
+      }
+      val effSyms = opEffSyms ++ defEffSyms
+
+      /**
+        * Map from position to effects.
+        * The position is the end of the effect expression, and the effects are all the effects that appear on that line.
+        * For example, if there are two effects on the same line, they will be combined into a single hint.
+        */
+      val positionToEffectsMap: Map[Position, Set[Symbol.EffSym]] = effSyms.foldLeft(Map.empty[Position, Set[Symbol.EffSym]]) {
+        case (acc, (eff, loc)) =>
+          val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
+          acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
+      }
+      mkHintsFromEffects(positionToEffectsMap) ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
+    } else {
+      List.empty[InlayHint] ::: getInlayHintsFromErrors(errors) ::: getDecreasingParamHints(uri) ::: getTailRecursionHints(uri)
+    }
+  }
+
+  /**
+    * Returns a list of inlay hints from a given list of CompilationMessage(s),
+    * specifically containing explicitly and implicitly pure functions using IO, errors.
+    */
+  private def getInlayHintsFromErrors(errors: List[CompilationMessage]): List[InlayHint] = {
+    errors.foldLeft(List(): List[InlayHint]) {
+      case (acc, TypeError.ExplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.start), "IO", "IO", Range.from(loc)) :: acc
+      case (acc, TypeError.ImplicitlyPureFunctionUsesIO(loc, _)) => mkIOHint(Position.from(loc.end), " \\ IO ", " \\ IO ", Range.from(loc)) :: acc
+      case (acc, _) => acc
+    }
+  }
+
+  /**
+    * Returns a list of operation symbol uses.
+    */
+  private def getOpSymUses(uri: String)(implicit root: Root): List[(SymUse.OpSymUse, SourceLocation)] = {
+    var opSymUses: List[(SymUse.OpSymUse, SourceLocation)] = List.empty
+    object opSymUseConsumer extends Consumer {
+      override def consumeExpr(expr: Expr): Unit = {
+        expr match {
+          case Expr.ApplyOp(opSymUse, _, _, _, _, loc) =>
+            opSymUses = (opSymUse, loc) :: opSymUses
+          case _ => ()
+        }
+      }
+    }
+    Visitor.visitRoot(root, opSymUseConsumer, FileAcceptor(uri))
+    opSymUses
+  }
+
+  /**
+    * Returns a list of definition symbol uses.
+    */
+  private def getDefSymUses(uri: String)(implicit root: Root): List[(SymUse.DefSymUse, SourceLocation)] = {
+    var defSymUses: List[(SymUse.DefSymUse, SourceLocation)] = List.empty
+    object defSymUseConsumer extends Consumer {
+      override def consumeExpr(expr: Expr): Unit = {
+        expr match {
+          case Expr.ApplyDef(defSymUse, _, _, _, _, _, _, loc) =>
+            defSymUses = (defSymUse, loc) :: defSymUses
+          case _ => ()
+        }
+      }
+    }
+    Visitor.visitRoot(root, defSymUseConsumer, FileAcceptor(uri))
+    defSymUses
+  }
+
+  /**
+    * Creates a list of inlay hints from the effects mapped to their positions.
+    */
+  private def mkHintsFromEffects(positionToEffectsMap: Map[Position, Set[Symbol.EffSym]]): List[InlayHint] = {
+    positionToEffectsMap.map {
+      case (pos, effs) =>
+        mkHint(effs, pos)
+    }.toList
+  }
+
+  /**
+    * Creates an inlay hint combining all effects for a given line.
+    * For example, if the effects are ef1 and ef2, the hint will be { ef1 + ef2 }.
+    */
+  private def mkHint(effs: Set[Symbol.EffSym], pos: Position): InlayHint = {
+    val effectString: String = effs.mkString(" + ")
+    InlayHint(
+      position = pos,
+      label = s"{ $effectString }",
+      kind = Some(InlayHintKind.Type),
+      textEdits = List.empty,
+      tooltip = s"{ $effectString }",
+    )
+  }
+
+  /**
+    * Creates an inlay hint for explicitly and implicitly pure functions using IO.
+    */
+  private def mkIOHint(pos: Position, lbl: String, ttp: String, rng: Range): InlayHint = {
+      InlayHint(
+        position = pos,
+        label = lbl,
+        kind = Some(InlayHintKind.Type),
+        textEdits = List(TextEdit(rng, lbl)),
+        tooltip = ttp,
+      )
+  }
+
+  /**
+    * Returns a list of inlay hints for structurally decreasing parameters.
+    *
+    * For example, a parameter marked as structurally decreasing:
+    * {{{
+    *   def length(↓ l: List[a]): Int32
+    * }}}
+    */
+  private def getDecreasingParamHints(uri: String)(implicit root: Root): List[InlayHint] = {
+    var hints: List[InlayHint] = List.empty
+    object c extends Consumer {
+      override def consumeFormalParam(fparam: FormalParam): Unit = {
+        if (fparam.decreasing == Decreasing.StrictlyDecreasing) {
+          hints = InlayHint(
+            position = Position.fromBegin(fparam.loc),
+            label = "\u2193",
+            kind = Some(InlayHintKind.Parameter),
+            textEdits = List.empty,
+            tooltip = "Structurally decreasing",
+            paddingLeft = false,
+            paddingRight = true
+          ) :: hints
+        }
+      }
+    }
+    Visitor.visitRoot(root, c, FileAcceptor(uri))
+    hints
+  }
+
+  /**
+    * Returns a list of inlay hints for tail-recursive self-calls in `@Tailrec` functions
+    * and self-recursive local defs.
+    *
+    * For example, a tail-recursive self-call:
+    * {{{
+    *   @Tailrec
+    *   def length(l: List[a]): Int32 = match l {
+    *       case Nil     => 0
+    *       case _ :: xs => ↺ length(xs)
+    *   }
+    * }}}
+    */
+  private def getTailRecursionHints(uri: String)(implicit root: Root): List[InlayHint] = {
+    var hints: List[InlayHint] = List.empty
+    val localDefFparams: mutable.Map[Symbol.VarSym, List[FormalParam]] = mutable.Map.empty
+
+    object c extends Consumer {
+      override def consumeExpr(expr: Expr): Unit = {
+        expr match {
+          case Expr.LocalDef(_, bnd, fparams, _, _, _, _, _) =>
+            localDefFparams.put(bnd.sym, fparams)
+
+          case Expr.ApplyDef(symUse, exps, _, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
+            if (root.defs(symUse.sym).spec.ann.isTailRecursive) {
+              hints = mkTailRecHint(loc) :: hints
+              val fparams = root.defs(symUse.sym).spec.fparams
+              hints = mkDecreasingArgHints(exps, fparams) ::: hints
+            }
+
+          case Expr.ApplyLocalDef(symUse, exps, _, _, _, pos, loc) if pos == ApplyPosition.SelfTail =>
+            localDefFparams.get(symUse.sym) match {
+              case Some(fparams) =>
+                hints = mkTailRecHint(loc) :: hints
+                hints = mkDecreasingArgHints(exps, fparams) ::: hints
+              case None =>
+                // The local def has not been visited yet, which cannot happen because
+                // the visitor traverses LocalDef before its body where self-calls appear.
+                ()
+            }
+
+          case _ => ()
+        }
+      }
+    }
+    Visitor.visitRoot(root, c, FileAcceptor(uri))
+    hints
+  }
+
+  /**
+    * Creates an inlay hint for a tail-recursive self-call.
+    */
+  private def mkTailRecHint(loc: SourceLocation): InlayHint = InlayHint(
+    position = Position.fromBegin(loc),
+    label = "\u21ba",
+    kind = Some(InlayHintKind.Parameter),
+    textEdits = List.empty,
+    tooltip = "Tail-recursive self-call",
+    paddingLeft = false,
+    paddingRight = true
+  )
+
+  /**
+    * Creates inlay hints for arguments corresponding to structurally decreasing parameters.
+    */
+  private def mkDecreasingArgHints(exps: List[Expr], fparams: List[FormalParam]): List[InlayHint] = {
+    exps.zip(fparams).collect {
+      case (arg, fparam) if fparam.decreasing == Decreasing.StrictlyDecreasing =>
+        InlayHint(
+          position = Position.fromBegin(arg.loc),
+          label = "\u2193",
+          kind = Some(InlayHintKind.Parameter),
+          textEdits = List.empty,
+          tooltip = s"Argument for structurally decreasing parameter '${fparam.bnd.sym.text}'",
+          paddingLeft = false,
+          paddingRight = true
+        )
+    }
+  }
+
+}

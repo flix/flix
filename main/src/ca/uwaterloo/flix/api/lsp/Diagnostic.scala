@@ -16,33 +16,30 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.CodeHint
-import ca.uwaterloo.flix.util.Formatter
-import org.json4s.JsonDSL._
-import org.json4s._
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
+import org.json4s.JsonDSL.*
+import org.json4s.*
+import org.eclipse.lsp4j
+
+import scala.jdk.CollectionConverters.*
 
 /**
   * Companion object for [[Diagnostic]].
   */
 object Diagnostic {
-  def from(compilationMessage: CompilationMessage, formatter: Formatter): Diagnostic = {
-    val range = Range.from(compilationMessage.loc)
+  def from(m: CompilationMessage, root: Option[TypedAst.Root]): Diagnostic = {
+    val range = Range.from(m.loc)
     val severity = Some(DiagnosticSeverity.Error)
-    val code = compilationMessage.kind
-    val summary = compilationMessage.summary
-    val explanationHeading =
-      s"""
-         |${formatter.underline("Explanation:")}
-         |""".stripMargin
-    val explanation = compilationMessage.explain(formatter) match {
-      case None => ""
-      case Some(expl) => explanationHeading + expl
-    }
-    val fullMessage = compilationMessage.message(formatter) + explanation
-    Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)
+    val code = m.kind.toString
+    val summary = m.summary
+    val fullMessage = m.messageWithLoc(AnsiTerminalFormatter)(root)
+    val relatedInformation = m.locs.map(l => DiagnosticRelatedInformation(Location.from(l), m.summary))
+    Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil, relatedInformation)
   }
 
-  def from(codeHint: CodeHint, formatter: Formatter): Diagnostic = {
+  def from(codeHint: CodeHint): Diagnostic = {
     val range = Range.from(codeHint.loc)
     val severity = Some(DiagnosticSeverity.from(codeHint.severity))
     val summary = codeHint.summary
@@ -61,7 +58,7 @@ object Diagnostic {
   * @param fullMessage The full error message (non-standard).
   * @param tags        Additional metadata about the diagnostic.
   */
-case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, fullMessage: String, tags: List[DiagnosticTag]) {
+case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, fullMessage: String, tags: List[DiagnosticTag], relatedInformation: List[DiagnosticRelatedInformation] = Nil) {
   def toJSON: JValue =
     ("range" -> range.toJSON) ~
       ("severity" -> severity.map(_.toInt)) ~
@@ -69,5 +66,18 @@ case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: 
       ("source" -> source) ~
       ("message" -> message) ~
       ("fullMessage" -> fullMessage) ~
-      ("tags" -> tags.map(_.toInt))
+      ("tags" -> tags.map(_.toInt)) ~
+      ("relatedInformation" -> relatedInformation.map(_.toJSON))
+
+  def toLsp4j: lsp4j.Diagnostic = {
+    val diagnostic = new lsp4j.Diagnostic()
+    diagnostic.setRange(range.toLsp4j)
+    diagnostic.setSeverity(severity.map(_.toLsp4j).orNull)
+    diagnostic.setCode(code.orNull)
+    diagnostic.setSource(source.orNull)
+    diagnostic.setMessage(message)
+    diagnostic.setTags(tags.map(_.toLsp4j).asJava)
+    diagnostic.setRelatedInformation(relatedInformation.map(_.toLsp4j).asJava)
+    diagnostic
+  }
 }

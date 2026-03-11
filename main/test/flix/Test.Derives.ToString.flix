@@ -1,8 +1,11 @@
-namespace Test/Derives/ToString {
+mod Test.Derives.ToString {
+
+    use Assert.assertEq
+
     pub enum Enum with ToString {
       case EmptyCase
-      case SingletonCase(Int)
-      case TupleCase(Int, Bool)
+      case SingletonCase(Int32)
+      case TupleCase(Int32, Bool)
     }
 
     pub enum PolyEnum[a] with ToString {
@@ -23,7 +26,7 @@ namespace Test/Derives/ToString {
         case BothCase(a, b)
     }
 
-    pub enum PolyBoolEnum[ef: Bool] with ToString {
+    pub enum PolyBoolEnum[ef: Eff] with ToString {
         case EmptyCase
         case RecursiveCase(PolyBoolEnum[ef])
     }
@@ -38,77 +41,101 @@ namespace Test/Derives/ToString {
         case RecursiveCase(MutRecursiveEnum1)
     }
 
-    pub opaque type OpaqueType with ToString = Int
+    pub enum OpaqueType(Int32) with ToString
 
-    @test
-    def testToString01(): Bool = "${Enum.EmptyCase}" == "EmptyCase"
+    @Test
+    def testToString01(): Unit \ Assert =
+        assertEq(expected = "EmptyCase", "${Enum.EmptyCase}")
 
-    @test
-    def testToString02(): Bool = "${Enum.SingletonCase(123)}" == "SingletonCase(123)"
+    @Test
+    def testToString02(): Unit \ Assert =
+        assertEq(expected = "SingletonCase(123)", "${Enum.SingletonCase(123)}")
 
-    @test
-    def testToString03(): Bool = "${Enum.TupleCase(123, true)}" == "TupleCase(123, true)"
+    @Test
+    def testToString03(): Unit \ Assert =
+        assertEq(expected = "TupleCase(123, true)", "${Enum.TupleCase(123, true)}")
 
-    @test
-    def testToString04(): Bool = "${PolyEnum.EmptyCase: PolyEnum[Int]}" == "EmptyCase"
+    @Test
+    def testToString04(): Unit \ Assert =
+        assertEq(expected = "EmptyCase", "${(PolyEnum.EmptyCase: PolyEnum[Int32])}")
 
-    @test
-    def testToString05(): Bool = "${PolyEnum.SingletonCase(123)}" == "SingletonCase(123)"
+    @Test
+    def testToString05(): Unit \ Assert =
+        assertEq(expected = "SingletonCase(123)", "${PolyEnum.SingletonCase(123)}")
 
-    @test
-    def testToString06(): Bool = "${PolyEnum.TupleCase(123, 123)}" == "TupleCase(123, 123)"
+    @Test
+    def testToString06(): Unit \ Assert =
+        assertEq(expected = "TupleCase(123, 123)", "${PolyEnum.TupleCase(123, 123)}")
 
-    @test
-    def testToString07(): Bool = "${PolyEnum.EmptyCase: PolyEnum[Enum]}" == "EmptyCase"
+    @Test
+    def testToString07(): Unit \ Assert =
+        assertEq(expected = "EmptyCase", "${(PolyEnum.EmptyCase: PolyEnum[Enum])}")
 
-    @test
-    def testToString08(): Bool = "${PolyEnum.SingletonCase(Enum.EmptyCase)}" == "SingletonCase(EmptyCase)"
+    @Test
+    def testToString08(): Unit \ Assert =
+        assertEq(expected = "SingletonCase(EmptyCase)", "${PolyEnum.SingletonCase(Enum.EmptyCase)}")
 
-    @test
-    def testToString09(): Bool = "${PolyEnum.SingletonCase(Enum.SingletonCase(123))}" == "SingletonCase(SingletonCase(123))"
+    @Test
+    def testToString09(): Unit \ Assert =
+        assertEq(expected = "SingletonCase(SingletonCase(123))", "${PolyEnum.SingletonCase(Enum.SingletonCase(123))}")
 
-    @test
-    def testToString10(): Bool = "${PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int]]}" == "EmptyCase"
+    @Test
+    def testToString10(): Unit \ Assert =
+        assertEq(expected = "EmptyCase", "${(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]])}")
 
-    @test
-    def testToString11(): Bool = "${PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]]}" == "SingletonCase(EmptyCase)"
+    @Test
+    def testToString11(): Unit \ Assert =
+        assertEq(expected = "SingletonCase(EmptyCase)", "${(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]])}")
 
-    @test
-    def testToString12(): Bool = "${PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))}" == "SingletonCase(SingletonCase(123))"
+    @Test
+    def testToString12(): Unit \ Assert =
+        assertEq(expected = "SingletonCase(SingletonCase(123))", "${PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))}")
 
-    @test
-    def testToString13(): Bool = "${RecursiveEnum.EmptyCase}" == "EmptyCase"
+    @Test
+    def testToString13(): Unit \ Assert =
+        assertEq(expected = "EmptyCase", "${RecursiveEnum.EmptyCase}")
 
-    @test
-    def testToString14(): Bool = "${RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)}" == "RecursiveCase(EmptyCase)"
+    @Test
+    def testToString14(): Unit \ Assert =
+        assertEq(expected = "RecursiveCase(EmptyCase)", "${RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)}")
 
-    @test
-    def testToString15(): Bool = "${PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool]}" == "EmptyCase"
+    @Test
+    def testToString15(): Unit \ Assert =
+        assertEq(expected = "EmptyCase", "${(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool])}")
 
-    @test
-    def testToString16(): Bool = "${PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool]}" == "LeftCase(123)"
+    @Test
+    def testToString16(): Unit \ Assert =
+        assertEq(expected = "LeftCase(123)", "${(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool])}")
 
-    @test
-    def testToString17(): Bool = "${PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool]}" == "RightCase(true)"
+    @Test
+    def testToString17(): Unit \ Assert =
+        assertEq(expected = "RightCase(true)", "${(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool])}")
 
-    @test
-    def testToString18(): Bool = "${PolyMultiEnum.BothCase(123, true)}" == "BothCase(123, true)"
+    @Test
+    def testToString18(): Unit \ Assert =
+        assertEq(expected = "BothCase(123, true)", "${PolyMultiEnum.BothCase(123, true)}")
 
-    @test
-    def testToString19(): Bool = "${PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]}" == "EmptyCase"
+    @Test
+    def testToString19(): Unit \ Assert =
+        assertEq(expected = "EmptyCase", "${(PolyBoolEnum.EmptyCase: PolyBoolEnum[{}])}")
 
-    @test
-    def testToString20(): Bool = "${PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]}" == "RecursiveCase(EmptyCase)"
+    @Test
+    def testToString20(): Unit \ Assert =
+        assertEq(expected = "RecursiveCase(EmptyCase)", "${(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[{}])}")
 
-    @test
-    def testToString21(): Bool = "${MutRecursiveEnum1.EmptyCase}" == "EmptyCase"
+    @Test
+    def testToString21(): Unit \ Assert =
+        assertEq(expected = "EmptyCase", "${MutRecursiveEnum1.EmptyCase}")
 
-    @test
-    def testToString22(): Bool = "${MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)}" == "RecursiveCase(EmptyCase)"
+    @Test
+    def testToString22(): Unit \ Assert =
+        assertEq(expected = "RecursiveCase(EmptyCase)", "${MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)}")
 
-    @test
-    def testToString23(): Bool = "${MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))}" == "RecursiveCase(RecursiveCase(EmptyCase))"
+    @Test
+    def testToString23(): Unit \ Assert =
+        assertEq(expected = "RecursiveCase(RecursiveCase(EmptyCase))", "${MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))}")
 
-    @test
-    def testToString24(): Bool = "${OpaqueType(123)}" == "OpaqueType(123)"
+    @Test
+    def testToString24(): Unit \ Assert =
+        assertEq(expected = "OpaqueType(123)", "${OpaqueType.OpaqueType(123)}")
 }

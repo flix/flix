@@ -27,11 +27,35 @@
 /// Otherwise, the front index always points to an element (going counter-clockwise)
 /// and the back index always points to the first empty index (going clockwise).
 ///
-pub enum MutDeque[a] {
-    case MutDeque(Ref[Array[a]], Ref[Int32], Ref[Int32])
+pub struct MutDeque[a: Type, r: Region] {
+    r: Region[r],
+    mut values: Array[a, r],
+    mut front: Int32,
+    mut back: Int32
 }
 
-namespace MutDeque {
+instance Iterable[MutDeque[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutDeque.iterator(rc, md)
+}
+
+instance ForEach[MutDeque[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, md: MutDeque[a, r]): Unit \ ef + r = MutDeque.forEach(f, md)
+}
+
+instance Formattable[MutDeque[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutDeque#{") + joinWith(Formattable.format, fromString(", "), MutDeque.toList(x)) + fromString("}")
+}
+
+pub mod MutDeque {
+    use Math.Shuffle
 
     ///
     /// Constant denoting the minimum allowed capacity of the backing array.
@@ -59,17 +83,37 @@ namespace MutDeque {
     def maxLoadFactor(): Float32 = 3.0f32 / 4.0f32
 
     ///
+    /// Returns a string representation of the given MutDeque `d`.
+    ///
+    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc {
+        "MutDeque#{" + (MutDeque.iterator(rc, d) |> Iterator.join(", ")) + "}"
+    }
+
+    ///
     /// Returns an empty MutDeque.
     ///
-    pub def new(): MutDeque[a] & Impure =
-        MutDeque(ref [$DEFAULT$; minCapacity()], ref 0, ref 0)
+    pub def empty(rc: Region[r]): MutDeque[a, r] \ r =
+        emptyWithCapacity(rc, minCapacity())
+
+    ///
+    /// Returns an empty mutable deque with the given capacity rounded up to the
+    /// default capacity.
+    ///
+    pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutDeque[a, r] \ r = {
+        let flooredCapacity = Int32.max(capacity, minCapacity());
+        new MutDeque @ rc {r = rc, values = Array.empty(rc, flooredCapacity), front = 0, back = 0}
+    }
 
     ///
     /// Returns the number of elements in `d`.
     ///
-    pub def size(d: MutDeque[a]): Int32 & Impure =
-        let MutDeque(_, f, b) = d;
-        computeSize(capacity(d), deref f, deref b)
+    pub def size(d: MutDeque[a, r]): Int32 \ r =
+        computeSize(capacity(d), d->front, d->back)
+
+    ///
+    /// Returns a range of all valid indices of the mutable deque `d`.
+    ///
+    pub def indices(d: MutDeque[a, r]): Range[Int32] \ r = Range.Range(0, size(d))
 
     ///
     /// Returns the size of a MutDeque, where `l` = array length, `f` = front index, `b` = back index.
@@ -83,130 +127,194 @@ namespace MutDeque {
     ///
     /// Returns `true` if `d` is empty.
     ///
-    pub def isEmpty(d: MutDeque[a]): Bool & Impure =
-        let MutDeque(_, f, b) = d;
-        deref f == deref b
+    pub def isEmpty(d: MutDeque[a, r]): Bool \ r =
+        d->front == d->back
+
+    ///
+    /// Returns `true` if `d` is non-empty.
+    ///
+    pub def nonEmpty(d: MutDeque[a, r]): Bool \ r = not isEmpty(d)
+
+    ///
+    /// Returns the sum of all elements in the deque `d`.
+    ///
+    pub def sum(d: MutDeque[Int32, r]): Int32 \ r =
+        sumWith(identity, d)
+
+    ///
+    /// Returns the sum of all elements in the deque `d` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 \ ef, d: MutDeque[a, r]): Int32 \ { ef, r } =
+        foldLeft((acc, x) -> f(x) + acc, 0, d)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, r } =
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else
+                loop(Int32.bitwiseAnd(i + 1, c), e, f(acc, Array.get(i, d->values)));
+        loop(d->front, d->back, s)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, r } =
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else {
+                let j = Int32.bitwiseAnd(i - 1, c);
+                loop(j, e, f(Array.get(j, d->values), acc))
+            };
+        loop(d->back, d->front, s)
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b \ ef, d: MutDeque[a, r]): b \ { ef, r } with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), d)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
     ///
-    pub def popFront(d: MutDeque[a]): Option[a] & Impure =
+    pub def popFront(d: MutDeque[a, r]): Option[a] \ r =
         if (isEmpty(d)) {
             None
         }
         else { // Get the element `x` at the front, update index, optionally compress array, return `Some(x)`.
-            let MutDeque(a, f, _) = d;
-            let a1 = deref a;
-            let f1 = deref f;
-            let x = a1[f1];
-            f := (f1 + 1) mod capacity(d);
-            compress!(d);
+            let x = Array.get(d->front, d->values);
+            d->front = (d->front + 1) `Int32.modulo` capacity(d);
+            compress(d);
             Some(x)
         }
 
     ///
     /// Returns `Some(x)` where `x` is the element at the back. Returns `None` if `d` is empty.
     ///
-    pub def popBack(d: MutDeque[a]): Option[a] & Impure =
+    pub def popBack(d: MutDeque[a, r]): Option[a] \ r =
         if (isEmpty(d)) {
             None
         }
         else { // Update index such that back points to a valid element `x`, get element, optionally compress array, return `Some(x)`.
-            let MutDeque(a, _, b) = d;
-            let a1 = deref a;
-            let b1 = (deref b - 1) mod capacity(d);
-            let x = a1[b1];
-            b := b1;
-            compress!(d);
+            let b1 = (d->back - 1) `Int32.modulo` capacity(d);
+            let x = Array.get(b1, d->values);
+            d->back = b1;
+            compress(d);
             Some(x)
         }
 
     ///
     /// Pushes `x` to the front of `d`.
     ///
-    pub def pushFront(x: a, d: MutDeque[a]): Unit & Impure =
-        let MutDeque(a, f, _) = d;
-        let a1 = deref a;
-        let f1 = (deref f - 1) mod capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
-        a1[f1] = x;                               // Store `x` in the array.
-        f := f1;                                  // Update the front index reference.
-        expand!(d)                                // Optionally expand `d`.
+    pub def pushFront(x: a, d: MutDeque[a, r]): Unit \ r =
+        let f1 = (d->front - 1) `Int32.modulo` capacity(d);     // Update index such that it points to an empty index. This will never overlap with the back index.
+        Array.put(x, f1, d->values);                            // Store `x` in the array.
+        d->front = f1;                                          // Update the front index reference.
+        expand(d)                                               // Optionally expand `d`.
 
     ///
     /// Pushes `x` to the back of `d`.
     ///
-    pub def pushBack(x: a, d: MutDeque[a]): Unit & Impure =
-        let MutDeque(a, _, b) = d;
-        let a1 = deref a;
-        let b1 = deref b;
-        a1[b1] = x;                      // Store `x` in the array.
-        b := (b1 + 1) mod capacity(d); // Update back index reference to point to next empty index.
-        expand!(d)                       // Optionally expand `d`.
+    pub def pushBack(x: a, d: MutDeque[a, r]): Unit \ r =
+        Array.put(x, d->back, d->values);                           // Store `x` in the array.
+        d->back = (d->back + 1) `Int32.modulo` capacity(d);         // Update back index reference to point to next empty index.
+        expand(d)                                                   // Optionally expand `d`.
+
+    ///
+    /// Optionally returns the front element. Does *not* remove it.
+    ///
+    pub def peekFront(d: MutDeque[a, r]): Option[a] \ r =
+        let f1 = d->front;
+        let b1 = d->back;
+        if (f1 == b1)
+            None
+        else
+            Some(Array.get(f1, d->values))
+
+    ///
+    /// Optionally returns the back element. Does *not* remove it.
+    ///
+    pub def peekBack(d: MutDeque[a, r]): Option[a] \ r =
+        let f1 = d->front;
+        let b1 = d->back;
+        if (f1 == b1)
+            None
+        else
+            let c = capacity(d) - 1;
+            let i = Int32.bitwiseAnd(b1 - 1, c);
+            Some(Array.get(i, d->values))
 
     ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
-    def expand!(d: MutDeque[a]): Unit & Impure =
-        if (shouldExpand(d)) grow!(d) else ()
+    def expand(d: MutDeque[a, r]): Unit \ r =
+        if (shouldExpand(d)) { grow(d) }
 
     ///
     /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
-    def shouldExpand(d: MutDeque[a]): Bool & Impure =
+    def shouldExpand(d: MutDeque[a, r]): Bool \ r =
         loadFactorOf(size(d), capacity(d)) >= maxLoadFactor()
 
     ///
     /// Doubles the capacity of `d`.
     ///
-    def grow!(d: MutDeque[a]): Unit & Impure = {
-        let MutDeque(a, f, b) = d;
+    def grow(d: MutDeque[a, r]): Unit \ r =
         let c = capacity(d);
-        let arr = [$DEFAULT$; 2 * c];                  // Allocate new array `arr` with double the capacity of `a`.
-        copyElements!(deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
-        a := arr;                                      // Update references.
-        b := computeSize(c, deref f, deref b);
-        f := 0
-    }
+        let arr = Array.empty(d->r, Int32.leftShift(c, 1));     // Allocate empty array `arr` with double the capacity of `a`.
+        copyElements(d->r, d->front, d->back, d->values, arr);  // Copy elements from old array `a` to empty array `arr`.
+        d->values = arr;                                        // Update references.
+        d->back = computeSize(c, d->front, d->back);
+        d->front = 0
 
     ///
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
-    def compress!(d: MutDeque[a]): Unit & Impure =
-        if (shouldCompress(d)) shrink!(d) else ()
+    def compress(d: MutDeque[a, r]): Unit \ r =
+        if (shouldCompress(d)) { shrink(d) }
 
     ///
     /// Returns `true` if the load factor is less than or equal to 1 / 4.
     ///
-    def shouldCompress(d: MutDeque[a]): Bool & Impure =
+    def shouldCompress(d: MutDeque[a, r]): Bool \ r =
         loadFactorOf(size(d), capacity(d)) <= minLoadFactor()
 
     ///
     /// Shrinks MutDeque `d` to half its size but never below `minCapacity`.
     ///
-    def shrink!(d: MutDeque[a]): Unit & Impure =
-        let MutDeque(a, f, b) = d;
+    def shrink(d: MutDeque[a, r]): Unit \ r =
         let mc = minCapacity();
         let c = capacity(d);
-        if (c > mc) {                                      // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = [$DEFAULT$; c / 2];                  // Allocate new array `arr` with half the capacity of `a`.
-            copyElements!(deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
-            a := arr;                                      // Update references.
-            b := computeSize(c, deref f, deref b);
-            f := 0
+        if (c > mc) {                                               // Prevent the backing array from shrinking below `minCapacity`.
+            let arr = Array.empty(d->r, Int32.rightShift(c, 1));    // Allocate empty array `arr` with half the capacity of `a`.
+            copyElements(d->r, d->front, d->back, d->values, arr);  // Copy elements from old array `a` to empty array `arr`.
+            d->values = arr;                                        // Update references.
+            d->back = computeSize(c, d->front, d->back);
+            d->front = 0
         } else {
             ()
         }
 
+
     ///
     /// Copies the elements from `a` to `a1`. Mutates the array `a1`.
     ///
-    def copyElements!(f: Int32, b: Int32, a: Array[a], a1: Array[a]): Unit & Impure =
+    def copyElements(rc2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { r1, r2 } =
         let c = Array.length(a);
         if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
-            Array.updateSequence!(0,     a[f .. b], a1)
+            Array.updateSequence(0,     Array.slice(rc2, start = f, end = b, a), a1)
         } else {
-            Array.updateSequence!(0,     a[f .. c], a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
-            Array.updateSequence!(c - f, a[0 .. b], a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
+            Array.updateSequence(0,     Array.slice(rc2, start = f, end = c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
+            Array.updateSequence(c - f, Array.slice(rc2, start = 0, end = b, a), a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
         }
 
     ///
@@ -218,8 +326,124 @@ namespace MutDeque {
     ///
     /// Returns the capacity of `d`.
     ///
-    def capacity(d: MutDeque[a]): Int32 & Impure =
-        let MutDeque(a, _, _) = d;
-        Array.length(deref a)
+    def capacity(d: MutDeque[a, r]): Int32 \ r =
+        Array.length(d->values)
+
+    ///
+    /// Returns `true` if `MutDeque`s `a` and `b` have the same elements in the same order, i.e. are structurally equal.
+    ///
+    pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ { r1, r2 } with Eq[t] = region rc3 {
+        let aSize = size(d1);
+        let bSize = size(d2);
+        if (aSize == bSize) {
+            let a1 = Array.empty(rc3, aSize);
+            let b1 = Array.empty(rc3, bSize);
+            copyElements(rc3, d1->front, d1->back, d1->values, a1);
+            copyElements(rc3, d2->front, d2->back, d2->values, b1);
+            Array.sameElements(a1, b1)
+        } else
+            false
+    }
+
+    ///
+    /// Returns `d` as a `List`.
+    ///
+    pub def toList(d: MutDeque[a, r]): List[a] \ r =
+        foldRight((x, acc) -> x :: acc, Nil, d)
+
+    ///
+    /// Returns `d` as an array.
+    ///
+    pub def toArray(rc1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { r2, r1 } =
+        let len = MutDeque.capacity(d);
+        let i = d->front;
+        let j = d->back;
+        if (i == j)
+            Array#{} @ rc1
+        else if (i < j)
+            Array.copyOfRange(rc1, i, j, d->values)
+        else
+            Array.append(rc1, Array.copyOfRange(rc1, i, len, d->values), Array.copyOfRange(rc1, 0, j, d->values))
+
+    ///
+    /// Returns `d` as a vector.
+    ///
+    pub def toVector(d: MutDeque[a, r]): Vector[a] \ r = region rc {
+        let arr = Array.empty(rc, size(d));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), d);
+        Array.toVector(arr)
+    }
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `d` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] = region rc {
+        MutDeque.iterator(rc, d) |> Iterator.join(sep)
+    }
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `d` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc {
+        MutDeque.iterator(rc, d) |> Iterator.joinWith(f, sep)
+    }
+
+    ///
+    /// Returns an iterator over `d`.
+    ///
+    /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+        let i = Ref.fresh(rc, d->front);
+        let next = () -> {
+            if (Ref.get(i) < d->back) {
+                let x = Array.get(Ref.get(i), d->values);
+                Ref.put(Ref.get(i) + Int32.bitwiseAnd(1, capacity(d) - 1), i);
+                Some(x)
+            } else {
+                None
+            }
+        };
+        Iterator.iterate(rc, next)
+
+    ///
+    /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
+    ///
+    pub def forEach(f: a -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } =
+        let c = capacity(d) - 1;
+
+        def loop(i) = {
+            if (i == d->back) {
+                ()
+            } else {
+                match Array.nth(i, d->values) {
+                    case Some(x) => f(x)
+                    case None    => bug!("An error occurred in MutDeque.forEach!")
+                };
+                loop(Int32.bitwiseAnd(i + 1, c))
+            }
+        };
+        loop(d->front)
+
+    ///
+    /// Apply the effectful function `f` to all the elements in the MutDeque `d`
+    /// along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } = region rc {
+        let ix = Ref.fresh(rc, 0);
+        forEach(x -> { let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix) }, d)
+    }
+
+    ///
+    /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rc1: Region[r1], d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, Shuffle } = region rc3 {
+        let arr = toArray(rc3, d) !> Array.shuffle;
+        let result = empty(rc1);
+        Array.forEach(x -> pushBack(x, result), arr);
+        result
+    }
 
 }

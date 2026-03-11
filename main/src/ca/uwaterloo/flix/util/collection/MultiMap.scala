@@ -12,7 +12,7 @@ object MultiMap {
   /**
     * Returns a singleton multi map with a mapping from `k` to `v`.
     */
-  def singleton[K, V](k: K, v: V): MultiMap[K, V] = empty + (k, v)
+  def singleton[K, V](k: K, v: V): MultiMap[K, V] = empty + (k -> v)
 }
 
 /**
@@ -33,7 +33,8 @@ case class MultiMap[K, V](m: Map[K, Set[V]]) {
   /**
     * Returns `this` multi map extended with an additional mapping from `k` to `v`.
     */
-  def +(k: K, v: V): MultiMap[K, V] = {
+  def +(kv: (K, V)): MultiMap[K, V] = {
+    val (k, v) = kv
     val s = m.getOrElse(k, Set.empty)
     MultiMap(m + (k -> (s + v)))
   }
@@ -41,7 +42,8 @@ case class MultiMap[K, V](m: Map[K, Set[V]]) {
   /**
     * Returns `this` multi map extended with additional mappings from `k`to the values in `vs`.
     */
-  def +(k: K, vs: Set[V]): MultiMap[K, V] = {
+  def ++(kvs: (K, Set[V])): MultiMap[K, V] = {
+    val (k, vs) = kvs
     val s = m.getOrElse(k, Set.empty)
     MultiMap(m + (k -> (s ++ vs)))
   }
@@ -51,7 +53,7 @@ case class MultiMap[K, V](m: Map[K, Set[V]]) {
     */
   def ++(that: MultiMap[K, V]): MultiMap[K, V] = {
     that.m.foldLeft(this) {
-      case (macc, (k, vs)) => macc + (k, vs)
+      case (macc, (k, vs)) => macc ++ (k -> vs)
     }
   }
 

@@ -16,26 +16,29 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.lsp.LanguageServer
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.Main.Command.PlainLsp
+import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, Formatter as LspFormatter}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.phase.HtmlDocumentor
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools._
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.tools.*
+import ca.uwaterloo.flix.tools.pkg.PackageModules
+import ca.uwaterloo.flix.util.*
 
-import java.io.{File, PrintWriter}
+import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
-/**
-  * The main entry point for the Flix compiler and runtime.
-  */
 object Main {
 
-  /**
-    * The main method.
-    */
   def main(argv: Array[String]): Unit = {
+
+    // retrieve the current working directory.
+    val cwd = Paths.get(".").toAbsolutePath.normalize()
 
     // parse command line options.
     val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
@@ -44,188 +47,411 @@ object Main {
       null
     }
 
-    // check if the --listen flag was passed.
-    if (cmdOpts.listen.nonEmpty) {
-      var successfulRun: Boolean = false
-      while (!successfulRun) {
-        try {
-          val socketServer = new SocketServer(cmdOpts.listen.get)
-          socketServer.run()
-          successfulRun = true
-        } catch {
-          case ex: BindException =>
-            Console.println(ex.getMessage)
-            Console.println("Retrying in 10 seconds.")
-            Thread.sleep(10_000)
-        }
-      }
-      System.exit(0)
-    }
+    // get GitHub token
+    val githubToken =
+      cmdOpts.githubToken
+        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN").normalize()))
+        .orElse(sys.env.get("GITHUB_TOKEN"))
 
-    // check if the --lsp flag was passed.
-    if (cmdOpts.lsp.nonEmpty) {
-      try {
-        val languageServer = new LanguageServer(cmdOpts.lsp.get)
-        languageServer.run()
-      } catch {
-        case ex: BindException =>
-          Console.println(ex.getMessage)
-      }
-      System.exit(0)
+    // compute the main entry point
+    val entryPoint = cmdOpts.entryPoint match {
+      case None => Options.Default.entryPoint
+      case Some(s) => Some(Symbol.mkDefnSym(s))
     }
 
     // construct flix options.
-    var options = Options.Default.copy(
+    var options = Options(
       lib = cmdOpts.xlib,
-      debug = cmdOpts.xdebug,
-      documentor = cmdOpts.documentor,
-      explain = cmdOpts.explain,
+      build = Build.Development,
+      entryPoint = entryPoint,
+      githubToken = githubToken,
+      incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
-      threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
-      writeClassFiles = !cmdOpts.interactive,
-      xnostratifier = cmdOpts.xnostratifier,
-      xstatistics = cmdOpts.xstatistics,
-      xstrictmono = cmdOpts.xstrictmono
+      installDeps = cmdOpts.installDeps,
+      outputJvm = false,
+      outputPath = Options.Default.outputPath,
+      threads = cmdOpts.threads.getOrElse(Options.Default.threads),
+      loadClassFiles = Options.Default.loadClassFiles,
+      assumeYes = cmdOpts.assumeYes,
+      xprintphases = cmdOpts.xprintphases,
+      xnodeprecated = cmdOpts.xnodeprecated,
+      xsummary = cmdOpts.xsummary,
+      xsubeffecting = cmdOpts.xsubeffecting,
+      XPerfFrontend = cmdOpts.XPerfFrontend,
+      XPerfPar = cmdOpts.XPerfPar,
+      XPerfN = cmdOpts.XPerfN,
+      xchaosMonkey = Options.Default.xchaosMonkey
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
+      options = options.copy(progress = false)
+    }
+
+    // Don't use progress bar if not attached to a console.
+    if (System.console() == null) {
       options = options.copy(progress = false)
     }
 
     // check if command was passed.
     try {
-      val cwd = Paths.get(".")
+      implicit val formatter: Formatter = Formatter.getDefault
+      implicit val out: PrintStream = System.err
 
       cmdOpts.command match {
         case Command.None =>
-        // nop, continue
-
-        case Command.Init =>
-          Packager.init(cwd, options)
-          System.exit(0)
-
-        case Command.Check =>
-          Packager.check(cwd, options)
-          System.exit(0)
-
-        case Command.Build =>
-          Packager.build(cwd, options, loadClasses = false)
-          System.exit(0)
-
-        case Command.BuildJar =>
-          Packager.buildJar(cwd, options)
-          System.exit(0)
-
-        case Command.BuildPkg =>
-          Packager.buildPkg(cwd, options)
-          System.exit(0)
-
-        case Command.Run =>
-          Packager.run(cwd, options)
-          System.exit(0)
-
-        case Command.Benchmark =>
-          val o = options.copy(progress = false)
-          Packager.benchmark(cwd, o)
-          System.exit(0)
-
-        case Command.Test =>
-          val o = options.copy(progress = false)
-          Packager.test(cwd, o) match {
-            case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
-            case Tester.OverallTestResult.Failure => System.exit(1)
+          // check if the --listen flag was passed.
+          if (cmdOpts.listen.nonEmpty) {
+            SocketServer.listen(cmdOpts.listen.get)
+            System.exit(0)
           }
 
-        case Command.Install(project) =>
-          val o = options.copy(progress = false)
-          Packager.install(project, cwd, o)
+          // check if the --Xbenchmark-code-size flag was passed.
+          if (cmdOpts.xbenchmarkCodeSize) {
+            BenchmarkCompilerOld.benchmarkCodeSize(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-incremental flag was passed.
+          if (cmdOpts.xbenchmarkIncremental) {
+            BenchmarkCompilerOld.benchmarkIncremental(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-phases flag was passed.
+          if (cmdOpts.xbenchmarkPhases) {
+            BenchmarkCompilerOld.benchmarkPhases(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-frontend flag was passed.
+          if (cmdOpts.xbenchmarkFrontend) {
+            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-throughput flag was passed.
+          if (cmdOpts.xbenchmarkThroughput) {
+            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
+            System.exit(0)
+          }
+
+          // check if we should start a REPL
+          if (cmdOpts.files.isEmpty) {
+            Bootstrap.bootstrap(cwd, options.githubToken) match {
+              case Result.Ok(bootstrap) =>
+                val shell = new Shell(bootstrap, options)
+                shell.loop()
+                System.exit(0)
+              case Result.Err(error) =>
+                println(error.message(formatter))
+                System.exit(1)
+            }
+          }
+
+          // configure Flix and add the paths.
+          val flix = new Flix()
+          flix.setOptions(options)
+          implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+          for (file <- cmdOpts.files) {
+            val ext = file.getName.split('.').last
+            ext match {
+              case "flix" => flix.addFile(file.toPath)
+              case "fpkg" => flix.addPkg(file.toPath)
+              case "jar" => flix.addJar(file.toPath)
+              case _ =>
+                Console.println(s"Unrecognized file extension: '$ext'.")
+                System.exit(1)
+            }
+          }
+
+          flix.setFormatter(formatter)
+
+          // evaluate main.
+          flix.check() match {
+            case (Some(root), Nil) =>
+              flix.codeGen(root).getMain match {
+                case None => // nop
+                case Some(m) =>
+                  // Invoke main with the supplied arguments.
+                  m(cmdOpts.args.toArray)
+              }
+              System.exit(0)
+            case (optRoot, errors) =>
+              println(CompilationMessage.formatAll(errors)(formatter, optRoot))
+              System.exit(1)
+          }
+
+        case Command.Init =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'init' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult(Bootstrap.init(cwd))
+
+        case Command.Check =>
+          if (cmdOpts.files.isEmpty) {
+            exitOnResult {
+              Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                bootstrap.check(flix)
+              }
+            }
+          } else {
+            val flix = mkFlixWithFiles(cmdOpts.files, options)
+            val (optRoot, errors) = flix.check()
+            if (errors.isEmpty) System.exit(0)
+            else exitWithErrors(flix, errors, optRoot)
+          }
+
+        case Command.Build =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.build(flix)
+            }
+          }
+
+        case Command.BuildJar =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-jar' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildJar(flix)
+            }
+          }
+
+        case Command.BuildFatJar =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-fatjar' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildFatJar(flix)
+            }
+          }
+
+        case Command.BuildPkg =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-pkg' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              bootstrap.buildPkg()
+            }
+          }
+
+        case Command.Clean =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'clean' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              bootstrap.clean()
+            }
+          }
+
+        case Command.Doc =>
+          if (cmdOpts.files.isEmpty) {
+            exitOnResult {
+              Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                bootstrap.doc(flix)
+              }
+            }
+          } else {
+            val flix = mkFlixWithFiles(cmdOpts.files, options)
+            val (optRoot, errors) = flix.check()
+            if (errors.isEmpty) {
+              HtmlDocumentor.run(optRoot.get, PackageModules.All)(flix)
+              System.exit(0)
+            } else exitWithErrors(flix, errors, optRoot)
+          }
+
+        case Command.Format =>
+          if (cmdOpts.files.isEmpty) {
+            exitOnResult {
+              Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                bootstrap.format(flix)
+              }
+            }
+          }
+          val flix = mkFlixWithFiles(cmdOpts.files, options)
+          val (optRoot, errors) = flix.check()
+          if (errors.isEmpty) {
+            val syntaxTree = flix.getParsedAst
+            LspFormatter.formatFiles(syntaxTree, cmdOpts.files.map(_.toPath).toList)(flix)
+            System.exit(0)
+          }
+          else exitWithErrors(flix, errors, optRoot)
+
+
+        case Command.Run =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'run' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.run(flix, cmdOpts.args.toArray)
+            }
+          }
+
+        case Command.Test =>
+          if (cmdOpts.files.isEmpty) {
+            exitOnResult {
+              Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options.copy(progress = false))
+                bootstrap.test(flix)
+              }
+            }
+          } else {
+            val flix = mkFlixWithFiles(cmdOpts.files, options.copy(progress = false))
+            flix.compile() match {
+              case Validation.Success(compilationResult) =>
+                Tester.run(Nil, compilationResult)(flix) match {
+                  case Result.Ok(_) => System.exit(0)
+                  case Result.Err(_) => System.exit(1)
+                }
+              case Validation.Failure(errors) => exitWithErrors(flix, errors.toList, None)
+            }
+          }
+
+        case Command.Repl =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'repl' command does not support file arguments.")
+            System.exit(1)
+          }
+          Bootstrap.bootstrap(cwd, options.githubToken) match {
+            case Result.Ok(bootstrap) =>
+              val shell = new Shell(bootstrap, options)
+              shell.loop()
+              System.exit(0)
+            case Result.Err(error) =>
+              println(error.message(formatter))
+              System.exit(1)
+          }
+
+        case PlainLsp =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'lsp' command does not support file arguments.")
+            System.exit(1)
+          }
+          LspServer.run(options)
           System.exit(0)
+
+        case Command.VSCodeLsp(port) =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'lsp-vscode' command does not support file arguments.")
+            System.exit(1)
+          }
+          val o = options.copy(progress = false)
+          try {
+            val languageServer = new VSCodeLspServer(port, o)
+            languageServer.run()
+          } catch {
+            case ex: BindException =>
+              throw new RuntimeException(ex)
+          }
+          System.exit(0)
+
+        case Command.Release =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'release' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.release(flix)(System.err)
+            }
+          }
+
+        case Command.Outdated =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'outdated' command does not support file arguments.")
+            System.exit(1)
+          }
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.outdated(flix)(System.err)
+          } match {
+            case Result.Ok(false) =>
+              // Up to date
+              System.exit(0)
+            case Result.Ok(true) =>
+              // Contains outdated dependencies
+              System.exit(1)
+            case Result.Err(error) =>
+              println(error.message(formatter))
+              System.exit(1)
+          }
+
+        case Command.EffCheck =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'eff-check' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.checkEffects(flix)
+            }
+          }
+
+        case Command.EffLock =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'eff-lock' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options.copy(progress = false))
+                bootstrap.lockEffects(flix)
+            }
+          }
+
+        case Command.CompilerPerf =>
+          CompilerPerf.run(options)
+
+        case Command.CompilerMemory =>
+          CompilerMemory.run(options)
+
+        case Command.Zhegalkin =>
+          ZhegalkinPerf.run(options.XPerfN)
 
       }
     } catch {
       case ex: RuntimeException =>
-        Console.println(ex.getMessage)
-        System.exit(1)
-    }
-
-    // check if the --Xbenchmark-code-size flag was passed.
-    if (cmdOpts.xbenchmarkCodeSize) {
-      BenchmarkCompiler.benchmarkCodeSize(options)
-      System.exit(0)
-    }
-
-    // check if the --Xbenchmark-phases flag was passed.
-    if (cmdOpts.xbenchmarkPhases) {
-      BenchmarkCompiler.benchmarkPhases(options)
-      System.exit(0)
-    }
-
-    // check if the --Xbenchmark-throughput flag was passed.
-    if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput(options)
-      System.exit(0)
-    }
-
-    // check if running in interactive mode.
-    val interactive = cmdOpts.interactive || (cmdOpts.command == Command.None && cmdOpts.files.isEmpty)
-    if (interactive) {
-      val shell = new Shell(cmdOpts.files.toList.map(_.toPath), options)
-      shell.loop()
-      System.exit(0)
-    }
-
-    // configure Flix and add the paths.
-    val flix = new Flix()
-    flix.setOptions(options)
-    for (file <- cmdOpts.files) {
-      val ext = file.getName.split('.').last
-      ext match {
-        case "flix" => flix.addPath(file.toPath)
-        case "fpkg" => flix.addPath(file.toPath)
-        case "jar" => flix.addJar(file.toPath)
-        case _ =>
-          Console.println(s"Unrecognized file extension: '$ext'.")
-          System.exit(1)
-      }
-    }
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
-
-    // evaluate main.
-    val timer = new Timer(flix.compile())
-    timer.getResult match {
-      case Validation.Success(compilationResult) =>
-
-        compilationResult.getMain match {
-          case None => // nop
-          case Some(m) =>
-            // Compute the arguments to be passed to main.
-            val args: Array[String] = cmdOpts.args match {
-              case None => Array.empty
-              case Some(a) => a.split(" ")
-            }
-            // Invoke main with the supplied arguments.
-            val exitCode = m(args)
-
-            // Exit with the returned exit code.
-            System.exit(exitCode)
-        }
-
-        if (cmdOpts.benchmark) {
-          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
-        }
-
-        if (cmdOpts.test) {
-          val results = Tester.test(compilationResult)
-          Console.println(results.output(flix.getFormatter))
-        }
-      case Validation.Failure(errors) =>
-        flix.mkMessages(errors.sortBy(_.source.name))
-          .foreach(println)
-        println()
-        println(s"Compilation failed with ${errors.length} error(s).")
+        ex.printStackTrace()
         System.exit(1)
     }
   }
@@ -233,26 +459,31 @@ object Main {
   /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(command: Command = Command.None,
-                     args: Option[String] = None,
-                     benchmark: Boolean = false,
-                     documentor: Boolean = false,
-                     explain: Boolean = false,
-                     interactive: Boolean = false,
-                     json: Boolean = false,
-                     listen: Option[Int] = None,
-                     lsp: Option[Int] = None,
-                     test: Boolean = false,
-                     threads: Option[Int] = None,
-                     xbenchmarkCodeSize: Boolean = false,
-                     xbenchmarkPhases: Boolean = false,
-                     xbenchmarkThroughput: Boolean = false,
-                     xlib: LibLevel = LibLevel.All,
-                     xdebug: Boolean = false,
-                     xnostratifier: Boolean = false,
-                     xstatistics: Boolean = false,
-                     xstrictmono: Boolean = false,
-                     files: Seq[File] = Seq())
+  case class CmdOpts(
+    command: Command = Command.None,
+    args: List[String] = Nil,
+    entryPoint: Option[String] = None,
+    installDeps: Boolean = true,
+    githubToken: Option[String] = None,
+    json: Boolean = false,
+    listen: Option[Int] = None,
+    threads: Option[Int] = None,
+    assumeYes: Boolean = false,
+    xbenchmarkCodeSize: Boolean = false,
+    xbenchmarkIncremental: Boolean = false,
+    xbenchmarkPhases: Boolean = false,
+    xbenchmarkFrontend: Boolean = false,
+    xbenchmarkThroughput: Boolean = false,
+    xnodeprecated: Boolean = false,
+    xlib: LibLevel = LibLevel.All,
+    xprintphases: Boolean = false,
+    xsummary: Boolean = false,
+    xsubeffecting: Set[Subeffecting] = Set.empty,
+    XPerfN: Option[Int] = None,
+    XPerfFrontend: Boolean = false,
+    XPerfPar: Boolean = false,
+    files: Seq[File] = Seq()
+  )
 
   /**
     * A case class representing possible commands.
@@ -271,15 +502,39 @@ object Main {
 
     case object BuildJar extends Command
 
+    case object BuildFatJar extends Command
+
     case object BuildPkg extends Command
+
+    case object Clean extends Command
+
+    case object Doc extends Command
+
+    case object Format extends Command
 
     case object Run extends Command
 
-    case object Benchmark extends Command
-
     case object Test extends Command
 
-    case class Install(project: String) extends Command
+    case object Repl extends Command
+
+    case object PlainLsp extends Command
+
+    case class VSCodeLsp(port: Int) extends Command
+
+    case object Release extends Command
+
+    case object Outdated extends Command
+
+    case object EffCheck extends Command
+
+    case object EffLock extends Command
+
+    case object CompilerPerf extends Command
+
+    case object CompilerMemory extends Command
+
+    case object Zhegalkin extends Command
 
   }
 
@@ -289,11 +544,26 @@ object Main {
     * @param args the arguments array.
     */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
-    implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
+    // Split at "--" separator: arguments before are for flix, arguments after are for the program
+    val separatorIndex = args.indexOf("--")
+    val (flixArgs, progArgs) = if (separatorIndex >= 0) {
+      (args.take(separatorIndex), args.drop(separatorIndex + 1))
+    } else {
+      (args, Array.empty[String])
+    }
+
+    implicit val readLibLevel: scopt.Read[LibLevel] = scopt.Read.reads {
       case "nix" => LibLevel.Nix
       case "min" => LibLevel.Min
       case "all" => LibLevel.All
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+    }
+
+    implicit val readSubEffectLevel: scopt.Read[Subeffecting] = scopt.Read.reads {
+      case "mod-defs" => Subeffecting.ModDefs
+      case "ins-defs" => Subeffecting.InsDefs
+      case "lambdas" => Subeffecting.Lambdas
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
@@ -310,104 +580,134 @@ object Main {
 
       cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
 
+      cmd("build-fatjar").action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
+
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
+
+      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
+
+      cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
+
+      cmd("format").action((_, c) => c.copy(command = Command.Format)).text("  formats Flix source code files.")
 
       cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
 
-      cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
-
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
-      cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
+      cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
+
+      cmd("lsp").text("  starts the Plain-LSP server.")
+        .action((_, c) => c.copy(command = Command.PlainLsp))
+
+      cmd("lsp-vscode").text("  starts the VSCode-LSP server and listens on the given port.")
         .children(
-          arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
+          arg[Int]("port").action((port, c) => c.copy(command = Command.VSCodeLsp(port)))
             .required()
         )
 
+      cmd("release").text("  releases a new version to GitHub.")
+        .action((_, c) => c.copy(command = Command.Release))
+
+      cmd("outdated").text("  shows dependencies which have newer versions available.")
+        .action((_, c) => c.copy(command = Command.Outdated))
+
+      cmd("eff-check").text("  checks that dependencies respect the 'effects.lock' file.")
+        .action((_, c) => c.copy(command = Command.EffCheck))
+
+      cmd("eff-lock").text("  locks the current effect signatures.")
+        .action((_, c) => c.copy(command = Command.EffLock))
+
+      cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
+        opt[Unit]("frontend")
+          .action((_, c) => c.copy(XPerfFrontend = true))
+          .text("benchmark only frontend"),
+        opt[Unit]("par")
+          .action((_, c) => c.copy(XPerfPar = true))
+          .text("benchmark only parallel evaluation"),
+        opt[Int]("n")
+          .action((v, c) => c.copy(XPerfN = Some(v)))
+          .text("number of compilations")
+      ).hidden()
+
+      cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
+
+      cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
+        opt[Int]("n")
+          .action((v, c) => c.copy(XPerfN = Some(v)))
+          .text("number of compilations")
+      ).hidden()
+
       note("")
 
-      // Listen.
-      opt[String]("args").action((s, c) => c.copy(args = Some(s))).
-        valueName("<a1, a2, ...>").
-        text("arguments passed to main. Must be a single quoted string.")
+      opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
+        text("specifies the main entry point.")
 
-      // Benchmark.
-      opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
-        text("runs benchmarks.")
+      opt[String]("github-token").action((s, c) => c.copy(githubToken = Some(s))).
+        text("API key to use for GitHub dependency resolution.")
 
-      // Doc.
-      opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
-        text("generates HTML documentation.")
-
-      opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
-        text("provides suggestions on how to solve a problem")
-
-      // Help.
       help("help").text("prints this usage information.")
 
-      // Interactive.
-      opt[Unit]("interactive").action((_, c) => c.copy(interactive = true)).
-        text("enables interactive mode.")
-
-      // Json.
       opt[Unit]("json").action((_, c) => c.copy(json = true)).
         text("enables json output.")
 
-      // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
         valueName("<port>").
         text("starts the socket server and listens on the given port.")
 
-      // LSP.
-      opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
-        valueName("<port>").
-        text("starts the LSP server and listens on the given port.")
-      // Test.
-      opt[Unit]("test").action((_, c) => c.copy(test = true)).
-        text("runs unit tests.")
+      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
+        text("disables automatic installation of dependencies.")
 
-      // Threads.
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
 
-      // Version.
+      opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
+        text("automatically answer yes to all prompts.")
+
       version("version").text("prints the version number.")
 
       // Experimental options:
       note("")
       note("The following options are experimental:")
 
-      // xbenchmark-code-size
+      // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
+
+      // Xbenchmark-incremental
+      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental = true)).
+        text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
         text("[experimental] benchmarks the performance of each compiler phase.")
 
+      // Xbenchmark-frontend
+      opt[Unit]("Xbenchmark-frontend").action((_, c) => c.copy(xbenchmarkFrontend = true)).
+        text("[experimental] benchmarks the performance of the frontend.")
+
       // Xbenchmark-throughput
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
         text("[experimental] benchmarks the performance of the entire compiler.")
-
-      // Xdebug.
-      opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
-        text("[experimental] enables compiler debugging output.")
 
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
-      // Xno-stratifier
-      opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
-        text("[experimental] disables computation of stratification.")
+      // Xno-deprecated
+      opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
+        text("[experimental] disables deprecated features.")
 
-      // Xstatistics
-      opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
-        text("[experimental] prints compilation statistics.")
+      // Xprint-phase
+      opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
+        text("[experimental] prints the ASTs after the each phase.")
 
-      // Xstrictmono
-      opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
-        text("[experimental] enable strict monomorphization.")
+      // Xsummary
+      opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
+        text("[experimental] prints a summary of the compiled modules.")
+
+      // Xsubeffecting
+      opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
+        text("[experimental] enables sub-effecting in select places")
 
       note("")
 
@@ -419,7 +719,45 @@ object Main {
 
     }
 
-    parser.parse(args, CmdOpts())
+    parser.parse(flixArgs, CmdOpts()).map(_.copy(args = progArgs.toList))
+  }
+
+  /**
+    * Creates a fresh Flix instance configured with the given options and source files.
+    */
+  private def mkFlixWithFiles(files: Seq[File], options: Options)(implicit formatter: Formatter): Flix = {
+    val flix = new Flix().setFormatter(formatter)
+    flix.setOptions(options)
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    for (file <- files) {
+      if (file.getName.endsWith(".flix")) {
+        flix.addFile(file.toPath)
+      } else {
+        Console.println(s"Unrecognized file: '${file.getName}'. Only .flix files are supported.")
+        System.exit(1)
+      }
+    }
+    flix
+  }
+
+  /**
+    * Prints compilation errors and exits with code 1.
+    */
+  private def exitWithErrors(flix: Flix, errors: List[CompilationMessage], root: Option[TypedAst.Root]): Unit = {
+    println(CompilationMessage.formatAll(errors)(flix.getFormatter, root))
+    System.exit(1)
+  }
+
+  /**
+    * Exits with code 0 on success, or prints the error and exits with code 1 on failure.
+    */
+  private def exitOnResult[T](result: Result[T, BootstrapError])(implicit formatter: Formatter): Unit = {
+    result match {
+      case Result.Ok(_) => System.exit(0)
+      case Result.Err(error) =>
+        println(error.message(formatter))
+        System.exit(1)
+    }
   }
 
 }

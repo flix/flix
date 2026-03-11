@@ -1,126 +1,251 @@
-namespace Test/Exp/ArrayLength {
+mod Test.Exp.ArrayLength {
 
-    @test
-    def testArrayLength01(): Int & Impure = let x = []; x.length
+    use Assert.assertEq
 
-    @test
-    def testArrayLength02(): Int & Impure = let x = [1]; x.length
+    @Test
+    def testArrayLength01(): Unit \ Assert = region rc {
+        let x = Array#{} @ rc;
+        assertEq(expected = 0, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength03(): Int & Impure = let x = [1, 2, 3]; x.length
+    @Test
+    def testArrayLength02(): Unit \ Assert = region rc {
+        let x = Array#{1} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength04(): Int & Impure = let x = [1, 2, 3, 4]; x.length
+    @Test
+    def testArrayLength03(): Unit \ Assert = region rc {
+        let x = Array#{1, 2, 3} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength05(): Int & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x.length
+    @Test
+    def testArrayLength04(): Unit \ Assert = region rc {
+        let x = Array#{1, 2, 3, 4} @ rc;
+        assertEq(expected = 4, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength06(): Int & Impure = let x = [1, 2]; x.length
+    @Test
+    def testArrayLength05(): Unit \ Assert = region rc {
+        let x = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20} @ rc;
+        assertEq(expected = 20, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength07(): Int & Impure = let x = [true]; x.length
+    @Test
+    def testArrayLength06(): Unit \ Assert = region rc {
+        let x = Array#{1, 2} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength08(): Int & Impure = let x = [false]; x.length
+    @Test
+    def testArrayLength07(): Unit \ Assert = region rc {
+        let x = Array#{true} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength09(): Int & Impure = let x = [true, false]; x.length
+    @Test
+    def testArrayLength08(): Unit \ Assert = region rc {
+        let x = Array#{false} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength10(): Int & Impure = let x = [false, true, false]; x.length
+    @Test
+    def testArrayLength09(): Unit \ Assert = region rc {
+        let x = Array#{true, false} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength11(): Int & Impure = let x = [false, false, false, false, true]; x.length
+    @Test
+    def testArrayLength10(): Unit \ Assert = region rc {
+        let x = Array#{false, true, false} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength12(): Int & Impure = let x = ['c']; x.length
+    @Test
+    def testArrayLength11(): Unit \ Assert = region rc {
+        let x = Array#{false, false, false, false, true} @ rc;
+        assertEq(expected = 5, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength13(): Int & Impure = let x = ['a', 'b']; x.length
+    @Test
+    def testArrayLength12(): Unit \ Assert = region rc {
+        let x = Array#{'c'} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength14(): Int & Impure = let x = ['a', 'b', 'c']; x.length
+    @Test
+    def testArrayLength13(): Unit \ Assert = region rc {
+        let x = Array#{'a', 'b'} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength15(): Int & Impure = let x = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']; x.length
+    @Test
+    def testArrayLength14(): Unit \ Assert = region rc {
+        let x = Array#{'a', 'b', 'c'} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength16(): Int & Impure = let x = [1i8]; x.length
+    @Test
+    def testArrayLength15(): Unit \ Assert = region rc {
+        let x = Array#{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'} @ rc;
+        assertEq(expected = 14, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength17(): Int & Impure = let x = [1i8, 2i8, 3i8]; x.length
+    @Test
+    def testArrayLength16(): Unit \ Assert = region rc {
+        let x = Array#{1i8} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength18(): Int & Impure = let x = [1i8, 2i8, 3i8, 4i8]; x.length
+    @Test
+    def testArrayLength17(): Unit \ Assert = region rc {
+        let x = Array#{1i8, 2i8, 3i8} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength19(): Int & Impure = let x = [1i16]; x.length
+    @Test
+    def testArrayLength18(): Unit \ Assert = region rc {
+        let x = Array#{1i8, 2i8, 3i8, 4i8} @ rc;
+        assertEq(expected = 4, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength20(): Int & Impure = let x = [1i16, 2i16, 3i16]; x.length
+    @Test
+    def testArrayLength19(): Unit \ Assert = region rc {
+        let x = Array#{1i16} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength21(): Int & Impure = let x = [1i16, 2i16, 3i16, 4i16]; x.length
+    @Test
+    def testArrayLength20(): Unit \ Assert = region rc {
+        let x = Array#{1i16, 2i16, 3i16} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength22(): Int & Impure = let x = [1i64]; x.length
+    @Test
+    def testArrayLength21(): Unit \ Assert = region rc {
+        let x = Array#{1i16, 2i16, 3i16, 4i16} @ rc;
+        assertEq(expected = 4, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength23(): Int & Impure = let x = [1i64, 2i64, 3i64]; x.length
+    @Test
+    def testArrayLength22(): Unit \ Assert = region rc {
+        let x = Array#{1i64} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength24(): Int & Impure = let x = [1i64, 2i64, 3i64, 4i64]; x.length
+    @Test
+    def testArrayLength23(): Unit \ Assert = region rc {
+        let x = Array#{1i64, 2i64, 3i64} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength25(): Int & Impure = let x = [1.0f32]; x.length
+    @Test
+    def testArrayLength24(): Unit \ Assert = region rc {
+        let x = Array#{1i64, 2i64, 3i64, 4i64} @ rc;
+        assertEq(expected = 4, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength26(): Int & Impure = let x = [1.0f32, 2.0f32, 3.0f32]; x.length
+    @Test
+    def testArrayLength25(): Unit \ Assert = region rc {
+        let x = Array#{1.0f32} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength27(): Int & Impure = let x = [1.0f32, 2.0f32, 3.0f32, 4.0f32]; x.length
+    @Test
+    def testArrayLength26(): Unit \ Assert = region rc {
+        let x = Array#{1.0f32, 2.0f32, 3.0f32} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength28(): Int & Impure = let x = [1.0f64]; x.length
+    @Test
+    def testArrayLength27(): Unit \ Assert = region rc {
+        let x = Array#{1.0f32, 2.0f32, 3.0f32, 4.0f32} @ rc;
+        assertEq(expected = 4, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength29(): Int & Impure = let x = [1.0f64, 2.0f64, 3.0f64]; x.length
+    @Test
+    def testArrayLength28(): Unit \ Assert = region rc {
+        let x = Array#{1.0f64} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength30(): Int & Impure = let x = [1.0f64, 2.0f64, 3.0f64, 4.0f64]; x.length
+    @Test
+    def testArrayLength29(): Unit \ Assert = region rc {
+        let x = Array#{1.0f64, 2.0f64, 3.0f64} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength31(): Int & Impure = let x = ["Hello"]; x.length
+    @Test
+    def testArrayLength30(): Unit \ Assert = region rc {
+        let x = Array#{1.0f64, 2.0f64, 3.0f64, 4.0f64} @ rc;
+        assertEq(expected = 4, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength32(): Int & Impure = let x = ["Hello", "World"]; x.length
+    @Test
+    def testArrayLength31(): Unit \ Assert = region rc {
+        let x = Array#{"Hello"} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength33(): Int & Impure = let x = ["World", "Hello", "World"]; x.length
+    @Test
+    def testArrayLength32(): Unit \ Assert = region rc {
+        let x = Array#{"Hello", "World"} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength34(): Int & Impure = let x = [[1, 2, 3]]; x.length
+    @Test
+    def testArrayLength33(): Unit \ Assert = region rc {
+        let x = Array#{"World", "Hello", "World"} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength35(): Int & Impure = let x = [[1, 2], [1, 2]]; x.length
+    @Test
+    def testArrayLength34(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1, 2, 3} @ rc} @ rc;
+        assertEq(expected = 1, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength36(): Int & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x.length
+    @Test
+    def testArrayLength35(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1, 2} @ rc, Array#{1, 2} @ rc} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength37(): Int & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x.length
+    @Test
+    def testArrayLength36(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1} @ rc, Array#{1, 2, 3, 4, 5, 6, 7, 8} @ rc} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength38(): Int & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x.length
+    @Test
+    def testArrayLength37(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1, 2, 3, 4, 5} @ rc, Array#{2} @ rc} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength39(): Int & Impure = let x = [[None, Some(1), None], [Some(2), Some(45), Some(9), None]]; x.length
+    @Test
+    def testArrayLength38(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1, 2, 3} @ rc, Array#{1, 2, 3} @ rc, Array#{1, 2, 3} @ rc} @ rc;
+        assertEq(expected = 3, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength40(): Int & Impure = let x = [(1, 2), (3, 4)]; x.length
+    @Test
+    def testArrayLength39(): Unit \ Assert = region rc {
+        let x = Array#{Array#{None, Some(1), None} @ rc, Array#{Some(2), Some(45), Some(9), None} @ rc} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
-    @test
-    def testArrayLength41(): Int & Impure = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; x.length
+    @Test
+    def testArrayLength40(): Unit \ Assert = region rc {
+        let x = Array#{(1, 2), (3, 4)} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
+
+    @Test
+    def testArrayLength41(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1 :: Nil} @ rc, Array#{3 :: 4 :: 5 :: Nil} @ rc} @ rc;
+        assertEq(expected = 2, %%ARRAY_LENGTH%%(x))
+    }
 
 }

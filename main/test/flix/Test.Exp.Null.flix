@@ -1,84 +1,77 @@
-namespace Test/Exp/Null {
+mod Test.Exp.Null {
 
-    @test
+    @CompileTest
     def testNull01(): Null = null
 
-    @test
-    def testNullUnit01(): Unit = null as Unit
+    @CompileTest
+    def testNullUnit01(): Unit = unchecked_cast(null as Unit)
 
-    @test
-    def testNullString01(): String = null as String
+    @CompileTest
+    def testNullString01(): String = checked_cast(null)
 
-    @test
-    def testNullArray01(): Array[String] = null as Array[String]
-
-    @test
-    def testNullChannel01(): Channel[String] = null as Channel[String]
-
-    @test
-    def testNullRecord01(): {} = null as {}
-
-    @test
-    def testNullRecord02(): {name :: String} = null as {name :: String}
-
-    @test
-    def testNullRecord03(): {name :: String} = {name = null as String}
-
-    @test
-    def testNullRecord04(): {fstName :: String, lstName :: String} = null as {fstName :: String, lstName :: String}
-
-    @test
-    def testNullRecord05(): {fstName :: String, lstName :: String} = {fstName = null as String, lstName = null as String}
-
-    @test
-    def testNullRef01(): Ref[String] = null as Ref[String]
-
-    @test
-    def testNullTuple01(): (String, String) = null as (String, String)
-
-    @test
-    def testNullTuple02(): (String, String) = (null as String, "abc")
-
-    @test
-    def testNullTuple03(): (String, String) = ("abc", null as String)
-
-    @test
-    def testNullOption01(): Option[String] = null as Option[String]
-
-    @test
-    def testNullOption02(): Option[String] = Some(null as String)
-
-    @test
-    def testNullList01(): List[String] = null as List[String]
-
-    @test
-    def testNullList02(): List[String] = (null as String) :: Nil
-
-    @test
-    def testNullResult01(): Result[String, String] = null as Result[String, String]
-
-    @test
-    def testNullResult03(): Result[String, String] = Ok(null as String)
-
-    @test
-    def testNullResult04(): Result[String, String] = Err(null as String)
-
-    @test
-    def testNullArrow01(): (String -> String) = (_: String) -> null as String
-
-    pub enum Option[t] {
-        case None,
-        case Some(t)
+    @CompileTest
+    def testNullArray01(): Unit \ IO = region rc {
+        let _ = rc;
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Array[String, rc] \ IO)
     }
 
-    pub enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
+    @CompileTest
+    def testNullChannel01(): Unit \ IO = {
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Receiver[String] \ IO)
     }
 
-    pub enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
+    @CompileTest
+    def testNullRecord01(): {|} = unchecked_cast(null as {|})
+
+    @CompileTest
+    def testNullRecord02(): {name = String} = unchecked_cast(null as {name = String})
+
+    @CompileTest
+    def testNullRecord03(): {name = String} = {name = checked_cast(null)}
+
+    @CompileTest
+    def testNullRecord04(): {fstName = String, lstName = String} = unchecked_cast(null as {fstName = String, lstName = String})
+
+    @CompileTest
+    def testNullRecord05(): {fstName = String, lstName = String} = {fstName = checked_cast(null), lstName = checked_cast(null)}
+
+    @CompileTest
+    def testNullRef01(): Unit \ IO = region rc {
+        let _ = rc;
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Ref[String, rc] \ IO)
     }
+
+    @CompileTest
+    def testNullTuple01(): (String, String) = unchecked_cast(null as (String, String))
+
+    @CompileTest
+    def testNullTuple02(): (String, String) = (checked_cast(null), "abc")
+
+    @CompileTest
+    def testNullTuple03(): (String, String) = ("abc", checked_cast(null))
+
+    @CompileTest
+    def testNullOption01(): Option[String] = unchecked_cast(null as Option[String])
+
+    @CompileTest
+    def testNullOption02(): Option[String] = Some(checked_cast(null))
+
+    @CompileTest
+    def testNullList01(): List[String] = unchecked_cast(null as List[String])
+
+    @CompileTest
+    def testNullList02(): List[String] = (checked_cast(null)) :: Nil
+
+    @CompileTest
+    def testNullResult01(): Result[String, String] = unchecked_cast(null as Result[String, String])
+
+    @CompileTest
+    def testNullResult03(): Result[String, String] = Ok(checked_cast(null))
+
+    @CompileTest
+    def testNullResult04(): Result[String, String] = Err(checked_cast(null))
+
+    @CompileTest
+    def testNullArrow01(): (String -> String) = (_: String) -> checked_cast(null)
 
 }

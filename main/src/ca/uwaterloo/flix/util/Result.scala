@@ -16,7 +16,11 @@
 
 package ca.uwaterloo.flix.util
 
-import scala.annotation.tailrec
+import ca.uwaterloo.flix.util.collection.Chain
+
+import scala.annotation.{tailrec, unused}
+import scala.collection.mutable.ArrayBuffer
+import scala.util.{Failure, Success, Try}
 
 /**
   * A result either holds a value ([[Result.Ok]]) or holds an error ([[Result.Err]]).
@@ -24,14 +28,14 @@ import scala.annotation.tailrec
   * @tparam T the type of the value.
   * @tparam E the type of the error.
   */
-sealed trait Result[T, E] {
+sealed trait Result[+T, +E] {
 
   /**
     * Retrieves the value from `this` result.
     *
     * @throws IllegalStateException if `this` result does not hold a value.
     */
-  final def get: T = this match {
+  final def unsafeGet: T = this match {
     case Result.Ok(t) => t
     case Result.Err(e) => throw new IllegalStateException(s"Result is Err($e).")
   }
@@ -45,9 +49,17 @@ sealed trait Result[T, E] {
   }
 
   /**
+    * If `this` is a [[Result.Err]] the given function `f` is applied to the contained error.
+    */
+  final def mapErr[F](f: E => F): Result[T, F] = this match {
+    case Result.Ok(t) => Result.Ok(t)
+    case Result.Err(e) => Result.Err(f(e))
+  }
+
+  /**
     * Applies the given function `f` to the value of `this`.
     */
-  final def flatMap[B](f: T => Result[B, E]): Result[B, E] = this match {
+  final def flatMap[R >: E, B](f: T => Result[B, R]): Result[B, R] = this match {
     case Result.Ok(t) => f(t)
     case Result.Err(e) => Result.Err(e)
   }
@@ -57,8 +69,22 @@ sealed trait Result[T, E] {
     */
   final def toValidation: Validation[T, E] = this match {
     case Result.Ok(t) => Validation.Success(t)
-    case Result.Err(e) => Validation.Failure(LazyList(e))
+    case Result.Err(e) => Validation.Failure(Chain(e))
   }
+
+  /**
+    * Returns `this` result as an [[Option]].
+    */
+  final def toOption: Option[T] = this match {
+    case Result.Ok(t) => Some(t)
+    case Result.Err(_) => None
+  }
+
+  /**
+    * Required for pattern-matching in for-patterns.
+    * Doesn't actually filter anything.
+    */
+  final def withFilter(@unused f: T => Boolean): Result[T, E] = this
 }
 
 object Result {
@@ -72,6 +98,18 @@ object Result {
     * A result that holds an error.
     */
   case class Err[T, E](e: E) extends Result[T, E]
+
+  /**
+    * Applies the given function `f` to value of `res` wrapping it in [[Result.Ok]].
+    */
+  def mapN[T, U, E](res: Result[T, E])(f: T => U): Result[U, E] =
+    res.map(f)
+
+  /**
+    * Applies the given function `f` to values of the results wrapping it in [[Result.Ok]].
+    */
+  def mapN[T1, T2, U, E](res1: Result[T1, E], res2: Result[T2, E])(f: (T1, T2) => U): Result[U, E] =
+    res1.flatMap(r1 => res2.map(r2 => f(r1, r2)))
 
   /**
     * Evaluates the given results from left to right collecting the values into a list.
@@ -95,17 +133,41 @@ object Result {
   }
 
   /**
-    * Adds an implicit `toOk` method.
+    * Applies f to each element in the list.
+    *
+    * Fails at the first error found, or returns the new list.
     */
-  implicit class ToOk[+T](val t: T) {
-    def toOk[U >: T, E]: Result[U, E] = Ok(t)
+  def traverse[T, S, E](xs: Iterable[T])(f: T => Result[S, E]): Result[List[S], E] = {
+    val res = ArrayBuffer.empty[S]
+
+    for (x <- xs) {
+      f(x) match {
+        // Case 1: Ok. Add to the list.
+        case Ok(ok) => res.append(ok)
+        // Case 2: Error. Short-circuit.
+        case Err(err) => return Err(err)
+      }
+    }
+
+    Ok(res.toList)
   }
 
   /**
-    * Adds an implicit `toErr` method.
+    * Traverses `o` applying the function `f` to the value, if it exists.
     */
-  implicit class ToErr[+E](val e: E) {
-    def toErr[T, F >: E]: Result[T, F] = Err(e)
+  def traverseOpt[T, S, E](o: Option[T])(f: T => Result[S, E]): Result[Option[S], E] = o match {
+    case None => Ok(None)
+    case Some(x) => f(x) match {
+      case Ok(t) => Ok(Some(t))
+      case Err(e) => Err(e)
+    }
   }
 
+  /**
+    * Returns `t` try as a [[Result]].
+    */
+  def fromTry[A](t: Try[A]): Result[A, Throwable] = t match {
+    case Success(v) => Result.Ok(v)
+    case Failure(e) => Result.Err(e)
+  }
 }

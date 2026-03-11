@@ -22,51 +22,21 @@ instance UpperBound[Bool] {
     pub def maxValue(): Bool = true
 }
 
-namespace Bool {
+pub mod Bool {
 
     ///
-    /// Alias for logical conjunction.
+    /// Returns `true` if `x` implies `y` logically holds.
     ///
-    @Time(1) @Space(1)
-    pub def ∧(x: Bool, y: Bool): Bool = x and y
+    pub def ==>(x: Bool, y: Bool): Bool = not x or y
 
     ///
-    /// Alias for logical disjunction.
+    /// Returns true if `x` implies `y` and vise versa.
     ///
-    @Time(1) @Space(1)
-    pub def ∨(x: Bool, y: Bool): Bool = x or y
+    pub def <==>(x: Bool, y: Bool): Bool = x == y
 
     ///
-    /// Alias for logical implication.
+    /// Calls `f` if `cond` is true.
     ///
-    @Time(1) @Space(1)
-    pub def →(x: Bool, y: Bool): Bool = not x ∨ y
-
-    ///
-    /// Alias for logical bi-implication.
-    ///
-    @Time(1) @Space(1)
-    pub def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
-
-    ///
-    /// Alias for exclusive or.
-    ///
-    @Time(1) @Space(1)
-    pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ not (x ∧ y)
-
-    ///
-    /// Negation of `x`
-    ///
-    pub def not(x: Bool): Bool = not x
-
-    ///
-    /// Logical and.
-    ///
-    pub def and(x: Bool, y: Lazy[Bool]): Bool = if(x) force y else x
-
-    ///
-    /// Logical or.
-    ///
-    pub def or(x: Bool, y: Lazy[Bool]): Bool = if(x) x else force y
+    pub def runIf(f: Unit -> Unit \ ef, cond: Bool): Unit \ ef = if (cond) { f() }
 
 }

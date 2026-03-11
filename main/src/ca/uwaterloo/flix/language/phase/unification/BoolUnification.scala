@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 Magnus Madsen
+ *  Copyright 2023 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,343 +15,126 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution, SveAlgorithm}
+import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Bimap
 
-import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 
+/**
+  * An implementation of Boolean Unification is for the `Bool` kind.
+  */
 object BoolUnification {
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    ///
-    /// Perform aggressive matching to optimize for common cases.
-    ///
-    if (tpe1 eq tpe2) {
-      return Ok(Substitution.empty)
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Option[Substitution] = {
+    // Give up early if either type contains an associated type.
+    if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
+      return None
     }
 
-    tpe1 match {
-      case x: Type.KindedVar if x.rigidity eq Rigidity.Flexible =>
-        if (tpe2 eq Type.True)
-          return Ok(Substitution.singleton(x, Type.True))
-        if (tpe2 eq Type.False)
-          return Ok(Substitution.singleton(x, Type.False))
-
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
-      case _ => // nop
+    // Check for Type.Error
+    (tpe1, tpe2) match {
+      case (Type.Cst(TypeConstructor.Error(_, _), _), _) => return Some(Substitution.empty)
+      case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => return Some(Substitution.empty)
+      case _ => // fallthrough
     }
 
-    tpe2 match {
-      case y: Type.KindedVar if y.rigidity eq Rigidity.Flexible =>
-        if (tpe1 eq Type.True)
-          return Ok(Substitution.singleton(y, Type.True))
-        if (tpe1 eq Type.False)
-          return Ok(Substitution.singleton(y, Type.False))
-
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
-      case _ => // nop
-    }
-
-    ///
-    /// Run the expensive boolean unification algorithm.
-    ///
-    booleanUnification(tpe1, tpe2)
+    lookupOrSolve(tpe1, tpe2, renv0)
   }
 
+
   /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+    * Lookup the unifier of `tpe1` and `tpe2` or solve them.
     */
-  private def booleanUnification(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    // The boolean expression we want to show is 0.
-    val query = mkEq(tpe1, tpe2)
+  private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Option[Substitution] = {
+    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.BoolFormulaAlg
 
-    // The free and flexible type variables in the query.
-    val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
+    //
+    // Translate the types into formulas.
+    //
+    val env = getEnv(List(tpe1, tpe2))
+    val f1 = fromType(tpe1, env)
+    val f2 = fromType(tpe2, env)
 
-    // Eliminate all variables.
-    try {
-      val subst = successiveVariableElimination(query, freeVars)
+    val renv = liftRigidityEnv(renv0, env)
 
-      //    if (!subst.isEmpty) {
-      //      val s = subst.toString
-      //      val len = s.length
-      //      if (len > 50) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //        println()
-      //      }
-      //    }
-
-      Ok(subst)
-    } catch {
-      case BooleanUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2))
+    //
+    // Run the expensive Boolean unification algorithm.
+    //
+    SveAlgorithm.unify(f1, f2, renv) map {
+      case subst => toTypeSubstitution(subst, env)
     }
   }
 
   /**
-    * Performs success variable elimination on the given boolean expression `f`.
+    * Returns an environment built from the given types mapping between type variables and formula variables.
+    *
+    * This environment should be used in the functions [[toType]] and [[fromType]].
     */
-  private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
-    case Nil =>
-      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      val (_, q) = Scheme.instantiate(Scheme(f.typeVars.toList, List.empty, f), InstantiateMode.Flexible)
-      if (!satisfiable(q))
-        Substitution.empty
-      else
-        throw BooleanUnificationException
+  private def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
+    // Compute the variables in `tpe`.
+    val tvars =
+      fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
+        .toList
 
-    case x :: xs =>
-      val t0 = Substitution.singleton(x, Type.False)(f)
-      val t1 = Substitution.singleton(x, Type.True)(f)
-      val se = successiveVariableElimination(mkAnd(t0, t1), xs)
-
-      // Investigate impact on Monomorph semantics:
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
-      //val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
-      st ++ se
-  }
-
-  /**
-    * An exception thrown to indicate that boolean unification failed.
-    */
-  private case object BooleanUnificationException extends RuntimeException
-
-  /**
-    * Returns `true` if the given boolean formula `f` is satisfiable.
-    */
-  private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
-    case Type.True => true
-    case Type.False => false
-    case _ =>
-      val q = mkEq(f, Type.True)
-      try {
-        successiveVariableElimination(q, q.typeVars.toList)
-        true
-      } catch {
-        case BooleanUnificationException => false
-      }
-  }
-
-
-  /**
-    * To unify two Boolean formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
-    */
-  private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
-
-  /**
-    * Returns the negation of the Boolean formula `tpe0`.
-    */
-  // NB: The order of cases has been determined by code coverage analysis.
-  def mkNot(tpe0: Type): Type = tpe0 match {
-    case Type.True =>
-      Type.False
-
-    case Type.False =>
-      Type.True
-
-    case NOT(x) =>
-      x
-
-    // ¬(¬x ∨ y) => x ∧ ¬y
-    case OR(NOT(x), y) =>
-      mkAnd(x, mkNot(y))
-
-    // ¬(x ∨ ¬y) => ¬x ∧ y
-    case OR(x, NOT(y)) =>
-      mkAnd(mkNot(x), y)
-
-    case _ => Type.Apply(Type.Not, tpe0, tpe0.loc)
-  }
-
-  /**
-    * Returns the conjunction of the two Boolean formulas `tpe1` and `tpe2`.
-    */
-  // NB: The order of cases has been determined by code coverage analysis.
-  @tailrec
-  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-    // T ∧ x => x
-    case (Type.True, _) =>
-      tpe2
-
-    // x ∧ T => x
-    case (_, Type.True) =>
-      tpe1
-
-    // F ∧ x => F
-    case (Type.False, _) =>
-      Type.False
-
-    // x ∧ F => F
-    case (_, Type.False) =>
-      Type.False
-
-    // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
-      mkAnd(mkNot(x1), y)
-
-    // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 =>
-      Type.False
-
-    // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 =>
-      Type.False
-
-    // x ∧ (x ∧ y) => (x ∧ y)
-    case (x1, AND(x2, y)) if x1 == x2 =>
-      mkAnd(x1, y)
-
-    // x ∧ (y ∧ x) => (x ∧ y)
-    case (x1, AND(y, x2)) if x1 == x2 =>
-      mkAnd(x1, y)
-
-    // (x ∧ y) ∧ x) => (x ∧ y)
-    case (AND(x1, y), x2) if x1 == x2 =>
-      mkAnd(x1, y)
-
-    // (x ∧ y) ∧ y) => (x ∧ y)
-    case (AND(x, y1), y2) if y1 == y2 =>
-      mkAnd(x, y1)
-
-    // x ∧ (x ∨ y) => x
-    case (x1, OR(x2, _)) if x1 == x2 =>
-      x1
-
-    // (x ∨ y) ∧ x => x
-    case (OR(x1, _), x2) if x1 == x2 =>
-      x1
-
-    // x ∧ (y ∧ ¬x) => F
-    case (x1, AND(_, NOT(x2))) if x1 == x2 =>
-      Type.False
-
-    // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.False
-
-    // x ∧ ¬(x ∨ y) => F
-    case (x1, NOT(OR(x2, _))) if x1 == x2 =>
-      Type.False
-
-    // ¬(x ∨ y) ∧ x => F
-    case (NOT(OR(x1, _)), x2) if x1 == x2 =>
-      Type.False
-
-    // x ∧ (¬x ∧ y) => F
-    case (x1, AND(NOT(x2), _)) if x1 == x2 =>
-      Type.False
-
-    // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.False
-
-    // x ∧ x => x
-    case _ if tpe1 == tpe2 => tpe1
-
-    case _ =>
-      //      val s = s"And($eff1, $eff2)"
-      //      val len = s.length
-      //      if (true) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //      }
-
-      Type.Apply(Type.Apply(Type.And, tpe1, tpe1.loc), tpe2, tpe1.loc)
-  }
-
-  /**
-    * Returns the disjunction of the two Boolean formulas `tpe1` and `tpe2`.
-    */
-  // NB: The order of cases has been determined by code coverage analysis.
-  @tailrec
-  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-    // T ∨ x => T
-    case (Type.True, _) =>
-      Type.True
-
-    // F ∨ y => y
-    case (Type.False, _) =>
-      tpe2
-
-    // x ∨ T => T
-    case (_, Type.True) =>
-      Type.True
-
-    // x ∨ F => x
-    case (_, Type.False) =>
-      tpe1
-
-    // x ∨ (y ∨ x) => x ∨ y
-    case (x1, OR(y, x2)) if x1 == x2 =>
-      mkOr(x1, y)
-
-    // (x ∨ y) ∨ x => x ∨ y
-    case (OR(x1, y), x2) if x1 == x2 =>
-      mkOr(x1, y)
-
-    // ¬x ∨ x => T
-    case (NOT(x), y) if x == y =>
-      Type.True
-
-    // x ∨ ¬x => T
-    case (x, NOT(y)) if x == y =>
-      Type.True
-
-    // (¬x ∨ y) ∨ x) => T
-    case (OR(NOT(x), _), y) if x == y =>
-      Type.True
-
-    // x ∨ (¬x ∨ y) => T
-    case (x, OR(NOT(y), _)) if x == y =>
-      Type.True
-
-    // x ∨ (y ∧ x) => x
-    case (x1, AND(_, x2)) if x1 == x2 => x1
-
-    // (y ∧ x) ∨ x => x
-    case (AND(_, x1), x2) if x1 == x2 => x1
-
-    // x ∨ x => x
-    case _ if tpe1 == tpe2 =>
-      tpe1
-
-    case _ =>
-
-      //              val s = s"Or($eff1, $eff2)"
-      //              val len = s.length
-      //              if (len > 30) {
-      //                println(s.substring(0, Math.min(len, 300)))
-      //              }
-
-      Type.Apply(Type.Apply(Type.Or, tpe1, tpe1.loc), tpe2, tpe1.loc)
-  }
-
-  private object NOT {
-    @inline
-    def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x, _) => Some(x)
-      case _ => None
+    // Construct a bi-directional map from type variables to indices.
+    // The idea is that the first variable becomes x0, the next x1, and so forth.
+    tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
+      case (macc, (sym, x)) => macc + (sym -> x)
     }
   }
 
-  private object AND {
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, _) => Some((x, y))
-      case _ => None
+  /**
+    * Returns a rigidity environment on formulas that is equivalent to the given one on types.
+    */
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
+    renv.s.flatMap {
+      case tvar => env.getForward(tvar)
     }
   }
 
-  private object OR {
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Some((x, y))
-      case _ => None
+  /**
+    * Converts this formula substitution into a type substitution
+    */
+  def toTypeSubstitution(s: BoolSubstitution[BoolFormula], env: Bimap[Symbol.KindedTypeVarSym, Int]): Substitution = {
+    val map = s.m.map {
+      case (k0, v0) =>
+        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
+        val v = toType(v0, env)
+        (k, v)
     }
+    Substitution(map)
   }
 
+  /**
+    * Converts the given type t into a formula.
+    */
+  private def fromType[F](t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): F = Type.eraseTopAliases(t) match {
+    case Type.Var(sym, _) => env.getForward(sym) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
+      case Some(x) => alg.mkVar(x)
+    }
+    case Type.True => alg.mkTop
+    case Type.False => alg.mkBot
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => alg.mkNot(fromType(tpe1, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => alg.mkAnd(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => alg.mkOr(fromType(tpe1, env), fromType(tpe2, env))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
+  }
+
+  private def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
+    case BoolFormula.True => Type.True
+    case BoolFormula.False => Type.False
+    case BoolFormula.And(f1, f2) => Type.mkAnd(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
+    case BoolFormula.Or(f1, f2) => Type.mkOr(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
+    case BoolFormula.Not(f1) => Type.mkNot(toType(f1, env), SourceLocation.Unknown)
+    case BoolFormula.Var(id) => env.getBackward(id) match {
+      case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
+      case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
+    }
+  }
 }

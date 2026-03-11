@@ -1,264 +1,438 @@
-namespace Test/Exp/ArrayLit {
-
-    @test
-    def testArrayLit01(): Array[Unit] & Impure = []
-
-    @test
-    def testArrayLit02(): Array[Int] & Impure = [1]
-
-    @test
-    def testArrayLit04(): Array[Int] & Impure = [1, 2, 3, 4]
-
-    @test
-    def testArrayLit05(): Array[Int] & Impure = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
-    @test
-    def testArrayLit06(): Array[Int] & Impure = [1, 2]
-
-    @test
-    def testArrayLit07(): Array[Bool] & Impure = [true]
-
-    @test
-    def testArrayLit08(): Array[Bool] & Impure = [false]
-
-    @test
-    def testArrayLit09(): Array[Bool] & Impure = [true, false]
-
-    @test
-    def testArrayLit10(): Array[Bool] & Impure = [false, true, false]
-
-    @test
-    def testArrayLit11(): Array[Bool] & Impure = [false, false, false, false, true]
-
-    @test
-    def testArrayLit12(): Array[Char] & Impure = ['c']
-
-    @test
-    def testArrayLit13(): Array[Char] & Impure = ['a', 'b']
-
-    @test
-    def testArrayLit14(): Array[Char] & Impure = ['a', 'b', 'c']
-
-    @test
-    def testArrayLit15(): Array[Char] & Impure = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']
-
-    @test
-    def testArrayLit16(): Array[Int8] & Impure = [1i8]
-
-    @test
-    def testArrayLit17(): Array[Int8] & Impure = [1i8, 2i8, 3i8]
-
-    @test
-    def testArrayLit18(): Array[Int8] & Impure = [1i8, 2i8, 3i8, 4i8]
-
-    @test
-    def testArrayLit19(): Array[Int16] & Impure = [1i16]
-
-    @test
-    def testArrayLit20(): Array[Int16] & Impure = [1i16, 2i16, 3i16]
-
-    @test
-    def testArrayLit21(): Array[Int16] & Impure = [1i16, 2i16, 3i16, 4i16]
-
-    @test
-    def testArrayLit22(): Array[Int64] & Impure = [1i64]
-
-    @test
-    def testArrayLit23(): Array[Int64] & Impure = [1i64, 2i64, 3i64]
-
-    @test
-    def testArrayLit24(): Array[Int64] & Impure = [1i64, 2i64, 3i64, 4i64]
-
-    @test
-    def testArrayLit25(): Array[Float32] & Impure = [1.0f32]
-
-    @test
-    def testArrayLit26(): Array[Float32] & Impure = [1.0f32, 2.0f32, 3.0f32]
-
-    @test
-    def testArrayLit27(): Array[Float32] & Impure = [1.0f32, 2.0f32, 3.0f32, 4.0f32]
-
-    @test
-    def testArrayLit28(): Array[Float64] & Impure = [1.0f64]
-
-    @test
-    def testArrayLit29(): Array[Float64] & Impure = [1.0f64, 2.0f64, 3.0f64]
-
-    @test
-    def testArrayLit30(): Array[Float64] & Impure = [1.0f64, 2.0f64, 3.0f64, 4.0f64]
-
-    @test
-    def testArrayLit31(): Array[String] & Impure = ["Hello"]
-
-    @test
-    def testArrayLit32(): Array[String] & Impure = ["Hello", "World"]
-
-    @test
-    def testArrayLit33(): Array[String] & Impure = ["World", "Hello", "World"]
-
-    @test
-    def testArrayLit34(): Array[Array[Int]] & Impure = [[1,2,3]]
-
-    @test
-    def testArrayLit35(): Array[Array[Int]] & Impure = [[1, 2], [1, 2]]
-
-    @test
-    def testArrayLit36(): Array[Array[Int]] & Impure = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]
-
-    @test
-    def testArrayLit37(): Array[Array[Int]] & Impure = [[1, 2, 3, 4, 5], [2]]
-
-    @test
-    def testArrayLit38(): Array[Array[Int]] & Impure = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]
-
-    @test
-    def testArrayLit39(): Array[Array[Bool]] & Impure = [[true, false]]
-
-    @test
-    def testArrayLit40(): Array[Array[Bool]] & Impure = [[true, false], [true, false]]
-
-    @test
-    def testArrayLit41(): Array[Array[Bool]] & Impure = [[true], [true, true, false, false]]
-
-    @test
-    def testArrayLit42(): Array[Array[Bool]] & Impure = [[true, false, true, false, true, false], [true]]
-
-    @test
-    def testArrayLit43(): Array[Array[Bool]] & Impure = [[true, true, true], [false, false, false], [false, true, false]]
-
-    @test
-    def testArrayLit44(): Array[Array[Char]] & Impure = [['a', 'b', 'c']]
-
-    @test
-    def testArrayLit45(): Array[Array[Char]] & Impure = [['a', 'b'], ['a', 'b']]
-
-    @test
-    def testArrayLit46(): Array[Array[Char]] & Impure = [['a'], ['a', 'b', 'c', 'd', 'e']]
-
-    @test
-    def testArrayLit47(): Array[Array[Char]] & Impure = [['a', 'b', 'c', 'd', 'e'], ['a']]
-
-    @test
-    def testArrayLit48(): Array[Array[Char]] & Impure = [['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c']]
-
-    @test
-    def testArrayLit49(): Array[Array[Int8]] & Impure = [[1i8, 2i8, 3i8]]
-
-    @test
-    def testArrayLit50(): Array[Array[Int8]] & Impure = [[1i8, 2i8], [1i8, 2i8]]
-
-    @test
-    def testArrayLit51(): Array[Array[Int8]] & Impure = [[1i8], [1i8, 2i8, 3i8, 4i8, 5i8, 6i8]]
-
-    @test
-    def testArrayLit52(): Array[Array[Int8]] & Impure = [[1i8, 2i8, 3i8, 4i8, 5i8, 6i8], [1i8]]
-
-    @test
-    def testArrayLit53(): Array[Array[Int8]] & Impure = [[1i8, 2i8, 3i8], [1i8, 2i8, 3i8], [1i8, 2i8, 3i8]]
-
-    @test
-    def testArrayLit54(): Array[Array[Int16]] & Impure = [[1i16, 2i16, 3i16]]
-
-    @test
-    def testArrayLit55(): Array[Array[Int16]] & Impure = [[1i16, 2i16], [1i16, 2i16]]
-
-    @test
-    def testArrayLit56(): Array[Array[Int16]] & Impure = [[1i16], [1i16, 2i16, 3i16, 4i16, 5i16, 6i16]]
-
-    @test
-    def testArrayLit57(): Array[Array[Int16]] & Impure = [[1i16, 2i16, 3i16, 4i16, 5i16, 6i16], [1i16]]
-
-    @test
-    def testArrayLit58(): Array[Array[Int16]] & Impure = [[1i16, 2i16, 3i16], [1i16, 2i16, 3i16], [1i16, 2i16, 3i16]]
-
-    @test
-    def testArrayLit59(): Array[Array[Int64]] & Impure = [[1i64, 2i64, 3i64]]
-
-    @test
-    def testArrayLit60(): Array[Array[Int64]] & Impure = [[1i64, 2i64], [1i64, 2i64]]
-
-    @test
-    def testArrayLit61(): Array[Array[Int64]] & Impure = [[1i64], [1i64, 2i64, 3i64, 4i64, 5i64, 6i64]]
-
-    @test
-    def testArrayLit62(): Array[Array[Int64]] & Impure = [[1i64, 2i64, 3i64, 4i64, 5i64, 6i64], [1i64]]
-
-    @test
-    def testArrayLit63(): Array[Array[Int64]] & Impure= [[1i64, 2i64, 3i64], [1i64, 2i64, 3i64], [1i64, 2i64, 3i64]]
-
-    @test
-    def testArrayLit64(): Array[Array[Float32]] & Impure = [[1.0f32, 2.0f32, 3.0f32]]
-
-    @test
-    def testArrayLit65(): Array[Array[Float32]] & Impure = [[1.0f32, 2.0f32], [1.0f32, 2.0f32]]
-
-    @test
-    def testArrayLit66(): Array[Array[Float32]] & Impure = [[1.0f32], [1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32]]
-
-    @test
-    def testArrayLit67(): Array[Array[Float32]] & Impure = [[1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32], [1.0f32]]
-
-    @test
-    def testArrayLit68(): Array[Array[Float64]]  & Impure = [[1.0f64, 2.0f64, 3.0f64]]
-
-    @test
-    def testArrayLit69(): Array[Array[Float64]] & Impure = [[1.0f64, 2.0f64], [3.0f64, 4.0f64]]
-
-    @test
-    def testArrayLit70(): Array[Array[Float64]] & Impure = [[1.0f64], [1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64]]
-
-    @test
-    def testArrayLit71(): Array[Array[Float64]] & Impure = [[1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64], [1.0f64]]
-
-    @test
-    def testArrayLit72(): Array[Array[Float64]] & Impure = [[1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64]]
-
-    @test
-    def testArrayLit73(): Array[Array[String]] & Impure = [["Hello"]]
-
-    @test
-    def testArrayLit74(): Array[Array[String]] & Impure = [["Hello"], ["World"]]
-
-    @test
-    def testArrayLit75(): Array[Array[String]] & Impure = [["Hello"], ["Hello", "World", "World", "Hello"]]
-
-    @test
-    def testArrayLit76(): Array[Array[String]] & Impure = [["Hello", "World", "World", "Hello"] ,["Hello"]]
-
-    @test
-    def testArrayLit77(): Array[(Int, Int)] & Impure = [(12, 42)]
-
-    @test
-    def testArrayLit78(): Array[(Int, Int, Int)] & Impure = [(12, 42, 34), (12, 42, 34)]
-
-    @test
-    def testArrayLit79(): Array[(Int, Int, Int)] & Impure = [(12, 42, 12), (12, 23, 12), (12,12,12)]
-
-    @test
-    def testArrayLit80(): Array[(Int, Int, Int, Int)] & Impure = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
-
-    @test
-    def testArrayLit81(): Array[(Int, Int)] & Impure =[(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)]
-
-    @test
-    def testArrayLit82(): Array[(Bool, Bool)] & Impure =[(true, true)]
-
-    @test
-    def testArrayLit83(): Array[(Bool, Bool, Bool)] & Impure =[(true, true, true), (true, true, true)]
-
-    @test
-    def testArrayLit84(): Array[(Bool, Bool, Bool)] & Impure =[(true, true, true), (true, false, false), (true, true, false)]
-
-    @test
-    def testArrayLit85(): Array[(List[Int])] & Impure = [(Nil)]
-
-    @test
-    def testArrayLit86(): Array[(List[Int])] & Impure = [(1 :: Nil)]
-
-    @test
-    def testArrayLit88(): Array[Option[String]] & Impure = [Some("Hello World")]
-
-    @test
-    def testArrayLit89(): Array[Option[Int]] & Impure = [Some(1), Some(2), None]
+mod Test.Exp.ArrayLit {
+
+    @Test
+    def testArrayLit01(): Unit = region rc {
+        discard Array#{} @ rc
+    }
+
+    @Test
+    def testArrayLit02(): Unit = region rc {
+        discard Array#{1} @ rc
+    }
+
+    @Test
+    def testArrayLit04(): Unit = region rc {
+        discard Array#{1, 2, 3, 4} @ rc
+    }
+
+    @Test
+    def testArrayLit05(): Unit = region rc {
+        discard Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20} @ rc
+    }
+
+    @Test
+    def testArrayLit06(): Unit = region rc {
+        discard Array#{1, 2} @ rc
+    }
+
+    @Test
+    def testArrayLit07(): Unit = region rc {
+        discard Array#{true} @ rc
+    }
+
+    @Test
+    def testArrayLit08(): Unit = region rc {
+        discard Array#{false} @ rc
+    }
+
+    @Test
+    def testArrayLit09(): Unit = region rc {
+        discard Array#{true, false} @ rc
+    }
+
+    @Test
+    def testArrayLit10(): Unit = region rc {
+        discard Array#{false, true, false} @ rc
+    }
+
+    @Test
+    def testArrayLit11(): Unit = region rc {
+        discard Array#{false, false, false, false, true} @ rc
+    }
+
+    @Test
+    def testArrayLit12(): Unit = region rc {
+        discard Array#{'c'} @ rc
+    }
+
+    @Test
+    def testArrayLit13(): Unit = region rc {
+        discard Array#{'a', 'b'} @ rc
+    }
+
+    @Test
+    def testArrayLit14(): Unit = region rc {
+        discard Array#{'a', 'b', 'c'} @ rc
+    }
+
+    @Test
+    def testArrayLit15(): Unit = region rc {
+        discard Array#{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'} @ rc
+    }
+
+    @Test
+    def testArrayLit16(): Unit = region rc {
+        discard Array#{1i8} @ rc
+    }
+
+    @Test
+    def testArrayLit17(): Unit = region rc {
+        discard Array#{1i8, 2i8, 3i8} @ rc
+    }
+
+    @Test
+    def testArrayLit18(): Unit = region rc {
+        discard Array#{1i8, 2i8, 3i8, 4i8} @ rc
+    }
+
+    @Test
+    def testArrayLit19(): Unit = region rc {
+        discard Array#{1i16} @ rc
+    }
+
+    @Test
+    def testArrayLit20(): Unit = region rc {
+        discard Array#{1i16, 2i16, 3i16} @ rc
+    }
+
+    @Test
+    def testArrayLit21(): Unit = region rc {
+        discard Array#{1i16, 2i16, 3i16, 4i16} @ rc
+    }
+
+    @Test
+    def testArrayLit22(): Unit = region rc {
+        discard Array#{1i64} @ rc
+    }
+
+    @Test
+    def testArrayLit23(): Unit = region rc {
+        discard Array#{1i64, 2i64, 3i64} @ rc
+    }
+
+    @Test
+    def testArrayLit24(): Unit = region rc {
+        discard Array#{1i64, 2i64, 3i64, 4i64} @ rc
+    }
+
+    @Test
+    def testArrayLit25(): Unit = region rc {
+        discard Array#{1.0f32} @ rc
+    }
+
+    @Test
+    def testArrayLit26(): Unit = region rc {
+        discard Array#{1.0f32, 2.0f32, 3.0f32} @ rc
+    }
+
+    @Test
+    def testArrayLit27(): Unit = region rc {
+        discard Array#{1.0f32, 2.0f32, 3.0f32, 4.0f32} @ rc
+    }
+
+    @Test
+    def testArrayLit28(): Unit = region rc {
+        discard Array#{1.0f64} @ rc
+    }
+
+    @Test
+    def testArrayLit29(): Unit = region rc {
+        discard Array#{1.0f64, 2.0f64, 3.0f64} @ rc
+    }
+
+    @Test
+    def testArrayLit30(): Unit = region rc {
+        discard Array#{1.0f64, 2.0f64, 3.0f64, 4.0f64} @ rc
+    }
+
+    @Test
+    def testArrayLit31(): Unit = region rc {
+        discard Array#{"Hello"} @ rc
+    }
+
+    @Test
+    def testArrayLit32(): Unit = region rc {
+        discard Array#{"Hello", "World"} @ rc
+    }
+
+    @Test
+    def testArrayLit33(): Unit = region rc {
+        discard Array#{"World", "Hello", "World"} @ rc
+    }
+
+    @Test
+    def testArrayLit34(): Unit = region rc {
+        discard Array#{Array#{1,2,3} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit35(): Unit = region rc {
+        discard Array#{Array#{1, 2} @ rc, Array#{1, 2} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit36(): Unit = region rc {
+        discard Array#{Array#{1} @ rc, Array#{1, 2, 3, 4, 5, 6, 7, 8} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit37(): Unit = region rc {
+        discard Array#{Array#{1, 2, 3, 4, 5} @ rc, Array#{2} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit38(): Unit = region rc {
+        discard Array#{Array#{1, 2, 3} @ rc, Array#{1, 2, 3} @ rc, Array#{1, 2, 3} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit39(): Unit = region rc {
+        discard Array#{Array#{true, false} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit40(): Unit = region rc {
+        discard Array#{Array#{true, false} @ rc, Array#{true, false} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit41(): Unit = region rc {
+        discard Array#{Array#{true} @ rc, Array#{true, true, false, false} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit42(): Unit = region rc {
+        discard Array#{Array#{true, false, true, false, true, false} @ rc, Array#{true} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit43(): Unit = region rc {
+        discard Array#{Array#{true, true, true} @ rc, Array#{false, false, false} @ rc, Array#{false, true, false} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit44(): Unit = region rc {
+        discard Array#{Array#{'a', 'b', 'c'} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit45(): Unit = region rc {
+        discard Array#{Array#{'a', 'b'} @ rc, Array#{'a', 'b'} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit46(): Unit = region rc {
+        discard Array#{Array#{'a'} @ rc, Array#{'a', 'b', 'c', 'd', 'e'} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit47(): Unit = region rc {
+        discard Array#{Array#{'a', 'b', 'c', 'd', 'e'} @ rc, Array#{'a'} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit48(): Unit = region rc {
+        discard Array#{Array#{'a', 'b', 'c'} @ rc, Array#{'a', 'b', 'c'} @ rc, Array#{'a', 'b', 'c'} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit49(): Unit = region rc {
+        discard Array#{Array#{1i8, 2i8, 3i8} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit50(): Unit = region rc {
+        discard Array#{Array#{1i8, 2i8} @ rc, Array#{1i8, 2i8} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit51(): Unit = region rc {
+        discard Array#{Array#{1i8} @ rc, Array#{1i8, 2i8, 3i8, 4i8, 5i8, 6i8} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit52(): Unit = region rc {
+        discard Array#{Array#{1i8, 2i8, 3i8, 4i8, 5i8, 6i8} @ rc, Array#{1i8} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit53(): Unit = region rc {
+        discard Array#{Array#{1i8, 2i8, 3i8} @ rc, Array#{1i8, 2i8, 3i8} @ rc, Array#{1i8, 2i8, 3i8} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit54(): Unit = region rc {
+        discard Array#{Array#{1i16, 2i16, 3i16} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit55(): Unit = region rc {
+        discard Array#{Array#{1i16, 2i16} @ rc, Array#{1i16, 2i16} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit56(): Unit = region rc {
+        discard Array#{Array#{1i16} @ rc, Array#{1i16, 2i16, 3i16, 4i16, 5i16, 6i16} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit57(): Unit = region rc {
+        discard Array#{Array#{1i16, 2i16, 3i16, 4i16, 5i16, 6i16} @ rc, Array#{1i16} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit58(): Unit = region rc {
+        discard Array#{Array#{1i16, 2i16, 3i16} @ rc, Array#{1i16, 2i16, 3i16} @ rc, Array#{1i16, 2i16, 3i16} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit59(): Unit = region rc {
+        discard Array#{Array#{1i64, 2i64, 3i64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit60(): Unit = region rc {
+        discard Array#{Array#{1i64, 2i64} @ rc, Array#{1i64, 2i64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit61(): Unit = region rc {
+        discard Array#{Array#{1i64} @ rc, Array#{1i64, 2i64, 3i64, 4i64, 5i64, 6i64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit62(): Unit = region rc {
+        discard Array#{Array#{1i64, 2i64, 3i64, 4i64, 5i64, 6i64} @ rc, Array#{1i64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit63(): Unit = region rc {
+        discard Array#{Array#{1i64, 2i64, 3i64} @ rc, Array#{1i64, 2i64, 3i64} @ rc, Array#{1i64, 2i64, 3i64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit64(): Unit = region rc {
+        discard Array#{Array#{1.0f32, 2.0f32, 3.0f32} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit65(): Unit = region rc {
+        discard Array#{Array#{1.0f32, 2.0f32} @ rc, Array#{1.0f32, 2.0f32} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit66(): Unit = region rc {
+        discard Array#{Array#{1.0f32} @ rc, Array#{1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit67(): Unit = region rc {
+        discard Array#{Array#{1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32} @ rc, Array#{1.0f32} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit68(): Unit = region rc {
+        discard Array#{Array#{1.0f64, 2.0f64, 3.0f64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit69(): Unit = region rc {
+        discard Array#{Array#{1.0f64, 2.0f64} @ rc, Array#{3.0f64, 4.0f64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit70(): Unit = region rc {
+        discard Array#{Array#{1.0f64} @ rc, Array#{1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit71(): Unit = region rc {
+        discard Array#{Array#{1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64} @ rc, Array#{1.0f64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit72(): Unit = region rc {
+        discard Array#{Array#{1.0f64, 2.0f64, 3.0f64} @ rc, Array#{1.0f64, 2.0f64, 3.0f64} @ rc, Array#{1.0f64, 2.0f64, 3.0f64} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit73(): Unit = region rc {
+        discard Array#{Array#{"Hello"} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit74(): Unit = region rc {
+        discard Array#{Array#{"Hello"} @ rc, Array#{"World"} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit75(): Unit = region rc {
+        discard Array#{Array#{"Hello"} @ rc, Array#{"Hello", "World", "World", "Hello"} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit76(): Unit = region rc {
+        discard Array#{Array#{"Hello", "World", "World", "Hello"} @ rc, Array#{"Hello"} @ rc} @ rc
+    }
+
+    @Test
+    def testArrayLit77(): Unit = region rc {
+        discard Array#{(12, 42)} @ rc
+    }
+
+    @Test
+    def testArrayLit78(): Unit = region rc {
+        discard Array#{(12, 42, 34), (12, 42, 34)} @ rc
+    }
+
+    @Test
+    def testArrayLit79(): Unit = region rc {
+        discard Array#{(12, 42, 12), (12, 23, 12), (12,12,12)} @ rc
+    }
+
+    @Test
+    def testArrayLit80(): Unit = region rc {
+        discard Array#{(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)} @ rc
+    }
+
+    @Test
+    def testArrayLit81(): Unit = region rc {
+        discard Array#{(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)} @ rc
+    }
+
+    @Test
+    def testArrayLit82(): Unit = region rc {
+        discard Array#{(true, true)} @ rc
+    }
+
+    @Test
+    def testArrayLit83(): Unit = region rc {
+        discard Array#{(true, true, true), (true, true, true)} @ rc
+    }
+
+    @Test
+    def testArrayLit84(): Unit = region rc {
+        discard Array#{(true, true, true), (true, false, false), (true, true, false)} @ rc
+    }
+
+    @Test
+    def testArrayLit85(): Unit = region rc {
+        discard Array#{(Nil)} @ rc
+    }
+
+    @Test
+    def testArrayLit86(): Unit = region rc {
+        discard Array#{(1 :: Nil)} @ rc
+    }
+
+    @Test
+    def testArrayLit88(): Unit = region rc {
+        discard Array#{Some("Hello World")} @ rc
+    }
+
+    @Test
+    def testArrayLit89(): Unit = region rc {
+        discard Array#{Some(1), Some(2), None} @ rc
+    }
 
 }

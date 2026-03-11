@@ -14,76 +14,180 @@
  * limitations under the License.
  */
 
-use RedBlackTree.RedBlackTree;
+import java.util.{Set => JSet}
 
 ///
 /// The Set type.
 ///
 /// A set is currently represented internally as a red-black tree.
 ///
-enum Set[t] {
+pub enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]]
-
-instance ToString[Set[a]] with ToString[a] {
-    pub def toString(xs: Set[a]): String =
-        let s = Set.foldRight((x, acc) -> "${x}, ${acc}", "", xs);
-        "Set#{${String.dropRight(2, s)}}"
-}
-
-instance Hash[Set[a]] with Hash[a] {
-    pub def hash(xs: Set[a]): Int =
-        Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, xs)
-}
-
 instance Eq[Set[a]] with Eq[a] {
-    pub def eq(xs: Set[a], ys: Set[a]): Bool =
-        Set.toList(xs) == Set.toList(ys)
+    pub def eq(s1: Set[a], s2: Set[a]): Bool =
+        Set.toList(s1) == Set.toList(s2)
 }
 
 instance Order[Set[a]] with Order[a] {
+    pub def compare(s1: Set[a], s2: Set[a]): Comparison =
+        Set.toList(s1) <=> Set.toList(s2)
 
-    pub def compare(xs: Set[a], ys: Set[a]): Comparison =
-        Set.toList(xs) <=> Set.toList(ys)
+}
 
+instance Hash[Set[a]] with Hash[a] {
+    pub def hash(s: Set[a]): Int32 =
+        Set.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), s)
+}
+
+instance Formattable[Set[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Set[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("Set#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), Set.toList(x)) + RichString.fromString("}")
+}
+
+instance ToString[Set[a]] with ToString[a] {
+    pub def toString(s: Set[a]): String = Set.toString(s)
+}
+
+instance LowerBound[Set[a]] {
+    pub def minValue(): Set[a] = Set.empty()
+}
+
+instance PartialOrder[Set[a]] with Order[a] {
+    pub def lessEqual(s1: Set[a], s2: Set[a]): Bool = s1 `Set.isSubsetOf` s2
+}
+
+instance JoinLattice[Set[a]] with Order[a] {
+    pub def leastUpperBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.union` s2
+}
+
+instance MeetLattice[Set[a]] with Order[a] {
+    pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
 }
 
 instance Foldable[Set] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Set[a]): b & ef = Set.foldLeft(f, s, xs)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Set[a]): b & ef = Set.foldRight(f, s, xs)
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
+    redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+    redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+    redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
 }
 
-namespace Set {
+instance UnorderedFoldable[Set] {
+    pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
+    redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+    redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
+    redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+
+    @ParallelWhenPure
+    redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
+}
+
+instance SemiGroup[Set[a]] with Order[a] {
+    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
+}
+
+instance CommutativeSemiGroup[Set[a]] with Order[a]
+
+instance Monoid[Set[a]] with Order[a] {
+    pub def empty(): Set[a] = Set.empty()
+}
+
+instance CommutativeMonoid[Set[a]] with Order[a]
+
+instance Collectable[Set[a]] with Order[a] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } = Iterator.toSet(iter)
+}
+
+instance Iterable[Set[a]] {
+    type Elm = a
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
+}
+
+instance ForEach[Set[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef = Set.forEach(f, s)
+}
+
+instance ToJava[Set[a]] with Order[a] {
+    type Out = JSet
+    type Aef = IO
+    pub def toJava(s: Set[a]): JSet \ IO = Adaptor.toSet(s)
+}
+
+instance ToFlix[Set[a]] with Order[a] {
+    type In = JSet
+    pub def toFlix(s: JSet): Set[a] = Adaptor.fromSet(s)
+}
+
+pub mod Set {
 
     ///
-    /// Returns the size of `xs`.
+    /// Returns a string representation of the given set `s`.
     ///
-    @Time(size(xs)) @Space(1)
-    pub def size(xs: Set[a]): Int32 =
-        let Set(es) = xs;
-        RedBlackTree.size(es)
+    pub def toString(s: Set[a]): String with ToString[a] = region rc {
+        "Set#{" + (Set.iterator(rc, s) |> Iterator.join(", ")) + "}"
+    }
 
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the set has a certain size.
+    ///
+    def useParallelEvaluation(s: Set[a]): Bool =
+        let Set(t) = s;
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
+        minSize >= 1024
 
-
-
-
+    ///
+    /// Returns the number of elements in `s`.
+    ///
+    pub def size(s: Set[a]): Int32 =
+        let Set(t) = s;
+        RedBlackTree.size(t)
 
     ///
     /// Returns the empty set.
     ///
-    /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
+    /// `Set#{}` is syntactic sugar for `empty` i.e. `Set#{} == empty()`.
     ///
-    @Time(1) @Space(1)
     pub def empty(): Set[a] = Set(RedBlackTree.empty())
+
+    ///
+    /// Adds `x` to `s`.
+    ///
+    pub def insert(x: a, s: Set[a]): Set[a] with Order[a] =
+        let Set(t) = s;
+        Set(RedBlackTree.insert(x, (), t))
+
+    ///
+    /// Removes `x` from `s`.
+    ///
+    pub def remove(x: a, s: Set[a]): Set[a] with Order[a] =
+        let Set(t) = s;
+        Set(RedBlackTree.remove(x, t))
+
+    ///
+    /// Returns true if and only if `s` is the empty set.
+    ///
+    pub def isEmpty(s: Set[a]): Bool =
+        let Set(t) = s;
+        RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns true if and only if `s` is a non-empty set.
+    ///
+    pub def nonEmpty(s: Set[a]): Bool = not isEmpty(s)
 
     ///
     /// Returns the singleton set containing `x`.
     ///
-    /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
+    /// `Set#{x}` is syntactic sugar for `singleton` i.e. `Set#{x} == singleton(x)`.
     ///
-    @Time(1) @Space(1)
     pub def singleton(x: a): Set[a] with Order[a] = insert(x, empty())
 
     ///
@@ -91,347 +195,345 @@ namespace Set {
     ///
     /// Returns `empty()` if `b >= e`.
     ///
-    @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): Set[Int32] =
-        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
+        def loop(i, s) = {
+            if (i >= e)
+                s
+            else
+                loop(i + 1, insert(i, s))
+        };
+        loop(b, empty())
 
     ///
-    /// Adds `x` to `xs`.
+    /// Returns true if and only if `x` is a member of `s`.
     ///
-    @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def insert(x: a, xs: Set[a]): Set[a] with Order[a] =
-        let Set(es) = xs;
-        Set(RedBlackTree.insert(x, (), es))
+    pub def memberOf(x: a, s: Set[a]): Bool with Order[a] =
+        let Set(t) = s;
+        RedBlackTree.memberOf(x, t)
 
     ///
-    /// Removes `x` from `xs`.
+    /// Optionally finds the smallest element of `s` according to the `Order` on `a`.
     ///
-    @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def remove(x: a, xs: Set[a]): Set[a] with Order[a] =
-        let Set(es) = xs;
-        Set(RedBlackTree.remove(x, es))
-
-
-
-
+    /// Returns `None` if `s` is empty.
+    ///
+    pub def minimum(s: Set[a]): Option[a] =
+        let Set(t) = s;
+        RedBlackTree.minimumKey(t) |> Option.map(fst)
 
     ///
-    /// Returns true if and only if `xs` is the empty set.
+    /// Optionally finds the smallest element of `s` according to the given comparator `cmp`.
     ///
-    @Time(1) @Space(1)
-    pub def isEmpty(xs: Set[a]): Bool =
-        let Set(es) = xs;
-        RedBlackTree.isEmpty(es)
+    /// Returns `None` if `s` is empty.
+    ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
+        def min() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.LessThan) x else y, s);
+        match purityOf2(cmp) {
+            case Purity2.Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (kl, _, kr, _) -> g(kl, kr);
+                    let Set(t) = s;
+                    let o = RedBlackTree.parMinimumBy(h, t);
+                    Option.map(fst, o)
+                else
+                    min()
+            case Purity2.Impure(_) => min()
+        }
 
     ///
-    /// Returns true if and only if `x` is a member of `xs`.
+    /// Optionally finds the largest element of `s` according to the `Order` on `a`.
     ///
-    @Time(Int32.log2(size(xs))) @Space(1)
-    pub def memberOf(x: a, xs: Set[a]): Bool with Order[a] =
-        let Set(es) = xs;
-        RedBlackTree.memberOf(x, es)
+    /// Returns `None` if `s` is empty.
+    ///
+    pub def maximum(s: Set[a]): Option[a] =
+        let Set(t) = s;
+        RedBlackTree.maximumKey(t) |> Option.map(fst)
 
     ///
-    /// Optionally finds the smallest element of `xs` according to the `Order` on `a`.
+    /// Optionally finds the largest element of `s` according to the given comparator `cmp`.
     ///
-    /// Returns `None` if `xs` is empty.
+    /// Returns `None` if `s` is empty.
     ///
-    pub def minimum(xs: Set[a]): Option[a] =
-        let Set(es) = xs;
-        RedBlackTree.minimum(es) |> Option.map(fst)
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
+        def max() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.GreaterThan) x else y, s);
+        match purityOf2(cmp) {
+            case Purity2.Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (kl, _, kr, _) -> g(kl, kr);
+                    let Set(t) = s;
+                    let o = RedBlackTree.parMaximumBy(h, t);
+                    Option.map(fst, o)
+                else
+                    max()
+            case Purity2.Impure(_) => max()
+        }
 
     ///
-    /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
+    /// Returns true if and only if every element in `s1` appears in `s2`.
     ///
-    /// Returns `None` if `xs` is empty.
-    ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
-        reduceLeft(Order.minBy(cmp), xs)
+    pub def isSubsetOf(s1: Set[a], s2: Set[a]): Bool with Order[a] = forAll(x -> memberOf(x, s2), s1)
 
     ///
-    /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
+    /// Returns true if and only if every element in `s1` appears in `s2` and `s != s2`.
     ///
-    /// Returns `None` if `xs` is empty.
-    ///
-    pub def maximum(xs: Set[a]): Option[a] =
-        let Set(es) = xs;
-        RedBlackTree.maximum(es) |> Option.map(fst)
-
-    ///
-    /// Optionally finds the largest element of `xs` according to the given comparator `cmp`.
-    ///
-    /// Returns `None` if `xs` is empty.
-    ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
-        reduceLeft(Order.maxBy(cmp), xs)
-
-    ///
-    /// Returns true if and only if every element in `xs` appears in `ys`.
-    ///
-    @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isSubsetOf(xs: Set[a], ys: Set[a]): Bool with Order[a] = forall(x -> memberOf(x, ys), xs)
-
-    ///
-    /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
-    ///
-    @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool with Order[a] = size(xs) != size(ys) and isSubsetOf(xs, ys)
+    pub def isProperSubsetOf(s1: Set[a], s2: Set[a]): Bool with Order[a] = size(s1) != size(s2) and isSubsetOf(s1, s2)
 
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def find(f: a -> Bool, xs: Set[a]): Option[a] = findLeft(f, xs)
+    pub def find(f: a -> Bool \ ef, s: Set[a]): Option[a] \ ef = findLeft(f, s)
 
     ///
-    /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from left to right.
+    /// Optionally returns the first element of `s` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def findLeft(f: a -> Bool, xs: Set[a]): Option[a] =
-        let Set(es) = xs;
-        RedBlackTree.findLeft((x, _) -> f(x), es) |> Option.map(fst)
+    pub def findLeft(f: a -> Bool \ ef, s: Set[a]): Option[a] \ ef =
+        let Set(t) = s;
+        RedBlackTree.findLeft((x, _) -> f(x), t) |> Option.map(fst)
 
     ///
-    /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
+    /// Optionally returns the first element of `s` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def findRight(f: a -> Bool, xs: Set[a]): Option[a] =
-        let Set(es) = xs;
-        RedBlackTree.findRight((x, _) -> f(x), es) |> Option.map(fst)
-
-
-
-
-
+    pub def findRight(f: a -> Bool \ ef, s: Set[a]): Option[a] \ ef =
+        let Set(t) = s;
+        RedBlackTree.findRight((x, _) -> f(x), t) |> Option.map(fst)
 
     ///
-    /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
+    /// Returns the result of applying `combine` to all the elements in `s`, using `empty` as the initial value.
     ///
-    pub def fold(xs: Set[a]): a with Monoid[a] = Foldable.fold(xs)
+    pub def fold(s: Set[a]): a with Monoid[a] = Foldable.fold(s)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
+    /// Applies `f` to a start value `s` and all elements in `s` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Set[a]): b & ef =
-        let Set(es) = xs;
-        RedBlackTree.foldLeft((acc, k, _) -> f(acc, k), s, es)
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef =
+        let Set(t) = s1;
+        RedBlackTree.foldLeft((acc, k, _) -> f(acc, k), s, t)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// Applies `f` to a start value `s` and all elements in `s1` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Set[a]): b & ef =
-        let Set(es) = xs;
-        RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, es)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef =
+        let Set(t) = s1;
+        RedBlackTree.foldRight((k, _, c) -> f(k, c), s, t)
 
     ///
-    /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
+
+    ///
+    /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
-    /// Returns `None` if `xs` is the empty set.
+    /// Returns `None` if `s` is the empty set.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, xs: Set[a]): Option[a] & ef =
-        let Set(es) = xs;
-        RedBlackTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
+    pub def reduceLeft(f: (a, a) -> a \ ef, s: Set[a]): Option[a] \ ef =
+        let Set(t) = s;
+        RedBlackTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), t) |> Option.map(fst)
 
     ///
-    /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `s` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-    /// Returns `None` if `xs` is the empty set.
+    /// Returns `None` if `s` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, xs: Set[a]): Option[a] & ef =
-        let Set(es) = xs;
-        RedBlackTree.reduceRight((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
-
-
-
-
-
+    pub def reduceRight(f: (a, a) -> a \ ef, s: Set[a]): Option[a] \ ef =
+        let Set(t) = s;
+        RedBlackTree.reduceRight((x, _, y, _) -> (f(x, y), ()), t) |> Option.map(fst)
 
     ///
-    /// Returns the number of elements in `xs` that satisfy the predicate `f`.
+    /// Returns the number of elements in `s` that satisfy the predicate `f`.
+    ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: a -> Bool & ef, xs: Set[a]): Int32 & ef =
-        let Set(t) = xs;
-        RedBlackTree.count((k, _) -> f(k), t)
+    pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef =
+        match purityOf(f) {
+            case Purity.Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (k, _) -> g(k);
+                    let Set(t) = s;
+                    RedBlackTree.parCount(h, t)
+                else
+                    foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+            case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
+        }
 
     ///
-    /// Returns the union of the elements in `xs`.
+    /// Returns the union of the elements in `s`.
     ///
-    @Time(size(xs) * Int32.log2(size(xs))) @Space(size(xs) * Int32.log2(size(xs)))
-    pub def flatten(xs: Set[Set[a]]): Set[a] with Order[a] =
-        foldLeft((acc, x) -> union(acc, x), empty(), xs)
+    pub def flatten(s: Set[Set[a]]): Set[a] with Order[a] =
+        foldLeft((acc, x) -> union(acc, x), empty(), s)
 
     ///
-    /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
+    /// Returns `true` if and only if at least one element in `s` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `xs` is the empty set.
+    /// Returns `false` if `s` is the empty set.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def exists(f: a -> Bool, xs: Set[a]): Bool =
-        let Set(es) = xs;
-        RedBlackTree.exists((x, _) -> f(x), es)
+    pub def exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef =
+        let Set(t) = s;
+        RedBlackTree.exists((x, _) -> f(x), t)
 
     ///
-    /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
+    /// Returns `true` if and only if all elements in `s` satisfy the predicate `f`.
     ///
-    /// Returns `true` if `xs` is the empty set.
+    /// Returns `true` if `s` is the empty set.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def forall(f: a -> Bool, xs: Set[a]): Bool =
-        let Set(es) = xs;
-        RedBlackTree.forall((x, _) -> f(x), es)
-
-
-
-
-
+    pub def forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef =
+        let Set(t) = s;
+        RedBlackTree.forAll((x, _) -> f(x), t)
 
     ///
-    /// Returns the union of `xs` and `ys`.
+    /// Returns the union of `s1` and `s2`.
     ///
-    @Time(Int32.min(size(xs), size(ys)) * Int32.log2(size(xs) + size(ys)))
-    @Space(Int32.min(size(xs), size(ys)) * Int32.log2(size(xs) + size(ys)))
-    pub def union(xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
+    pub def union(s1: Set[a], s2: Set[a]): Set[a] with Order[a] =
         use RedBlackTree.{blackHeight, foldLeft, insert};
-        let Set(as) = xs;
-        let Set(bs) = ys;
-        if (blackHeight(as) < blackHeight(bs))
-            Set(foldLeft((acc, x, _) -> insert(x, (), acc), bs, as))
+        let Set(t1) = s1;
+        let Set(t2) = s2;
+        if (blackHeight(t1) < blackHeight(t2))
+            Set(foldLeft((acc, x, _) -> insert(x, (), acc), t2, t1))
         else
-            Set(foldLeft((acc, y, _) -> insert(y, (), acc), as, bs))
+            Set(foldLeft((acc, y, _) -> insert(y, (), acc), t1, t2))
 
     ///
-    /// Returns the intersection of `xs` and `ys`.
+    /// Returns the intersection of `s1` and `s2`.
     ///
-    @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
-    pub def intersection(xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
-        foldLeft((acc, x) -> if (memberOf(x, xs)) insert(x, acc) else acc, empty(), ys)
+    pub def intersection(s1: Set[a], s2: Set[a]): Set[a] with Order[a] =
+        foldLeft((acc, x) -> if (memberOf(x, s1)) insert(x, acc) else acc, empty(), s2)
 
     ///
-    /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
+    /// Returns the difference of `s1` and `s2`, i.e. `s1 - s2`.
     ///
-    @Time(size(xs) * Int32.log2(size(ys))) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def difference(xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
-        foldLeft((acc, x) -> if (not memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
+    pub def difference(s1: Set[a], s2: Set[a]): Set[a] with Order[a] =
+        foldLeft((acc, x) -> if (not memberOf(x, s2)) insert(x, acc) else acc, empty(), s1)
 
     ///
-    /// Returns all subsets of `xs`.
+    /// Returns all subsets of `s`.
     ///
-    @Time(size(xs) * (1 <<< size(xs))) @Space(size(xs) * (1 <<< size(xs)))
-    pub def subsets(xs: Set[a]): Set[Set[a]] with Order[a] =
-        foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), xs)
-
-
-
-
-
+    pub def subsets(s: Set[a]): Set[Set[a]] with Order[a] =
+        foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), s)
 
     ///
-    /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
+    /// Returns the set of all elements of `s` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
-    pub def filter(f: a -> Bool, xs: Set[a]): Set[a] with Order[a] =
-        foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs)
+    pub def filter(f: a -> Bool \ ef, s: Set[a]): Set[a] \ ef with Order[a] =
+        foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), s)
 
     ///
-    /// Returns the result of applying `f` to every element in `xs`.
+    /// Returns the result of applying `f` to every element in `s`.
     ///
-    /// Note: The returned set may be smaller than `xs`.
+    /// Note: The returned set may be smaller than `s`.
     ///
-    @ParallelWhenPure // TODO
-    pub def map(f: a -> b & ef, xs: Set[a]): Set[b] & ef with Order[b] =
-        foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
+    pub def map(f: a -> b \ ef, s: Set[a]): Set[b] \ ef with Order[b] =
+        foldLeft((acc, x) -> insert(f(x), acc), empty(), s)
 
     ///
-    /// Returns the result of applying `f` to every element in `xs` and taking the union.
+    /// Returns the result of applying `f` to every element in `s` and taking the union.
     ///
-    @Time(time(f) * size(xs) * Int32.log2(size(xs))) @Space(space(f) * size(xs) * Int32.log2(size(xs)))
-    pub def flatMap(f: a -> Set[b] & ef, xs: Set[a]): Set[b] & ef with Order[b] =
-        foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
+    pub def flatMap(f: a -> Set[b] \ ef, s: Set[a]): Set[b] \ ef with Order[b] =
+        foldLeft((acc, x) -> union(acc, f(x)), empty(), s)
 
     ///
-    /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
+    /// Collects the results of applying the partial function `f` to every element in `s`.
     ///
-    /// Note: The returned set may be smaller than `xs`.
-    ///
-    @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def replace(x: a, y: a, xs: Set[a]): Set[a] with Order[a] =
-        if (memberOf(x, xs)) insert(y, remove(x, xs)) else xs
+    pub def filterMap(f: a -> Option[b] \ ef, s: Set[a]): Set[b] \ ef with Order[b] =
+        let step = (acc, x) -> match f(x) {
+            case None    => acc
+            case Some(v) => insert(v, acc)
+        };
+        foldLeft(step, empty(), s)
 
     ///
-    /// Returns a pair of sets `(ys, zs)`.
+    /// Replaces the element `src` with `dst` if `src` is in `s`. Otherwise, returns `s`.
     ///
-    /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
-    /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
+    /// Note: The returned set may be smaller than `s`.
     ///
-    /// The function `f` must be pure.
+    pub def replace(src: {src = a}, dst: {dst = a}, s: Set[a]): Set[a] with Order[a] =
+        if (memberOf(src#src, s)) insert(dst#dst, remove(src#src, s)) else s
+
     ///
-    @Time(size(xs) * Int32.log2(size(xs))) @Space(size(xs) * Int32.log2(size(xs)))
-    pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) with Order[a] =
+    /// Returns a pair of sets `(s1, s2)`.
+    ///
+    /// `s1` contains all elements of `s` that satisfy the predicate `f`.
+    /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
+    ///
+    pub def partition(f: a -> Bool \ ef, s: Set[a]): (Set[a], Set[a]) \ ef with Order[a] =
         foldLeft((acc, x) ->
             let (a, b) = acc;
             if (f(x))
                 (insert(x, a), b)
             else
                 (a, insert(x, b)), (empty(), empty()),
-            xs)
-
-
-
+            s)
 
     ///
-    /// Returns `xs` as a mutable set.
+    /// Returns the set `s` as a list.
     ///
-    @Time(1) @Space(1)
-    pub def toMutSet(xs: Set[a]): MutSet[a] & Impure =
-        MutSet(ref xs)
+    pub def toList(s: Set[a]): List[a] =
+        foldRight((x, acc) -> x :: acc, Nil, s)
 
     ///
-    /// Returns the set `xs` as a list.
+    /// Returns the set `s` as an array.
     ///
-    @Time(size(xs)) @Space(size(xs))
-    pub def toList(xs: Set[a]): List[a] =
-        foldLeft((acc, x) -> x :: acc, Nil, xs)
+    pub def toArray(rc: Region[r], s: Set[a]): Array[a, r] \ r = match size(s) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
+            a
+        }
+
+    ///
+    /// Returns the set `s` as a vector.
+    ///
+    pub def toVector(s: Set[a]): Vector[a] = region rc {
+        let arr = Array.empty(rc, size(s));
+        Iterator.forEachWithIndex((i, x) -> Array.put(x, i, arr), iterator(rc, s));
+        Array.toVector(arr)
+    }
 
     ///
     /// Returns the set `s` as a chain.
     ///
     pub def toChain(s: Set[a]): Chain[a] =
-        foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), s)
+        foldLeft(Chain.snoc, Chain.empty(), s)
 
     ///
-    /// Returns the association set `xs` as a map.
+    /// Returns the association set `s` as a map.
     ///
-    /// If `xs` contains multiple mappings with the same key, `toMap` does not
+    /// If `s` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    @Time(size(xs)) @Space(size(xs))
-    pub def toMap(xs: Set[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, xs)
+    pub def toMap(s: Set[(a, b)]): Map[a, b] with Order[a] =
+        foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, s)
 
     ///
-    /// Applies `f` to every element of `xs`.
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
-    @Time(size(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def foreach(f: a -> Unit & ef, xs: Set[a]): Unit & ef =
-        let Set(es) = xs;
-        RedBlackTree.foreach((x, _) -> f(x), es)
+    pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
+        Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
+
+    ///
+    /// Applies `f` to every element of `s`.
+    ///
+    pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef =
+        let Set(t) = s;
+        RedBlackTree.forEach((x, _) -> f(x), t)
+
+    ///
+    /// Applies `f` to every element of `s` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: Set[a]): Unit \ ef =
+        let Set(t) = s;
+        RedBlackTree.forEachWithIndex((i, x, _) -> f(i, x), t)
 
     ///
     /// Build a set by applying `f` to the seed value `st`.
@@ -440,15 +542,12 @@ namespace Set {
     ///
     /// `f` should return `None` to signal the end of building the set.
     ///
-    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): Set[a] & ef with Order[a] = unfoldHelper(f, st, empty())
-
-    ///
-    /// Helper function for `unfold`.
-    ///
-    def unfoldHelper(f: s -> Option[(a, s)] & ef, st: s, ac: Set[a]): Set[a] & ef with Order[a] = match f(st) {
-        case None => ac
-        case Some((a, st1)) => unfoldHelper(f, st1, insert(a, ac))
-    }
+    pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): Set[a] \ ef with Order[a] =
+        def loop(sst, s) = match f(sst) {
+            case None           => s
+            case Some((a, st1)) => loop(st1, insert(a, s))
+        };
+        loop(st, empty())
 
     ///
     /// Build a set by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -458,32 +557,32 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter(next: Unit -> Option[a] & ef): Set[a] & ef with Order[a] = unfoldWithIterHelper(next, empty())
-
-    ///
-    /// Helper function for `unfoldWithIter`.
-    ///
-    def unfoldWithIterHelper(next: Unit -> Option[a] & ef, ac: Set[a]): Set[a] & ef with Order[a] = match next() {
-        case None => ac
-        case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
-    }
-
-    ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
-        if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
-
-    ///
-    /// Returns the set `s` as a `LazyList`.
-    ///
-    pub def toLazyList(s: Set[a]): LazyList[a] =
-        foldRight((x, acc) -> ECons(x, acc), ENil, s)
+    pub def unfoldWithIter(next: Unit -> Option[a] \ ef): Set[a] \ ef with Order[a] =
+        def loop(s) = match next() {
+            case None    => s
+            case Some(a) => loop(insert(a, s))
+        };
+        loop(empty())
 
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def toIterator(s: Set[a]): Iterator[a] & Impure =
-        List.toIterator(Set.toList(s))
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r =
+        let Set(t) = s;
+        RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, s: Set[a]): String with ToString[a] =
+        Foldable.join(sep, s)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String \ ef, sep: String, s: Set[a]): String \ ef =
+        Foldable.joinWith(f, sep, s)
 
 }

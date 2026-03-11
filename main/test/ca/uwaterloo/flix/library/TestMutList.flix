@@ -1,1662 +1,2708 @@
-/*
- * Copyright 2020 Esben Bjerre
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-namespace TestMutList {
-    use ToString.toString;
-    use MutList.eq;
+mod TestMutList {
+    use Assert.{assertEq, assertTrue, assertFalse, assertSome, fail};
+    use Math.Shuffle
+    use MutList.sameElements
+    use ToString.toString
 
-    ///
-    /// Helper function to test capacity of internal array.
-    ///
-    def capacity(v: MutList[a]): Int32 & Impure =
-        let MutList(a, _) = v;
-        Array.length(deref a)
+    /////////////////////////////////////////////////////////////////////////////
+    // emptyWithCapacity                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def emptyWithCapacity01(): Unit \ Assert = region rc {
+        let l: MutList[Int32, rc] = MutList.emptyWithCapacity(rc, 10);
+        assertEq(expected = "MutList#{}", MutList.toString(l))
+    }
+
+    @Test
+    def emptyWithCapacity02(): Unit \ Assert = region rc {
+        let l: MutList[Int32, rc] = MutList.emptyWithCapacity(rc, -1);
+        assertEq(expected = "MutList#{}", MutList.toString(l))
+    }
+
+    @Test
+    def emptyWithCapacity03(): Unit \ Assert = region rc {
+        let l: MutList[Int32, rc] = MutList.emptyWithCapacity(rc, 0);
+        MutList.push(5, l);
+        MutList.push(4, l);
+        assertEq(expected = "MutList#{5, 4}", MutList.toString(l))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toString01(): Unit \ Assert = region rc {
+        let l: MutList[Int32, rc] = MutList.empty(rc);
+        assertEq(expected = "MutList#{}", MutList.toString(l))
+    }
+
+    @Test
+    def toString02(): Unit \ Assert = region rc {
+        let l: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.push(1, l);
+        assertEq(expected = "MutList#{1}", MutList.toString(l))
+    }
+
+    @Test
+    def toString03(): Unit \ Assert = region rc {
+        let l: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.push(1, l);
+        MutList.push(2, l);
+        MutList.push(3, l);
+        MutList.push(4, l);
+        MutList.push(5, l);
+        assertEq(expected = "MutList#{1, 2, 3, 4, 5}", MutList.toString(l))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sameElements                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def sameElements01(): Unit \ Assert = region rc {
+        let u: MutList[Int32, _] = MutList.empty(rc);
+        let v: MutList[Int32, _] = MutList.empty(rc);
+        assertTrue(u `sameElements` v)
+    }
+
+    @Test
+    def sameElements02(): Unit \ Assert = region rc {
+        let u = MutList.empty(rc);
+        MutList.push(0, u);
+        let v = MutList.empty(rc);
+        assertFalse(u `sameElements` v)
+    }
+
+    @Test
+    def sameElements03(): Unit \ Assert = region rc {
+        let u = MutList.empty(rc);
+        MutList.push(2, u);
+        MutList.push(3, u);
+        let v = MutList.empty(rc);
+        MutList.push(2, v);
+        MutList.push(3, v);
+        assertTrue(u `sameElements` v)
+    }
+
+    @Test
+    def sameElements04(): Unit \ Assert = region rc {
+        let u = MutList.empty(rc);
+        MutList.push(2, u);
+        MutList.push(3, u);
+        let v = MutList.empty(rc);
+        MutList.push(2, v);
+        MutList.push(2, v);
+        assertFalse(u `sameElements` v)
+    }
+
+    @Test
+    def sameElements05(): Unit \ Assert = region rc {
+        let u = MutList.empty(rc);
+        MutList.push(1, u);
+        let v = MutList.empty(rc);
+        assertFalse(u `sameElements` v)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def get01(): Unit \ Assert = region rc {
+        let r = run MutList.get(0, MutList.empty(rc)) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index 0 is out of bounds for MutList of length 0", r)
+    }
+
+    @Test
+    def get02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.push("item", l);
+        let r = run MutList.get(0, l) with handler OutOfBounds {
+            def outOfBounds(_, _) = "error"
+        };
+        assertEq(expected = "item", r)
+    }
+
+    @Test
+    def get03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.push("item", l);
+        let r = run MutList.get(1, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index 1 is out of bounds for MutList of length 1", r)
+    }
+
+    @Test
+    def get04(): Unit \ Assert = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 2));
+
+        let r = run MutList.get(1, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "item 1", r)
+    }
+
+    @Test
+    def get05(): Unit \ Assert = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 4));
+
+        let r = run MutList.get(3, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "item 3", r)
+    }
+
+    @Test
+    def get06(): Unit \ Assert = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = run MutList.get(30, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "item 30", r)
+    }
+
+    @Test
+    def get07(): Unit \ Assert = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = run MutList.get(-30, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index -30 is out of bounds for MutList of length 42", r)
+    }
+
+    @Test
+    def get08(): Unit \ Assert = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = run MutList.get(50, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index 50 is out of bounds for MutList of length 42", r)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // eq                                                                   //
+    // put                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def eq01(): Bool & Impure =
-        let u: MutList[Int32] = MutList.new();
-        let v: MutList[Int32] = MutList.new();
-        u `eq` v
+    @Test
+    def put01(): Unit \ Assert = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
 
-    @test
-    def eq02(): Bool & Impure =
-        let u = MutList.new();
-        MutList.push!(0, u);
-        let v = MutList.new();
-        (u `eq` v) == false
+        run MutList.put("new item", 0, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        assertEq(expected = Some("index 0 is out of bounds for MutList of length 0"), Ref.get(error))
+    }
 
-    @test
-    def eq03(): Bool & Impure =
-        let u = MutList.new();
-        MutList.push!(2, u);
-        MutList.push!(3, u);
-        let v = MutList.new();
-        MutList.push!(2, v);
-        MutList.push!(3, v);
-        u `eq` v
+    @Test
+    def put02(): Unit \ Assert = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
+        MutList.push("item", l);
 
-    @test
-    def eq04(): Bool & Impure =
-        let u = MutList.new();
-        MutList.push!(2, u);
-        MutList.push!(3, u);
-        let v = MutList.new();
-        MutList.push!(2, v);
-        MutList.push!(2, v);
-        (u `eq` v) == false
+        run MutList.put("new item", 0, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        assertEq(expected = None, Ref.get(error));
+        assertEq(expected = Some("new item"), MutList.nth(0, l))
+    }
 
-    @test
-    def eq05(): Bool & Impure =
-        let u = MutList.new();
-        MutList.push!(1, u);
-        let v = MutList.new();
-        (u `eq` v) == false
+    @Test
+    def put03(): Unit \ Assert = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
+        MutList.push("item", l);
+
+        run MutList.put("new item", 1, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        assertEq(expected = Some("index 1 is out of bounds for MutList of length 1"), Ref.get(error))
+    }
+
+    @Test
+    def put04(): Unit \ Assert = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 2);
+
+        run MutList.put(1234, 1, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        assertEq(expected = None, Ref.get(error));
+        assertEq(expected = Some(1234), MutList.nth(1, l))
+    }
+
+    @Test
+    def put05(): Unit \ Assert = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 4);
+
+        run MutList.put(1234, 3, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        assertEq(expected = None, Ref.get(error));
+        assertEq(expected = Some(1234), MutList.nth(3, l))
+    }
+
+    @Test
+    def put06(): Unit \ Assert = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        run MutList.put(1234, 30, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        assertEq(expected = None, Ref.get(error));
+        assertEq(expected = Some(1234), MutList.nth(30, l))
+    }
+
+    @Test
+    def put07(): Unit \ Assert = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        run MutList.put(1234, -30, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        assertEq(expected = Some("index -30 is out of bounds for MutList of length 42"), Ref.get(error))
+    }
+
+    @Test
+    def put08(): Unit \ Assert = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        run MutList.put(1234, 50, l) with handler OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        assertEq(expected = Some("index 50 is out of bounds for MutList of length 42"), Ref.get(error))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
-    // Order.compare                                                           //
+    // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    // TODO
+    @Test
+    def nth01(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.nth(0, (MutList.empty(rc): MutList[Int32, _])))
+    }
+
+    @Test
+    def nth02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(42, v);
+        assertEq(expected = Some(42), MutList.nth(0, v))
+    }
+
+    @Test
+    def nth03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(42, v);
+        assertEq(expected = None, MutList.nth(1, v))
+    }
+
+    @Test
+    def nth04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), MutList.nth(1, MutList.range(rc, 0, 2)))
+    }
+
+    @Test
+    def nth05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), MutList.nth(3, MutList.range(rc, 0, 4)))
+    }
+
+    @Test
+    def nth06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(30), MutList.nth(30, MutList.range(rc, 0, 42)))
+    }
+
+    @Test
+    def nth07(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.nth(-30, MutList.range(rc, 0, 42)))
+    }
+
+    @Test
+    def nth08(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.nth(50, MutList.range(rc, 0, 42)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def length01(): Bool & Impure = MutList.length(MutList.new()) == 0
+    @Test
+    def length01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, MutList.length(MutList.empty(rc)))
+    }
 
-    @test
-    def length02(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(42, v);
-        MutList.length(v) == 1
+    @Test
+    def length02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(42, v);
+        assertEq(expected = 1, MutList.length(v))
+    }
 
-    @test
-    def length03(): Bool & Impure = MutList.length(MutList.range(0, 2)) == 2
+    @Test
+    def length03(): Unit \ Assert = region rc {
+        assertEq(expected = 2, MutList.length(MutList.range(rc, 0, 2)))
+    }
 
-    @test
-    def length04(): Bool & Impure = MutList.length(MutList.range(0, 4)) == 4
+    @Test
+    def length04(): Unit \ Assert = region rc {
+        assertEq(expected = 4, MutList.length(MutList.range(rc, 0, 4)))
+    }
 
-    @test
-    def length05(): Bool & Impure = MutList.length(MutList.range(0, 42)) == 42
+    @Test
+    def length05(): Unit \ Assert = region rc {
+        assertEq(expected = 42, MutList.length(MutList.range(rc, 0, 42)))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def size01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, MutList.size(MutList.empty(rc)))
+    }
+
+    @Test
+    def size02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(42, v);
+        assertEq(expected = 1, MutList.size(v))
+    }
+
+    @Test
+    def size03(): Unit \ Assert = region rc {
+        assertEq(expected = 2, MutList.size(MutList.range(rc, 0, 2)))
+    }
+
+    @Test
+    def size04(): Unit \ Assert = region rc {
+        assertEq(expected = 4, MutList.size(MutList.range(rc, 0, 4)))
+    }
+
+    @Test
+    def size05(): Unit \ Assert = region rc {
+        assertEq(expected = 42, MutList.size(MutList.range(rc, 0, 42)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def isEmpty01(): Bool & Impure = MutList.isEmpty(MutList.new())
+    @Test
+    def isEmpty01(): Unit \ Assert = region rc {
+        assertTrue(MutList.isEmpty(MutList.empty(rc)))
+    }
 
-    @test
-    def isEmpty02(): Bool & Impure = MutList.isEmpty(MutList.range(0, 0))
+    @Test
+    def isEmpty02(): Unit \ Assert = region rc {
+        assertTrue(MutList.isEmpty(MutList.range(rc, 0, 0)))
+    }
 
-    @test
-    def isEmpty03(): Bool & Impure = MutList.isEmpty(MutList.range(0, 1)) == false
+    @Test
+    def isEmpty03(): Unit \ Assert = region rc {
+        assertFalse(MutList.isEmpty(MutList.range(rc, 0, 1)))
+    }
 
-    @test
-    def isEmpty04(): Bool & Impure = MutList.isEmpty(MutList.range(0, 2)) == false
+    @Test
+    def isEmpty04(): Unit \ Assert = region rc {
+        assertFalse(MutList.isEmpty(MutList.range(rc, 0, 2)))
+    }
 
-    @test
-    def isEmpty05(): Bool & Impure = MutList.isEmpty(MutList.range(3, 4)) == false
+    @Test
+    def isEmpty05(): Unit \ Assert = region rc {
+        assertFalse(MutList.isEmpty(MutList.range(rc, 3, 4)))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nonEmpty01(): Unit \ Assert = region rc {
+        assertFalse(MutList.nonEmpty(MutList.empty(rc)))
+    }
+
+    @Test
+    def nonEmpty02(): Unit \ Assert = region rc {
+        assertFalse(MutList.nonEmpty(MutList.range(rc, 0, 0)))
+    }
+
+    @Test
+    def nonEmpty03(): Unit \ Assert = region rc {
+        assertTrue(MutList.nonEmpty(MutList.range(rc, 0, 1)))
+    }
+
+    @Test
+    def nonEmpty04(): Unit \ Assert = region rc {
+        assertTrue(MutList.nonEmpty(MutList.range(rc, 0, 2)))
+    }
+
+    @Test
+    def nonEmpty05(): Unit \ Assert = region rc {
+        assertTrue(MutList.nonEmpty(MutList.range(rc, 3, 4)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def memberOf01(): Bool & Impure = MutList.memberOf(42, MutList.new()) == false
+    @Test
+    def memberOf01(): Unit \ Assert = region rc {
+        assertFalse(MutList.memberOf(42, MutList.empty(rc)))
+    }
 
-    @test
-    def memberOf02(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(2, v);
-        MutList.memberOf(2, v)
+    @Test
+    def memberOf02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(2, v);
+        assertTrue(MutList.memberOf(2, v))
+    }
 
-    @test
-    def memberOf03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(42, v);
-        MutList.memberOf(2, v) == false
+    @Test
+    def memberOf03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(42, v);
+        assertFalse(MutList.memberOf(2, v))
+    }
 
-    @test
-    def memberOf04(): Bool & Impure = MutList.memberOf(4, MutList.range(0, 4)) == false
+    @Test
+    def memberOf04(): Unit \ Assert = region rc {
+        assertFalse(MutList.memberOf(4, MutList.range(rc, 0, 4)))
+    }
 
-    @test
-    def memberOf05(): Bool & Impure = MutList.memberOf(0, MutList.range(0, 3))
+    @Test
+    def memberOf05(): Unit \ Assert = region rc {
+        assertTrue(MutList.memberOf(0, MutList.range(rc, 0, 3)))
+    }
 
-    @test
-    def memberOf06(): Bool & Impure = MutList.memberOf(2, MutList.range(0, 3))
+    @Test
+    def memberOf06(): Unit \ Assert = region rc {
+        assertTrue(MutList.memberOf(2, MutList.range(rc, 0, 3)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def count01(): Bool & Impure = MutList.count(x -> x > 2, MutList.range(0, 4)) == 1
+    @Test
+    def count01(): Unit \ Assert = region rc {
+        assertEq(expected = 1, MutList.count(x -> x > 2, MutList.range(rc, 0, 4)))
+    }
 
-    @test
-    def count02(): Bool & Impure = MutList.count(x -> x >= 2, MutList.range(0, 4)) == 2
+    @Test
+    def count02(): Unit \ Assert = region rc {
+        assertEq(expected = 2, MutList.count(x -> x >= 2, MutList.range(rc, 0, 4)))
+    }
 
-    @test
-    def count03(): Bool & Impure = MutList.count(x -> x rem 2 == 0, MutList.range(0, 10)) == 5
+    @Test
+    def count03(): Unit \ Assert = region rc {
+        assertEq(expected = 5, MutList.count(x -> x `Int32.remainder` 2 == 0, MutList.range(rc, 0, 10)))
+    }
 
-    @test
-    def count04(): Bool & Impure = MutList.count(x -> x == 11, MutList.range(0, 21)) == 1
+    @Test
+    def count04(): Unit \ Assert = region rc {
+        assertEq(expected = 1, MutList.count(x -> x == 11, MutList.range(rc, 0, 21)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def exists01(): Bool & Impure = MutList.exists(x -> x > 9, MutList.range(0, 9)) == false
+    @Test
+    def exists01(): Unit \ Assert = region rc {
+        assertFalse(MutList.exists(x -> x > 9, MutList.range(rc, 0, 9)))
+    }
 
-    @test
-    def exists02(): Bool & Impure = MutList.exists(x -> x < 0, MutList.range(0, 9)) == false
+    @Test
+    def exists02(): Unit \ Assert = region rc {
+        assertFalse(MutList.exists(x -> x < 0, MutList.range(rc, 0, 9)))
+    }
 
-    @test
-    def exists03(): Bool & Impure = MutList.exists(x -> x == 8, MutList.range(0, 9))
+    @Test
+    def exists03(): Unit \ Assert = region rc {
+        assertTrue(MutList.exists(x -> x == 8, MutList.range(rc, 0, 9)))
+    }
 
-    @test
-    def exists04(): Bool & Impure = MutList.exists(x -> x > 0, MutList.range(0, 9))
+    @Test
+    def exists04(): Unit \ Assert = region rc {
+        assertTrue(MutList.exists(x -> x > 0, MutList.range(rc, 0, 9)))
+    }
 
-    @test
-    def exists05(): Bool & Impure = MutList.exists(x -> x == 0, MutList.new()) == false
+    @Test
+    def exists05(): Unit \ Assert = region rc {
+        assertFalse(MutList.exists(x -> x == 0, MutList.empty(rc)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forall01(): Bool & Impure = MutList.forall(x -> x > 0, MutList.range(0, 9)) == false
+    @Test
+    def forAll01(): Unit \ Assert = region rc {
+        assertFalse(MutList.forAll(x -> x > 0, MutList.range(rc, 0, 9)))
+    }
 
-    @test
-    def forall02(): Bool & Impure = MutList.forall(x -> x >= 0, MutList.range(0, 9))
+    @Test
+    def forAll02(): Unit \ Assert = region rc {
+        assertTrue(MutList.forAll(x -> x >= 0, MutList.range(rc, 0, 9)))
+    }
 
-    @test
-    def forall03(): Bool & Impure = MutList.forall(x -> x >= 0 and x < 9, MutList.range(0, 9))
+    @Test
+    def forAll03(): Unit \ Assert = region rc {
+        assertTrue(MutList.forAll(x -> x >= 0 and x < 9, MutList.range(rc, 0, 9)))
+    }
 
-    @test
-    def forall05(): Bool & Impure = MutList.forall(x -> x > 0, MutList.new())
+    @Test
+    def forAll05(): Unit \ Assert = region rc {
+        assertTrue(MutList.forAll(x -> x > 0, MutList.empty(rc)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def head01(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(42, v);
-        MutList.head(v) == Some(42)
+    @Test
+    def head01(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(42, v);
+        assertEq(expected = Some(42), MutList.head(v))
+    }
 
-    @test
-    def head02(): Bool & Impure = MutList.head(MutList.new(): MutList[Unit]) == None
+    @Test
+    def head02(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.head((MutList.empty(rc): MutList[Unit, _])))
+    }
 
-    @test
-    def head03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(101, v);
-        MutList.push!(102, v);
-        MutList.head(v) == Some(101)
+    @Test
+    def head03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(101, v);
+        MutList.push(102, v);
+        assertEq(expected = Some(101), MutList.head(v))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // last                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def last01(): Bool & Impure = MutList.last(MutList.new(): MutList[Unit]) == None
+    @Test
+    def last01(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.last((MutList.empty(rc): MutList[Unit, _])))
+    }
 
-    @test
-    def last02(): Bool & Impure = MutList.last(MutList.range(0, 8)) == Some(7)
+    @Test
+    def last02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(7), MutList.last(MutList.range(rc, 0, 8)))
+    }
 
-    @test
-    def last03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!('A', v);
-        MutList.push!('B', v);
-        MutList.last(v) == Some('B')
+    @Test
+    def last03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push('A', v);
+        MutList.push('B', v);
+        assertEq(expected = Some('B'), MutList.last(v))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // indexOfLeft                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def indexOfLeft01(): Bool & Impure = MutList.indexOfLeft(2, MutList.range(2, 3)) == Some(0)
+    @Test
+    def indexOfLeft01(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), MutList.indexOfLeft(2, MutList.range(rc, 2, 3)))
+    }
 
-    @test
-    def indexOfLeft02(): Bool & Impure = MutList.indexOfLeft(10, MutList.range(0, 10)) == None
+    @Test
+    def indexOfLeft02(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.indexOfLeft(10, MutList.range(rc, 0, 10)))
+    }
 
-    @test
-    def indexOfLeft03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!('A', v);
-        MutList.push!('B', v);
-        MutList.push!('C', v);
-        MutList.indexOfLeft('B', v) == Some(1)
+    @Test
+    def indexOfLeft03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push('A', v);
+        MutList.push('B', v);
+        MutList.push('C', v);
+        assertEq(expected = Some(1), MutList.indexOfLeft('B', v))
+    }
 
-    @test
-    def indexOfLeft04(): Bool & Impure = MutList.indexOfLeft(99, MutList.range(0, 100)) == Some(99)
+    @Test
+    def indexOfLeft04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(99), MutList.indexOfLeft(99, MutList.range(rc, 0, 100)))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // indexOfRight                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def indexOfRight01(): Bool & Impure = MutList.indexOfRight(2, MutList.range(2, 3)) == Some(0)
+    @Test
+    def indexOfRight01(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), MutList.indexOfRight(2, MutList.range(rc, 2, 3)))
+    }
 
-    @test
-    def indexOfRight02(): Bool & Impure = MutList.indexOfRight(10, MutList.range(0, 10)) == None
+    @Test
+    def indexOfRight02(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.indexOfRight(10, MutList.range(rc, 0, 10)))
+    }
 
-    @test
-    def indexOfRight03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!('A', v);
-        MutList.push!('B', v);
-        MutList.push!('A', v);
-        MutList.indexOfRight('A', v) == Some(2)
+    @Test
+    def indexOfRight03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push('A', v);
+        MutList.push('B', v);
+        MutList.push('A', v);
+        assertEq(expected = Some(2), MutList.indexOfRight('A', v))
+    }
 
-    @test
-    def indexOfRight04(): Bool & Impure =
-        let v1 = MutList.range(0, 4);
-        let v2 = MutList.range(0, 4);
-        MutList.append!(v1, v2);
-        MutList.indexOfRight(2, v1) == Some(6)
+    @Test
+    def indexOfRight04(): Unit \ Assert = region rc {
+        let v1 = MutList.range(rc, 0, 4);
+        let v2 = MutList.range(rc, 0, 4);
+        MutList.append(MutList.toList(v2), v1);
+        assertEq(expected = Some(6), MutList.indexOfRight(2, v1))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        assertEq(expected = Vector#{}, MutList.indicesOf(0, v))
+    }
+
+    @Test
+    def indicesOf02(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{}, MutList.indicesOf(0, MutList.range(rc, 1, 2)))
+    }
+
+    @Test
+    def indicesOf03(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{0}, MutList.indicesOf(1, MutList.range(rc, 1, 2)))
+    }
+
+    @Test
+    def indicesOf04(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{}, MutList.indicesOf(0, MutList.range(rc, 1, 3)))
+    }
+
+    @Test
+    def indicesOf05(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{0}, MutList.indicesOf(1, MutList.range(rc, 1, 3)))
+    }
+
+    @Test
+    def indicesOf06(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{1}, MutList.indicesOf(2, MutList.range(rc, 1, 3)))
+    }
+
+    @Test
+    def indicesOf07(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(1, v);
+        MutList.push(1, v);
+        assertEq(expected = Vector#{0, 1}, MutList.indicesOf(1, v))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 0), MutList.indices(MutList.empty(rc)))
+    }
+
+    @Test
+    def indices02(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 3), MutList.indices(MutList.range(rc, 1, 4)))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findLeft01(): Bool & Impure = MutList.findLeft(x -> x > 3, MutList.range(3, 11)) == Some(4)
+    @Test
+    def findLeft01(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), MutList.findLeft(x -> x > 3, MutList.range(rc, 3, 11)))
+    }
 
-    @test
-    def findLeft02(): Bool & Impure = MutList.findLeft(x -> x > 10, MutList.range(3, 11)) == None
+    @Test
+    def findLeft02(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.findLeft(x -> x > 10, MutList.range(rc, 3, 11)))
+    }
 
-    @test
-    def findLeft03(): Bool & Impure = MutList.findLeft(x -> x < 3, MutList.range(3, 11)) == None
+    @Test
+    def findLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.findLeft(x -> x < 3, MutList.range(rc, 3, 11)))
+    }
 
-    @test
-    def findLeft04(): Bool & Impure = MutList.findLeft(x -> x rem 2 == 1, MutList.range(3, 11)) == Some(3)
+    @Test
+    def findLeft04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), MutList.findLeft(x -> x `Int32.remainder` 2 == 1, MutList.range(rc, 3, 11)))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findRight01(): Bool & Impure = MutList.findRight(x -> x > 0, MutList.range(2, 5)) == Some(4)
+    @Test
+    def findRight01(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), MutList.findRight(x -> x > 0, MutList.range(rc, 2, 5)))
+    }
 
-    @test
-    def findRight02(): Bool & Impure = MutList.findRight(x -> x == 10, MutList.range(9, 10)) == None
+    @Test
+    def findRight02(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.findRight(x -> x == 10, MutList.range(rc, 9, 10)))
+    }
 
-    @test
-    def findRight03(): Bool & Impure = MutList.findRight(x -> x rem 2 == 0, MutList.range(3, 4)) == None
+    @Test
+    def findRight03(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.findRight(x -> x `Int32.remainder` 2 == 0, MutList.range(rc, 3, 4)))
+    }
 
-    @test
-    def findRight04(): Bool & Impure = MutList.findRight(x -> x < 5, MutList.range(3, 11)) == Some(4)
+    @Test
+    def findRight04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), MutList.findRight(x -> x < 5, MutList.range(rc, 3, 11)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // scanLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def scanLeft01(): Bool & Impure =
-        let v = MutList.scanLeft((x, y) -> x + y, 0, MutList.new());
-        MutList.length(v) == 1 and MutList.head(v) == Some(0)
+    @Test
+    def scanLeft01(): Unit \ Assert = region rc {
+        let v = MutList.scanLeft(rc, (x, y) -> x + y, 0, MutList.empty(rc));
+        assertEq(expected = 1, MutList.length(v));
+        assertEq(expected = Some(0), MutList.head(v))
+    }
 
-    @test
-    def scanLeft02(): Bool & Impure =
-        let v1 = MutList.range(1, 6);
-        let v2 = MutList.new();
-        MutList.push!(0, v2);
-        MutList.push!(1, v2);
-        MutList.push!(3, v2);
-        MutList.push!(6, v2);
-        MutList.push!(10, v2);
-        MutList.push!(15, v2);
-        let v3 = MutList.scanLeft((x, y) -> x + y, 0, v1);
-        MutList.sameElements(v2, v3)
+    @Test
+    def scanLeft02(): Unit \ Assert = region rc {
+        let v1 = MutList.range(rc, 1, 6);
+        let v2 = MutList.empty(rc);
+        MutList.push(0, v2);
+        MutList.push(1, v2);
+        MutList.push(3, v2);
+        MutList.push(6, v2);
+        MutList.push(10, v2);
+        MutList.push(15, v2);
+        let v3 = MutList.scanLeft(rc, (x, y) -> x + y, 0, v1);
+        assertTrue(MutList.sameElements(v2, v3))
+    }
 
-    @test
-    def scanLeft03(): Bool & Impure =
-        let v = MutList.scanLeft((x, y) -> x + y, 7, MutList.range(5, 13));
-        MutList.last(v) == Some(75)
+    @Test
+    def scanLeft03(): Unit \ Assert = region rc {
+        let v = MutList.scanLeft(rc, (x, y) -> x + y, 7, MutList.range(rc, 5, 13));
+        assertEq(expected = Some(75), MutList.last(v))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // scanRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def scanRight01(): Bool & Impure =
-        let v = MutList.scanRight((x, y) -> x + y, 0, MutList.new());
-        MutList.length(v) == 1 and MutList.head(v) == Some(0)
+    @Test
+    def scanRight01(): Unit \ Assert = region rc {
+        let v = MutList.scanRight(rc, (x, y) -> x + y, 0, MutList.empty(rc));
+        assertEq(expected = 1, MutList.length(v));
+        assertEq(expected = Some(0), MutList.head(v))
+    }
 
-    @test
-    def scanRight02(): Bool & Impure =
-        let v1 = MutList.range(1, 6);
-        let v2 = MutList.new();
-        MutList.push!(15, v2);
-        MutList.push!(14, v2);
-        MutList.push!(12, v2);
-        MutList.push!(9, v2);
-        MutList.push!(5, v2);
-        MutList.push!(0, v2);
-        let v3 = MutList.scanRight((x, y) -> x + y, 0, v1);
-        MutList.sameElements(v2, v3)
+    @Test
+    def scanRight02(): Unit \ Assert = region rc {
+        let v1 = MutList.range(rc, 1, 6);
+        let v2 = MutList.empty(rc);
+        MutList.push(15, v2);
+        MutList.push(14, v2);
+        MutList.push(12, v2);
+        MutList.push(9, v2);
+        MutList.push(5, v2);
+        MutList.push(0, v2);
+        let v3 = MutList.scanRight(rc, (x, y) -> x + y, 0, v1);
+        assertTrue(MutList.sameElements(v2, v3))
+    }
 
-    @test
-    def scanRight03(): Bool & Impure =
-        let v = MutList.scanRight((x, y) -> x + y, 7, MutList.range(5, 13));
-        MutList.last(v) == Some(7)
+    @Test
+    def scanRight03(): Unit \ Assert = region rc {
+        let v = MutList.scanRight(rc, (x, y) -> x + y, 7, MutList.range(rc, 5, 13));
+        assertEq(expected = Some(7), MutList.last(v))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def map01(): Bool & Impure =
-        let v = MutList.map(x -> x * 2, MutList.range(0, 6));
-        MutList.sameElements(v, Array.toMutList([0, 2, 4, 6, 8, 10]))
+    @Test
+    def map01(): Unit \ Assert = region rc {
+        let v = MutList.map(rc, x -> x * 2, MutList.range(rc, 0, 6));
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 2, 4, 6, 8, 10}, expected);
+        assertTrue(MutList.sameElements(v, expected))
+    }
 
-    @test
-    def map02(): Bool & Impure =
-        let v = MutList.map(identity, MutList.range(0, 10));
-        MutList.sameElements(v, MutList.range(0, 10))
+    @Test
+    def map02(): Unit \ Assert = region rc {
+        let v = MutList.map(rc, identity, MutList.range(rc, 0, 10));
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 0, 10)))
+    }
 
-    @test
-    def map03(): Bool & Impure =
-        let v = MutList.map(identity, MutList.new(): MutList[Unit]);
-        MutList.sameElements(v, MutList.new())
+    @Test
+    def map03(): Unit \ Assert = region rc {
+        let v = MutList.map(rc, identity, (MutList.empty(rc): MutList[Unit, _]));
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
 
-    @test
-    def map04(): Bool & Impure =
-        let v = MutList.map(x -> x + 1, MutList.range(0, 100));
-        MutList.sameElements(v, MutList.range(1, 101))
+    @Test
+    def map04(): Unit \ Assert = region rc {
+        let v = MutList.map(rc, x -> x + 1, MutList.range(rc, 0, 100));
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 1, 101)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
-    // transform!                                                              //
+    // flatten                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def transform!01(): Bool & Impure =
-        let v = MutList.range(0, 6);
-        MutList.transform!(x -> x * 2, v);
-        MutList.sameElements(v, Array.toMutList([0, 2, 4, 6, 8, 10]))
+    @Test
+    def flatten01(): Unit \ Assert = region rc {
+        assertTrue(MutList.flatten(rc, MutList.empty(rc)) |> MutList.isEmpty)
+    }
 
-    @test
-    def transform!02(): Bool & Impure =
-        let v = MutList.range(0, 10);
-        MutList.transform!(identity, v);
-        MutList.sameElements(v, MutList.range(0, 10))
+    @Test
+    def flatten02(): Unit \ Assert = region rc {
+        let empties = MutList.empty(rc);
+        MutList.pushAll(List.repeat(10, MutList.empty(rc)), empties);
+        assertTrue(MutList.flatten(rc, empties) |> MutList.isEmpty)
+    }
 
-    @test
-    def transform!03(): Bool & Impure =
-        let v: MutList[Unit] = MutList.new();
-        MutList.transform!(identity, v);
-        MutList.sameElements(v, MutList.new())
+    @Test
+    def flatten03(): Unit \ Assert = region rc {
+        let ml1 = MutList.empty(rc);
+        MutList.pushAll(List#{1, 2}, ml1);
+        let ml2 = MutList.empty(rc);
+        MutList.pushAll(List#{3, 4}, ml2);
+        let lists = MutList.empty(rc);
+        MutList.pushAll(List#{ml1, MutList.empty(rc), ml2}, lists);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{1, 2, 3, 4}, expected);
+        assertTrue(MutList.sameElements(MutList.flatten(rc, lists), expected))
+    }
 
-    @test
-    def transform!04(): Bool & Impure =
-        let v = MutList.range(0, 100);
-        MutList.transform!(x -> x + 1, v);
-        MutList.sameElements(v, MutList.range(1, 101))
+    /////////////////////////////////////////////////////////////////////////////
+    // flatMap                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def flatMap01(): Unit \ Assert = region rc {
+        assertTrue(MutList.flatMap(rc, x -> x, MutList.empty(rc)) |> MutList.isEmpty)
+    }
+
+    @Test
+    def flatMap02(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 5);
+        assertTrue(MutList.flatMap(rc, _ -> MutList.empty(rc), v) |> MutList.isEmpty)
+    }
+
+    @Test
+    def flatMap03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 100);
+        def f(n) = {
+            let ml = MutList.empty(rc);
+            MutList.pushAll(List#{n}, ml);
+            ml
+        };
+        let w = MutList.flatMap(rc, f, v);
+        assertTrue(MutList.sameElements(v, w))
+    }
+
+    @Test
+    pub def flatMap04(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 5);
+        def f(n) = {
+            let ml = MutList.empty(rc);
+            MutList.pushAll(List.repeat(n, Int32.toString(n)), ml);
+            ml
+        };
+        let w = MutList.flatMap(rc, f, v);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{"1", "2", "2", "3", "3", "3", "4", "4", "4", "4"}, expected);
+        assertTrue(MutList.sameElements(expected, w))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // transform                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def transform01(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 6);
+        MutList.transform(x -> x * 2, v);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 2, 4, 6, 8, 10}, expected);
+        assertTrue(MutList.sameElements(v, expected))
+    }
+
+    @Test
+    def transform02(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 10);
+        MutList.transform(identity, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 0, 10)))
+    }
+
+    @Test
+    def transform03(): Unit \ Assert = region rc {
+        let v: MutList[Unit, _] = MutList.empty(rc);
+        MutList.transform(identity, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
+
+    @Test
+    def transform04(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 100);
+        MutList.transform(x -> x + 1, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 1, 101)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // mapWithIndex                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapWithIndex01(): Bool & Impure =
-        let v = MutList.mapWithIndex((_, i) -> if (i < 3) 0 else 1, MutList.range(0, 6));
-        MutList.sameElements(v, Array.toMutList([0, 0, 0, 1, 1, 1]))
+    @Test
+    def mapWithIndex01(): Unit \ Assert = region rc {
+        let v = MutList.mapWithIndex(rc, (i, _) -> if (i < 3) 0 else 1, MutList.range(rc, 0, 6));
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 0, 0, 1, 1, 1}, expected);
+        assertTrue(MutList.sameElements(v, expected))
+    }
 
-    @test
-    def mapWithIndex02(): Bool & Impure =
-        let v = MutList.mapWithIndex((x, i) -> if (x == 8 and i == 1) 42 else 0, MutList.range(7, 10));
-        MutList.sameElements(v, Array.toMutList([0, 42, 0]))
+    @Test
+    def mapWithIndex02(): Unit \ Assert = region rc {
+        let v = MutList.mapWithIndex(rc, (i, x) -> if (x == 8 and i == 1) 42 else 0, MutList.range(rc, 7, 10));
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 42, 0}, expected);
+        assertTrue(MutList.sameElements(v, expected))
+    }
 
-    @test
-    def mapWithIndex03(): Bool & Impure =
-        let v = MutList.mapWithIndex((_, i) -> if (i == 0) 42 else 0, MutList.new());
-        MutList.sameElements(v, MutList.new())
+    @Test
+    def mapWithIndex03(): Unit \ Assert = region rc {
+        let v = MutList.mapWithIndex(rc, (i, _) -> if (i == 0) 42 else 0, MutList.empty(rc));
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
-    // transformWithIndex!                                                     //
+    // transformWithIndex                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def transformWithIndex!01(): Bool & Impure =
-        let v = MutList.range(0, 6);
-        MutList.transformWithIndex!((_, i) -> if (i < 3) 0 else 1, v);
-        MutList.sameElements(v, Array.toMutList([0, 0, 0, 1, 1, 1]))
+    @Test
+    def transformWithIndex01(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 6);
+        MutList.transformWithIndex((i, _) -> if (i < 3) 0 else 1, v);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 0, 0, 1, 1, 1}, expected);
+        assertTrue(MutList.sameElements(v, expected))
+    }
 
-    @test
-    def transformWithIndex!02(): Bool & Impure =
-        let v = MutList.range(7, 10);
-        MutList.transformWithIndex!((x, i) -> if (x == 8 and i == 1) 42 else 0, v);
-        MutList.sameElements(v, Array.toMutList([0, 42, 0]))
+    @Test
+    def transformWithIndex02(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 7, 10);
+        MutList.transformWithIndex((i, x) -> if (x == 8 and i == 1) 42 else 0, v);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 42, 0}, expected);
+        assertTrue(MutList.sameElements(v, expected))
+    }
 
-    @test
-    def transformWithIndex!03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.transformWithIndex!((_, i) -> if (i == 0) 42 else 0, v);
-        MutList.sameElements(v, MutList.new())
+    @Test
+    def transformWithIndex03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.transformWithIndex((i, _) -> if (i == 0) 42 else 0, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldLeft01(): Bool & Impure = MutList.foldLeft((acc, x) -> acc + x, 0, MutList.range(1, 5)) == 10
+    @Test
+    def foldLeft01(): Unit \ Assert = region rc {
+        assertEq(expected = 10, MutList.foldLeft((acc, x) -> acc + x, 0, MutList.range(rc, 1, 5)))
+    }
 
-    @test
-    def foldLeft02(): Bool & Impure =
-        let v1 = MutList.new();
-        let v2 = MutList.range(0, 10);
-        MutList.foldLeft((_, x) -> MutList.push!(x, v1), (), v2);
-        MutList.sameElements(v1, v2)
+    @Test
+    def foldLeft02(): Unit \ Assert = region rc {
+        let v1 = MutList.empty(rc);
+        let v2 = MutList.range(rc, 0, 10);
+        MutList.foldLeft((_, x) -> MutList.push(x, v1), (), v2);
+        assertTrue(MutList.sameElements(v1, v2))
+    }
 
-    @test
-    def foldLeft03(): Bool & Impure = MutList.foldLeft((acc, x) -> x :: acc, Nil, MutList.range(0, 6)) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+    @Test
+    def foldLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil, MutList.foldLeft((acc, x) -> x :: acc, Nil, MutList.range(rc, 0, 6)))
+    }
 
-    @test
-    def foldLeft04(): Bool & Impure = MutList.foldLeft((acc, x) -> acc - x, 0, MutList.range(0, 100)) == -4950
+    @Test
+    def foldLeft04(): Unit \ Assert = region rc {
+        assertEq(expected = -4950, MutList.foldLeft((acc, x) -> acc - x, 0, MutList.range(rc, 0, 100)))
+    }
 
-    @test
-    def foldLeft05(): Bool & Impure = MutList.foldRight((acc, x) -> acc + x, 42, MutList.new()) == 42
+    @Test
+    def foldLeft05(): Unit \ Assert = region rc {
+        assertEq(expected = 42, MutList.foldLeft((acc, x) -> acc + x, 42, MutList.empty(rc)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRight01(): Bool & Impure = MutList.foldRight((x, acc) -> acc + x, 0, MutList.range(1, 5)) == 10
+    @Test
+    def foldRight01(): Unit \ Assert = region rc {
+        assertEq(expected = 10, MutList.foldRight((x, acc) -> acc + x, 0, MutList.range(rc, 1, 5)))
+    }
 
-    @test
-    def foldRight02(): Bool & Impure = MutList.foldRight((x, acc) -> Int32.toString(x) + acc, "", MutList.range(3, 8)) == "34567"
+    @Test
+    def foldRight02(): Unit \ Assert = region rc {
+        assertEq(expected = "34567", MutList.foldRight((x, acc) -> Int32.toString(x) + acc, "", MutList.range(rc, 3, 8)))
+    }
 
-    @test
-    def foldRight03(): Bool & Impure = MutList.foldRight((x, acc) -> x :: acc, Nil, MutList.range(0, 6)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    @Test
+    def foldRight03(): Unit \ Assert = region rc {
+        assertEq(expected = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil, MutList.foldRight((x, acc) -> x :: acc, Nil, MutList.range(rc, 0, 6)))
+    }
 
-    @test
-    def foldRight04(): Bool & Impure = MutList.foldRight((x, acc) -> x - acc, 0, MutList.range(0, 100)) == -50
+    @Test
+    def foldRight04(): Unit \ Assert = region rc {
+        assertEq(expected = -50, MutList.foldRight((x, acc) -> x - acc, 0, MutList.range(rc, 0, 100)))
+    }
 
-    @test
-    def foldRight05(): Bool & Impure = MutList.foldRight((x, acc) -> x + acc, 42, MutList.new()) == 42
+    @Test
+    def foldRight05(): Unit \ Assert = region rc {
+        assertEq(expected = 42, MutList.foldRight((x, acc) -> x + acc, 42, MutList.empty(rc)))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def foldMap01(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll((Nil: List[Int32]), l);
+        assertEq(expected = 0, MutList.foldMap(x -> 2 * x, l))
+    }
+
+    @Test
+    def foldMap02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: Nil, l);
+        assertEq(expected = 6, MutList.foldMap(x -> 2 * x, l))
+    }
+
+    @Test
+    def foldMap03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll("a" :: Nil, l);
+        assertEq(expected = "b", MutList.foldMap(x -> if (x == "a") "b" else x, l))
+    }
+
+    @Test
+    def foldMap04(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll("a" :: "b" :: "c":: Nil, l);
+        assertEq(expected = "abb", MutList.foldMap(x -> if (x == "c") "b" else x, l))
+    }
+
+    @Test
+    def foldMap05(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: 3 :: Nil, l);
+        assertEq(expected = "123", MutList.foldMap(Int32.toString, l))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduceLeft01(): Bool & Impure = MutList.reduceLeft((x, y) -> x + y, MutList.new(): MutList[Int32]) == None
+    @Test
+    def reduceLeft01(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.reduceLeft((x, y) -> x + y, (MutList.empty(rc): MutList[Int32, _])))
+    }
 
-    @test
-    def reduceLeft02(): Bool & Impure = MutList.reduceLeft((x, y) -> x + y, MutList.range(0, 5)) == Some(10)
+    @Test
+    def reduceLeft02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(10), MutList.reduceLeft((x, y) -> x + y, MutList.range(rc, 0, 5)))
+    }
 
-    @test
-    def reduceLeft03(): Bool & Impure = MutList.reduceLeft((x, y) -> x - y, MutList.range(0, 101)) == Some(-5050)
+    @Test
+    def reduceLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(-5050), MutList.reduceLeft((x, y) -> x - y, MutList.range(rc, 0, 101)))
+    }
 
-    @test
-    def reduceLeft04(): Bool & Impure = MutList.reduceLeft((_, y) -> if (y > 4) 1 else 0, MutList.range(0, 6)) == Some(1)
+    @Test
+    def reduceLeft04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), MutList.reduceLeft((_, y) -> if (y > 4) 1 else 0, MutList.range(rc, 0, 6)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduceRight01(): Bool & Impure = MutList.reduceRight((x, y) -> x + y, MutList.new(): MutList[Int32]) == None
+    @Test
+    def reduceRight01(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.reduceRight((x, y) -> x + y, (MutList.empty(rc): MutList[Int32, _])))
+    }
 
-    @test
-    def reduceRight02(): Bool & Impure = MutList.reduceRight((x, y) -> x + y, MutList.range(0, 5)) == Some(10)
+    @Test
+    def reduceRight02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(10), MutList.reduceRight((x, y) -> x + y, MutList.range(rc, 0, 5)))
+    }
 
-    @test
-    def reduceRight03(): Bool & Impure = MutList.reduceRight((x, y) -> x - y, MutList.range(0, 6)) == Some(-3)
+    @Test
+    def reduceRight03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(-3), MutList.reduceRight((x, y) -> x - y, MutList.range(rc, 0, 6)))
+    }
 
-    @test
-    def reduceRight04(): Bool & Impure = MutList.reduceRight((x, _) -> if (x < 2) 1 else 0, MutList.range(0, 6)) == Some(1)
+    @Test
+    def reduceRight04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), MutList.reduceRight((x, _) -> if (x < 2) 1 else 0, MutList.range(rc, 0, 6)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
-    // clear!                                                                  //
+    // clear                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def clear!01(): Bool & Impure =
-        let v = MutList.range(0, 1);
+    @Test
+    def clear01(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 1);
         let len = MutList.length(v);
-        MutList.clear!(v);
-        len == 1 and MutList.isEmpty(v)
+        MutList.clear(v);
+        assertEq(expected = 1, len);
+        assertTrue(MutList.isEmpty(v))
+    }
 
-    @test
-    def clear!02(): Bool & Impure =
-        let v = MutList.new();
+    @Test
+    def clear02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
         let len = MutList.length(v);
-        MutList.clear!(v);
-        len == MutList.length(v)
+        MutList.clear(v);
+        assertEq(expected = len, MutList.length(v))
+    }
 
-    @test
-    def clear!03(): Bool & Impure =
-        let v = MutList.range(0, 100);
-        MutList.clear!(v);
-        MutList.isEmpty(v)
+    @Test
+    def clear03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 100);
+        MutList.clear(v);
+        assertTrue(MutList.isEmpty(v))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // copy                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def copy01(): Bool & Impure =
-        let v1 = MutList.range(0, 6);
-        let v2 = MutList.copy(v1);
-        v1 `eq` v2
+    @Test
+    def copy01(): Unit \ Assert = region rc {
+        let v1 = MutList.range(rc, 0, 6);
+        let v2 = MutList.copy(rc, v1);
+        assertTrue(v1 `sameElements` v2)
+    }
 
-    @test
-    def copy02(): Bool & Impure =
-        let v1 = MutList.range(0, 100);
-        let v2 = MutList.copy(v1);
-        MutList.transform!(x -> x + 1, v2);
-        MutList.last(v1) == Some(99) and MutList.last(v2) == Some(100)
+    @Test
+    def copy02(): Unit \ Assert = region rc {
+        let v1 = MutList.range(rc, 0, 100);
+        let v2 = MutList.copy(rc, v1);
+        MutList.transform(x -> x + 1, v2);
+        assertEq(expected = Some(99), MutList.last(v1));
+        assertEq(expected = Some(100), MutList.last(v2))
+    }
 
-    @test
-    def copy03(): Bool & Impure =
-        let v1 = MutList.range(0, 6);
-        let v2 = MutList.copy(v1);
-        MutList.clear!(v1);
-        MutList.length(v1) == 0 and MutList.length(v2) == 6
+    @Test
+    def copy03(): Unit \ Assert = region rc {
+        let v1 = MutList.range(rc, 0, 6);
+        let v2 = MutList.copy(rc, v1);
+        MutList.clear(v1);
+        assertEq(expected = 0, MutList.length(v1));
+        assertEq(expected = 6, MutList.length(v2))
+    }
 
-    @test
-    def copy04(): Bool & Impure =
-        let v1 = MutList.range(0, 1000);
-        let MutList(l1, n1) = v1;
-        let MutList(l2, n2) = MutList.copy(v1);
-        (deref n1 == deref n2) and (deref l1 `Array.eq` deref l2)
-
-    @test
-    def copy05(): Bool & Impure =
-        let v1 = MutList.range(0, 3);
-        let MutList(l1, n1) = v1;
-        let MutList(l2, n2) = MutList.copy(v1);
-        (deref n1 == deref n2) and (deref l1 `Array.eq` deref l2) and
-            (Array.length(deref l2) == 8)
+    @Test
+    def copy04(): Unit \ Assert = region rc {
+        let v1 = MutList.range(rc, 0, 1000);
+        let v2 = MutList.copy(rc, v1);
+        assertEq(expected = MutList.length(v1), MutList.length(v2));
+        assertTrue(MutList.toArray(rc, v1) `Array.sameElements` MutList.toArray(rc, v2))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
     // pop                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def pop01(): Bool & Impure =
-        let v = MutList.range(0, 6);
+    @Test
+    def pop01(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 6);
         let len = MutList.length(v);
-        let last = MutList.pop!(v);
-        MutList.length(v) == len - 1 and last == Some(5)
+        let last = MutList.pop(v);
+        assertEq(expected = len - 1, MutList.length(v));
+        assertEq(expected = Some(5), last)
+    }
 
-    @test
-    def pop02(): Bool & Impure =
-        let v: MutList[Unit] = MutList.new();
-        MutList.pop!(v) == None
+    @Test
+    def pop02(): Unit \ Assert = region rc {
+        let v: MutList[Unit, _] = MutList.empty(rc);
+        assertEq(expected = None, MutList.pop(v))
+    }
 
-    @test
-    def pop03(): Bool & Impure =
-        let v = MutList.range(1, 4);
-        let three = MutList.pop!(v);
-        let two = MutList.pop!(v);
-        let one = MutList.pop!(v);
-        let none = MutList.pop!(v);
-        three == Some(3) and two == Some(2) and one == Some(1) and none == None
+    @Test
+    def pop03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 1, 4);
+        let three = MutList.pop(v);
+        let two = MutList.pop(v);
+        let one = MutList.pop(v);
+        let none = MutList.pop(v);
+        assertEq(expected = Some(3), three);
+        assertEq(expected = Some(2), two);
+        assertEq(expected = Some(1), one);
+        assertEq(expected = None, none)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // push                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def push01(): Bool & Impure =
-        let v = MutList.new();
+    @Test
+    def push01(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
         let len = MutList.length(v);
-        MutList.push!(1, v);
-        MutList.last(v) == Some(1) and MutList.length(v) == len + 1
+        MutList.push(1, v);
+        assertEq(expected = Some(1), MutList.last(v));
+        assertEq(expected = len + 1, MutList.length(v))
+    }
 
-    @test
-    def push02(): Bool & Impure =
-        let v = MutList.new();
+    @Test
+    def push02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
         let len = MutList.length(v);
-        List.foreach(x -> MutList.push!(x, v), List.range(0, 97));
-        MutList.head(v) == Some(0) and MutList.last(v) == Some(96) and MutList.length(v) == len + 97
+        List.forEach(x -> MutList.push(x, v), List.range(0, 97));
+        assertEq(expected = Some(0), MutList.head(v));
+        assertEq(expected = Some(96), MutList.last(v));
+        assertEq(expected = len + 97, MutList.length(v))
+    }
 
-    @test
-    def push03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(42, v);
-        MutList.push!(31, v);
-        MutList.push!(1019, v);
-        MutList.length(v) == 3 and MutList.get(0, v) == 42 and MutList.get(1, v) == 31 and MutList.get(2, v) == 1019
+    @Test
+    def push03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(42, v);
+        MutList.push(31, v);
+        MutList.push(1019, v);
+        assertEq(expected = 3, MutList.length(v));
+        assertEq(expected = Some(42), MutList.nth(0, v));
+        assertEq(expected = Some(31), MutList.nth(1, v));
+        assertEq(expected = Some(1019), MutList.nth(2, v))
+    }
 
-    @test
-    def push04(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(0, v);
-        MutList.push!(0, v);
-        MutList.push!(0, v);
-        MutList.push!(0, v);
-        MutList.length(v) == 4 and MutList.get(0, v) == 0 and MutList.get(1, v) == 0 and MutList.get(2, v) == 0 and MutList.get(3, v) == 0
-
-    /////////////////////////////////////////////////////////////////////////////
-    // insert!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def insert!01(): Bool & Impure =
-        let v = MutList.new();
-        MutList.insert!(42, 0, v);
-        MutList.length(v) == 1 and MutList.head(v) == Some(42)
-
-    @test
-    def insert!02(): Bool & Impure =
-        let v = MutList.new();
-        MutList.insert!(107, 0, v);
-        MutList.insert!(7, 0, v);
-        MutList.length(v) == 2 and MutList.head(v) == Some(7)
-
-    @test
-    def insert!03(): Bool & Impure =
-        let v = MutList.new();
-        List.foreach(x -> MutList.insert!(x, 0, v), List.range(0, 107));
-        MutList.length(v) == 107 and MutList.head(v) == Some(106)
-
-    @test
-    def insert!04(): Bool & Impure =
-        let v = MutList.new();
-        MutList.insert!(42, 0, v);
-        MutList.insert!(3, 1, v);
-        MutList.insert!(5, 2, v);
-        MutList.insert!(6, 0, v);
-        MutList.length(v) == 4 and MutList.head(v) == Some(6) and MutList.last(v) == Some(5)
-
-    @test
-    def insert!05(): Bool & Impure =
-        let v = MutList.new();
-        List.foreach(x -> MutList.push!(x, v), List.range(97, 147));
-        MutList.insert!(42, 0, v);
-        MutList.insert!(49, 0, v);
-        MutList.length(v) == 52 and MutList.head(v) == Some(49) and MutList.last(v) == Some(146)
-
-    @test
-    def insert!06(): Bool & Impure =
-        let v = MutList.new();
-        MutList.insert!(42, 0, v);
-        MutList.insert!(42, 0, v);
-        MutList.insert!(42, 0, v);
-        MutList.insert!(42, 1, v);
-        MutList.insert!(97, 0, v);
-        MutList.insert!(98, 2, v);
-        MutList.length(v) == 6 and MutList.head(v) == Some(97) and MutList.last(v) == Some(42)
-
-    @test
-    def insert!07(): Bool & Impure =
-        let v = MutList.new();
-        MutList.insert!(97, 0, v);
-        MutList.insert!(98, 1, v);
-        MutList.insert!(99, 2, v);
-        MutList.insert!(107, 1, v);
-        MutList.length(v) == 4 and MutList.get(1, v) == 107
-
-    @test
-    def insert!08(): Bool & Impure =
-        let v = MutList.range(0, 4);
-        MutList.insert!(42, 3, v);
-        MutList.insert!(41, 2, v);
-        MutList.insert!(40, 1, v);
-        MutList.insert!(55, 0, v);
-        MutList.insert!(33, 1, v);
-        MutList.sameElements(v, List.toMutList(55 :: 33 :: 0 :: 40 :: 1 :: 41 :: 2 :: 42 :: 3 :: Nil))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // remove!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def remove!01(): Bool & Impure =
-        let v: MutList[Unit] = MutList.new();
-        MutList.remove!(0, v);
-        MutList.sameElements(v, MutList.new())
-
-    @test
-    def remove!02(): Bool & Impure =
-        let v = MutList.range(0, 4);
-        MutList.remove!(0, v);
-        MutList.sameElements(v, MutList.range(1, 4))
-
-    @test
-    def remove!03(): Bool & Impure =
-        let v = MutList.range(0, 4);
-        MutList.remove!(3, v);
-        MutList.sameElements(v, MutList.range(0, 3))
-
-    @test
-    def remove!04(): Bool & Impure =
-        let v = MutList.range(3, 7);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.sameElements(v, MutList.range(6, 7))
-
-    @test
-    def remove!05(): Bool & Impure =
-        let v = MutList.range(9, 12);
-        MutList.remove!(2, v);
-        MutList.remove!(1, v);
-        MutList.remove!(0, v);
-        MutList.sameElements(v, MutList.new())
-
-    @test
-    def remove!06(): Bool & Impure =
-        let v = MutList.range(7, 13);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.sameElements(v, MutList.new())
-
-    @test
-    def remove!07(): Bool & Impure =
-        let v = MutList.range(0, 3);
-        MutList.remove!(3, v);
-        MutList.remove!(7, v);
-        MutList.remove!(99, v);
-        MutList.sameElements(v, MutList.range(0, 3))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // append!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def append!01(): Bool & Impure =
-        let v1 = MutList.range(0, 4);
-        let v2 = MutList.range(4, 8);
-        MutList.append!(v1, v2);
-        MutList.sameElements(v1, MutList.range(0, 8))
-
-    @test
-    def append!02(): Bool & Impure =
-        let v1 = MutList.new();
-        let v2 = MutList.range(1, 4);
-        MutList.append!(v1, v2);
-        MutList.sameElements(v1, MutList.range(1, 4))
-
-    @test
-    def append!03(): Bool & Impure =
-        let v1 = MutList.range(9, 24);
-        let v2 = MutList.new();
-        MutList.append!(v1, v2);
-        MutList.sameElements(v1, MutList.range(9, 24))
-
-    @test
-    def append!04(): Bool & Impure =
-        let v1: MutList[Unit] = MutList.new();
-        let v2: MutList[Unit] = MutList.new();
-        MutList.append!(v1, v2);
-        MutList.sameElements(v1, MutList.new())
-
-    @test
-    def append!05(): Bool & Impure =
-        let v1 = MutList.range(1, 3);
-        let v2 = MutList.range(3, 5);
-        let v3 = MutList.range(5, 99);
-        MutList.append!(v1, v2);
-        MutList.append!(v1, v3);
-        MutList.sameElements(v1, MutList.range(1, 99))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // retain!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def retain!01(): Bool & Impure =
-        let v = MutList.range(0, 10);
-        MutList.retain!(x -> x rem 2 == 0, v);
-        MutList.sameElements(List.toMutList(0 :: 2 :: 4 :: 6 :: 8 :: Nil), v)
-
-    @test
-    def retain!02(): Bool & Impure =
-        let v = MutList.range(0, 10);
-        MutList.retain!(x -> x rem 2 == 1, v);
-        MutList.sameElements(List.toMutList(1 :: 3 :: 5 :: 7 :: 9 :: Nil), v)
-
-    @test
-    def retain!03(): Bool & Impure =
-        let v = MutList.range(0, 10);
-        MutList.retain!(x -> x > 5, v);
-        MutList.sameElements(v, MutList.range(6, 10))
-
-    @test
-    def retain!04(): Bool & Impure =
-        let v = MutList.range(0, 10);
-        MutList.retain!(x -> x > 10, v);
-        MutList.sameElements(v, MutList.new())
-
-    /////////////////////////////////////////////////////////////////////////////
-    // replace!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def replace!01(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(1, v);
-        MutList.push!(2, v);
-        MutList.push!(2, v);
-        MutList.push!(1, v);
-        MutList.push!(1, v);
-        MutList.replace!(1, 42, v);
-        MutList.sameElements(List.toMutList(42 :: 2 :: 2 :: 42 :: 42 :: Nil), v)
-
-    @test
-    def replace!02(): Bool & Impure =
-        let v = MutList.range(4, 7);
-        MutList.replace!(4, 0, v);
-        MutList.sameElements(List.toMutList(0 :: 5 :: 6 :: Nil), v)
-
-    @test
-    def replace!03(): Bool & Impure =
-        let v = MutList.range(4, 7);
-        MutList.replace!(5, 0, v);
-        MutList.sameElements(List.toMutList(4 :: 0 :: 6 :: Nil), v)
-
-    @test
-    def replace!04(): Bool & Impure =
-        let v = MutList.range(4, 7);
-        MutList.replace!(6, 0, v);
-        MutList.sameElements(List.toMutList(4 :: 5 :: 0 :: Nil), v)
-
-    @test
-    def replace!05(): Bool & Impure =
-        let v = List.toMutList(List.repeat(97, 'a'));
-        MutList.replace!('a', 'z', v);
-        MutList.sameElements(List.toMutList(List.repeat(97, 'z')), v)
-
-    /////////////////////////////////////////////////////////////////////////////
-    // reverse!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def reverse01!(): Bool & Impure =
-        let v: MutList[Unit] = MutList.new();
-        MutList.reverse!(v);
-        MutList.sameElements(v, MutList.new())
-
-    @test
-    def reverse02!(): Bool & Impure =
-        let v = MutList.range(0, 1);
-        MutList.reverse!(v);
-        MutList.sameElements(v, MutList.range(0, 1))
-
-    @test
-    def reverse03!(): Bool & Impure =
-        let v = MutList.range(0, 5);
-        MutList.reverse!(v);
-        MutList.sameElements(v, List.toMutList(4 :: 3 :: 2 :: 1 :: 0 :: Nil))
-
-    @test
-    def reverse04!(): Bool & Impure =
-        let v = MutList.range(0, 6);
-        MutList.reverse!(v);
-        MutList.sameElements(v, List.toMutList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
-
-    @test
-    def reverse05!(): Bool & Impure =
-        let v = List.toMutList(7 :: 6 :: 5 :: 4 :: 3 :: 2 :: Nil);
-        MutList.reverse!(v);
-        MutList.sameElements(v, MutList.range(2, 8))
+    @Test
+    def push04(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(0, v);
+        MutList.push(0, v);
+        MutList.push(0, v);
+        MutList.push(0, v);
+        assertEq(expected = 4, MutList.length(v));
+        assertEq(expected = Some(0), MutList.nth(0, v));
+        assertEq(expected = Some(0), MutList.nth(1, v));
+        assertEq(expected = Some(0), MutList.nth(2, v));
+        assertEq(expected = Some(0), MutList.nth(3, v))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // shrink!                                                                 //
+    // insert                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def shrink!01(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(0, v);
-        MutList.push!(1, v);
-        MutList.push!(2, v);
-        MutList.shrink!(v);
-        MutList.length(v) == 3
+    @Test
+    def insert01(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.insert(42, 0, v);
+        assertEq(expected = 1, MutList.length(v));
+        assertEq(expected = Some(42), MutList.head(v))
+    }
 
-    @test
-    def shrink!02(): Bool & Impure =
-        let v = MutList.new();
-        MutList.shrink!(v);
-        MutList.length(v) == 0
+    @Test
+    def insert02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.insert(107, 0, v);
+        MutList.insert(7, 0, v);
+        assertEq(expected = 2, MutList.length(v));
+        assertEq(expected = Some(7), MutList.head(v))
+    }
 
-    @test
-    def shrink!03(): Bool & Impure =
-        let v = MutList.range(0, 9);
-        MutList.push!(9, v);
-        MutList.shrink!(v);
-        MutList.length(v) == 10
+    @Test
+    def insert03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        List.forEach(x -> MutList.insert(x, 0, v), List.range(0, 107));
+        assertEq(expected = 107, MutList.length(v));
+        assertEq(expected = Some(106), MutList.head(v))
+    }
 
-    @test
-    def shrink!04(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(4, v);
-        MutList.append!(v, MutList.range(0, 4));
-        MutList.push!(5, v);
-        MutList.shrink!(v);
-        MutList.length(v) == 6
+    @Test
+    def insert04(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.insert(42, 0, v);
+        MutList.insert(3, 1, v);
+        MutList.insert(5, 2, v);
+        MutList.insert(6, 0, v);
+        assertEq(expected = 4, MutList.length(v));
+        assertEq(expected = Some(6), MutList.head(v));
+        assertEq(expected = Some(5), MutList.last(v))
+    }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // truncate!                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def insert05(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        List.forEach(x -> MutList.push(x, v), List.range(97, 147));
+        MutList.insert(42, 0, v);
+        MutList.insert(49, 0, v);
+        assertEq(expected = 52, MutList.length(v));
+        assertEq(expected = Some(49), MutList.head(v));
+        assertEq(expected = Some(146), MutList.last(v))
+    }
 
-    @test
-    def truncate!01(): Bool & Impure =
-        let v: MutList[Unit] = MutList.new();
-        MutList.truncate!(0, v);
-        MutList.sameElements(v, MutList.new())
+    @Test
+    def insert06(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.insert(42, 0, v);
+        MutList.insert(42, 0, v);
+        MutList.insert(42, 0, v);
+        MutList.insert(42, 1, v);
+        MutList.insert(97, 0, v);
+        MutList.insert(98, 2, v);
+        assertEq(expected = 6, MutList.length(v));
+        assertEq(expected = Some(97), MutList.head(v));
+        assertEq(expected = Some(42), MutList.last(v))
+    }
 
-    @test
-    def truncate!02(): Bool & Impure =
-        let v = MutList.range(0, 10);
-        MutList.truncate!(5, v);
-        MutList.sameElements(v, MutList.range(0, 5))
+    @Test
+    def insert07(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.insert(97, 0, v);
+        MutList.insert(98, 1, v);
+        MutList.insert(99, 2, v);
+        MutList.insert(107, 1, v);
+        assertEq(expected = 4, MutList.length(v));
+        assertEq(expected = Some(107), MutList.nth(1, v))
+    }
 
-    @test
-    def truncate!03(): Bool & Impure =
-        let v = MutList.range(0, 99);
-        MutList.truncate!(-1, v);
-        MutList.sameElements(v, MutList.new())
+    @Test
+    def insert08(): Unit \ Assert = region rc {
+        let l1 = MutList.range(rc, 0, 4);
+        MutList.insert(42, 3, l1);
+        MutList.insert(41, 2, l1);
+        MutList.insert(40, 1, l1);
+        MutList.insert(55, 0, l1);
+        MutList.insert(33, 1, l1);
+        let l2 = MutList.empty(rc);
+        let xs = 55 :: 33 :: 0 :: 40 :: 1 :: 41 :: 2 :: 42 :: 3 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
 
-    @test
-    def truncate!04(): Bool & Impure =
-        let v = MutList.range(7, 8);
-        MutList.truncate!(2, v);
-        MutList.sameElements(v, MutList.range(7, 8))
-
-    @test
-    def truncate!05(): Bool & Impure =
-        let v = MutList.range(99, 102);
-        MutList.truncate!(1, v);
-        MutList.sameElements(v, MutList.range(99, 100))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // reserve!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def reserve!01(): Bool & Impure =
-        let v = MutList.new();
-        MutList.reserve!(4, v);
-        capacity(v) - MutList.length(v) >= 4
-
-    @test
-    def reserve!02(): Bool & Impure =
-        let v = MutList.range(0, 5);
-        MutList.reserve!(5, v);
-        capacity(v) - MutList.length(v) >= 5
-
-    @test
-    def reserve!03(): Bool & Impure =
-        let v = MutList.range(0, 99);
-        MutList.reserve!(1, v);
-        capacity(v) - MutList.length(v) >= 1
-
-    @test
-    def reserve!04(): Bool & Impure =
-        let v = MutList.range(0, 100);
-        MutList.reserve!(100, v);
-        capacity(v) - MutList.length(v) >= 100
-
-    @test
-    def reserve!05(): Bool & Impure =
-        let v = MutList.range(0, 5);
-        MutList.reserve!(MutList.length(v), v);
-        capacity(v) - MutList.length(v) >= MutList.length(v)
-
-    @test
-    def reserve!06(): Bool & Impure =
-        let n = 197;
-        let v = MutList.range(0, n);
-        MutList.reserve!(1, v);
-        MutList.reserve!(1, v);
-        MutList.reserve!(1, v);
-        MutList.reserve!(1, v);
-        MutList.reserve!(1, v);
-        capacity(v) - MutList.length(v) >= 1
 
     /////////////////////////////////////////////////////////////////////////////
-    // formatWith                                                              //
+    // remove                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def formatWith01(): Bool & Impure =
-        let v = MutList.range(0, 5);
-        MutList.formatWith(Int32.toString, ", ", v) == "0, 1, 2, 3, 4"
+    @Test
+    def remove01(): Unit \ Assert = region rc {
+        let v: MutList[Unit, _] = MutList.empty(rc);
+        MutList.remove(0, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
 
-    @test
-    def formatWith02(): Bool & Impure =
-        let v = MutList.range(1, 4);
-        MutList.formatWith(Int32.toString, "+", v) == "1+2+3"
+    @Test
+    def remove02(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 4);
+        MutList.remove(0, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 1, 4)))
+    }
 
-    @test
-    def formatWith03(): Bool & Impure =
-        let v = MutList.range(2, 3);
-        MutList.formatWith(Int32.toString, "/", v) == "2"
+    @Test
+    def remove03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 4);
+        MutList.remove(3, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 0, 3)))
+    }
 
-    @test
-    def formatWith04(): Bool & Impure =
-        let v = MutList.range(6, 9);
-        MutList.formatWith(Int32.toString, "/", v) == "6/7/8"
+    @Test
+    def remove04(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 3, 7);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 6, 7)))
+    }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def remove05(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 9, 12);
+        MutList.remove(2, v);
+        MutList.remove(1, v);
+        MutList.remove(0, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
 
-    @test
-    def foreach01(): Bool & Impure =
-        let v = MutList.new();
-        let sb = StringBuilder.new();
-        let f = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        MutList.foreach(f, v);
-        StringBuilder.toString(sb) == ""
+    @Test
+    def remove06(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 7, 13);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        MutList.remove(0, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
 
-    @test
-    def foreach02(): Bool & Impure =
-        let v = MutList.range(0, 5);
-        let sb = StringBuilder.new();
-        let f = x -> if (x rem 2 == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        MutList.foreach(f, v);
-        StringBuilder.toString(sb) == "TFTFT"
+    @Test
+    def remove07(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 3);
+        MutList.remove(3, v);
+        MutList.remove(7, v);
+        MutList.remove(99, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 0, 3)))
+    }
 
-    @test
-    def foreach03(): Bool & Impure =
-        let v = MutList.range(0, 2);
-        let sb = StringBuilder.new();
-        let f = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        MutList.foreach(f, v);
-        StringBuilder.toString(sb) == "FT"
-
-    @test
-    def foreach04(): Bool & Impure =
-        let v = MutList.range(0, 2);
-        let sb = StringBuilder.new();
-        let f = x -> if (x < 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        MutList.foreach(f, v);
-        StringBuilder.toString(sb) == "FF"
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foreachWithIndex                                                        //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def foreachWithIndex01(): Bool & Impure =
-        let v1 = MutList.range(0, 100);
-        let v2 = MutList.new();
-        MutList.foreachWithIndex((x, i) -> if (x rem 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
-        MutList.sameElements(v2, List.toMutList(0 :: 2 :: 4 :: 6 :: 8 :: Nil))
-
-    @test
-    def foreachWithIndex02(): Bool & Impure =
-        let v = MutList.range(1, 4);
-        let sb = StringBuilder.new();
-        let f = (x, i) -> if (x rem 2 == 1 and i == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        MutList.foreachWithIndex(f, v);
-        StringBuilder.toString(sb) == "TFF"
-
-    @test
-    def foreachWithIndex03(): Bool & Impure =
-        let v = MutList.range(0, 5);
-        let sb = StringBuilder.new();
-        let f = (x, _) -> if (x rem 2 == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        MutList.foreachWithIndex(f, v);
-        StringBuilder.toString(sb) == "TFTFT"
 
     /////////////////////////////////////////////////////////////////////////////
-    // compress!                                                               //
+    // pushAll                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def compress!01(): Bool & Impure =
-        // Pop 76 element such that the load factor is strictly lower than 1 / 4.
-        let v = MutList.range(0, 100);
-        let c = capacity(v);
-        let i = ref 0;
-        let f = _ -> {
-            if (deref i < 76) {
-                MutList.pop!(v);
-                i := deref i + 1
-            }
-            else ()
-        };
-        MutList.foreach(f, v);
-        capacity(v) == c / 2 and
-            MutList.length(v) == 100 - 75 - 1
+    @Test
+    def pushAll01(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 4);
+        let l = List.range(4, 8);
+        MutList.pushAll(l, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 0, 8)))
+    }
 
-    @test
-    def compress!02(): Bool & Impure =
-        let v = MutList.new();
-        MutList.compress!(v);
-        capacity(v) == capacity(MutList.new())
+    @Test
+    def pushAll02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        let l = List.range(1, 4);
+        MutList.pushAll(l, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 1, 4)))
+    }
 
-    @test
-    def compress!03(): Bool & Impure =
-        let v = MutList.new();
-        let c = capacity(v);
-        MutList.push!(42, v);
-        MutList.compress!(v);
-        capacity(v) <= c and
-        MutList.length(v) == 1
+    @Test
+    def pushAll03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 9, 24);
+        let l = (Nil: List[Int32]);
+        MutList.pushAll(l, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 9, 24)))
+    }
 
-    @test
-    def compress!04(): Bool & Impure =
-        let v = MutList.range(0, 5);
-        MutList.compress!(v);
-        capacity(v) <= capacity(MutList.range(0, 5))
+    @Test
+    def pushAll04(): Unit \ Assert = region rc {
+        let v: MutList[Unit, _] = MutList.empty(rc);
+        let l: List[Unit] = Nil;
+        MutList.pushAll(l, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
+
+    @Test
+    def pushAll05(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 1, 3);
+        let l1 = List.range(3, 5);
+        let l2 = List.range(5, 99);
+        MutList.pushAll(l1, v);
+        MutList.pushAll(l2, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 1, 99)))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // retain                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def retain01(): Unit \ Assert = region rc {
+        let l1 = MutList.range(rc, 0, 10);
+        MutList.retain(x -> x `Int32.remainder` 2 == 0, l1);
+        let l2 = MutList.empty(rc);
+        let xs = 0 :: 2 :: 4 :: 6 :: 8 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+    @Test
+    def retain02(): Unit \ Assert = region rc {
+        let l1 = MutList.range(rc, 0, 10);
+        MutList.retain(x -> x `Int32.remainder` 2 == 1, l1);
+        let l2 = MutList.empty(rc);
+        let xs = 1 :: 3 :: 5 :: 7 :: 9 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+    @Test
+    def retain03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 10);
+        MutList.retain(x -> x > 5, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 6, 10)))
+    }
+
+    @Test
+    def retain04(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 10);
+        MutList.retain(x -> x > 10, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // replace                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def replace01(): Unit \ Assert = region rc {
+        let l1 = MutList.empty(rc);
+        MutList.push(1, l1);
+        MutList.push(2, l1);
+        MutList.push(2, l1);
+        MutList.push(1, l1);
+        MutList.push(1, l1);
+        MutList.replace(src = 1, dst = 42, l1);
+        let l2 = MutList.empty(rc);
+        let xs = 42 :: 2 :: 2 :: 42 :: 42 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+    @Test
+    def replace02(): Unit \ Assert = region rc {
+        let l1 = MutList.range(rc, 4, 7);
+        MutList.replace(src = 4, dst = 0, l1);
+        let l2 = MutList.empty(rc);
+        let xs = 0 :: 5 :: 6 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+    @Test
+    def replace03(): Unit \ Assert = region rc {
+        let l1 = MutList.range(rc, 4, 7);
+        MutList.replace(src = 5, dst = 0, l1);
+        let l2 = MutList.empty(rc);
+        let xs = 4 :: 0 :: 6 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+    @Test
+    def replace04(): Unit \ Assert = region rc {
+        let l1 = MutList.range(rc, 4, 7);
+        MutList.replace(src = 6, dst = 0, l1);
+        let l2 = MutList.empty(rc);
+        let xs = 4 :: 5 :: 0 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+    @Test
+    def replace05(): Unit \ Assert = region rc {
+        let l1 = MutList.empty(rc);
+        let xs1 = List.repeat(97, 'a');
+        List.forEach(x -> MutList.push(x, l1), xs1);
+        MutList.replace(src = 'a', dst = 'z', l1);
+        let l2 = MutList.empty(rc);
+        let xs2 = List.repeat(97, 'z');
+        List.forEach(x -> MutList.push(x, l2), xs2);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reverse                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def reverse01(): Unit \ Assert = region rc {
+        let v: MutList[Unit, _] = MutList.empty(rc);
+        MutList.reverse(v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
+
+    @Test
+    def reverse02(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 1);
+        MutList.reverse(v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 0, 1)))
+    }
+
+    @Test
+    def reverse03(): Unit \ Assert = region rc {
+        let l1 = MutList.range(rc, 0, 5);
+        MutList.reverse(l1);
+        let l2 = MutList.empty(rc);
+        let xs = 4 :: 3 :: 2 :: 1 :: 0 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+    @Test
+    def reverse04(): Unit \ Assert = region rc {
+        let l1 = MutList.range(rc, 0, 6);
+        MutList.reverse(l1);
+        let l2 = MutList.empty(rc);
+        let xs = 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil;
+        List.forEach(x -> MutList.push(x, l2), xs);
+        assertTrue(MutList.sameElements(l1, l2))
+    }
+
+    @Test
+    def reverse05(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 7 :: 6 :: 5 :: 4 :: 3 :: 2 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        MutList.reverse(l);
+        assertTrue(MutList.sameElements(l, MutList.range(rc, 2, 8)))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shrink                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def shrink01(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(0, v);
+        MutList.push(1, v);
+        MutList.push(2, v);
+        MutList.shrink(v);
+        assertEq(expected = 3, MutList.length(v))
+    }
+
+    @Test
+    def shrink02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.shrink(v);
+        assertEq(expected = 0, MutList.length(v))
+    }
+
+    @Test
+    def shrink03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 9);
+        MutList.push(9, v);
+        MutList.shrink(v);
+        assertEq(expected = 10, MutList.length(v))
+    }
+
+    @Test
+    def shrink04(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(4, v);
+        MutList.append(MutList.toList(MutList.range(rc, 0, 4)), v);
+        MutList.push(5, v);
+        MutList.shrink(v);
+        assertEq(expected = 6, MutList.length(v))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // truncate                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncate01(): Unit \ Assert = region rc {
+        let v: MutList[Unit, _] = MutList.empty(rc);
+        MutList.truncate(0, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
+
+    @Test
+    def truncate02(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 10);
+        MutList.truncate(5, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 0, 5)))
+    }
+
+    @Test
+    def truncate03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 99);
+        MutList.truncate(-1, v);
+        assertTrue(MutList.sameElements(v, MutList.empty(rc)))
+    }
+
+    @Test
+    def truncate04(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 7, 8);
+        MutList.truncate(2, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 7, 8)))
+    }
+
+    @Test
+    def truncate05(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 99, 102);
+        MutList.truncate(1, v);
+        assertTrue(MutList.sameElements(v, MutList.range(rc, 99, 100)))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterator01(): Unit \ Assert = region rc {
+        let l = (MutList.empty(rc): MutList[Int32, rc]);
+        let iter = MutList.iterator(rc, l);
+        match Iterator.next(iter) {
+            case None => ()
+            case _    => fail("Unexpected case")
+        }
+    }
+
+    @Test
+    def iterator02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: 3 :: Nil, l);
+        let iter = MutList.iterator(rc, l);
+        match Iterator.next(iter) {
+            case Some(_) => ()
+            case _       => fail("Unexpected case")
+        }
+    }
+
+    @Test
+    def iterator03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: 3 :: Nil, l);
+        discard MutList.pop(l);
+        discard MutList.pop(l);
+        discard MutList.pop(l);
+        let iter = MutList.iterator(rc, l);
+        match Iterator.next(iter) {
+            case None => ()
+            case _    => fail("Unexpected case")
+        }
+    }
+
+    @Test
+    def iterator04(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: 3 :: Nil, l);
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, MutList.iterator(rc, l) |> Iterator.toList)
+    }
+
+    @Test
+    def iterator05(): Unit \ Assert = region rc {
+        let l = MutList.range(rc, 0, 100);
+        assertEq(expected = List.range(0, 100), MutList.iterator(rc, l) |> Iterator.toList);
+        assertEq(expected = List.range(0, 100), MutList.toList(l))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        let sb = StringBuilder.empty(rc);
+        let f = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        MutList.forEach(f, v);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 5);
+        let sb = StringBuilder.empty(rc);
+        let f = x -> if (x `Int32.remainder` 2 == 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        MutList.forEach(f, v);
+        assertEq(expected = "TFTFT", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEach03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 2);
+        let sb = StringBuilder.empty(rc);
+        let f = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        MutList.forEach(f, v);
+        assertEq(expected = "FT", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEach04(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 2);
+        let sb = StringBuilder.empty(rc);
+        let f = x -> if (x < 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        MutList.forEach(f, v);
+        assertEq(expected = "FF", StringBuilder.toString(sb))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forEachWithIndex01(): Unit \ Assert = region rc {
+        let v1 = MutList.range(rc, 0, 100);
+        let v2 = MutList.empty(rc);
+        MutList.forEachWithIndex((i, x) -> if (x `Int32.remainder` 2 == 0 and i < 10) MutList.push(x, v2) else (), v1);
+        let l = MutList.empty(rc);
+        let xs = 0 :: 2 :: 4 :: 6 :: 8 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertTrue(MutList.sameElements(v2, l))
+    }
+
+    @Test
+    def forEachWithIndex02(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 1, 4);
+        let sb = StringBuilder.empty(rc);
+        let f = (i, x) -> if (x `Int32.remainder` 2 == 1 and i == 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        MutList.forEachWithIndex(f, v);
+        assertEq(expected = "TFF", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEachWithIndex03(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 5);
+        let sb = StringBuilder.empty(rc);
+        let f = (_, x) -> if (x `Int32.remainder` 2 == 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        MutList.forEachWithIndex(f, v);
+        assertEq(expected = "TFTFT", StringBuilder.toString(sb))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def minimumBy01(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.new(): MutList[Int32]) == None
+    @Test
+    def minimumBy01(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.minimumBy((x, y) -> x <=> y, (MutList.empty(rc): MutList[Int32, _])))
+    }
 
-    @test
-    def minimumBy02(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.range(0, 5)) == Some(0)
+    @Test
+    def minimumBy02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), MutList.minimumBy((x, y) -> x <=> y, MutList.range(rc, 0, 5)))
+    }
 
-    @test
-    def minimumBy03(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.range(5, 10)) == Some(5)
+    @Test
+    def minimumBy03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(5), MutList.minimumBy((x, y) -> x <=> y, MutList.range(rc, 5, 10)))
+    }
 
-    @test
-    def minimumBy04(): Bool & Impure =
-        let v = MutList.range(0, 6);
-        MutList.push!(-2, v);
-        MutList.minimumBy((x, y) -> x <=> y, v) == Some(-2)
+    @Test
+    def minimumBy04(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 6);
+        MutList.push(-2, v);
+        assertEq(expected = Some(-2), MutList.minimumBy((x, y) -> x <=> y, v))
+    }
 
-    @test
-    def minimumBy05(): Bool & Impure =
-        let v = MutList.range(9, 19);
-        let cmp = (x, y) -> if (x < y and x rem 2 == 0) LessThan else GreaterThan;
-        MutList.minimumBy(cmp, v) == Some(10)
+    @Test
+    def minimumBy05(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 9, 19);
+        let cmp = (x, y) -> if (x < y and x `Int32.remainder` 2 == 0) Comparison.LessThan else Comparison.GreaterThan;
+        assertEq(expected = Some(10), MutList.minimumBy(cmp, v))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def maximumBy01(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.new(): MutList[Int32]) == None
+    @Test
+    def maximumBy01(): Unit \ Assert = region rc {
+        assertEq(expected = None, MutList.maximumBy((x, y) -> x <=> y, (MutList.empty(rc): MutList[Int32, _])))
+    }
 
-    @test
-    def maximumBy02(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.range(0, 5)) == Some(4)
+    @Test
+    def maximumBy02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), MutList.maximumBy((x, y) -> x <=> y, MutList.range(rc, 0, 5)))
+    }
 
-    @test
-    def maximumBy03(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.range(5, 10)) == Some(9)
+    @Test
+    def maximumBy03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(9), MutList.maximumBy((x, y) -> x <=> y, MutList.range(rc, 5, 10)))
+    }
 
-    @test
-    def maximumBy04(): Bool & Impure =
-        let v = MutList.range(0, 6);
-        MutList.push!(11, v);
-        MutList.maximumBy((x, y) -> x <=> y, v) == Some(11)
+    @Test
+    def maximumBy04(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 0, 6);
+        MutList.push(11, v);
+        assertEq(expected = Some(11), MutList.maximumBy((x, y) -> x <=> y, v))
+    }
 
-    @test
-    def maximumBy05(): Bool & Impure =
-        let v = MutList.range(9, 19);
-        let cmp = (x, y) -> if (x > y and x rem 2 == 0) GreaterThan else LessThan;
-        MutList.maximumBy(cmp, v) == Some(18)
+    @Test
+    def maximumBy05(): Unit \ Assert = region rc {
+        let v = MutList.range(rc, 9, 19);
+        let cmp = (x, y) -> if (x > y and x `Int32.remainder` 2 == 0) Comparison.GreaterThan else Comparison.LessThan;
+        assertEq(expected = Some(18), MutList.maximumBy(cmp, v))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool & Impure =
-        Array.sameElements(MutList.toArray(Array.toMutList([1, 2, 3])), [1, 2, 3])
+    @Test
+    def toArray01(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.pushAll(List#{1, 2, 3}, v);
+        assertTrue(Array.sameElements(MutList.toArray(rc, v), Array#{1, 2, 3} @ rc))
+    }
 
-    @test
-    def toArray02(): Bool & Impure =
-        let v = Array.toMutList([1, 2, 3]);
-        let a = MutList.toArray(v);
-        a[1] = 42;
-        MutList.get(1, v) == 2
+    @Test
+    def toArray02(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.pushAll(List#{1, 2, 3}, v);
+        let a = MutList.toArray(rc, v);
+        Array.put(42, 1, a);
+        assertEq(expected = Some(2), MutList.nth(1, v))
+    }
 
-    @test
-    def toArray03(): Bool & Impure =
-        let v = Array.toMutList([1, 2, 3]);
-        MutList.pop!(v);
-        MutList.pop!(v);
-        Array.length(MutList.toArray(v)) == 1
+    @Test
+    def toArray03(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.pushAll(List#{1, 2, 3}, v);
+        discard MutList.pop(v);
+        discard MutList.pop(v);
+        assertEq(expected = 1, Array.length(MutList.toArray(rc, v)))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
-    // toList                                                                   //
+    // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool & Impure =
-        MutList.new(): MutList[Int32] |> MutList.toList == Nil: List[Int32]
+    @Test
+    def toVector01(): Unit \ Assert = region rc {
+        assertTrue(MutList.toVector((MutList.empty(rc) : MutList[Int32, _])) `Vector.equals` Vector.empty())
+    }
 
-    @test
-    def toList02(): Bool & Impure =
-        let ml = MutList.range(0, 1000);
-        ml |> MutList.toList == List.range(0, 1000) and
-            not (MutList.isEmpty(ml))
+    @Test
+    def toVector02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.push(0, l);
+        assertTrue(MutList.toVector(l) `Vector.equals` Vector.singleton(0))
+    }
 
-    @test
-    def toList03(): Bool & Impure =
-        let ml = MutList.range(0, 1000);
-        ml |> MutList.toList == List.range(0, 1000) and
-           ml `eq` MutList.range(0, 1000)
+    @Test
+    def toVector03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.push(1, l);
+        MutList.push(2, l);
+        MutList.push(3, l);
+        assertTrue(MutList.toVector(l) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toList01(): Unit \ Assert = region rc {
+        assertEq(expected = (Nil: List[Int32]), (MutList.empty(rc): MutList[Int32, _]) |> MutList.toList)
+    }
+
+    @Test
+    def toList02(): Unit \ Assert = region rc {
+        let ml = MutList.range(rc, 0, 1000);
+        assertEq(expected = List.range(0, 1000), ml |> MutList.toList);
+        assertFalse(MutList.isEmpty(ml))
+    }
+
+    @Test
+    def toList03(): Unit \ Assert = region rc {
+        let ml = MutList.range(rc, 0, 1000);
+        assertEq(expected = List.range(0, 1000), ml |> MutList.toList);
+        assertTrue(ml `sameElements` MutList.range(rc, 0, 1000))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toChain01(): Bool & Impure =
-        MutList.toChain(List.toMutList(Nil): MutList[Int]) == Chain.empty(): Chain[Int]
+    @Test
+    def toChain01(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs: List[Int32] = Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = Chain.empty(), MutList.toChain(l))
+    }
+
+    @Test
+    def toChain02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = Chain.singleton(1), MutList.toChain(l))
+    }
+
+    @Test
+    def toChain03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: 2 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = List.toChain(1 :: 2 :: Nil), MutList.toChain(l))
+    }
+
+    @Test
+    def toChain04(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = List.toChain(1 :: 2 :: 3 :: Nil), MutList.toChain(l))
+    }
 
-    @test
-    def toChain02(): Bool & Impure =
-        MutList.toChain(List.toMutList(1 :: Nil)) == Chain.singleton(1)
-
-    @test
-    def toChain03(): Bool & Impure =
-        MutList.toChain(List.toMutList(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
-
-    @test
-    def toChain04(): Bool & Impure =
-        MutList.toChain(List.toMutList(1 :: 2 :: 3 :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-// The following tests for sort functions correspond to those in TestArray //
-/////////////////////////////////////////////////////////////////////////////
-// sortWith                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-def cmp(x: Int32, y: Int32): Comparison =
-    if (x < y) LessThan
-    else if (x == y) EqualTo
-    else GreaterThan
-
-@test
-def sortWith01(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([]: Array[Int32]));
-    a `eq` Array.toMutList([]: Array[Int32])
-
-@test
-def sortWith02(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([0]));
-    a `eq` Array.toMutList([0])
-
-@test
-def sortWith03(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([0,1]));
-    a `eq` Array.toMutList([0,1])
-
-@test
-def sortWith04(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([1,0]));
-    a `eq` Array.toMutList([0,1])
-
-@test
-def sortWith05(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([1,1]));
-    a `eq` Array.toMutList([1,1])
-
-@test
-def sortWith06(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([0,1,2,3,4,5]));
-    a `eq` Array.toMutList([0,1,2,3,4,5])
-
-@test
-def sortWith07(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([5,4,3,2,1,0]));
-    a `eq` Array.toMutList([0,1,2,3,4,5])
-
-@test
-def sortWith08(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([5,3,0,4,1,2]));
-    a `eq` Array.toMutList([0,1,2,3,4,5])
-
-@test
-def sortWith09(): Bool & Impure =
-    let a = MutList.sortWith(cmp, Array.toMutList([2,3,0,4,1,2]));
-    a `eq` Array.toMutList([0,1,2,2,3,4])
-
-@test
-def sortWith10(): Bool & Impure =
-    let a = MutList.sortWith(flip(cmp), Array.toMutList([0,1,2,3,4,5]));
-    a `eq` Array.toMutList([5,4,3,2,1,0])
-
-@test
-def sortWith11(): Bool & Impure =
-    let a = MutList.sortWith(flip(cmp), Array.toMutList([5,4,3,2,1,0]));
-    a `eq` Array.toMutList([5,4,3,2,1,0])
-
-@test
-def sortWith12(): Bool & Impure =
-    let a = MutList.sortWith(flip(cmp), Array.toMutList([5,3,0,4,1,2]));
-    a `eq` Array.toMutList([5,4,3,2,1,0])
-
-@test
-def sortWith13(): Bool & Impure =
-    let a = MutList.sortWith(flip(cmp), Array.toMutList([2,3,0,4,1,2]));
-    a `eq` Array.toMutList([4,3,2,2,1,0])
-
-/////////////////////////////////////////////////////////////////////////////
-// sort                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSortVsSortWith(a: MutList[Int32]) : Bool & Impure =
-    MutList.sort(a) `eq` MutList.sortWith(cmp, a)
-
-@test
-def sort01(): Bool & Impure = testSortVsSortWith(Array.toMutList([]: Array[Int32]))
-
-@test
-def sort02(): Bool & Impure = testSortVsSortWith(Array.toMutList([0]))
-
-@test
-def sort03(): Bool & Impure = testSortVsSortWith(Array.toMutList([0,1]))
-
-@test
-def sort04(): Bool & Impure = testSortVsSortWith(Array.toMutList([1,0]))
-
-@test
-def sort05(): Bool & Impure = testSortVsSortWith(Array.toMutList([1,1]))
-
-@test
-def sort06(): Bool & Impure = testSortVsSortWith(Array.toMutList([0,1,2,3,4,5]))
-
-@test
-def sort07(): Bool & Impure = testSortVsSortWith(Array.toMutList([5,4,3,2,1,0]))
-
-@test
-def sort08(): Bool & Impure = testSortVsSortWith(Array.toMutList([5,3,0,4,1,2]))
-
-@test
-def sort09(): Bool & Impure = testSortVsSortWith(Array.toMutList([2,3,0,4,1,2]))
-
-/////////////////////////////////////////////////////////////////////////////
-// sortWith!                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def sortWith01!(): Bool & Impure =
-    let a = Array.toMutList([]: Array[Int32]);
-    MutList.sortWith(cmp, a);
-    a `eq` Array.toMutList([]: Array[Int32])
-
-@test
-def sortWith02!(): Bool & Impure =
-    let a = Array.toMutList([0]);
-    MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0])
-
-@test
-def sortWith03!(): Bool & Impure =
-    let a = Array.toMutList([0,1]);
-    MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1])
-
-@test
-def sortWith04!(): Bool & Impure =
-    let a = Array.toMutList([1,0]);
-    MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1])
-
-@test
-def sortWith05!(): Bool & Impure =
-    let a = Array.toMutList([1,1]);
-    MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([1,1])
-
-@test
-def sortWith06!(): Bool & Impure =
-    let a = Array.toMutList([0,1,2,3,4,5]);
-    MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1,2,3,4,5])
-
-@test
-def sortWith07!(): Bool & Impure =
-    let a = Array.toMutList([5,4,3,2,1,0]);
-    MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1,2,3,4,5])
-
-@test
-def sortWith08!(): Bool & Impure =
-    let a = Array.toMutList([5,3,0,4,1,2]);
-    MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1,2,3,4,5])
-
-@test
-def sortWith09!(): Bool & Impure =
-    let a = Array.toMutList([2,3,0,4,1,2]);
-    MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1,2,2,3,4])
-
-@test
-def sortWith10!(): Bool & Impure =
-    let a = Array.toMutList([0,1,2,3,4,5]);
-    MutList.sortWith!(flip(cmp), a);
-    a `eq` Array.toMutList([5,4,3,2,1,0])
-
-@test
-def sortWith11!(): Bool & Impure =
-    let a = Array.toMutList([5,4,3,2,1,0]);
-    MutList.sortWith!(flip(cmp), a);
-    a `eq` Array.toMutList([5,4,3,2,1,0])
-
-@test
-def sortWith12!(): Bool & Impure =
-    let a = Array.toMutList([5,3,0,4,1,2]);
-    MutList.sortWith!(flip(cmp), a);
-    a `eq` Array.toMutList([5,4,3,2,1,0])
-
-@test
-def sortWith13!(): Bool & Impure =
-    let a = Array.toMutList([2,3,0,4,1,2]);
-    MutList.sortWith!(flip(cmp), a);
-    a `eq` Array.toMutList([4,3,2,2,1,0])
-
-/////////////////////////////////////////////////////////////////////////////
-// sort!                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSort!VsSortWith!(a: MutList[Int32]) : Bool & Impure =
-    let b = MutList.copy(a);
-    let c = MutList.copy(a);
-    MutList.sort!(b);
-    MutList.sortWith!(cmp, c);
-    b `eq` c
-
-@test
-def sort!01(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([]: Array[Int32]))
-
-@test
-def sort!02(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([0]))
-
-@test
-def sort!03(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([0,1]))
-
-@test
-def sort!04(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([1,0]))
-
-@test
-def sort!05(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([1,1]))
-
-@test
-def sort!06(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([0,1,2,3,4,5]))
-
-@test
-def sort!07(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([5,4,3,2,1,0]))
-
-@test
-def sort!08(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([5,3,0,4,1,2]))
-
-@test
-def sort!09(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([2,3,0,4,1,2]))
-
-/////////////////////////////////////////////////////////////////////////////
-// sortBy                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSortByVsSort(a: MutList[Int32]) : Bool & Impure =
-    (MutList.sortBy(identity, a) `eq` MutList.sort(a)) and
-    (MutList.sortBy(x -> 4*x+7, a) `eq` MutList.sort(a)) and
-    (MutList.sortBy(x -> -x, a) `eq` MutList.sortWith(flip(cmp),a))
-
-@test
-def sortBy01(): Bool & Impure = testSortByVsSort(Array.toMutList([]: Array[Int32]))
-
-@test
-def sortBy02(): Bool & Impure = testSortByVsSort(Array.toMutList([0]))
-
-@test
-def sortBy03(): Bool & Impure = testSortByVsSort(Array.toMutList([0,1]))
-
-@test
-def sortBy04(): Bool & Impure = testSortByVsSort(Array.toMutList([1,0]))
-
-@test
-def sortBy05(): Bool & Impure = testSortByVsSort(Array.toMutList([1,1]))
-
-@test
-def sortBy06(): Bool & Impure = testSortByVsSort(Array.toMutList([0,1,2,3,4,5]))
-
-@test
-def sortBy07(): Bool & Impure = testSortByVsSort(Array.toMutList([5,4,3,2,1,0]))
-
-@test
-def sortBy08(): Bool & Impure = testSortByVsSort(Array.toMutList([5,3,0,4,1,2]))
-
-@test
-def sortBy09(): Bool & Impure = testSortByVsSort(Array.toMutList([2,3,0,4,1,2]))
-
-enum R {
-    case R({i :: Int32, s :: String})
-}
-
-instance Eq[R] {
-    pub def eq(a: R, b: R): Bool =
-        let R(x) = a;
-        let R(y) = b;
-        x.i == y.i and x.s == y.s
-}
-
-@test
-def sortBy10(): Bool & Impure =
-    MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})]))
-    `eq` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})])
-
-/////////////////////////////////////////////////////////////////////////////
-// sortBy!                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSortBy!VsSortBy(a: MutList[Int32]) : Bool & Impure =
-    let b = MutList.copy(a);
-    let c = MutList.copy(a);
-    MutList.sortBy!(identity, b);
-    MutList.sortBy!(x -> 4*x+7, c);
-    (b `eq` MutList.sortBy(x -> 4*x+7, a)) and
-    (c `eq` MutList.sortBy(identity, a))
-
-@test
-def sortBy!01(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([]: Array[Int32]))
-
-@test
-def sortBy!02(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([0]))
-
-@test
-def sortBy!03(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([0,1]))
-
-@test
-def sortBy!04(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([1,0]))
-
-@test
-def sortBy!05(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([1,1]))
-
-@test
-def sortBy!06(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([0,1,2,3,4,5]))
-
-@test
-def sortBy!07(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([5,4,3,2,1,0]))
-
-@test
-def sortBy!08(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([5,3,0,4,1,2]))
-
-@test
-def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,2]))
 
     /////////////////////////////////////////////////////////////////////////////
-    // range                                                                   //
+    // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def range01(): Bool & Impure =
-        let v1 = MutList.range(1, 4) |> MutList.toArray;
-        let v2 = MutList.range(0, 5) |> MutList.toArray;
-        let arr1 = [1, 2, 3];
-        let arr2 = [0, 1, 2, 3, 4];
-        (v1 `Array.eq` arr1) and (v2 `Array.eq` arr2)
+    /////////////////////////////////////////////////////////////////////////////
+    // sortWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def range02(): Bool & Impure =
-        let v = MutList.range(-1, 3) |> MutList.toArray;
-        let arr = [-1, 0, 1, 2];
-        (v `Array.eq` arr)
+    def cmp(x: Int32, y: Int32): Comparison =
+        if (x < y) Comparison.LessThan
+        else if (x == y) Comparison.EqualTo
+        else Comparison.GreaterThan
 
-    @test
-    def range03(): Bool & Impure =
-        MutList.range(0, 1000) |> MutList.toList == List.range(0, 1000)
+    @Test
+    def sortWith01(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll((List#{}: List[Int32]), a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll((List#{}: List[Int32]), expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith02(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{0}, a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith03(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith04(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{1, 0}, a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+    @Test
+    def sortWith05(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{1, 1}, a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{1, 1}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith06(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith07(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{5, 4, 3, 2, 1, 0}, a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith08(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{5, 3, 0, 4, 1, 2}, a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith09(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{2, 3, 0, 4, 1, 2}, a);
+        MutList.sortWith(cmp, a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 2, 3, 4}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith10(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, a);
+        MutList.sortWith(flip(cmp), a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{5, 4, 3, 2, 1, 0}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith11(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{5, 4, 3, 2, 1, 0}, a);
+        MutList.sortWith(flip(cmp), a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{5, 4, 3, 2, 1, 0}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith12(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{5, 3, 0, 4, 1, 2}, a);
+        MutList.sortWith(flip(cmp), a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{5, 4, 3, 2, 1, 0}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    @Test
+    def sortWith13(): Unit \ Assert = region rc {
+        let a = MutList.empty(rc);
+        MutList.pushAll(List#{2, 3, 0, 4, 1, 2}, a);
+        MutList.sortWith(flip(cmp), a);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{4, 3, 2, 2, 1, 0}, expected);
+        assertTrue(a `sameElements` expected)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sort                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def testSortSortWith(a: MutList[Int32, r]): Bool \ r = region rc1 {
+        let b = MutList.copy(rc1, a);
+        let c = MutList.copy(rc1, a);
+        MutList.sort(b);
+        MutList.sortWith(cmp, c);
+        b `sameElements` c
+    }
+
+    @Test
+    def sort01(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll((List#{}: List[Int32]), ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+    @Test
+    def sort02(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll(List#{0}, ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+    @Test
+    def sort03(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+    @Test
+    def sort04(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll(List#{1, 0}, ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+    @Test
+    def sort05(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll(List#{1, 1}, ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+    @Test
+    def sort06(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+    @Test
+    def sort07(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll(List#{5, 4, 3, 2, 1, 0}, ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+    @Test
+    def sort08(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll(List#{5, 3, 0, 4, 1, 2}, ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+    @Test
+    def sort09(): Unit \ Assert = region rc {
+        let ml = MutList.empty(rc);
+        MutList.pushAll(List#{2, 3, 0, 4, 1, 2}, ml);
+        assertTrue(testSortSortWith(ml))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sortBy                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def sortBy01(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll((List#{}: List[Int32]), a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll((List#{}: List[Int32]), b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll((List#{}: List[Int32]), expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll((List#{}: List[Int32]), expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
+
+    @Test
+    def sortBy02(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{0}, a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{0}, b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll(List#{0}, expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll(List#{0}, expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
+
+    @Test
+    def sortBy03(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
+
+    @Test
+    def sortBy04(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{1, 0}, a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{1, 0}, b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1}, expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
+
+    @Test
+    def sortBy05(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{1, 1}, a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{1, 1}, b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll(List#{1, 1}, expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll(List#{1, 1}, expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
+
+    @Test
+    def sortBy06(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
+
+    @Test
+    def sortBy07(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{5, 4, 3, 2, 1, 0}, a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{5, 4, 3, 2, 1, 0}, b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
+
+    @Test
+    def sortBy08(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{5, 3, 0, 4, 1, 2}, a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{5, 3, 0, 4, 1, 2}, b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 3, 4, 5}, expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
+
+    @Test
+    def sortBy09(): Unit \ Assert = region rc {
+        let a: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{2, 3, 0, 4, 1, 2}, a);
+        MutList.sortBy(identity, a);
+        let b: MutList[Int32, rc] = MutList.empty(rc);
+        MutList.pushAll(List#{2, 3, 0, 4, 1, 2}, b);
+        MutList.sortBy(x -> 4 * x + 7, b);
+        let expected1 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 2, 3, 4}, expected1);
+        let expected2 = MutList.empty(rc);
+        MutList.pushAll(List#{0, 1, 2, 2, 3, 4}, expected2);
+        assertTrue(a `sameElements` expected1);
+        assertTrue(b `sameElements` expected2)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool & Impure =
-        MutList.sum(MutList.new()) == 0
+    @Test
+    def sum01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, MutList.empty(rc) |> MutList.sum)
+    }
 
-    @test
-    def sum02(): Bool & Impure =
-        (1 :: Nil) |> List.toMutList |> MutList.sum == 1
+    @Test
+    def sum02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 1, MutList.sum(l))
+    }
 
-    @test
-    def sum03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toMutList |> MutList.sum == 6
+    @Test
+    def sum03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 6, MutList.sum(l))
+    }
 
-    @test
-    def sum04(): Bool & Impure =
-        (1 :: 2 :: 3 :: -3 :: Nil) |> List.toMutList |> MutList.sum == 3
+    @Test
+    def sum04(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: 2 :: 3 :: -3 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 3, MutList.sum(l))
+    }
 
-    @test
-    def sum05(): Bool & Impure =
-        (-1 :: -2 :: -3 :: -4 :: Nil) |> List.toMutList |> MutList.sum == -10
+    @Test
+    def sum05(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = -1 :: -2 :: -3 :: -4 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = -10, MutList.sum(l))
+    }
 
-    @test
-    def sum06(): Bool & Impure =
-        (10 :: -10 :: Nil) |> List.toMutList |> MutList.sum == 0
+    @Test
+    def sum06(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 10 :: -10 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 0, MutList.sum(l))
+    }
 
-    @test
-    def sum07(): Bool & Impure =
-        List.range(1, 101) |> List.toMutList |> MutList.sum == 5050
+    @Test
+    def sum07(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = List.range(1, 101);
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 5050, MutList.sum(l))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def sumWith01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, MutList.empty(rc) |> MutList.sumWith(x -> x + 1))
+    }
+
+    @Test
+    def sumWith02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 2, MutList.sumWith(x -> x + 1, l))
+    }
+
+    @Test
+    def sumWith03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 9, MutList.sumWith(x -> x + 1, l))
+    }
+
+    @Test
+    def sumWith04(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: 2 :: 3 :: -3 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 7, MutList.sumWith(x -> x + 1, l))
+    }
+
+    @Test
+    def sumWith05(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = -1 :: -2 :: -3 :: -4 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = -6, MutList.sumWith(x -> x + 1, l))
+    }
+
+    @Test
+    def sumWith06(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 10 :: -10 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = 2, MutList.sumWith(x -> x + 1, l))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def join01(): Unit \ Assert = region rc {
+        assertEq(expected = "", ((MutList.empty(rc): MutList[Int32, _])) |> MutList.join(","))
+    }
+
+    @Test
+    def join02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = "1", MutList.join(",", l))
+    }
+
+    @Test
+    def join03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = "1,2,3", MutList.join(",", l))
+    }
+
+    @Test
+    def join04(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = "1" :: "2" :: "3" :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = "1,2,3", MutList.join(",", l))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def joinWith01(): Unit \ Assert = region rc {
+        assertEq(expected = "", ((MutList.empty(rc): MutList[Int32, _])) |> MutList.joinWith(x -> "${x + 1}", ","))
+    }
+
+    @Test
+    def joinWith02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = "2", MutList.joinWith(x -> "${x + 1}", ",", l))
+    }
+
+    @Test
+    def joinWith03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = "2,3,4", MutList.joinWith(x -> "${x + 1}", ",", l))
+    }
+
+    @Test
+    def joinWith04(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        let xs = "1" :: "2" :: "3" :: Nil;
+        List.forEach(x -> MutList.push(x, l), xs);
+        assertEq(expected = "11,22,33", MutList.joinWith(x -> x + x, ",", l))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def shuffle01(): Unit \ {Assert, NonDet} = region rc {
+        run {
+            let l: List[Int32] = Nil;
+            let v1 = MutList.empty(rc);
+            MutList.pushAll(l, v1);
+            let v = MutList.shuffle(rc, v1);
+            MutList.sort(v);
+
+            assertEq(expected = 0, MutList.length(v));
+            let v2 = MutList.empty(rc);
+            MutList.pushAll(l, v2);
+            assertTrue(v `MutList.sameElements` v2)
+        } with Shuffle.runWithIO
+    }
+
+    @Test
+    def shuffle02(): Unit \ {Assert, NonDet} = region rc {
+        run {
+            let l = 1 :: Nil;
+            let v1 = MutList.empty(rc);
+            MutList.pushAll(l, v1);
+            let v = MutList.shuffle(rc, v1);
+            MutList.sort(v);
+
+            assertEq(expected = 1, MutList.length(v));
+            let v2 = MutList.empty(rc);
+            MutList.pushAll(l, v2);
+            assertTrue(v `MutList.sameElements` v2)
+        } with Shuffle.runWithIO
+    }
+
+    @Test
+    def shuffle03(): Unit \ {Assert, NonDet} = region rc {
+        run {
+            let l = 1 :: 2 :: 3 :: Nil;
+            let v1 = MutList.empty(rc);
+            MutList.pushAll(l, v1);
+            let v = MutList.shuffle(rc, v1);
+            MutList.sort(v);
+
+            assertEq(expected = 3, MutList.length(v));
+            let v2 = MutList.empty(rc);
+            MutList.pushAll(l, v2);
+            assertTrue(v `MutList.sameElements` v2)
+        } with Shuffle.runWithIO
+    }
+
+    @Test
+    def shuffle04(): Unit \ {Assert, NonDet} = region rc {
+        run {
+            let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let v1 = MutList.empty(rc);
+            MutList.pushAll(l, v1);
+            let v = MutList.shuffle(rc, v1);
+            MutList.sort(v);
+
+            assertEq(expected = 10, MutList.length(v));
+            let v2 = MutList.empty(rc);
+            MutList.pushAll(l, v2);
+            assertTrue(v `MutList.sameElements` v2)
+        } with Shuffle.runWithIO
+    }
 
 }

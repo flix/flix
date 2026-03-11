@@ -1,603 +1,850 @@
-/*
- * Copyright 2020 Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+mod TestChar {
 
-namespace TestChar {
+    use Assert.{assertEq, assertTrue, assertFalse, assertSome, assertNone};
 
-/////////////////////////////////////////////////////////////////////////////
-// isAscii                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // isAscii                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isAscii01(): Bool = Char.isAscii('a') == true
+    @Test
+    def isAscii01(): Unit \ Assert = assertTrue(Char.isAscii('a'))
 
-@test
-def isAscii02(): Bool = Char.isAscii('A') == true
+    @Test
+    def isAscii02(): Unit \ Assert = assertTrue(Char.isAscii('A'))
 
-@test
-def isAscii03(): Bool = Char.isAscii(' ') == true
+    @Test
+    def isAscii03(): Unit \ Assert = assertTrue(Char.isAscii(' '))
 
-@test
-def isAscii04(): Bool = Char.isAscii('+') == true
+    @Test
+    def isAscii04(): Unit \ Assert = assertTrue(Char.isAscii('+'))
 
-@test
-def isAscii05(): Bool = Char.isAscii('0') == true
+    @Test
+    def isAscii05(): Unit \ Assert = assertTrue(Char.isAscii('0'))
 
-@test
-def isAscii06(): Bool = Char.isAscii('9') == true
+    @Test
+    def isAscii06(): Unit \ Assert = assertTrue(Char.isAscii('9'))
 
-@test
-def isAscii07(): Bool = Char.isAscii('†') == false
+    @Test
+    def isAscii07(): Unit \ Assert = assertFalse(Char.isAscii('†'))
 
-@test
-def isAscii08(): Bool = Char.isAscii('\u00FE') == false     // lower-case thorn
+    @Test
+    def isAscii08(): Unit \ Assert = assertFalse(Char.isAscii('\u00FE'))     // lower-case thorn
 
-@test
-def isAscii09(): Bool = Char.isAscii('\u00B1') == false     // plus-minus sign
+    @Test
+    def isAscii09(): Unit \ Assert = assertFalse(Char.isAscii('\u00B1'))     // plus-minus sign
 
-@test
-def isAscii10(): Bool = Char.isAscii('â') == false
+    @Test
+    def isAscii10(): Unit \ Assert = assertFalse(Char.isAscii('â'))
 
-@test
-def isAscii11(): Bool = Char.isAscii('Â') == false
+    @Test
+    def isAscii11(): Unit \ Assert = assertFalse(Char.isAscii('Â'))
 
-/////////////////////////////////////////////////////////////////////////////
-// isLetter                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isAscii12(): Unit \ Assert = assertFalse(Char.isAscii('\u0081'))
 
-@test
-def isLetter01(): Bool = Char.isLetter('a') == true
+    /////////////////////////////////////////////////////////////////////////////
+    // isLetter                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isLetter02(): Bool = Char.isLetter('A') == true
+    @Test
+    def isLetter01(): Unit \ Assert = assertTrue(Char.isLetter('a'))
 
-@test
-def isLetter03(): Bool = Char.isLetter(' ') == false
+    @Test
+    def isLetter02(): Unit \ Assert = assertTrue(Char.isLetter('A'))
 
-@test
-def isLetter04(): Bool = Char.isLetter('+') == false
+    @Test
+    def isLetter03(): Unit \ Assert = assertFalse(Char.isLetter(' '))
 
-@test
-def isLetter05(): Bool = Char.isLetter('0') == false
+    @Test
+    def isLetter04(): Unit \ Assert = assertFalse(Char.isLetter('+'))
 
-@test
-def isLetter06(): Bool = Char.isLetter('9') == false
+    @Test
+    def isLetter05(): Unit \ Assert = assertFalse(Char.isLetter('0'))
 
-@test
-def isLetter07(): Bool = Char.isLetter('†') == false
+    @Test
+    def isLetter06(): Unit \ Assert = assertFalse(Char.isLetter('9'))
 
-@test
-def isLetter08(): Bool = Char.isLetter('\u00FE') == true        // lower-case thorn
+    @Test
+    def isLetter07(): Unit \ Assert = assertFalse(Char.isLetter('†'))
 
-@test
-def isLetter09(): Bool = Char.isLetter('\u00B1') == false       // plus-minus sign
+    @Test
+    def isLetter08(): Unit \ Assert = assertTrue(Char.isLetter('\u00FE'))        // lower-case thorn
 
-@test
-def isLetter10(): Bool = Char.isLetter('â') == true
+    @Test
+    def isLetter09(): Unit \ Assert = assertFalse(Char.isLetter('\u00B1'))       // plus-minus sign
 
-@test
-def isLetter11(): Bool = Char.isLetter('Â') == true
+    @Test
+    def isLetter10(): Unit \ Assert = assertTrue(Char.isLetter('â'))
 
-/////////////////////////////////////////////////////////////////////////////
-// isDigit                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isLetter11(): Unit \ Assert = assertTrue(Char.isLetter('Â'))
 
-@test
-def isDigit01(): Bool = Char.isDigit('a') == false
+    /////////////////////////////////////////////////////////////////////////////
+    // isDigit                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isDigit02(): Bool = Char.isDigit('A') == false
+    @Test
+    def isDigit01(): Unit \ Assert = assertFalse(Char.isDigit('a'))
 
-@test
-def isDigit03(): Bool = Char.isDigit(' ') == false
+    @Test
+    def isDigit02(): Unit \ Assert = assertFalse(Char.isDigit('A'))
 
-@test
-def isDigit04(): Bool = Char.isDigit('+') == false
+    @Test
+    def isDigit03(): Unit \ Assert = assertFalse(Char.isDigit(' '))
 
-@test
-def isDigit05(): Bool = Char.isDigit('0') == true
+    @Test
+    def isDigit04(): Unit \ Assert = assertFalse(Char.isDigit('+'))
 
-@test
-def isDigit06(): Bool = Char.isDigit('9') == true
+    @Test
+    def isDigit05(): Unit \ Assert = assertTrue(Char.isDigit('0'))
 
-@test
-def isDigit07(): Bool = Char.isDigit('†') == false
+    @Test
+    def isDigit06(): Unit \ Assert = assertTrue(Char.isDigit('9'))
 
-@test
-def isDigit08(): Bool = Char.isDigit('\u00FE') == false         // lower-case thorn
+    @Test
+    def isDigit07(): Unit \ Assert = assertFalse(Char.isDigit('†'))
 
-@test
-def isDigit09(): Bool = Char.isDigit('\u00B1') == false         // plus-minus sign
+    @Test
+    def isDigit08(): Unit \ Assert = assertFalse(Char.isDigit('\u00FE'))         // lower-case thorn
 
-@test
-def isDigit10(): Bool = Char.isDigit('â') == false
+    @Test
+    def isDigit09(): Unit \ Assert = assertFalse(Char.isDigit('\u00B1'))         // plus-minus sign
 
-@test
-def isDigit11(): Bool = Char.isDigit('Â') == false
+    @Test
+    def isDigit10(): Unit \ Assert = assertFalse(Char.isDigit('â'))
 
-@test
-def isDigit12(): Bool = Char.isDigit('\u0660') == true          // Arabic-Indic digit zero
+    @Test
+    def isDigit11(): Unit \ Assert = assertFalse(Char.isDigit('Â'))
 
-@test
-def isDigit13(): Bool = Char.isDigit('\u0669') == true          // Arabic-Indic digit nine
+    @Test
+    def isDigit12(): Unit \ Assert = assertTrue(Char.isDigit('\u0660'))          // Arabic-Indic digit zero
 
-@test
-def isDigit14(): Bool = Char.isDigit('\u0966') == true          // Devanagari digit zero
+    @Test
+    def isDigit13(): Unit \ Assert = assertTrue(Char.isDigit('\u0669'))          // Arabic-Indic digit nine
 
-@test
-def isDigit15(): Bool = Char.isDigit('\u096F') == true          // Devanagari digit nine
+    @Test
+    def isDigit14(): Unit \ Assert = assertTrue(Char.isDigit('\u0966'))          // Devanagari digit zero
 
-/////////////////////////////////////////////////////////////////////////////
-// isAsciiDigit                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isDigit15(): Unit \ Assert = assertTrue(Char.isDigit('\u096F'))          // Devanagari digit nine
 
-@test
-def isAsciiDigit01(): Bool = Char.isAsciiDigit('a') == false
+    /////////////////////////////////////////////////////////////////////////////
+    // isLetterOrDigit                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isAsciiDigit02(): Bool = Char.isAsciiDigit('A') == false
+    @Test
+    def isLetterOrDigit01(): Unit \ Assert = assertTrue(Char.isLetterOrDigit('a'))
 
-@test
-def isAsciiDigit03(): Bool = Char.isAsciiDigit(' ') == false
+    @Test
+    def isLetterOrDigit02(): Unit \ Assert = assertTrue(Char.isLetterOrDigit('A'))
 
-@test
-def isAsciiDigit04(): Bool = Char.isAsciiDigit('+') == false
+    @Test
+    def isLetterOrDigit03(): Unit \ Assert = assertFalse(Char.isLetterOrDigit(' '))
 
-@test
-def isAsciiDigit05(): Bool = Char.isAsciiDigit('0') == true
+    @Test
+    def isLetterOrDigit04(): Unit \ Assert = assertFalse(Char.isLetterOrDigit('+'))
 
-@test
-def isAsciiDigit06(): Bool = Char.isAsciiDigit('9') == true
+    @Test
+    def isLetterOrDigit05(): Unit \ Assert = assertTrue(Char.isLetterOrDigit('0'))
 
-@test
-def isAsciiDigit07(): Bool = Char.isAsciiDigit('†') == false
+    @Test
+    def isLetterOrDigit06(): Unit \ Assert = assertTrue(Char.isLetterOrDigit('9'))
 
-@test
-def isAsciiDigit08(): Bool = Char.isAsciiDigit('\u00FE') == false        // lower-case thorn
+    @Test
+    def isLetterOrDigit07(): Unit \ Assert = assertFalse(Char.isLetterOrDigit('†'))
 
-@test
-def isAsciiDigit09(): Bool = Char.isAsciiDigit('\u00B1') == false       // plus-minus sign
+    /////////////////////////////////////////////////////////////////////////////
+    // isAsciiDigit                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isAsciiDigit10(): Bool = Char.isAsciiDigit('â') == false
+    @Test
+    def isAsciiDigit01(): Unit \ Assert = assertFalse(Char.isAsciiDigit('a'))
 
-@test
-def isAsciiDigit11(): Bool = Char.isAsciiDigit('Â') == false
+    @Test
+    def isAsciiDigit02(): Unit \ Assert = assertFalse(Char.isAsciiDigit('A'))
 
-@test
-def isAsciiDigit12(): Bool = Char.isAsciiDigit('\u0660') == false       // Arabic-Indic digit zero
+    @Test
+    def isAsciiDigit03(): Unit \ Assert = assertFalse(Char.isAsciiDigit(' '))
 
-@test
-def isAsciiDigit13(): Bool = Char.isAsciiDigit('\u0669') == false       // Arabic-Indic digit nine
+    @Test
+    def isAsciiDigit04(): Unit \ Assert = assertFalse(Char.isAsciiDigit('+'))
 
-@test
-def isAsciiDigit14(): Bool = Char.isAsciiDigit('\u0966') == false       // Devanagari digit zero
+    @Test
+    def isAsciiDigit05(): Unit \ Assert = assertTrue(Char.isAsciiDigit('0'))
 
-@test
-def isAsciiDigit15(): Bool = Char.isAsciiDigit('\u096F') == false       // Devanagari digit nine
+    @Test
+    def isAsciiDigit06(): Unit \ Assert = assertTrue(Char.isAsciiDigit('9'))
 
-/////////////////////////////////////////////////////////////////////////////
-// isOctDigit                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isAsciiDigit07(): Unit \ Assert = assertFalse(Char.isAsciiDigit('†'))
 
-@test
-def isOctDigit01(): Bool = Char.isOctDigit('a') == false
+    @Test
+    def isAsciiDigit08(): Unit \ Assert = assertFalse(Char.isAsciiDigit('\u00FE'))        // lower-case thorn
 
-@test
-def isOctDigit02(): Bool = Char.isOctDigit('A') == false
+    @Test
+    def isAsciiDigit09(): Unit \ Assert = assertFalse(Char.isAsciiDigit('\u00B1'))       // plus-minus sign
 
-@test
-def isOctDigit03(): Bool = Char.isOctDigit(' ') == false
+    @Test
+    def isAsciiDigit10(): Unit \ Assert = assertFalse(Char.isAsciiDigit('â'))
 
-@test
-def isOctDigit04(): Bool = Char.isOctDigit('+') == false
+    @Test
+    def isAsciiDigit11(): Unit \ Assert = assertFalse(Char.isAsciiDigit('Â'))
 
-@test
-def isOctDigit05(): Bool = Char.isOctDigit('0') == true
+    @Test
+    def isAsciiDigit12(): Unit \ Assert = assertFalse(Char.isAsciiDigit('\u0660'))       // Arabic-Indic digit zero
 
-@test
-def isOctDigit06(): Bool = Char.isOctDigit('9') == false
+    @Test
+    def isAsciiDigit13(): Unit \ Assert = assertFalse(Char.isAsciiDigit('\u0669'))       // Arabic-Indic digit nine
 
-@test
-def isOctDigit07(): Bool = Char.isOctDigit('†') == false
+    @Test
+    def isAsciiDigit14(): Unit \ Assert = assertFalse(Char.isAsciiDigit('\u0966'))       // Devanagari digit zero
 
-@test
-def isOctDigit08(): Bool = Char.isOctDigit('\u00FE') == false        // lower-case thorn
+    @Test
+    def isAsciiDigit15(): Unit \ Assert = assertFalse(Char.isAsciiDigit('\u096F'))       // Devanagari digit nine
 
-@test
-def isOctDigit09(): Bool = Char.isOctDigit('\u00B1') == false       // plus-minus sign
+    /////////////////////////////////////////////////////////////////////////////
+    // isOctDigit                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isOctDigit10(): Bool = Char.isOctDigit('â') == false
+    @Test
+    def isOctDigit01(): Unit \ Assert = assertFalse(Char.isOctDigit('a'))
 
-@test
-def isOctDigit11(): Bool = Char.isOctDigit('Â') == false
+    @Test
+    def isOctDigit02(): Unit \ Assert = assertFalse(Char.isOctDigit('A'))
 
-@test
-def isOctDigit12(): Bool = Char.isOctDigit('7') == true
+    @Test
+    def isOctDigit03(): Unit \ Assert = assertFalse(Char.isOctDigit(' '))
 
-@test
-def isOctDigit13(): Bool = Char.isOctDigit('8') == false
+    @Test
+    def isOctDigit04(): Unit \ Assert = assertFalse(Char.isOctDigit('+'))
 
-/////////////////////////////////////////////////////////////////////////////
-// isHexDigit                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isOctDigit05(): Unit \ Assert = assertTrue(Char.isOctDigit('0'))
 
-@test
-def isHexDigit01(): Bool = Char.isHexDigit('a') == true
+    @Test
+    def isOctDigit06(): Unit \ Assert = assertFalse(Char.isOctDigit('9'))
 
-@test
-def isHexDigit02(): Bool = Char.isHexDigit('A') == true
+    @Test
+    def isOctDigit07(): Unit \ Assert = assertFalse(Char.isOctDigit('†'))
 
-@test
-def isHexDigit03(): Bool = Char.isHexDigit(' ') == false
+    @Test
+    def isOctDigit08(): Unit \ Assert = assertFalse(Char.isOctDigit('\u00FE'))        // lower-case thorn
 
-@test
-def isHexDigit04(): Bool = Char.isHexDigit('+') == false
+    @Test
+    def isOctDigit09(): Unit \ Assert = assertFalse(Char.isOctDigit('\u00B1'))       // plus-minus sign
 
-@test
-def isHexDigit05(): Bool = Char.isHexDigit('0') == true
+    @Test
+    def isOctDigit10(): Unit \ Assert = assertFalse(Char.isOctDigit('â'))
 
-@test
-def isHexDigit06(): Bool = Char.isHexDigit('9') == true
+    @Test
+    def isOctDigit11(): Unit \ Assert = assertFalse(Char.isOctDigit('Â'))
 
-@test
-def isHexDigit07(): Bool = Char.isHexDigit('†') == false
+    @Test
+    def isOctDigit12(): Unit \ Assert = assertTrue(Char.isOctDigit('7'))
 
-@test
-def isHexDigit08(): Bool = Char.isHexDigit('\u00FE') == false        // lower-case thorn
+    @Test
+    def isOctDigit13(): Unit \ Assert = assertFalse(Char.isOctDigit('8'))
 
-@test
-def isHexDigit09(): Bool = Char.isHexDigit('\u00B1') == false       // plus-minus sign
+    /////////////////////////////////////////////////////////////////////////////
+    // isHexDigit                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isHexDigit10(): Bool = Char.isHexDigit('â') == false
+    @Test
+    def isHexDigit01(): Unit \ Assert = assertTrue(Char.isHexDigit('a'))
 
-@test
-def isHexDigit11(): Bool = Char.isHexDigit('Â') == false
+    @Test
+    def isHexDigit02(): Unit \ Assert = assertTrue(Char.isHexDigit('A'))
 
-@test
-def isHexDigit12(): Bool = Char.isHexDigit('7') == true
+    @Test
+    def isHexDigit03(): Unit \ Assert = assertFalse(Char.isHexDigit(' '))
 
-@test
-def isHexDigit13(): Bool = Char.isHexDigit('8') == true
+    @Test
+    def isHexDigit04(): Unit \ Assert = assertFalse(Char.isHexDigit('+'))
 
-@test
-def isHexDigit14(): Bool = Char.isHexDigit('F') == true
+    @Test
+    def isHexDigit05(): Unit \ Assert = assertTrue(Char.isHexDigit('0'))
 
-@test
-def isHexDigit15(): Bool = Char.isHexDigit('f') == true
+    @Test
+    def isHexDigit06(): Unit \ Assert = assertTrue(Char.isHexDigit('9'))
 
-@test
-def isHexDigit16(): Bool = Char.isHexDigit('G') == false
+    @Test
+    def isHexDigit07(): Unit \ Assert = assertFalse(Char.isHexDigit('†'))
 
-@test
-def isHexDigit17(): Bool = Char.isHexDigit('g') == false
+    @Test
+    def isHexDigit08(): Unit \ Assert = assertFalse(Char.isHexDigit('\u00FE'))        // lower-case thorn
 
-/////////////////////////////////////////////////////////////////////////////
-// isLowerCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isHexDigit09(): Unit \ Assert = assertFalse(Char.isHexDigit('\u00B1'))       // plus-minus sign
 
-@test
-def isLowerCase01(): Bool = Char.isLowerCase('a') == true
+    @Test
+    def isHexDigit10(): Unit \ Assert = assertFalse(Char.isHexDigit('â'))
 
-@test
-def isLowerCase02(): Bool = Char.isLowerCase('A') == false
+    @Test
+    def isHexDigit11(): Unit \ Assert = assertFalse(Char.isHexDigit('Â'))
 
-@test
-def isLowerCase03(): Bool = Char.isLowerCase(' ') == false
+    @Test
+    def isHexDigit12(): Unit \ Assert = assertTrue(Char.isHexDigit('7'))
 
-@test
-def isLowerCase04(): Bool = Char.isLowerCase('+') == false
+    @Test
+    def isHexDigit13(): Unit \ Assert = assertTrue(Char.isHexDigit('8'))
 
-@test
-def isLowerCase05(): Bool = Char.isLowerCase('0') == false
+    @Test
+    def isHexDigit14(): Unit \ Assert = assertTrue(Char.isHexDigit('F'))
 
-@test
-def isLowerCase06(): Bool = Char.isLowerCase('9') == false
+    @Test
+    def isHexDigit15(): Unit \ Assert = assertTrue(Char.isHexDigit('f'))
 
-@test
-def isLowerCase07(): Bool = Char.isLowerCase('†') == false
+    @Test
+    def isHexDigit16(): Unit \ Assert = assertFalse(Char.isHexDigit('G'))
 
-@test
-def isLowerCase08(): Bool = Char.isLowerCase('\u00FE') == true        // lower-case thorn
+    @Test
+    def isHexDigit17(): Unit \ Assert = assertFalse(Char.isHexDigit('g'))
 
-@test
-def isLowerCase09(): Bool = Char.isLowerCase('\u00B1') == false       // plus-minus sign
+    /////////////////////////////////////////////////////////////////////////////
+    // isLowerCase                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isLowerCase10(): Bool = Char.isLowerCase('â') == true
+    @Test
+    def isLowerCase01(): Unit \ Assert = assertTrue(Char.isLowerCase('a'))
 
-@test
-def isLowerCase11(): Bool = Char.isLowerCase('Â') == false
+    @Test
+    def isLowerCase02(): Unit \ Assert = assertFalse(Char.isLowerCase('A'))
 
-/////////////////////////////////////////////////////////////////////////////
-// isUpperCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isLowerCase03(): Unit \ Assert = assertFalse(Char.isLowerCase(' '))
 
-@test
-def isUpperCase01(): Bool = Char.isUpperCase('a') == false
+    @Test
+    def isLowerCase04(): Unit \ Assert = assertFalse(Char.isLowerCase('+'))
 
-@test
-def isUpperCase02(): Bool = Char.isUpperCase('A') == true
+    @Test
+    def isLowerCase05(): Unit \ Assert = assertFalse(Char.isLowerCase('0'))
 
-@test
-def isUpperCase03(): Bool = Char.isUpperCase(' ') == false
+    @Test
+    def isLowerCase06(): Unit \ Assert = assertFalse(Char.isLowerCase('9'))
 
-@test
-def isUpperCase04(): Bool = Char.isUpperCase('+') == false
+    @Test
+    def isLowerCase07(): Unit \ Assert = assertFalse(Char.isLowerCase('†'))
 
-@test
-def isUpperCase05(): Bool = Char.isUpperCase('0') == false
+    @Test
+    def isLowerCase08(): Unit \ Assert = assertTrue(Char.isLowerCase('\u00FE'))        // lower-case thorn
 
-@test
-def isUpperCase06(): Bool = Char.isUpperCase('9') == false
+    @Test
+    def isLowerCase09(): Unit \ Assert = assertFalse(Char.isLowerCase('\u00B1'))       // plus-minus sign
 
-@test
-def isUpperCase07(): Bool = Char.isUpperCase('†') == false
+    @Test
+    def isLowerCase10(): Unit \ Assert = assertTrue(Char.isLowerCase('â'))
 
-@test
-def isUpperCase08(): Bool = Char.isUpperCase('\u00FE') == false        // lower case thorn
+    @Test
+    def isLowerCase11(): Unit \ Assert = assertFalse(Char.isLowerCase('Â'))
 
-@test
-def isUpperCase09(): Bool = Char.isUpperCase('\u00B1') == false       // plus-minus sign
+    /////////////////////////////////////////////////////////////////////////////
+    // isUpperCase                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isUpperCase10(): Bool = Char.isUpperCase('â') == false
+    @Test
+    def isUpperCase01(): Unit \ Assert = assertFalse(Char.isUpperCase('a'))
 
-@test
-def isUpperCase11(): Bool = Char.isUpperCase('Â') == true
+    @Test
+    def isUpperCase02(): Unit \ Assert = assertTrue(Char.isUpperCase('A'))
 
-/////////////////////////////////////////////////////////////////////////////
-// isWhiteSpace                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isUpperCase03(): Unit \ Assert = assertFalse(Char.isUpperCase(' '))
 
-@test
-def isWhiteSpace01(): Bool = Char.isWhiteSpace('a') == false
+    @Test
+    def isUpperCase04(): Unit \ Assert = assertFalse(Char.isUpperCase('+'))
 
-@test
-def isWhiteSpace02(): Bool = Char.isWhiteSpace('A') == false
+    @Test
+    def isUpperCase05(): Unit \ Assert = assertFalse(Char.isUpperCase('0'))
 
-@test
-def isWhiteSpace03(): Bool = Char.isWhiteSpace(' ') == true
+    @Test
+    def isUpperCase06(): Unit \ Assert = assertFalse(Char.isUpperCase('9'))
 
-@test
-def isWhiteSpace04(): Bool = Char.isWhiteSpace('+') == false
+    @Test
+    def isUpperCase07(): Unit \ Assert = assertFalse(Char.isUpperCase('†'))
 
-@test
-def isWhiteSpace05(): Bool = Char.isWhiteSpace('0') == false
+    @Test
+    def isUpperCase08(): Unit \ Assert = assertFalse(Char.isUpperCase('\u00FE'))        // lower case thorn
 
-@test
-def isWhiteSpace06(): Bool = Char.isWhiteSpace('9') == false
+    @Test
+    def isUpperCase09(): Unit \ Assert = assertFalse(Char.isUpperCase('\u00B1'))       // plus-minus sign
 
-@test
-def isWhiteSpace07(): Bool = Char.isWhiteSpace('†') == false
+    @Test
+    def isUpperCase10(): Unit \ Assert = assertFalse(Char.isUpperCase('â'))
 
-@test
-def isWhiteSpace08(): Bool = Char.isWhiteSpace('\u00FE') == false     // lower-case thorn
+    @Test
+    def isUpperCase11(): Unit \ Assert = assertTrue(Char.isUpperCase('Â'))
 
-@test
-def isWhiteSpace09(): Bool = Char.isWhiteSpace('\u00B1') == false     // plus-minus sign
+    /////////////////////////////////////////////////////////////////////////////
+    // isTitleCase                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isWhiteSpace10(): Bool = Char.isWhiteSpace('â') == false
+    @Test
+    def isTitleCase01(): Unit \ Assert = assertFalse(Char.isTitleCase('a'))
 
-@test
-def isWhiteSpace11(): Bool = Char.isWhiteSpace('Â') == false
+    @Test
+    def isTitleCase02(): Unit \ Assert = assertFalse(Char.isTitleCase('A'))
 
-@test
-def isWhiteSpace12(): Bool = Char.isWhiteSpace('\u0009') == true    // tab
+    @Test
+    def isTitleCase03(): Unit \ Assert = assertFalse(Char.isTitleCase(' '))
 
-@test
-def isWhiteSpace13(): Bool = Char.isWhiteSpace('\t') == true        // tab
+    @Test
+    def isTitleCase04(): Unit \ Assert = assertTrue(Char.isTitleCase('\u01F2'))      // Dz (single char, upper case)
 
-@test
-def isWhiteSpace14(): Bool = Char.isWhiteSpace('\u000A') == true    // line-feed
+    @Test
+    def isTitleCase05(): Unit \ Assert = assertFalse(Char.isTitleCase('\u01F3'))      // dz (single char, lower case)
 
-@test
-def isWhiteSpace15(): Bool = Char.isWhiteSpace('\n') == true        // line-feed
+    @Test
+    def isTitleCase06(): Unit \ Assert = assertTrue(Char.isTitleCase('\u1F99'))      // Greek Capital Letter Eta with Dasia and Prosgegrammeni
 
-@test
-def isWhiteSpace16(): Bool = Char.isWhiteSpace('\u000D') == true    // carriage-return
+    /////////////////////////////////////////////////////////////////////////////
+    // isWhitespace                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isWhiteSpace17(): Bool = Char.isWhiteSpace('\r') == true        // carriage-return
+    @Test
+    def isWhitespace01(): Unit \ Assert = assertFalse(Char.isWhitespace('a'))
 
-/////////////////////////////////////////////////////////////////////////////
-// toLowerCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isWhitespace02(): Unit \ Assert = assertFalse(Char.isWhitespace('A'))
 
-@test
-def toLowerCase01(): Bool = Char.toLowerCase('a') == 'a'
+    @Test
+    def isWhitespace03(): Unit \ Assert = assertTrue(Char.isWhitespace(' '))
 
-@test
-def toLowerCase02(): Bool = Char.toLowerCase('A') == 'a'
+    @Test
+    def isWhitespace04(): Unit \ Assert = assertFalse(Char.isWhitespace('+'))
 
-@test
-def toLowerCase03(): Bool = Char.toLowerCase(' ') == ' '
+    @Test
+    def isWhitespace05(): Unit \ Assert = assertFalse(Char.isWhitespace('0'))
 
-@test
-def toLowerCase04(): Bool = Char.toLowerCase('+') == '+'
+    @Test
+    def isWhitespace06(): Unit \ Assert = assertFalse(Char.isWhitespace('9'))
 
-@test
-def toLowerCase05(): Bool = Char.toLowerCase('0') == '0'
+    @Test
+    def isWhitespace07(): Unit \ Assert = assertFalse(Char.isWhitespace('†'))
 
-@test
-def toLowerCase06(): Bool = Char.toLowerCase('9') == '9'
+    @Test
+    def isWhitespace08(): Unit \ Assert = assertFalse(Char.isWhitespace('\u00FE'))     // lower-case thorn
 
-@test
-def toLowerCase07(): Bool = Char.toLowerCase('†') == '†'
+    @Test
+    def isWhitespace09(): Unit \ Assert = assertFalse(Char.isWhitespace('\u00B1'))     // plus-minus sign
 
-@test
-def toLowerCase08(): Bool = Char.toLowerCase('\u00FE') == '\u00FE'     // lower-case thorn
+    @Test
+    def isWhitespace10(): Unit \ Assert = assertFalse(Char.isWhitespace('â'))
 
-@test
-def toLowerCase09(): Bool = Char.toLowerCase('\u00B1') == '\u00B1'     // plus-minus sign
+    @Test
+    def isWhitespace11(): Unit \ Assert = assertFalse(Char.isWhitespace('Â'))
 
-@test
-def toLowerCase10(): Bool = Char.toLowerCase('â') == 'â'
+    @Test
+    def isWhitespace12(): Unit \ Assert = assertTrue(Char.isWhitespace('\u0009'))    // tab
 
-@test
-def toLowerCase11(): Bool = Char.toLowerCase('Â') == 'â'
+    @Test
+    def isWhitespace13(): Unit \ Assert = assertTrue(Char.isWhitespace('\t'))        // tab
 
-/////////////////////////////////////////////////////////////////////////////
-// toUpperCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isWhitespace14(): Unit \ Assert = assertTrue(Char.isWhitespace('\u000A'))    // line-feed
 
-@test
-def toUpperCase01(): Bool = Char.toUpperCase('a') == 'A'
+    @Test
+    def isWhitespace15(): Unit \ Assert = assertTrue(Char.isWhitespace('\n'))        // line-feed
 
-@test
-def toUpperCase02(): Bool = Char.toUpperCase('A') == 'A'
+    @Test
+    def isWhitespace16(): Unit \ Assert = assertTrue(Char.isWhitespace('\u000D'))    // carriage-return
 
-@test
-def toUpperCase03(): Bool = Char.toUpperCase(' ') == ' '
+    @Test
+    def isWhitespace17(): Unit \ Assert = assertTrue(Char.isWhitespace('\r'))        // carriage-return
 
-@test
-def toUpperCase04(): Bool = Char.toUpperCase('+') == '+'
+    /////////////////////////////////////////////////////////////////////////////
+    // isDefined                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toUpperCase05(): Bool = Char.toUpperCase('0') == '0'
+    @Test
+    def isDefined01(): Unit \ Assert = assertTrue(Char.isDefined('a'))
 
-@test
-def toUpperCase06(): Bool = Char.toUpperCase('9') == '9'
+    @Test
+    def isDefined02(): Unit \ Assert = assertTrue(Char.isDefined('A'))
 
-@test
-def toUpperCase07(): Bool = Char.toUpperCase('†') == '†'
+    /////////////////////////////////////////////////////////////////////////////
+    // isISOControl                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toUpperCase08(): Bool = Char.toUpperCase('\u00FE') == '\u00DE'     // thorn (lower to upper)
+    @Test
+    def isISOControl01(): Unit \ Assert = assertFalse(Char.isISOControl('a'))
 
-@test
-def toUpperCase09(): Bool = Char.toUpperCase('\u00B1') == '\u00B1'     // plus-minus sign
+    @Test
+    def isISOControl02(): Unit \ Assert = assertFalse(Char.isISOControl('A'))
 
-@test
-def toUpperCase10(): Bool = Char.toUpperCase('â') == 'Â'
+    @Test
+    def isISOControl03(): Unit \ Assert = assertTrue(Char.isISOControl('\u0000'))
 
-@test
-def toUpperCase11(): Bool = Char.toUpperCase('Â') == 'Â'
+    @Test
+    def isISOControl04(): Unit \ Assert = assertTrue(Char.isISOControl('\u0015'))        // NAK
 
-/////////////////////////////////////////////////////////////////////////////
-// toString                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // isMirrored                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toString01(): Bool = Char.toString('a') == "a"
+    @Test
+    def isMirrored01(): Unit \ Assert = assertFalse(Char.isMirrored('a'))
 
-@test
-def toString02(): Bool = Char.toString('A') == "A"
+    @Test
+    def isMirrored02(): Unit \ Assert = assertFalse(Char.isMirrored('A'))
 
-@test
-def toString03(): Bool = Char.toString(' ') == " "
+    @Test
+    def isMirrored03(): Unit \ Assert = assertTrue(Char.isMirrored('['))
 
-@test
-def toString04(): Bool = Char.toString('+') == "+"
+    @Test
+    def isMirrored04(): Unit \ Assert = assertTrue(Char.isMirrored(']'))
 
-@test
-def toString05(): Bool = Char.toString('0') == "0"
+    /////////////////////////////////////////////////////////////////////////////
+    // isSurrogate                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toString06(): Bool = Char.toString('9') == "9"
+    @Test
+    def isSurrogate01(): Unit \ Assert = assertFalse(Char.isSurrogate('a'))
 
-@test
-def toString07(): Bool = Char.toString('†') == "†"
+    @Test
+    def isSurrogate02(): Unit \ Assert = assertFalse(Char.isSurrogate('A'))
 
-@test
-def toString08(): Bool = Char.toString('\u00FE') == "þ"    // lower-case thorn
+    @Test
+    def isSurrogate03(): Unit \ Assert = assertTrue(Char.isSurrogate('\uD83C'))
 
-@test
-def toString09(): Bool = Char.toString('\u00B1') == "±"     // plus-minus sign
+    @Test
+    def isSurrogate04(): Unit \ Assert = assertTrue(Char.isSurrogate('\uDFDD'))
 
-@test
-def toString10(): Bool = Char.toString('â') == "â"
+    /////////////////////////////////////////////////////////////////////////////
+    // isSurrogatePair                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toString11(): Bool = Char.toString('Â') == "Â"
+    @Test
+    def isSurrogatePair01(): Unit \ Assert = assertFalse(Char.isSurrogatePair(high = 'A', low = 'a'))
 
-/////////////////////////////////////////////////////////////////////////////
-// toInt32                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isSurrogatePair02(): Unit \ Assert = assertTrue(Char.isSurrogatePair(high = '\uD83C', low = '\uDFDD'))
 
-@test
-def toInt3201(): Bool = Char.toInt32('a') == 0x0061
+    /////////////////////////////////////////////////////////////////////////////
+    // toLowerCase                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toInt3202(): Bool = Char.toInt32('A') == 0x0041
+    @Test
+    def toLowerCase01(): Unit \ Assert = assertEq(expected = 'a', Char.toLowerCase('a'))
 
-@test
-def toInt3203(): Bool = Char.toInt32(' ') == 0x0020
+    @Test
+    def toLowerCase02(): Unit \ Assert = assertEq(expected = 'a', Char.toLowerCase('A'))
 
-@test
-def toInt3204(): Bool = Char.toInt32('+') == 0x002B
+    @Test
+    def toLowerCase03(): Unit \ Assert = assertEq(expected = ' ', Char.toLowerCase(' '))
 
-@test
-def toInt3205(): Bool = Char.toInt32('0') == 0x0030
+    @Test
+    def toLowerCase04(): Unit \ Assert = assertEq(expected = '+', Char.toLowerCase('+'))
 
-@test
-def toInt3206(): Bool = Char.toInt32('9') == 0x0039
+    @Test
+    def toLowerCase05(): Unit \ Assert = assertEq(expected = '0', Char.toLowerCase('0'))
 
-@test
-def toInt3207(): Bool = Char.toInt32('†') == 0x2020         // dagger
+    @Test
+    def toLowerCase06(): Unit \ Assert = assertEq(expected = '9', Char.toLowerCase('9'))
 
-@test
-def toInt3208(): Bool = Char.toInt32('\u00FE') == 0x00FE    // lower-case thorn
+    @Test
+    def toLowerCase07(): Unit \ Assert = assertEq(expected = '†', Char.toLowerCase('†'))
 
-@test
-def toInt3209(): Bool = Char.toInt32('\u00B1') == 0x00B1    // plus-minus sign
+    @Test
+    def toLowerCase08(): Unit \ Assert = assertEq(expected = '\u00FE', Char.toLowerCase('\u00FE'))     // lower-case thorn
 
-@test
-def toInt3210(): Bool = Char.toInt32('â') == 0x00E2         // a-circumflex (lower case)
+    @Test
+    def toLowerCase09(): Unit \ Assert = assertEq(expected = '\u00B1', Char.toLowerCase('\u00B1'))     // plus-minus sign
 
-@test
-def toInt3211(): Bool = Char.toInt32('Â') == 0x00C2         // A-circumflex (upper-case)
+    @Test
+    def toLowerCase10(): Unit \ Assert = assertEq(expected = 'â', Char.toLowerCase('â'))
 
-/////////////////////////////////////////////////////////////////////////////
-// fromInt32                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def toLowerCase11(): Unit \ Assert = assertEq(expected = 'â', Char.toLowerCase('Â'))
 
-@test
-def fromInt3201(): Bool = Char.fromInt32(0x0061) == 'a'
+    /////////////////////////////////////////////////////////////////////////////
+    // toUpperCase                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def fromInt3202(): Bool = Char.fromInt32(0x0041) == 'A'
+    @Test
+    def toUpperCase01(): Unit \ Assert = assertEq(expected = 'A', Char.toUpperCase('a'))
 
-@test
-def fromInt3203(): Bool = Char.fromInt32(0x0020) == ' '
+    @Test
+    def toUpperCase02(): Unit \ Assert = assertEq(expected = 'A', Char.toUpperCase('A'))
 
-@test
-def fromInt3204(): Bool = Char.fromInt32(0x002B) == '+'
+    @Test
+    def toUpperCase03(): Unit \ Assert = assertEq(expected = ' ', Char.toUpperCase(' '))
 
-@test
-def fromInt3205(): Bool = Char.fromInt32(0x0030) == '0'
+    @Test
+    def toUpperCase04(): Unit \ Assert = assertEq(expected = '+', Char.toUpperCase('+'))
 
-@test
-def fromInt3206(): Bool = Char.fromInt32(0x0039) == '9'
+    @Test
+    def toUpperCase05(): Unit \ Assert = assertEq(expected = '0', Char.toUpperCase('0'))
 
-@test
-def fromInt3207(): Bool = Char.fromInt32(0x2020) == '†'         // dagger
+    @Test
+    def toUpperCase06(): Unit \ Assert = assertEq(expected = '9', Char.toUpperCase('9'))
 
-@test
-def fromInt3208(): Bool = Char.fromInt32(0x00FE) == '\u00FE'    // lower-case thorn
+    @Test
+    def toUpperCase07(): Unit \ Assert = assertEq(expected = '†', Char.toUpperCase('†'))
 
-@test
-def fromInt3209(): Bool = Char.fromInt32(0x00B1) == '\u00B1'    // plus-minus sign
+    @Test
+    def toUpperCase08(): Unit \ Assert = assertEq(expected = '\u00DE', Char.toUpperCase('\u00FE'))     // thorn (lower to upper)
 
-@test
-def fromInt3210(): Bool = Char.fromInt32(0x00E2) == 'â'         // a-circumflex (lower case)
+    @Test
+    def toUpperCase09(): Unit \ Assert = assertEq(expected = '\u00B1', Char.toUpperCase('\u00B1'))     // plus-minus sign
 
-@test
-def fromInt3211(): Bool = Char.fromInt32(0x00C2) == 'Â'         // A-circumflex (upper-case)
+    @Test
+    def toUpperCase10(): Unit \ Assert = assertEq(expected = 'Â', Char.toUpperCase('â'))
+
+    @Test
+    def toUpperCase11(): Unit \ Assert = assertEq(expected = 'Â', Char.toUpperCase('Â'))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toTitleCase                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toTitleCase01(): Unit \ Assert = assertEq(expected = 'A', Char.toTitleCase('a'))
+
+    @Test
+    def toTitleCase02(): Unit \ Assert = assertEq(expected = 'A', Char.toTitleCase('A'))
+
+    @Test
+    def toTitleCase03(): Unit \ Assert = assertEq(expected = ' ', Char.toTitleCase(' '))
+
+    @Test
+    def toTitleCase04(): Unit \ Assert = assertEq(expected = '\u01F2', Char.toTitleCase('\u01F2'))      // Dz (single char)
+
+    @Test
+    def toTitleCase05(): Unit \ Assert = assertEq(expected = '\u01F2', Char.toTitleCase('\u01F3'))      // dz (single char)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toBmpCodePoint                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toBmpCodePoint01(): Unit \ Assert = assertEq(expected = 0x0061, Char.toBmpCodePoint('a'))
+
+    @Test
+    def toBmpCodePoint02(): Unit \ Assert = assertEq(expected = 0x0041, Char.toBmpCodePoint('A'))
+
+    @Test
+    def toBmpCodePoint03(): Unit \ Assert = assertEq(expected = 0x0020, Char.toBmpCodePoint(' '))
+
+    @Test
+    def toBmpCodePoint04(): Unit \ Assert = assertEq(expected = 0x01F2, Char.toBmpCodePoint('\u01F2'))      // Dz (single char)
+
+    @Test
+    def toBmpCodePoint05(): Unit \ Assert = assertEq(expected = 0x01F3, Char.toBmpCodePoint('\u01F3'))      // dz (single char)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toSupplementaryCodePoint                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toSupplementaryCodePoint01(): Unit \ Assert =
+        assertEq(expected = 0x1f3dd, Char.toSupplementaryCodePoint(high = '\uD83C', low = '\uDFDD'))      // Desert Island pictogram
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toString01(): Unit \ Assert = assertEq(expected = "a", Char.toString('a'))
+
+    @Test
+    def toString02(): Unit \ Assert = assertEq(expected = "A", Char.toString('A'))
+
+    @Test
+    def toString03(): Unit \ Assert = assertEq(expected = " ", Char.toString(' '))
+
+    @Test
+    def toString04(): Unit \ Assert = assertEq(expected = "+", Char.toString('+'))
+
+    @Test
+    def toString05(): Unit \ Assert = assertEq(expected = "0", Char.toString('0'))
+
+    @Test
+    def toString06(): Unit \ Assert = assertEq(expected = "9", Char.toString('9'))
+
+    @Test
+    def toString07(): Unit \ Assert = assertEq(expected = "†", Char.toString('†'))
+
+    @Test
+    def toString08(): Unit \ Assert = assertEq(expected = "þ", Char.toString('\u00FE'))    // lower-case thorn
+
+    @Test
+    def toString09(): Unit \ Assert = assertEq(expected = "±", Char.toString('\u00B1'))     // plus-minus sign
+
+    @Test
+    def toString10(): Unit \ Assert = assertEq(expected = "â", Char.toString('â'))
+
+    @Test
+    def toString11(): Unit \ Assert = assertEq(expected = "Â", Char.toString('Â'))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getNumericValue                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getNumericValue01(): Unit \ Assert = assertSome(Char.getNumericValue('0'))
+
+    @Test
+    def getNumericValue02(): Unit \ Assert = assertSome(Char.getNumericValue('1'))
+
+    @Test
+    def getNumericValue03(): Unit \ Assert = assertSome(Char.getNumericValue('9'))
+
+    @Test
+    def getNumericValue04(): Unit \ Assert = assertSome(Char.getNumericValue('A'))
+
+    @Test
+    def getNumericValue05(): Unit \ Assert = assertSome(Char.getNumericValue('a'))
+
+    @Test
+    def getNumericValue06(): Unit \ Assert = assertSome(Char.getNumericValue('F'))
+
+    @Test
+    def getNumericValue07(): Unit \ Assert = assertSome(Char.getNumericValue('f'))
+
+    @Test
+    def getNumericValue08(): Unit \ Assert = assertNone(Char.getNumericValue(' '))
+
+    @Test
+    def getNumericValue09(): Unit \ Assert = assertNone(Char.getNumericValue('+'))
+
+    @Test
+    def getNumericValue10(): Unit \ Assert = assertNone(Char.getNumericValue('-'))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // digit                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def digit01(): Unit \ Assert = assertEq(expected = Some(0), Char.digit(radix = 10, '0'))
+
+    @Test
+    def digit02(): Unit \ Assert = assertEq(expected = Some(1), Char.digit(radix = 10, '1'))
+
+    @Test
+    def digit03(): Unit \ Assert = assertEq(expected = Some(9), Char.digit(radix = 10, '9'))
+
+    @Test
+    def digit04(): Unit \ Assert = assertNone(Char.digit(radix = 10, 'A'))
+
+    @Test
+    def digit05(): Unit \ Assert = assertNone(Char.digit(radix = 10, 'a'))
+
+    @Test
+    def digit06(): Unit \ Assert = assertNone(Char.digit(radix = 10, 'F'))
+
+    @Test
+    def digit07(): Unit \ Assert = assertNone(Char.digit(radix = 10, 'f'))
+
+    @Test
+    def digit08(): Unit \ Assert = assertNone(Char.digit(radix = 10, ' '))
+
+    @Test
+    def digit09(): Unit \ Assert = assertNone(Char.digit(radix = 10, '+'))
+
+    @Test
+    def digit10(): Unit \ Assert = assertNone(Char.digit(radix = 10, '-'))
+
+    @Test
+    def digit11(): Unit \ Assert = assertEq(expected = Some(0), Char.digit(radix = 16, '0'))
+
+    @Test
+    def digit12(): Unit \ Assert = assertEq(expected = Some(1), Char.digit(radix = 16, '1'))
+
+    @Test
+    def digit13(): Unit \ Assert = assertEq(expected = Some(9), Char.digit(radix = 16, '9'))
+
+    @Test
+    def digit14(): Unit \ Assert = assertEq(expected = Some(10), Char.digit(radix = 16, 'A'))
+
+    @Test
+    def digit15(): Unit \ Assert = assertEq(expected = Some(10), Char.digit(radix = 16, 'a'))
+
+    @Test
+    def digit16(): Unit \ Assert = assertEq(expected = Some(15), Char.digit(radix = 16, 'F'))
+
+    @Test
+    def digit17(): Unit \ Assert = assertEq(expected = Some(15), Char.digit(radix = 16, 'f'))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forDigit                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forDigit01(): Unit \ Assert = assertEq(expected = Some('0'), Char.forDigit(radix = 10, 0))
+
+    @Test
+    def forDigit02(): Unit \ Assert = assertEq(expected = Some('1'), Char.forDigit(radix = 10, 1))
+
+    @Test
+    def forDigit03(): Unit \ Assert = assertEq(expected = Some('9'), Char.forDigit(radix = 10, 9))
+
+    @Test
+    def forDigit04(): Unit \ Assert = assertNone(Char.forDigit(radix = 10, 11))              // 'A'
+
+    @Test
+    def forDigit05(): Unit \ Assert = assertNone(Char.forDigit(radix = 10, 15))              // 'F'
+
+    @Test
+    def forDigit06(): Unit \ Assert = assertNone(Char.forDigit(radix = 10, 256))
+
+    @Test
+    def forDigit07(): Unit \ Assert = assertEq(expected = Some('0'), Char.forDigit(radix = 16, 0))
+
+    @Test
+    def forDigit08(): Unit \ Assert = assertEq(expected = Some('1'), Char.forDigit(radix = 16, 1))
+
+    @Test
+    def forDigit09(): Unit \ Assert = assertEq(expected = Some('9'), Char.forDigit(radix = 16, 9))
+
+    @Test
+    def forDigit10(): Unit \ Assert = assertEq(expected = Some('a'), Char.forDigit(radix = 16, 10))
+
+    @Test
+    def forDigit11(): Unit \ Assert = assertEq(expected = Some('f'), Char.forDigit(radix = 16, 15))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // charValue                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def charValue01(): Unit \ Assert = {
+        let c = Char.valueOf('0');
+        assertEq(expected = '0', Char.charValue(c))
+    }
+
+    @Test
+    def charValue02(): Unit \ Assert = {
+        let c = Char.valueOf('A');
+        assertEq(expected = 'A', Char.charValue(c))
+    }
+
+    @Test
+    def charValue03(): Unit \ Assert = {
+        let c = Char.valueOf('+');
+        assertEq(expected = '+', Char.charValue(c))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // valueOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def valueOf01(): Unit \ Assert = {
+        let c = Char.valueOf('0');
+        assertTrue(c.equals(Char.valueOf('0')))
+    }
+
+    @Test
+    def valueOf02(): Unit \ Assert = {
+        let c = Char.valueOf('A');
+        assertTrue(c.equals(Char.valueOf('A')))
+    }
+
+    @Test
+    def valueOf03(): Unit \ Assert = {
+        let c = Char.valueOf('+');
+        assertTrue(c.equals(Char.valueOf('+')))
+    }
 
 }

@@ -1,321 +1,253 @@
-namespace Test/Exp/Unary/Arithmetic {
+mod Test.Exp.Unary.Arithmetic {
 
-    @test
-    def testUnaryPlus01(): Bool = 0 == +0
+    use Assert.assertEq
 
-    @test
-    def testUnaryPlus02(): Bool = +36000 == 36000
+    @Test
+    def testUnaryMinus01(): Unit \ Assert =
+        assertEq(expected = 0, -0)
 
-    @test
-    def testUnaryPlus03(): Bool = +(-36000) == -36000
+    @Test
+    def testUnaryMinus02(): Unit \ Assert =
+        assertEq(expected = -36000, -36000)
 
-    @test
-    def testUnaryPlus04(): Bool = +2147483647 == 2147483647
+    @Test
+    def testUnaryMinus03(): Unit \ Assert =
+        assertEq(expected = 36000, -(-36000))
 
-    @test
-    def testUnaryPlus05(): Bool = -2147483648 == +-2147483648
+    @Test
+    def testUnaryMinus04(): Unit \ Assert =
+        assertEq(expected = -2147483648, -(-2147483648))
 
-    @test
-    def testUnaryPlus06(): Bool = +0i8 == 0i8
+    @Test
+    def testUnaryMinus05(): Unit \ Assert =
+        assertEq(expected = -2147483648, -2147483648)
 
-    @test
-    def testUnaryPlus07(): Bool = +36i8 == 36i8
+    @Test
+    def testUnaryMinus06(): Unit \ Assert =
+        assertEq(expected = 0i8, -0i8)
 
-    @test
-    def testUnaryPlus08(): Bool = +(-36i8) == -36i8
+    @Test
+    def testUnaryMinus07(): Unit \ Assert =
+        assertEq(expected = -36i8, -36i8)
 
-    @test
-    def testUnaryPlus09(): Bool = +127i8 == 127i8
-
-    @test
-    def testUnaryPlus10(): Bool = +-128i8 == -128i8
-
-    @test
-    def testUnaryPlus11(): Bool = +0i16 == 0i16
-
-    @test
-    def testUnaryPlus12(): Bool = +3600i16 == 3600i16
-
-    @test
-    def testUnaryPlus13(): Bool = +(-3600i16) == -3600i16
-
-    @test
-    def testUnaryPlus14(): Bool = +32767i16 == 32767i16
-
-    @test
-    def testUnaryPlus15(): Bool = +-32768i16 == -32768i16
-
-    @test
-    def testUnaryPlus16(): Bool = +0i32 == 0i32
-
-    @test
-    def testUnaryPlus17(): Bool = +36000i32 == 36000i32
-
-    @test
-    def testUnaryPlus18(): Bool = +(-36000i32) == -36000i32
-
-    @test
-    def testUnaryPlus19(): Bool = +2147483647i32 == 2147483647i32
-
-    @test
-    def testUnaryPlus20(): Bool = +-2147483648i32 == -2147483648i32
-
-    @test
-    def testUnaryPlus21(): Bool = +0i64 == 0i64
-
-    @test
-    def testUnaryPlus22(): Bool = +3600000000i64 == 3600000000i64
-
-    @test
-    def testUnaryPlus23(): Bool = +(-3600000000i64) == -3600000000i64
-
-    @test
-    def testUnaryPlus24(): Bool = +9223372036854775807i64 == 9223372036854775807i64
-
-    @test
-    def testUnaryPlus25(): Bool = +-9223372036854775808i64 == -9223372036854775808i64
-
-    @test
-    def testUnaryPlus26(): Bool = +0.0 == 0.0
-
-    @test
-    def testUnaryPlus27(): Bool = +(-0.0) == 0.0
-
-    @test
-    def testUnaryPlus28(): Bool = +(4.2) == 4.2
-
-    @test
-    def testUnaryPlus29(): Bool = +99999999999999999999999999999999999999999999999999999999999999999999999999999999.0 ==
-                                         99999999999999999999999999999999999999999999999999999999999999999999999999999999.0
-
-    @test
-    def testUnaryPlus30(): Bool = +0.000000000000000000000000000000000000000000000000000000000000000000000000000000001 ==
-                                          0.000000000000000000000000000000000000000000000000000000000000000000000000000000001
-
-    @test
-    def testUnaryPlus31(): Bool = +(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0) ==
-                                           -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0
-
-    @test
-    def testUnaryPlus32(): Bool = +(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001) ==
-                                           -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001
-
-    @test
-    def testUnaryPlus33(): Bool = +0.0f32 == 0.0f32
-
-    @test
-    def testUnaryPlus34(): Bool = +(-0.0f32) == 0.0f32
-
-    @test
-    def testUnaryPlus35(): Bool = +(4.2f32) == 4.2f32
-
-    @test
-    def testUnaryPlus36(): Bool = +999999999999999999999999999999.0f32 == 999999999999999999999999999999.0f32
-
-    @test
-    def testUnaryPlus37(): Bool = +0.0000000000000000000000000000001f32 == 0.0000000000000000000000000000001f32
-
-    @test
-    def testUnaryPlus38(): Bool = +(-999999999999999999999999999999.0f32) == -999999999999999999999999999999.0f32
-
-    @test
-    def testUnaryPlus39(): Bool = +(-0.0000000000000000000000000000001f32) == -0.0000000000000000000000000000001f32
-
-    @test
-    def testUnaryPlus40(): Bool = +0.0f64 == 0.0f64
-
-    @test
-    def testUnaryPlus41(): Bool = +(-0.0f64) == 0.0f64
-
-    @test
-    def testUnaryPlus42(): Bool = +(4.2f64) == 4.2f64
-
-    @test
-    def testUnaryPlus43(): Bool = +99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64 ==
-                                         99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64
-
-    @test
-    def testUnaryPlus44(): Bool = +0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64 ==
-                                         0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64
-
-    @test
-    def testUnaryPlus45(): Bool = +(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64) ==
-                                         -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64
-
-    @test
-    def testUnaryPlus46(): Bool = +(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64) ==
-                                         -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64
-
-    @test
-    def testUnaryPlus47(): Bool = +0ii == 0ii
-
-    @test
-    def testUnaryPlus48(): Bool = +1ii == 1ii
-
-    @test
-    def testUnaryPlus49(): Bool = +10ii == 10ii
-
-    @test
-    def testUnaryPlus50(): Bool = +9223372036854775808ii == 9223372036854775808ii
-
-    @test
-    def testUnaryPlus51(): Bool = +(-9223372036854775809ii) == -9223372036854775809ii
-
-    @test
-    def testUnaryMinus01(): Bool = -0 == 0
-
-    @test
-    def testUnaryMinus02(): Int = -36000
-
-    @test
-    def testUnaryMinus03(): Bool = -(-36000) == 36000
-
-    @test
-    def testUnaryMinus04(): Bool = --2147483648 == -2147483648
-
-    @test
-    def testUnaryMinus05(): Int = -2147483648
-
-    @test
-    def testUnaryMinus06(): Int8 = -0i8
-
-    @test
-    def testUnaryMinus07(): Int8 = -36i8
-
-    @test
-    def testUnaryMinus08(): Bool = -(-36i8) == 36i8
-
-    @test
-    def testUnaryMinus09(): Bool = --128i8 == -128i8
-
-    @test
-    def testUnaryMinus10(): Int8 = -127i8
-
-    @test
-    def testUnaryMinus11(): Bool = -0i16 == 0i16
-
-    @test
-    def testUnaryMinus12(): Int16 = -3600i16
-
-    @test
-    def testUnaryMinus13(): Bool = -(-3600i16) == 3600i16
-
-    @test
-    def testUnaryMinus14(): Int16 = -32767i16
-
-    @test
-    def testUnaryMinus15(): Bool = --32768i16 == -32768i16
-
-    @test
-    def testUnaryMinus16(): Bool = -0i32 == 0i32
-
-    @test
-    def testUnaryMinus17(): Int32 = -36000i32
-
-    @test
-    def testUnaryMinus18(): Bool = -(-36000i32) == 36000i32
-
-    @test
-    def testUnaryMinus19(): Int32 = -2147483647i32
-
-    @test
-    def testUnaryMinus20(): Bool = --2147483648i32 == -2147483648i32
-
-    @test
-    def testUnaryMinus21(): Bool = -0i64 == 0i64
-
-    @test
-    def testUnaryMinus22(): Int64 = -3600000000i64
-
-    @test
-    def testUnaryMinus23(): Bool = -(-3600000000i64) == 3600000000i64
-
-    @test
-    def testUnaryMinus24(): Int64 = -9223372036854775807i64
-
-    @test
-    def testUnaryMinus25(): Bool = --9223372036854775808i64 == -9223372036854775808i64
-
-    @test
-    def testUnaryMinus26(): Bool = -0.0 == 0.0
-
-    @test
-    def testUnaryMinus27(): Bool = -(-0.0) == 0.0
-
-    @test
-    def testUnaryMinus28(): Bool = -(4.2) == -4.2
-
-    @test
-    def testUnaryMinus29(): Float64 = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0
-
-    @test
-    def testUnaryMinus30(): Float64 = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001
-
-    @test
-    def testUnaryMinus31(): Bool = -(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0) ==
-                                         99999999999999999999999999999999999999999999999999999999999999999999999999999999.0
-
-    @test
-    def testUnaryMinus32(): Bool = -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001) ==
-                                         0.000000000000000000000000000000000000000000000000000000000000000000000000000000001
-
-    @test
-    def testUnaryMinus33(): Bool = -0.0f32 == 0.0f32
-
-    @test
-    def testUnaryMinus34(): Bool = -(-0.0f32) == 0.0f32
-
-    @test
-    def testUnaryMinus35(): Bool = -(4.2f32) == -4.2f32
-
-    @test
-    def testUnaryMinus36(): Float32 = -999999999999999999999999999999.0f32
-
-    @test
-    def testUnaryMinus37(): Float32 = -0.0000000000000000000000000000001f32
-
-    @test
-    def testUnaryMinus38(): Bool = -(-999999999999999999999999999999.0f32) == 999999999999999999999999999999.0f32
-
-    @test
-    def testUnaryMinus39(): Bool = -(-0.0000000000000000000000000000001f32) == 0.0000000000000000000000000000001f32
-
-    @test
-    def testUnaryMinus40(): Float64 = -0.0f64
-
-    @test
-    def testUnaryMinus41(): Bool = -(-0.0f64) == 0.0f64
-
-    @test
-    def testUnaryMinus42(): Bool = -(4.2f64) == -4.2f64
-
-    @test
-    def testUnaryMinus43(): Float64 = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64
-
-    @test
-    def testUnaryMinus44(): Float64 = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64
-
-    @test
-    def testUnaryMinus45(): Bool = -(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64) ==
-                                         99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64
-
-    @test
-    def testUnaryMinus46(): Bool = -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64) ==
-                                         0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64
-
-    @test
-    def testUnaryMinus47(): Bool = -0ii == 0ii
-
-    @test
-    def testUnaryMinus48(): BigInt = -1ii
-
-    @test
-    def testUnaryMinus49(): BigInt = -10ii
-
-    @test
-    def testUnaryMinus50(): BigInt = -9223372036854775808ii
-
-    @test
-    def testUnaryMinus51(): Bool = -(-9223372036854775809ii) == 9223372036854775809ii
+    @Test
+    def testUnaryMinus08(): Unit \ Assert =
+        assertEq(expected = 36i8, -(-36i8))
+
+    @Test
+    def testUnaryMinus09(): Unit \ Assert =
+        assertEq(expected = -128i8, -(-128i8))
+
+    @Test
+    def testUnaryMinus10(): Unit \ Assert =
+        assertEq(expected = -127i8, -127i8)
+
+    @Test
+    def testUnaryMinus11(): Unit \ Assert =
+        assertEq(expected = 0i16, -0i16)
+
+    @Test
+    def testUnaryMinus12(): Unit \ Assert =
+        assertEq(expected = -3600i16, -3600i16)
+
+    @Test
+    def testUnaryMinus13(): Unit \ Assert =
+        assertEq(expected = 3600i16, -(-3600i16))
+
+    @Test
+    def testUnaryMinus14(): Unit \ Assert =
+        assertEq(expected = -32767i16, -32767i16)
+
+    @Test
+    def testUnaryMinus15(): Unit \ Assert =
+        assertEq(expected = -32768i16, -(-32768i16))
+
+    @Test
+    def testUnaryMinus16(): Unit \ Assert =
+        assertEq(expected = 0i32, -0i32)
+
+    @Test
+    def testUnaryMinus17(): Unit \ Assert =
+        assertEq(expected = -36000i32, -36000i32)
+
+    @Test
+    def testUnaryMinus18(): Unit \ Assert =
+        assertEq(expected = 36000i32, -(-36000i32))
+
+    @Test
+    def testUnaryMinus19(): Unit \ Assert =
+        assertEq(expected = -2147483647i32, -2147483647i32)
+
+    @Test
+    def testUnaryMinus20(): Unit \ Assert =
+        assertEq(expected = -2147483648i32, -(-2147483648i32))
+
+    @Test
+    def testUnaryMinus21(): Unit \ Assert =
+        assertEq(expected = 0i64, -0i64)
+
+    @Test
+    def testUnaryMinus22(): Unit \ Assert =
+        assertEq(expected = -3600000000i64, -3600000000i64)
+
+    @Test
+    def testUnaryMinus23(): Unit \ Assert =
+        assertEq(expected = 3600000000i64, -(-3600000000i64))
+
+    @Test
+    def testUnaryMinus24(): Unit \ Assert =
+        assertEq(expected = -9223372036854775807i64, -9223372036854775807i64)
+
+    @Test
+    def testUnaryMinus25(): Unit \ Assert =
+        assertEq(expected = -9223372036854775808i64, -(-9223372036854775808i64))
+
+    @Test
+    def testUnaryMinus26(): Unit \ Assert =
+        assertEq(expected = 0.0, -0.0)
+
+    @Test
+    def testUnaryMinus27(): Unit \ Assert =
+        assertEq(expected = 0.0, -(-0.0))
+
+    @Test
+    def testUnaryMinus28(): Unit \ Assert =
+        assertEq(expected = -4.2, -(4.2))
+
+    @Test
+    def testUnaryMinus29(): Unit \ Assert =
+        assertEq(expected = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0,
+                            -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0)
+
+    @Test
+    def testUnaryMinus30(): Unit \ Assert =
+        assertEq(expected = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001,
+                            -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001)
+
+    @Test
+    def testUnaryMinus31(): Unit \ Assert =
+        assertEq(expected = 99999999999999999999999999999999999999999999999999999999999999999999999999999999.0,
+                         -(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0))
+
+    @Test
+    def testUnaryMinus32(): Unit \ Assert =
+        assertEq(expected = 0.000000000000000000000000000000000000000000000000000000000000000000000000000000001,
+                         -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001))
+
+    @Test
+    def testUnaryMinus33(): Unit \ Assert =
+        assertEq(expected = 0.0f32, -0.0f32)
+
+    @Test
+    def testUnaryMinus34(): Unit \ Assert =
+        assertEq(expected = 0.0f32, -(-0.0f32))
+
+    @Test
+    def testUnaryMinus35(): Unit \ Assert =
+        assertEq(expected = -4.2f32, -(4.2f32))
+
+    @Test
+    def testUnaryMinus36(): Unit \ Assert =
+        assertEq(expected = -999999999999999999999999999999.0f32,
+                            -999999999999999999999999999999.0f32)
+
+    @Test
+    def testUnaryMinus37(): Unit \ Assert =
+        assertEq(expected = -0.0000000000000000000000000000001f32,
+                            -0.0000000000000000000000000000001f32)
+
+    @Test
+    def testUnaryMinus38(): Unit \ Assert =
+        assertEq(expected = 999999999999999999999999999999.0f32,
+                         -(-999999999999999999999999999999.0f32))
+
+    @Test
+    def testUnaryMinus39(): Unit \ Assert =
+        assertEq(expected = 0.0000000000000000000000000000001f32,
+                         -(-0.0000000000000000000000000000001f32))
+
+    @Test
+    def testUnaryMinus40(): Unit \ Assert =
+        assertEq(expected = -0.0f64, -0.0f64)
+
+    @Test
+    def testUnaryMinus41(): Unit \ Assert =
+        assertEq(expected = 0.0f64, -(-0.0f64))
+
+    @Test
+    def testUnaryMinus42(): Unit \ Assert =
+        assertEq(expected = -4.2f64, -(4.2f64))
+
+    @Test
+    def testUnaryMinus43(): Unit \ Assert =
+        assertEq(expected = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64,
+                            -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64)
+
+    @Test
+    def testUnaryMinus44(): Unit \ Assert =
+        assertEq(expected = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64,
+                            -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64)
+
+    @Test
+    def testUnaryMinus45(): Unit \ Assert =
+        assertEq(expected = 99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64,
+                         -(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64))
+
+    @Test
+    def testUnaryMinus46(): Unit \ Assert =
+        assertEq(expected = 0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64,
+                         -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64))
+
+    @Test
+    def testUnaryMinus47(): Unit \ Assert =
+        assertEq(expected = 0ii, -0ii)
+
+    @Test
+    def testUnaryMinus48(): Unit \ Assert =
+        assertEq(expected = -1ii, -1ii)
+
+    @Test
+    def testUnaryMinus49(): Unit \ Assert =
+        assertEq(expected = -10ii, -10ii)
+
+    @Test
+    def testUnaryMinus50(): Unit \ Assert =
+        assertEq(expected = -9223372036854775808ii, -9223372036854775808ii)
+
+    @Test
+    def testUnaryMinus51(): Unit \ Assert =
+        assertEq(expected = 9223372036854775809ii, -(-9223372036854775809ii))
+
+    @Test
+    def testUnaryMinus52(): Unit \ Assert =
+        assertEq(expected = -0.0ff, -0.0ff)
+
+    @Test
+    def testUnaryMinus53(): Unit \ Assert =
+        assertEq(expected = 0.0ff, -(-0.0ff))
+
+    @Test
+    def testUnaryMinus54(): Unit \ Assert =
+        assertEq(expected = -4.2ff, -(4.2ff))
+
+    @Test
+    def testUnaryMinus55(): Unit \ Assert =
+        assertEq(expected = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0ff,
+                            -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0ff)
+
+    @Test
+    def testUnaryMinus56(): Unit \ Assert =
+        assertEq(expected = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001ff,
+                            -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001ff)
+
+    @Test
+    def testUnaryMinus57(): Unit \ Assert =
+        assertEq(expected = 99999999999999999999999999999999999999999999999999999999999999999999999999999999.0ff,
+                         -(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0ff))
+
+    @Test
+    def testUnaryMinus58(): Unit \ Assert =
+        assertEq(expected = 0.000000000000000000000000000000000000000000000000000000000000000000000000000000001ff,
+                         -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001ff))
 
 }

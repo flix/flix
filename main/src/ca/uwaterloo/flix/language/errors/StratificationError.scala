@@ -16,46 +16,47 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationMessage {
-  private implicit val audience: Audience = Audience.External
+case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends CompilationMessage {
+  def kind: CompilationMessageKind = CompilationMessageKind.StratificationError
 
-  def kind: String = "Stratification Error"
+  def code: ErrorCode = ErrorCode.E5914
 
-  def summary: String = "The expression is not stratified. A predicate depends negatively on itself."
+  def summary: String = "The expression is not stratified. A predicate depends strongly on itself."
 
-  def message(formatter: Formatter): String = {
-    import formatter._
-    s"""${line(kind, source.format)}
-       |>> The expression is not stratified. A predicate depends negatively on itself.
+  def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+    import fmt.*
+    s""">> The expression is not stratified. A predicate depends strongly on itself.
        |
-       |${code(loc, "the expression is not stratified.")}
+       |${highlight(loc, "the expression is not stratified.", fmt)}
+       |
        |The type of the expression is:
        |
        |  ${cyan(FormatType.formatType(tpe))}
        |
-       |The following predicate symbols are on the negative cycle:
+       |The following predicate symbols are on the cycle:
        |
        |  ${cycle.map(_._1).mkString(" <- ")}
        |
-       |The following constraints are part of the negative cycle:
-       |${constraints(formatter)}
+       |The following constraints are part of the cycle:
+       |${fmtConstraints(fmt)}
        |""".stripMargin
   }
 
-  private def constraints(formatter: Formatter): String = {
-    cycle.map(t => "  " + formatter.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
-  }
-
   /**
-    * Returns a formatted string with helpful suggestions.
+    * Formats the constraint dependencies.
     */
-  def explain(formatter: Formatter): Option[String] = None
+  private def fmtConstraints(fmt: Formatter): String = {
+    cycle.map(t => "  " + fmt.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
+  }
 }

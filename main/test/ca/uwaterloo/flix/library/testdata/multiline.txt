@@ -1,0 +1,3 @@
+Sample text for TestFile.flix
+Multiline text with Unix linefeeds
+End

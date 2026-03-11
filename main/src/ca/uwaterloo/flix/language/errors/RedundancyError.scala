@@ -16,21 +16,75 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatTypeConstraint}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.errors.Highlighter.highlight
+import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for redundancy errors.
   */
 trait RedundancyError extends CompilationMessage {
-  val kind: String = "Redundancy Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.RedundancyError
 }
 
 object RedundancyError {
 
-  private implicit val audience: Audience = Audience.External
+  /**
+    * An error raised to indicate that the result of a pure expression is discarded.
+    *
+    * @param loc the location of the expression.
+    */
+  case class DiscardedPureExpression(loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E6736
+
+    def summary: String = "Discarded pure expression."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Discarded pure expression.
+         |
+         |${highlight(loc, "discarded pure expression.", fmt)}
+         |
+         |${underline("Explanation:")} The result of this pure expression is explicitly discarded.
+         |It means the expression itself might as well be removed.
+         |
+         |If you want to keep the expression, use:
+         |
+         |    let _ = <exp>
+         |
+         |although the compiler will remove the expression during code generation.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the extensible variant constructor `label` was used multiple times.
+    *
+    * @param label the name of the extensible variant constructor.
+    * @param loc1  the location of the first pattern.
+    * @param loc2  the location of the second pattern.
+    */
+  case class DuplicateExtPattern(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E6843
+
+    def summary: String = s"Duplicate extensible pattern '${label.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Duplicate extensible pattern '${red(label.name)}'.
+         |
+         |${highlight(loc1, "first occurrence.", fmt)}
+         |
+         |${highlight(loc2, "duplicate occurrence.", fmt)}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = loc1
+  }
 
   /**
     * An error raised to indicate that the variable symbol `sym` is hidden.
@@ -39,84 +93,248 @@ object RedundancyError {
     * @param loc the source location of the use.
     */
   case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Hidden variable symbol."
+    def code: ErrorCode = ErrorCode.E6956
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Hidden variable symbol '${red(sym.text)}'. The symbol is marked as unused.
+    def summary: String = s"Hidden variable symbol '${sym.text}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Hidden variable symbol '${red(sym.text)}'.
          |
-         |${code(loc, "hidden symbol.")}
+         |${highlight(loc, "hidden symbol.", fmt)}
+         |
+         |${underline("Explanation:")} A hidden variable symbol cannot be accessed.
          |""".stripMargin
-
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Don't use the variable symbol.
-         |  (2)  Rename the underscore prefix from the variable symbol name.
-         |
-         |""".stripMargin
-    })
   }
 
   /**
-    * An error raised to indicate that a variable has been shadowed.
+    * An error raised to indicate that a checked effect cast is redundant.
     *
-    * @param sym1 the shadowed variable.
-    * @param sym2 the shadowing variable.
+    * @param eff the effect of the expression.
+    * @param loc the source location of the cast.
     */
-  case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
-    def summary: String = "Shadowed variable."
+  case class RedundantCheckedEffectCast(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7067
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Shadowed variable '${red(sym1.text)}'.
+    def summary: String = "Redundant effect cast."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Redundant effect cast.
          |
-         |${code(sym2.loc, "shadowing variable.")}
+         |${highlight(loc, "redundant cast.", fmt)}
          |
-         |The shadowed variable was declared here:
+         |The expression already has the '${cyan(FormatType.formatType(eff))}' effect.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a checked type cast is redundant.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the source location of the cast.
+    */
+  case class RedundantCheckedTypeCast(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7178
+
+    def summary: String = "Redundant type cast."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Redundant type cast.
          |
-         |${code(sym1.loc, "shadowed variable.")}
+         |${highlight(loc, "redundant cast.", fmt)}
          |
+         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a redundant discard of a unit value.
+    *
+    * @param loc the location of the inner expression.
+    */
+  case class RedundantDiscard(loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7281
+
+    def summary: String = "Redundant discard of unit value."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Redundant discard of unit value.
+         |
+         |${highlight(loc, "discarded unit value.", fmt)}
+         |
+         |${underline("Explanation:")} Discarding a unit value is redundant since unit
+         |has no meaningful value to discard.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a redundant trait constraint.
+    *
+    * @param entailingTconstr the tconstr that entails the other.
+    * @param redundantTconstr the tconstr that is made redundant by the other.
+    * @param loc              the location where the error occured.
+    */
+  case class RedundantTraitConstraint(entailingTconstr: TraitConstraint, redundantTconstr: TraitConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7394
+
+    def summary: String = "Redundant trait constraint."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Redundant trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
+         |
+         |${highlight(loc, "redundant trait constraint.", fmt)}
+         |
+         |The constraint is implied by '${cyan(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
+         |
+         |${underline("Explanation:")} A trait constraint is redundant if it is implied by another
+         |constraint. For example, if we have:
+         |
+         |    def foo(x: a): a with Order[a], Eq[a] = ...
+         |
+         |then the 'Eq[a]' constraint is redundant because 'Order[a]' already implies 'Eq[a]'.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an effect cast is redundant.
+    *
+    * @param loc the source location of the cast.
+    */
+  case class RedundantUncheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7407
+
+    def summary: String = "Redundant effect cast. The expression is already pure."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      s""">> Redundant effect cast. The expression is already pure.
+         |
+         |${highlight(loc, "redundant cast.", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that unsafe was used on a pure expression.
+    *
+    * @param eff the effect that the block unsafely removes.
+    * @param loc the source location of the unsafe block.
+    */
+  case class RedundantUnsafe(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7623
+
+    def summary: String = "Redundant unsafe block, the expression is pure."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Redundant unsafe block, the expression is pure.
+         |
+         |${highlight(loc, "redundant unsafe block.", fmt)}
+         |
+         |${underline("Explanation:")} The block unsafely removes the '${cyan(FormatType.formatType(eff))}' effect,
+         |but the body expression is pure.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a name has been shadowed.
+    *
+    * @param shadowed  the shadowed name.
+    * @param shadowing the shadowing name.
+    */
+  case class ShadowedName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7736
+
+    def summary: String = s"Shadowed name '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Shadowed name '${red(name)}'.
+         |
+         |${highlight(shadowed, "shadowed name.", fmt)}
+         |
+         |The shadowing name was declared here:
+         |
+         |${highlight(shadowing, "shadowing name.", fmt)}
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def loc: SourceLocation = shadowed
+  }
 
-    def loc: SourceLocation = sym1.loc min sym2.loc
+  /**
+    * An error raised to indicate that a name is shadowing another name.
+    *
+    * @param shadowed  the shadowed name.
+    * @param shadowing the shadowing name.
+    */
+  case class ShadowingName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7843
+
+    def summary: String = s"Shadowing name '$name'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Shadowing name '${red(name)}'.
+         |
+         |${highlight(shadowing, "shadowing name.", fmt)}
+         |
+         |The shadowed name was declared here:
+         |
+         |${highlight(shadowed, "shadowed name.", fmt)}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = shadowing
   }
 
   /**
     * An error raised to indicate that the def with the symbol `sym` is not used.
     *
-    * @param sym the unused enum symbol.
+    * @param sym the unused def symbol.
     */
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
-    def summary: String = "Unused definition."
+    def code: ErrorCode = ErrorCode.E7956
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Unused definition '${red(sym.name)}'. The definition is never referenced.
+    def summary: String = s"Unused definition '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused definition '${red(sym.name)}'. The definition is never referenced.
          |
-         |${code(sym.loc, "unused definition.")}
+         |${highlight(sym.loc, "unused definition.", fmt)}
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""Possible fixes:
+    def loc: SourceLocation = sym.loc
+  }
+
+  /**
+    * An error raised to indicate that the effect with the symbol `sym` is not used.
+    *
+    * @param sym the unused effect symbol.
+    */
+  case class UnusedEffSym(sym: Symbol.EffSym) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E8063
+
+    def summary: String = s"Unused effect '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused effect '${red(sym.name)}'. The effect is never referenced.
          |
-         |  (1)  Use the definition.
-         |  (2)  Remove the definition.
-         |  (3)  Mark the definition as public.
-         |  (4)  Prefix the definition name with an underscore.
-         |
+         |${highlight(sym.loc, "unused effect.", fmt)}
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = sym.loc
   }
@@ -127,28 +345,17 @@ object RedundancyError {
     * @param sym the unused enum symbol.
     */
   case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
-    def summary: String = "Unused enum."
+    def code: ErrorCode = ErrorCode.E8176
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
+    def summary: String = s"Unused enum '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
-         |${code(sym.loc, "unused enum.")}
+         |${highlight(sym.loc, "unused enum.", fmt)}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the enum.
-         |  (2)  Remove the enum.
-         |  (3)  Mark the enum as public.
-         |  (4)  Prefix the enum name with an underscore.
-         |
-         |""".stripMargin
-    })
 
     def loc: SourceLocation = sym.loc
   }
@@ -159,29 +366,39 @@ object RedundancyError {
     * @param sym the enum symbol.
     * @param tag the unused tag.
     */
-  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Tag) extends RedundancyError {
+  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Symbol.CaseSym) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E8289
+
     def summary: String = s"Unused case '${tag.name}'."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
          |
-         |${code(tag.loc, "unused tag.")}
+         |${highlight(tag.loc, "unused tag.", fmt)}
          |""".stripMargin
-
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+    def loc: SourceLocation = tag.loc
+  }
+
+  /**
+    * An error raised to indicate that the struct with the symbol `sym` is not used.
+    *
+    * @param sym the unused struct symbol.
+    */
+  case class UnusedStructSym(sym: Symbol.StructSym) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E8392
+
+    def summary: String = s"Unused struct '${sym.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused struct '${red(sym.name)}'.
          |
-         |  (1)  Use the case.
-         |  (2)  Remove the case.
-         |  (3)  Prefix the case with an underscore.
-         |
+         |${highlight(sym.loc, "unused struct.", fmt)}
          |""".stripMargin
-    })
+    }
 
     def loc: SourceLocation = sym.loc
   }
@@ -192,27 +409,21 @@ object RedundancyError {
     * @param sym the unused variable symbol.
     */
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
-    def summary: String = "Unused formal parameter."
+    def code: ErrorCode = ErrorCode.E8405
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
+    def summary: String = s"Unused formal parameter '${sym.text}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
          |
-         |${code(sym.loc, "unused formal parameter.")}
+         |${highlight(sym.loc, "unused formal parameter.", fmt)}
+         |
+         |${underline("Explanation:")} Flix does not allow unused formal parameters.
+         |An unused formal parameter can be prefixed with an underscore to suppress
+         |this error.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the formal parameter.
-         |  (2)  Remove the formal parameter.
-         |  (3)  Prefix the formal parameter name with an underscore.
-         |
-         |""".stripMargin
-    })
 
     def loc: SourceLocation = sym.loc
   }
@@ -222,30 +433,37 @@ object RedundancyError {
     *
     * @param ident the unused type variable.
     */
-  case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
-    def summary: String = "Unused type parameter."
+  case class UnusedTypeParam(ident: Name.Ident, loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E8518
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
+    def summary: String = s"Unused type parameter '${ident.name}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
          |
-         |${code(ident.loc, "unused type parameter.")}
+         |${highlight(ident.loc, "unused type parameter.", fmt)}
          |""".stripMargin
     }
+  }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+  /**
+    * An error raised to indicate that the given type parameter `ident` is not used in the signature.
+    *
+    * @param ident the unused type variable.
+    */
+  case class UnusedTypeParamSignature(ident: Name.Ident, loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E8629
+
+    def summary: String = s"Unused type parameter '${ident.name}' in function signature."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced in the signature.
          |
-         |  (1)  Use the type parameter.
-         |  (2)  Remove type parameter.
-         |  (3)  Prefix the type parameter name with an underscore.
-         |
+         |${highlight(ident.loc, "type parameter unused in function signature.", fmt)}
          |""".stripMargin
-    })
-
-    def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
+    }
   }
 
   /**
@@ -254,59 +472,48 @@ object RedundancyError {
     * @param sym the unused variable symbol.
     */
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
-    def summary: String = "Unused local variable."
+    def code: ErrorCode = ErrorCode.E8736
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
+    def summary: String = s"Unused local variable '${sym.text}'."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
          |
-         |${code(sym.loc, "unused local variable.")}
+         |${highlight(sym.loc, "unused local variable.", fmt)}
+         |
+         |${underline("Explanation:")} Flix does not allow unused local variables.
+         |An unused local variable can be prefixed with an underscore to suppress
+         |this error. For example:
+         |
+         |    let _${sym.text} = <exp>
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the local variable.
-         |  (2)  Remove local variable declaration.
-         |  (3)  Prefix the variable name with an underscore.
-         |
-         |""".stripMargin
-    })
 
     def loc: SourceLocation = sym.loc
   }
 
   /**
-    * An error raised to indicate that the given variable symbol `sym` is only used once in a constraint.
+    * An error raised to indicate that a case of an `ematch` expression is unreachable due to an earlier default case.
     *
-    * @param sym the variable only used once
-    * @param loc the location of the error
+    * @param defaultLoc the location of the default case.
+    * @param loc        the location of the unreachable case.
     */
-  case class IllegalSingleVariable(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
-    def summary: String = s"Single use of variable '$sym'."
+  case class UnreachableExtMatchCase(defaultLoc: SourceLocation, loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E8843
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> This variable is named, but only used once '${red(sym.text)}'. Use a wildcard instead?
+    override def summary: String = "Unreachable case."
+
+    override def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      s""">> Unreachable case. It is covered by a '_' pattern.
          |
-         |${code(loc, "the variable occurs here.")}
+         |${highlight(loc, "unreachable case.", fmt)}
+         |
+         |Covered by the following pattern:
+         |
+         |${highlight(defaultLoc, "covering pattern.", fmt)}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Prefix the variable name with a wildcard.
-         |  (2)  Replace the variable name with a wildcard.
-         |  (3)  Check for any spelling mistakes.
-         |
-         |""".stripMargin
-    })
   }
 
   /**
@@ -315,97 +522,42 @@ object RedundancyError {
     * @param loc the location of the expression.
     */
   case class UselessExpression(loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E8956
+
     def summary: String = "Useless expression."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Useless expression: It has no side-effect(s) and its result is discarded.
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Useless expression: It is pure and its result is discarded.
          |
-         |${code(loc, "useless expression.")}
+         |${highlight(loc, "useless expression.", fmt)}
+         |
+         |${underline("Explanation:")} A useless expression is pure and its result is not used.
+         |Either use the result or remove the expression.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the result computed by the expression.
-         |  (2)  Remove the expression statement.
-         |  (3)  Introduce a let-binding with a wildcard name.
-         |
-         |""".stripMargin
-    })
   }
 
   /**
-    * An error raised to indicate that a purity cast is redundant.
+    * An error raised to indicate that an `unsafe` block is useless.
     *
-    * @param loc the source location of the cast.
+    * @param loc the source location of the unsafe block.
     */
-  case class RedundantPurityCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant purity cast. The expression is already pure."
+  case class UselessUnsafe(loc: SourceLocation) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7512
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Redundant purity cast. The expression is already pure.
+    def summary: String = "Useless unsafe block."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Useless unsafe block.
          |
-         |${code(loc, "redundant cast")}
+         |${highlight(loc, "useless unsafe block.", fmt)}
          |
+         |${underline("Explanation:")} An unsafe block that runs the 'Pure' effect is useless
+         |since 'Pure' means no effects.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
-  /**
-    * An error raised to indicate that an effect cast is redundant.
-    *
-    * @param loc the source location of the cast.
-    */
-  case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant effect cast. The expression already has the same effect."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Redundant effect cast. The expression already has the same effect.
-         |
-         |${code(loc, "redundant cast")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate a redundant type constraint.
-    *
-    * @param entailingTconstr the tconstr that entails the other.
-    * @param redundantTconstr the tconstr that is made redundant by the other.
-    * @param loc              the location where the error occured.
-    */
-  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant type constraint."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
-         |
-         |${code(loc, "redundant type constraint.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Remove the type constraint.
-         |
-         |""".stripMargin
-    })
-  }
 }

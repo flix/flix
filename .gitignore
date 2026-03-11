@@ -1,4 +1,3 @@
-.idea/
 /api/
 /out/
 /local.properties
@@ -7,11 +6,24 @@
 target
 .ensime*
 /*.flix
-/build
-/.gradle
+/.mill-*
+!/.mill-version
+!/.mill-jvm-opts
 .metals
 .vscode
 .bloop
+crash_report_*.txt
+.DS_Store
+
+# IntelliJ IDEA
+# Ignore most IDEA files, but include inspections
+.idea/*
+!.idea/codeStyles
+!.idea/inspectionProfiles
+
+# backup files and IntelliJ profiler reports
+*~
 
 # local development files
 **/personal/**
+/.env

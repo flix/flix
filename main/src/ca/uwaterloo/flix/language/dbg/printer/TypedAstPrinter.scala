@@ -1,0 +1,227 @@
+package ca.uwaterloo.flix.language.dbg.printer
+
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.dbg.DocAst
+
+object TypedAstPrinter {
+
+  /**
+    * Returns the [[DocAst.Program]] representation of `root`.
+    */
+  def print(root: TypedAst.Root): DocAst.Program = {
+    val enums = root.enums.values.map {
+      case TypedAst.Enum(_, ann, mod, sym, tparams, _, cases, _) =>
+        DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases.values.map(printCase).toList)
+    }.toList
+    val defs = root.defs.values.map {
+      case TypedAst.Def(sym, TypedAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp, _) =>
+        DocAst.Def(ann, mod, sym, fparams.map(printFormalParam), TypePrinter.print(retTpe), TypePrinter.print(eff), print(exp))
+    }.toList
+    DocAst.Program(enums, defs, Nil)
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `e`.
+    */
+  private def print(e: TypedAst.Expr): DocAst.Expr = e match {
+    case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
+    case Expr.Var(sym, _, _) => printVar(sym)
+    case Expr.Hole(sym, _, _, _, _) => DocAst.Expr.Hole(sym)
+    case Expr.HoleWithExp(exp, _, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
+    case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
+    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Var(sym), exps.map(print))
+    case Expr.ApplyOp(op, exps, _, _, _, _) => DocAst.Expr.ApplyOp(op.sym, exps.map(print))
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
+    case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
+    case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
+    case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
+    case Expr.Region(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Region(printVar(sym), print(exp))
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
+    case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
+    case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
+    case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
+    case Expr.RestrictableChoose(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtMatch(exp, rules, _, _, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
+    case Expr.Tag(symUse, exps, _, _, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
+    case Expr.RestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtTag(label, exps, _, _, _) => DocAst.Expr.ExtTag(label, exps.map(print))
+    case Expr.Tuple(elms, _, _, _) => DocAst.Expr.Tuple(elms.map(print))
+    case Expr.RecordSelect(exp, label, _, _, _) => DocAst.Expr.RecordSelect(label, print(exp))
+    case Expr.RecordExtend(label, exp1, exp2, _, _, _) => DocAst.Expr.RecordExtend(label, print(exp1), print(exp2))
+    case Expr.RecordRestrict(label, exp, _, _, _) => DocAst.Expr.RecordRestrict(label, print(exp))
+    case Expr.ArrayLit(exps, exp, _, _, _) => DocAst.Expr.InRegion(DocAst.Expr.ArrayLit(exps.map(print)), print(exp))
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) => DocAst.Expr.InRegion(DocAst.Expr.ArrayNew(print(exp1), print(exp2)), print(exp3))
+    case Expr.ArrayLoad(exp1, exp2, _, _, _) => DocAst.Expr.ArrayLoad(print(exp1), print(exp2))
+    case Expr.ArrayLength(exp, _, _) => DocAst.Expr.ArrayLength(print(exp))
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) => DocAst.Expr.ArrayStore(print(exp1), print(exp2), print(exp3))
+    case Expr.StructNew(sym, fields, regionOpt, _, _, _) => DocAst.Expr.StructNew(sym, fields.map { case (k, v) => (k.sym, print(v)) }, regionOpt.map(print))
+    case Expr.StructGet(exp, field, _, _, _) => DocAst.Expr.StructGet(print(exp), field.sym)
+    case Expr.StructPut(exp1, field, exp2, _, _, _) => DocAst.Expr.StructPut(print(exp1), field.sym, print(exp2))
+    case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
+    case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
+    case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
+    case Expr.Ascribe(exp, _, _, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
+    case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
+    case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.UncheckedCast(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Unsafe(exp, runEff, asEff, _, _, _) => DocAst.Expr.Unsafe(print(exp), TypePrinter.print(runEff), asEff.map(TypePrinter.print))
+
+    case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
+    case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
+    case Expr.Handler(symUse, rules, _, _, _, _, _) => DocAst.Expr.Handler(symUse.sym, rules.map(printHandlerRule))
+    case Expr.RunWith(exp1, exp2, _, _, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
+    case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
+    case Expr.InvokeSuperConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
+    case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))
+    case Expr.InvokeSuperMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
+    case Expr.InvokeStaticMethod(method, exps, _, _, _) => DocAst.Expr.JavaInvokeStaticMethod(method, exps.map(print))
+    case Expr.GetField(field, exp, _, _, _) => DocAst.Expr.JavaGetField(field, print(exp))
+    case Expr.PutField(field, exp1, exp2, _, _, _) => DocAst.Expr.JavaPutField(field, print(exp1), print(exp2))
+    case Expr.GetStaticField(field, _, _, _) => DocAst.Expr.JavaGetStaticField(field)
+    case Expr.PutStaticField(field, exp, _, _, _) => DocAst.Expr.JavaPutStaticField(field, print(exp))
+    case Expr.NewObject(name, clazz, tpe, _, constructors, methods, _) => DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), constructors.map(printJvmConstructor), methods.map(printJvmMethod))
+    case Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Spawn(exp1, exp2, _, _, _) => DocAst.Expr.Spawn(print(exp1), print(exp2))
+    case Expr.ParYield(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Lazy(exp, _, _) => DocAst.Expr.Lazy(print(exp))
+    case Expr.Force(exp, _, _, _) => DocAst.Expr.Force(print(exp))
+    case Expr.FixpointConstraintSet(_, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointSolveWithProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Error(_, _, _) => DocAst.Expr.Error
+  }
+
+  /**
+    * Returns the [[DocAst.JvmConstructor]] representation of `constructor`.
+    */
+  private def printJvmConstructor(constructor: TypedAst.JvmConstructor): DocAst.JvmConstructor = constructor match {
+    case TypedAst.JvmConstructor(exp, retTpe, _, _) =>
+      DocAst.JvmConstructor(print(exp), TypePrinter.print(retTpe))
+  }
+
+  /**
+    * Returns the [[DocAst.JvmMethod]] representation of `method`.
+    */
+  private def printJvmMethod(method: TypedAst.JvmMethod): DocAst.JvmMethod = method match {
+    case TypedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
+      DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+  }
+
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printHandlerRule(rule: TypedAst.HandlerRule): (Symbol.OpSym, List[DocAst.Expr.AscriptionTpe], DocAst.Expr) = rule match {
+    case TypedAst.HandlerRule(op, fparams, exp, _) => (op.sym, fparams.map(printFormalParam), print(exp))
+  }
+
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
+    case TypedAst.CatchRule(bnd, clazz, exp, _) => (bnd.sym, clazz, print(exp))
+  }
+
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printMatchRule(rule: TypedAst.MatchRule): (DocAst.Expr, Option[DocAst.Expr], DocAst.Expr) = rule match {
+    case TypedAst.MatchRule(pat, guard, exp, _) => (printPattern(pat), guard.map(print), print(exp))
+  }
+
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printExtMatchRule(rule: TypedAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
+    case TypedAst.ExtMatchRule(pat, exp, _) =>
+      (printExtPattern(pat), print(exp))
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printPattern(pattern: TypedAst.Pattern): DocAst.Expr = pattern match {
+    case Pattern.Wild(_, _) => DocAst.Expr.Wild
+    case Pattern.Var(TypedAst.Binder(sym, _), _, _) => printVar(sym)
+    case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
+    case Pattern.Tag(symUse, pats, _, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
+    case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
+    case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
+    case Pattern.Error(_, _) => DocAst.Expr.Error
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pats`.
+    */
+  private def printRecordPattern(pats: List[Record.RecordLabelPattern], pat: Pattern): DocAst.Expr = {
+    pats.foldRight(printPattern(pat)) {
+      case (TypedAst.Pattern.Record.RecordLabelPattern(label, rest, _, _), acc) =>
+        DocAst.Expr.RecordExtend(label, printPattern(rest), acc)
+    }
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtPattern(pattern: TypedAst.ExtPattern): DocAst.Expr = {
+    pattern match {
+      case ExtPattern.Default(_) => DocAst.Expr.Wild
+      case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
+      case ExtPattern.Error(_) => DocAst.Expr.Error
+    }
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtTagPattern(pattern: TypedAst.ExtTagPattern): DocAst.Expr = pattern match {
+    case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(TypedAst.Binder(sym, _), _, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_, _) => DocAst.Expr.Unit
+    case ExtTagPattern.Error(_, _) => DocAst.Expr.Error
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `sym`.
+    */
+  private def printVar(sym: Symbol.VarSym): DocAst.Expr = {
+    DocAst.Expr.Var(sym)
+  }
+
+  /**
+    * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
+    */
+  private def printFormalParam(fp: TypedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
+    val TypedAst.FormalParam(bnd, tpe, _, _, _) = fp
+    DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(bnd.sym), TypePrinter.print(tpe))
+  }
+
+  /**
+    * Returns the [[DocAst.Case]] representation of `caze`.
+    */
+  private def printCase(caze: TypedAst.Case): DocAst.Case = caze match {
+    case TypedAst.Case(sym, tpes, _, _) => DocAst.Case(sym, tpes.map(TypePrinter.print))
+  }
+
+  /**
+    * Returns the [[DocAst.TypeParam]] representation of `tp`.
+    */
+  private def printTypeParam(tp: TypedAst.TypeParam): DocAst.TypeParam = tp match {
+    case TypedAst.TypeParam(_, sym, _) => DocAst.TypeParam(sym)
+  }
+
+}

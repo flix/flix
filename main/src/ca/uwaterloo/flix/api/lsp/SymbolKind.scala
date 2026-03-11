@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
+
 /**
   * Represents a `SymbolKind` in LSP.
   */
@@ -47,6 +49,8 @@ sealed trait SymbolKind {
     case SymbolKind.Operator => 25
     case SymbolKind.TypeParameter => 26
   }
+
+  def toLsp4j: lsp4j.SymbolKind = lsp4j.SymbolKind.forValue(toInt)
 }
 
 object SymbolKind {

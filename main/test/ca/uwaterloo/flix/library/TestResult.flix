@@ -1,685 +1,831 @@
-/*
- * Copyright 2017 Liam Palmer
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-namespace TestResult {
-
-    use Hash.hash;
-
-/////////////////////////////////////////////////////////////////////////////
-// isOk                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def isOk01(): Bool = Result.isOk(Ok(1)) == true
-
-@test
-def isOk02(): Bool = Result.isOk(Err(1)) == false
-
-/////////////////////////////////////////////////////////////////////////////
-// isErr                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def isErr01(): Bool = Result.isErr(Ok(1)) == false
-
-@test
-def isErr02(): Bool = Result.isErr(Err(1)) == true
-
-/////////////////////////////////////////////////////////////////////////////
-// getWithDefault                                                          //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def getWithDefault01(): Bool = Result.getWithDefault(2, Ok(1)) == 1
-
-@test
-def getWithDefault02(): Bool = Result.getWithDefault(2, Err(false)) == 2
-
-/////////////////////////////////////////////////////////////////////////////
-// withDefault                                                             //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def withDefault01(): Bool = Result.withDefault({default = Ok(2)}, Ok(1)): Result[_, Unit] == Ok(1)
-
-@test
-def withDefault02(): Bool = Result.withDefault({default = Err(false)}, Ok(1)) == Ok(1)
-
-@test
-def withDefault03(): Bool = Result.withDefault({default = Ok(2)}, Err(false)): Result[_, Unit] == Ok(2)
-
-@test
-def withDefault04(): Bool = Result.withDefault({default = Err(true)}, Err(false)): Result[Unit, _] == Err(true)
-
-/////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def replace01(): Bool = Result.replace(3, 4, Err(false)) == Err(false)
-
-@test
-def replace02(): Bool = Result.replace(3, 4, Ok(2): Result[_, Unit]) == Ok(2)
-
-@test
-def replace03(): Bool = Result.replace(3, 4, Ok(3)): Result[_, Unit] == Ok(4)
-
-@test
-def replace04(): Bool = Result.replace(3, 4, Ok(4)): Result[_, Unit] == Ok(4)
-
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def exists01(): Bool = Result.exists(i -> i == 2, Err(false)) == false
-
-@test
-def exists02(): Bool = Result.exists(i -> i == 2, Ok(1)) == false
-
-@test
-def exists03(): Bool = Result.exists(i -> i == 2, Ok(2)) == true
-
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def forall01(): Bool = Result.forall(i -> i == 2, Err(false)) == true
-
-@test
-def forall02(): Bool = Result.forall(i -> i == 2, Ok(1)) == false
-
-@test
-def forall03(): Bool = Result.forall(i -> i == 2, Ok(2)) == true
-
-/////////////////////////////////////////////////////////////////////////////
-// map                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def map01(): Bool = Result.map(i -> i == 2, Err(-1ii)) == Err(-1ii)
+mod TestResult {
+
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse}
+    use Validation.{Success, Failure}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Functor.map                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def functor_map01(): Unit \ Assert = assertEq(expected = Err(-1ii), Functor.map(i -> i == 2, Err(-1ii)))
+
+    @Test
+    def functor_map02(): Unit \ Assert = assertEq(expected = Ok(false), (Functor.map(i -> i == 2, Ok(1)): Result[Unit, Bool]))
+
+    @Test
+    def functor_map03(): Unit \ Assert = assertEq(expected = Ok(true), (Functor.map(i -> i == 2, Ok(2)): Result[Unit, Bool]))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Monad.flatMap                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def monad_flatMap01(): Unit \ Assert = assertEq(expected = Err(true), Monad.flatMap(i -> if (i == 2) Ok(i) else Err(false), Err(true)))
+
+    @Test
+    def monad_flatMap02(): Unit \ Assert = assertEq(expected = Err(false), Monad.flatMap(i -> if (i == 2) Ok(i) else Err(false), Ok(1)))
+
+    @Test
+    def monad_flatMap03(): Unit \ Assert = assertEq(expected = Ok(4), Monad.flatMap(i -> if (i == 2) Ok(2*i) else Err(false), Ok(2)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Applicative.ap                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def applicative_ap01(): Unit \ Assert = assertEq(expected = Ok(124), (Applicative.ap(Ok(x -> x + 1), Ok(123)): Result[String, Int32]))
+
+    @Test
+    def applicative_ap02(): Unit \ Assert = assertEq(expected = Err("b"), Applicative.ap(Ok(x -> x + 1), Err("b")))
+
+    @Test
+    def applicative_ap03(): Unit \ Assert = assertEq(expected = Err("a"), (Applicative.ap(Err("a"), Ok(123)): Result[String, Int32]))
+
+    @Test
+    def applicative_ap04(): Unit \ Assert = assertEq(expected = Err("a"), (Applicative.ap(Err("a"), Err("b")): Result[String, Int32]))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isOk                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isOk01(): Unit \ Assert = assertTrue(Result.isOk(Ok(1)))
+
+    @Test
+    def isOk02(): Unit \ Assert = assertFalse(Result.isOk(Err(1)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isErr                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isErr01(): Unit \ Assert = assertFalse(Result.isErr(Ok(1)))
+
+    @Test
+    def isErr02(): Unit \ Assert = assertTrue(Result.isErr(Err(1)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getWithDefault                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def getWithDefault01(): Unit \ Assert = assertEq(expected = 1, Result.getWithDefault(2, Ok(1)))
+
+    @Test
+    def getWithDefault02(): Unit \ Assert = assertEq(expected = 2, Result.getWithDefault(2, Err(false)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getOrAbort                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getOrAbort01(): Unit \ Assert =
+        let r = run {
+            Result.getOrAbort(Ok(42))
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(42), r)
+
+    @Test
+    def getOrAbort02(): Unit \ Assert =
+        let r = run {
+            Result.getOrAbort((Err("bad"): Result[String, Int32]))
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // withDefault                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def withDefault01(): Unit \ Assert = assertEq(expected = Ok(1), (Result.withDefault({default = Ok(2)}, Ok(1)): Result[Unit, Int32]))
+
+    @Test
+    def withDefault02(): Unit \ Assert = assertEq(expected = Ok(1), Result.withDefault({default = Err(false)}, Ok(1)))
+
+    @Test
+    def withDefault03(): Unit \ Assert = assertEq(expected = Ok(2), (Result.withDefault({default = Ok(2)}, Err(false)): Result[Unit, Int32]))
+
+    @Test
+    def withDefault04(): Unit \ Assert = assertEq(expected = Err(true), (Result.withDefault({default = Err(true)}, Err(false)): Result[Bool, Unit]))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // replace                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def replace01(): Unit \ Assert = assertEq(expected = Err(false), Result.replace(src =  3, dst =  4, Err(false)))
+
+    @Test
+    def replace02(): Unit \ Assert = assertEq(expected = Ok(2), (Result.replace(src =  3, dst =  4, (Ok(2): Result[Unit, Int32]))))
+
+    @Test
+    def replace03(): Unit \ Assert = assertEq(expected = Ok(4), (Result.replace(src =  3, dst =  4, (Ok(3): Result[Unit, Int32]))))
 
-@test
-def map02(): Bool = Result.map(i -> i == 2, Ok(1)): Result[_, Unit] == Ok(false)
+    @Test
+    def replace04(): Unit \ Assert = assertEq(expected = Ok(4), (Result.replace(src =  3, dst =  4, (Ok(4): Result[Unit, Int32]))))
 
-@test
-def map03(): Bool = Result.map(i -> i == 2, Ok(2)): Result[_, Unit] == Ok(true)
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def exists01(): Unit \ Assert = assertFalse(Result.exists(i -> i == 2, Err(false)))
 
-/////////////////////////////////////////////////////////////////////////////
-// mapErr                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def mapErr01(): Bool = Result.mapErr(i -> i == 2, Ok(1)) == Ok(1)
+    @Test
+    def exists02(): Unit \ Assert = assertFalse(Result.exists(i -> i == 2, Ok(1)))
 
-@test
-def mapErr02(): Bool = Result.mapErr(i -> i == 2, Err(1)): Result[Unit, _] == Err(false)
+    @Test
+    def exists03(): Unit \ Assert = assertTrue(Result.exists(i -> i == 2, Ok(2)))
 
-@test
-def mapErr03(): Bool = Result.mapErr(i -> i == 2, Err(2)): Result[Unit, _] == Err(true)
+    /////////////////////////////////////////////////////////////////////////////
+    // forAll                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def forAll01(): Unit \ Assert = assertTrue(Result.forAll(i -> i == 2, Err(false)))
 
-/////////////////////////////////////////////////////////////////////////////
-// flatMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flatMap01(): Bool = Result.flatMap(i -> if (i == 2) Ok(i) else Err(false), Err(true)) == Err(true)
+    @Test
+    def forAll02(): Unit \ Assert = assertFalse(Result.forAll(i -> i == 2, Ok(1)))
 
-@test
-def flatMap02(): Bool = Result.flatMap(i -> if (i == 2) Ok(i) else Err(false), Ok(1)) == Err(false)
+    @Test
+    def forAll03(): Unit \ Assert = assertTrue(Result.forAll(i -> i == 2, Ok(2)))
 
-@test
-def flatMap03(): Bool = Result.flatMap(i -> if (i == 2) Ok(2*i) else Err(false), Ok(2)) == Ok(4)
+    /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def map01(): Unit \ Assert = assertEq(expected = Err(-1ii), Result.map(i -> i == 2, Err(-1ii)))
 
-/////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def count01(): Bool = Result.count(i -> i == 2, Err(false)) == 0
+    @Test
+    def map02(): Unit \ Assert = assertEq(expected = Ok(false), (Result.map(i -> i == 2, Ok(1)): Result[Unit, Bool]))
 
-@test
-def count02(): Bool = Result.count(i -> i == 2, Ok(1)) == 0
+    @Test
+    def map03(): Unit \ Assert = assertEq(expected = Ok(true), (Result.map(i -> i == 2, Ok(2)): Result[Unit, Bool]))
 
-@test
-def count03(): Bool = Result.count(i -> i == 2, Ok(2)) == 1
+    /////////////////////////////////////////////////////////////////////////////
+    // mapErr                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def mapErr01(): Unit \ Assert = assertEq(expected = Ok(1), Result.mapErr(i -> i == 2, Ok(1)))
 
-/////////////////////////////////////////////////////////////////////////////
-// find                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def find01(): Bool = Result.find(i -> i == 2, Err(false)) == None
+    @Test
+    def mapErr02(): Unit \ Assert = assertEq(expected = Err(false), (Result.mapErr(i -> i == 2, Err(1)): Result[Bool, Unit]))
 
-@test
-def find02(): Bool = Result.find(i -> i == 2, Ok(1)) == None
+    @Test
+    def mapErr03(): Unit \ Assert = assertEq(expected = Err(true), (Result.mapErr(i -> i == 2, Err(2)): Result[Bool, Unit]))
 
-@test
-def find03(): Bool = Result.find(i -> i == 2, Ok(2)) == Some(2)
+    /////////////////////////////////////////////////////////////////////////////
+    // flatMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def flatMap01(): Unit \ Assert = assertEq(expected = Err(true), Result.flatMap(i -> if (i == 2) Ok(i) else Err(false), Err(true)))
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def foldLeft01(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Err(-1ii)) == false
+    @Test
+    def flatMap02(): Unit \ Assert = assertEq(expected = Err(false), Result.flatMap(i -> if (i == 2) Ok(i) else Err(false), Ok(1)))
 
-@test
-def foldLeft02(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Ok(1)) == false
+    @Test
+    def flatMap03(): Unit \ Assert = assertEq(expected = Ok(4), Result.flatMap(i -> if (i == 2) Ok(2*i) else Err(false), Ok(2)))
 
-@test
-def foldLeft03(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Ok(1)) == false
 
-@test
-def foldLeft04(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Ok(2)) == false
+    /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def flatten01(): Unit \ Assert = {
+        let err: Result[Int32, Unit] = Err(42);
+        assertEq(expected = Err(42), Result.flatten(Ok(err)))
+    }
 
-@test
-def foldLeft05(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Ok(2)) == true
+    @Test
+    def flatten02(): Unit \ Assert = {
+        let err: Result[Int32, Result[Int32, Int32]] = Err(42);
+        assertEq(expected = Err(42), Result.flatten(err))
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def foldRight01(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Err(-1ii), false) == false
+    @Test
+    def flatten03(): Unit \ Assert = {
+        let err: Result[Int32, Result[Int32, Int32]] = Ok(Ok(42));
+        assertEq(expected = Ok(42), Result.flatten(err))
+    }
 
-@test
-def foldRight02(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(1), false) == false
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def count01(): Unit \ Assert = assertEq(expected = 0, Result.count(i -> i == 2, Err(false)))
 
-@test
-def foldRight03(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(1), true) == false
+    @Test
+    def count02(): Unit \ Assert = assertEq(expected = 0, Result.count(i -> i == 2, Ok(1)))
 
-@test
-def foldRight04(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(2), false) == false
+    @Test
+    def count03(): Unit \ Assert = assertEq(expected = 1, Result.count(i -> i == 2, Ok(2)))
 
-@test
-def foldRight05(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(2), true) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// sequence                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def sequence01(): Bool = Result.sequence(Nil): Result[List[Unit], Unit] == Ok(Nil)
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def sequence02(): Bool = Result.sequence(Ok(1) :: Nil): Result[_, Unit] == Ok(1 :: Nil)
+    @Test
+    def sum01(): Unit \ Assert = assertEq(expected = 0, Result.sum(Err(false)))
 
-@test
-def sequence03(): Bool = Result.sequence(Ok(1) :: Ok(2) :: Nil): Result[_, Unit] == Ok(1 :: 2 :: Nil)
+    @Test
+    def sum02(): Unit \ Assert = assertEq(expected = 1, Result.sum(Ok(1)))
 
-@test
-def sequence04(): Bool = Result.sequence(Ok(1) :: Ok(2) :: Ok(3) :: Nil): Result[_, Unit] == Ok(1 :: 2 :: 3 :: Nil)
+    @Test
+    def sum03(): Unit \ Assert = assertEq(expected = -2, Result.sum(Ok(-2)))
 
-@test
-def sequence05(): Bool = Result.sequence(Err("one") :: Ok(2) :: Ok(3) :: Nil) == Err("one")
 
-@test
-def sequence06(): Bool = Result.sequence(Ok(1) :: Ok(2) :: Err("three") :: Nil) == Err("three")
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def sequence07(): Bool = Result.sequence(Ok(1) :: Err("two") :: Ok(3) :: Nil) == Err("two")
+    @Test
+    def sumWith01(): Unit \ Assert = assertEq(expected = 0, Result.sumWith(x -> x + 1, Err(false)))
 
-/////////////////////////////////////////////////////////////////////////////
-// traverse                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def traverse01(): Bool = Result.traverse(x -> Ok(x + 1), Nil): Result[_, Unit] == Ok(Nil)
+    @Test
+    def sumWith02(): Unit \ Assert = assertEq(expected = 2, Result.sumWith(x -> x + 1, Ok(1)))
 
-@test
-def traverse02(): Bool = Result.traverse(x -> Ok(x + 1), 1 :: Nil): Result[_, Unit] == Ok(2 :: Nil)
+    @Test
+    def sumWith03(): Unit \ Assert = assertEq(expected = -1, Result.sumWith(x -> x + 1, Ok(-2)))
 
-@test
-def traverse03(): Bool = Result.traverse(x -> Ok(x + 1), 1 :: 2 :: Nil): Result[_, Unit] == Ok(2 :: 3 :: Nil)
 
-@test
-def traverse04(): Bool = Result.traverse(x -> Ok(x + 1), 1 :: 2 :: 3 :: Nil): Result[_, Unit] == Ok(2 :: 3 :: 4 :: Nil)
+    /////////////////////////////////////////////////////////////////////////////
+    // find                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def find01(): Unit \ Assert = assertEq(expected = None, Result.find(i -> i == 2, Err(false)))
 
-@test
-def traverse05(): Bool = Result.traverse(x -> if (x == 1) Err("one") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("one")
+    @Test
+    def find02(): Unit \ Assert = assertEq(expected = None, Result.find(i -> i == 2, Ok(1)))
 
-@test
-def traverse06(): Bool = Result.traverse(x -> if (x == 3) Err("three") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("three")
+    @Test
+    def find03(): Unit \ Assert = assertEq(expected = Some(2), Result.find(i -> i == 2, Ok(2)))
 
-@test
-def traverse07(): Bool = Result.traverse(x -> if (x == 2) Err("two") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("two")
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldLeft01(): Unit \ Assert = assertFalse(Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Err(-1ii)))
 
-@test
-def traverse08(): Bool = Result.traverse(_ -> Ok(42), 1 :: 2 :: 3 :: Nil): Result[_, Unit] == Ok(42 :: 42 :: 42 :: Nil)
+    @Test
+    def foldLeft02(): Unit \ Assert = assertFalse(Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Ok(1)))
 
-/////////////////////////////////////////////////////////////////////////////
-// traverseX                                                               //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def traverseX01(): Bool = Result.traverseX(x -> Ok(x + 1), Nil): Result[_, Unit] == Ok()
+    @Test
+    def foldLeft03(): Unit \ Assert = assertFalse(Result.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Ok(1)))
 
-@test
-def traverseX02(): Bool = Result.traverseX(x -> Ok(x + 1), 1 :: Nil): Result[_, Unit] == Ok()
+    @Test
+    def foldLeft04(): Unit \ Assert = assertFalse(Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Ok(2)))
 
-@test
-def traverseX03(): Bool = Result.traverseX(x -> Ok(x + 1), 1 :: 2 :: Nil): Result[_, Unit] == Ok()
+    @Test
+    def foldLeft05(): Unit \ Assert = assertTrue(Result.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Ok(2)))
 
-@test
-def traverseX04(): Bool = Result.traverseX(x -> Ok(x + 1), 1 :: 2 :: 3 :: Nil): Result[_, Unit] == Ok()
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldRight01(): Unit \ Assert = assertFalse(Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, false, Err(-1ii)))
 
-@test
-def traverseX05(): Bool = Result.traverseX(x -> if (x == 1) Err("one") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("one")
+    @Test
+    def foldRight02(): Unit \ Assert = assertFalse(Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, false, Ok(1)))
 
-@test
-def traverseX06(): Bool = Result.traverseX(x -> if (x == 3) Err("three") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("three")
+    @Test
+    def foldRight03(): Unit \ Assert = assertFalse(Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, true, Ok(1)))
 
-@test
-def traverseX07(): Bool = Result.traverseX(x -> if (x == 2) Err("two") else Ok(x), 1 :: 2 :: 3 :: Nil) == Err("two")
+    @Test
+    def foldRight04(): Unit \ Assert = assertFalse(Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, false, Ok(2)))
 
-@test
-def traverseX08(): Bool = Result.traverseX(_ -> Ok(42), 1 :: 2 :: 3 :: Nil): Result[_, Unit] == Ok()
+    @Test
+    def foldRight05(): Unit \ Assert = assertTrue(Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, true, Ok(2)))
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeftM                                                               //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def foldLeftM01(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, Nil) == Ok(0)
+    /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def sequence01(): Unit \ Assert = assertEq(expected = Ok(Nil), (Result.sequence(Nil): Result[Unit, List[Unit]]))
 
-@test
-def foldLeftM02(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: Nil) == Ok(1)
+    @Test
+    def sequence02(): Unit \ Assert = assertEq(expected = Ok(1 :: Nil), (Result.sequence(Ok(1) :: Nil): Result[Unit, List[Int32]]))
 
-@test
-def foldLeftM03(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: Nil) == Ok(2)
+    @Test
+    def sequence03(): Unit \ Assert = assertEq(expected = Ok(1 :: 2 :: Nil), (Result.sequence(Ok(1) :: Ok(2) :: Nil): Result[Unit, List[Int32]]))
 
-@test
-def foldLeftM04(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: 3 :: Nil) == Ok(3)
+    @Test
+    def sequence04(): Unit \ Assert = assertEq(expected = Ok(1 :: 2 :: 3 :: Nil), (Result.sequence(Ok(1) :: Ok(2) :: Ok(3) :: Nil): Result[Unit, List[Int32]]))
 
-@test
-def foldLeftM05(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, -1 :: 2 :: 3 :: Nil) == Err(-1)
+    @Test
+    def sequence05(): Unit \ Assert = assertEq(expected = Err("one"), Result.sequence(Err("one") :: Ok(2) :: Ok(3) :: Nil))
 
-@test
-def foldLeftM06(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: -2 :: 3 :: Nil) == Err(-1)
+    @Test
+    def sequence06(): Unit \ Assert = assertEq(expected = Err("three"), Result.sequence(Ok(1) :: Ok(2) :: Err("three") :: Nil))
 
-@test
-def foldLeftM07(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: -3 :: Nil) == Err(-1)
+    @Test
+    def sequence07(): Unit \ Assert = assertEq(expected = Err("two"), Result.sequence(Ok(1) :: Err("two") :: Ok(3) :: Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRightM                                                              //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def foldRightM01(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, Nil) == Ok(0)
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def traverse01(): Unit \ Assert = assertEq(expected = Ok(Nil), (Result.traverse(x -> Ok(x + 1), Nil): Result[Unit, List[Int32]]))
 
-@test
-def foldRightM02(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: Nil) == Ok(1)
+    @Test
+    def traverse02(): Unit \ Assert = assertEq(expected = Ok(2 :: Nil), (Result.traverse(x -> Ok(x + 1), 1 :: Nil): Result[Unit, List[Int32]]))
 
-@test
-def foldRightM03(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: Nil) == Ok(2)
+    @Test
+    def traverse03(): Unit \ Assert = assertEq(expected = Ok(2 :: 3 :: Nil), (Result.traverse(x -> Ok(x + 1), 1 :: 2 :: Nil): Result[Unit, List[Int32]]))
 
-@test
-def foldRightM04(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: 3 :: Nil) == Ok(3)
+    @Test
+    def traverse04(): Unit \ Assert = assertEq(expected = Ok(2 :: 3 :: 4 :: Nil), (Result.traverse(x -> Ok(x + 1), 1 :: 2 :: 3 :: Nil): Result[Unit, List[Int32]]))
 
-@test
-def foldRightM05(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, -1 :: 2 :: 3 :: Nil) == Err(-1)
+    @Test
+    def traverse05(): Unit \ Assert = assertEq(expected = Err("one"), Result.traverse(x -> if (x == 1) Err("one") else Ok(x), 1 :: 2 :: 3 :: Nil))
 
-@test
-def foldRightM06(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: -2 :: 3 :: Nil) == Err(-1)
+    @Test
+    def traverse06(): Unit \ Assert = assertEq(expected = Err("three"), Result.traverse(x -> if (x == 3) Err("three") else Ok(x), 1 :: 2 :: 3 :: Nil))
 
-@test
-def foldRightM07(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: -3 :: Nil) == Err(-1)
+    @Test
+    def traverse07(): Unit \ Assert = assertEq(expected = Err("two"), Result.traverse(x -> if (x == 2) Err("two") else Ok(x), 1 :: 2 :: 3 :: Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toList01(): Bool = Result.toList(Err(-1ii): Result[Unit, _]) == Nil
+    @Test
+    def traverse08(): Unit \ Assert = assertEq(expected = Ok(42 :: 42 :: 42 :: Nil), (Result.traverse(_ -> Ok(42), 1 :: 2 :: 3 :: Nil): Result[Unit, List[Int32]]))
 
-@test
-def toList02(): Bool = Result.toList(Ok(1)) == 1 :: Nil
+    /////////////////////////////////////////////////////////////////////////////
+    // traverseX                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def traverseX01(): Unit \ Assert = assertEq(expected = Ok(), (Result.traverseX(x -> Ok(x + 1), Nil): Result[String, Unit]))
 
-/////////////////////////////////////////////////////////////////////////////
-// toSet                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toSet01(): Bool = Result.toSet(Err(-1ii): Result[Unit, _]) == Set#{}
+    @Test
+    def traverseX02(): Unit \ Assert = assertEq(expected = Ok(), (Result.traverseX(x -> Ok(x + 1), 1 :: Nil): Result[String, Unit]))
 
-@test
-def toSet02(): Bool = Result.toSet(Ok(1)) == Set#{1}
+    @Test
+    def traverseX03(): Unit \ Assert = assertEq(expected = Ok(), (Result.traverseX(x -> Ok(x + 1), 1 :: 2 :: Nil): Result[String, Unit]))
 
-/////////////////////////////////////////////////////////////////////////////
-// toMap                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toMap01(): Bool = Result.toMap(Err(-1ii): Result[(Unit, Unit), _]) == Map#{}
+    @Test
+    def traverseX04(): Unit \ Assert = assertEq(expected = Ok(), (Result.traverseX(x -> Ok(x + 1), 1 :: 2 :: 3 :: Nil): Result[String, Unit]))
 
-@test
-def toMap02(): Bool = Result.toMap(Ok((1, true))) == Map#{1 -> true}
+    @Test
+    def traverseX05(): Unit \ Assert = assertEq(expected = Err("one"), Result.traverseX(x -> if (x == 1) Err("one") else Ok(x), 1 :: 2 :: 3 :: Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// toOption                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toOption01(): Bool = Result.toOption(Err(-1ii): Result[Unit, _]) == None
+    @Test
+    def traverseX06(): Unit \ Assert = assertEq(expected = Err("three"), Result.traverseX(x -> if (x == 3) Err("three") else Ok(x), 1 :: 2 :: 3 :: Nil))
 
-@test
-def toOption02(): Bool = Result.toOption(Ok(1)) == Some(1)
+    @Test
+    def traverseX07(): Unit \ Assert = assertEq(expected = Err("two"), Result.traverseX(x -> if (x == 2) Err("two") else Ok(x), 1 :: 2 :: 3 :: Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def traverseX08(): Unit \ Assert = assertEq(expected = Ok(), (Result.traverseX(_ -> Ok(42), 1 :: 2 :: 3 :: Nil): Result[String, Unit]))
 
-@test
-def foreach01(): Bool & Impure =
-    let r = ref 21;
-    Result.foreach(x -> r := x, Ok(42): Result[Int, Int]);
-    42 == deref r
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeftM                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldLeftM01(): Unit \ Assert = assertEq(expected = Ok(0), Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, Nil))
 
-@test
-def foreach02(): Bool & Impure =
-    let r = ref 21;
-    Result.foreach(x -> r := x, Err(42): Result[Int, Int]);
-    21 == deref r
+    @Test
+    def foldLeftM02(): Unit \ Assert = assertEq(expected = Ok(1), Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// ap                                                                      //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def ap01(): Bool = Result.ap(Ok(x -> x + 1), Ok(123)): Result[_, Unit] == Ok(124)
+    @Test
+    def foldLeftM03(): Unit \ Assert = assertEq(expected = Ok(2), Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: Nil))
 
-@test
-def ap02(): Bool = Result.ap(Ok(x -> x + 1), Err("b")) == Err("b")
+    @Test
+    def foldLeftM04(): Unit \ Assert = assertEq(expected = Ok(3), Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: 3 :: Nil))
 
-@test
-def ap03(): Bool = Result.ap(Err("a"), Ok(123)): Result[Int32, _] == Err("a")
+    @Test
+    def foldLeftM05(): Unit \ Assert = assertEq(expected = Err(-1), Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, -1 :: 2 :: 3 :: Nil))
 
-@test
-def ap04(): Bool = Result.ap(Err("a"), Err("b")): Result[Unit, _] == Err("a")
+    @Test
+    def foldLeftM06(): Unit \ Assert = assertEq(expected = Err(-1), Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: -2 :: 3 :: Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// lift2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldLeftM07(): Unit \ Assert = assertEq(expected = Err(-1), Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: -3 :: Nil))
 
-@test
-def lift201(): Bool = Result.lift2((x1,x2) -> x1 + x2, Ok(123), Ok(1)): Result[_, Unit] == Ok(124)
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightM                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldRightM01(): Unit \ Assert = assertEq(expected = Ok(0), Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, Nil))
 
-@test
-def lift202(): Bool = Result.lift2((x1,x2) -> x1 + x2, Ok(123), Err("e1")) == Err("e1")
+    @Test
+    def foldRightM02(): Unit \ Assert = assertEq(expected = Ok(1), Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: Nil))
 
-@test
-def lift203(): Bool = Result.lift2((x1,x2) -> x1 + x2, Err("e1"), Ok(1)) == Err("e1")
+    @Test
+    def foldRightM03(): Unit \ Assert = assertEq(expected = Ok(2), Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: Nil))
 
-@test
-def lift204(): Bool = Result.lift2((x1,x2) -> x1 + x2, Err("e1"), Err("e2"): Result[Int32, String]) == Err("e1")
+    @Test
+    def foldRightM04(): Unit \ Assert = assertEq(expected = Ok(3), Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: 3 :: Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// lift3                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldRightM05(): Unit \ Assert = assertEq(expected = Err(-1), Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, -1 :: 2 :: 3 :: Nil))
 
-@test
-def lift301(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Ok(1), Ok(2)): Result[_, Unit] == Ok(126)
+    @Test
+    def foldRightM06(): Unit \ Assert = assertEq(expected = Err(-1), Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: -2 :: 3 :: Nil))
 
-@test
-def lift302(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Ok(1), Err("e1")) == Err("e1")
+    @Test
+    def foldRightM07(): Unit \ Assert = assertEq(expected = Err(-1), Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: -3 :: Nil))
 
-@test
-def lift303(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Err("e1"), Ok(2)) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def toList01(): Unit \ Assert = assertEq(expected = Nil, Result.toList((Err(-1ii): Result[BigInt, Unit])))
 
-@test
-def lift304(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Err("e1"), Ok(1), Ok(2)) == Err("e1")
+    @Test
+    def toList02(): Unit \ Assert = assertEq(expected = 1 :: Nil, Result.toList(Ok(1)))
 
-@test
-def lift305(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Err("e1"), Err("e2")) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def toSet01(): Unit \ Assert = assertEq(expected = Set#{}, Result.toSet((Err(-1ii): Result[BigInt, Unit])))
 
-@test
-def lift306(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Err("e1"), Ok(1), Err("e2")) == Err("e1")
+    @Test
+    def toSet02(): Unit \ Assert = assertEq(expected = Set#{1}, Result.toSet(Ok(1)))
 
-@test
-def lift307(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Err("e1"), Err("e2"), Err("e3"): Result[Int32, String]) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // toMap                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def toMap01(): Unit \ Assert = assertEq(expected = Map#{}, Result.toMap((Err(-1ii): Result[BigInt, (Unit, Unit)])))
 
-/////////////////////////////////////////////////////////////////////////////
-// lift4                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def toMap02(): Unit \ Assert = assertEq(expected = Map#{1 => true}, Result.toMap(Ok((1, true))))
 
-@test
-def lift401(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Ok(1), Ok(2), Ok(3)): Result[_, Unit] == Ok(129)
+    /////////////////////////////////////////////////////////////////////////////
+    // toMapWith                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lift402(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Ok(1), Ok(2), Err("e1")) == Err("e1")
+    @Test
+    def toMapWith01(): Unit \ Assert =
+        assertEq(expected = Map#{}, Result.toMapWith(x -> 0 * x, Err(1)))
 
-@test
-def lift403(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Ok(1), Err("e1"), Ok(3)) == Err("e1")
+    @Test
+    def toMapWith02(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 0}, Result.toMapWith(x -> 0 * x, Ok(1)))
 
-@test
-def lift404(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Err("e1"), Ok(2), Ok(3)) == Err("e1")
+    @Test
+    def toMapWith03(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 2}, Result.toMapWith(x -> 2 * x, Ok(1)))
 
-@test
-def lift405(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Err("e1"), Ok(1), Ok(2), Ok(3)) == Err("e1")
+    @Test
+    def toMapWith04(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 11}, Result.toMapWith(x -> x + 10, Ok(1)))
 
-@test
-def lift406(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Err("e1"), Err("e2"), Err("e3"), Err("e4"): Result[Int32, String]) == Err("e1")
+    @Test
+    def toMapWith05(): Unit \ Assert =
+        assertEq(expected = Map#{"a" => "ab"}, Result.toMapWith(x -> x + "b", Ok("a")))
 
-/////////////////////////////////////////////////////////////////////////////
-// lift5                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // toOption                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def toOption01(): Unit \ Assert = assertEq(expected = None, Result.toOption((Err(-1ii): Result[BigInt, Unit])))
 
-@test
-def lift501(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4)): Result[_, Unit] == Ok(133)
+    @Test
+    def toOption02(): Unit \ Assert = assertEq(expected = Some(1), Result.toOption(Ok(1)))
 
-@test
-def lift502(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1")) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // toValidation                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    pub def toValidation01(): Unit \ Assert =
+        assertEq(expected = Failure(Nec.singleton(1)), Result.toValidation((Err(1): Result[Int32, Unit])))
 
-@test
-def lift503(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4)) == Err("e1")
+    @Test
+    pub def toValidation02(): Unit \ Assert =
+        assertEq(expected = Success("s"), Result.toValidation((Ok("s"): Result[Unit, String])))
 
-@test
-def lift504(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4)) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // forEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lift505(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4)) == Err("e1")
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
+        let ri = Ref.fresh(rc, 21);
+        Result.forEach(x -> Ref.put(x, ri), (Ok(42): Result[Int32, Int32]));
+        assertEq(expected = 42, Ref.get(ri))
+    }
 
-@test
-def lift506(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4)) == Err("e1")
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
+        let ri = Ref.fresh(rc, 21);
+        Result.forEach(x -> Ref.put(x, ri), (Err(42): Result[Int32, Int32]));
+        assertEq(expected = 21, Ref.get(ri))
+    }
 
-@test
-def lift507(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"): Result[Int32, String]) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // ap                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def ap01(): Unit \ Assert = assertEq(expected = Ok(124), Result.ap(Ok(x -> x + 1), (Ok(123): Result[String, Int32])))
 
-/////////////////////////////////////////////////////////////////////////////
-// lift6                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def ap02(): Unit \ Assert = assertEq(expected = Err("b"), Result.ap(Ok(x -> x + 1), Err("b")))
 
-@test
-def lift601(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5)): Result[_, Unit] == Ok(138)
+    @Test
+    def ap03(): Unit \ Assert = assertEq(expected = Err("a"), (Result.ap(Err("a"), Ok(123)): Result[String, Int32]))
 
-@test
-def lift602(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1")) == Err("e1")
+    @Test
+    def ap04(): Unit \ Assert = assertEq(expected = Err("a"), (Result.ap(Err("a"), Err("b")): Result[String, Int32]))
 
-@test
-def lift603(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5)) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // map2                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lift604(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5)) == Err("e1")
+    @Test
+    def map201(): Unit \ Assert = assertEq(expected = Ok(124), (Result.map2((x1,x2) -> x1 + x2, Ok(123), Ok(1)): Result[String, Int32]))
 
-@test
-def lift605(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5)) == Err("e1")
+    @Test
+    def map202(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map2((x1,x2) -> x1 + x2, Ok(123), Err("e1")))
 
-@test
-def lift606(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5)) == Err("e1")
+    @Test
+    def map203(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map2((x1,x2) -> x1 + x2, Err("e1"), Ok(1)))
 
-@test
-def lift607(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5)) == Err("e1")
+    @Test
+    def map204(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map2((x1,x2) -> x1 + x2, Err("e1"), (Err("e2"): Result[String, Int32])))
 
-@test
-def lift608(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"): Result[Int32, String]) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // map3                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// lift7                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def map301(): Unit \ Assert = assertEq(expected = Ok(126), (Result.map3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Ok(1), Ok(2)): Result[String, Int32]))
 
-@test
-def lift701(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6)): Result[_, Unit] == Ok(144)
+    @Test
+    def map302(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Ok(1), Err("e1")))
 
-@test
-def lift702(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Err("e1")) == Err("e1")
+    @Test
+    def map303(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Err("e1"), Ok(2)))
 
-@test
-def lift703(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1"), Ok(6)) == Err("e1")
+    @Test
+    def map304(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map3((x1,x2,x3) -> x1 + x2 + x3, Err("e1"), Ok(1), Ok(2)))
 
-@test
-def lift704(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5), Ok(6)) == Err("e1")
+    @Test
+    def map305(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Err("e1"), Err("e2")))
 
-@test
-def lift705(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5), Ok(6)) == Err("e1")
+    @Test
+    def map306(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map3((x1,x2,x3) -> x1 + x2 + x3, Err("e1"), Ok(1), Err("e2")))
 
-@test
-def lift706(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5), Ok(6)) == Err("e1")
+    @Test
+    def map307(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map3((x1,x2,x3) -> x1 + x2 + x3, Err("e1"), Err("e2"), (Err("e3"): Result[String, Int32])))
 
-@test
-def lift707(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6)) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // map4                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lift708(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6)) == Err("e1")
+    @Test
+    def map401(): Unit \ Assert = assertEq(expected = Ok(129), (Result.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Ok(1), Ok(2), Ok(3)): Result[String, Int32]))
 
-@test
-def lift709(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"): Result[Int32, String]) == Err("e1")
+    @Test
+    def map402(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Ok(1), Ok(2), Err("e1")))
 
-/////////////////////////////////////////////////////////////////////////////
-// lift8                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def map403(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Ok(1), Err("e1"), Ok(3)))
 
-@test
-def lift801(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)): Result[_, Unit] == Ok(151)
+    @Test
+    def map404(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Err("e1"), Ok(2), Ok(3)))
 
-@test
-def lift802(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Err("e1")) == Err("e1")
+    @Test
+    def map405(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Err("e1"), Ok(1), Ok(2), Ok(3)))
 
-@test
-def lift803(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Err("e1"), Ok(7)) == Err("e1")
+    @Test
+    def map406(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Err("e1"), Err("e2"), Err("e3"), (Err("e4"): Result[String, Int32])))
 
-@test
-def lift804(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1"), Ok(6), Ok(7)) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // map5                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lift805(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5), Ok(6), Ok(7)) == Err("e1")
+    @Test
+    def map501(): Unit \ Assert = assertEq(expected = Ok(133), (Result.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4)): Result[String, Int32]))
 
-@test
-def lift806(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5), Ok(6), Ok(7)) == Err("e1")
+    @Test
+    def map502(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1")))
 
-@test
-def lift807(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)) == Err("e1")
+    @Test
+    def map503(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4)))
 
-@test
-def lift808(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)) == Err("e1")
+    @Test
+    def map504(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4)))
 
-@test
-def lift809(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)) == Err("e1")
+    @Test
+    def map505(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4)))
 
-@test
-def lift810(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"): Result[Int32, String]) == Err("e1")
+    @Test
+    def map506(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4)))
 
-/////////////////////////////////////////////////////////////////////////////
-// lift9                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def map507(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Err("e1"), Err("e2"), Err("e3"), Err("e4"), (Err("e5"): Result[String, Int32])))
 
-@test
-def lift901(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)): Result[_, Unit] == Ok(159)
+    /////////////////////////////////////////////////////////////////////////////
+    // map6                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lift902(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Err("e1")) == Err("e1")
+    @Test
+    def map601(): Unit \ Assert = assertEq(expected = Ok(138), (Result.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5)): Result[String, Int32]))
 
-@test
-def lift903(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Err("e1"), Ok(8)) == Err("e1")
+    @Test
+    def map602(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1")))
 
-@test
-def lift904(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Err("e1"), Ok(7), Ok(8)) == Err("e1")
+    @Test
+    def map603(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5)))
 
-@test
-def lift905(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1"), Ok(6), Ok(7), Ok(8)) == Err("e1")
+    @Test
+    def map604(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5)))
 
-@test
-def lift906(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5), Ok(6), Ok(7), Ok(8)) == Err("e1")
+    @Test
+    def map605(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5)))
 
-@test
-def lift907(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)) == Err("e1")
+    @Test
+    def map606(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5)))
 
-@test
-def lift908(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)) == Err("e1")
+    @Test
+    def map607(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5)))
 
-@test
-def lift909(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)) == Err("e1")
+    @Test
+    def map608(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), (Err("e6"): Result[String, Int32])))
 
-@test
-def lift910(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // map7                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lift911(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"), Err("e9"): Result[Int32, String]) == Err("e1")
+    @Test
+    def map701(): Unit \ Assert = assertEq(expected = Ok(144), (Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6)): Result[String, Int32]))
 
-/////////////////////////////////////////////////////////////////////////////
-// lift10                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def map702(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Err("e1")))
 
-@test
-def lift1001(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)): Result[_, Unit] == Ok(168)
+    @Test
+    def map703(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1"), Ok(6)))
 
-@test
-def lift1002(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Err("e1")) == Err("e1")
+    @Test
+    def map704(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5), Ok(6)))
 
-@test
-def lift1003(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Err("e1"), Ok(9)) == Err("e1")
+    @Test
+    def map705(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5), Ok(6)))
 
-@test
-def lift1004(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Err("e1"), Ok(8), Ok(9)) == Err("e1")
+    @Test
+    def map706(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5), Ok(6)))
 
-@test
-def lift1005(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Err("e1"), Ok(7), Ok(8), Ok(9)) == Err("e1")
+    @Test
+    def map707(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6)))
 
-@test
-def lift1006(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1"), Ok(6), Ok(7), Ok(8), Ok(9)) == Err("e1")
+    @Test
+    def map708(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6)))
 
-@test
-def lift1007(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)) == Err("e1")
+    @Test
+    def map709(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), (Err("e7"): Result[String, Int32])))
 
-@test
-def lift1008(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)) == Err("e1")
+    /////////////////////////////////////////////////////////////////////////////
+    // map8                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lift1009(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)) == Err("e1")
+    @Test
+    def map801(): Unit \ Assert = assertEq(expected = Ok(151), (Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)): Result[String, Int32]))
 
-@test
-def lift1010(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)) == Err("e1")
+    @Test
+    def map802(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Err("e1")))
 
-@test
-def lift1011(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)) == Err("e1")
+    @Test
+    def map803(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Err("e1"), Ok(7)))
 
-@test
-def lift1012(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"), Err("e9"), Err("e10"): Result[Int32, String]) == Err("e1")
+    @Test
+    def map804(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1"), Ok(6), Ok(7)))
+
+    @Test
+    def map805(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5), Ok(6), Ok(7)))
+
+    @Test
+    def map806(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5), Ok(6), Ok(7)))
+
+    @Test
+    def map807(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)))
+
+    @Test
+    def map808(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)))
+
+    @Test
+    def map809(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)))
+
+    @Test
+    def map810(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), (Err("e8"): Result[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map9                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map901(): Unit \ Assert = assertEq(expected = Ok(159), (Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)): Result[String, Int32]))
+
+    @Test
+    def map902(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Err("e1")))
+
+    @Test
+    def map903(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Err("e1"), Ok(8)))
+
+    @Test
+    def map904(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Err("e1"), Ok(7), Ok(8)))
+
+    @Test
+    def map905(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1"), Ok(6), Ok(7), Ok(8)))
+
+    @Test
+    def map906(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5), Ok(6), Ok(7), Ok(8)))
+
+    @Test
+    def map907(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)))
+
+    @Test
+    def map908(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)))
+
+    @Test
+    def map909(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)))
+
+    @Test
+    def map910(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)))
+
+    @Test
+    def map911(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"), (Err("e9"): Result[String, Int32])))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map10                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map1001(): Unit \ Assert = assertEq(expected = Ok(168), (Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)): Result[String, Int32]))
+
+    @Test
+    def map1002(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Err("e1")))
+
+    @Test
+    def map1003(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Err("e1"), Ok(9)))
+
+    @Test
+    def map1004(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Err("e1"), Ok(8), Ok(9)))
+
+    @Test
+    def map1005(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Err("e1"), Ok(7), Ok(8), Ok(9)))
+
+    @Test
+    def map1006(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Err("e1"), Ok(6), Ok(7), Ok(8), Ok(9)))
+
+    @Test
+    def map1007(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Err("e1"), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)))
+
+    @Test
+    def map1008(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Err("e1"), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)))
+
+    @Test
+    def map1009(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Err("e1"), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)))
+
+    @Test
+    def map1010(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Err("e1"), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)))
+
+    @Test
+    def map1011(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Err("e1"), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)))
+
+    @Test
+    def map1012(): Unit \ Assert = assertEq(expected = Err("e1"), Result.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"), Err("e9"), (Err("e10"): Result[String, Int32])))
 
     /////////////////////////////////////////////////////////////////////////////
     // hash                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def hash01(): Bool = hash(Err(()): Result[Unit, _]) == hash(Err(()): Result[Unit, _])
+    @Test
+    def hash01(): Unit \ Assert = assertEq(expected = true, Hash.hash((Err(()): Result[Unit, Unit])) == Hash.hash((Err(()): Result[Unit, Unit])))
 
-    @test
-    def hash02(): Bool = hash(Ok(()): Result[_, Unit]) != hash(Err(()): Result[Unit, _])
+    @Test
+    def hash02(): Unit \ Assert = assertEq(expected = true, Hash.hash((Ok(()): Result[Unit, Unit])) != Hash.hash((Err(()): Result[Unit, Unit])))
 
-    @test
-    def hash03(): Bool = hash(Ok("Success"): Result[_, Unit]) == hash(Ok("Success"): Result[_, Unit])
+    @Test
+    def hash03(): Unit \ Assert = assertEq(expected = true, Hash.hash((Ok("Success"): Result[Unit, String])) == Hash.hash((Ok("Success"): Result[Unit, String])))
 
-    @test
-    def hash04(): Bool = hash(Ok("Success"): Result[_, String]) != hash(Err("Error"): Result[String, _])
+    @Test
+    def hash04(): Unit \ Assert = assertEq(expected = true, Hash.hash((Ok("Success"): Result[String, String])) != Hash.hash((Err("Error"): Result[String, String])))
 
-    @test
-    def hash05(): Bool = hash(Err(13i8): Result[Unit, _]) != hash(Err(255i16): Result[Unit, _])
+    @Test
+    def hash05(): Unit \ Assert = assertEq(expected = true, Hash.hash((Err(13i8): Result[Int8, Unit])) != Hash.hash((Err(255i16): Result[Int16, Unit])))
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toIterator01(): Bool & Impure =
-        Err(1): Result[Int32, Int32] |> Result.toIterator |> Iterator.toList == Nil
+    @Test
+    def iterator01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (Err(1): Result[Int32, Int32]) |> Result.iterator(rc) |> Iterator.toList)
+    }
 
-    @test
-    def toIterator02(): Bool & Impure =
-        Ok(1) |> Result.toIterator |> Iterator.toList == 1 :: Nil
+    @Test
+    def iterator02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, Ok(1) |> Result.iterator(rc) |> Iterator.toList)
+    }
 
-    @test
-    def toIterator03(): Bool & Impure =
-        Ok(1 :: 2 :: 3 :: Nil) |> Result.toIterator |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
+    @Test
+    def iterator03(): Unit \ Assert = region rc {
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: Nil, Ok(1 :: 2 :: 3 :: Nil) |> Result.iterator(rc) |> Iterator.toList)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // tryCatch                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def tryCatch01(): Unit \ Assert = assertEq(expected = Ok(1), Result.tryCatch(_ -> 1 / 1))
+
+    @Test
+    def tryCatch02(): Unit \ Assert = region rc {
+        let arr = Array#{0} @ rc;
+        assertEq(expected = true, Result.tryCatch(_ -> Array.get(10, arr)) |> Result.isErr)
+    }
 
 }

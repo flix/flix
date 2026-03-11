@@ -1,123 +1,285 @@
-namespace Test/Exp/ArrayStore {
+mod Test.Exp.ArrayStore {
 
-    @test
-    def testArrayStore01(): Unit & Impure = let x = [1]; x[0] = 42
+    use Assert.assertEq
 
-    @test
-    def testArrayStore02(): Unit & Impure = let x = [1, 2, 3]; x[2] = 42
+    @Test
+    def testArrayStore01(): Unit \ Assert = region rc {
+        let x = Array#{1} @ rc;
+        %%ARRAY_STORE%%(x, 0, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore03(): Unit & Impure = let x = [1, 2, 3, 4]; x[2] = 42
+    @Test
+    def testArrayStore02(): Unit \ Assert = region rc {
+        let x = Array#{1, 2, 3} @ rc;
+        %%ARRAY_STORE%%(x, 2, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(x, 2))
+    }
 
-    @test
-    def testArrayStore04(): Unit & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[10] = 42
+    @Test
+    def testArrayStore03(): Unit \ Assert = region rc {
+        let x = Array#{1, 2, 3, 4} @ rc;
+        %%ARRAY_STORE%%(x, 2, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(x, 2))
+    }
 
-    @test
-    def testArrayStore05(): Unit & Impure = let x = [1, 2]; x[1] = 42
+    @Test
+    def testArrayStore04(): Unit \ Assert = region rc {
+        let x = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20} @ rc;
+        %%ARRAY_STORE%%(x, 10, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(x, 10))
+    }
 
-    @test
-    def testArrayStore06(): Unit & Impure = let x = [true]; x[0] = false
+    @Test
+    def testArrayStore05(): Unit \ Assert = region rc {
+        let x = Array#{1, 2} @ rc;
+        %%ARRAY_STORE%%(x, 1, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore07(): Unit & Impure = let x = [false]; x[0] = true
+    @Test
+    def testArrayStore06(): Unit \ Assert = region rc {
+        let x = Array#{true} @ rc;
+        %%ARRAY_STORE%%(x, 0, false);
+        assertEq(expected = false, %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore08(): Unit & Impure = let x = [true, false]; x[1] = true
+    @Test
+    def testArrayStore07(): Unit \ Assert = region rc {
+        let x = Array#{false} @ rc;
+        %%ARRAY_STORE%%(x, 0, true);
+        assertEq(expected = true, %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore9(): Unit & Impure = let x = [false, true, false]; x[2] = false
+    @Test
+    def testArrayStore08(): Unit \ Assert = region rc {
+        let x = Array#{true, false} @ rc;
+        %%ARRAY_STORE%%(x, 1, true);
+        assertEq(expected = true, %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore10(): Unit & Impure = let x = [false, false, false, false, true]; x[3] = true
+    @Test
+    def testArrayStore09(): Unit \ Assert = region rc {
+        let x = Array#{false, true, false} @ rc;
+        %%ARRAY_STORE%%(x, 2, false);
+        assertEq(expected = false, %%ARRAY_LOAD%%(x, 2))
+    }
 
-    @test
-    def testArrayStore11(): Unit & Impure = let x = ['c']; x[0] = 'e'
+    @Test
+    def testArrayStore10(): Unit \ Assert = region rc {
+        let x = Array#{false, false, false, false, true} @ rc;
+        %%ARRAY_STORE%%(x, 3, true);
+        assertEq(expected = true, %%ARRAY_LOAD%%(x, 3))
+    }
 
-    @test
-    def testArrayStore12(): Unit & Impure = let x = ['a', 'b']; x[0] = 'e'
+    @Test
+    def testArrayStore11(): Unit \ Assert = region rc {
+        let x = Array#{'c'} @ rc;
+        %%ARRAY_STORE%%(x, 0, 'e');
+        assertEq(expected = 'e', %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore13(): Unit & Impure = let x = ['a', 'b', 'c']; x[1] = 'e'
+    @Test
+    def testArrayStore12(): Unit \ Assert = region rc {
+        let x = Array#{'a', 'b'} @ rc;
+        %%ARRAY_STORE%%(x, 0, 'e');
+        assertEq(expected = 'e', %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore14(): Unit & Impure = let x = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']; x[9] = 'e'
+    @Test
+    def testArrayStore13(): Unit \ Assert = region rc {
+        let x = Array#{'a', 'b', 'c'} @ rc;
+        %%ARRAY_STORE%%(x, 1, 'e');
+        assertEq(expected = 'e', %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore15(): Unit & Impure = let x = [1i8]; x[0] = 42i8
+    @Test
+    def testArrayStore14(): Unit \ Assert = region rc {
+        let x = Array#{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'} @ rc;
+        %%ARRAY_STORE%%(x, 9, 'e');
+        assertEq(expected = 'e', %%ARRAY_LOAD%%(x, 9))
+    }
 
-    @test
-    def testArrayStore16(): Unit & Impure = let x = [1i8, 2i8, 3i8]; x[1] = 42i8
+    @Test
+    def testArrayStore15(): Unit \ Assert = region rc {
+        let x = Array#{1i8} @ rc;
+        %%ARRAY_STORE%%(x, 0, 42i8);
+        assertEq(expected = 42i8, %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore17(): Unit & Impure = let x = [1i8, 2i8, 3i8, 4i8]; x[2] = 42i8
+    @Test
+    def testArrayStore16(): Unit \ Assert = region rc {
+        let x = Array#{1i8, 2i8, 3i8} @ rc;
+        %%ARRAY_STORE%%(x, 1, 42i8);
+        assertEq(expected = 42i8, %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore18(): Unit & Impure = let x = [1i16]; x[0] = 42i16
+    @Test
+    def testArrayStore17(): Unit \ Assert = region rc {
+        let x = Array#{1i8, 2i8, 3i8, 4i8} @ rc;
+        %%ARRAY_STORE%%(x, 2, 42i8);
+        assertEq(expected = 42i8, %%ARRAY_LOAD%%(x, 2))
+    }
 
-    @test
-    def testArrayStore19(): Unit & Impure = let x = [1i16, 2i16, 3i16]; x[1] = 42i16
+    @Test
+    def testArrayStore18(): Unit \ Assert = region rc {
+        let x = Array#{1i16} @ rc;
+        %%ARRAY_STORE%%(x, 0, 42i16);
+        assertEq(expected = 42i16, %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore20(): Unit & Impure = let x = [1i16, 2i16, 3i16, 4i16]; x[2] = 42i16
+    @Test
+    def testArrayStore19(): Unit \ Assert = region rc {
+        let x = Array#{1i16, 2i16, 3i16} @ rc;
+        %%ARRAY_STORE%%(x, 1, 42i16);
+        assertEq(expected = 42i16, %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore21(): Unit & Impure = let x = [1i64]; x[0] = 42i64
+    @Test
+    def testArrayStore20(): Unit \ Assert = region rc {
+        let x = Array#{1i16, 2i16, 3i16, 4i16} @ rc;
+        %%ARRAY_STORE%%(x, 2, 42i16);
+        assertEq(expected = 42i16, %%ARRAY_LOAD%%(x, 2))
+    }
 
-    @test
-    def testArrayStore22(): Unit & Impure = let x = [1i64, 2i64, 3i64]; x[1] = 42i64
+    @Test
+    def testArrayStore21(): Unit \ Assert = region rc {
+        let x = Array#{1i64} @ rc;
+        %%ARRAY_STORE%%(x, 0, 42i64);
+        assertEq(expected = 42i64, %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore23(): Unit & Impure = let x = [1i64, 2i64, 3i64, 4i64]; x[2] = 42i64
+    @Test
+    def testArrayStore22(): Unit \ Assert = region rc {
+        let x = Array#{1i64, 2i64, 3i64} @ rc;
+        %%ARRAY_STORE%%(x, 1, 42i64);
+        assertEq(expected = 42i64, %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore24(): Unit & Impure = let x = [1.0f32]; x[0] = 42.0f32
+    @Test
+    def testArrayStore23(): Unit \ Assert = region rc {
+        let x = Array#{1i64, 2i64, 3i64, 4i64} @ rc;
+        %%ARRAY_STORE%%(x, 2, 42i64);
+        assertEq(expected = 42i64, %%ARRAY_LOAD%%(x, 2))
+    }
 
-    @test
-    def testArrayStore25(): Unit & Impure = let x = [1.0f32, 2.0f32, 3.0f32]; x[1] = 42.0f32
+    @Test
+    def testArrayStore24(): Unit \ Assert = region rc {
+        let x = Array#{1.0f32} @ rc;
+        %%ARRAY_STORE%%(x, 0, 42.0f32);
+        assertEq(expected = 42.0f32, %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore26(): Unit & Impure = let x = [1.0f32, 2.0f32, 3.0f32, 4.0f32]; x[2] = 42.0f32
+    @Test
+    def testArrayStore25(): Unit \ Assert = region rc {
+        let x = Array#{1.0f32, 2.0f32, 3.0f32} @ rc;
+        %%ARRAY_STORE%%(x, 1, 42.0f32);
+        assertEq(expected = 42.0f32, %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore27(): Unit & Impure = let x = [1.0f64]; x[0] = 42.0f64
+    @Test
+    def testArrayStore26(): Unit \ Assert = region rc {
+        let x = Array#{1.0f32, 2.0f32, 3.0f32, 4.0f32} @ rc;
+        %%ARRAY_STORE%%(x, 2, 42.0f32);
+        assertEq(expected = 42.0f32, %%ARRAY_LOAD%%(x, 2))
+    }
 
-    @test
-    def testArrayStore28(): Unit & Impure = let x = [1.0f64, 2.0f64, 3.0f64]; x[1] = 42.0f64
+    @Test
+    def testArrayStore27(): Unit \ Assert = region rc {
+        let x = Array#{1.0f64} @ rc;
+        %%ARRAY_STORE%%(x, 0, 42.0f64);
+        assertEq(expected = 42.0f64, %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore29(): Unit & Impure = let x = [1.0f64, 2.0f64, 3.0f64, 4.0f64]; x[3] = 42.0f64
+    @Test
+    def testArrayStore28(): Unit \ Assert = region rc {
+        let x = Array#{1.0f64, 2.0f64, 3.0f64} @ rc;
+        %%ARRAY_STORE%%(x, 1, 42.0f64);
+        assertEq(expected = 42.0f64, %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore30(): Unit & Impure = let x = ["Hello"]; x[0] = "Test"
+    @Test
+    def testArrayStore29(): Unit \ Assert = region rc {
+        let x = Array#{1.0f64, 2.0f64, 3.0f64, 4.0f64} @ rc;
+        %%ARRAY_STORE%%(x, 3, 42.0f64);
+        assertEq(expected = 42.0f64, %%ARRAY_LOAD%%(x, 3))
+    }
 
-    @test
-    def testArrayStore31(): Unit & Impure = let x = ["Hello", "World"]; x[1] = "Test"
+    @Test
+    def testArrayStore30(): Unit \ Assert = region rc {
+        let x = Array#{"Hello"} @ rc;
+        %%ARRAY_STORE%%(x, 0, "Test");
+        assertEq(expected = "Test", %%ARRAY_LOAD%%(x, 0))
+    }
 
-    @test
-    def testArrayStore32(): Unit & Impure = let x = ["World", "Hello", "World"]; x[2] = "Test"
+    @Test
+    def testArrayStore31(): Unit \ Assert = region rc {
+        let x = Array#{"Hello", "World"} @ rc;
+        %%ARRAY_STORE%%(x, 1, "Test");
+        assertEq(expected = "Test", %%ARRAY_LOAD%%(x, 1))
+    }
 
-    @test
-    def testArrayStore33(): Unit & Impure = let x = [[1, 2, 3]]; x[0][1] = 42
+    @Test
+    def testArrayStore32(): Unit \ Assert = region rc {
+        let x = Array#{"World", "Hello", "World"} @ rc;
+        %%ARRAY_STORE%%(x, 2, "Test");
+        assertEq(expected = "Test", %%ARRAY_LOAD%%(x, 2))
+    }
 
-    @test
-    def testArrayStore34(): Unit & Impure = let x = [[1, 2], [1, 2]]; x[1][0] = 42
+    @Test
+    def testArrayStore33(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1, 2, 3} @ rc} @ rc;
+        %%ARRAY_STORE%%(%%ARRAY_LOAD%%(x, 0), 1, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(%%ARRAY_LOAD%%(x, 0), 1))
+    }
 
-    @test
-    def testArrayStore35(): Unit & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[1][5] = 42
+    @Test
+    def testArrayStore34(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1, 2} @ rc, Array#{1, 2} @ rc} @ rc;
+        %%ARRAY_STORE%%(%%ARRAY_LOAD%%(x, 1), 0, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(%%ARRAY_LOAD%%(x, 1), 0))
+    }
 
-    @test
-    def testArrayStore36(): Unit & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[0][3] = 42
+    @Test
+    def testArrayStore35(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1} @ rc, Array#{1, 2, 3, 4, 5, 6, 7, 8} @ rc} @ rc;
+        %%ARRAY_STORE%%(%%ARRAY_LOAD%%(x, 1), 5, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(%%ARRAY_LOAD%%(x, 1), 5))
+    }
 
-    @test
-    def testArrayStore37(): Unit & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[2][2] = 42
+    @Test
+    def testArrayStore36(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1, 2, 3, 4, 5} @ rc, Array#{2} @ rc} @ rc;
+        %%ARRAY_STORE%%(%%ARRAY_LOAD%%(x, 0), 3, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(%%ARRAY_LOAD%%(x, 0), 3))
+    }
 
-    @test
-    def testArrayStore38(): Unit & Impure = let x = [[(7 , 10)], [(7 , 10)]]; x[1] = [(19 , 10)]
+    @Test
+    def testArrayStore37(): Unit \ Assert = region rc {
+        let x = Array#{Array#{1, 2, 3} @ rc, Array#{1, 2, 3} @ rc, Array#{1, 2, 3} @ rc} @ rc;
+        %%ARRAY_STORE%%(%%ARRAY_LOAD%%(x, 2), 2, 42);
+        assertEq(expected = 42, %%ARRAY_LOAD%%(%%ARRAY_LOAD%%(x, 2), 2))
+    }
 
-    @test
-    def testArrayStore39(): Unit & Impure = let x = [[7 :: 10 :: Nil], [7 :: Nil]]; x[1] = [19 :: Nil]
+    @Test
+    def testArrayStore38(): Unit \ Assert = region rc {
+        let x = Array#{Array#{(7 , 10)} @ rc, Array#{(7 , 10)} @ rc} @ rc;
+        %%ARRAY_STORE%%(x, 1, Array#{(19 , 10)} @ rc);
+        assertEq(expected = (19, 10), %%ARRAY_LOAD%%(%%ARRAY_LOAD%%(x, 1), 0))
+    }
 
-    @test
-    def testArrayStore40(): Unit & Impure = let x = [None, None, None, Some(4)]; x[1] = Some(6)
+    @Test
+    def testArrayStore39(): Unit \ Assert = region rc {
+        let x = Array#{Array#{7 :: 10 :: Nil} @ rc, Array#{7 :: Nil} @ rc} @ rc;
+        %%ARRAY_STORE%%(x, 1, Array#{19 :: Nil} @ rc);
+        assertEq(expected = 19 :: Nil, %%ARRAY_LOAD%%(%%ARRAY_LOAD%%(x, 1), 0))
+    }
+
+    @Test
+    def testArrayStore40(): Unit \ Assert = region rc {
+        let x = Array#{None, None, None, Some(4)} @ rc;
+        %%ARRAY_STORE%%(x, 1, Some(6));
+        assertEq(expected = Some(6), %%ARRAY_LOAD%%(x, 1))
+    }
 
 }

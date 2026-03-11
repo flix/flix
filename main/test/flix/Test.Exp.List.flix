@@ -1,82 +1,62 @@
-namespace Test/Exp/List {
+mod Test.Exp.List {
 
-    @test
-    def testList01(): List[Int] = Nil
-
-    @test
-    def testList02(): List[Int] = 1 :: Nil
-
-    @test
-    def testList03(): List[Int] = 1 :: 2 :: Nil
-
-    @test
-    def testListOption01(): List[Option[Int]] = Nil
-
-    @test
-    def testListOption02(): List[Option[Int]] = None :: Nil
-
-    @test
-    def testListOption03(): List[Option[Int]] = None :: None :: Nil
-
-    @test
-    def testListOption04(): List[Option[Int]] = None :: Some(42) :: Nil
-
-    @test
-    def testListOption05(): List[Option[Int]] = Some(21) :: Some(42) :: Nil
-
-    @test
-    def testListList01(): List[List[Int]] = Nil
-
-    @test
-    def testListList02(): List[List[Int]] = Nil :: Nil
-
-    @test
-    def testListList03(): List[List[Int]] = (1 :: Nil) :: Nil
-
-    @test
-    def testListList04(): List[List[Int]] = (1 :: Nil) :: (2 :: Nil) :: Nil
-
-    @test
-    def testListList05(): List[List[Int]] = (1 :: Nil) :: (2 :: Nil) :: (Nil) :: Nil
-
-    @test
-    def testListAppend01(): List[Int] = Nil ::: Nil
-
-    @test
-    def testListAppend02(): List[Int] = 1 :: Nil ::: 2 :: Nil
-
-    @test
-    def testListAppend03(): List[Int] = 1 :: 2 :: Nil ::: 3 :: 4 :: Nil
-
-    @test
-    def testListAppend05(): List[Int] = Nil ::: Nil ::: Nil
-
-    @test
-    def testListAppend06(): List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil
-
-}
-
-enum Option[t] {
-    case None,
-    case Some(t)
-}
-
-enum List[t] {
-    case Nil,
-    case Cons(t, List[t])
-}
-
-namespace List {
-
-    pub def append(xs: List[a], ys: List[a]): List[a] = {
-        foldRight((x, acc) -> x :: acc, ys, xs)
+    // Define an enum with a `Cons` tag to ensure that it's not used in any of the following tests
+    pub enum Foo {
+        case Cons
     }
 
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = foldRightHelper(f, s, xs, s1 -> s1 as & e)
+    @CompileTest
+    def testList01(): List[Int32] = Nil
 
-    def foldRightHelper(f: (a, b) -> b & e, s: b, xs: List[a], k: b -> b & e): b & e = match xs {
-        case Nil => k(s)
-        case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
-    }
+    @CompileTest
+    def testList02(): List[Int32] = 1 :: Nil
+
+    @CompileTest
+    def testList03(): List[Int32] = 1 :: 2 :: Nil
+
+    @CompileTest
+    def testListOption01(): List[Option[Int32]] = Nil
+
+    @CompileTest
+    def testListOption02(): List[Option[Int32]] = None :: Nil
+
+    @CompileTest
+    def testListOption03(): List[Option[Int32]] = None :: None :: Nil
+
+    @CompileTest
+    def testListOption04(): List[Option[Int32]] = None :: Some(42) :: Nil
+
+    @CompileTest
+    def testListOption05(): List[Option[Int32]] = Some(21) :: Some(42) :: Nil
+
+    @CompileTest
+    def testListList01(): List[List[Int32]] = Nil
+
+    @CompileTest
+    def testListList02(): List[List[Int32]] = Nil :: Nil
+
+    @CompileTest
+    def testListList03(): List[List[Int32]] = (1 :: Nil) :: Nil
+
+    @CompileTest
+    def testListList04(): List[List[Int32]] = (1 :: Nil) :: (2 :: Nil) :: Nil
+
+    @CompileTest
+    def testListList05(): List[List[Int32]] = (1 :: Nil) :: (2 :: Nil) :: (Nil) :: Nil
+
+    @CompileTest
+    def testListAppend01(): List[Int32] = Nil ::: Nil
+
+    @CompileTest
+    def testListAppend02(): List[Int32] = 1 :: Nil ::: 2 :: Nil
+
+    @CompileTest
+    def testListAppend03(): List[Int32] = 1 :: 2 :: Nil ::: 3 :: 4 :: Nil
+
+    @CompileTest
+    def testListAppend05(): List[Int32] = Nil ::: Nil ::: Nil
+
+    @CompileTest
+    def testListAppend06(): List[Int32] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil
 
 }

@@ -16,5 +16,4 @@ object Rigidity {
     * Denotes a type variable that is rigid, i.e. cannot be unified with anything other than itself.
     */
   case object Rigid extends Rigidity
-
 }

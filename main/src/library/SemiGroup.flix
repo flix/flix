@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for types that form a semigroup.
+/// A trait for types that form a semigroup.
 ///
-pub lawless class SemiGroup[a] {
+pub trait SemiGroup[a] {
     ///
     /// An associative binary operation on `a`.
     ///
@@ -30,45 +30,53 @@ pub lawless class SemiGroup[a] {
         if (n <= 1) x
         else SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
 
-    law associative: forall(x: a, y: a, z: a) with Eq[a] . SemiGroup.combine(SemiGroup.combine(x, y), z) == SemiGroup.combine(x, SemiGroup.combine(y, z))
+    law associative: forall(x: a, y: a, z: a) with Eq[a] SemiGroup.combine(SemiGroup.combine(x, y), z) == SemiGroup.combine(x, SemiGroup.combine(y, z))
 
 }
+
+///
+/// Alias for `SemiGroup.combine`.
+///
+pub def ++(x: a, y: a): a with SemiGroup[a] = SemiGroup.combine(x, y)
 
 instance SemiGroup[Unit] {
     pub def combine(_: Unit, _: Unit): Unit = ()
 }
 
+instance SemiGroup[Int8] {
+    pub def combine(x: Int8, y: Int8): Int8 = x + y
+}
+
+instance SemiGroup[Int16] {
+    pub def combine(x: Int16, y: Int16): Int16 = x + y
+}
+
+instance SemiGroup[Int32] {
+    pub def combine(x: Int32, y: Int32): Int32 = x + y
+}
+
+instance SemiGroup[Int64] {
+    pub def combine(x: Int64, y: Int64): Int64 = x + y
+}
+
+instance SemiGroup[BigInt] {
+    pub def combine(x: BigInt, y: BigInt): BigInt = x + y
+}
+
+instance SemiGroup[Float32] {
+    pub def combine(x: Float32, y: Float32): Float32 = x + y
+}
+
+instance SemiGroup[Float64] {
+    pub def combine(x: Float64, y: Float64): Float64 = x + y
+}
+
+instance SemiGroup[BigDecimal] {
+    pub def combine(x: BigDecimal, y: BigDecimal): BigDecimal = x + y
+}
+
 instance SemiGroup[String] {
     pub def combine(x: String, y: String): String = x + y
-}
-
-instance SemiGroup[Option[a]] with SemiGroup[a] {
-    pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
-        case (a, None)              => a
-        case (None, b)              => b
-        case (Some(x1), Some(y1))   => Some(SemiGroup.combine(x1, y1))
-    }
-}
-
-instance SemiGroup[List[a]] {
-    pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
-}
-
-instance SemiGroup[Set[a]] with Order[a] {
-    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
-}
-
-instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
-    pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
-}
-
-instance SemiGroup[Validation[t, e]] with SemiGroup[t] {
-    pub def combine(x: Validation[t, e], y: Validation[t, e]): Validation[t, e] = match (x, y) {
-        case (Success(x1), Success(y1))     => Success(SemiGroup.combine(x1, y1))
-        case (Failure(es1), Failure(es2))   => Failure(Nel.append(es1, es2))
-        case (Failure(_), _)                => x
-        case (_, Failure(_))                => y
-    }
 }
 
 instance SemiGroup[(a1, a2)] with SemiGroup[a1], SemiGroup[a2] {
@@ -123,4 +131,37 @@ instance SemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with SemiGroup[a1]
     pub def combine(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = match (x, y) {
         case ((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10)) => (SemiGroup.combine(x1, y1), SemiGroup.combine(x2, y2), SemiGroup.combine(x3, y3), SemiGroup.combine(x4, y4), SemiGroup.combine(x5, y5), SemiGroup.combine(x6, y6), SemiGroup.combine(x7, y7), SemiGroup.combine(x8, y8), SemiGroup.combine(x9, y9), SemiGroup.combine(x10, y10))
     }
+}
+
+pub mod SemiGroup {
+
+    pub enum Any(Bool)
+
+    instance SemiGroup[Any] {
+        pub def combine(x: Any, y: Any): Any = match (x, y) {
+            case (Any.Any(a), Any.Any(b)) => Any.Any(a or b)
+        }
+    }
+
+    instance Monoid[Any] {
+        pub def empty(): Any = Any.Any(false)
+    }
+
+    instance CommutativeMonoid[Any]
+
+
+    pub enum All(Bool)
+
+    instance SemiGroup[All] {
+        pub def combine(x: All, y: All): All = match (x, y) {
+            case (All.All(a), All.All(b)) => All.All(a and b)
+        }
+    }
+
+    instance Monoid[All] {
+        pub def empty(): All = All.All(true)
+    }
+
+    instance CommutativeMonoid[All]
+
 }

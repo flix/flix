@@ -1,3355 +1,3865 @@
-/*
- * Copyright 2019 Magnus Madsen, Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+mod TestString {
 
-namespace TestString {
+    use Assert.{assertEq, assertTrue, assertFalse, assertSome, assertNone};
 
-/////////////////////////////////////////////////////////////////////////////
-// charAt                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // charAt                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def charAt01(): Bool = String.charAt(0, "Hello World!") == 'H'
+    @Test
+    def charAt01(): Unit \ Assert =
+        assertEq(expected = 'H', String.charAt(0, "Hello World!"))
 
-@test
-def charAt02(): Bool = String.charAt(1, "Hello World!") == 'e'
+    @Test
+    def charAt02(): Unit \ Assert =
+        assertEq(expected = 'e', String.charAt(1, "Hello World!"))
 
-@test
-def charAt03(): Bool = String.charAt(2, "Hello World!") == 'l'
+    @Test
+    def charAt03(): Unit \ Assert =
+        assertEq(expected = 'l', String.charAt(2, "Hello World!"))
 
-@test
-def charAt04(): Bool = String.charAt(3, "Hello World!") == 'l'
+    @Test
+    def charAt04(): Unit \ Assert =
+        assertEq(expected = 'l', String.charAt(3, "Hello World!"))
 
-@test
-def charAt05(): Bool = String.charAt(4, "Hello World!") == 'o'
+    @Test
+    def charAt05(): Unit \ Assert =
+        assertEq(expected = 'o', String.charAt(4, "Hello World!"))
 
-@test
-def charAt06(): Bool = String.charAt(5, "Hello World!") == ' '
+    @Test
+    def charAt06(): Unit \ Assert =
+        assertEq(expected = ' ', String.charAt(5, "Hello World!"))
 
-/////////////////////////////////////////////////////////////////////////////
-// concat                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def concat01(): Bool = "Hello World!" == "Hello World!"
+    @Test
+    def nth01(): Unit \ Assert =
+        assertNone(String.nth(0, ""))
 
-@test
-def concat02(): Bool = "Hello" + " World!" == "Hello World!"
+    @Test
+    def nth02(): Unit \ Assert =
+        assertNone(String.nth(-1, "Hello World!"))
 
-@test
-def concat03(): Bool = "Hello" + " World!" == "Hello" + " World!"
+    @Test
+    def nth03(): Unit \ Assert =
+        assertNone(String.nth(15, "Hello World!"))
 
-@test
-def concat04(): Bool = "Hello World!" + "" == "Hello World!"
+    @Test
+    def nth04(): Unit \ Assert =
+        assertEq(expected = Some('H'), String.nth(0, "Hello World!"))
 
-@test
-def concat05(): Bool = "Hello" + " " + "World" + "!" == "Hello World!"
+    @Test
+    def nth05(): Unit \ Assert =
+        assertEq(expected = Some('e'), String.nth(1, "Hello World!"))
 
-@test
-def concat06(): Bool =
-    let f = x -> (x + " World!");
-    f("Hello") == "Hello World!"
+    @Test
+    def nth06(): Unit \ Assert =
+        assertEq(expected = Some('l'), String.nth(2, "Hello World!"))
 
-@test
-def concat07(): Bool =
-    let f = (x, y) -> (x + y);
-    f("Hello", " World!") == "Hello World!"
+    @Test
+    def nth07(): Unit \ Assert =
+        assertEq(expected = Some('l'), String.nth(3, "Hello World!"))
 
-@test
-def concat08(): Bool =
-    let f = flip((x, y) -> (x + y));
-    f(" World!", "Hello") == "Hello World!"
+    @Test
+    def nth08(): Unit \ Assert =
+        assertEq(expected = Some('o'), String.nth(4, "Hello World!"))
 
-/////////////////////////////////////////////////////////////////////////////
-// isEmpty                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def nth09(): Unit \ Assert =
+        assertEq(expected = Some(' '), String.nth(5, "Hello World!"))
 
-@test
-def isEmpty01(): Bool = String.isEmpty("") == true
+    @Test
+    def nth10(): Unit \ Assert =
+        assertEq(expected = Some('!'), String.nth(11, "Hello World!"))
 
-@test
-def isEmpty02(): Bool = String.isEmpty("Hello") == false
+    /////////////////////////////////////////////////////////////////////////////
+    // codePointAt                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// length                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def codePointAt01(): Unit \ Assert =
+        assertEq(expected = 0x1f3dd, String.codePointAt(0, CodePoint.toString(0x1f3dd)))
 
-@test
-def length01(): Bool = String.length("") == 0
+    @Test
+    def codePointAt02(): Unit \ Assert =
+        assertEq(expected = 0x002E, String.codePointAt(2, "\uD83C\uDFDD."))
 
-@test
-def length02(): Bool = String.length("0123456789") == 10
+    @Test
+    def codePointAt03(): Unit \ Assert =
+        assertEq(expected = 0x1f3dd, String.codePointAt(1, ".\uD83C\uDFDD"))
 
-/////////////////////////////////////////////////////////////////////////////
-// split                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // nthCodePoint                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def split01(): Bool & Impure =
-   String.split({regex = "\\s+"}, "") == "" :: Nil
+    @Test
+    def nthCodePoint01(): Unit \ Assert =
+        assertNone(String.nthCodePoint(0, ""))
 
-@test
-def split02(): Bool & Impure =
-    List.length(String.split({regex = "\\s+"}, "1 3")) == 2
+    @Test
+    def nthCodePoint02(): Unit \ Assert =
+        assertEq(expected = Some(0x1f3dd), String.nthCodePoint(0, CodePoint.toString(0x1f3dd)))
+
+    @Test
+    def nthCodePoint03(): Unit \ Assert =
+        assertNone(String.nthCodePoint(2, CodePoint.toString(0x1f3dd)))
+
+    @Test
+    def nthCodePoint04(): Unit \ Assert =
+        assertEq(expected = Some(0x002E), String.nthCodePoint(2, "\uD83C\uDFDD."))
+
+    @Test
+    def nthCodePoint05(): Unit \ Assert =
+        assertEq(expected = Some(0x1f3dd), String.nthCodePoint(1, ".\uD83C\uDFDD"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // concat                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def concat01(): Unit \ Assert =
+        assertEq(expected = "Hello World!", "Hello World!")
+
+    @Test
+    def concat02(): Unit \ Assert =
+        assertEq(expected = "Hello World!", "Hello" + " World!")
+
+    @Test
+    def concat03(): Unit \ Assert =
+        assertEq(expected = "Hello" + " World!", "Hello" + " World!")
+
+    @Test
+    def concat04(): Unit \ Assert =
+        assertEq(expected = "Hello World!", "Hello World!" + "")
+
+    @Test
+    def concat05(): Unit \ Assert =
+        assertEq(expected = "Hello World!", "Hello" + " " + "World" + "!")
+
+    @Test
+    def concat06(): Unit \ Assert =
+        let f = x -> (x + " World!");
+        assertEq(expected = "Hello World!", f("Hello"))
+
+    @Test
+    def concat07(): Unit \ Assert =
+        let f = (x, y) -> (x + y);
+        assertEq(expected = "Hello World!", f("Hello", " World!"))
+
+    @Test
+    def concat08(): Unit \ Assert =
+        let f = flip((x, y) -> (x + y));
+        assertEq(expected = "Hello World!", f(" World!", "Hello"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isEmpty                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def isEmpty01(): Unit \ Assert =
+        assertTrue(String.isEmpty(""))
+
+    @Test
+    def isEmpty02(): Unit \ Assert =
+        assertFalse(String.isEmpty("Hello"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nonEmpty01(): Unit \ Assert =
+        assertFalse(String.nonEmpty(""))
+
+    @Test
+    def nonEmpty02(): Unit \ Assert =
+        assertTrue(String.nonEmpty("Hello"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def length01(): Unit \ Assert =
+        assertEq(expected = 0, String.length(""))
+
+    @Test
+    def length02(): Unit \ Assert =
+        assertEq(expected = 10, String.length("0123456789"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def size01(): Unit \ Assert =
+        assertEq(expected = 0, String.size(""))
+
+    @Test
+    def size02(): Unit \ Assert =
+        assertEq(expected = 10, String.size("0123456789"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // split                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def split01(): Unit \ Assert =
+       assertEq(expected = "" :: Nil, String.split({regex = "\\s+"}, ""))
+
+    @Test
+    def split02(): Unit \ Assert =
+        assertEq(expected = 2, List.length(String.split({regex = "\\s+"}, "1 3")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toLowerCase                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toLowerCase01(): Unit \ Assert =
+        assertEq(expected = "", String.toLowerCase(""))
+
+    @Test
+    def toLowerCase02(): Unit \ Assert =
+        assertEq(expected = "hello world!", String.toLowerCase("Hello World!"))
+
+    @Test
+    def toLowerCase03(): Unit \ Assert =
+        assertEq(expected = "â†'hello worldâˆ€!", String.toLowerCase("â†'Hello Worldâˆ€!"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toUpperCase                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toUpperCase01(): Unit \ Assert =
+        assertEq(expected = "", String.toUpperCase(""))
+
+    @Test
+    def toUpperCase02(): Unit \ Assert =
+        assertEq(expected = "HELLO WORLD!", String.toUpperCase("Hello World!"))
+
+    @Test
+    def toUpperCase03(): Unit \ Assert =
+        assertEq(expected = "Â†'HELLO WORLDÂˆ€!", String.toUpperCase("â†'Hello Worldâˆ€!"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toList01(): Unit \ Assert =
+        assertEq(expected = Nil, String.toList(""))
+
+    @Test
+    def toList02(): Unit \ Assert =
+        assertEq(expected = 'A' :: 'B' :: 'C' :: Nil, String.toList("ABC"))
+
+    @Test
+    def toList03(): Unit \ Assert =
+        assertEq(expected = '1' :: ' ' :: '2' :: ' ' :: '3' :: Nil, String.toList("1 2 3"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // trim                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def trim01(): Unit \ Assert =
+        assertEq(expected = "Hello World", String.trim("Hello World"))
+
+    @Test
+    def trim02(): Unit \ Assert =
+        assertEq(expected = "abc", String.trim(" abc"))
+
+    @Test
+    def trim03(): Unit \ Assert =
+        assertEq(expected = "abc", String.trim("abc "))
+
+    @Test
+    def trim04(): Unit \ Assert =
+        assertEq(expected = "abc", String.trim(" abc "))
+
+    @Test
+    def trim05(): Unit \ Assert =
+        assertEq(expected = "abc", String.trim("  abc"))
+
+    @Test
+    def trim06(): Unit \ Assert =
+        assertEq(expected = "", String.trim("  "))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // lineSeparator                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def lineSeparator01(): Unit \ Assert =
+        let newline = String.lineSeparator();
+        assertTrue(Char.isWhitespace(String.charAt(0, newline)))
+
+    @Test
+    def lineSeparator02(): Unit \ Assert =
+        let newline = String.lineSeparator();
+        assertTrue(String.length(newline) == 1 or String.length(newline) == 2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toArray01(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(String.toArray(rc, ""), Array#{} @ rc))
+    }
+
+    @Test
+    def toArray02(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(String.toArray(rc, "ABC"), Array#{'A', 'B', 'C'} @ rc))
+    }
+
+    @Test
+    def toArray03(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(String.toArray(rc, "1 2 3"), Array#{'1', ' ', '2', ' ', '3'} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toVector01(): Unit \ Assert =
+        assertEq(expected = Vector#{}, String.toVector(""))
+
+    @Test
+    def toVector02(): Unit \ Assert =
+        assertEq(expected = Vector#{'A', 'B', 'C'}, String.toVector("ABC"))
+
+    @Test
+    def toVector03(): Unit \ Assert =
+        assertEq(expected = Vector#{'1', ' ', '2', ' ', '3'}, String.toVector("1 2 3"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toBytes                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toBytes01(): Unit \ Assert =
+        assertEq(expected = Vector#{}, String.toBytes(""))
+
+    @Test
+    def toBytes02(): Unit \ Assert =
+        assertEq(expected = Vector#{72i8, 105i8}, String.toBytes("Hi"))
+
+    @Test
+    def toBytes03(): Unit \ Assert =
+        assertEq(expected = Vector#{65i8, 66i8, 67i8}, String.toBytes("ABC"))
+
+    @Test
+    def toBytes04(): Unit \ Assert =
+        assertEq(expected = 3, Vector.length(String.toBytes("abc")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fromBytes                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromBytes01(): Unit \ Assert =
+        assertEq(expected = "", String.fromBytes(Vector#{}))
+
+    @Test
+    def fromBytes02(): Unit \ Assert =
+        assertEq(expected = "Hi", String.fromBytes(Vector#{72i8, 105i8}))
+
+    @Test
+    def fromBytes03(): Unit \ Assert =
+        assertEq(expected = "ABC", String.fromBytes(Vector#{65i8, 66i8, 67i8}))
+
+    @Test
+    def fromBytes04(): Unit \ Assert =
+        assertEq(expected = "abc", String.fromBytes(String.toBytes("abc")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toRegex                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toRegex01(): Unit \ Assert =
+        assertTrue(String.toRegex("\\p{Alpha}+") |> Result.isOk)
+
+    @Test
+    def toRegex02(): Unit \ Assert =
+        assertTrue(String.toRegex("\\p{Alpha+") |> Result.isErr)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toRegexWithFlags                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def compileWithFlags01(): Unit \ Assert =
+        use Regex.Flag.{CaseInsenstive};
+        assertTrue(String.toRegexWithFlags(Set#{CaseInsenstive}, "\\p{Alpha}+") |> Result.isOk)
+
+    @Test
+    def compileWithFlags02(): Unit \ Assert =
+        use Regex.Flag.{CaseInsenstive};
+        assertTrue(String.toRegexWithFlags(Set#{CaseInsenstive}, "\\p{Alpha+") |> Result.isErr)
+
+
+    @Test
+    def compileWithFlags03(): Unit \ Assert =
+        use Regex.Flag.{CaseInsenstive, Multiline};
+        assertTrue(String.toRegexWithFlags(Set#{CaseInsenstive, Multiline}, "\\p{Alpha}+") |> Result.isOk)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // init                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def init01(): Unit \ Assert =
+        assertEq(expected = "", String.init(_ -> 'A', 0))
+
+    @Test
+    def init02(): Unit \ Assert =
+        assertEq(expected = "", String.init(_ -> 'A', -1))
+
+    @Test
+    def init03(): Unit \ Assert =
+        assertEq(expected = "A", String.init(_ -> 'A', 1))
+
+    @Test
+    def init04(): Unit \ Assert =
+        assertEq(expected = "AA", String.init(_ -> 'A', 2))
+
+    @Test
+    def init05(): Unit \ Assert =
+        let s = String.init(_ -> 'A', 50);
+        assertEq(expected = 50, String.length(s))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def flatten01(): Unit \ Assert =
+        assertEq(expected = "", String.flatten(Nil))
+
+    @Test
+    def flatten02(): Unit \ Assert =
+        assertEq(expected = "", String.flatten("" :: Nil))
+
+    @Test
+    def flatten03(): Unit \ Assert =
+        assertEq(expected = "a", String.flatten("a" :: Nil))
+
+    @Test
+    def flatten04(): Unit \ Assert =
+        assertEq(expected = "ab", String.flatten("ab" :: Nil))
+
+    @Test
+    def flatten05(): Unit \ Assert =
+        assertEq(expected = "", String.flatten("" :: "" :: Nil))
+
+    @Test
+    def flatten06(): Unit \ Assert =
+        assertEq(expected = "a", String.flatten("a" :: "" :: Nil))
+
+    @Test
+    def flatten07(): Unit \ Assert =
+        assertEq(expected = "a", String.flatten("" :: "a" :: Nil))
+
+    @Test
+    def flatten08(): Unit \ Assert =
+        assertEq(expected = "ab", String.flatten("a" :: "b" :: Nil))
+
+    @Test
+    def flatten09(): Unit \ Assert =
+        assertEq(expected = "abcde", String.flatten("ab" :: "cde" :: Nil))
+
+    @Test
+    def flatten10(): Unit \ Assert =
+        assertEq(expected = "abcd", String.flatten("a" :: "bc" :: "d" :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intercalate                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def intercalate01(): Unit \ Assert =
+        assertEq(expected = "", String.intercalate("-", Nil))
+
+    @Test
+    def intercalate02(): Unit \ Assert =
+        assertEq(expected = "", String.intercalate("-", "" :: Nil))
+
+    @Test
+    def intercalate03(): Unit \ Assert =
+        assertEq(expected = "a", String.intercalate("-", "a" :: Nil))
+
+    @Test
+    def intercalate04(): Unit \ Assert =
+        assertEq(expected = "ab", String.intercalate("-", "ab" :: Nil))
+
+    @Test
+    def intercalate05(): Unit \ Assert =
+        assertEq(expected = "-", String.intercalate("-", "" :: "" :: Nil))
+
+    @Test
+    def intercalate06(): Unit \ Assert =
+        assertEq(expected = "a-", String.intercalate("-", "a" :: "" :: Nil))
+
+    @Test
+    def intercalate07(): Unit \ Assert =
+        assertEq(expected = "-a", String.intercalate("-", "" :: "a" :: Nil))
+
+    @Test
+    def intercalate08(): Unit \ Assert =
+        assertEq(expected = "a-b", String.intercalate("-", "a" :: "b" :: Nil))
+
+    @Test
+    def intercalate09(): Unit \ Assert =
+        assertEq(expected = "ab-cde", String.intercalate("-", "ab" :: "cde" :: Nil))
+
+    @Test
+    def intercalate10(): Unit \ Assert =
+        assertEq(expected = "a-bc-d", String.intercalate("-", "a" :: "bc" :: "d" :: Nil))
+
+    @Test
+    def intercalate11(): Unit \ Assert =
+        assertEq(expected = "abcd", String.intercalate("", "a" :: "bc" :: "d" :: Nil))
+
+    @Test
+    def intercalate12(): Unit \ Assert =
+        assertEq(expected = "a<>bc<>d", String.intercalate("<>", "a" :: "bc" :: "d" :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intercalateChar                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def intercalateChar01(): Unit \ Assert =
+        assertEq(expected = "", String.intercalateChar('-', Nil))
+
+    @Test
+    def intercalateChar02(): Unit \ Assert =
+        assertEq(expected = "", String.intercalateChar('-', "" :: Nil))
+
+    @Test
+    def intercalateChar03(): Unit \ Assert =
+        assertEq(expected = "a", String.intercalateChar('-', "a" :: Nil))
+
+    @Test
+    def intercalateChar04(): Unit \ Assert =
+        assertEq(expected = "ab", String.intercalateChar('-', "ab" :: Nil))
+
+    @Test
+    def intercalateChar05(): Unit \ Assert =
+        assertEq(expected = "-", String.intercalateChar('-', "" :: "" :: Nil))
+
+    @Test
+    def intercalateChar06(): Unit \ Assert =
+        assertEq(expected = "a-", String.intercalateChar('-', "a" :: "" :: Nil))
+
+    @Test
+    def intercalateChar07(): Unit \ Assert =
+        assertEq(expected = "-a", String.intercalateChar('-', "" :: "a" :: Nil))
+
+    @Test
+    def intercalateChar08(): Unit \ Assert =
+        assertEq(expected = "a-b", String.intercalateChar('-', "a" :: "b" :: Nil))
+
+    @Test
+    def intercalateChar09(): Unit \ Assert =
+        assertEq(expected = "ab-cde", String.intercalateChar('-', "ab" :: "cde" :: Nil))
+
+    @Test
+    def intercalateChar10(): Unit \ Assert =
+        assertEq(expected = "a-bc-d", String.intercalateChar('-', "a" :: "bc" :: "d" :: Nil))
+
+    @Test
+    def intercalateChar11(): Unit \ Assert =
+        assertEq(expected = "a bc d", String.intercalateChar(' ', "a" :: "bc" :: "d" :: Nil))
+
+    @Test
+    def intercalateChar12(): Unit \ Assert =
+        assertEq(expected = "a/bc/d", String.intercalateChar('/', "a" :: "bc" :: "d" :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map01(): Unit \ Assert =
+        assertEq(expected = "", String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', ""))
+
+    @Test
+    def map02(): Unit \ Assert =
+        assertEq(expected = "f", String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "a"))
+
+    @Test
+    def map03(): Unit \ Assert =
+        assertEq(expected = "t", String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "A"))
+
+    @Test
+    def map04(): Unit \ Assert =
+        assertEq(expected = "ff", String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "ab"))
+
+    @Test
+    def map05(): Unit \ Assert =
+        assertEq(expected = "ft", String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "aB"))
+
+    @Test
+    def map06(): Unit \ Assert =
+        assertEq(expected = "tf", String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "Ab"))
+
+    @Test
+    def map07(): Unit \ Assert =
+        assertEq(expected = "tt", String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "AB"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def mapWithIndex01(): Unit \ Assert =
+        let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
+        assertEq(expected = "", String.mapWithIndex(test, ""))
+
+    @Test
+    def mapWithIndex02(): Unit \ Assert =
+        let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
+        assertEq(expected = "f", String.mapWithIndex(test, "a"))
+
+    @Test
+    def mapWithIndex03(): Unit \ Assert =
+        let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
+        assertEq(expected = "t", String.mapWithIndex(test, "A"))
+
+    @Test
+    def mapWithIndex04(): Unit \ Assert =
+        let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
+        assertEq(expected = "fT", String.mapWithIndex(test, "aB"))
+
+    @Test
+    def mapWithIndex05(): Unit \ Assert =
+        let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
+        assertEq(expected = "fF", String.mapWithIndex(test, "ab"))
+
+    @Test
+    def mapWithIndex06(): Unit \ Assert =
+        let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
+        assertEq(expected = "tT", String.mapWithIndex(test, "AB"))
+
+    @Test
+    def mapWithIndex07(): Unit \ Assert =
+        let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
+        assertEq(expected = "tF", String.mapWithIndex(test, "Ab"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reverse                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def reverse01(): Unit \ Assert =
+        assertEq(expected = "", String.reverse(""))
+
+    @Test
+    def reverse02(): Unit \ Assert =
+        assertEq(expected = "A", String.reverse("A"))
+
+    @Test
+    def reverse03(): Unit \ Assert =
+        assertEq(expected = "dlroW olleH", String.reverse("Hello World"))
 
-/////////////////////////////////////////////////////////////////////////////
-// toLowerCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def reverse04(): Unit \ Assert =
+        assertEq(expected = "!dlroW olleH", String.reverse("Hello World!"))
 
-@test
-def toLowerCase01(): Bool = String.toLowerCase("") == ""
+    @Test
+    def reverse05(): Unit \ Assert =
+        assertTrue(String.reverse("Hello World!") != "!dlroW OLLEH")
 
-@test
-def toLowerCase02(): Bool = String.toLowerCase("Hello World!") == "hello world!"
+    /////////////////////////////////////////////////////////////////////////////
+    // rotateLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toLowerCase03(): Bool = String.toLowerCase("â†’Hello Worldâˆ€!") == "â†’hello worldâˆ€!"
+    @Test
+    def rotateLeft01(): Unit \ Assert =
+        assertEq(expected = "", String.rotateLeft(0, ""))
 
-/////////////////////////////////////////////////////////////////////////////
-// toUpperCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def rotateLeft02(): Unit \ Assert =
+        assertEq(expected = "", String.rotateLeft(1, ""))
 
-@test
-def toUpperCase01(): Bool = String.toUpperCase("") == ""
+    @Test
+    def rotateLeft03(): Unit \ Assert =
+        assertEq(expected = "a", String.rotateLeft(0, "a"))
 
-@test
-def toUpperCase02(): Bool = String.toUpperCase("Hello World!") == "HELLO WORLD!"
+    @Test
+    def rotateLeft04(): Unit \ Assert =
+        assertEq(expected = "ab", String.rotateLeft(0, "ab"))
 
-@test
-def toUpperCase03(): Bool = String.toUpperCase("â†’Hello Worldâˆ€!") == "Â†’HELLO WORLDÂˆ€!"
+    @Test
+    def rotateLeft05(): Unit \ Assert =
+        assertEq(expected = "ba", String.rotateLeft(1, "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def rotateLeft06(): Unit \ Assert =
+        assertEq(expected = "ab", String.rotateLeft(2, "ab"))
 
-@test
-def toList01(): Bool = String.toList("") == Nil
+    @Test
+    def rotateLeft07(): Unit \ Assert =
+        assertEq(expected = "ba", String.rotateLeft(3, "ab"))
 
-@test
-def toList02(): Bool = String.toList("ABC") == 'A' :: 'B' :: 'C' :: Nil
+    @Test
+    def rotateLeft08(): Unit \ Assert = assertEq(expected = "ba", String.rotateLeft(-1, "ab"))
 
-@test
-def toList03(): Bool = String.toList("1 2 3") == '1' :: ' ' :: '2' :: ' ' :: '3' :: Nil
+    @Test
+    def rotateLeft09(): Unit \ Assert = assertEq(expected = "abc", String.rotateLeft(0, "abc"))
 
-/////////////////////////////////////////////////////////////////////////////
-// trim                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def rotateLeft10(): Unit \ Assert = assertEq(expected = "bca", String.rotateLeft(1, "abc"))
 
-@test
-def trim01(): Bool = "Hello World" == String.trim("Hello World")
+    @Test
+    def rotateLeft11(): Unit \ Assert = assertEq(expected = "cab", String.rotateLeft(2, "abc"))
 
-@test
-def trim02(): Bool = "abc" == String.trim(" abc")
+    /////////////////////////////////////////////////////////////////////////////
+    // rotateRight                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def trim03(): Bool = "abc" == String.trim("abc ")
+    @Test
+    def rotateRight01(): Unit \ Assert = assertEq(expected = "", String.rotateRight(0, ""))
 
-@test
-def trim04(): Bool = "abc" == String.trim(" abc ")
+    @Test
+    def rotateRight02(): Unit \ Assert = assertEq(expected = "", String.rotateRight(1, ""))
 
-@test
-def trim05(): Bool = "abc" == String.trim("  abc")
+    @Test
+    def rotateRight03(): Unit \ Assert = assertEq(expected = "a", String.rotateRight(0, "a"))
 
-@test
-def trim06(): Bool = "" == String.trim("  ")
+    @Test
+    def rotateRight04(): Unit \ Assert = assertEq(expected = "ab", String.rotateRight(0, "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// lineSeparator                                                           //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def rotateRight05(): Unit \ Assert = assertEq(expected = "ba", String.rotateRight(1, "ab"))
 
-@test
-def lineSeparator01(): Bool =
-    let newline = String.lineSeparator();
-    Char.isWhiteSpace(String.charAt(0, newline)) == true
+    @Test
+    def rotateRight06(): Unit \ Assert = assertEq(expected = "ab", String.rotateRight(2, "ab"))
 
-@test
-def lineSeparator02(): Bool =
-    let newline = String.lineSeparator();
-    String.length(newline) == 1 or String.length(newline) == 2
+    @Test
+    def rotateRight07(): Unit \ Assert = assertEq(expected = "ba", String.rotateRight(3, "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// toArray                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def rotateRight08(): Unit \ Assert = assertEq(expected = "ba", String.rotateRight(-1, "ab"))
 
-@test
-def toArray01(): Bool & Impure = Array.sameElements(String.toArray(""), []: Array[Char])
+    @Test
+    def rotateRight09(): Unit \ Assert = assertEq(expected = "abc", String.rotateRight(0, "abc"))
 
-@test
-def toArray02(): Bool & Impure = Array.sameElements(String.toArray("ABC"), ['A', 'B', 'C'])
+    @Test
+    def rotateRight10(): Unit \ Assert = assertEq(expected = "cab", String.rotateRight(1, "abc"))
 
-@test
-def toArray03(): Bool & Impure = Array.sameElements(String.toArray("1 2 3"), ['1', ' ', '2', ' ', '3'])
+    @Test
+    def rotateRight11(): Unit \ Assert = assertEq(expected = "bca", String.rotateRight(2, "abc"))
 
-/////////////////////////////////////////////////////////////////////////////
-// init                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // isMatch                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def init01(): Bool = String.init(_ -> 'A', 0) == ""
+    @Test
+    def isMatch01(): Unit \ Assert = assertTrue(String.isMatch({regex = ".*"}, ""))
 
-@test
-def init02(): Bool = String.init(_ -> 'A', -1) == ""
+    @Test
+    def isMatch02(): Unit \ Assert = assertFalse(String.isMatch({regex = ".+"}, ""))
 
-@test
-def init03(): Bool = String.init(_ -> 'A', 1) == "A"
+    @Test
+    def isMatch03(): Unit \ Assert = assertTrue(String.isMatch({regex = "[a]*"}, ""))
 
-@test
-def init04(): Bool = String.init(_ -> 'A', 2) == "AA"
+    @Test
+    def isMatch04(): Unit \ Assert = assertFalse(String.isMatch({regex = "[a]+"}, ""))
 
-@test
-def init05(): Bool =
-    let s = String.init(_ -> 'A', 50);
-    String.length(s) == 50
+    @Test
+    def isMatch05(): Unit \ Assert = assertTrue(String.isMatch({regex = "[a]*"}, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// flatten                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isMatch06(): Unit \ Assert = assertTrue(String.isMatch({regex = "[a]*"}, "aa"))
 
-@test
-def flatten01(): Bool = String.flatten(Nil) == ""
+    @Test
+    def isMatch07(): Unit \ Assert = assertFalse(String.isMatch({regex = "[a]*"}, "aab"))
 
-@test
-def flatten02(): Bool = String.flatten("" :: Nil) == ""
+    @Test
+    def isMatch08(): Unit \ Assert = assertTrue(String.isMatch({regex = "[a]*b"}, "aab"))
 
-@test
-def flatten03(): Bool = String.flatten("a" :: Nil) == "a"
+    @Test
+    def isSMatch09(): Unit \ Assert = assertFalse(String.isMatch({regex = "[b]+"}, "aab"))
 
-@test
-def flatten04(): Bool = String.flatten("ab" :: Nil) == "ab"
+    @Test
+    def isMatch10(): Unit \ Assert = assertFalse(String.isMatch({regex = "[b]+"}, "bbbc"))
 
-@test
-def flatten05(): Bool = String.flatten("" :: "" :: Nil) == ""
+    @Test
+    def isMatch11(): Unit \ Assert = assertFalse(String.isMatch({regex = "[b]+"}, "aabbbc"))
 
-@test
-def flatten06(): Bool = String.flatten("a" :: "" :: Nil) == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // isSubmatch                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def flatten07(): Bool = String.flatten("" :: "a" :: Nil) == "a"
+    @Test
+    def isSubmatch01(): Unit \ Assert = assertTrue(String.isSubmatch({regex = ".*"}, ""))
 
-@test
-def flatten08(): Bool = String.flatten("a" :: "b" :: Nil) == "ab"
+    @Test
+    def isSubmatch02(): Unit \ Assert = assertFalse(String.isSubmatch({regex = ".+"}, ""))
 
-@test
-def flatten09(): Bool = String.flatten("ab" :: "cde" :: Nil) == "abcde"
+    @Test
+    def isSubmatch03(): Unit \ Assert = assertTrue(String.isSubmatch({regex = "[a]*"}, ""))
 
-@test
-def flatten10(): Bool = String.flatten("a" :: "bc" :: "d" :: Nil) == "abcd"
+    @Test
+    def isSubmatch04(): Unit \ Assert = assertFalse(String.isSubmatch({regex = "[a]+"}, ""))
 
-/////////////////////////////////////////////////////////////////////////////
-// intercalate                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isSubmatch05(): Unit \ Assert = assertTrue(String.isSubmatch({regex = "[a]*"}, "a"))
 
-@test
-def intercalate01(): Bool = String.intercalate("-", Nil) == ""
+    @Test
+    def isSubmatch06(): Unit \ Assert = assertTrue(String.isSubmatch({regex = "[a]*"}, "aa"))
 
-@test
-def intercalate02(): Bool = String.intercalate("-", "" :: Nil) == ""
+    @Test
+    def isSubmatch07(): Unit \ Assert = assertTrue(String.isSubmatch({regex = "[a]*"}, "aab"))
 
-@test
-def intercalate03(): Bool = String.intercalate("-", "a" :: Nil) == "a"
+    @Test
+    def isSubmatch08(): Unit \ Assert = assertTrue(String.isSubmatch({regex = "[a]*b"}, "aab"))
 
-@test
-def intercalate04(): Bool = String.intercalate("-", "ab" :: Nil) == "ab"
+    @Test
+    def isSubmatch09(): Unit \ Assert = assertTrue(String.isSubmatch({regex = "[b]+"}, "aab"))
 
-@test
-def intercalate05(): Bool = String.intercalate("-", "" :: "" :: Nil) == "-"
+    @Test
+    def isSubmatch10(): Unit \ Assert = assertTrue(String.isSubmatch({regex = "[b]+"}, "bbbc"))
 
-@test
-def intercalate06(): Bool = String.intercalate("-", "a" :: "" :: Nil) == "a-"
+    @Test
+    def isSubmatch11(): Unit \ Assert = assertTrue(String.isSubmatch({regex = "[b]+"}, "aabbbc"))
 
-@test
-def intercalate07(): Bool = String.intercalate("-", "" :: "a" :: Nil) == "-a"
+    /////////////////////////////////////////////////////////////////////////////
+    // slice                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def intercalate08(): Bool = String.intercalate("-", "a" :: "b" :: Nil) == "a-b"
+    @Test
+    def slice01(): Unit \ Assert = assertEq(expected = "", String.slice(start = 0, end = 1, ""))
 
-@test
-def intercalate09(): Bool = String.intercalate("-", "ab" :: "cde" :: Nil) == "ab-cde"
+    @Test
+    def slice02(): Unit \ Assert = assertEq(expected = "a", String.slice(start = 0, end = 1, "a"))
 
-@test
-def intercalate10(): Bool = String.intercalate("-", "a" :: "bc" :: "d" :: Nil) == "a-bc-d"
+    @Test
+    def slice03(): Unit \ Assert = assertEq(expected = "", String.slice(start = 1, end = 2, "a"))
 
-@test
-def intercalate11(): Bool = String.intercalate("", "a" :: "bc" :: "d" :: Nil) == "abcd"
+    @Test
+    def slice04(): Unit \ Assert = assertEq(expected = "", String.slice(start = 0, end = 2, "a"))
 
-@test
-def intercalate12(): Bool = String.intercalate("<>", "a" :: "bc" :: "d" :: Nil) == "a<>bc<>d"
+    @Test
+    def slice05(): Unit \ Assert = assertEq(expected = "", String.slice(start = -1, end = 0, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// intercalateChar                                                         //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def slice06(): Unit \ Assert = assertEq(expected = "a", String.slice(start = 0, end = 1, "ab"))
 
-@test
-def intercalateChar01(): Bool = String.intercalateChar('-', Nil) == ""
+    @Test
+    def slice07(): Unit \ Assert = assertEq(expected = "b", String.slice(start = 1, end = 2, "ab"))
 
-@test
-def intercalateChar02(): Bool = String.intercalateChar('-', "" :: Nil) == ""
+    @Test
+    def slice08(): Unit \ Assert = assertEq(expected = "ab", String.slice(start = 0, end = 2, "ab"))
 
-@test
-def intercalateChar03(): Bool = String.intercalateChar('-', "a" :: Nil) == "a"
+    @Test
+    def slice09(): Unit \ Assert = assertEq(expected = "", String.slice(start = 0, end = 3, "ab"))
 
-@test
-def intercalateChar04(): Bool = String.intercalateChar('-', "ab" :: Nil) == "ab"
+    @Test
+    def slice10(): Unit \ Assert = assertEq(expected = "", String.slice(start = -1, end = 2, "ab"))
 
-@test
-def intercalateChar05(): Bool = String.intercalateChar('-', "" :: "" :: Nil) == "-"
+    @Test
+    def slice11(): Unit \ Assert = assertEq(expected = "a", String.slice(start = 0, end = 1, "abc"))
 
-@test
-def intercalateChar06(): Bool = String.intercalateChar('-', "a" :: "" :: Nil) == "a-"
+    @Test
+    def slice12(): Unit \ Assert = assertEq(expected = "b", String.slice(start = 1, end = 2, "abc"))
 
-@test
-def intercalateChar07(): Bool = String.intercalateChar('-', "" :: "a" :: Nil) == "-a"
+    @Test
+    def slice13(): Unit \ Assert = assertEq(expected = "c", String.slice(start = 2, end = 3, "abc"))
 
-@test
-def intercalateChar08(): Bool = String.intercalateChar('-', "a" :: "b" :: Nil) == "a-b"
+    @Test
+    def slice14(): Unit \ Assert = assertEq(expected = "ab", String.slice(start = 0, end = 2, "abc"))
 
-@test
-def intercalateChar09(): Bool = String.intercalateChar('-', "ab" :: "cde" :: Nil) == "ab-cde"
+    @Test
+    def slice15(): Unit \ Assert = assertEq(expected = "bc", String.slice(start = 1, end = 3, "abc"))
 
-@test
-def intercalateChar10(): Bool = String.intercalateChar('-', "a" :: "bc" :: "d" :: Nil) == "a-bc-d"
+    @Test
+    def slice16(): Unit \ Assert = assertEq(expected = "abc", String.slice(start = 0, end = 3, "abc"))
 
-@test
-def intercalateChar11(): Bool = String.intercalateChar(' ', "a" :: "bc" :: "d" :: Nil) == "a bc d"
+    /////////////////////////////////////////////////////////////////////////////
+    // sliceLeft                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def intercalateChar12(): Bool = String.intercalateChar('/', "a" :: "bc" :: "d" :: Nil) == "a/bc/d"
+    @Test
+    def sliceLeft01(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = 0, ""))
 
-/////////////////////////////////////////////////////////////////////////////
-// map                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def sliceLeft02(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = 1, ""))
 
-@test
-def map01(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "") == ""
+    @Test
+    def sliceLeft03(): Unit \ Assert = assertEq(expected = "a", String.sliceLeft(end = 1, "a"))
 
-@test
-def map02(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "a") == "f"
+    @Test
+    def sliceLeft04(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = 0, "a"))
 
-@test
-def map03(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "A") == "t"
+    @Test
+    def sliceLeft05(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = 2, "a"))
 
-@test
-def map04(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "ab") == "ff"
+    @Test
+    def sliceLeft06(): Unit \ Assert = assertEq(expected = "a", String.sliceLeft(end = 1, "ab"))
 
-@test
-def map05(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "aB") == "ft"
+    @Test
+    def sliceLeft07(): Unit \ Assert = assertEq(expected = "ab", String.sliceLeft(end = 2, "ab"))
 
-@test
-def map06(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "Ab") == "tf"
+    @Test
+    def sliceLeft08(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = 0, "ab"))
 
-@test
-def map07(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "AB") == "tt"
+    @Test
+    def sliceLeft09(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = 3, "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// mapWithIndex                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def sliceLeft10(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = -1, "ab"))
 
-@test
-def mapWithIndex01(): Bool =
-    let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
-    String.mapWithIndex(test, "") == ""
+    @Test
+    def sliceLeft11(): Unit \ Assert = assertEq(expected = "a", String.sliceLeft(end = 1, "abc"))
 
-@test
-def mapWithIndex02(): Bool =
-    let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
-    String.mapWithIndex(test, "a") == "f"
+    @Test
+    def sliceLeft12(): Unit \ Assert = assertEq(expected = "ab", String.sliceLeft(end = 2, "abc"))
 
-@test
-def mapWithIndex03(): Bool =
-    let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
-    String.mapWithIndex(test, "A") == "t"
+    @Test
+    def sliceLeft13(): Unit \ Assert = assertEq(expected = "abc", String.sliceLeft(end = 3, "abc"))
 
-@test
-def mapWithIndex04(): Bool =
-    let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
-    String.mapWithIndex(test, "aB") == "fT"
+    @Test
+    def sliceLeft14(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = 0, "abc"))
 
-@test
-def mapWithIndex05(): Bool =
-    let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
-    String.mapWithIndex(test, "ab") == "fF"
+    @Test
+    def sliceLeft15(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = 4, "abc"))
 
-@test
-def mapWithIndex06(): Bool =
-    let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
-    String.mapWithIndex(test, "AB") == "tT"
+    @Test
+    def sliceLeft16(): Unit \ Assert = assertEq(expected = "", String.sliceLeft(end = -1, "abc"))
 
-@test
-def mapWithIndex07(): Bool =
-    let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
-    String.mapWithIndex(test, "Ab") == "tF"
+    /////////////////////////////////////////////////////////////////////////////
+    // sliceRight                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def sliceRight01(): Unit \ Assert = assertEq(expected = "", String.sliceRight(start = 0, ""))
 
-@test
-def map201(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "", "");
-    s == ""
+    @Test
+    def sliceRight02(): Unit \ Assert = assertEq(expected = "", String.sliceRight(start = 1, ""))
 
-@test
-def map202(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "a", "");
-    s == ""
+    @Test
+    def sliceRight03(): Unit \ Assert = assertEq(expected = "", String.sliceRight(start = 1, "a"))
 
-@test
-def map203(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "", "1");
-    s == ""
+    @Test
+    def sliceRight04(): Unit \ Assert = assertEq(expected = "a", String.sliceRight(start = 0, "a"))
 
-@test
-def map204(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "A", "1");
-    s == "1"
+    @Test
+    def sliceRight05(): Unit \ Assert = assertEq(expected = "", String.sliceRight(start = 1, "a"))
 
-@test
-def map205(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "a", "1");
-    s == "a"
+    @Test
+    def sliceRight06(): Unit \ Assert = assertEq(expected = "ab", String.sliceRight(start = 0, "ab"))
 
-@test
-def map206(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "_bc__fgh", "12345678");
-    s == "1bc45fgh"
+    @Test
+    def sliceRight07(): Unit \ Assert = assertEq(expected = "b", String.sliceRight(start = 1, "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// reverse                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def sliceRight08(): Unit \ Assert = assertEq(expected = "", String.sliceRight(start = -1, "ab"))
 
-@test
-def reverse01(): Bool =
-    String.reverse("") == ""
+    @Test
+    def sliceRight09(): Unit \ Assert = assertEq(expected = "", String.sliceRight(start = 2, "ab"))
 
-@test
-def reverse02(): Bool =
-    String.reverse("A") == "A"
+    @Test
+    def sliceRight10(): Unit \ Assert = assertEq(expected = "abc", String.sliceRight(start = 0, "abc"))
 
-@test
-def reverse03(): Bool =
-    String.reverse("Hello World") == "dlroW olleH"
+    @Test
+    def sliceRight11(): Unit \ Assert = assertEq(expected = "bc", String.sliceRight(start = 1, "abc"))
 
-@test
-def reverse04(): Bool =
-    String.reverse("Hello World!") == "!dlroW olleH"
+    @Test
+    def sliceRight12(): Unit \ Assert = assertEq(expected = "c", String.sliceRight(start = 2, "abc"))
 
-@test
-def reverse05(): Bool =
-    String.reverse("Hello World!") != "!dlroW OLLEH"
+    @Test
+    def sliceRight13(): Unit \ Assert = assertEq(expected = "", String.sliceRight(start = 3, "abc"))
 
-/////////////////////////////////////////////////////////////////////////////
-// rotateLeft                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def sliceRight14(): Unit \ Assert = assertEq(expected = "", String.sliceRight(start = -1, "abc"))
 
-@test
-def rotateLeft01(): Bool = String.rotateLeft(0, "") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOfLeft                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def rotateLeft02(): Bool = String.rotateLeft(1, "") == ""
+    @Test
+    def findIndexOfLeft01(): Unit \ Assert = assertNone(String.findIndexOfLeft(Char.isUpperCase, ""))
 
-@test
-def rotateLeft03(): Bool = String.rotateLeft(0, "a") == "a"
+    @Test
+    def findIndexOfLeft02(): Unit \ Assert = assertNone(String.findIndexOfLeft(Char.isUpperCase, "a"))
 
-@test
-def rotateLeft04(): Bool = String.rotateLeft(0, "ab") == "ab"
+    @Test
+    def findIndexOfLeft03(): Unit \ Assert = assertEq(expected = Some(0), String.findIndexOfLeft(Char.isUpperCase, "A"))
 
-@test
-def rotateLeft05(): Bool = String.rotateLeft(1, "ab") == "ba"
+    @Test
+    def findIndexOfLeft04(): Unit \ Assert = assertNone(String.findIndexOfLeft(Char.isUpperCase, "ab"))
 
-@test
-def rotateLeft06(): Bool = String.rotateLeft(2, "ab") == "ab"
+    @Test
+    def findIndexOfLeft05(): Unit \ Assert = assertEq(expected = Some(0), String.findIndexOfLeft(Char.isUpperCase, "Ab"))
 
-@test
-def rotateLeft07(): Bool = String.rotateLeft(3, "ab") == "ba"
+    @Test
+    def findIndexOfLeft06(): Unit \ Assert = assertEq(expected = Some(1), String.findIndexOfLeft(Char.isUpperCase, "aB"))
 
-@test
-def rotateLeft08(): Bool = String.rotateLeft(-1, "ab") == "ba"
+    @Test
+    def findIndexOfLeft07(): Unit \ Assert = assertEq(expected = Some(0), String.findIndexOfLeft(Char.isUpperCase, "AB"))
 
-@test
-def rotateLeft09(): Bool = String.rotateLeft(0, "abc") == "abc"
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOfRight                                                        //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def rotateLeft10(): Bool = String.rotateLeft(1, "abc") == "bca"
+    @Test
+    def findIndexOfRight01(): Unit \ Assert = assertNone(String.findIndexOfRight(Char.isUpperCase, ""))
 
-@test
-def rotateLeft11(): Bool = String.rotateLeft(2, "abc") == "cab"
+    @Test
+    def findIndexOfRight02(): Unit \ Assert = assertNone(String.findIndexOfRight(Char.isUpperCase, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// rotateRight                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def findIndexOfRight03(): Unit \ Assert = assertEq(expected = Some(0), String.findIndexOfRight(Char.isUpperCase, "A"))
 
-@test
-def rotateRight01(): Bool = String.rotateRight(0, "") == ""
+    @Test
+    def findIndexOfRight04(): Unit \ Assert = assertNone(String.findIndexOfRight(Char.isUpperCase, "ab"))
 
-@test
-def rotateRight02(): Bool = String.rotateRight(1, "") == ""
+    @Test
+    def findIndexOfRight05(): Unit \ Assert = assertEq(expected = Some(0), String.findIndexOfRight(Char.isUpperCase, "Ab"))
 
-@test
-def rotateRight03(): Bool = String.rotateRight(0, "a") == "a"
+    @Test
+    def findIndexOfRight06(): Unit \ Assert = assertEq(expected = Some(1), String.findIndexOfRight(Char.isUpperCase, "aB"))
 
-@test
-def rotateRight04(): Bool = String.rotateRight(0, "ab") == "ab"
+    @Test
+    def findIndexOfRight07(): Unit \ Assert = assertEq(expected = Some(1), String.findIndexOfRight(Char.isUpperCase, "AB"))
 
-@test
-def rotateRight05(): Bool = String.rotateRight(1, "ab") == "ba"
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndices                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def rotateRight06(): Bool = String.rotateRight(2, "ab") == "ab"
+    @Test
+    def findIndices01(): Unit \ Assert = assertEq(expected = Vector#{}, String.findIndices(Char.isDigit, ""))
 
-@test
-def rotateRight07(): Bool = String.rotateRight(3, "ab") == "ba"
+    @Test
+    def findIndices02(): Unit \ Assert = assertEq(expected = Vector#{}, String.findIndices(Char.isDigit, "a"))
 
-@test
-def rotateRight08(): Bool = String.rotateRight(-1, "ab") == "ba"
+    @Test
+    def findIndices03(): Unit \ Assert = assertEq(expected = Vector#{0}, String.findIndices(Char.isDigit, "1"))
 
-@test
-def rotateRight09(): Bool = String.rotateRight(0, "abc") == "abc"
+    @Test
+    def findIndices04(): Unit \ Assert = assertEq(expected = Vector#{}, String.findIndices(Char.isDigit, "ab"))
 
-@test
-def rotateRight10(): Bool = String.rotateRight(1, "abc") == "cab"
+    @Test
+    def findIndices05(): Unit \ Assert = assertEq(expected = Vector#{0}, String.findIndices(Char.isDigit, "1b"))
 
-@test
-def rotateRight11(): Bool = String.rotateRight(2, "abc") == "bca"
+    @Test
+    def findIndices06(): Unit \ Assert = assertEq(expected = Vector#{1}, String.findIndices(Char.isDigit, "a2"))
 
-/////////////////////////////////////////////////////////////////////////////
-// isMatch                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def findIndices07(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, String.findIndices(Char.isDigit, "12"))
 
-@test
-def isMatch01(): Bool = String.isMatch({regex = ".*"}, "") == true
+    /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isMatch02(): Bool = String.isMatch({regex = ".+"}, "") == false
+    @Test
+    def indicesOf01(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = ""}, ""))
 
-@test
-def isMatch03(): Bool = String.isMatch({regex = "[a]*"}, "") == true
+    @Test
+    def indicesOf02(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = ""}, "a::b::c"))
 
-@test
-def isMatch04(): Bool = String.isMatch({regex = "[a]+"}, "") == false
+    @Test
+    def indicesOf03(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = "::"}, ""))
 
-@test
-def isMatch05(): Bool = String.isMatch({regex = "[a]*"}, "a") == true
+    @Test
+    def indicesOf04(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = "::"}, "a"))
 
-@test
-def isMatch06(): Bool = String.isMatch({regex = "[a]*"}, "aa") == true
+    @Test
+    def indicesOf05(): Unit \ Assert = assertEq(expected = Vector#{0}, String.indicesOf({substr = "::"}, "::"))
 
-@test
-def isMatch07(): Bool = String.isMatch({regex = "[a]*"}, "aab") == false
+    @Test
+    def indicesOf06(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = "::"}, "ab"))
 
-@test
-def isMatch08(): Bool = String.isMatch({regex = "[a]*b"}, "aab") == true
+    @Test
+    def indicesOf07(): Unit \ Assert = assertEq(expected = Vector#{0}, String.indicesOf({substr = "::"}, "::a"))
 
-@test
-def isSMatch09(): Bool = String.isMatch({regex = "[b]+"}, "aab") == false
+    @Test
+    def indicesOf08(): Unit \ Assert = assertEq(expected = Vector#{1}, String.indicesOf({substr = "::"}, "a::"))
 
-@test
-def isMatch10(): Bool = String.isMatch({regex = "[b]+"}, "bbbc") == false
+    @Test
+    def indicesOf09(): Unit \ Assert = assertEq(expected = Vector#{1, 4}, String.indicesOf({substr = "::"}, "a::b::"))
 
-@test
-def isMatch11(): Bool = String.isMatch({regex = "[b]+"}, "aabbbc") == false
+    @Test
+    def indicesOf10(): Unit \ Assert = assertEq(expected = Vector#{1, 4}, String.indicesOf({substr = "::"}, "a::b::c"))
 
-/////////////////////////////////////////////////////////////////////////////
-// isSubmatch                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def indicesOf11(): Unit \ Assert = assertEq(expected = Vector#{1, 4}, String.indicesOf({substr = "::"}, "a::b::c:"))
 
-@test
-def isSubmatch01(): Bool = String.isSubmatch({regex = ".*"}, "") == true
+    @Test
+    def indicesOf12(): Unit \ Assert = assertEq(expected = Vector#{2, 5}, String.indicesOf({substr = "::"}, ":a::b::c"))
 
-@test
-def isSubmatch02(): Bool = String.isSubmatch({regex = ".+"}, "") == false
+    @Test
+    def indicesOf13(): Unit \ Assert = assertEq(expected = Vector#{0, 2}, String.indicesOf({substr = "::"}, "::::"))
 
-@test
-def isSubmatch03(): Bool = String.isSubmatch({regex = "[a]*"}, "") == true
 
-@test
-def isSubmatch04(): Bool = String.isSubmatch({regex = "[a]+"}, "") == false
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isSubmatch05(): Bool = String.isSubmatch({regex = "[a]*"}, "a") == true
+    @Test
+    def take01(): Unit \ Assert = assertEq(expected = "", String.take(-1, ""))
 
-@test
-def isSubmatch06(): Bool = String.isSubmatch({regex = "[a]*"}, "aa") == true
+    @Test
+    def take02(): Unit \ Assert = assertEq(expected = "", String.take(0, ""))
 
-@test
-def isSubmatch07(): Bool = String.isSubmatch({regex = "[a]*"}, "aab") == true
+    @Test
+    def take03(): Unit \ Assert = assertEq(expected = "", String.take(1, ""))
 
-@test
-def isSubmatch08(): Bool = String.isSubmatch({regex = "[a]*b"}, "aab") == true
+    @Test
+    def take04(): Unit \ Assert = assertEq(expected = "", String.take(-1, "a"))
 
-@test
-def isSubmatch09(): Bool = String.isSubmatch({regex = "[b]+"}, "aab") == true
+    @Test
+    def take05(): Unit \ Assert = assertEq(expected = "", String.take(0, "a"))
 
-@test
-def isSubmatch10(): Bool = String.isSubmatch({regex = "[b]+"}, "bbbc") == true
+    @Test
+    def take06(): Unit \ Assert = assertEq(expected = "a", String.take(1, "a"))
 
-@test
-def isSubmatch11(): Bool = String.isSubmatch({regex = "[b]+"}, "aabbbc") == true
+    @Test
+    def take07(): Unit \ Assert = assertEq(expected = "a", String.take(2, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// slice                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def take08(): Unit \ Assert = assertEq(expected = "", String.take(0, "ab"))
 
-@test
-def slice01(): Bool = String.slice(0, 1, "") == ""
+    @Test
+    def take09(): Unit \ Assert = assertEq(expected = "a", String.take(1, "ab"))
 
-@test
-def slice02(): Bool = String.slice(0, 1, "a") == "a"
+    @Test
+    def take10(): Unit \ Assert = assertEq(expected = "ab", String.take(2, "ab"))
 
-@test
-def slice03(): Bool = String.slice(1, 2, "a") == ""
+    @Test
+    def take11(): Unit \ Assert = assertEq(expected = "ab", String.take(2, "abcdef"))
 
-@test
-def slice04(): Bool = String.slice(0, 2, "a") == ""
+    @Test
+    def take12(): Unit \ Assert = assertEq(expected = "abcd", String.take(4, "abcdef"))
 
-@test
-def slice05(): Bool = String.slice(-1, 0, "a") == ""
+    @Test
+    def take13(): Unit \ Assert = assertEq(expected = "abcdef", String.take(10, "abcdef"))
 
-@test
-def slice06(): Bool = String.slice(0, 1, "ab") == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // takeLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def slice07(): Bool = String.slice(1, 2, "ab") == "b"
+    @Test
+    def takeLeft01(): Unit \ Assert = assertEq(expected = "", String.takeLeft(-1, ""))
 
-@test
-def slice08(): Bool = String.slice(0, 2, "ab") == "ab"
+    @Test
+    def takeLeft02(): Unit \ Assert = assertEq(expected = "", String.takeLeft(0, ""))
 
-@test
-def slice09(): Bool = String.slice(0, 3, "ab") == ""
+    @Test
+    def takeLeft03(): Unit \ Assert = assertEq(expected = "", String.takeLeft(1, ""))
 
-@test
-def slice10(): Bool = String.slice(-1, 2, "ab") == ""
+    @Test
+    def takeLeft04(): Unit \ Assert = assertEq(expected = "", String.takeLeft(-1, "a"))
 
-@test
-def slice11(): Bool = String.slice(0, 1, "abc") == "a"
+    @Test
+    def takeLeft05(): Unit \ Assert = assertEq(expected = "", String.takeLeft(0, "a"))
 
-@test
-def slice12(): Bool = String.slice(1, 2, "abc") == "b"
+    @Test
+    def takeLeft06(): Unit \ Assert = assertEq(expected = "a", String.takeLeft(1, "a"))
 
-@test
-def slice13(): Bool = String.slice(2, 3, "abc") == "c"
+    @Test
+    def takeLeft07(): Unit \ Assert = assertEq(expected = "a", String.takeLeft(2, "a"))
 
-@test
-def slice14(): Bool = String.slice(0, 2, "abc") == "ab"
+    @Test
+    def takeLeft08(): Unit \ Assert = assertEq(expected = "", String.takeLeft(0, "ab"))
 
-@test
-def slice15(): Bool = String.slice(1, 3, "abc") == "bc"
+    @Test
+    def takeLeft09(): Unit \ Assert = assertEq(expected = "a", String.takeLeft(1, "ab"))
 
-@test
-def slice16(): Bool = String.slice(0, 3, "abc") == "abc"
+    @Test
+    def takeLeft10(): Unit \ Assert = assertEq(expected = "ab", String.takeLeft(2, "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// sliceLeft                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def takeLeft11(): Unit \ Assert = assertEq(expected = "ab", String.takeLeft(2, "abcdef"))
 
-@test
-def sliceLeft01(): Bool = String.sliceLeft(0, "") == ""
+    @Test
+    def takeLeft12(): Unit \ Assert = assertEq(expected = "abcd", String.takeLeft(4, "abcdef"))
 
-@test
-def sliceLeft02(): Bool = String.sliceLeft(1, "") == ""
+    @Test
+    def takeLeft13(): Unit \ Assert = assertEq(expected = "abcdef", String.takeLeft(10, "abcdef"))
 
-@test
-def sliceLeft03(): Bool = String.sliceLeft(1, "a") == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // takeRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def sliceLeft04(): Bool = String.sliceLeft(0, "a") == ""
+    @Test
+    def takeRight01(): Unit \ Assert = assertEq(expected = "", String.takeRight(-1, ""))
 
-@test
-def sliceLeft05(): Bool = String.sliceLeft(2, "a") == ""
+    @Test
+    def takeRight02(): Unit \ Assert = assertEq(expected = "", String.takeRight(0, ""))
 
-@test
-def sliceLeft06(): Bool = String.sliceLeft(1, "ab") == "a"
+    @Test
+    def takeRight03(): Unit \ Assert = assertEq(expected = "", String.takeRight(1, ""))
 
-@test
-def sliceLeft07(): Bool = String.sliceLeft(2, "ab") == "ab"
+    @Test
+    def takeRight04(): Unit \ Assert = assertEq(expected = "", String.takeRight(-1, "a"))
 
-@test
-def sliceLeft08(): Bool = String.sliceLeft(0, "ab") == ""
+    @Test
+    def takeRight05(): Unit \ Assert = assertEq(expected = "", String.takeRight(0, "a"))
 
-@test
-def sliceLeft09(): Bool = String.sliceLeft(3, "ab") == ""
+    @Test
+    def takeRight06(): Unit \ Assert = assertEq(expected = "a", String.takeRight(1, "a"))
 
-@test
-def sliceLeft10(): Bool = String.sliceLeft(-1, "ab") == ""
+    @Test
+    def takeRight07(): Unit \ Assert = assertEq(expected = "a", String.takeRight(2, "a"))
 
-@test
-def sliceLeft11(): Bool = String.sliceLeft(1, "abc") == "a"
+    @Test
+    def takeRight08(): Unit \ Assert = assertEq(expected = "", String.takeRight(0, "ab"))
 
-@test
-def sliceLeft12(): Bool = String.sliceLeft(2, "abc") == "ab"
+    @Test
+    def takeRight09(): Unit \ Assert = assertEq(expected = "b", String.takeRight(1, "ab"))
 
-@test
-def sliceLeft13(): Bool = String.sliceLeft(3, "abc") == "abc"
+    @Test
+    def takeRight10(): Unit \ Assert = assertEq(expected = "ab", String.takeRight(2, "ab"))
 
-@test
-def sliceLeft14(): Bool = String.sliceLeft(0, "abc") == ""
+    @Test
+    def takeRight11(): Unit \ Assert = assertEq(expected = "ef", String.takeRight(2, "abcdef"))
 
-@test
-def sliceLeft15(): Bool = String.sliceLeft(4, "abc") == ""
+    @Test
+    def takeRight12(): Unit \ Assert = assertEq(expected = "cdef", String.takeRight(4, "abcdef"))
 
-@test
-def sliceLeft16(): Bool = String.sliceLeft(-1, "abc") == ""
+    @Test
+    def takeRight13(): Unit \ Assert = assertEq(expected = "abcdef", String.takeRight(10, "abcdef"))
 
-/////////////////////////////////////////////////////////////////////////////
-// sliceRight                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // drop                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def sliceRight01(): Bool = String.sliceRight(0, "") == ""
+    @Test
+    def drop01(): Unit \ Assert = assertEq(expected = "", String.drop(-1, ""))
 
-@test
-def sliceRight02(): Bool = String.sliceRight(1, "") == ""
+    @Test
+    def drop02(): Unit \ Assert = assertEq(expected = "", String.drop(0, ""))
 
-@test
-def sliceRight03(): Bool = String.sliceRight(1, "a") == ""
+    @Test
+    def drop03(): Unit \ Assert = assertEq(expected = "", String.drop(1, ""))
 
-@test
-def sliceRight04(): Bool = String.sliceRight(0, "a") == "a"
+    @Test
+    def drop04(): Unit \ Assert = assertEq(expected = "a", String.drop(-1, "a"))
 
-@test
-def sliceRight05(): Bool = String.sliceRight(1, "a") == ""
+    @Test
+    def drop05(): Unit \ Assert = assertEq(expected = "a", String.drop(0, "a"))
 
-@test
-def sliceRight06(): Bool = String.sliceRight(0, "ab") == "ab"
+    @Test
+    def drop06(): Unit \ Assert = assertEq(expected = "", String.drop(1, "a"))
 
-@test
-def sliceRight07(): Bool = String.sliceRight(1, "ab") == "b"
+    @Test
+    def drop07(): Unit \ Assert = assertEq(expected = "", String.drop(2, "a"))
 
-@test
-def sliceRight08(): Bool = String.sliceRight(-1, "ab") == ""
+    @Test
+    def drop08(): Unit \ Assert = assertEq(expected = "ab", String.drop(0, "ab"))
 
-@test
-def sliceRight09(): Bool = String.sliceRight(2, "ab") == ""
+    @Test
+    def drop09(): Unit \ Assert = assertEq(expected = "b", String.drop(1, "ab"))
 
-@test
-def sliceRight10(): Bool = String.sliceRight(0, "abc") == "abc"
+    @Test
+    def drop10(): Unit \ Assert = assertEq(expected = "", String.drop(2, "ab"))
 
-@test
-def sliceRight11(): Bool = String.sliceRight(1, "abc") == "bc"
+    @Test
+    def drop11(): Unit \ Assert = assertEq(expected = "cdef", String.drop(2, "abcdef"))
 
-@test
-def sliceRight12(): Bool = String.sliceRight(2, "abc") == "c"
+    @Test
+    def drop12(): Unit \ Assert = assertEq(expected = "ef", String.drop(4, "abcdef"))
 
-@test
-def sliceRight13(): Bool = String.sliceRight(3, "abc") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // dropLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def sliceRight14(): Bool = String.sliceRight(-1, "abc") == ""
+    @Test
+    def dropLeft01(): Unit \ Assert = assertEq(expected = "", String.dropLeft(-1, ""))
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOfLeft                                                         //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def dropLeft02(): Unit \ Assert = assertEq(expected = "", String.dropLeft(0, ""))
 
-@test
-def findIndexOfLeft01(): Bool = String.findIndexOfLeft(Char.isUpperCase, "") == None
+    @Test
+    def dropLeft03(): Unit \ Assert = assertEq(expected = "", String.dropLeft(1, ""))
 
-@test
-def findIndexOfLeft02(): Bool = String.findIndexOfLeft(Char.isUpperCase, "a") == None
+    @Test
+    def dropLeft04(): Unit \ Assert = assertEq(expected = "a", String.dropLeft(-1, "a"))
 
-@test
-def findIndexOfLeft03(): Bool = String.findIndexOfLeft(Char.isUpperCase, "A") == Some(0)
+    @Test
+    def dropLeft05(): Unit \ Assert = assertEq(expected = "a", String.dropLeft(0, "a"))
 
-@test
-def findIndexOfLeft04(): Bool = String.findIndexOfLeft(Char.isUpperCase, "ab") == None
+    @Test
+    def dropLeft06(): Unit \ Assert = assertEq(expected = "", String.dropLeft(1, "a"))
 
-@test
-def findIndexOfLeft05(): Bool = String.findIndexOfLeft(Char.isUpperCase, "Ab") == Some(0)
+    @Test
+    def dropLeft07(): Unit \ Assert = assertEq(expected = "", String.dropLeft(2, "a"))
 
-@test
-def findIndexOfLeft06(): Bool = String.findIndexOfLeft(Char.isUpperCase, "aB") == Some(1)
+    @Test
+    def dropLeft08(): Unit \ Assert = assertEq(expected = "ab", String.dropLeft(0, "ab"))
 
-@test
-def findIndexOfLeft07(): Bool = String.findIndexOfLeft(Char.isUpperCase, "AB") == Some(0)
+    @Test
+    def dropLeft09(): Unit \ Assert = assertEq(expected = "b", String.dropLeft(1, "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOfRight                                                        //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def dropLeft10(): Unit \ Assert = assertEq(expected = "", String.dropLeft(2, "ab"))
 
-@test
-def findIndexOfRight01(): Bool = String.findIndexOfRight(Char.isUpperCase, "") == None
+    @Test
+    def dropLeft11(): Unit \ Assert = assertEq(expected = "cdef", String.dropLeft(2, "abcdef"))
 
-@test
-def findIndexOfRight02(): Bool = String.findIndexOfRight(Char.isUpperCase, "a") == None
+    @Test
+    def dropLeft12(): Unit \ Assert = assertEq(expected = "ef", String.dropLeft(4, "abcdef"))
 
-@test
-def findIndexOfRight03(): Bool = String.findIndexOfRight(Char.isUpperCase, "A") == Some(0)
+    /////////////////////////////////////////////////////////////////////////////
+    // dropRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findIndexOfRight04(): Bool = String.findIndexOfRight(Char.isUpperCase, "ab") == None
+    @Test
+    def dropRight01(): Unit \ Assert = assertEq(expected = "", String.dropRight(-1, ""))
 
-@test
-def findIndexOfRight05(): Bool = String.findIndexOfRight(Char.isUpperCase, "Ab") == Some(0)
+    @Test
+    def dropRight02(): Unit \ Assert = assertEq(expected = "", String.dropRight(0, ""))
 
-@test
-def findIndexOfRight06(): Bool = String.findIndexOfRight(Char.isUpperCase, "aB") == Some(1)
+    @Test
+    def dropRight03(): Unit \ Assert = assertEq(expected = "", String.dropRight(1, ""))
 
-@test
-def findIndexOfRight07(): Bool = String.findIndexOfRight(Char.isUpperCase, "AB") == Some(1)
+    @Test
+    def dropRight04(): Unit \ Assert = assertEq(expected = "a", String.dropRight(-1, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndices                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def dropRight05(): Unit \ Assert = assertEq(expected = "a", String.dropRight(0, "a"))
 
-@test
-def findIndices01(): Bool = String.findIndices(Char.isDigit, "") == Nil
+    @Test
+    def dropRight06(): Unit \ Assert = assertEq(expected = "", String.dropRight(1, "a"))
 
-@test
-def findIndices02(): Bool = String.findIndices(Char.isDigit, "a") == Nil
+    @Test
+    def dropRight07(): Unit \ Assert = assertEq(expected = "", String.dropRight(2, "a"))
 
-@test
-def findIndices03(): Bool = String.findIndices(Char.isDigit, "1") == 0 :: Nil
+    @Test
+    def dropRight08(): Unit \ Assert = assertEq(expected = "ab", String.dropRight(0, "ab"))
 
-@test
-def findIndices04(): Bool = String.findIndices(Char.isDigit, "ab") == Nil
+    @Test
+    def dropRight09(): Unit \ Assert = assertEq(expected = "a", String.dropRight(1, "ab"))
 
-@test
-def findIndices05(): Bool = String.findIndices(Char.isDigit, "1b") == 0 :: Nil
+    @Test
+    def dropRight10(): Unit \ Assert = assertEq(expected = "", String.dropRight(2, "ab"))
 
-@test
-def findIndices06(): Bool = String.findIndices(Char.isDigit, "a2") == 1 :: Nil
+    @Test
+    def dropRight11(): Unit \ Assert = assertEq(expected = "abcd", String.dropRight(2, "abcdef"))
 
-@test
-def findIndices07(): Bool = String.findIndices(Char.isDigit, "12") == 0 :: 1 :: Nil
+    @Test
+    def dropRight12(): Unit \ Assert = assertEq(expected = "ab", String.dropRight(4, "abcdef"))
 
-/////////////////////////////////////////////////////////////////////////////
-// indices                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indices01(): Bool = String.indices({substr = ""}, "") == Nil
+    @Test
+    def takeWhile01(): Unit \ Assert = assertEq(expected = "", String.takeWhile(Char.isUpperCase, ""))
 
-@test
-def indices02(): Bool = String.indices({substr = ""}, "a::b::c") == Nil
+    @Test
+    def takeWhile02(): Unit \ Assert = assertEq(expected = "", String.takeWhile(Char.isUpperCase, "a"))
 
-@test
-def indices03(): Bool = String.indices({substr = "::"}, "") == Nil
+    @Test
+    def takeWhile03(): Unit \ Assert = assertEq(expected = "A", String.takeWhile(Char.isUpperCase, "A"))
 
-@test
-def indices04(): Bool = String.indices({substr = "::"}, "a") == Nil
+    @Test
+    def takeWhile04(): Unit \ Assert = assertEq(expected = "", String.takeWhile(Char.isUpperCase, "ab"))
 
-@test
-def indices05(): Bool = String.indices({substr = "::"}, "::") == 0 :: Nil
+    @Test
+    def takeWhile05(): Unit \ Assert = assertEq(expected = "", String.takeWhile(Char.isUpperCase, "aB"))
 
-@test
-def indices06(): Bool = String.indices({substr = "::"}, "ab") == Nil
+    @Test
+    def takeWhile06(): Unit \ Assert = assertEq(expected = "A", String.takeWhile(Char.isUpperCase, "Ab"))
 
-@test
-def indices07(): Bool = String.indices({substr = "::"}, "::a") == 0 :: Nil
+    @Test
+    def takeWhile07(): Unit \ Assert = assertEq(expected = "AB", String.takeWhile(Char.isUpperCase, "AB"))
 
-@test
-def indices08(): Bool = String.indices({substr = "::"}, "a::") == 1 :: Nil
+    @Test
+    def takeWhile08(): Unit \ Assert = assertEq(expected = "AB", String.takeWhile(Char.isUpperCase, "ABcDefgHIjK"))
 
-@test
-def indices09(): Bool = String.indices({substr = "::"}, "a::b::") == 1 :: 4 :: Nil
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indices10(): Bool = String.indices({substr = "::"}, "a::b::c") == 1 :: 4 :: Nil
+    @Test
+    def takeWhileLeft01(): Unit \ Assert = assertEq(expected = "", String.takeWhileLeft(Char.isUpperCase, ""))
 
-@test
-def indices11(): Bool = String.indices({substr = "::"}, "a::b::c:") == 1 :: 4 :: Nil
+    @Test
+    def takeWhileLeft02(): Unit \ Assert = assertEq(expected = "", String.takeWhileLeft(Char.isUpperCase, "a"))
 
-@test
-def indices12(): Bool = String.indices({substr = "::"}, ":a::b::c") == 2 :: 5 :: Nil
+    @Test
+    def takeWhileLeft03(): Unit \ Assert = assertEq(expected = "A", String.takeWhileLeft(Char.isUpperCase, "A"))
 
-@test
-def indices13(): Bool = String.indices({substr = "::"}, "::::") == 0 :: 2 :: Nil
+    @Test
+    def takeWhileLeft04(): Unit \ Assert = assertEq(expected = "", String.takeWhileLeft(Char.isUpperCase, "ab"))
 
+    @Test
+    def takeWhileLeft05(): Unit \ Assert = assertEq(expected = "", String.takeWhileLeft(Char.isUpperCase, "aB"))
 
-/////////////////////////////////////////////////////////////////////////////
-// take                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def takeWhileLeft06(): Unit \ Assert = assertEq(expected = "A", String.takeWhileLeft(Char.isUpperCase, "Ab"))
 
-@test
-def take01(): Bool = String.take(-1, "") == ""
+    @Test
+    def takeWhileLeft07(): Unit \ Assert = assertEq(expected = "AB", String.takeWhileLeft(Char.isUpperCase, "AB"))
 
-@test
-def take02(): Bool = String.take(0, "") == ""
+    @Test
+    def takeWhileLeft08(): Unit \ Assert = assertEq(expected = "AB", String.takeWhileLeft(Char.isUpperCase, "ABcDefgHIjK"))
 
-@test
-def take03(): Bool = String.take(1, "") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def take04(): Bool = String.take(-1, "a") == ""
+    @Test
+    def takeWhileRight01(): Unit \ Assert = assertEq(expected = "", String.takeWhileRight(Char.isUpperCase, ""))
 
-@test
-def take05(): Bool = String.take(0, "a") == ""
+    @Test
+    def takeWhileRight02(): Unit \ Assert = assertEq(expected = "", String.takeWhileRight(Char.isUpperCase, "a"))
 
-@test
-def take06(): Bool = String.take(1, "a") == "a"
+    @Test
+    def takeWhileRight03(): Unit \ Assert = assertEq(expected = "A", String.takeWhileRight(Char.isUpperCase, "A"))
 
-@test
-def take07(): Bool = String.take(2, "a") == "a"
+    @Test
+    def takeWhileRight04(): Unit \ Assert = assertEq(expected = "", String.takeWhileRight(Char.isUpperCase, "ab"))
 
-@test
-def take08(): Bool = String.take(0, "ab") == ""
+    @Test
+    def takeWhileRight05(): Unit \ Assert = assertEq(expected = "B", String.takeWhileRight(Char.isUpperCase, "aB"))
 
-@test
-def take09(): Bool = String.take(1, "ab") == "a"
+    @Test
+    def takeWhileRight06(): Unit \ Assert = assertEq(expected = "", String.takeWhileRight(Char.isUpperCase, "Ab"))
 
-@test
-def take10(): Bool = String.take(2, "ab") == "ab"
+    @Test
+    def takeWhileRight07(): Unit \ Assert = assertEq(expected = "AB", String.takeWhileRight(Char.isUpperCase, "AB"))
 
-@test
-def take11(): Bool = String.take(2, "abcdef") == "ab"
+    @Test
+    def takeWhileRight08(): Unit \ Assert = assertEq(expected = "K", String.takeWhileRight(Char.isUpperCase, "ABcDefgHIjK"))
 
-@test
-def take12(): Bool = String.take(4, "abcdef") == "abcd"
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def take13(): Bool = String.take(10, "abcdef") == "abcdef"
+    @Test
+    def dropWhile01(): Unit \ Assert = assertEq(expected = "", String.dropWhile(Char.isUpperCase, ""))
 
-/////////////////////////////////////////////////////////////////////////////
-// takeLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def dropWhile02(): Unit \ Assert = assertEq(expected = "a", String.dropWhile(Char.isUpperCase, "a"))
 
-@test
-def takeLeft01(): Bool = String.takeLeft(-1, "") == ""
+    @Test
+    def dropWhile03(): Unit \ Assert = assertEq(expected = "", String.dropWhile(Char.isUpperCase, "A"))
 
-@test
-def takeLeft02(): Bool = String.takeLeft(0, "") == ""
+    @Test
+    def dropWhile04(): Unit \ Assert = assertEq(expected = "ab", String.dropWhile(Char.isUpperCase, "ab"))
 
-@test
-def takeLeft03(): Bool = String.takeLeft(1, "") == ""
+    @Test
+    def dropWhile05(): Unit \ Assert = assertEq(expected = "aB", String.dropWhile(Char.isUpperCase, "aB"))
 
-@test
-def takeLeft04(): Bool = String.takeLeft(-1, "a") == ""
+    @Test
+    def dropWhile06(): Unit \ Assert = assertEq(expected = "b", String.dropWhile(Char.isUpperCase, "Ab"))
 
-@test
-def takeLeft05(): Bool = String.takeLeft(0, "a") == ""
+    @Test
+    def dropWhile07(): Unit \ Assert = assertEq(expected = "", String.dropWhile(Char.isUpperCase, "AB"))
 
-@test
-def takeLeft06(): Bool = String.takeLeft(1, "a") == "a"
+    @Test
+    def dropWhile08(): Unit \ Assert = assertEq(expected = "cDefgHIjK", String.dropWhile(Char.isUpperCase, "ABcDefgHIjK"))
 
-@test
-def takeLeft07(): Bool = String.takeLeft(2, "a") == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeLeft08(): Bool = String.takeLeft(0, "ab") == ""
+    @Test
+    def dropWhileLeft01(): Unit \ Assert = assertEq(expected = "", String.dropWhileLeft(Char.isUpperCase, ""))
 
-@test
-def takeLeft09(): Bool = String.takeLeft(1, "ab") == "a"
+    @Test
+    def dropWhileLeft02(): Unit \ Assert = assertEq(expected = "a", String.dropWhileLeft(Char.isUpperCase, "a"))
 
-@test
-def takeLeft10(): Bool = String.takeLeft(2, "ab") == "ab"
+    @Test
+    def dropWhileLeft03(): Unit \ Assert = assertEq(expected = "", String.dropWhileLeft(Char.isUpperCase, "A"))
 
-@test
-def takeLeft11(): Bool = String.takeLeft(2, "abcdef") == "ab"
+    @Test
+    def dropWhileLeft04(): Unit \ Assert = assertEq(expected = "ab", String.dropWhileLeft(Char.isUpperCase, "ab"))
 
-@test
-def takeLeft12(): Bool = String.takeLeft(4, "abcdef") == "abcd"
+    @Test
+    def dropWhileLeft05(): Unit \ Assert = assertEq(expected = "aB", String.dropWhileLeft(Char.isUpperCase, "aB"))
 
-@test
-def takeLeft13(): Bool = String.takeLeft(10, "abcdef") == "abcdef"
+    @Test
+    def dropWhileLeft06(): Unit \ Assert = assertEq(expected = "b", String.dropWhileLeft(Char.isUpperCase, "Ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// takeRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def dropWhileLeft07(): Unit \ Assert = assertEq(expected = "", String.dropWhileLeft(Char.isUpperCase, "AB"))
 
-@test
-def takeRight01(): Bool = String.takeRight(-1, "") == ""
+    @Test
+    def dropWhileLeft08(): Unit \ Assert = assertEq(expected = "cDefgHIjK", String.dropWhileLeft(Char.isUpperCase, "ABcDefgHIjK"))
 
-@test
-def takeRight02(): Bool = String.takeRight(0, "") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeRight03(): Bool = String.takeRight(1, "") == ""
+    @Test
+    def dropWhileRight01(): Unit \ Assert = assertEq(expected = "", String.dropWhileRight(Char.isUpperCase, ""))
 
-@test
-def takeRight04(): Bool = String.takeRight(-1, "a") == ""
+    @Test
+    def dropWhileRight02(): Unit \ Assert = assertEq(expected = "a", String.dropWhileRight(Char.isUpperCase, "a"))
 
-@test
-def takeRight05(): Bool = String.takeRight(0, "a") == ""
+    @Test
+    def dropWhileRight03(): Unit \ Assert = assertEq(expected = "", String.dropWhileRight(Char.isUpperCase, "A"))
 
-@test
-def takeRight06(): Bool = String.takeRight(1, "a") == "a"
+    @Test
+    def dropWhileRight04(): Unit \ Assert = assertEq(expected = "ab", String.dropWhileRight(Char.isUpperCase, "ab"))
 
-@test
-def takeRight07(): Bool = String.takeRight(2, "a") == "a"
+    @Test
+    def dropWhileRight05(): Unit \ Assert = assertEq(expected = "a", String.dropWhileRight(Char.isUpperCase, "aB"))
 
-@test
-def takeRight08(): Bool = String.takeRight(0, "ab") == ""
+    @Test
+    def dropWhileRight06(): Unit \ Assert = assertEq(expected = "Ab", String.dropWhileRight(Char.isUpperCase, "Ab"))
 
-@test
-def takeRight09(): Bool = String.takeRight(1, "ab") == "b"
+    @Test
+    def dropWhileRight07(): Unit \ Assert = assertEq(expected = "", String.dropWhileRight(Char.isUpperCase, "AB"))
 
-@test
-def takeRight10(): Bool = String.takeRight(2, "ab") == "ab"
+    @Test
+    def dropWhileRight08(): Unit \ Assert = assertEq(expected = "ABcDefgHIj", String.dropWhileRight(Char.isUpperCase, "ABcDefgHIjK"))
 
-@test
-def takeRight11(): Bool = String.takeRight(2, "abcdef") == "ef"
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileAround                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeRight12(): Bool = String.takeRight(4, "abcdef") == "cdef"
+    @Test
+    def dropWhileAround01(): Unit \ Assert = assertEq(expected = "", String.dropWhileRight(Char.isUpperCase, ""))
 
-@test
-def takeRight13(): Bool = String.takeRight(10, "abcdef") == "abcdef"
+    @Test
+    def dropWhileAround02(): Unit \ Assert = assertEq(expected = "a", String.dropWhileAround(Char.isUpperCase, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// drop                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def dropWhileAround03(): Unit \ Assert = assertEq(expected = "", String.dropWhileAround(Char.isUpperCase, "A"))
 
-@test
-def drop01(): Bool = String.drop(-1, "") == ""
+    @Test
+    def dropWhileAround04(): Unit \ Assert = assertEq(expected = "ab", String.dropWhileAround(Char.isUpperCase, "ab"))
 
-@test
-def drop02(): Bool = String.drop(0, "") == ""
+    @Test
+    def dropWhileAround05(): Unit \ Assert = assertEq(expected = "a", String.dropWhileAround(Char.isUpperCase, "aB"))
 
-@test
-def drop03(): Bool = String.drop(1, "") == ""
+    @Test
+    def dropWhileAround06(): Unit \ Assert = assertEq(expected = "b", String.dropWhileAround(Char.isUpperCase, "Ab"))
 
-@test
-def drop04(): Bool = String.drop(-1, "a") == "a"
+    @Test
+    def dropWhileAround07(): Unit \ Assert = assertEq(expected = "", String.dropWhileAround(Char.isUpperCase, "AB"))
 
-@test
-def drop05(): Bool = String.drop(0, "a") == "a"
+    @Test
+    def dropWhileAround08(): Unit \ Assert = assertEq(expected = "cDefgHIj", String.dropWhileAround(Char.isUpperCase, "ABcDefgHIjK"))
 
-@test
-def drop06(): Bool = String.drop(1, "a") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // splitAt                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def drop07(): Bool = String.drop(2, "a") == ""
+    @Test
+    def splitAt01(): Unit \ Assert = assertEq(expected = ("", ""), String.splitAt(0, ""))
 
-@test
-def drop08(): Bool = String.drop(0, "ab") == "ab"
+    @Test
+    def splitAt02(): Unit \ Assert = assertEq(expected = ("", ""), String.splitAt(1, ""))
 
-@test
-def drop09(): Bool = String.drop(1, "ab") == "b"
+    @Test
+    def splitAt03(): Unit \ Assert = assertEq(expected = ("", ""), String.splitAt(-1, ""))
 
-@test
-def drop10(): Bool = String.drop(2, "ab") == ""
+    @Test
+    def splitAt04(): Unit \ Assert = assertEq(expected = ("", "a"), String.splitAt(0, "a"))
 
-@test
-def drop11(): Bool = String.drop(2, "abcdef") == "cdef"
+    @Test
+    def splitAt05(): Unit \ Assert = assertEq(expected = ("a", ""), String.splitAt(1, "a"))
 
-@test
-def drop12(): Bool = String.drop(4, "abcdef") == "ef"
+    @Test
+    def splitAt06(): Unit \ Assert = assertEq(expected = ("", "a"), String.splitAt(-1, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// dropLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def splitAt07(): Unit \ Assert = assertEq(expected = ("", "ab"), String.splitAt(0, "ab"))
 
-@test
-def dropLeft01(): Bool = String.dropLeft(-1, "") == ""
+    @Test
+    def splitAt08(): Unit \ Assert = assertEq(expected = ("a", "b"), String.splitAt(1, "ab"))
 
-@test
-def dropLeft02(): Bool = String.dropLeft(0, "") == ""
+    @Test
+    def splitAt09(): Unit \ Assert = assertEq(expected = ("ab", ""), String.splitAt(2, "ab"))
 
-@test
-def dropLeft03(): Bool = String.dropLeft(1, "") == ""
+    @Test
+    def splitAt10(): Unit \ Assert = assertEq(expected = ("", "ab"), String.splitAt(-1, "ab"))
 
-@test
-def dropLeft04(): Bool = String.dropLeft(-1, "a") == "a"
+    @Test
+    def splitAt11(): Unit \ Assert = assertEq(expected = ("ab", ""), String.splitAt(3, "ab"))
 
-@test
-def dropLeft05(): Bool = String.dropLeft(0, "a") == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def dropLeft06(): Bool = String.dropLeft(1, "a") == ""
+    @Test
+    def foldLeft01(): Unit \ Assert = assertEq(expected = "", String.foldLeft((ac, c) -> ac + Char.toString(c), "", ""))
 
-@test
-def dropLeft07(): Bool = String.dropLeft(2, "a") == ""
+    @Test
+    def foldLeft02(): Unit \ Assert = assertEq(expected = "a", String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "a"))
 
-@test
-def dropLeft08(): Bool = String.dropLeft(0, "ab") == "ab"
+    @Test
+    def foldLeft03(): Unit \ Assert = assertEq(expected = "ab", String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "ab"))
 
-@test
-def dropLeft09(): Bool = String.dropLeft(1, "ab") == "b"
+    @Test
+    def foldLeft04(): Unit \ Assert = assertEq(expected = "abc", String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abc"))
 
-@test
-def dropLeft10(): Bool = String.dropLeft(2, "ab") == ""
+    @Test
+    def foldLeft05(): Unit \ Assert = assertEq(expected = "abcd", String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abcd"))
 
-@test
-def dropLeft11(): Bool = String.dropLeft(2, "abcdef") == "cdef"
+    @Test
+    def foldLeft06(): Unit \ Assert = assertEq(expected = "abcde", String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abcde"))
 
-@test
-def dropLeft12(): Bool = String.dropLeft(4, "abcdef") == "ef"
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// dropRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldRight01(): Unit \ Assert = assertEq(expected = "", String.foldRight((c, ac) -> Char.toString(c) + ac, "", ""))
 
-@test
-def dropRight01(): Bool = String.dropRight(-1, "") == ""
+    @Test
+    def foldRight02(): Unit \ Assert = assertEq(expected = "a", String.foldRight((c, ac) -> Char.toString(c) + ac, "", "a"))
 
-@test
-def dropRight02(): Bool = String.dropRight(0, "") == ""
+    @Test
+    def foldRight03(): Unit \ Assert = assertEq(expected = "ab", String.foldRight((c, ac) -> Char.toString(c) + ac, "", "ab"))
 
-@test
-def dropRight03(): Bool = String.dropRight(1, "") == ""
+    @Test
+    def foldRight04(): Unit \ Assert = assertEq(expected = "abc", String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abc"))
 
-@test
-def dropRight04(): Bool = String.dropRight(-1, "a") == "a"
+    @Test
+    def foldRight05(): Unit \ Assert = assertEq(expected = "abcd", String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abcd"))
 
-@test
-def dropRight05(): Bool = String.dropRight(0, "a") == "a"
+    @Test
+    def foldRight06(): Unit \ Assert = assertEq(expected = "abcde", String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abcde"))
 
-@test
-def dropRight06(): Bool = String.dropRight(1, "a") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft2                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def dropRight07(): Bool = String.dropRight(2, "a") == ""
+    @Test
+    def foldLeft201(): Unit \ Assert =
+        assertEq(expected = "", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "", ""))
 
-@test
-def dropRight08(): Bool = String.dropRight(0, "ab") == "ab"
+    @Test
+    def foldLeft202(): Unit \ Assert =
+        assertEq(expected = "a", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "a", "_"))
 
-@test
-def dropRight09(): Bool = String.dropRight(1, "ab") == "a"
+    @Test
+    def foldLeft203(): Unit \ Assert =
+        assertEq(expected = "A", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "a", "A"))
 
-@test
-def dropRight10(): Bool = String.dropRight(2, "ab") == ""
+    @Test
+    def foldLeft204(): Unit \ Assert =
+        assertEq(expected = "ab", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "__"))
 
-@test
-def dropRight11(): Bool = String.dropRight(2, "abcdef") == "abcd"
+    @Test
+    def foldLeft205(): Unit \ Assert =
+        assertEq(expected = "Ab", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "A_"))
 
-@test
-def dropRight12(): Bool = String.dropRight(4, "abcdef") == "ab"
+    @Test
+    def foldLeft206(): Unit \ Assert =
+        assertEq(expected = "AB", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "AB"))
 
-/////////////////////////////////////////////////////////////////////////////
-// takeWhile                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldLeft207(): Unit \ Assert =
+        assertEq(expected = "", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", ""))
 
-@test
-def takeWhile01(): Bool = String.takeWhile(Char.isUpperCase, "") == ""
+    @Test
+    def foldLeft208(): Unit \ Assert =
+        assertEq(expected = "a", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "_"))
 
-@test
-def takeWhile02(): Bool = String.takeWhile(Char.isUpperCase, "a") == ""
+    @Test
+    def foldLeft209(): Unit \ Assert =
+        assertEq(expected = "A", String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "A"))
 
-@test
-def takeWhile03(): Bool = String.takeWhile(Char.isUpperCase, "A") == "A"
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight2                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeWhile04(): Bool = String.takeWhile(Char.isUpperCase, "ab") == ""
+    @Test
+    def foldRight201(): Unit \ Assert =
+        assertEq(expected = "", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "", ""))
 
-@test
-def takeWhile05(): Bool = String.takeWhile(Char.isUpperCase, "aB") == ""
+    @Test
+    def foldRight202(): Unit \ Assert =
+        assertEq(expected = "a", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "a", "_"))
 
-@test
-def takeWhile06(): Bool = String.takeWhile(Char.isUpperCase, "Ab") == "A"
+    @Test
+    def foldRight203(): Unit \ Assert =
+        assertEq(expected = "A", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "a", "A"))
 
-@test
-def takeWhile07(): Bool = String.takeWhile(Char.isUpperCase, "AB") == "AB"
+    @Test
+    def foldRight204(): Unit \ Assert =
+        assertEq(expected = "ab", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "__"))
 
-@test
-def takeWhile08(): Bool = String.takeWhile(Char.isUpperCase, "ABcDefgHIjK") == "AB"
+    @Test
+    def foldRight205(): Unit \ Assert =
+        assertEq(expected = "Ab", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "A_"))
 
-/////////////////////////////////////////////////////////////////////////////
-// takeWhileLeft                                                           //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def foldRight206(): Unit \ Assert =
+        assertEq(expected = "AB", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "AB"))
 
-@test
-def takeWhileLeft01(): Bool = String.takeWhileLeft(Char.isUpperCase, "") == ""
+    @Test
+    def foldRight207(): Unit \ Assert =
+        assertEq(expected = "", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", ""))
 
-@test
-def takeWhileLeft02(): Bool = String.takeWhileLeft(Char.isUpperCase, "a") == ""
+    @Test
+    def foldRight208(): Unit \ Assert =
+        assertEq(expected = "b", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "_"))
 
-@test
-def takeWhileLeft03(): Bool = String.takeWhileLeft(Char.isUpperCase, "A") == "A"
+    @Test
+    def foldRight209(): Unit \ Assert =
+        assertEq(expected = "B", String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "B"))
 
-@test
-def takeWhileLeft04(): Bool = String.takeWhileLeft(Char.isUpperCase, "ab") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // unfold                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeWhileLeft05(): Bool = String.takeWhileLeft(Char.isUpperCase, "aB") == ""
+    @Test
+    def unfold01(): Unit \ Assert =
+        assertEq(expected = "aaaaa", String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 0))
 
-@test
-def takeWhileLeft06(): Bool = String.takeWhileLeft(Char.isUpperCase, "Ab") == "A"
+    @Test
+    def unfold02(): Unit \ Assert =
+        assertEq(expected = "aaaa", String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 1))
 
-@test
-def takeWhileLeft07(): Bool = String.takeWhileLeft(Char.isUpperCase, "AB") == "AB"
+    @Test
+    def unfold03(): Unit \ Assert =
+        assertEq(expected = "aaa", String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 2))
 
-@test
-def takeWhileLeft08(): Bool = String.takeWhileLeft(Char.isUpperCase, "ABcDefgHIjK") == "AB"
+    @Test
+    def unfold04(): Unit \ Assert =
+        assertEq(expected = "aa", String.unfold(x -> if (x < 5) Some((('a', x+1))) else None, 3))
 
-/////////////////////////////////////////////////////////////////////////////
-// takeWhileRight                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def unfold05(): Unit \ Assert =
+        assertEq(expected = "a", String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 4))
 
-@test
-def takeWhileRight01(): Bool = String.takeWhileRight(Char.isUpperCase, "") == ""
+    @Test
+    def unfold06(): Unit \ Assert =
+        assertEq(expected = "", String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 5))
 
-@test
-def takeWhileRight02(): Bool = String.takeWhileRight(Char.isUpperCase, "a") == ""
+    @Test
+    def unfold07(): Unit \ Assert =
+        assertEq(expected = "", String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, 6))
 
-@test
-def takeWhileRight03(): Bool = String.takeWhileRight(Char.isUpperCase, "A") == "A"
+    @Test
+    def unfold08(): Unit \ Assert =
+        assertEq(expected = "aaaaaa", String.unfold(x -> if (x < 5) Some(('a', x+1)) else None, -1))
 
-@test
-def takeWhileRight04(): Bool = String.takeWhileRight(Char.isUpperCase, "ab") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // unfoldWithIter                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeWhileRight05(): Bool = String.takeWhileRight(Char.isUpperCase, "aB") == "B"
+    ///
+    /// Converts Int32 in ranges [65;90] (inclusive) and [97;122] (inclusive) to a Char.
+    ///
+    def toChar(step: Int32): Char = match step {
+        case 65  => 'A'
+        case 66  => 'B'
+        case 67  => 'C'
+        case 68  => 'D'
+        case 69  => 'E'
+        case 70  => 'F'
+        case 71  => 'G'
+        case 72  => 'H'
+        case 73  => 'I'
+        case 74  => 'J'
+        case 75  => 'K'
+        case 76  => 'L'
+        case 77  => 'M'
+        case 78  => 'N'
+        case 79  => 'O'
+        case 80  => 'P'
+        case 81  => 'Q'
+        case 82  => 'R'
+        case 83  => 'S'
+        case 84  => 'T'
+        case 85  => 'U'
+        case 86  => 'V'
+        case 87  => 'W'
+        case 88  => 'X'
+        case 89  => 'Y'
+        case 90  => 'Z'
+        case 97  => 'a'
+        case 98  => 'b'
+        case 99  => 'c'
+        case 100 => 'd'
+        case 101 => 'e'
+        case 102 => 'f'
+        case 103 => 'g'
+        case 104 => 'h'
+        case 105 => 'i'
+        case 106 => 'j'
+        case 107 => 'k'
+        case 108 => 'l'
+        case 109 => 'm'
+        case 110 => 'n'
+        case 111 => 'o'
+        case 112 => 'p'
+        case 113 => 'q'
+        case 114 => 'r'
+        case 115 => 's'
+        case 116 => 't'
+        case 117 => 'u'
+        case 118 => 'v'
+        case 119 => 'w'
+        case 120 => 'x'
+        case 121 => 'y'
+        case 122 => 'z'
+        case _   => bug!("toChar called with bad input!")
+    }
 
-@test
-def takeWhileRight06(): Bool = String.takeWhileRight(Char.isUpperCase, "Ab") == ""
+    @Test
+    def unfoldWithIter01(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (true)
+                None
+            else {
+                let c = Some(toChar(Ref.get(x) + 97));
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        assertEq(expected = "", String.unfoldWithIter(step))
+    }
 
-@test
-def takeWhileRight07(): Bool = String.takeWhileRight(Char.isUpperCase, "AB") == "AB"
+    @Test
+    def unfoldWithIter02(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) > 0)
+                None
+            else {
+                let c = Some(toChar(Ref.get(x) + 97));
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        assertEq(expected = "a", String.unfoldWithIter(step))
+    }
 
-@test
-def takeWhileRight08(): Bool = String.takeWhileRight(Char.isUpperCase, "ABcDefgHIjK") == "K"
+    @Test
+    def unfoldWithIter03(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) > 1)
+                None
+            else {
+                let c = Some(toChar(Ref.get(x) + 97));
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        assertEq(expected = "ab", String.unfoldWithIter(step))
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// dropWhile                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def unfoldWithIter04(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) >= 10)
+                None
+            else {
+                let c = Some(toChar(Ref.get(x) + 97));
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        assertEq(expected = "abcdefghij", String.unfoldWithIter(step))
+    }
 
-@test
-def dropWhile01(): Bool = String.dropWhile(Char.isUpperCase, "") == ""
+    @Test
+    def unfoldWithIter05(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 5);
+        let step = () ->
+            if (Ref.get(x) >= 10)
+                None
+            else {
+                let c = Some(toChar(Ref.get(x) + 97));
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        assertEq(expected = "fghij", String.unfoldWithIter(step))
+    }
 
-@test
-def dropWhile02(): Bool = String.dropWhile(Char.isUpperCase, "a") == "a"
+    @Test
+    def unfoldWithIter06(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) >= 10)
+                None
+            else {
+                let c = Some(toChar(Ref.get(x) + 97));
+                Ref.put(Ref.get(x) + 2, x);
+                c
+            };
+        assertEq(expected = "acegi", String.unfoldWithIter(step))
+    }
 
-@test
-def dropWhile03(): Bool = String.dropWhile(Char.isUpperCase, "A") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // unfoldString                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def dropWhile04(): Bool = String.dropWhile(Char.isUpperCase, "ab") == "ab"
+    @Test
+    def unfoldString01(): Unit \ Assert =
+        assertEq(expected = "ab.ab.ab.ab.ab.", String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 0))
 
-@test
-def dropWhile05(): Bool = String.dropWhile(Char.isUpperCase, "aB") == "aB"
+    @Test
+    def unfoldString02(): Unit \ Assert =
+        assertEq(expected = "ab.ab.ab.ab.", String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 1))
 
-@test
-def dropWhile06(): Bool = String.dropWhile(Char.isUpperCase, "Ab") == "b"
+    @Test
+    def unfoldString03(): Unit \ Assert =
+        assertEq(expected = "ab.ab.ab.", String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 2))
 
-@test
-def dropWhile07(): Bool = String.dropWhile(Char.isUpperCase, "AB") == ""
+    @Test
+    def unfoldString04(): Unit \ Assert =
+        assertEq(expected = "ab.ab.", String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 3))
 
-@test
-def dropWhile08(): Bool = String.dropWhile(Char.isUpperCase, "ABcDefgHIjK") == "cDefgHIjK"
+    @Test
+    def unfoldString05(): Unit \ Assert =
+        assertEq(expected = "ab.", String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 4))
 
-/////////////////////////////////////////////////////////////////////////////
-// dropWhileLeft                                                           //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def unfoldString06(): Unit \ Assert =
+        assertEq(expected = "", String.unfoldString(x -> if (x < 5) Some(("", x+1)) else None, 5))
 
-@test
-def dropWhileLeft01(): Bool = String.dropWhileLeft(Char.isUpperCase, "") == ""
+    @Test
+    def unfoldString07(): Unit \ Assert =
+        assertEq(expected = "", String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, 6))
 
-@test
-def dropWhileLeft02(): Bool = String.dropWhileLeft(Char.isUpperCase, "a") == "a"
+    @Test
+    def unfoldString08(): Unit \ Assert =
+        assertEq(expected = "ab.ab.ab.ab.ab.ab.", String.unfoldString(x -> if (x < 5) Some(("ab.", x+1)) else None, -1))
 
-@test
-def dropWhileLeft03(): Bool = String.dropWhileLeft(Char.isUpperCase, "A") == ""
 
-@test
-def dropWhileLeft04(): Bool = String.dropWhileLeft(Char.isUpperCase, "ab") == "ab"
+    /////////////////////////////////////////////////////////////////////////////
+    // unfoldStringWithIter                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def dropWhileLeft05(): Bool = String.dropWhileLeft(Char.isUpperCase, "aB") == "aB"
+    @Test
+    def unfoldStringWithIter01(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (true)
+                None
+            else {
+                let c1 = toChar(Ref.get(x) + 65);
+                let c2 = toChar(Ref.get(x) + 97);
+                let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+                Ref.put(Ref.get(x) + 1, x);
+                Some(s)
+            };
+        assertEq(expected = "", String.unfoldStringWithIter(step))
+    }
 
-@test
-def dropWhileLeft06(): Bool = String.dropWhileLeft(Char.isUpperCase, "Ab") == "b"
+    @Test
+    def unfoldStringWithIter02(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) > 0)
+                None
+            else {
+                let c1 = toChar(Ref.get(x) + 65);
+                let c2 = toChar(Ref.get(x) + 97);
+                let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+                Ref.put(Ref.get(x) + 1, x);
+                Some(s)
+            };
+        assertEq(expected = "Aa.", String.unfoldStringWithIter(step))
+    }
 
-@test
-def dropWhileLeft07(): Bool = String.dropWhileLeft(Char.isUpperCase, "AB") == ""
+    @Test
+    def unfoldStringWithIter03(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) > 1)
+                None
+            else {
+                let c1 = toChar(Ref.get(x) + 65);
+                let c2 = toChar(Ref.get(x) + 97);
+                let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+                Ref.put(Ref.get(x) + 1, x);
+                Some(s)
+            };
+        assertEq(expected = "Aa.Bb.", String.unfoldStringWithIter(step))
+    }
 
-@test
-def dropWhileLeft08(): Bool = String.dropWhileLeft(Char.isUpperCase, "ABcDefgHIjK") == "cDefgHIjK"
+    @Test
+    def unfoldStringWithIter04(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) >= 10)
+                None
+            else {
+                let c1 = toChar(Ref.get(x) + 65);
+                let c2 = toChar(Ref.get(x) + 97);
+                let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+                Ref.put(Ref.get(x) + 1, x);
+                Some(s)
+            };
+        assertEq(expected = "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj.", String.unfoldStringWithIter(step))
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// dropWhileRight                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def unfoldStringWithIter05(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 5);
+        let step = () ->
+            if (Ref.get(x) >= 10)
+                None
+            else {
+                let c1 = toChar(Ref.get(x) + 65);
+                let c2 = toChar(Ref.get(x) + 97);
+                let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+                Ref.put(Ref.get(x) + 1, x);
+                Some(s)
+            };
+        assertEq(expected = "Ff.Gg.Hh.Ii.Jj.", String.unfoldStringWithIter(step))
+    }
 
-@test
-def dropWhileRight01(): Bool = String.dropWhileRight(Char.isUpperCase, "") == ""
+    @Test
+    def unfoldStringWithIter06(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) >= 10)
+                None
+            else {
+                let c1 = toChar(Ref.get(x) + 65);
+                let c2 = toChar(Ref.get(x) + 97);
+                let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+                Ref.put(Ref.get(x) + 2, x);
+                Some(s)
+            };
+        assertEq(expected = "Aa.Cc.Ee.Gg.Ii.", String.unfoldStringWithIter(step))
+    }
 
-@test
-def dropWhileRight02(): Bool = String.dropWhileRight(Char.isUpperCase, "a") == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def dropWhileRight03(): Bool = String.dropWhileRight(Char.isUpperCase, "A") == ""
+    @Test
+    def exists01(): Unit \ Assert = assertFalse(String.exists(Char.isUpperCase, ""))
 
-@test
-def dropWhileRight04(): Bool = String.dropWhileRight(Char.isUpperCase, "ab") == "ab"
+    @Test
+    def exists02(): Unit \ Assert = assertFalse(String.exists(Char.isUpperCase, "a"))
 
-@test
-def dropWhileRight05(): Bool = String.dropWhileRight(Char.isUpperCase, "aB") == "a"
+    @Test
+    def exists03(): Unit \ Assert = assertTrue(String.exists(Char.isUpperCase, "A"))
 
-@test
-def dropWhileRight06(): Bool = String.dropWhileRight(Char.isUpperCase, "Ab") == "Ab"
+    @Test
+    def exists04(): Unit \ Assert = assertFalse(String.exists(Char.isUpperCase, "ab"))
 
-@test
-def dropWhileRight07(): Bool = String.dropWhileRight(Char.isUpperCase, "AB") == ""
+    @Test
+    def exists05(): Unit \ Assert = assertTrue(String.exists(Char.isUpperCase, "aB"))
 
-@test
-def dropWhileRight08(): Bool = String.dropWhileRight(Char.isUpperCase, "ABcDefgHIjK") == "ABcDefgHIj"
+    @Test
+    def exists06(): Unit \ Assert = assertTrue(String.exists(Char.isUpperCase, "Ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// dropWhileAround                                                         //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def exists07(): Unit \ Assert = assertTrue(String.exists(Char.isUpperCase, "AB"))
 
-@test
-def dropWhileAround01(): Bool = String.dropWhileRight(Char.isUpperCase, "") == ""
+    @Test
+    def exists08(): Unit \ Assert = assertFalse(String.exists(Char.isUpperCase, "a*c"))
 
-@test
-def dropWhileAround02(): Bool = String.dropWhileAround(Char.isUpperCase, "a") == "a"
+    @Test
+    def exists09(): Unit \ Assert = assertTrue(String.exists(Char.isUpperCase, "aBc"))
 
-@test
-def dropWhileAround03(): Bool = String.dropWhileAround(Char.isUpperCase, "A") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // forAll                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def dropWhileAround04(): Bool = String.dropWhileAround(Char.isUpperCase, "ab") == "ab"
+    @Test
+    def forAll01(): Unit \ Assert = assertTrue(String.forAll(Char.isUpperCase, ""))
 
-@test
-def dropWhileAround05(): Bool = String.dropWhileAround(Char.isUpperCase, "aB") == "a"
+    @Test
+    def forAll02(): Unit \ Assert = assertFalse(String.forAll(Char.isUpperCase, "a"))
 
-@test
-def dropWhileAround06(): Bool = String.dropWhileAround(Char.isUpperCase, "Ab") == "b"
+    @Test
+    def forAll03(): Unit \ Assert = assertTrue(String.forAll(Char.isUpperCase, "A"))
 
-@test
-def dropWhileAround07(): Bool = String.dropWhileAround(Char.isUpperCase, "AB") == ""
+    @Test
+    def forAll04(): Unit \ Assert = assertFalse(String.forAll(Char.isUpperCase, "a"))
 
-@test
-def dropWhileAround08(): Bool = String.dropWhileAround(Char.isUpperCase, "ABcDefgHIjK") == "cDefgHIj"
+    @Test
+    def forAll05(): Unit \ Assert = assertFalse(String.forAll(Char.isUpperCase, "aB"))
 
-/////////////////////////////////////////////////////////////////////////////
-// splitAt                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def forAll06(): Unit \ Assert = assertFalse(String.forAll(Char.isUpperCase, "Ab"))
 
-@test
-def splitAt01(): Bool = String.splitAt(0, "") == ("", "")
+    @Test
+    def forAll07(): Unit \ Assert = assertTrue(String.forAll(Char.isUpperCase, "AB"))
 
-@test
-def splitAt02(): Bool = String.splitAt(1, "") == ("", "")
+    @Test
+    def forAll08(): Unit \ Assert = assertFalse(String.forAll(Char.isUpperCase, "a*b"))
 
-@test
-def splitAt03(): Bool = String.splitAt(-1, "") == ("", "")
+    @Test
+    def forAll09(): Unit \ Assert = assertFalse(String.forAll(Char.isUpperCase, "aBc"))
 
-@test
-def splitAt04(): Bool = String.splitAt(0, "a") == ("", "a")
+    @Test
+    def forAll10(): Unit \ Assert = assertTrue(String.forAll(Char.isUpperCase, "ABC"))
 
-@test
-def splitAt05(): Bool = String.splitAt(1, "a") == ("a", "")
+    /////////////////////////////////////////////////////////////////////////////
+    // isAscii                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def splitAt06(): Bool = String.splitAt(-1, "a") == ("", "a")
+    @Test
+    def isAscii01(): Unit \ Assert = assertTrue(String.isAscii(""))
 
-@test
-def splitAt07(): Bool = String.splitAt(0, "ab") == ("", "ab")
+    @Test
+    def isAscii02(): Unit \ Assert = assertTrue(String.isAscii("a"))
 
-@test
-def splitAt08(): Bool = String.splitAt(1, "ab") == ("a", "b")
+    @Test
+    def isAscii03(): Unit \ Assert = assertTrue(String.isAscii("A"))
 
-@test
-def splitAt09(): Bool = String.splitAt(2, "ab") == ("ab", "")
+    @Test
+    def isAscii04(): Unit \ Assert = assertTrue(String.isAscii("0"))
 
-@test
-def splitAt10(): Bool = String.splitAt(-1, "ab") == ("", "ab")
+    @Test
+    def isAscii05(): Unit \ Assert = assertTrue(String.isAscii("~"))
 
-@test
-def splitAt11(): Bool = String.splitAt(3, "ab") == ("ab", "")
+    @Test
+    def isAscii06(): Unit \ Assert = assertFalse(String.isAscii("Â"))
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isAscii07(): Unit \ Assert = assertFalse(String.isAscii("†"))
 
-@test
-def foldLeft01(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "", "")  == ""
+    @Test
+    def isAscii08(): Unit \ Assert = assertTrue(String.isAscii("ab"))
 
-@test
-def foldLeft02(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "a") == "a"
+    @Test
+    def isAscii09(): Unit \ Assert = assertFalse(String.isAscii("a†"))
 
-@test
-def foldLeft03(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "ab") == "ab"
+    @Test
+    def isAscii10(): Unit \ Assert = assertFalse(String.isAscii("†b"))
 
-@test
-def foldLeft04(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abc") == "abc"
+    /////////////////////////////////////////////////////////////////////////////
+    // isWhitespace                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foldLeft05(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abcd") == "abcd"
+    @Test
+    def isWhitespace01(): Unit \ Assert = assertTrue(String.isWhitespace(""))
 
-@test
-def foldLeft06(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abcde") == "abcde"
+    @Test
+    def isWhitespace02(): Unit \ Assert = assertTrue(String.isWhitespace(" "))
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def isWhitespace03(): Unit \ Assert = assertFalse(String.isWhitespace("A"))
 
-@test
-def foldRight01(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "", "")  == ""
+    @Test
+    def isWhitespace04(): Unit \ Assert = assertFalse(String.isWhitespace("0"))
 
-@test
-def foldRight02(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "", "a") == "a"
+    @Test
+    def isWhitespace05(): Unit \ Assert = assertFalse(String.isWhitespace("~"))
 
-@test
-def foldRight03(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "", "ab") == "ab"
+    @Test
+    def isWhitespace06(): Unit \ Assert = assertTrue(String.isWhitespace(String.lineSeparator()))
 
-@test
-def foldRight04(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abc") == "abc"
+    @Test
+    def isWhitespace07(): Unit \ Assert = assertTrue(String.isWhitespace("  "))
 
-@test
-def foldRight05(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abcd") == "abcd"
+    /////////////////////////////////////////////////////////////////////////////
+    // trimLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foldRight06(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abcde") == "abcde"
+    @Test
+    def trimLeft01(): Unit \ Assert = assertEq(expected = "", String.trimLeft(""))
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft2                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def trimLeft02(): Unit \ Assert = assertEq(expected = "", String.trimLeft(" "))
 
-@test
-def foldLeft201(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "", "") == ""
+    @Test
+    def trimLeft03(): Unit \ Assert = assertEq(expected = "a", String.trimLeft("a"))
 
-@test
-def foldLeft202(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "a", "_") == "a"
+    @Test
+    def trimLeft04(): Unit \ Assert = assertEq(expected = "a", String.trimLeft(" a"))
 
-@test
-def foldLeft203(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "a", "A") == "A"
+    @Test
+    def trimLeft05(): Unit \ Assert = assertEq(expected = "a ", String.trimLeft("a "))
 
-@test
-def foldLeft204(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "__") == "ab"
+    @Test
+    def trimLeft06(): Unit \ Assert = assertEq(expected = "aa", String.trimLeft("aa"))
 
-@test
-def foldLeft205(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "A_") == "Ab"
+    @Test
+    def trimLeft07(): Unit \ Assert = assertEq(expected = "aa", String.trimLeft("  aa"))
 
-@test
-def foldLeft206(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "AB") == "AB"
+    @Test
+    def trimLeft08(): Unit \ Assert = assertEq(expected = "aa  ", String.trimLeft("aa  "))
 
-@test
-def foldLeft207(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "") == ""
+    @Test
+    def trimLeft09(): Unit \ Assert = assertEq(expected = "aa ", String.trimLeft(" aa "))
 
-@test
-def foldLeft208(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "_") == "a"
+    @Test
+    def trimLeft10(): Unit \ Assert = assertEq(expected = "aa  ", String.trimLeft("  aa  "))
 
-@test
-def foldLeft209(): Bool =
-    String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "A") == "A"
+    @Test
+    def trimLeft11(): Unit \ Assert = assertEq(expected = "a a ", String.trimLeft(" a a "))
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight2                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def trimLeft12(): Unit \ Assert = assertEq(expected = "aa", String.trimLeft(String.lineSeparator() + "aa"))
 
-@test
-def foldRight201(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "", "") == ""
 
-@test
-def foldRight202(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "a", "_") == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // trimRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foldRight203(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "a", "A") == "A"
+    @Test
+    def trimRight01(): Unit \ Assert = assertEq(expected = "", String.trimRight(""))
 
-@test
-def foldRight204(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "__") == "ab"
+    @Test
+    def trimRight02(): Unit \ Assert = assertEq(expected = "", String.trimRight(" "))
 
-@test
-def foldRight205(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "A_") == "Ab"
+    @Test
+    def trimRight03(): Unit \ Assert = assertEq(expected = "a", String.trimRight("a"))
 
-@test
-def foldRight206(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "AB") == "AB"
+    @Test
+    def trimRight04(): Unit \ Assert = assertEq(expected = " a", String.trimRight(" a"))
 
-@test
-def foldRight207(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "") == ""
+    @Test
+    def trimRight05(): Unit \ Assert = assertEq(expected = "a", String.trimRight("a "))
 
-@test
-def foldRight208(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "_") == "b"
+    @Test
+    def trimRight06(): Unit \ Assert = assertEq(expected = "aa", String.trimRight("aa"))
 
-@test
-def foldRight209(): Bool =
-    String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "B") == "B"
+    @Test
+    def trimRight07(): Unit \ Assert = assertEq(expected = "  aa", String.trimRight("  aa"))
 
-/////////////////////////////////////////////////////////////////////////////
-// unfold                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def trimRight08(): Unit \ Assert = assertEq(expected = "aa", String.trimRight("aa  "))
 
-@test
-def unfold01(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 0) == "aaaaa"
+    @Test
+    def trimRight09(): Unit \ Assert = assertEq(expected = " aa", String.trimRight(" aa "))
 
-@test
-def unfold02(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 1) == "aaaa"
+    @Test
+    def trimRight10(): Unit \ Assert = assertEq(expected = "  aa", String.trimRight("  aa  "))
 
-@test
-def unfold03(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 2) == "aaa"
+    @Test
+    def trimRight11(): Unit \ Assert = assertEq(expected = " a a", String.trimRight(" a a "))
 
-@test
-def unfold04(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 3) == "aa"
+    @Test
+    def trimRight12(): Unit \ Assert = assertEq(expected = "aa", String.trimRight("aa" + String.lineSeparator()))
 
-@test
-def unfold05(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 4) == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // repeat                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def unfold06(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 5) == ""
+    @Test
+    def repeat01(): Unit \ Assert = assertEq(expected = "", String.repeat(-1, "a"))
 
-@test
-def unfold07(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, 6) == ""
+    @Test
+    def repeat02(): Unit \ Assert = assertEq(expected = "", String.repeat(0, "a"))
 
-@test
-def unfold08(): Bool =
-    String.unfold(x -> if (x < 5) Some('a', x+1) else None, -1) == "aaaaaa"
+    @Test
+    def repeat03(): Unit \ Assert = assertEq(expected = "a", String.repeat(1, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// unfoldWithIter                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def repeat04(): Unit \ Assert = assertEq(expected = "aa", String.repeat(2, "a"))
 
-@test
-def unfoldWithIter01(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (true)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 97);
-            x := deref x + 1;
-            Some(c)
-        };
-    String.unfoldWithIter(step) == ""
+    @Test
+    def repeat05(): Unit \ Assert = assertEq(expected = "aaa", String.repeat(3, "a"))
 
-@test
-def unfoldWithIter02(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x > 0)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 97);
-            x := deref x + 1;
-            Some(c)
-        };
-    String.unfoldWithIter(step) == "a"
+    @Test
+    def repeat06(): Unit \ Assert = assertEq(expected = "", String.repeat(0, "ab"))
 
-@test
-def unfoldWithIter03(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x > 1)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 97);
-            x := deref x + 1;
-            Some(c)
-        };
-    String.unfoldWithIter(step) == "ab"
+    @Test
+    def repeat07(): Unit \ Assert = assertEq(expected = "ab", String.repeat(1, "ab"))
 
-@test
-def unfoldWithIter04(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 97);
-            x := deref x + 1;
-            Some(c)
-        };
-    String.unfoldWithIter(step) == "abcdefghij"
+    @Test
+    def repeat08(): Unit \ Assert = assertEq(expected = "abab", String.repeat(2, "ab"))
 
-@test
-def unfoldWithIter05(): Bool & Impure =
-    let x = ref 5;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 97);
-            x := deref x + 1;
-            Some(c)
-        };
-    String.unfoldWithIter(step) == "fghij"
+    @Test
+    def repeat09(): Unit \ Assert = assertEq(expected = "ababab", String.repeat(3, "ab"))
 
-@test
-def unfoldWithIter06(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 97);
-            x := deref x + 2;
-            Some(c)
-        };
-    String.unfoldWithIter(step) == "acegi"
+    /////////////////////////////////////////////////////////////////////////////
+    // padLeft                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// unfoldString                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def padLeft01(): Unit \ Assert = assertEq(expected = "", String.padLeft(0, ' ', ""))
 
-@test
-def unfoldString01(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 0) == "ab.ab.ab.ab.ab."
+    @Test
+    def padLeft02(): Unit \ Assert = assertEq(expected = " ", String.padLeft(1, ' ', ""))
 
-@test
-def unfoldString02(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 1) == "ab.ab.ab.ab."
+    @Test
+    def padLeft03(): Unit \ Assert = assertEq(expected = "  ", String.padLeft(2, ' ', ""))
 
-@test
-def unfoldString03(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 2) == "ab.ab.ab."
+    @Test
+    def padLeft04(): Unit \ Assert = assertEq(expected = "   ", String.padLeft(3, ' ', ""))
 
-@test
-def unfoldString04(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 3) == "ab.ab."
+    @Test
+    def padLeft05(): Unit \ Assert = assertEq(expected = "a", String.padLeft(0, ' ', "a"))
 
-@test
-def unfoldString05(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 4) == "ab."
+    @Test
+    def padLeft06(): Unit \ Assert = assertEq(expected = "a", String.padLeft(1, ' ', "a"))
 
-@test
-def unfoldString06(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("", x+1) else None, 5) == ""
+    @Test
+    def padLeft07(): Unit \ Assert = assertEq(expected = " a", String.padLeft(2, ' ', "a"))
 
-@test
-def unfoldString07(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 6) == ""
+    @Test
+    def padLeft08(): Unit \ Assert = assertEq(expected = "  a", String.padLeft(3, ' ', "a"))
 
-@test
-def unfoldString08(): Bool =
-    String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, -1) == "ab.ab.ab.ab.ab.ab."
+    @Test
+    def padLeft09(): Unit \ Assert = assertEq(expected = "ab", String.padLeft(0, ' ', "ab"))
 
+    @Test
+    def padLeft10(): Unit \ Assert = assertEq(expected = "ab", String.padLeft(1, ' ', "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// unfoldStringWithIter                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def padLeft11(): Unit \ Assert = assertEq(expected = "ab", String.padLeft(2, ' ', "ab"))
 
-@test
-def unfoldStringWithIter01(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (true)
-            None
-        else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
-            Some(s)
-        };
-    String.unfoldStringWithIter(step) == ""
+    @Test
+    def padLeft12(): Unit \ Assert = assertEq(expected = " ab", String.padLeft(3, ' ', "ab"))
 
-@test
-def unfoldStringWithIter02(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x > 0)
-            None
-        else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
-            Some(s)
-        };
-    String.unfoldStringWithIter(step) == "Aa."
+    @Test
+    def padLeft13(): Unit \ Assert = assertEq(expected = "__a", String.padLeft(3, '_', "a"))
 
-@test
-def unfoldStringWithIter03(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x > 1)
-            None
-        else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
-            Some(s)
-        };
-    String.unfoldStringWithIter(step) == "Aa.Bb."
+    @Test
+    def padLeft14(): Unit \ Assert = assertEq(expected = "_ab", String.padLeft(3, '_', "ab"))
 
-@test
-def unfoldStringWithIter04(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
-            Some(s)
-        };
-    String.unfoldStringWithIter(step) == "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj."
+    @Test
+    def padLeft15(): Unit \ Assert = assertEq(expected = "abc", String.padLeft(3, '_', "abc"))
 
-@test
-def unfoldStringWithIter05(): Bool & Impure =
-    let x = ref 5;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
-            Some(s)
-        };
-    String.unfoldStringWithIter(step) == "Ff.Gg.Hh.Ii.Jj."
+    /////////////////////////////////////////////////////////////////////////////
+    // padRight                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def unfoldStringWithIter06(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 2;
-            Some(s)
-        };
-    String.unfoldStringWithIter(step) == "Aa.Cc.Ee.Gg.Ii."
+    @Test
+    def padRight01(): Unit \ Assert = assertEq(expected = "", String.padRight(0, ' ', ""))
 
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def padRight02(): Unit \ Assert = assertEq(expected = " ", String.padRight(1, ' ', ""))
 
-@test
-def exists01(): Bool = String.exists(Char.isUpperCase, "") == false
+    @Test
+    def padRight03(): Unit \ Assert = assertEq(expected = "  ", String.padRight(2, ' ', ""))
 
-@test
-def exists02(): Bool = String.exists(Char.isUpperCase, "a") == false
+    @Test
+    def padRight04(): Unit \ Assert = assertEq(expected = "   ", String.padRight(3, ' ', ""))
 
-@test
-def exists03(): Bool = String.exists(Char.isUpperCase, "A") == true
+    @Test
+    def padRight05(): Unit \ Assert = assertEq(expected = "a", String.padRight(0, ' ', "a"))
 
-@test
-def exists04(): Bool = String.exists(Char.isUpperCase, "ab") == false
+    @Test
+    def padRight06(): Unit \ Assert = assertEq(expected = "a", String.padRight(1, ' ', "a"))
 
-@test
-def exists05(): Bool = String.exists(Char.isUpperCase, "aB") == true
+    @Test
+    def padRight07(): Unit \ Assert = assertEq(expected = "a ", String.padRight(2, ' ', "a"))
 
-@test
-def exists06(): Bool = String.exists(Char.isUpperCase, "Ab") == true
+    @Test
+    def padRight08(): Unit \ Assert = assertEq(expected = "a  ", String.padRight(3, ' ', "a"))
 
-@test
-def exists07(): Bool = String.exists(Char.isUpperCase, "AB") == true
+    @Test
+    def padRight09(): Unit \ Assert = assertEq(expected = "ab", String.padRight(0, ' ', "ab"))
 
-@test
-def exists08(): Bool = String.exists(Char.isUpperCase, "a*c") == false
+    @Test
+    def padRight10(): Unit \ Assert = assertEq(expected = "ab", String.padRight(1, ' ', "ab"))
 
-@test
-def exists09(): Bool = String.exists(Char.isUpperCase, "aBc") == true
+    @Test
+    def padRight11(): Unit \ Assert = assertEq(expected = "ab", String.padRight(2, ' ', "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def padRight12(): Unit \ Assert = assertEq(expected = "ab ", String.padRight(3, ' ', "ab"))
 
-@test
-def forall01(): Bool = String.forall(Char.isUpperCase, "") == true
+    @Test
+    def padRight13(): Unit \ Assert = assertEq(expected = "a__", String.padRight(3, '_', "a"))
 
-@test
-def forall02(): Bool = String.forall(Char.isUpperCase, "a") == false
+    @Test
+    def padRight14(): Unit \ Assert = assertEq(expected = "ab_", String.padRight(3, '_', "ab"))
 
-@test
-def forall03(): Bool = String.forall(Char.isUpperCase, "A") == true
+    @Test
+    def padRight15(): Unit \ Assert = assertEq(expected = "abc", String.padRight(3, '_', "abc"))
 
-@test
-def forall04(): Bool = String.forall(Char.isUpperCase, "a") == false
+    /////////////////////////////////////////////////////////////////////////////
+    // center                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def forall05(): Bool = String.forall(Char.isUpperCase, "aB") == false
+    @Test
+    def center01(): Unit \ Assert = assertEq(expected = "", String.center(0, ' ', ""))
 
-@test
-def forall06(): Bool = String.forall(Char.isUpperCase, "Ab") == false
+    @Test
+    def center02(): Unit \ Assert = assertEq(expected = " ", String.center(1, ' ', ""))
 
-@test
-def forall07(): Bool = String.forall(Char.isUpperCase, "AB") == true
+    @Test
+    def center03(): Unit \ Assert = assertEq(expected = "  ", String.center(2, ' ', ""))
 
-@test
-def forall08(): Bool = String.forall(Char.isUpperCase, "a*b") == false
+    @Test
+    def center04(): Unit \ Assert = assertEq(expected = "   ", String.center(3, ' ', ""))
 
-@test
-def forall09(): Bool = String.forall(Char.isUpperCase, "aBc") == false
+    @Test
+    def center05(): Unit \ Assert = assertEq(expected = "a", String.center(0, ' ', "a"))
 
-@test
-def forall10(): Bool = String.forall(Char.isUpperCase, "ABC") == true
+    @Test
+    def center06(): Unit \ Assert = assertEq(expected = "a", String.center(1, ' ', "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// isAscii                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def center07(): Unit \ Assert = assertEq(expected = "a ", String.center(2, ' ', "a"))
 
-@test
-def isAscii01(): Bool = String.isAscii("") == true
+    @Test
+    def center08(): Unit \ Assert = assertEq(expected = " a ", String.center(3, ' ', "a"))
 
-@test
-def isAscii02(): Bool = String.isAscii("a") == true
+    @Test
+    def center09(): Unit \ Assert = assertEq(expected = "ab", String.center(0, ' ', "ab"))
 
-@test
-def isAscii03(): Bool = String.isAscii("A") == true
+    @Test
+    def center10(): Unit \ Assert = assertEq(expected = "ab", String.center(1, ' ', "ab"))
 
-@test
-def isAscii04(): Bool = String.isAscii("0") == true
+    @Test
+    def center11(): Unit \ Assert = assertEq(expected = "ab", String.center(2, ' ', "ab"))
 
-@test
-def isAscii05(): Bool = String.isAscii("~") == true
+    @Test
+    def center12(): Unit \ Assert = assertEq(expected = "ab ", String.center(3, ' ', "ab"))
 
-@test
-def isAscii06(): Bool = String.isAscii("Â") == false
+    @Test
+    def center13(): Unit \ Assert = assertEq(expected = "_a_", String.center(3, '_', "a"))
 
-@test
-def isAscii07(): Bool = String.isAscii("†") == false
+    @Test
+    def center14(): Unit \ Assert = assertEq(expected = "ab_", String.center(3, '_', "ab"))
 
-@test
-def isAscii08(): Bool = String.isAscii("ab") == true
+    @Test
+    def center15(): Unit \ Assert = assertEq(expected = "abc", String.center(3, '_', "abc"))
 
-@test
-def isAscii09(): Bool = String.isAscii("a†") == false
+    @Test
+    def center16(): Unit \ Assert = assertEq(expected = "__abc__", String.center(7, '_', "abc"))
 
-@test
-def isAscii10(): Bool = String.isAscii("†b") == false
+    @Test
+    def center17(): Unit \ Assert = assertEq(expected = "__abc___", String.center(8, '_', "abc"))
 
-/////////////////////////////////////////////////////////////////////////////
-// isWhiteSpace                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // replace                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isWhiteSpace01(): Bool = String.isWhiteSpace("") == true
+    @Test
+    def replace01(): Unit \ Assert = assertEq(expected = "", String.replace({src = "c"}, {dst = "d"}, ""))
 
-@test
-def isWhiteSpace02(): Bool = String.isWhiteSpace(" ") == true
+    @Test
+    def replace02(): Unit \ Assert = assertEq(expected = "a", String.replace({src = "c"}, {dst = "d"}, "a"))
 
-@test
-def isWhiteSpace03(): Bool = String.isWhiteSpace("A") == false
+    @Test
+    def replace03(): Unit \ Assert = assertEq(expected = "d", String.replace({src = "c"}, {dst = "d"}, "c"))
 
-@test
-def isWhiteSpace04(): Bool = String.isWhiteSpace("0") == false
+    @Test
+    def replace04(): Unit \ Assert = assertEq(expected = "d", String.replace({src = "c"}, {dst = "d"}, "d"))
 
-@test
-def isWhiteSpace05(): Bool = String.isWhiteSpace("~") == false
+    @Test
+    def replace05(): Unit \ Assert = assertEq(expected = "ab", String.replace({src = "c"}, {dst = "d"}, "ab"))
 
-@test
-def isWhiteSpace06(): Bool = String.isWhiteSpace(String.lineSeparator()) == true
+    @Test
+    def replace06(): Unit \ Assert = assertEq(expected = "abd", String.replace({src = "c"}, {dst = "d"}, "abc"))
 
-@test
-def isWhiteSpace07(): Bool = String.isWhiteSpace("  ") == true
+    @Test
+    def replace07(): Unit \ Assert = assertEq(expected = "dd", String.replace({src = "c"}, {dst = "d"}, "cd"))
 
-/////////////////////////////////////////////////////////////////////////////
-// trimLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def replace08(): Unit \ Assert = assertEq(expected = "dd", String.replace({src = "c"}, {dst = "d"}, "cc"))
 
-@test
-def trimLeft01(): Bool = String.trimLeft("") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // replaceChar                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def trimLeft02(): Bool = String.trimLeft(" ") == ""
+    @Test
+    def replaceChar01(): Unit \ Assert = assertEq(expected = "", String.replaceChar({src = 'c'}, {dst = 'd'}, ""))
 
-@test
-def trimLeft03(): Bool = String.trimLeft("a") == "a"
+    @Test
+    def replaceChar02(): Unit \ Assert = assertEq(expected = "a", String.replaceChar({src = 'c'}, {dst = 'd'}, "a"))
 
-@test
-def trimLeft04(): Bool = String.trimLeft(" a") == "a"
+    @Test
+    def replaceChar03(): Unit \ Assert = assertEq(expected = "d", String.replaceChar({src = 'c'}, {dst = 'd'}, "c"))
 
-@test
-def trimLeft05(): Bool = String.trimLeft("a ") == "a "
+    @Test
+    def replaceChar04(): Unit \ Assert = assertEq(expected = "d", String.replaceChar({src = 'c'}, {dst = 'd'}, "d"))
 
-@test
-def trimLeft06(): Bool = String.trimLeft("aa") == "aa"
+    @Test
+    def replaceChar05(): Unit \ Assert = assertEq(expected = "ab", String.replaceChar({src = 'c'}, {dst = 'd'}, "ab"))
 
-@test
-def trimLeft07(): Bool = String.trimLeft("  aa") == "aa"
+    @Test
+    def replaceChar06(): Unit \ Assert = assertEq(expected = "abd", String.replaceChar({src = 'c'}, {dst = 'd'}, "abc"))
 
-@test
-def trimLeft08(): Bool = String.trimLeft("aa  ") == "aa  "
+    @Test
+    def replaceChar07(): Unit \ Assert = assertEq(expected = "dd", String.replaceChar({src = 'c'}, {dst = 'd'}, "cd"))
 
-@test
-def trimLeft09(): Bool = String.trimLeft(" aa ") == "aa "
+    @Test
+    def replaceChar08(): Unit \ Assert = assertEq(expected = "dd", String.replaceChar({src = 'c'}, {dst = 'd'}, "cc"))
 
-@test
-def trimLeft10(): Bool = String.trimLeft("  aa  ") == "aa  "
+    /////////////////////////////////////////////////////////////////////////////
+    // replaceMatches                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def trimLeft11(): Bool = String.trimLeft(" a a ") == "a a "
+    @Test
+    def replaceMatches01(): Unit \ Assert = assertEq(expected = "", String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, ""))
 
-@test
-def trimLeft12(): Bool = String.trimLeft(String.lineSeparator() + "aa") == "aa"
+    @Test
+    def replaceMatches02(): Unit \ Assert = assertEq(expected = "a", String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "a"))
 
+    @Test
+    def replaceMatches03(): Unit \ Assert = assertEq(expected = "d", String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "c"))
 
-/////////////////////////////////////////////////////////////////////////////
-// trimRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def replaceMatches04(): Unit \ Assert = assertEq(expected = "d", String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "d"))
 
-@test
-def trimRight01(): Bool = String.trimRight("") == ""
+    @Test
+    def replaceMatches05(): Unit \ Assert = assertEq(expected = "ab", String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "ab"))
 
-@test
-def trimRight02(): Bool = String.trimRight(" ") == ""
+    @Test
+    def replaceMatches06(): Unit \ Assert = assertEq(expected = "abd", String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "abc"))
 
-@test
-def trimRight03(): Bool = String.trimRight("a") == "a"
+    @Test
+    def replaceMatches07(): Unit \ Assert = assertEq(expected = "dd", String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "cd"))
 
-@test
-def trimRight04(): Bool = String.trimRight(" a") == " a"
+    @Test
+    def replaceMatches08(): Unit \ Assert = assertEq(expected = "dd", String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "cc"))
 
-@test
-def trimRight05(): Bool = String.trimRight("a ") == "a"
+    /////////////////////////////////////////////////////////////////////////////
+    // replaceFirstMatch                                                       //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def trimRight06(): Bool = String.trimRight("aa") == "aa"
+    @Test
+    def replaceFirstMatch01(): Unit \ Assert = assertEq(expected = "", String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, ""))
 
-@test
-def trimRight07(): Bool = String.trimRight("  aa") == "  aa"
+    @Test
+    def replaceFirstMatch02(): Unit \ Assert = assertEq(expected = "a", String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "a"))
 
-@test
-def trimRight08(): Bool = String.trimRight("aa  ") == "aa"
+    @Test
+    def replaceFirstMatch03(): Unit \ Assert = assertEq(expected = "d", String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "c"))
 
-@test
-def trimRight09(): Bool = String.trimRight(" aa ") == " aa"
+    @Test
+    def replaceFirstMatch04(): Unit \ Assert = assertEq(expected = "d", String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "d"))
 
-@test
-def trimRight10(): Bool = String.trimRight("  aa  ") == "  aa"
+    @Test
+    def replaceFirstMatch05(): Unit \ Assert = assertEq(expected = "ab", String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "ab"))
 
-@test
-def trimRight11(): Bool = String.trimRight(" a a ") == " a a"
+    @Test
+    def replaceFirstMatch06(): Unit \ Assert = assertEq(expected = "abd", String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "abc"))
 
-@test
-def trimRight12(): Bool = String.trimRight("aa" + String.lineSeparator()) == "aa"
+    @Test
+    def replaceFirstMatch07(): Unit \ Assert = assertEq(expected = "dd", String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "cd"))
 
-/////////////////////////////////////////////////////////////////////////////
-// repeat                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def replaceFirstMatch08(): Unit \ Assert = assertEq(expected = "dc", String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "cc"))
 
-@test
-def repeat01(): Bool = String.repeat(-1, "a") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // update                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def repeat02(): Bool = String.repeat(0, "a") == ""
+    @Test
+    def update01(): Unit \ Assert = assertEq(expected = "", String.update(0, 'b', ""))
 
-@test
-def repeat03(): Bool = String.repeat(1, "a") == "a"
+    @Test
+    def update02(): Unit \ Assert = assertEq(expected = "a", String.update(-1, 'b', "a"))
 
-@test
-def repeat04(): Bool = String.repeat(2, "a") == "aa"
+    @Test
+    def update03(): Unit \ Assert = assertEq(expected = "b", String.update(0, 'b', "a"))
 
-@test
-def repeat05(): Bool = String.repeat(3, "a") == "aaa"
+    @Test
+    def update04(): Unit \ Assert = assertEq(expected = "a", String.update(1, 'b', "a"))
 
-@test
-def repeat06(): Bool = String.repeat(0, "ab") == ""
+    @Test
+    def update05(): Unit \ Assert = assertEq(expected = "eb", String.update(0, 'e', "ab"))
 
-@test
-def repeat07(): Bool = String.repeat(1, "ab") == "ab"
+    @Test
+    def update06(): Unit \ Assert = assertEq(expected = "ae", String.update(1, 'e', "ab"))
 
-@test
-def repeat08(): Bool = String.repeat(2, "ab") == "abab"
+    @Test
+    def update07(): Unit \ Assert = assertEq(expected = "ab", String.update(2, 'e', "ab"))
 
-@test
-def repeat09(): Bool = String.repeat(3, "ab") == "ababab"
+    /////////////////////////////////////////////////////////////////////////////
+    // patch                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// padLeft                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def patch01(): Unit \ Assert = assertEq(expected = "", String.patch(0, 0, "", ""))
 
-@test
-def padLeft01(): Bool = String.padLeft(0, ' ', "") == ""
+    @Test
+    def patch02(): Unit \ Assert = assertEq(expected = "", String.patch(0, 2, "ab", ""))
 
-@test
-def padLeft02(): Bool = String.padLeft(1, ' ', "") == " "
+    @Test
+    def patch03(): Unit \ Assert = assertEq(expected = "ab", String.patch(0, 2, "", "ab"))
 
-@test
-def padLeft03(): Bool = String.padLeft(2, ' ', "") == "  "
+    @Test
+    def patch04(): Unit \ Assert = assertEq(expected = "ab", String.patch(-3, 3, "abd", "ab"))
 
-@test
-def padLeft04(): Bool = String.padLeft(3, ' ', "") == "   "
+    @Test
+    def patch05(): Unit \ Assert = assertEq(expected = "ab", String.patch(2, 3, "abd", "ab"))
 
-@test
-def padLeft05(): Bool = String.padLeft(0, ' ', "a") == "a"
+    @Test
+    def patch06(): Unit \ Assert = assertEq(expected = "a", String.patch(0, 0, "", "a"))
 
-@test
-def padLeft06(): Bool = String.padLeft(1, ' ', "a") == "a"
+    @Test
+    def patch07(): Unit \ Assert = assertEq(expected = "a", String.patch(1, 0, "b", "a"))
 
-@test
-def padLeft07(): Bool = String.padLeft(2, ' ', "a") == " a"
+    @Test
+    def patch08(): Unit \ Assert = assertEq(expected = "b", String.patch(0, 1, "b", "a"))
 
-@test
-def padLeft08(): Bool = String.padLeft(3, ' ', "a") == "  a"
+    @Test
+    def patch09(): Unit \ Assert = assertEq(expected = "b", String.patch(0, 2, "bd", "a"))
 
-@test
-def padLeft09(): Bool = String.padLeft(0, ' ', "ab") == "ab"
+    @Test
+    def patch10(): Unit \ Assert = assertEq(expected = "d", String.patch(-1, 2, "bd", "a"))
 
-@test
-def padLeft10(): Bool = String.padLeft(1, ' ', "ab") == "ab"
+    @Test
+    def patch11(): Unit \ Assert = assertEq(expected = "db", String.patch(-1, 2, "cd", "ab"))
 
-@test
-def padLeft11(): Bool = String.padLeft(2, ' ', "ab") == "ab"
+    @Test
+    def patch12(): Unit \ Assert = assertEq(expected = "ac", String.patch(1, 2, "cd", "ab"))
 
-@test
-def padLeft12(): Bool = String.padLeft(3, ' ', "ab") == " ab"
+    @Test
+    def patch13(): Unit \ Assert = assertEq(expected = "ab", String.patch(-2, 2, "cd", "ab"))
 
-@test
-def padLeft13(): Bool = String.padLeft(3, '_', "a") == "__a"
+    @Test
+    def patch14(): Unit \ Assert = assertEq(expected = "ab", String.patch(2, 2, "cd", "ab"))
 
-@test
-def padLeft14(): Bool = String.padLeft(3, '_', "ab") == "_ab"
+    @Test
+    def patch15(): Unit \ Assert = assertEq(expected = "ac", String.patch(1, 1, "c", "ab"))
 
-@test
-def padLeft15(): Bool = String.padLeft(3, '_', "abc") == "abc"
+    @Test
+    def patch16(): Unit \ Assert = assertEq(expected = "cd", String.patch(0, 2, "cd", "ab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// padRight                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def patch17(): Unit \ Assert = assertEq(expected = "dbc", String.patch(0, 1, "d", "abc"))
 
-@test
-def padRight01(): Bool = String.padRight(0, ' ', "") == ""
+    @Test
+    def patch18(): Unit \ Assert = assertEq(expected = "adc", String.patch(1, 1, "d", "abc"))
 
-@test
-def padRight02(): Bool = String.padRight(1, ' ', "") == " "
+    @Test
+    def patch19(): Unit \ Assert = assertEq(expected = "abd", String.patch(2, 1, "d", "abc"))
 
-@test
-def padRight03(): Bool = String.padRight(2, ' ', "") == "  "
+    @Test
+    def patch20(): Unit \ Assert = assertEq(expected = "dec", String.patch(0, 2, "de", "abc"))
 
-@test
-def padRight04(): Bool = String.padRight(3, ' ', "") == "   "
+    @Test
+    def patch21(): Unit \ Assert = assertEq(expected = "ade", String.patch(1, 2, "de", "abc"))
 
-@test
-def padRight05(): Bool = String.padRight(0, ' ', "a") == "a"
+    @Test
+    def patch22(): Unit \ Assert = assertEq(expected = "dec", String.patch(0, 2, "def", "abc"))
 
-@test
-def padRight06(): Bool = String.padRight(1, ' ', "a") == "a"
+    @Test
+    def patch23(): Unit \ Assert = assertEq(expected = "def", String.patch(0, 3, "def", "abc"))
 
-@test
-def padRight07(): Bool = String.padRight(2, ' ', "a") == "a "
+    @Test
+    def patch24(): Unit \ Assert = assertEq(expected = "abnopqg", String.patch(2, 4, "nopq", "abcdefg"))
 
-@test
-def padRight08(): Bool = String.padRight(3, ' ', "a") == "a  "
+    @Test
+    def patch25(): Unit \ Assert = assertEq(expected = "pqcdefg", String.patch(-2, 4, "nopq", "abcdefg"))
 
-@test
-def padRight09(): Bool = String.padRight(0, ' ', "ab") == "ab"
+    @Test
+    def patch26(): Unit \ Assert = assertEq(expected = "abcdnop", String.patch(4, 5, "nopq", "abcdefg"))
 
-@test
-def padRight10(): Bool = String.padRight(1, ' ', "ab") == "ab"
+    @Test
+    def patch27(): Unit \ Assert = assertEq(expected = "abcdnog", String.patch(4, 2, "nopq", "abcdefg"))
 
-@test
-def padRight11(): Bool = String.padRight(2, ' ', "ab") == "ab"
+    @Test
+    def patch28(): Unit \ Assert = assertEq(expected = "BCDEFGH", String.patch(-1, 10, "ABCDEFGH", "abcdefg"))
 
-@test
-def padRight12(): Bool = String.padRight(3, ' ', "ab") == "ab "
+    /////////////////////////////////////////////////////////////////////////////
+    // indent                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def padRight13(): Bool = String.padRight(3, '_', "a") == "a__"
+    @Test
+    def indent01(): Unit \ Assert =
+        assertEq(expected = "", String.indent(3, ""))
 
-@test
-def padRight14(): Bool = String.padRight(3, '_', "ab") == "ab_"
+    @Test
+    def indent02(): Unit \ Assert =
+        assertEq(expected = String.unlines("   abc" :: Nil), String.indent(3, String.unlines("abc" :: Nil)))
 
-@test
-def padRight15(): Bool = String.padRight(3, '_', "abc") == "abc"
+    @Test
+    def indent03(): Unit \ Assert =
+        assertEq(expected = String.unlines("   abc" :: "   def" :: Nil), String.indent(3, String.unlines("abc" :: "def" :: Nil)))
 
-/////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def indent04(): Unit \ Assert =
+        assertEq(expected = String.unlines("   ab" :: "   cd" :: "   ef" :: Nil), String.indent(3, String.unlines("ab" :: "cd" :: "ef" :: Nil)))
 
-@test
-def replace01(): Bool = String.replace({from = "c"}, {to = "d"}, "") == ""
+    @Test
+    def indent05(): Unit \ Assert =
+        assertEq(expected = String.unlines(" abc" :: Nil), String.indent(1, String.unlines("abc" :: Nil)))
 
-@test
-def replace02(): Bool = String.replace({from = "c"}, {to = "d"}, "a") == "a"
+    @Test
+    def indent06(): Unit \ Assert =
+        assertEq(expected = String.unlines(" abc" :: " def" :: Nil), String.indent(1, String.unlines("abc" :: "def" :: Nil)))
 
-@test
-def replace03(): Bool = String.replace({from = "c"}, {to = "d"}, "c") == "d"
+    @Test
+    def indent07(): Unit \ Assert =
+        assertEq(expected = String.unlines(" ab" :: " cd" :: " ef" :: Nil), String.indent(1, String.unlines("ab" :: "cd" :: "ef" :: Nil)))
 
-@test
-def replace04(): Bool = String.replace({from = "c"}, {to = "d"}, "d") == "d"
+    @Test
+    def indent08(): Unit \ Assert =
+        assertEq(expected = String.unlines("abc" :: Nil), String.indent(0, String.unlines("abc" :: Nil)))
 
-@test
-def replace05(): Bool = String.replace({from = "c"}, {to = "d"}, "ab") == "ab"
+    @Test
+    def indent09(): Unit \ Assert =
+        assertEq(expected = String.unlines("abc" :: "def" :: Nil), String.indent(0, String.unlines("abc" :: "def" :: Nil)))
 
-@test
-def replace06(): Bool = String.replace({from = "c"}, {to = "d"}, "abc") == "abd"
+    @Test
+    def indent10(): Unit \ Assert =
+        assertEq(expected = String.unlines("ab" :: "cd" :: "ef" :: Nil), String.indent(0, String.unlines("ab" :: "cd" :: "ef" :: Nil)))
 
-@test
-def replace07(): Bool = String.replace({from = "c"}, {to = "d"}, "cd") == "dd"
+    /////////////////////////////////////////////////////////////////////////////
+    // stripIndent                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def replace08(): Bool = String.replace({from = "c"}, {to = "d"}, "cc") == "dd"
+    @Test
+    def stripIndent01(): Unit \ Assert =
+        assertEq(expected = "", String.stripIndent(3, ""))
 
-/////////////////////////////////////////////////////////////////////////////
-// replaceChar                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def stripIndent02(): Unit \ Assert =
+        assertEq(expected = String.unlines("abc" :: Nil), String.stripIndent(3, String.unlines("   abc" :: Nil)))
 
-@test
-def replaceChar01(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "") == ""
+    @Test
+    def stripIndent03(): Unit \ Assert =
+        assertEq(expected = String.unlines("abc" :: "def" :: Nil), String.stripIndent(3, String.unlines("   abc" :: "   def" :: Nil)))
 
-@test
-def replaceChar02(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "a") == "a"
+    @Test
+    def stripIndent04(): Unit \ Assert =
+        assertEq(expected = String.unlines("ab" :: "cd" :: "ef" :: Nil), String.stripIndent(3, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)))
 
-@test
-def replaceChar03(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "c") == "d"
+    @Test
+    def stripIndent05(): Unit \ Assert =
+        assertEq(expected = String.unlines("  abc" :: Nil), String.stripIndent(1, String.unlines("   abc" :: Nil)))
 
-@test
-def replaceChar04(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "d") == "d"
+    @Test
+    def stripIndent06(): Unit \ Assert =
+        assertEq(expected = String.unlines("  abc" :: "  def" :: Nil), String.stripIndent(1, String.unlines("   abc" :: "   def" :: Nil)))
 
-@test
-def replaceChar05(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "ab") == "ab"
+    @Test
+    def stripIndent07(): Unit \ Assert =
+        assertEq(expected = String.unlines("  ab" :: "  cd" :: "  ef" :: Nil), String.stripIndent(1, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)))
 
-@test
-def replaceChar06(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "abc") == "abd"
+    @Test
+    def stripIndent08(): Unit \ Assert =
+        assertEq(expected = String.unlines("   abc" :: Nil), String.stripIndent(0, String.unlines("   abc" :: Nil)))
 
-@test
-def replaceChar07(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cd") == "dd"
+    @Test
+    def stripIndent09(): Unit \ Assert =
+        assertEq(expected = String.unlines("   abc" :: "   def" :: Nil), String.stripIndent(0, String.unlines("   abc" :: "   def" :: Nil)))
 
-@test
-def replaceChar08(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cc") == "dd"
+    @Test
+    def stripIndent10(): Unit \ Assert  =
+        assertEq(expected = String.unlines("   ab" :: "   cd" :: "   ef" :: Nil), String.stripIndent(0, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)))
 
-/////////////////////////////////////////////////////////////////////////////
-// replaceMatches                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // lines                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def replaceMatches01(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "") == ""
+    @Test
+    def lines01(): Unit \ Assert = assertEq(expected = Nil, String.lines(""))
 
-@test
-def replaceMatches02(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "a") == "a"
+    @Test
+    def lines02(): Unit \ Assert = assertEq(expected = "a" :: Nil, String.lines("a"))
 
-@test
-def replaceMatches03(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "c") == "d"
+    @Test
+    def lines03(): Unit \ Assert = assertEq(expected = "a" :: Nil, String.lines("a" + String.lineSeparator()))
 
-@test
-def replaceMatches04(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "d") == "d"
+    @Test
+    def lines04(): Unit \ Assert = assertEq(expected = "" :: "a" :: Nil, String.lines(String.lineSeparator() + "a"))
 
-@test
-def replaceMatches05(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "ab") == "ab"
+    @Test
+    def lines05(): Unit \ Assert = assertEq(expected = "a" :: "b" :: Nil, String.lines("a" + String.lineSeparator() + "b"))
 
-@test
-def replaceMatches06(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "abc") == "abd"
+    @Test
+    def lines06(): Unit \ Assert = assertEq(expected = "a" :: "b" :: Nil, String.lines("a" + Char.toString('\n') + "b"))
 
-@test
-def replaceMatches07(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "cd") == "dd"
+    @Test
+    def lines07(): Unit \ Assert = assertEq(expected = "a" :: "b" :: Nil, String.lines("a" + Char.toString('\r') + Char.toString('\n') + "b"))
 
-@test
-def replaceMatches08(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "cc") == "dd"
+    /////////////////////////////////////////////////////////////////////////////
+    // unlines                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// replaceFirstMatch                                                       //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def unlines01(): Unit \ Assert = assertEq(expected = "", String.unlines(Nil))
 
-@test
-def replaceFirstMatch01(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "") == ""
+    @Test
+    def unlines02(): Unit \ Assert =
+        assertEq(expected = String.lineSeparator(), String.unlines("" :: Nil))
 
-@test
-def replaceFirstMatch02(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "a") == "a"
+    @Test
+    def unlines03(): Unit \ Assert =
+        assertEq(expected = "a" + String.lineSeparator(), String.unlines("a" :: Nil))
 
-@test
-def replaceFirstMatch03(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "c") == "d"
+    @Test
+    def unlines04(): Unit \ Assert =
+        assertEq(expected = "a" + String.lineSeparator() + String.lineSeparator(), String.unlines("a" :: "" :: Nil))
 
-@test
-def replaceFirstMatch04(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "d") == "d"
+    @Test
+    def unlines05(): Unit \ Assert =
+        assertEq(expected = String.lineSeparator() + "b" + String.lineSeparator(), String.unlines("" :: "b" :: Nil))
 
-@test
-def replaceFirstMatch05(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "ab") == "ab"
+    @Test
+    def unlines06(): Unit \ Assert =
+        assertEq(expected = "a" + String.lineSeparator() + "b" + String.lineSeparator(), String.unlines("a" :: "b" :: Nil))
 
-@test
-def replaceFirstMatch06(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "abc") == "abd"
+    @Test
+    def unlines07(): Unit \ Assert =
+        assertEq(expected = "a" + String.lineSeparator() + String.lineSeparator() + String.lineSeparator(), String.unlines("a" :: String.lineSeparator() :: Nil))
 
-@test
-def replaceFirstMatch07(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "cd") == "dd"
+    @Test
+    def unlines08(): Unit \ Assert =
+        assertEq(expected = String.lineSeparator() + String.lineSeparator() + "b" + String.lineSeparator(), String.unlines(String.lineSeparator() :: "b" :: Nil))
 
-@test
-def replaceFirstMatch08(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "cc") == "dc"
+    /////////////////////////////////////////////////////////////////////////////
+    // words                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// update                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def words01(): Unit \ Assert = assertEq(expected = Nil, String.words(""))
 
-@test
-def update01(): Bool = String.update(0, 'b', "") == ""
+    @Test
+    def words02(): Unit \ Assert = assertEq(expected = "a" :: Nil, String.words("a"))
 
-@test
-def update02(): Bool = String.update(-1, 'b', "a") == "a"
+    @Test
+    def words03(): Unit \ Assert = assertEq(expected = "a" :: Nil, String.words("a "))
 
-@test
-def update03(): Bool = String.update(0, 'b', "a") == "b"
+    @Test
+    def words04(): Unit \ Assert = assertEq(expected = "a" :: Nil, String.words(" a"))
 
-@test
-def update04(): Bool = String.update(1, 'b', "a") == "a"
+    @Test
+    def words05(): Unit \ Assert = assertEq(expected = "a" :: "b" :: Nil, String.words("a b"))
 
-@test
-def update05(): Bool = String.update(0, 'e', "ab") == "eb"
+    @Test
+    def words06(): Unit \ Assert = assertEq(expected = "a" :: "b" :: Nil, String.words("a  b"))
 
-@test
-def update06(): Bool = String.update(1, 'e', "ab") == "ae"
+    @Test
+    def words07(): Unit \ Assert = assertEq(expected = "a" :: "b" :: Nil, String.words("a" + Char.toString('\t') + "b"))
 
-@test
-def update07(): Bool = String.update(2, 'e', "ab") == "ab"
+    /////////////////////////////////////////////////////////////////////////////
+    // unwords                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// patch                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def unwords01(): Unit \ Assert = assertEq(expected = "", String.unwords(Nil))
 
-@test
-def patch01(): Bool = String.patch(0, 0, "", "") == ""
+    @Test
+    def unwords02(): Unit \ Assert = assertEq(expected = "", String.unwords("" :: Nil))
 
-@test
-def patch02(): Bool = String.patch(0, 2, "ab", "") == ""
+    @Test
+    def unwords03(): Unit \ Assert = assertEq(expected = "a", String.unwords("a" :: Nil))
 
-@test
-def patch03(): Bool = String.patch(0, 2, "", "ab") == "ab"
+    @Test
+    def unwords04(): Unit \ Assert = assertEq(expected = "a ", String.unwords("a" :: "" :: Nil))
 
-@test
-def patch04(): Bool = String.patch(-3, 3, "abd", "ab") == "ab"
+    @Test
+    def unwords05(): Unit \ Assert = assertEq(expected = " b", String.unwords("" :: "b" :: Nil))
 
-@test
-def patch05(): Bool = String.patch(2, 3, "abd", "ab") == "ab"
+    @Test
+    def unwords06(): Unit \ Assert = assertEq(expected = "a b", String.unwords("a" :: "b" :: Nil))
 
-@test
-def patch06(): Bool = String.patch(0, 0, "", "a") == "a"
+    @Test
+    def unwords07(): Unit \ Assert = assertEq(expected = "a " + String.lineSeparator(), String.unwords("a" :: String.lineSeparator() :: Nil))
 
-@test
-def patch07(): Bool = String.patch(1, 0, "b", "a") == "a"
+    @Test
+    def unwords08(): Unit \ Assert = assertEq(expected = String.lineSeparator() + " b", String.unwords(String.lineSeparator() :: "b" :: Nil))
 
-@test
-def patch08(): Bool = String.patch(0, 1, "b", "a") == "b"
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def patch09(): Bool = String.patch(0, 2, "bd", "a") == "b"
+    @Test
+    def indexOf01(): Unit \ Assert = assertNone(String.indexOf({substr = "a"}, ""))
 
-@test
-def patch10(): Bool = String.patch(-1, 2, "bd", "a") == "d"
+    @Test
+    def indexOf02(): Unit \ Assert = assertNone(String.indexOf({substr = "a"}, "A"))
 
-@test
-def patch11(): Bool = String.patch(-1, 2, "cd", "ab") == "db"
+    @Test
+    def indexOf03(): Unit \ Assert = assertEq(expected = Some(0), String.indexOf({substr = "a"}, "a"))
 
-@test
-def patch12(): Bool = String.patch(1, 2, "cd", "ab") == "ac"
+    @Test
+    def indexOf04(): Unit \ Assert = assertNone(String.indexOf({substr = "a"}, "AB"))
 
-@test
-def patch13(): Bool = String.patch(-2, 2, "cd", "ab") == "ab"
+    @Test
+    def indexOf05(): Unit \ Assert = assertEq(expected = Some(0), String.indexOf({substr = "a"}, "ab"))
 
-@test
-def patch14(): Bool = String.patch(2, 2, "cd", "ab") == "ab"
+    @Test
+    def indexOf06(): Unit \ Assert = assertEq(expected = Some(1), String.indexOf({substr = "b"}, "ab"))
 
-@test
-def patch15(): Bool = String.patch(1, 1, "c", "ab") == "ac"
+    @Test
+    def indexOf07(): Unit \ Assert = assertEq(expected = Some(0), String.indexOf({substr = "a"}, "aa"))
 
-@test
-def patch16(): Bool = String.patch(0, 2, "cd", "ab") == "cd"
+    @Test
+    def indexOf08(): Unit \ Assert = assertEq(expected = Some(0), String.indexOf({substr = "ab"}, "ab"))
 
-@test
-def patch17(): Bool = String.patch(0, 1, "d", "abc") == "dbc"
+    @Test
+    def indexOf09(): Unit \ Assert = assertEq(expected = Some(1), String.indexOf({substr = "bc"}, "abc"))
 
-@test
-def patch18(): Bool = String.patch(1, 1, "d", "abc") == "adc"
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfLeft                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def patch19(): Bool = String.patch(2, 1, "d", "abc") == "abd"
+    @Test
+    def indexOfLeft01(): Unit \ Assert = assertNone(String.indexOfLeft({substr = "a"}, ""))
 
-@test
-def patch20(): Bool = String.patch(0, 2, "de", "abc") == "dec"
+    @Test
+    def indexOfLeft02(): Unit \ Assert = assertNone(String.indexOfLeft({substr = "a"}, "A"))
 
-@test
-def patch21(): Bool = String.patch(1, 2, "de", "abc") == "ade"
+    @Test
+    def indexOfLeft03(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfLeft({substr = "a"}, "a"))
 
-@test
-def patch22(): Bool = String.patch(0, 2, "def", "abc") == "dec"
+    @Test
+    def indexOfLeft04(): Unit \ Assert = assertNone(String.indexOfLeft({substr = "a"}, "AB"))
 
-@test
-def patch23(): Bool = String.patch(0, 3, "def", "abc") == "def"
+    @Test
+    def indexOfLeft05(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfLeft({substr = "a"}, "ab"))
 
-@test
-def patch24(): Bool = String.patch(2, 4, "nopq", "abcdefg") == "abnopqg"
+    @Test
+    def indexOfLeft06(): Unit \ Assert = assertEq(expected = Some(1), String.indexOfLeft({substr = "b"}, "ab"))
 
-@test
-def patch25(): Bool = String.patch(-2, 4, "nopq", "abcdefg") == "pqcdefg"
+    @Test
+    def indexOfLeft07(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfLeft({substr = "a"}, "aa"))
 
-@test
-def patch26(): Bool = String.patch(4, 5, "nopq", "abcdefg") == "abcdnop"
+    @Test
+    def indexOfLeft08(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfLeft({substr = "ab"}, "ab"))
 
-@test
-def patch27(): Bool = String.patch(4, 2, "nopq", "abcdefg") == "abcdnog"
+    @Test
+    def indexOfLeft09(): Unit \ Assert = assertEq(expected = Some(1), String.indexOfLeft({substr = "bc"}, "abc"))
 
-@test
-def patch28(): Bool = String.patch(-1, 10, "ABCDEFGH", "abcdefg") == "BCDEFGH"
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfRight                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// indent                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def indexOfRight01(): Unit \ Assert = assertNone(String.indexOfRight({substr = "a"}, ""))
 
-@test
-def indent01(): Bool =
-    String.indent(3, "") == ""
+    @Test
+    def indexOfRight02(): Unit \ Assert = assertNone(String.indexOfRight({substr = "a"}, "A"))
 
-@test
-def indent02(): Bool =
-    String.indent(3, String.unlines("abc" :: Nil)) == String.unlines("   abc" :: Nil)
+    @Test
+    def indexOfRight03(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRight({substr = "a"}, "a"))
 
-@test
-def indent03(): Bool =
-    String.indent(3, String.unlines("abc" :: "def" :: Nil)) == String.unlines("   abc" :: "   def" :: Nil)
+    @Test
+    def indexOfRight04(): Unit \ Assert = assertNone(String.indexOfRight({substr = "a"}, "AB"))
 
-@test
-def indent04(): Bool =
-    String.indent(3, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)
+    @Test
+    def indexOfRight05(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRight({substr = "a"}, "ab"))
 
-@test
-def indent05(): Bool =
-    String.indent(1, String.unlines("abc" :: Nil)) == String.unlines(" abc" :: Nil)
+    @Test
+    def indexOfRight06(): Unit \ Assert = assertEq(expected = Some(1), String.indexOfRight({substr = "b"}, "ab"))
 
-@test
-def indent06(): Bool =
-    String.indent(1, String.unlines("abc" :: "def" :: Nil)) == String.unlines(" abc" :: " def" :: Nil)
+    @Test
+    def indexOfRight07(): Unit \ Assert = assertEq(expected = Some(1), String.indexOfRight({substr = "a"}, "aa"))
 
-@test
-def indent07(): Bool =
-    String.indent(1, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines(" ab" :: " cd" :: " ef" :: Nil)
+    @Test
+    def indexOfRight08(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRight({substr = "ab"}, "ab"))
 
-@test
-def indent08(): Bool =
-    String.indent(0, String.unlines("abc" :: Nil)) == String.unlines("abc" :: Nil)
+    @Test
+    def indexOfRight09(): Unit \ Assert = assertEq(expected = Some(1), String.indexOfRight({substr = "bc"}, "abc"))
 
-@test
-def indent09(): Bool =
-    String.indent(0, String.unlines("abc" :: "def" :: Nil)) == String.unlines("abc" :: "def" :: Nil)
+    /////////////////////////////////////////////////////////////////////////////
+    // startsWith                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indent10(): Bool =
-    String.indent(0, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines("ab" :: "cd" :: "ef" :: Nil)
+    @Test
+    def startsWith01(): Unit \ Assert = assertTrue(String.startsWith({prefix = ""}, ""))
 
-/////////////////////////////////////////////////////////////////////////////
-// stripIndent                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def startsWith02(): Unit \ Assert = assertTrue(String.startsWith({prefix = ""}, "a"))
 
-@test
-def stripIndent01(): Bool =
-    String.stripIndent(3, "") == ""
+    @Test
+    def startsWith03(): Unit \ Assert = assertTrue(String.startsWith({prefix = ""}, "abc"))
 
-@test
-def stripIndent02(): Bool =
-    String.stripIndent(3, String.unlines("   abc" :: Nil)) == String.unlines("abc" :: Nil)
+    @Test
+    def startsWith04(): Unit \ Assert = assertFalse(String.startsWith({prefix = "a"}, ""))
 
-@test
-def stripIndent03(): Bool =
-    String.stripIndent(3, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("abc" :: "def" :: Nil)
+    @Test
+    def startsWith05(): Unit \ Assert = assertTrue(String.startsWith({prefix = "a"}, "a"))
 
-@test
-def stripIndent04(): Bool =
-    String.stripIndent(3, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("ab" :: "cd" :: "ef" :: Nil)
+    @Test
+    def startsWith06(): Unit \ Assert = assertFalse(String.startsWith({prefix = "a"}, "b"))
 
-@test
-def stripIndent05(): Bool =
-    String.stripIndent(1, String.unlines("   abc" :: Nil)) == String.unlines("  abc" :: Nil)
+    @Test
+    def startsWith07(): Unit \ Assert = assertTrue(String.startsWith({prefix = "a"}, "aa"))
 
-@test
-def stripIndent06(): Bool =
-    String.stripIndent(1, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("  abc" :: "  def" :: Nil)
+    @Test
+    def startsWith08(): Unit \ Assert = assertTrue(String.startsWith({prefix = "ab"}, "ab"))
 
-@test
-def stripIndent07(): Bool =
-    String.stripIndent(1, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("  ab" :: "  cd" :: "  ef" :: Nil)
+    @Test
+    def startsWith09(): Unit \ Assert = assertFalse(String.startsWith({prefix = "bs"}, "abc"))
 
-@test
-def stripIndent08(): Bool =
-    String.stripIndent(0, String.unlines("   abc" :: Nil)) == String.unlines("   abc" :: Nil)
+    @Test
+    def startsWith10(): Unit \ Assert = assertTrue(String.startsWith({prefix = ""}, "Hello World!"))
 
-@test
-def stripIndent09(): Bool =
-    String.stripIndent(0, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("   abc" :: "   def" :: Nil)
+    @Test
+    def startsWith11(): Unit \ Assert = assertTrue(String.startsWith({prefix = "Hello"}, "Hello World!"))
 
-@test
-def stripIndent10(): Bool  =
-    String.stripIndent(0, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)
+    @Test
+    def startsWith12(): Unit \ Assert = assertFalse(String.startsWith({prefix = "HELLO"}, "Hello World!"))
 
-/////////////////////////////////////////////////////////////////////////////
-// lines                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // contains                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def lines01(): Bool = String.lines("") == Nil
+    @Test
+    def contains01(): Unit \ Assert = assertTrue(String.contains({substr = ""}, ""))
 
-@test
-def lines02(): Bool = String.lines("a")  == "a" :: Nil
+    @Test
+    def contains02(): Unit \ Assert = assertTrue(String.contains({substr = ""}, "a"))
 
-@test
-def lines03(): Bool = String.lines("a" + String.lineSeparator()) == "a" :: Nil
+    @Test
+    def contains03(): Unit \ Assert = assertTrue(String.contains({substr = ""}, "abc"))
 
-@test
-def lines04(): Bool = String.lines(String.lineSeparator() + "a") == "" :: "a" :: Nil
+    @Test
+    def contains04(): Unit \ Assert = assertFalse(String.contains({substr = "a"}, ""))
 
-@test
-def lines05(): Bool = String.lines("a" + String.lineSeparator() + "b") == "a" :: "b" :: Nil
+    @Test
+    def contains05(): Unit \ Assert = assertTrue(String.contains({substr = "a"}, "a"))
 
-@test
-def lines06(): Bool = String.lines("a" + Char.toString('\n') + "b") == "a" :: "b" :: Nil
+    @Test
+    def contains06(): Unit \ Assert = assertFalse(String.contains({substr = "a"}, "b"))
 
-@test
-def lines07(): Bool = String.lines("a" + Char.toString('\r') + Char.toString('\n') + "b") ==  "a" :: "b" :: Nil
+    @Test
+    def contains07(): Unit \ Assert = assertTrue(String.contains({substr = "a"}, "aa"))
 
-/////////////////////////////////////////////////////////////////////////////
-// unlines                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def contains08(): Unit \ Assert = assertTrue(String.contains({substr = "ab"}, "ab"))
 
-@test
-def unlines01(): Bool = String.unlines(Nil) == ""
+    @Test
+    def contains09(): Unit \ Assert = assertTrue(String.contains({substr = "ab"}, "abc"))
 
-@test
-def unlines02(): Bool =
-    String.unlines("" :: Nil) == String.lineSeparator()
+    /////////////////////////////////////////////////////////////////////////////
+    // endsWith                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def unlines03(): Bool =
-    String.unlines("a" :: Nil) == "a" + String.lineSeparator()
+    @Test
+    def endsWith01(): Unit \ Assert = assertTrue(String.endsWith({suffix = ""}, ""))
 
-@test
-def unlines04(): Bool =
-    String.unlines("a" :: "" :: Nil) == "a" + String.lineSeparator() + String.lineSeparator()
+    @Test
+    def endsWith02(): Unit \ Assert = assertTrue(String.endsWith({suffix = ""}, "a"))
 
-@test
-def unlines05(): Bool =
-    String.unlines("" :: "b" :: Nil) == String.lineSeparator() + "b" + String.lineSeparator()
+    @Test
+    def endsWith03(): Unit \ Assert = assertTrue(String.endsWith({suffix = ""}, "abc"))
 
-@test
-def unlines06(): Bool =
-    String.unlines("a" :: "b" :: Nil) == "a" + String.lineSeparator() + "b" + String.lineSeparator()
+    @Test
+    def endsWith04(): Unit \ Assert = assertFalse(String.endsWith({suffix = "a"}, ""))
 
-@test
-def unlines07(): Bool =
-    String.unlines("a" :: String.lineSeparator() :: Nil) == "a" + String.lineSeparator() + String.lineSeparator() + String.lineSeparator()
+    @Test
+    def endsWith05(): Unit \ Assert = assertTrue(String.endsWith({suffix = "a"}, "a"))
 
-@test
-def unlines08(): Bool =
-    String.unlines(String.lineSeparator() :: "b" :: Nil) ==  String.lineSeparator() + String.lineSeparator() + "b" + String.lineSeparator()
+    @Test
+    def endsWith06(): Unit \ Assert = assertFalse(String.endsWith({suffix = "a"}, "b"))
 
-/////////////////////////////////////////////////////////////////////////////
-// words                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def endsWith07(): Unit \ Assert = assertTrue(String.endsWith({suffix = "a"}, "aa"))
 
-@test
-def words01(): Bool = String.words("") == Nil
+    @Test
+    def endsWith08(): Unit \ Assert = assertTrue(String.endsWith({suffix = "ab"}, "ab"))
 
-@test
-def words02(): Bool = String.words("a") == "a" :: Nil
+    @Test
+    def endsWith09(): Unit \ Assert = assertTrue(String.endsWith({suffix = "bc"}, "abc"))
 
-@test
-def words03(): Bool = String.words("a ") == "a" :: Nil
+    @Test
+    def endsWith10(): Unit \ Assert = assertFalse(String.endsWith({suffix = "ab"}, "abc"))
 
-@test
-def words04(): Bool = String.words(" a") == "a" :: Nil
+    @Test
+    def endsWith11(): Unit \ Assert = assertTrue(String.endsWith({suffix = ""}, "Hello World!"))
 
-@test
-def words05(): Bool = String.words("a b") == "a" :: "b" :: Nil
+    @Test
+    def endsWith12(): Unit \ Assert = assertTrue(String.endsWith({suffix = "World!"}, "Hello World!"))
 
-@test
-def words06(): Bool = String.words("a  b") == "a" :: "b" :: Nil
+    @Test
+    def endsWith13(): Unit \ Assert = assertFalse(String.endsWith({suffix = "WORLD!"}, "Hello World!"))
 
-@test
-def words07(): Bool = String.words("a" + Char.toString('\t') + "b") == "a" :: "b" :: Nil
+    /////////////////////////////////////////////////////////////////////////////
+    // commonPrefix                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// unwords                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def commonPrefix01(): Unit \ Assert =
+        assertEq(expected = "", String.commonPrefix("", ""))
 
-@test
-def unwords01(): Bool = String.unwords(Nil) == ""
+    @Test
+    def commonPrefix02(): Unit \ Assert =
+        assertEq(expected = "", String.commonPrefix("a", ""))
 
-@test
-def unwords02(): Bool = String.unwords("" :: Nil) == ""
+    @Test
+    def commonPrefix03(): Unit \ Assert =
+        assertEq(expected = "", String.commonPrefix("", "a"))
 
-@test
-def unwords03(): Bool = String.unwords("a" :: Nil) == "a"
+    @Test
+    def commonPrefix04(): Unit \ Assert =
+        assertEq(expected = "a", String.commonPrefix("a", "a"))
 
-@test
-def unwords04(): Bool = String.unwords("a" :: "" :: Nil) == "a "
+    @Test
+    def commonPrefix05(): Unit \ Assert =
+        assertEq(expected = "", String.commonPrefix("a", "b"))
 
-@test
-def unwords05(): Bool = String.unwords("" :: "b" :: Nil) == " b"
+    @Test
+    def commonPrefix06(): Unit \ Assert =
+        assertEq(expected = "", String.commonPrefix("ab", "bc"))
 
-@test
-def unwords06(): Bool = String.unwords("a" :: "b" :: Nil) == "a b"
+    @Test
+    def commonPrefix07(): Unit \ Assert =
+        assertEq(expected = "a", String.commonPrefix("ab", "ac"))
 
-@test
-def unwords07(): Bool = String.unwords("a" :: String.lineSeparator() :: Nil) == "a " + String.lineSeparator()
+    @Test
+    def commonPrefix08(): Unit \ Assert =
+        assertEq(expected = "ab", String.commonPrefix("ab", "ab"))
 
-@test
-def unwords08(): Bool = String.unwords(String.lineSeparator() :: "b" :: Nil) ==  String.lineSeparator() + " b"
+    @Test
+    def commonPrefix09(): Unit \ Assert =
+        assertEq(expected = "", String.commonPrefix("abc", "ABC"))
 
-/////////////////////////////////////////////////////////////////////////////
-// indexOf                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def commonPrefix10(): Unit \ Assert =
+        assertEq(expected = "abc", String.commonPrefix("abc", "abcd"))
 
-@test
-def indexOf01(): Bool = String.indexOf({substr = "a"}, "") == None
+    @Test
+    def commonPrefix11(): Unit \ Assert =
+        assertEq(expected = "abc", String.commonPrefix("abcd", "abc"))
 
-@test
-def indexOf02(): Bool = String.indexOf({substr = "a"}, "A") == None
+    /////////////////////////////////////////////////////////////////////////////
+    // commonSuffix                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indexOf03(): Bool = String.indexOf({substr = "a"}, "a") == Some(0)
+    @Test
+    def commonSuffix01(): Unit \ Assert =
+        assertEq(expected = "", String.commonSuffix("", ""))
 
-@test
-def indexOf04(): Bool = String.indexOf({substr = "a"}, "AB") == None
+    @Test
+    def commonSuffix02(): Unit \ Assert =
+        assertEq(expected = "", String.commonSuffix("a", ""))
 
-@test
-def indexOf05(): Bool = String.indexOf({substr = "a"}, "ab") == Some(0)
+    @Test
+    def commonSuffix03(): Unit \ Assert =
+        assertEq(expected = "", String.commonSuffix("", "a"))
 
-@test
-def indexOf06(): Bool = String.indexOf({substr = "b"}, "ab") == Some(1)
+    @Test
+    def commonSuffix04(): Unit \ Assert =
+        assertEq(expected = "a", String.commonSuffix("a", "a"))
 
-@test
-def indexOf07(): Bool = String.indexOf({substr = "a"}, "aa") == Some(0)
+    @Test
+    def commonSuffix05(): Unit \ Assert =
+        assertEq(expected = "", String.commonSuffix("a", "b"))
 
-@test
-def indexOf08(): Bool = String.indexOf({substr = "ab"}, "ab") == Some(0)
+    @Test
+    def commonSuffix06(): Unit \ Assert =
+        assertEq(expected = "", String.commonSuffix("ab", "bc"))
 
-@test
-def indexOf09(): Bool = String.indexOf({substr = "bc"}, "abc") == Some(1)
+    @Test
+    def commonSuffix07(): Unit \ Assert =
+        assertEq(expected = "b", String.commonSuffix("ab", "_b"))
 
-/////////////////////////////////////////////////////////////////////////////
-// indexOfLeft                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def commonSuffix08(): Unit \ Assert =
+        assertEq(expected = "ab", String.commonSuffix("ab", "ab"))
 
-@test
-def indexOfLeft01(): Bool = String.indexOfLeft({substr = "a"}, "") == None
+    @Test
+    def commonSuffix09(): Unit \ Assert =
+        assertEq(expected = "", String.commonSuffix("abc", "ABC"))
 
-@test
-def indexOfLeft02(): Bool = String.indexOfLeft({substr = "a"}, "A") == None
+    @Test
+    def commonSuffix10(): Unit \ Assert =
+        assertEq(expected = "bcd", String.commonSuffix("bcd", "abcd"))
 
-@test
-def indexOfLeft03(): Bool = String.indexOfLeft({substr = "a"}, "a") == Some(0)
+    @Test
+    def commonSuffix11(): Unit \ Assert =
+        assertEq(expected = "bcd", String.commonSuffix("abcd", "bcd"))
 
-@test
-def indexOfLeft04(): Bool = String.indexOfLeft({substr = "a"}, "AB") == None
+    /////////////////////////////////////////////////////////////////////////////
+    // abbreviateLeft                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indexOfLeft05(): Bool = String.indexOfLeft({substr = "a"}, "ab") == Some(0)
+    @Test
+    def abbreviateLeft01(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(0, ""))
 
-@test
-def indexOfLeft06(): Bool = String.indexOfLeft({substr = "b"}, "ab") == Some(1)
+    @Test
+    def abbreviateLeft02(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(0, "a"))
 
-@test
-def indexOfLeft07(): Bool = String.indexOfLeft({substr = "a"}, "aa") == Some(0)
+    @Test
+    def abbreviateLeft03(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(0, "abcde"))
 
-@test
-def indexOfLeft08(): Bool = String.indexOfLeft({substr = "ab"}, "ab") == Some(0)
+    @Test
+    def abbreviateLeft04(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(1, ""))
 
-@test
-def indexOfLeft09(): Bool = String.indexOfLeft({substr = "bc"}, "abc") == Some(1)
+    @Test
+    def abbreviateLeft05(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(1, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// indexOfRight                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def abbreviateLeft06(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(1, "abcde"))
 
-@test
-def indexOfRight01(): Bool = String.indexOfRight({substr = "a"}, "") == None
+    @Test
+    def abbreviateLeft07(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(3, ""))
 
-@test
-def indexOfRight02(): Bool = String.indexOfRight({substr = "a"}, "A") == None
+    @Test
+    def abbreviateLeft08(): Unit \ Assert =
+        assertEq(expected = "a", String.abbreviateLeft(3, "a"))
 
-@test
-def indexOfRight03(): Bool = String.indexOfRight({substr = "a"}, "a") == Some(0)
+    @Test
+    def abbreviateLeft09(): Unit \ Assert =
+        assertEq(expected = "...", String.abbreviateLeft(3, "abcde"))
 
-@test
-def indexOfRight04(): Bool = String.indexOfRight({substr = "a"}, "AB") == None
+    @Test
+    def abbreviateLeft10(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(4, ""))
 
-@test
-def indexOfRight05(): Bool = String.indexOfRight({substr = "a"}, "ab") == Some(0)
+    @Test
+    def abbreviateLeft11(): Unit \ Assert =
+        assertEq(expected = "a", String.abbreviateLeft(4, "a"))
 
-@test
-def indexOfRight06(): Bool = String.indexOfRight({substr = "b"}, "ab") == Some(1)
+    @Test
+    def abbreviateLeft12(): Unit \ Assert =
+        assertEq(expected = "...e", String.abbreviateLeft(4, "abcde"))
 
-@test
-def indexOfRight07(): Bool = String.indexOfRight({substr = "a"}, "aa") == Some(1)
+    @Test
+    def abbreviateLeft13(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateLeft(5, ""))
 
-@test
-def indexOfRight08(): Bool = String.indexOfRight({substr = "ab"}, "ab") == Some(0)
+    @Test
+    def abbreviateLeft14(): Unit \ Assert =
+        assertEq(expected = "a", String.abbreviateLeft(5, "a"))
 
-@test
-def indexOfRight09(): Bool = String.indexOfRight({substr = "bc"}, "abc") == Some(1)
+    @Test
+    def abbreviateLeft15(): Unit \ Assert =
+        assertEq(expected = "...de", String.abbreviateLeft(5, "abcde"))
 
-/////////////////////////////////////////////////////////////////////////////
-// startsWith                                                              //
-/////////////////////////////////////////////////////////////////////////////
 
-@test
-def startsWith01(): Bool = String.startsWith({prefix = ""}, "") == true
+    /////////////////////////////////////////////////////////////////////////////
+    // abbreviateRight                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def startsWith02(): Bool = String.startsWith({prefix = ""}, "a") == true
+    @Test
+    def abbreviateRight01(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(0, ""))
 
-@test
-def startsWith03(): Bool = String.startsWith({prefix = ""}, "abc") == true
+    @Test
+    def abbreviateRight02(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(0, "a"))
 
-@test
-def startsWith04(): Bool = String.startsWith({prefix = "a"}, "") == false
+    @Test
+    def abbreviateRight03(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(0, "abcde"))
 
-@test
-def startsWith05(): Bool = String.startsWith({prefix = "a"}, "a") == true
+    @Test
+    def abbreviateRight04(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(1, ""))
 
-@test
-def startsWith06(): Bool = String.startsWith({prefix = "a"}, "b") == false
+    @Test
+    def abbreviateRight05(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(1, "a"))
 
-@test
-def startsWith07(): Bool = String.startsWith({prefix = "a"}, "aa") == true
+    @Test
+    def abbreviateRight06(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(1, "abcde"))
 
-@test
-def startsWith08(): Bool = String.startsWith({prefix = "ab"}, "ab") == true
+    @Test
+    def abbreviateRight07(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(3, ""))
 
-@test
-def startsWith09(): Bool = String.startsWith({prefix = "bs"}, "abc") == false
+    @Test
+    def abbreviateRight08(): Unit \ Assert =
+        assertEq(expected = "a", String.abbreviateRight(3, "a"))
 
-@test
-def startsWith10(): Bool = String.startsWith({prefix = ""}, "Hello World!") == true
+    @Test
+    def abbreviateRight09(): Unit \ Assert =
+        assertEq(expected = "...", String.abbreviateRight(3, "abcde"))
 
-@test
-def startsWith11(): Bool = String.startsWith({prefix = "Hello"}, "Hello World!") == true
+    @Test
+    def abbreviateRight10(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(4, ""))
 
-@test
-def startsWith12(): Bool = String.startsWith({prefix = "HELLO"}, "Hello World!") == false
+    @Test
+    def abbreviateRight11(): Unit \ Assert =
+        assertEq(expected = "a", String.abbreviateRight(4, "a"))
 
-/////////////////////////////////////////////////////////////////////////////
-// contains                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def abbreviateRight12(): Unit \ Assert =
+        assertEq(expected = "a...", String.abbreviateRight(4, "abcde"))
 
-@test
-def contains01(): Bool = String.contains({substr = ""}, "") == true
+    @Test
+    def abbreviateRight13(): Unit \ Assert =
+        assertEq(expected = "", String.abbreviateRight(5, ""))
 
-@test
-def contains02(): Bool = String.contains({substr = ""}, "a") == true
+    @Test
+    def abbreviateRight14(): Unit \ Assert =
+        assertEq(expected = "a", String.abbreviateRight(5, "a"))
 
-@test
-def contains03(): Bool = String.contains({substr = ""}, "abc") == true
+    @Test
+    def abbreviateRight15(): Unit \ Assert =
+        assertEq(expected = "ab...", String.abbreviateRight(5, "abcde"))
 
-@test
-def contains04(): Bool = String.contains({substr = "a"}, "") == false
+    /////////////////////////////////////////////////////////////////////////////
+    // levenshteinDistance                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def contains05(): Bool = String.contains({substr = "a"}, "a") == true
+    @Test
+    def levenshteinDistance01(): Unit \ Assert =
+        assertEq(expected = 0, String.levenshteinDistance("", ""))
 
-@test
-def contains06(): Bool = String.contains({substr = "a"}, "b") == false
+    @Test
+    def levenshteinDistance02(): Unit \ Assert =
+        assertEq(expected = 1, String.levenshteinDistance("A", ""))
 
-@test
-def contains07(): Bool = String.contains({substr = "a"}, "aa") == true
+    @Test
+    def levenshteinDistance03(): Unit \ Assert =
+        assertEq(expected = 1, String.levenshteinDistance("", "A"))
 
-@test
-def contains08(): Bool = String.contains({substr = "ab"}, "ab") == true
+    @Test
+    def levenshteinDistance04(): Unit \ Assert =
+        assertEq(expected = 0, String.levenshteinDistance("A", "A"))
 
-@test
-def contains09(): Bool = String.contains({substr = "ab"}, "abc") == true
+    @Test
+    def levenshteinDistance05(): Unit \ Assert =
+        assertEq(expected = 3, String.levenshteinDistance("kitten", "sitting"))
 
-/////////////////////////////////////////////////////////////////////////////
-// endsWith                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def levenshteinDistance06(): Unit \ Assert =
+        assertEq(expected = 3, String.levenshteinDistance("Saturday", "Sunday"))
 
-@test
-def endsWith01(): Bool = String.endsWith({suffix = ""}, "") == true
+    @Test
+    def levenshteinDistance07(): Unit \ Assert =
+        assertEq(expected = 2, String.levenshteinDistance("Gumbo", "Gambol"))
 
-@test
-def endsWith02(): Bool = String.endsWith({suffix = ""}, "a") == true
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def endsWith03(): Bool = String.endsWith({suffix = ""}, "abc") == true
+    @Test
+    def zip01(): Unit \ Assert =
+        assertEq(expected = (Nil: List[(Char,Char)]), String.zip("", ""))
 
-@test
-def endsWith04(): Bool = String.endsWith({suffix = "a"}, "") == false
+    @Test
+    def zip02(): Unit \ Assert =
+        assertEq(expected = (Nil: List[(Char, Char)]), String.zip("a", ""))
 
-@test
-def endsWith05(): Bool = String.endsWith({suffix = "a"}, "a") == true
+    @Test
+    def zip03(): Unit \ Assert =
+        assertEq(expected = (Nil: List[(Char, Char)]), String.zip("", "1"))
 
-@test
-def endsWith06(): Bool = String.endsWith({suffix = "a"}, "b") == false
+    @Test
+    def zip04(): Unit \ Assert =
+        assertEq(expected = ('a', '1') :: Nil, String.zip("a", "1"))
 
-@test
-def endsWith07(): Bool = String.endsWith({suffix = "a"}, "aa") == true
+    @Test
+    def zip05(): Unit \ Assert =
+        assertEq(expected = ('a', '1') :: ('b', '2') :: Nil, String.zip("ab", "12"))
 
-@test
-def endsWith08(): Bool = String.endsWith({suffix = "ab"}, "ab") == true
+    @Test
+    def zip06(): Unit \ Assert =
+        assertEq(expected = ('a', '1') :: ('b', '2') :: ('c', '3') :: Nil, String.zip("abc", "123"))
 
-@test
-def endsWith09(): Bool = String.endsWith({suffix = "bc"}, "abc") == true
+    @Test
+    def zip07(): Unit \ Assert =
+        assertEq(expected = ('a', '1') :: ('b', '2') :: ('c', '3') :: ('d', '4') :: Nil, String.zip("abcd", "1234"))
 
-@test
-def endsWith10(): Bool = String.endsWith({suffix = "ab"}, "abc") == false
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def endsWith11(): Bool = String.endsWith({suffix = ""}, "Hello World!") == true
+    @Test
+    def zipWith01(): Unit \ Assert =
+        let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "", "");
+        assertEq(expected = "", s)
 
-@test
-def endsWith12(): Bool = String.endsWith({suffix = "World!"}, "Hello World!") == true
+    @Test
+    def zipWith02(): Unit \ Assert =
+        let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "a", "");
+        assertEq(expected = "", s)
 
-@test
-def endsWith13(): Bool = String.endsWith({suffix = "WORLD!"}, "Hello World!") == false
+    @Test
+    def zipWith03(): Unit \ Assert =
+        let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "", "1");
+        assertEq(expected = "", s)
 
-/////////////////////////////////////////////////////////////////////////////
-// commonPrefix                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def zipWith04(): Unit \ Assert =
+        let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_", "1");
+        assertEq(expected = "1", s)
 
-@test
-def commonPrefix01(): Bool =
-    String.commonPrefix("", "") == ""
+    @Test
+    def zipWith05(): Unit \ Assert =
+        let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "a", "1");
+        assertEq(expected = "a", s)
 
-@test
-def commonPrefix02(): Bool =
-    String.commonPrefix("a", "") == ""
+    @Test
+    def zipWith06(): Unit \ Assert =
+        let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fgh", "12345678");
+        assertEq(expected = "1bc45fgh", s)
 
-@test
-def commonPrefix03(): Bool =
-    String.commonPrefix("", "a") == ""
+    @Test
+    def zipWith07(): Unit \ Assert =
+        let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fghijkl", "12345678");
+        assertEq(expected = "1bc45fgh", s)
 
-@test
-def commonPrefix04(): Bool =
-    String.commonPrefix("a", "a") == "a"
+    @Test
+    def zipWith08(): Unit \ Assert =
+        let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fgh", "1234567890");
+        assertEq(expected = "1bc45fgh", s)
 
-@test
-def commonPrefix05(): Bool =
-    String.commonPrefix("a", "b") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // splitOn                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def commonPrefix06(): Bool =
-    String.commonPrefix("ab", "bc") == ""
+    @Test
+    def splitOn01(): Unit \ Assert = assertEq(expected = "" :: Nil, String.splitOn({substr = ""}, ""))
 
-@test
-def commonPrefix07(): Bool =
-    String.commonPrefix("ab", "ac") == "a"
+    @Test
+    def splitOn02(): Unit \ Assert = assertEq(expected = "a::b" :: Nil, String.splitOn({substr = ""}, "a::b"))
 
-@test
-def commonPrefix08(): Bool =
-    String.commonPrefix("ab", "ab") == "ab"
+    @Test
+    def splitOn03(): Unit \ Assert = assertEq(expected = "" :: Nil, String.splitOn({substr = "::"}, ""))
 
-@test
-def commonPrefix09(): Bool =
-    String.commonPrefix("abc", "ABC") == ""
+    @Test
+    def splitOn04(): Unit \ Assert = assertEq(expected = "a" :: Nil, String.splitOn({substr = "::"}, "a"))
 
-@test
-def commonPrefix10(): Bool =
-    String.commonPrefix("abc", "abcd") == "abc"
+    @Test
+    def splitOn05(): Unit \ Assert = assertEq(expected = "a:b" :: Nil, String.splitOn({substr = "::"}, "a:b"))
 
-@test
-def commonPrefix11(): Bool =
-    String.commonPrefix("abcd", "abc") == "abc"
+    @Test
+    def splitOn06(): Unit \ Assert = assertEq(expected = "a" :: "b" :: Nil, String.splitOn({substr = "::"}, "a::b"))
 
-/////////////////////////////////////////////////////////////////////////////
-// commonSuffix                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def splitOn07(): Unit \ Assert = assertEq(expected = "" :: "a" :: "b" :: Nil, String.splitOn({substr = "::"}, "::a::b"))
 
-@test
-def commonSuffix01(): Bool =
-    String.commonSuffix("", "") == ""
+    @Test
+    def splitOn08(): Unit \ Assert = assertEq(expected = "a" :: "b" :: "" :: Nil, String.splitOn({substr = "::"}, "a::b::"))
 
-@test
-def commonSuffix02(): Bool =
-    String.commonSuffix("a", "") == ""
+    @Test
+    def splitOn09(): Unit \ Assert = assertEq(expected = "" :: "a" :: "b" :: "" :: Nil, String.splitOn({substr = "::"}, "::a::b::"))
 
-@test
-def commonSuffix03(): Bool =
-    String.commonSuffix("", "a") == ""
+    @Test
+    def splitOn10(): Unit \ Assert = assertEq(expected = "a:b" :: "c" :: Nil, String.splitOn({substr = "::"}, "a:b::c"))
 
-@test
-def commonSuffix04(): Bool =
-    String.commonSuffix("a", "a") == "a"
+    @Test
+    def splitOn11(): Unit \ Assert = assertEq(expected = "a" :: "b:c" :: Nil, String.splitOn({substr = "::"}, "a::b:c"))
 
-@test
-def commonSuffix05(): Bool =
-    String.commonSuffix("a", "b") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfLeftWithOffset                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def commonSuffix06(): Bool =
-    String.commonSuffix("ab", "bc") == ""
+    @Test
+    def indexOfLeftWithOffset01(): Unit \ Assert = assertNone(String.indexOfLeftWithOffset({substr = ""}, {offset = 0}, ""))
 
-@test
-def commonSuffix07(): Bool =
-    String.commonSuffix("ab", "_b") == "b"
+    @Test
+    def indexOfLeftWithOffset02(): Unit \ Assert = assertNone(String.indexOfLeftWithOffset({substr = ""}, {offset = 0}, "a"))
 
-@test
-def commonSuffix08(): Bool =
-    String.commonSuffix("ab", "ab") == "ab"
+    @Test
+    def indexOfLeftWithOffset03(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfLeftWithOffset({substr = "a"}, {offset = 0}, "a"))
 
-@test
-def commonSuffix09(): Bool =
-    String.commonSuffix("abc", "ABC") == ""
+    @Test
+    def indexOfLeftWithOffset04(): Unit \ Assert = assertNone(String.indexOfLeftWithOffset({substr = "a"}, {offset = 1}, "a"))
 
-@test
-def commonSuffix10(): Bool =
-    String.commonSuffix("bcd", "abcd") == "bcd"
+    @Test
+    def indexOfLeftWithOffset05(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfLeftWithOffset({substr = "a"}, {offset = 0}, "ab"))
 
-@test
-def commonSuffix11(): Bool =
-    String.commonSuffix("abcd", "bcd") == "bcd"
+    @Test
+    def indexOfLeftWithOffset06(): Unit \ Assert = assertEq(expected = Some(1), String.indexOfLeftWithOffset({substr = "a"}, {offset = 1}, "aa"))
 
-/////////////////////////////////////////////////////////////////////////////
-// abbreviateLeft                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def indexOfLeftWithOffset07(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfLeftWithOffset({substr = "ab"}, {offset = 0}, "ab"))
 
-@test
-def abbreviateLeft01(): Bool =
-    String.abbreviateLeft(0, "") == ""
+    @Test
+    def indexOfLeftWithOffset08(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfLeftWithOffset({substr = "ab"}, {offset = 0}, "abab"))
 
-@test
-def abbreviateLeft02(): Bool =
-    String.abbreviateLeft(0, "a") == ""
+    @Test
+    def indexOfLeftWithOffset09(): Unit \ Assert = assertEq(expected = Some(2), String.indexOfLeftWithOffset({substr = "ab"}, {offset = 1}, "abab"))
 
-@test
-def abbreviateLeft03(): Bool =
-    String.abbreviateLeft(0, "abcde") == ""
+    @Test
+    def indexOfLeftWithOffset10(): Unit \ Assert = assertEq(expected = Some(2), String.indexOfLeftWithOffset({substr = "ab"}, {offset = 2}, "abab"))
 
-@test
-def abbreviateLeft04(): Bool =
-    String.abbreviateLeft(1, "") == ""
+    @Test
+    def indexOfLeftWithOffset11(): Unit \ Assert = assertNone(String.indexOfLeftWithOffset({substr = "ab"}, {offset = 3}, "abab"))
 
-@test
-def abbreviateLeft05(): Bool =
-    String.abbreviateLeft(1, "a") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfRightWithOffset                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def abbreviateLeft06(): Bool =
-    String.abbreviateLeft(1, "abcde") == ""
+    @Test
+    def indexOfRightWithOffset01(): Unit \ Assert = assertNone(String.indexOfRightWithOffset({substr = ""}, {offset = 0}, ""))
 
-@test
-def abbreviateLeft07(): Bool =
-    String.abbreviateLeft(3, "") == ""
+    @Test
+    def indexOfRightWithOffset02(): Unit \ Assert = assertNone(String.indexOfRightWithOffset({substr = ""}, {offset = 0}, "a"))
 
-@test
-def abbreviateLeft08(): Bool =
-    String.abbreviateLeft(3, "a") == "a"
+    @Test
+    def indexOfRightWithOffset03(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRightWithOffset({substr = "a"}, {offset = 0}, "a"))
 
-@test
-def abbreviateLeft09(): Bool =
-    String.abbreviateLeft(3, "abcde") == "..."
+    @Test
+    def indexOfRightWithOffset04(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRightWithOffset({substr = "a"}, {offset = 1}, "a"))
 
-@test
-def abbreviateLeft10(): Bool =
-    String.abbreviateLeft(4, "") == ""
+    @Test
+    def indexOfRightWithOffset05(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRightWithOffset({substr = "a"}, {offset = 2}, "ab"))
 
-@test
-def abbreviateLeft11(): Bool =
-    String.abbreviateLeft(4, "a") == "a"
+    @Test
+    def indexOfRightWithOffset06(): Unit \ Assert = assertEq(expected = Some(1), String.indexOfRightWithOffset({substr = "a"}, {offset = 2}, "aa"))
 
-@test
-def abbreviateLeft12(): Bool =
-    String.abbreviateLeft(4, "abcde") == "...e"
+    @Test
+    def indexOfRightWithOffset07(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRightWithOffset({substr = "ab"}, {offset = 2}, "ab"))
 
-@test
-def abbreviateLeft13(): Bool =
-    String.abbreviateLeft(5, "") == ""
+    @Test
+    def indexOfRightWithOffset08(): Unit \ Assert = assertEq(expected = Some(2), String.indexOfRightWithOffset({substr = "ab"}, {offset = 3}, "abab"))
 
-@test
-def abbreviateLeft14(): Bool =
-    String.abbreviateLeft(5, "a") == "a"
+    @Test
+    def indexOfRightWithOffset09(): Unit \ Assert = assertEq(expected = Some(2), String.indexOfRightWithOffset({substr = "ab"}, {offset = 2}, "abab"))
 
-@test
-def abbreviateLeft15(): Bool =
-    String.abbreviateLeft(5, "abcde") == "...de"
+    @Test
+    def indexOfRightWithOffset10(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRightWithOffset({substr = "ab"}, {offset = 1}, "abab"))
 
+    @Test
+    def indexOfRightWithOffset11(): Unit \ Assert = assertEq(expected = Some(0), String.indexOfRightWithOffset({substr = "ab"}, {offset = 0}, "abab"))
 
-/////////////////////////////////////////////////////////////////////////////
-// abbreviateRight                                                         //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def indexOfRightWithOffset12(): Unit \ Assert = assertNone(String.indexOfRightWithOffset({substr = "ab"}, {offset = -1}, "abab"))
 
-@test
-def abbreviateRight01(): Bool =
-    String.abbreviateRight(0, "") == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // toChunks                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def abbreviateRight02(): Bool =
-    String.abbreviateRight(0, "a") == ""
+    @Test
+    def toChunks01(): Unit \ Assert = assertEq(expected = Nil, String.toChunks(0, ""))
 
-@test
-def abbreviateRight03(): Bool =
-    String.abbreviateRight(0, "abcde") == ""
+    @Test
+    def toChunks02(): Unit \ Assert = assertEq(expected = Nil, String.toChunks(0, "aaa"))
 
-@test
-def abbreviateRight04(): Bool =
-    String.abbreviateRight(1, "") == ""
+    @Test
+    def toChunks03(): Unit \ Assert = assertEq(expected = Nil, String.toChunks(3, ""))
 
-@test
-def abbreviateRight05(): Bool =
-    String.abbreviateRight(1, "a") == ""
+    @Test
+    def toChunks04(): Unit \ Assert = assertEq(expected = "a" :: Nil, String.toChunks(3, "a"))
 
-@test
-def abbreviateRight06(): Bool =
-    String.abbreviateRight(1, "abcde") == ""
+    @Test
+    def toChunks05(): Unit \ Assert = assertEq(expected = "aa" :: Nil, String.toChunks(3, "aa"))
 
-@test
-def abbreviateRight07(): Bool =
-    String.abbreviateRight(3, "") == ""
+    @Test
+    def toChunks06(): Unit \ Assert = assertEq(expected = "aaa" :: Nil, String.toChunks(3, "aaa"))
 
-@test
-def abbreviateRight08(): Bool =
-    String.abbreviateRight(3, "a") == "a"
+    @Test
+    def toChunks07(): Unit \ Assert = assertEq(expected = "aaa" :: "b" :: Nil, String.toChunks(3, "aaab"))
 
-@test
-def abbreviateRight09(): Bool =
-    String.abbreviateRight(3, "abcde") == "..."
+    @Test
+    def toChunks08(): Unit \ Assert = assertEq(expected = "aaa" :: "bb" :: Nil, String.toChunks(3, "aaabb"))
 
-@test
-def abbreviateRight10(): Bool =
-    String.abbreviateRight(4, "") == ""
+    @Test
+    def toChunks09(): Unit \ Assert = assertEq(expected = "aaa" :: "bbb" :: Nil, String.toChunks(3, "aaabbb"))
 
-@test
-def abbreviateRight11(): Bool =
-    String.abbreviateRight(4, "a") == "a"
+    @Test
+    def toChunks10(): Unit \ Assert = assertEq(expected = "aaa" :: "bbb" :: "c" :: Nil, String.toChunks(3, "aaabbbc"))
 
-@test
-def abbreviateRight12(): Bool =
-    String.abbreviateRight(4, "abcde") == "a..."
+    @Test
+    def toChunks11(): Unit \ Assert = assertEq(expected = "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: "c" :: Nil, String.toChunks(1, "aaabbbc"))
 
-@test
-def abbreviateRight13(): Bool =
-    String.abbreviateRight(5, "") == ""
+    @Test
+    def toChunks12(): Unit \ Assert = assertEq(expected = "aa" :: "ab" :: "bb" :: "c" :: Nil, String.toChunks(2, "aaabbbc"))
 
-@test
-def abbreviateRight14(): Bool =
-    String.abbreviateRight(5, "a") == "a"
+    @Test
+    def toChunks13(): Unit \ Assert = assertEq(expected = "aaab" :: "bbc" :: Nil, String.toChunks(4, "aaabbbc"))
 
-@test
-def abbreviateRight15(): Bool =
-    String.abbreviateRight(5, "abcde") == "ab..."
+    @Test
+    def toChunks14(): Unit \ Assert = assertEq(expected = "aaabbbc" :: Nil, String.toChunks(10, "aaabbbc"))
 
-/////////////////////////////////////////////////////////////////////////////
-// levenshteinDistance                                                     //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // breakOnLeft                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def levenshteinDistance01(): Bool =
-    String.levenshteinDistance("", "") == 0
+    @Test
+    def breakOnLeft01(): Unit \ Assert = assertEq(expected = ("", ""), String.breakOnLeft({substr = ""}, ""))
 
-@test
-def levenshteinDistance02(): Bool =
-    String.levenshteinDistance("A", "") == 1
+    @Test
+    def breakOnLeft02(): Unit \ Assert = assertEq(expected = ("aaa", ""), String.breakOnLeft({substr = ""}, "aaa"))
 
-@test
-def levenshteinDistance03(): Bool =
-    String.levenshteinDistance("", "A") == 1
+    @Test
+    def breakOnLeft03(): Unit \ Assert = assertEq(expected = ("", ""), String.breakOnLeft({substr = "::"}, ""))
 
-@test
-def levenshteinDistance04(): Bool =
-    String.levenshteinDistance("A", "A") == 0
+    @Test
+    def breakOnLeft04(): Unit \ Assert = assertEq(expected = ("aaa", ""), String.breakOnLeft({substr = "::"}, "aaa"))
 
-@test
-def levenshteinDistance05(): Bool =
-    String.levenshteinDistance("kitten", "sitting") == 3
+    @Test
+    def breakOnLeft05(): Unit \ Assert = assertEq(expected = ("aaa:", ""), String.breakOnLeft({substr = "::"}, "aaa:"))
 
-@test
-def levenshteinDistance06(): Bool =
-    String.levenshteinDistance("Saturday", "Sunday") == 3
+    @Test
+    def breakOnLeft06(): Unit \ Assert = assertEq(expected = ("aaa", "::"), String.breakOnLeft({substr = "::"}, "aaa::"))
 
-@test
-def levenshteinDistance07(): Bool =
-    String.levenshteinDistance("Gumbo", "Gambol") == 2
+    @Test
+    def breakOnLeft07(): Unit \ Assert = assertEq(expected = ("aaa", "::bbb"), String.breakOnLeft({substr = "::"}, "aaa::bbb"))
 
-/////////////////////////////////////////////////////////////////////////////
-// zip                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def breakOnLeft08(): Unit \ Assert = assertEq(expected = ("aaa", "::bbb::ccc"), String.breakOnLeft({substr = "::"}, "aaa::bbb::ccc"))
 
-@test
-def zip01(): Bool & Impure =
-    let a = String.zip("", "");
-    Array.sameElements(a, []: Array[(Char,Char)])
+    /////////////////////////////////////////////////////////////////////////////
+    // breakOnRight                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def zip02(): Bool & Impure =
-    let a = String.zip("a", "");
-    Array.sameElements(a, []: Array[(Char, Char)])
+    @Test
+    def breakOnRight01(): Unit \ Assert = assertEq(expected = ("", ""), String.breakOnRight({substr = ""}, ""))
 
-@test
-def zip03(): Bool & Impure =
-    let a = String.zip("", "1");
-    Array.sameElements(a, []: Array[(Char, Char)])
+    @Test
+    def breakOnRight02(): Unit \ Assert = assertEq(expected = ("aaa", ""), String.breakOnRight({substr = ""}, "aaa"))
 
-@test
-def zip04(): Bool & Impure =
-    let a = String.zip("a", "1");
-    Array.sameElements(a, [('a', '1')])
+    @Test
+    def breakOnRight03(): Unit \ Assert = assertEq(expected = ("", ""), String.breakOnRight({substr = "::"}, ""))
 
-@test
-def zip05(): Bool & Impure =
-    let a = String.zip("ab", "12");
-    Array.sameElements(a, [('a', '1'), ('b', '2')])
+    @Test
+    def breakOnRight04(): Unit \ Assert = assertEq(expected = ("aaa", ""), String.breakOnRight({substr = "::"}, "aaa"))
 
-@test
-def zip06(): Bool & Impure =
-    let a = String.zip("abc", "123");
-    Array.sameElements(a, [('a', '1'), ('b', '2'), ('c', '3')])
+    @Test
+    def breakOnRight05(): Unit \ Assert = assertEq(expected = ("aaa:", ""), String.breakOnRight({substr = "::"}, "aaa:"))
 
-@test
-def zip07(): Bool & Impure =
-    let a = String.zip("abcd", "1234");
-    Array.sameElements(a, [('a', '1'), ('b', '2'), ('c', '3'), ('d', '4')])
+    @Test
+    def breakOnRight06(): Unit \ Assert = assertEq(expected = ("aaa::", ""), String.breakOnRight({substr = "::"}, "aaa::"))
 
-/////////////////////////////////////////////////////////////////////////////
-// zipWith                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def breakOnRight07(): Unit \ Assert = assertEq(expected = ("aaa::", "bbb"), String.breakOnRight({substr = "::"}, "aaa::bbb"))
 
-@test
-def zipWith01(): Bool =
-    let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "", "");
-    s == ""
+    @Test
+    def breakOnRight08(): Unit \ Assert = assertEq(expected = ("aaa::bbb::", "ccc"), String.breakOnRight({substr = "::"}, "aaa::bbb::ccc"))
 
-@test
-def zipWith02(): Bool =
-    let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "a", "");
-    s == ""
+    /////////////////////////////////////////////////////////////////////////////
+    // countSubstring                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def zipWith03(): Bool =
-    let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "", "1");
-    s == ""
+    @Test
+    def countSubstring01(): Unit \ Assert = assertEq(expected = 0, String.countSubstring({substr = ""}, ""))
 
-@test
-def zipWith04(): Bool =
-    let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_", "1");
-    s == "1"
+    @Test
+    def countSubstring02(): Unit \ Assert = assertEq(expected = 0, String.countSubstring({substr = ""}, "abc abc"))
 
-@test
-def zipWith05(): Bool =
-    let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "a", "1");
-    s == "a"
+    @Test
+    def countSubstring03(): Unit \ Assert = assertEq(expected = 0, String.countSubstring({substr = "abc"}, ""))
 
-@test
-def zipWith06(): Bool =
-    let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fgh", "12345678");
-    s == "1bc45fgh"
+    @Test
+    def countSubstring04(): Unit \ Assert = assertEq(expected = 1, String.countSubstring({substr = "abc"}, "abc"))
 
-@test
-def zipWith07(): Bool =
-    let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fghijkl", "12345678");
-    s == "1bc45fgh"
+    @Test
+    def countSubstring05(): Unit \ Assert = assertEq(expected = 1, String.countSubstring({substr = "abc"}, "aabc"))
 
-@test
-def zipWith08(): Bool =
-    let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fgh", "1234567890");
-    s == "1bc45fgh"
+    @Test
+    def countSubstring06(): Unit \ Assert = assertEq(expected = 1, String.countSubstring({substr = "abc"}, "abcc"))
 
-/////////////////////////////////////////////////////////////////////////////
-// splitOn                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def countSubstring07(): Unit \ Assert = assertEq(expected = 1, String.countSubstring({substr = "abc"}, "abc def "))
 
-@test
-def splitOn01(): Bool = String.splitOn({substr = ""}, "") == "" :: Nil
+    @Test
+    def countSubstring08(): Unit \ Assert = assertEq(expected = 1, String.countSubstring({substr = "abc"}, " abc def"))
 
-@test
-def splitOn02(): Bool = String.splitOn({substr = ""}, "a::b") == "a::b" :: Nil
+    @Test
+    def countSubstring09(): Unit \ Assert = assertEq(expected = 2, String.countSubstring({substr = "abc"}, " abc abc"))
 
-@test
-def splitOn03(): Bool = String.splitOn({substr = "::"}, "") == "" :: Nil
+    @Test
+    def countSubstring10(): Unit \ Assert = assertEq(expected = 2, String.countSubstring({substr = "abc"}, " abc ABC abc"))
 
-@test
-def splitOn04(): Bool = String.splitOn({substr = "::"}, "a") == "a" :: Nil
+    @Test
+    def countSubstring11(): Unit \ Assert = assertEq(expected = 2, String.countSubstring({substr = "abc"}, "ABC abc def abc"))
 
-@test
-def splitOn05(): Bool = String.splitOn({substr = "::"}, "a:b") == "a:b" :: Nil
+    @Test
+    def countSubstring12(): Unit \ Assert = assertEq(expected = 2, String.countSubstring({substr = "abc"}, "aBC::abc::AbC::abc::Abc"))
 
-@test
-def splitOn06(): Bool = String.splitOn({substr = "::"}, "a::b") == "a" :: "b" :: Nil
+    /////////////////////////////////////////////////////////////////////////////
+    // stripMargin                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def splitOn07(): Bool = String.splitOn({substr = "::"}, "::a::b") == "" :: "a" :: "b" :: Nil
+    @Test
+    def stripMargin01(): Unit \ Assert = assertEq(expected = "", String.stripMargin(""))
 
-@test
-def splitOn08(): Bool = String.splitOn({substr = "::"}, "a::b::") == "a" :: "b" :: "" :: Nil
+    @Test
+    def stripMargin02(): Unit \ Assert = assertEq(expected = "abc", String.stripMargin("abc"))
 
-@test
-def splitOn09(): Bool = String.splitOn({substr = "::"}, "::a::b::") == "" :: "a" :: "b" :: "" :: Nil
+    @Test
+    def stripMargin03(): Unit \ Assert = assertEq(expected = "${'\t'}", String.stripMargin("${'\t'}"))
 
-@test
-def splitOn10(): Bool = String.splitOn({substr = "::"}, "a:b::c") == "a:b" :: "c" :: Nil
+    @Test
+    def stripMargin04(): Unit \ Assert = assertEq(expected = "abc", String.stripMargin("    |abc"))
 
-@test
-def splitOn11(): Bool = String.splitOn({substr = "::"}, "a::b:c") == "a" :: "b:c" :: Nil
+    @Test
+    def stripMargin05(): Unit \ Assert = assertEq(expected = "abc", String.stripMargin("${'\t'} |abc"))
 
-/////////////////////////////////////////////////////////////////////////////
-// indexOfLeftWithOffset                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def stripMargin06(): Unit \ Assert = assertEq(expected = " abc", String.stripMargin(" | abc"))
 
-@test
-def indexOfLeftWithOffset01(): Bool = String.indexOfLeftWithOffset({substr = ""}, {offset = 0}, "") == None
+    @Test
+    def stripMargin07(): Unit \ Assert = assertEq(expected = "|abc", String.stripMargin(" ||abc"))
 
-@test
-def indexOfLeftWithOffset02(): Bool = String.indexOfLeftWithOffset({substr = ""}, {offset = 0}, "a") == None
+    @Test
+    def stripMargin08(): Unit \ Assert = assertEq(expected = String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil), String.stripMargin(String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)))
 
-@test
-def indexOfLeftWithOffset03(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 0}, "a") == Some(0)
+    @Test
+    def stripMargin09(): Unit \ Assert = assertEq(expected = String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil), String.stripMargin(String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)))
 
-@test
-def indexOfLeftWithOffset04(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 1}, "a") == None
+    /////////////////////////////////////////////////////////////////////////////
+    // stripMarginWith                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indexOfLeftWithOffset05(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 0}, "ab") == Some(0)
+    @Test
+    def stripMarginWith01(): Unit \ Assert = assertEq(expected = "", String.stripMarginWith({margin = "|"}, ""))
 
-@test
-def indexOfLeftWithOffset06(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 1}, "aa") == Some(1)
+    @Test
+    def stripMarginWith02(): Unit \ Assert = assertEq(expected = "abc", String.stripMarginWith({margin = "|"}, "abc"))
 
-@test
-def indexOfLeftWithOffset07(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 0}, "ab") == Some(0)
+    @Test
+    def stripMarginWith03(): Unit \ Assert = assertEq(expected = "${'\t'}", String.stripMarginWith({margin = "|"}, "${'\t'}"))
 
-@test
-def indexOfLeftWithOffset08(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 0}, "abab") == Some(0)
+    @Test
+    def stripMarginWith04(): Unit \ Assert = assertEq(expected = "abc", String.stripMarginWith({margin = "|"}, "    |abc"))
 
-@test
-def indexOfLeftWithOffset09(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 1}, "abab") == Some(2)
+    @Test
+    def stripMarginWith05(): Unit \ Assert = assertEq(expected = "abc", String.stripMarginWith({margin = "|"}, "${'\t'} |abc"))
 
-@test
-def indexOfLeftWithOffset10(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 2}, "abab") == Some(2)
+    @Test
+    def stripMarginWith06(): Unit \ Assert = assertEq(expected = " abc", String.stripMarginWith({margin = "|"}, " | abc"))
 
-@test
-def indexOfLeftWithOffset11(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 3}, "abab") == None
+    @Test
+    def stripMarginWith07(): Unit \ Assert = assertEq(expected = "|abc", String.stripMarginWith({margin = "|"}, " ||abc"))
 
-/////////////////////////////////////////////////////////////////////////////
-// indexOfRightWithOffset                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def stripMarginWith08(): Unit \ Assert = assertEq(expected = "abc", String.stripMarginWith({margin = "| "}, " | abc"))
 
-@test
-def indexOfRightWithOffset01(): Bool = String.indexOfRightWithOffset({substr = ""}, {offset = 0}, "") == None
+    @Test
+    def stripMarginWith09(): Unit \ Assert = assertEq(expected = String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil), String.stripMarginWith({margin = "|"}, String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)))
 
-@test
-def indexOfRightWithOffset02(): Bool = String.indexOfRightWithOffset({substr = ""}, {offset = 0}, "a") == None
+    @Test
+    def stripMarginWith10(): Unit \ Assert = assertEq(expected = String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil), String.stripMarginWith({margin = "|"}, String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)))
 
-@test
-def indexOfRightWithOffset03(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 0}, "a") == Some(0)
 
-@test
-def indexOfRightWithOffset04(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 1}, "a") == Some(0)
+    /////////////////////////////////////////////////////////////////////////////
+    // stripPrefix                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indexOfRightWithOffset05(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 2}, "ab") == Some(0)
+    @Test
+    def stripPrefix01(): Unit \ Assert = assertEq(expected = Some(""), String.stripPrefix({substr = ""}, ""))
 
-@test
-def indexOfRightWithOffset06(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 2}, "aa") == Some(1)
+    @Test
+    def stripPrefix02(): Unit \ Assert = assertEq(expected = Some("abc"), String.stripPrefix({substr = ""}, "abc"))
 
-@test
-def indexOfRightWithOffset07(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 2}, "ab") == Some(0)
+    @Test
+    def stripPrefix03(): Unit \ Assert = assertNone(String.stripPrefix({substr = "abc"}, ""))
 
-@test
-def indexOfRightWithOffset08(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 3}, "abab") == Some(2)
+    @Test
+    def stripPrefix04(): Unit \ Assert = assertEq(expected = Some(""), String.stripPrefix({substr = "abc"}, "abc"))
 
-@test
-def indexOfRightWithOffset09(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 2}, "abab") == Some(2)
+    @Test
+    def stripPrefix05(): Unit \ Assert = assertEq(expected = Some("def"), String.stripPrefix({substr = "abc"}, "abcdef"))
 
-@test
-def indexOfRightWithOffset10(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 1}, "abab") == Some(0)
+    @Test
+    def stripPrefix06(): Unit \ Assert = assertNone(String.stripPrefix({substr = "def"}, "abcdef"))
 
-@test
-def indexOfRightWithOffset11(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 0}, "abab") == Some(0)
+    @Test
+    def stripPrefix07(): Unit \ Assert = assertNone(String.stripPrefix({substr = "abc"}, "ABCDEF"))
 
-@test
-def indexOfRightWithOffset12(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = -1}, "abab") == None
+    /////////////////////////////////////////////////////////////////////////////
+    // stripSuffix                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// toChunks                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def stripSuffix01(): Unit \ Assert = assertEq(expected = Some(""), String.stripSuffix({substr = ""}, ""))
 
-@test
-def toChunks01(): Bool = String.toChunks(0, "") == Nil
+    @Test
+    def stripSuffix02(): Unit \ Assert = assertEq(expected = Some("abc"), String.stripSuffix({substr = ""}, "abc"))
 
-@test
-def toChunks02(): Bool = String.toChunks(0, "aaa") == Nil
+    @Test
+    def stripSuffix03(): Unit \ Assert = assertNone(String.stripSuffix({substr = "abc"}, ""))
 
-@test
-def toChunks03(): Bool = String.toChunks(3, "") == Nil
+    @Test
+    def stripSuffix04(): Unit \ Assert = assertEq(expected = Some(""), String.stripSuffix({substr = "abc"}, "abc"))
 
-@test
-def toChunks04(): Bool = String.toChunks(3, "a") == "a" :: Nil
+    @Test
+    def stripSuffix05(): Unit \ Assert = assertNone(String.stripSuffix({substr = "abc"}, "abcdef"))
 
-@test
-def toChunks05(): Bool = String.toChunks(3, "aa") == "aa" :: Nil
+    @Test
+    def stripSuffix06(): Unit \ Assert = assertEq(expected = Some("abc"), String.stripSuffix({substr = "def"}, "abcdef"))
 
-@test
-def toChunks06(): Bool = String.toChunks(3, "aaa") == "aaa" :: Nil
+    @Test
+    def stripSuffix07(): Unit \ Assert = assertNone(String.stripPrefix({substr = "abc"}, "ABCDEF"))
 
-@test
-def toChunks07(): Bool = String.toChunks(3, "aaab") == "aaa" :: "b" :: Nil
+    /////////////////////////////////////////////////////////////////////////////
+    // wrap                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toChunks08(): Bool = String.toChunks(3, "aaabb") == "aaa" :: "bb" :: Nil
+    @Test
+    def wrap01(): Unit \ Assert = assertEq(expected = "", String.wrap(0, "a"))
 
-@test
-def toChunks09(): Bool = String.toChunks(3, "aaabbb") == "aaa" :: "bbb" :: Nil
+    @Test
+    def wrap02(): Unit \ Assert = assertEq(expected = "a", String.wrap(1, "a"))
 
-@test
-def toChunks10(): Bool = String.toChunks(3, "aaabbbc") == "aaa" :: "bbb" :: "c" :: Nil
+    @Test
+    def wrap03(): Unit \ Assert = assertEq(expected = "a", String.wrap(2, "a"))
 
-@test
-def toChunks11(): Bool = String.toChunks(1, "aaabbbc") == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: "c" :: Nil
+    @Test
+    def wrap04(): Unit \ Assert = assertEq(expected = "ab", String.wrap(2, "ab"))
 
-@test
-def toChunks12(): Bool = String.toChunks(2, "aaabbbc") == "aa" :: "ab" :: "bb" :: "c" :: Nil
+    @Test
+    def wrap05(): Unit \ Assert = assertEq(expected = "a" + String.lineSeparator() + "b", String.wrap(1, "ab"))
 
-@test
-def toChunks13(): Bool = String.toChunks(4, "aaabbbc") == "aaab" :: "bbc" :: Nil
+    @Test
+    def wrap06(): Unit \ Assert = assertEq(expected = "a" + String.lineSeparator() + "b", String.wrap(2, "a b"))
 
-@test
-def toChunks14(): Bool = String.toChunks(10, "aaabbbc") == "aaabbbc" :: Nil
+    @Test
+    def wrap07(): Unit \ Assert = assertEq(expected = "a" + String.lineSeparator() + "b" + String.lineSeparator() + "c", String.wrap(2, "a b c"))
 
-/////////////////////////////////////////////////////////////////////////////
-// breakOnLeft                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def wrap08(): Unit \ Assert = assertEq(expected = "ab" + String.lineSeparator() + "cd", String.wrap(2, "ab   cd"))
 
-@test
-def breakOnLeft01(): Bool = String.breakOnLeft({substr = ""}, "") == ("", "")
+    @Test
+    def wrap09(): Unit \ Assert = assertEq(expected = "ab" + String.lineSeparator() + "cd", String.wrap(3, "ab   cd"))
 
-@test
-def breakOnLeft02(): Bool = String.breakOnLeft({substr = ""}, "aaa") == ("aaa", "")
+    @Test
+    def wrap10(): Unit \ Assert = assertEq(expected = "ab" + String.lineSeparator() + "cd", String.wrap(5, "ab   cd"))
 
-@test
-def breakOnLeft03(): Bool = String.breakOnLeft({substr = "::"}, "") == ("", "")
+    @Test
+    def wrap11(): Unit \ Assert =
+        assertEq(expected = "Lorem" + String.lineSeparator()
+            + "ipsum" + String.lineSeparator()
+            + "dolor" + String.lineSeparator()
+            + "sitam" + String.lineSeparator()
+            + "et", String.wrap(5, "Lorem ipsum dolor sitamet"))
 
-@test
-def breakOnLeft04(): Bool = String.breakOnLeft({substr = "::"}, "aaa") == ("aaa", "")
+    /////////////////////////////////////////////////////////////////////////////
+    // unwrap                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def breakOnLeft05(): Bool = String.breakOnLeft({substr = "::"}, "aaa:") == ("aaa:", "")
+    @Test
+    def unwrap01(): Unit \ Assert = assertEq(expected = "", String.unwrap(""))
 
-@test
-def breakOnLeft06(): Bool = String.breakOnLeft({substr = "::"}, "aaa::") == ("aaa", "::")
+    @Test
+    def unwrap02(): Unit \ Assert = assertEq(expected = "a b", String.unwrap("a\nb"))
 
-@test
-def breakOnLeft07(): Bool = String.breakOnLeft({substr = "::"}, "aaa::bbb") == ("aaa", "::bbb")
+    @Test
+    def unwrap03(): Unit \ Assert = assertEq(expected = "a b c", String.unwrap("a\nb\nc"))
 
-@test
-def breakOnLeft08(): Bool = String.breakOnLeft({substr = "::"}, "aaa::bbb::ccc") == ("aaa", "::bbb::ccc")
+    @Test
+    def unwrap04(): Unit \ Assert = assertEq(expected = "ab c d", String.unwrap("ab\nc\nd"))
 
-/////////////////////////////////////////////////////////////////////////////
-// breakOnRight                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def unwrap05(): Unit \ Assert = assertEq(expected = "a b", String.unwrap("a\rb"))
 
-@test
-def breakOnRight01(): Bool = String.breakOnRight({substr = ""}, "") == ("", "")
+    @Test
+    def unwrap06(): Unit \ Assert = assertEq(expected = "a b c", String.unwrap("a\rb\rc"))
 
-@test
-def breakOnRight02(): Bool = String.breakOnRight({substr = ""}, "aaa") == ("aaa", "")
+    @Test
+    def unwrap07(): Unit \ Assert = assertEq(expected = "ab c d", String.unwrap("ab\rc\rd"))
 
-@test
-def breakOnRight03(): Bool = String.breakOnRight({substr = "::"}, "") == ("", "")
+    @Test
+    def unwrap08(): Unit \ Assert = assertEq(expected = "a b", String.unwrap("a\r\nb"))
 
-@test
-def breakOnRight04(): Bool = String.breakOnRight({substr = "::"}, "aaa") == ("aaa", "")
+    @Test
+    def unwrap09(): Unit \ Assert = assertEq(expected = "a b c", String.unwrap("a\r\nb\r\nc"))
 
-@test
-def breakOnRight05(): Bool = String.breakOnRight({substr = "::"}, "aaa:") == ("aaa:", "")
+    @Test
+    def unwrap10(): Unit \ Assert = assertEq(expected = "ab c d", String.unwrap("ab\r\nc\r\nd"))
 
-@test
-def breakOnRight06(): Bool = String.breakOnRight({substr = "::"}, "aaa::") == ("aaa::", "")
+    /////////////////////////////////////////////////////////////////////////////
+    // escapeInterpolation                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def breakOnRight07(): Bool = String.breakOnRight({substr = "::"}, "aaa::bbb") == ("aaa::", "bbb")
+    @Test
+    def escapeInterpolation01(): Unit \ Assert = assertEq(expected = ("$" + "{"), "\${")
 
-@test
-def breakOnRight08(): Bool = String.breakOnRight({substr = "::"}, "aaa::bbb::ccc") == ("aaa::bbb::", "ccc")
+    @Test
+    def escapeInterpolation02(): Unit \ Assert = assertEq(expected = ("$" + "{1 + {2}"), "\${1 + {2}")
 
-/////////////////////////////////////////////////////////////////////////////
-// countSubstring                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def escapeInterpolation03(): Unit \ Assert = assertEq(expected = ("$" + "{}"), "\${}")
 
-@test
-def countSubstring01(): Bool = String.countSubstring({substr = ""}, "") == 0
+    @Test
+    def escapeInterpolation04(): Unit \ Assert = assertEq(expected = "$", "$")
 
-@test
-def countSubstring02(): Bool = String.countSubstring({substr = ""}, "abc abc") == 0
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def countSubstring03(): Bool = String.countSubstring({substr = "abc"}, "") == 0
+    @Test
+    def iterator01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, String.iterator(rc, "") |> Iterator.toList)
+    }
 
-@test
-def countSubstring04(): Bool = String.countSubstring({substr = "abc"}, "abc") == 1
-
-@test
-def countSubstring05(): Bool = String.countSubstring({substr = "abc"}, "aabc") == 1
-
-@test
-def countSubstring06(): Bool = String.countSubstring({substr = "abc"}, "abcc") == 1
-
-@test
-def countSubstring07(): Bool = String.countSubstring({substr = "abc"}, "abc def ") == 1
-
-@test
-def countSubstring08(): Bool = String.countSubstring({substr = "abc"}, " abc def") == 1
-
-@test
-def countSubstring09(): Bool = String.countSubstring({substr = "abc"}, " abc abc") == 2
-
-@test
-def countSubstring10(): Bool = String.countSubstring({substr = "abc"}, " abc ABC abc") == 2
-
-@test
-def countSubstring11(): Bool = String.countSubstring({substr = "abc"}, "ABC abc def abc") == 2
-
-@test
-def countSubstring12(): Bool = String.countSubstring({substr = "abc"}, "aBC::abc::AbC::abc::Abc") == 2
-
-/////////////////////////////////////////////////////////////////////////////
-// stripPrefix                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def stripPrefix01(): Bool = String.stripPrefix({substr = ""}, "") == Some("")
-
-@test
-def stripPrefix02(): Bool = String.stripPrefix({substr = ""}, "abc") == Some("abc")
-
-@test
-def stripPrefix03(): Bool = String.stripPrefix({substr = "abc"}, "") == None
-
-@test
-def stripPrefix04(): Bool = String.stripPrefix({substr = "abc"}, "abc") == Some("")
-
-@test
-def stripPrefix05(): Bool = String.stripPrefix({substr = "abc"}, "abcdef") == Some("def")
-
-@test
-def stripPrefix06(): Bool = String.stripPrefix({substr = "def"}, "abcdef") == None
-
-@test
-def stripPrefix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
-
-/////////////////////////////////////////////////////////////////////////////
-// stripSuffix                                                            //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def stripSuffix01(): Bool = String.stripSuffix({substr = ""}, "") == Some("")
-
-@test
-def stripSuffix02(): Bool = String.stripSuffix({substr = ""}, "abc") == Some("abc")
-
-@test
-def stripSuffix03(): Bool = String.stripSuffix({substr = "abc"}, "") == None
-
-@test
-def stripSuffix04(): Bool = String.stripSuffix({substr = "abc"}, "abc") == Some("")
-
-@test
-def stripSuffix05(): Bool = String.stripSuffix({substr = "abc"}, "abcdef") == None
-
-@test
-def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == Some("abc")
-
-@test
-def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
-
-/////////////////////////////////////////////////////////////////////////////
-// escapeInterpolation                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def escapeInterpolation01(): Bool = "\${" == ("$" + "{")
-
-@test
-def escapeInterpolation02(): Bool = "\${1 + {2}" == ("$" + "{1 + {2}")
-
-@test
-def escapeInterpolation03(): Bool = "\${}" == ("$" + "{}")
-
-@test
-def escapeInterpolation04(): String = "$"
-
+    @Test
+    def iterator02(): Unit \ Assert = region rc {
+        assertEq(expected = 'a' :: 'b' :: 'c' :: Nil, String.iterator(rc, "abc") |> Iterator.toList)
+    }
 
 }
 

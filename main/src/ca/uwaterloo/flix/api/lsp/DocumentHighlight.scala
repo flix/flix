@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.eclipse.lsp4j
+import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Represents a `DocumentHighlight` in LSP.
@@ -26,4 +27,11 @@ import org.json4s._
   */
 case class DocumentHighlight(range: Range, kind: DocumentHighlightKind) {
   def toJSON: JValue = ("range" -> range.toJSON) ~ ("kind" -> kind.toJSON)
+
+  def toLsp4j: lsp4j.DocumentHighlight = {
+    val documentHighlight = new lsp4j.DocumentHighlight()
+    documentHighlight.setRange(range.toLsp4j)
+    documentHighlight.setKind(kind.toLsp4j)
+    documentHighlight
+  }
 }

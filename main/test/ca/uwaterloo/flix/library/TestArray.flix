@@ -1,4564 +1,5643 @@
-/*
- * Copyright 2019 Magnus Madsen, Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-namespace TestArray {
-
-use Array.eq;
-
-/////////////////////////////////////////////////////////////////////////////
-// new                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testNew01(): Bool & Impure = Array.new(42, 10)[0] == 42
-
-@test
-def testNew02(): Bool & Impure = Array.new(42, 10)[5] == 42
-
-@test
-def testNew03(): Bool & Impure = Array.new(42, 10)[9] == 42
-
-/////////////////////////////////////////////////////////////////////////////
-// get                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testGet01(): Bool & Impure = Array.get(0, [1, 2, 3]) == 1
-
-@test
-def testGet02(): Bool & Impure = Array.get(1, [1, 2, 3]) == 2
-
-@test
-def testGet03(): Bool & Impure = Array.get(2, [1, 2, 3]) == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// put                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testPut01(): Bool & Impure = Array.put(42, 0, [1])[0] == 42
-
-@test
-def testPut02(): Bool & Impure = Array.put(42, 1, [1, 2])[1] == 42
-
-@test
-def testPut03(): Bool & Impure = Array.put(42, 2, [1, 2, 3])[2] == 42
-
-/////////////////////////////////////////////////////////////////////////////
-// isEmpty                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testIsEmpty01(): Bool & Impure = Array.isEmpty([])
-
-@test
-def testIsEmpty02(): Bool & Impure = not Array.isEmpty([1])
-
-@test
-def testIsEmpty03(): Bool & Impure = not Array.isEmpty([1, 2, 3])
-
-/////////////////////////////////////////////////////////////////////////////
-// length                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testLength01(): Bool & Impure = Array.length([]) == 0
-
-@test
-def testLength02(): Bool & Impure = Array.length([1]) == 1
-
-@test
-def testLength03(): Bool & Impure = Array.length([1, 2, 3]) == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// slice                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testSlice01(): Bool & Impure = Array.slice(0, 1, [1, 2, 3])[0] == 1
-
-@test
-def testSlice02(): Bool & Impure = Array.slice(1, 2, [1, 2, 3])[0] == 2
-
-@test
-def testSlice03(): Bool & Impure = Array.slice(2, 3, [1, 2, 3])[0] == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testToList01(): Bool & Impure = Array.toList([]: Array[Unit]) == Nil
-
-@test
-def testToList02(): Bool & Impure = Array.toList([1]) == 1 :: Nil
-
-@test
-def testToList03(): Bool & Impure = Array.toList([1, 2]) == 1 :: 2 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// head                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def head01(): Bool & Impure = Array.head([]: Array[Int32]) == None
-
-@test
-def head02(): Bool & Impure = Array.head([1]) == Some(1)
-
-@test
-def head03(): Bool & Impure = Array.head([2,1]) == Some(2)
-
-@test
-def head04(): Bool & Impure = Array.head([3,2,1]) == Some(3)
-
-/////////////////////////////////////////////////////////////////////////////
-// last                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def last01(): Bool & Impure = Array.last([]): Option[Unit] == None
-
-@test
-def last02(): Bool & Impure = Array.last([1]) == Some(1)
-
-@test
-def last03(): Bool & Impure = Array.last([1,2]) == Some(2)
-
-@test
-def last04(): Bool & Impure = Array.last([1,2,3]) == Some(3)
-
-/////////////////////////////////////////////////////////////////////////////
-// append                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def append01(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def append02(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], [1]);
-    Array.sameElements(a, [1])
-
-@test
-def append03(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def append04(): Bool & Impure =
-    let a = Array.append([1], []: Array[Int32]);
-    Array.sameElements(a, [1])
-
-@test
-def append05(): Bool & Impure =
-    let a = Array.append([1,2], []: Array[Int32]);
-    Array.sameElements(a, [1,2])
-
-@test
-def append06(): Bool & Impure =
-    let a = Array.append([1], [2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def append07(): Bool & Impure =
-    let a = Array.append([1,2], [3]);
-    Array.sameElements(a, [1,2,3])
-
-@test
-def append08(): Bool & Impure =
-    let a = Array.append([1], [2,3]);
-    Array.sameElements(a, [1,2,3])
-
-/////////////////////////////////////////////////////////////////////////////
-// memberOf                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def memberOf01(): Bool & Impure = Array.memberOf(0, []: Array[Int32]) == false
-
-@test
-def memberOf02(): Bool & Impure = Array.memberOf(0, [1]) == false
-
-@test
-def memberOf03(): Bool & Impure = Array.memberOf(0, [0]) == true
-
-@test
-def memberOf04(): Bool & Impure = Array.memberOf(0, [1,2]) == false
-
-@test
-def memberOf05(): Bool & Impure = Array.memberOf(1, [1,2]) == true
-
-@test
-def memberOf06(): Bool & Impure = Array.memberOf(2, [1,2]) == true
-
-@test
-def memberOf07(): Bool & Impure = Array.memberOf(3, [1,2]) == false
-
-/////////////////////////////////////////////////////////////////////////////
-// indexOf                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def indexOf01(): Bool & Impure = Array.indexOf(0, []: Array[Int32]) == None
-
-@test
-def indexOf02(): Bool & Impure = Array.indexOf(0, [1]) == None
-
-@test
-def indexOf03(): Bool & Impure = Array.indexOf(1, [1]) == Some(0)
-
-@test
-def indexOf04(): Bool & Impure = Array.indexOf(0, [1,2]) == None
-
-@test
-def indexOf05(): Bool & Impure = Array.indexOf(1, [1,2]) == Some(0)
-
-@test
-def indexOf06(): Bool & Impure = Array.indexOf(2, [1,2]) == Some(1)
-
-/////////////////////////////////////////////////////////////////////////////
-// indexOfLeft                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def indexOfLeft01(): Bool & Impure = Array.indexOfLeft(0, []: Array[Int32]) == None
-
-@test
-def indexOfLeft02(): Bool & Impure = Array.indexOfLeft(0, [1]) == None
-
-@test
-def indexOfLeft03(): Bool & Impure = Array.indexOfLeft(1, [1]) == Some(0)
-
-@test
-def indexOfLeft04(): Bool & Impure = Array.indexOfLeft(0, [1,2]) == None
-
-@test
-def indexOfLeft05(): Bool & Impure = Array.indexOfLeft(1, [1,2]) == Some(0)
-
-@test
-def indexOfLeft06(): Bool & Impure = Array.indexOfLeft(2, [1,2]) == Some(1)
-
-@test
-def indexOfLeft07(): Bool & Impure = Array.indexOfLeft(1, [1,1]) == Some(0)
-
-/////////////////////////////////////////////////////////////////////////////
-// indexOfRight                                                            //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def indexOfRight01(): Bool & Impure = Array.indexOfRight(0, []: Array[Int32]) == None
-
-@test
-def indexOfRight02(): Bool & Impure = Array.indexOfRight(0, [1]) == None
-
-@test
-def indexOfRight03(): Bool & Impure = Array.indexOfRight(1, [1]) == Some(0)
-
-@test
-def indexOfRight04(): Bool & Impure = Array.indexOfRight(0, [1,2]) == None
-
-@test
-def indexOfRight05(): Bool & Impure = Array.indexOfRight(1, [1,2]) == Some(0)
-
-@test
-def indexOfRight06(): Bool & Impure = Array.indexOfRight(2, [1,2]) == Some(1)
-
-@test
-def indexOfRight07(): Bool & Impure = Array.indexOfRight(1, [1,1]) == Some(1)
-
-/////////////////////////////////////////////////////////////////////////////
-// indices                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def indices01(): Bool & Impure =
-    let a = Array.indices(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def indices02(): Bool & Impure =
-    let a = Array.indices(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def indices03(): Bool & Impure =
-    let a = Array.indices(1, [1]);
-    Array.sameElements(a, [0])
-
-@test
-def indices04(): Bool & Impure =
-    let a = Array.indices(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def indices05(): Bool & Impure =
-    let a = Array.indices(1, [1,2]);
-    Array.sameElements(a, [0])
-
-@test
-def indices06(): Bool & Impure =
-    let a = Array.indices(2, [1,2]);
-    Array.sameElements(a, [1])
-
-@test
-def indices07(): Bool & Impure =
-    let a = Array.indices(1, [1,1]);
-    Array.sameElements(a, [0,1])
-
-/////////////////////////////////////////////////////////////////////////////
-// find                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def find01(): Bool & Impure = Array.find(i -> i > 2, []: Array[Int32]) == None
-
-@test
-def find02(): Bool & Impure = Array.find(i -> i > 2, [1]) == None
-
-@test
-def find03(): Bool & Impure = Array.find(i -> i > 2, [3]) == Some(3)
-
-@test
-def find04(): Bool & Impure = Array.find(i -> i > 2, [1,2]) == None
-
-@test
-def find05(): Bool & Impure = Array.find(i -> i > 2, [6,-6]) == Some(6)
-
-@test
-def find06(): Bool & Impure = Array.find(i -> i > 2, [-6,6]) == Some(6)
-
-@test
-def find07(): Bool & Impure = Array.find(i -> i > 2, [6,7]) == Some(6)
-
-/////////////////////////////////////////////////////////////////////////////
-// findLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def findLeft01(): Bool & Impure = Array.findLeft(i -> i > 2, []) == None
-
-@test
-def findLeft02(): Bool & Impure = Array.findLeft(i -> i > 2, [1]) == None
-
-@test
-def findLeft03(): Bool & Impure = Array.findLeft(i -> i > 2, [3]) == Some(3)
-
-@test
-def findLeft04(): Bool & Impure = Array.findLeft(i -> i > 2, [1,2]) == None
-
-@test
-def findLeft05(): Bool & Impure = Array.findLeft(i -> i > 2, [6,-6]) == Some(6)
-
-@test
-def findLeft06(): Bool & Impure = Array.findLeft(i -> i > 2, [-6,6]) == Some(6)
-
-@test
-def findLeft07(): Bool & Impure = Array.findLeft(i -> i > 2, [6,7]) == Some(6)
-
-/////////////////////////////////////////////////////////////////////////////
-// findRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def findRight01(): Bool & Impure = Array.findRight(i -> i > 2, []: Array[Int32]) == None
-
-@test
-def findRight02(): Bool & Impure = Array.findRight(i -> i > 2, [1]) == None
-
-@test
-def findRight03(): Bool & Impure = Array.findRight(i -> i > 2, [3]) == Some(3)
-
-@test
-def findRight04(): Bool & Impure = Array.findRight(i -> i > 2, [1,2]) == None
-
-@test
-def findRight05(): Bool & Impure = Array.findRight(i -> i > 2, [6,-6]) == Some(6)
-
-@test
-def findRight06(): Bool & Impure = Array.findRight(i -> i > 2, [-6,6]) == Some(6)
-
-@test
-def findRight07(): Bool & Impure = Array.findRight(i -> i > 2, [6,7]) == Some(7)
-
-/////////////////////////////////////////////////////////////////////////////
-// range                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def range01(): Bool & Impure =
-    let a = Array.range(1, 0);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def range02(): Bool & Impure =
-    let a = Array.range(1, 1);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def range03(): Bool & Impure =
-    let a = Array.range(1, 2);
-    Array.sameElements(a, [1])
-
-@test
-def range04(): Bool & Impure =
-    let a = Array.range(1, 3);
-    Array.sameElements(a, [1,2])
-
-@test
-def range05(): Bool & Impure =
-    let a = Array.range(1, 4);
-    Array.sameElements(a, [1,2,3])
-
-@test
-def range06(): Bool & Impure =
-    let a = Array.range(-1, 3);
-    Array.sameElements(a, [-1,0,1,2])
-
-/////////////////////////////////////////////////////////////////////////////
-// repeat                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def repeat01(): Bool & Impure =
-    let a = Array.repeat(-1, 1);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def repeat02(): Bool & Impure =
-    let a = Array.repeat(0, 1);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def repeat03(): Bool & Impure =
-    let a = Array.repeat(1, 1);
-    Array.sameElements(a, [1])
-
-@test
-def repeat04(): Bool & Impure =
-    let a = Array.repeat(2, 1);
-    Array.sameElements(a, [1,1])
-
-@test
-def repeat05(): Bool & Impure =
-    let a = Array.repeat(3, 1);
-    Array.sameElements(a, [1,1,1])
-
-/////////////////////////////////////////////////////////////////////////////
-// scan                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def scan01(): Bool & Impure =
-    let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, []);
-    Array.sameElements(a, [1])
-
-@test
-def scan02(): Bool & Impure =
-    let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false]);
-    Array.sameElements(a, [1,3])
-
-@test
-def scan03(): Bool & Impure =
-    let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true]);
-    Array.sameElements(a, [1,2])
-
-@test
-def scan04(): Bool & Impure =
-    let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false,false]);
-    Array.sameElements(a, [1,3,5])
-
-@test
-def scan05(): Bool & Impure =
-    let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false,true]);
-    Array.sameElements(a, [1,3,4])
-
-@test
-def scan06(): Bool & Impure =
-    let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true,false]);
-    Array.sameElements(a, [1,2,4])
-
-@test
-def scan07(): Bool & Impure =
-    let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true,true]);
-    Array.sameElements(a, [1,2,3])
-
-/////////////////////////////////////////////////////////////////////////////
-// scanLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def scanLeft01(): Bool & Impure =
-    let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, []: Array[Bool]);
-    Array.sameElements(a, [1])
-
-@test
-def scanLeft02(): Bool & Impure =
-    let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false]);
-    Array.sameElements(a, [1,3])
-
-@test
-def scanLeft03(): Bool & Impure =
-    let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true]);
-    Array.sameElements(a, [1,2])
-
-@test
-def scanLeft04(): Bool & Impure =
-    let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false,false]);
-    Array.sameElements(a, [1,3,5])
-
-@test
-def scanLeft05(): Bool & Impure =
-    let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false,true]);
-    Array.sameElements(a, [1,3,4])
-
-@test
-def scanLeft06(): Bool & Impure =
-    let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true,false]);
-    Array.sameElements(a, [1,2,4])
-
-@test
-def scanLeft07(): Bool & Impure =
-    let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true,true]);
-    Array.sameElements(a, [1,2,3])
-
-/////////////////////////////////////////////////////////////////////////////
-// scanRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def scanRight01(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, []);
-    Array.sameElements(a, [1])
-
-@test
-def scanRight02(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false]);
-    Array.sameElements(a, [3,1])
-
-@test
-def scanRight03(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true]);
-    Array.sameElements(a, [2,1])
-
-@test
-def scanRight04(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,false]);
-    Array.sameElements(a, [5,3,1])
-
-@test
-def scanRight05(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,true]);
-    Array.sameElements(a, [4,2,1])
-
-@test
-def scanRight06(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,false]);
-    Array.sameElements(a, [4,3,1])
-
-@test
-def scanRight07(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,true]);
-    Array.sameElements(a, [3,2,1])
-
-/////////////////////////////////////////////////////////////////////////////
-// map                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def map01(): Bool & Impure =
-    let a = Array.map(i -> i > 2, []);
-    Array.sameElements(a, []: Array[Bool])
-
-@test
-def map02(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [1]);
-    Array.sameElements(a, [false])
-
-@test
-def map03(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [3]);
-    Array.sameElements(a, [true])
-
-@test
-def map04(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [1,2]);
-    Array.sameElements(a, [false,false])
-
-@test
-def map05(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [1,8]);
-    Array.sameElements(a, [false, true])
-
-@test
-def map06(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [8,1]);
-    Array.sameElements(a, [true,false])
-
-@test
-def map07(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [7,8]);
-    Array.sameElements(a, [true,true])
-
-/////////////////////////////////////////////////////////////////////////////
-// transform!                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def transform01!(): Bool & Impure =
-    let a: Array[Int32] = [];
-    Array.transform!(x -> x+1, a);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def transform02!(): Bool & Impure =
-    let a = [0];
-    Array.transform!(x -> x+1, a);
-    Array.sameElements(a, [1])
-
-@test
-def transform03!(): Bool & Impure =
-    let a = [0,1];
-    Array.transform!(x -> x+1, a);
-    Array.sameElements(a, [1,2])
-
-@test
-def transform04!(): Bool & Impure =
-    let a = [0,1,2];
-    Array.transform!(x -> x+1, a);
-    Array.sameElements(a, [1,2,3])
-
-/////////////////////////////////////////////////////////////////////////////
-// mapWithIndex                                                            //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def mapWithIndex01(): Bool & Impure =
-    let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, []);
-    Array.sameElements(a, []: Array[Bool])
-
-@test
-def mapWithIndex02(): Bool & Impure =
-    let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1]);
-    Array.sameElements(a, [false])
-
-@test
-def mapWithIndex03(): Bool & Impure =
-    let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [3]);
-    Array.sameElements(a, [true])
-
-@test
-def mapWithIndex04(): Bool & Impure =
-    let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1,2]);
-    Array.sameElements(a, [false,true])
-
-@test
-def mapWithIndex05(): Bool & Impure =
-    let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1,8]);
-    Array.sameElements(a, [false,false])
-
-@test
-def mapWithIndex06(): Bool & Impure =
-    let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [8,1]);
-    Array.sameElements(a, [true,true])
-
-@test
-def mapWithIndex07(): Bool & Impure =
-    let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [7,8]);
-    Array.sameElements(a, [true,false])
-
-/////////////////////////////////////////////////////////////////////////////
-// transformWithIndex!                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def transformWithIndex01!(): Bool & Impure =
-    let a = []: Array[Int32];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def transformWithIndex02!(): Bool & Impure =
-    let a = [1];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [11])
-
-@test
-def transformWithIndex03!(): Bool & Impure =
-    let a = [3];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [13])
-
-@test
-def transformWithIndex04!(): Bool & Impure =
-    let a = [1,2];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [11,2])
-
-@test
-def transformWithIndex05!(): Bool & Impure =
-    let a = [1,8];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [11,8])
-
-@test
-def transformWithIndex06!(): Bool & Impure =
-    let a = [8,1];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [18,1])
-
-@test
-def transformWithIndex07!(): Bool & Impure =
-    let a = [7,8,9];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [17,8,9])
-
-/////////////////////////////////////////////////////////////////////////////
-// flatMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def flatMap01(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def flatMap02(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [0]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def flatMap03(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [1]);
-    Array.sameElements(a, [1])
-
-@test
-def flatMap04(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [2]);
-    Array.sameElements(a, [2,2])
-
-@test
-def flatMap05(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [1,2]);
-    Array.sameElements(a, [1,2,2])
-
-@test
-def flatMap06(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [2,3]);
-    Array.sameElements(a, [2,2,3,3,3])
-
-/////////////////////////////////////////////////////////////////////////////
-// reverse                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def reverse01(): Bool & Impure =
-    let a = Array.reverse([]: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def reverse02(): Bool & Impure =
-    let a = Array.reverse([1]);
-    Array.sameElements(a, [1])
-
-@test
-def reverse03(): Bool & Impure =
-    let a = Array.reverse([1,2]);
-    Array.sameElements(a, [2,1])
-
-@test
-def reverse04(): Bool & Impure =
-    let a = Array.reverse([1,1]);
-    Array.sameElements(a, [1,1])
-
-@test
-def reverse05(): Bool & Impure =
-    let a = Array.reverse([1,2,3]);
-    Array.sameElements(a, [3,2,1])
-
-@test
-def reverse06(): Bool & Impure =
-    let a = Array.reverse([1,2,3,4]);
-    Array.sameElements(a, [4,3,2,1])
-
-/////////////////////////////////////////////////////////////////////////////
-// reverse!                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def reverse01!(): Bool & Impure =
-    let a: Array[Int32] = [];
-    Array.reverse!(a);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def reverse02!(): Bool & Impure =
-    let a = [1];
-    Array.reverse!(a);
-    Array.sameElements(a, [1])
-
-@test
-def reverse03!(): Bool & Impure =
-    let a = [1,2];
-    Array.reverse!(a);
-    Array.sameElements(a, [2,1])
-
-@test
-def reverse04!(): Bool & Impure =
-    let a = [1,1];
-    Array.reverse!(a);
-    Array.sameElements(a, [1,1])
-
-@test
-def reverse05!(): Bool & Impure =
-    let a = [1,2,3];
-    Array.reverse!(a);
-    Array.sameElements(a, [3,2,1])
-
-@test
-def reverse06!(): Bool & Impure =
-    let a = [1,2,3,4];
-    Array.reverse!(a);
-    Array.sameElements(a, [4,3,2,1])
-
-/////////////////////////////////////////////////////////////////////////////
-// rotateLeft                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def rotateLeft01(): Bool & Impure =
-    let a = Array.rotateLeft(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def rotateLeft02(): Bool & Impure =
-    let a = Array.rotateLeft(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def rotateLeft03(): Bool & Impure =
-    let a = Array.rotateLeft(0, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def rotateLeft04(): Bool & Impure =
-    let a = Array.rotateLeft(0, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def rotateLeft05(): Bool & Impure =
-    let a = Array.rotateLeft(1, [1,2]);
-    Array.sameElements(a, [2,1])
-
-@test
-def rotateLeft06(): Bool & Impure =
-    let a = Array.rotateLeft(2, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def rotateLeft07(): Bool & Impure =
-    let a = Array.rotateLeft(3, [1,2]);
-    Array.sameElements(a, [2,1])
-
-@test
-def rotateLeft08(): Bool & Impure =
-    let a = Array.rotateLeft(-1, [1,2]);
-    Array.sameElements(a, [2,1])
-
-@test
-def rotateLeft09(): Bool & Impure =
-    let a = Array.rotateLeft(0, [1,2,3]);
-    Array.sameElements(a, [1,2,3])
-
-@test
-def rotateLeft10(): Bool & Impure =
-    let a = Array.rotateLeft(1, [1,2,3]);
-    Array.sameElements(a, [2,3,1])
-
-@test
-def rotateLeft11(): Bool & Impure =
-    let a = Array.rotateLeft(2, [1,2,3]);
-    Array.sameElements(a, [3,1,2])
-
-/////////////////////////////////////////////////////////////////////////////
-// rotateRight                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def rotateRight01(): Bool & Impure =
-    let a = Array.rotateRight(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def rotateRight02(): Bool & Impure =
-    let a = Array.rotateRight(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def rotateRight03(): Bool & Impure =
-    let a = Array.rotateRight(0, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def rotateRight04(): Bool & Impure =
-    let a = Array.rotateRight(0, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def rotateRight05(): Bool & Impure =
-    let a = Array.rotateRight(1, [1,2]);
-    Array.sameElements(a, [2,1])
-
-@test
-def rotateRight06(): Bool & Impure =
-    let a = Array.rotateRight(2, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def rotateRight07(): Bool & Impure =
-    let a = Array.rotateRight(3, [1,2]);
-    Array.sameElements(a, [2,1])
-
-@test
-def rotateRight08(): Bool & Impure =
-    let a = Array.rotateRight(-1, [1,2]);
-    Array.sameElements(a, [2,1])
-
-@test
-def rotateRight09(): Bool & Impure =
-    let a = Array.rotateRight(0, [1,2,3]);
-    Array.sameElements(a, [1,2,3])
-
-@test
-def rotateRight10(): Bool & Impure =
-    let a = Array.rotateRight(1, [1,2,3]);
-    Array.sameElements(a, [3,1,2])
-
-@test
-def rotateRight11(): Bool & Impure =
-    let a = Array.rotateRight(2, [1,2,3]);
-    Array.sameElements(a, [2,3,1])
-
-/////////////////////////////////////////////////////////////////////////////
-// update                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def update01(): Bool & Impure =
-    let a = Array.update(0, 2, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def update02(): Bool & Impure =
-    let a = Array.update(-1, 2, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def update03(): Bool & Impure =
-    let a = Array.update(0, 2, [1]);
-    Array.sameElements(a, [2])
-
-@test
-def update04(): Bool & Impure =
-    let a = Array.update(1, 2, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def update05(): Bool & Impure =
-    let a = Array.update(0, 5, [1,2]);
-    Array.sameElements(a, [5,2])
-
-@test
-def update06(): Bool & Impure =
-    let a = Array.update(1, 5, [1,2]);
-    Array.sameElements(a, [1,5])
-
-@test
-def update07(): Bool & Impure =
-    let a = Array.update(2, 5, [1,2]);
-    Array.sameElements(a, [1,2])
-
-/////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def replace01(): Bool & Impure =
-    let a = Array.replace(3, 4, []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def replace02(): Bool & Impure =
-    let a = Array.replace(3, 4, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def replace03(): Bool & Impure =
-    let a = Array.replace(3, 4, [3]);
-    Array.sameElements(a, [4])
-
-@test
-def replace04(): Bool & Impure =
-    let a = Array.replace(3, 4, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def replace05(): Bool & Impure =
-    let a = Array.replace(3, 4, [1, 2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def replace06(): Bool & Impure =
-    let a = Array.replace(3, 4, [1,3]);
-    Array.sameElements(a, [1,4])
-
-@test
-def replace07(): Bool & Impure =
-    let a = Array.replace(3, 4, [3,4]);
-    Array.sameElements(a, [4,4])
-
-@test
-def replace08(): Bool & Impure =
-    let a = Array.replace(3, 4, [3,3]);
-    Array.sameElements(a, [4,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// replace!                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def replace01!(): Bool & Impure =
-    let a: Array[Int32] = [];
-    Array.replace!(3, 4, a);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def replace02!(): Bool & Impure =
-    let a = [1];
-    Array.replace!(3, 4, a);
-    Array.sameElements(a, [1])
-
-@test
-def replace03!(): Bool & Impure =
-    let a = [3];
-    Array.replace!(3, 4, a);
-    Array.sameElements(a, [4])
-
-@test
-def replace04!(): Bool & Impure =
-    let a = [4];
-    Array.replace!(3, 4, a);
-    Array.sameElements(a, [4])
-
-@test
-def replace05!(): Bool & Impure =
-    let a = [1, 2];
-    Array.replace!(3, 4, a);
-    Array.sameElements(a, [1,2])
-
-@test
-def replace06!(): Bool & Impure =
-    let a = [1,3];
-    Array.replace!(3, 4, a);
-    Array.sameElements(a, [1,4])
-
-@test
-def replace07!(): Bool & Impure =
-    let a = [3,4];
-    Array.replace!(3, 4, a);
-    Array.sameElements(a, [4,4])
-
-@test
-def replace08!(): Bool & Impure =
-    let a = [3,3];
-    Array.replace!(3, 4, a);
-    Array.sameElements(a, [4,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// patch                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def patch01(): Bool & Impure =
-    let a = Array.patch(0, 0, []: Array[Int32], []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def patch02(): Bool & Impure =
-    let a = Array.patch(0, 2, [1,2], []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def patch03(): Bool & Impure =
-    let a = Array.patch(0, 2, [], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch04(): Bool & Impure =
-    let a = Array.patch(-3, 3, [1,2,4], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch05(): Bool & Impure =
-    let a = Array.patch(2, 3, [1,2,4], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch06(): Bool & Impure =
-    let a = Array.patch(0, 0, [], [1]);
-    Array.sameElements(a, [1])
-
-@test
-def patch07(): Bool & Impure =
-    let a = Array.patch(1, 0, [2], [1]);
-    Array.sameElements(a, [1])
-
-@test
-def patch08(): Bool & Impure =
-    let a = Array.patch(0, 1, [2], [1]);
-    Array.sameElements(a, [2])
-
-@test
-def patch09(): Bool & Impure =
-    let a = Array.patch(0, 2, [2,4], [1]);
-    Array.sameElements(a, [2])
-
-@test
-def patch10(): Bool & Impure =
-    let a = Array.patch(-1, 2, [2,4], [1]);
-    Array.sameElements(a, [4])
-
-@test
-def patch11(): Bool & Impure =
-    let a = Array.patch(-1, 2, [3,4], [1,2]);
-    Array.sameElements(a, [4,2])
-
-@test
-def patch12(): Bool & Impure =
-    let a = Array.patch(1, 2, [3,4], [1,2]);
-    Array.sameElements(a, [1,3])
-
-@test
-def patch13(): Bool & Impure =
-    let a = Array.patch(-2, 2, [3,4], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch14(): Bool & Impure =
-    let a = Array.patch(2, 2, [3,4], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch15(): Bool & Impure =
-    let a = Array.patch(1, 1, [3], [1,2]);
-    Array.sameElements(a, [1,3])
-
-@test
-def patch16(): Bool & Impure =
-    let a = Array.patch(0, 2, [3,4], [1,2]);
-    Array.sameElements(a, [3,4])
-
-@test
-def patch17(): Bool & Impure =
-    let a = Array.patch(0, 1, [4], [1, 2, 3]);
-    Array.sameElements(a, [4, 2, 3])
-
-@test
-def patch18(): Bool & Impure =
-    let a = Array.patch(1, 1, [4], [1, 2, 3]);
-    Array.sameElements(a, [1, 4, 3])
-
-@test
-def patch19(): Bool & Impure =
-    let a = Array.patch(2, 1, [4], [1, 2, 3]);
-    Array.sameElements(a, [1, 2, 4])
-
-@test
-def patch20(): Bool & Impure =
-    let a = Array.patch(0, 2, [4, 5], [1, 2, 3]);
-    Array.sameElements(a, [4, 5, 3])
-
-@test
-def patch21(): Bool & Impure =
-    let a = Array.patch(1, 2, [4, 5], [1, 2, 3]);
-    Array.sameElements(a, [1, 4, 5])
-
-@test
-def patch22(): Bool & Impure =
-    let a = Array.patch(0, 2, [4, 5, 6], [1, 2, 3]);
-    Array.sameElements(a, [4, 5, 3])
-
-@test
-def patch23(): Bool & Impure =
-    let a = Array.patch(0, 3, [4, 5, 6], [1, 2, 3]);
-    Array.sameElements(a, [4, 5, 6])
-
-@test
-def patch24(): Bool & Impure =
-    let a = Array.patch(2, 4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
-
-@test
-def patch25(): Bool & Impure =
-    let a = Array.patch(-2, 4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
-
-@test
-def patch26(): Bool & Impure =
-    let a = Array.patch(4, 5, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
-
-@test
-def patch27(): Bool & Impure =
-    let a = Array.patch(4, 2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
-
-@test
-def patch28(): Bool & Impure =
-    let a = Array.patch(-1, 10, [-1, -2, -3, -4, -5, -6, -7, -8], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
-
-/////////////////////////////////////////////////////////////////////////////
-// patch!                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def patch01!(): Bool & Impure =
-    let a = []: Array[Int32];
-    Array.patch!(0, 0, []: Array[Int32], a);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def patch02!(): Bool & Impure =
-    let a = []: Array[Int32];
-    Array.patch!(0, 2, [1,2], a);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def patch03!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(0, 2, [], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch04!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(-3, 3, [1,2,4], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch05!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(2, 3, [1,2,4], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch06!(): Bool & Impure =
-    let a = [1];
-    Array.patch!(0, 0, [], a);
-    Array.sameElements(a, [1])
-
-@test
-def patch07!(): Bool & Impure =
-    let a = [1];
-    Array.patch!(1, 0, [2], a);
-    Array.sameElements(a, [1])
-
-@test
-def patch08!(): Bool & Impure =
-    let a = [1];
-    Array.patch!(0, 1, [2], a);
-    Array.sameElements(a, [2])
-
-@test
-def patch09!(): Bool & Impure =
-    let a = [1];
-    Array.patch!(0, 2, [2,4], a);
-    Array.sameElements(a, [2])
-
-@test
-def patch10!(): Bool & Impure =
-    let a = [1];
-    Array.patch!(-1, 2, [2,4], a);
-    Array.sameElements(a, [4])
-
-@test
-def patch11!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(-1, 2, [3,4], a);
-    Array.sameElements(a, [4,2])
-
-@test
-def patch12!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(1, 2, [3,4], a);
-    Array.sameElements(a, [1,3])
-
-@test
-def patch13!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(-2, 2, [3,4], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch14!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(2, 2, [3,4], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def patch15!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(1, 1, [3], a);
-    Array.sameElements(a, [1,3])
-
-@test
-def patch16!(): Bool & Impure =
-    let a = [1,2];
-    Array.patch!(0, 2, [3,4], a);
-    Array.sameElements(a, [3,4])
-
-@test
-def patch17!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.patch!(0, 1, [4], a);
-    Array.sameElements(a, [4, 2, 3])
-
-@test
-def patch18!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.patch!(1, 1, [4], a);
-    Array.sameElements(a, [1, 4, 3])
-
-@test
-def patch19!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.patch!(2, 1, [4], a);
-    Array.sameElements(a, [1, 2, 4])
-
-@test
-def patch20!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.patch!(0, 2, [4, 5], a);
-    Array.sameElements(a, [4, 5, 3])
-
-@test
-def patch21!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.patch!(1, 2, [4, 5], a);
-    Array.sameElements(a, [1, 4, 5])
-
-@test
-def patch22!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.patch!(0, 2, [4, 5, 6], a);
-    Array.sameElements(a, [4, 5, 3])
-
-@test
-def patch23!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.patch!(0, 3, [4, 5, 6], a);
-    Array.sameElements(a, [4, 5, 6])
-
-@test
-def patch24!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.patch!(2, 4, [14, 15, 16, 17], a);
-    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
-
-@test
-def patch25!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.patch!(-2, 4, [14, 15, 16, 17], a);
-    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
-
-@test
-def patch26!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.patch!(4, 5, [14, 15, 16, 17], a);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
-
-@test
-def patch27!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.patch!(4, 2, [14, 15, 16, 17], a);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
-
-@test
-def patch28!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.patch!(-1, 10, [-1, -2, -3, -4, -5, -6, -7, -8], a);
-    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
-
-/////////////////////////////////////////////////////////////////////////////
-// intersperse                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def intersperse01(): Bool & Impure =
-    let a = Array.intersperse(11, []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def intersperse02(): Bool & Impure =
-    let a = Array.intersperse(11, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def intersperse03(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2]);
-    Array.sameElements(a, [1,11,2])
-
-@test
-def intersperse04(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2,3]);
-    Array.sameElements(a, [1,11,2,11,3])
-
-@test
-def intersperse05(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2,3,4]);
-    Array.sameElements(a, [1,11,2,11,3,11,4])
-
-
-/////////////////////////////////////////////////////////////////////////////
-// intercalate                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def intercalate01(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], []: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def intercalate02(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], [[1]]);
-    Array.sameElements(a, [1])
-
-@test
-def intercalate03(): Bool & Impure =
-    let a = Array.intercalate([11,12,13], []: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def intercalate04(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], [[1],[2,3]]);
-    Array.sameElements(a, [1,2,3])
-
-@test
-def intercalate05(): Bool & Impure =
-    let a = Array.intercalate([11,12,13], [[1],[2,3]]);
-    Array.sameElements(a, [1,11,12,13,2,3])
-
-@test
-def intercalate06(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], [[1],[2,3],[4]]);
-    Array.sameElements(a, [1,2,3,4])
-
-@test
-def intercalate07(): Bool & Impure =
-    let a = Array.intercalate([11,12,13], [[1],[2,3],[4]]);
-    Array.sameElements(a, [1,11,12,13,2,3,11,12,13,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// transpose                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def transpose01(): Bool & Impure =
-    let a = Array.transpose([]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b: List[List[Unit]] == Nil
-
-@test
-def transpose02(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil
-
-@test
-def transpose03(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[], []]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil :: Nil
-
-@test
-def transpose04(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[], [], []]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil :: Nil :: Nil
-
-@test
-def transpose05(): Bool & Impure =
-    let a = Array.transpose([ [1] ]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: Nil
-
-@test
-def transpose06(): Bool & Impure =
-    let a = Array.transpose([[1,2]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: Nil
-
-@test
-def transpose07(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
-
-@test
-def transpose08(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
-
-@test
-def transpose09(): Bool & Impure =
-    let a = Array.transpose([[1], [2]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b ==   (1 :: 2 :: Nil) :: Nil
-
-@test
-def transpose10(): Bool & Impure =
-    let a = Array.transpose([[1], [2], [3]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b ==  (1 :: 2 :: 3 :: Nil) :: Nil
-
-@test
-def transpose11(): Bool & Impure =
-    let a = Array.transpose([[1], [2], [3], [4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
-
-@test
-def transpose12(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
-
-@test
-def transpose13(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
-
-@test
-def transpose14(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4], [5, 6, 7, 8]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
-
-@test
-def transpose15(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
-
-@test
-def transpose16(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
-
-@test
-def transpose17(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7,8]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
-
-@test
-def transpose18(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
-
-@test
-def transpose19(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
-
-@test
-def transpose20(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
-
-@test
-def transpose21(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
-
-@test
-def transpose22(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// isPrefixOf                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def isPrefixOf01(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], []: Array[Int32])
-
-@test
-def isPrefixOf02(): Bool & Impure = Array.isPrefixOf([1], []: Array[Int32]) == false
-
-@test
-def isPrefixOf03(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], [1])
-
-@test
-def isPrefixOf04(): Bool & Impure = Array.isPrefixOf([1], [1])
-
-@test
-def isPrefixOf05(): Bool & Impure = Array.isPrefixOf([2], [1]) == false
-
-@test
-def isPrefixOf06(): Bool & Impure = Array.isPrefixOf([1,2], [1]) == false
-
-@test
-def isPrefixOf07(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], [1,2])
-
-@test
-def isPrefixOf08(): Bool & Impure = Array.isPrefixOf([1], [1,2])
-
-@test
-def isPrefixOf09(): Bool & Impure = Array.isPrefixOf([2], [1,2]) == false
-
-@test
-def isPrefixOf10(): Bool & Impure = Array.isPrefixOf([1,2], [1,2])
-
-@test
-def isPrefixOf11(): Bool & Impure = Array.isPrefixOf([1,3], [1,2]) == false
-
-@test
-def isPrefixOf12(): Bool & Impure = Array.isPrefixOf([1,2,3], [1,2]) == false
-
-@test
-def isPrefixOf13(): Bool & Impure = Array.isPrefixOf([1,2,3], [89,11,1,2,3,4]) == false
-
-/////////////////////////////////////////////////////////////////////////////
-// isInfixOf                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def isInfixOf01(): Bool & Impure = Array.isInfixOf([]: Array[Int32], []: Array[Int32])
-
-@test
-def isInfixOf02(): Bool & Impure = Array.isInfixOf([1], []: Array[Int32]) == false
-
-@test
-def isInfixOf03(): Bool & Impure = Array.isInfixOf([]: Array[Int32], [1])
-
-@test
-def isInfixOf04(): Bool & Impure = Array.isInfixOf([1], [1])
-
-@test
-def isInfixOf05(): Bool & Impure = Array.isInfixOf([2], [1]) == false
-
-@test
-def isInfixOf06(): Bool & Impure = Array.isInfixOf([1,2], [1]) == false
-
-@test
-def isInfixOf07(): Bool & Impure = Array.isInfixOf([]: Array[Int32], [1,2])
-
-@test
-def isInfixOf08(): Bool & Impure = Array.isInfixOf([1], [1,2])
-
-@test
-def isInfixOf09(): Bool & Impure = Array.isInfixOf([2], [1,2])
-
-@test
-def isInfixOf10(): Bool & Impure = Array.isInfixOf([1,2], [1,2])
-
-@test
-def isInfixOf11(): Bool & Impure = Array.isInfixOf([1,3], [1,2]) == false
-
-@test
-def isInfixOf12(): Bool & Impure = Array.isInfixOf([1,2,3], [1,2]) == false
-
-@test
-def isInfixOf13(): Bool & Impure = Array.isInfixOf([1,2,3], [89,11,1,2,3,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// isSuffixOf                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def isSuffixOf01(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], []: Array[Int32])
-
-@test
-def isSuffixOf02(): Bool & Impure = Array.isSuffixOf([1], []: Array[Int32]) == false
-
-@test
-def isSuffixOf03(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], [1])
-
-@test
-def isSuffixOf04(): Bool & Impure = Array.isSuffixOf([1], [1])
-
-@test
-def isSuffixOf05(): Bool & Impure = Array.isSuffixOf([2], [1]) == false
-
-@test
-def isSuffixOf06(): Bool & Impure = Array.isSuffixOf([1,2], [1]) == false
-
-@test
-def isSuffixOf07(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], [1,2])
-
-@test
-def isSuffixOf08(): Bool & Impure = Array.isSuffixOf([1], [1,2]) == false
-
-@test
-def isSuffixOf09(): Bool & Impure = Array.isSuffixOf([2], [1,2])
-
-@test
-def isSuffixOf10(): Bool & Impure = Array.isSuffixOf([1,2], [1,2])
-
-@test
-def isSuffixOf11(): Bool & Impure = Array.isSuffixOf([1,3], [1,2]) == false
-
-@test
-def isSuffixOf12(): Bool & Impure = Array.isSuffixOf([1,2,3], [1,2]) == false
-
-@test
-def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
-
-/////////////////////////////////////////////////////////////////////////////
-// eq                                                                      //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testEq01(): Bool & Impure = ([] : Array[Int]) `eq` ([] : Array[Int])
-
-@test
-def testEq02(): Bool & Impure = Bool.not([1] `eq` [])
-
-@test
-def testEq03(): Bool & Impure = Bool.not([] `eq` [1])
-
-@test
-def testEq04(): Bool & Impure = [1] `eq` [1]
-
-@test
-def testEq05(): Bool & Impure = Bool.not([1] `eq` [2])
-
-@test
-def testEq06(): Bool & Impure = Bool.not([1,2] `eq` [1])
-
-@test
-def testEq07(): Bool & Impure = Bool.not([1] `eq` [1,2])
-
-@test
-def testEq08(): Bool & Impure = [1,2,3,4] `eq` [1,2,3,4]
-
-/////////////////////////////////////////////////////////////////////////////
-// compare                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testCompare01(): Bool & Impure = (([] : Array[Int]) `Array.compare` ([] : Array[Int])) == EqualTo
-
-@test
-def testCompare02(): Bool & Impure = ([1] `Array.compare` []) == GreaterThan
-
-@test
-def testCompare03(): Bool & Impure = ([] `Array.compare` [1]) == LessThan
-
-@test
-def testCompare04(): Bool & Impure = ([1] `Array.compare` [1]) == EqualTo
-
-@test
-def testCompare05(): Bool & Impure = ([1] `Array.compare` [2]) == LessThan
-
-@test
-def testCompare06(): Bool & Impure = ([2] `Array.compare` [1]) == GreaterThan
-
-@test
-def testCompare07(): Bool & Impure = ([1] `Array.compare` [1,2]) == LessThan
-
-@test
-def testCompare08(): Bool & Impure = ([1,2] `Array.compare` [1]) == GreaterThan
-
-@test
-def testCompare09(): Bool & Impure = ([1] `Array.compare` [0,0]) == GreaterThan
-
-@test
-def testCompare10(): Bool & Impure = ([0,0] `Array.compare` [1]) == LessThan
-
-@test
-def testCompare11(): Bool & Impure = ([1,2] `Array.compare` [1,1]) == GreaterThan
-
-@test
-def testCompare12(): Bool & Impure = ([1,2] `Array.compare` [1,3]) == LessThan
-
-@test
-def testCompare13(): Bool & Impure = ([1,2,3,4] `Array.compare` [1,2,3,4]) == EqualTo
-
-/////////////////////////////////////////////////////////////////////////////
-// fold                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def fold01(): Bool & Impure = Array.fold([]: Array[Unit]) == ()
-
-@test
-def fold02(): Bool & Impure = Array.fold(["a"]) == "a"
-
-@test
-def fold03(): Bool & Impure = Array.fold(["a", "b", "c"]) == "abc"
-
-@test
-def fold04(): Bool & Impure = Array.fold([("yes", "no"), ("no", "yes")]) == ("yesno", "noyes")
-
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foldLeft01(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, []) == 100
-
-@test
-def foldLeft02(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1]) == 198
-
-@test
-def foldLeft03(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1,2]) == 196
-
-@test
-def foldLeft04(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1,2,3]) == 386
-
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foldRight01(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, []) == 100
-
-@test
-def foldRight02(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, [1]) == 198
-
-@test
-def foldRight03(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, [1,2]) == 194
-
-@test
-def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, [1,2,3]) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// reduceLeft                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def reduceLeft01(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, []: Array[Int]) == None
-
-@test
-def reduceLeft02(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1]) == Some(1)
-
-@test
-def reduceLeft03(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2]) == Some(-1)
-
-@test
-def reduceLeft04(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2,3]) == Some(-4)
-
-@test
-def reduceLeft05(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2,3,4]) == Some(-8)
-
-/////////////////////////////////////////////////////////////////////////////
-// reduceRight                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def reduceRight01(): Bool & Impure = Array.reduceRight((a, b) -> a-b, []: Array[Int]) == None
-
-@test
-def reduceRight02(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1]) == Some(1)
-
-@test
-def reduceRight03(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1,2]) == Some(-1)
-
-@test
-def reduceRight04(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1,2,3]) == Some(2)
-
-@test
-def reduceRight05(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1,2,3,4]) == Some(-2)
-
-/////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def count01(): Bool & Impure = Array.count(i -> i > 3, []) == 0
-
-@test
-def count02(): Bool & Impure = Array.count(i -> i > 3, [1]) == 0
-
-@test
-def count03(): Bool & Impure = Array.count(i -> i > 3, [4]) == 1
-
-@test
-def count04(): Bool & Impure = Array.count(i -> i > 3, [1,2]) == 0
-
-@test
-def count05(): Bool & Impure = Array.count(i -> i > 3, [1,8]) == 1
-
-@test
-def count06(): Bool & Impure = Array.count(i -> i > 3, [8,1]) == 1
-
-@test
-def count07(): Bool & Impure = Array.count(i -> i > 3, [6,7]) == 2
-
-/////////////////////////////////////////////////////////////////////////////
-// flatten                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def flatten01(): Bool & Impure =
-    let a = Array.flatten([]: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def flatten02(): Bool & Impure =
-    let a = Array.flatten([[]]: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def flatten03(): Bool & Impure =
-    let a = Array.flatten([[1]]);
-    Array.sameElements(a, [1])
-
-@test
-def flatten04(): Bool & Impure =
-    let a= Array.flatten([[1,2]]);
-    Array.sameElements(a, [1,2])
-
-@test
-def flatten05(): Bool & Impure =
-    let a = Array.flatten([[],[]]: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def flatten06(): Bool & Impure =
-    let a = Array.flatten([[1],[]]);
-    Array.sameElements(a, [1])
-
-@test
-def flatten07(): Bool & Impure =
-    let a = Array.flatten([[],[1]]);
-    Array.sameElements(a, [1])
-
-@test
-def flatten08(): Bool & Impure =
-    let a = Array.flatten([[1],[2]]);
-    Array.sameElements(a, [1,2])
-
-@test
-def flatten09(): Bool & Impure =
-    let a = Array.flatten([[1,2],[3,4,5]]);
-    Array.sameElements(a, [1,2,3,4,5])
-
-@test
-def flatten10(): Bool & Impure =
-    let a = Array.flatten([[1],[2,3],[4]]);
-    Array.sameElements(a, [1,2,3,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def exists01(): Bool & Impure = Array.exists(i -> i > 3, [] : Array[Int32]) == false
-
-@test
-def exists02(): Bool & Impure = Array.exists(i -> i > 3, [1]) == false
-
-@test
-def exists03(): Bool & Impure = Array.exists(i -> i > 3, [5]) == true
-
-@test
-def exists04(): Bool & Impure = Array.exists(i -> i > 3, [1,2]) == false
-
-@test
-def exists05(): Bool & Impure = Array.exists(i -> i > 3, [1,6]) == true
-
-@test
-def exists06(): Bool & Impure = Array.exists(i -> i > 3, [6,1]) == true
-
-@test
-def exists07(): Bool & Impure = Array.exists(i -> i > 3, [16,6]) == true
-
-@test
-def exists08(): Bool & Impure = Array.exists(i -> i > 3, [1,-9,3]) == false
-
-@test
-def exists09(): Bool & Impure = Array.exists(i -> i > 3, [1,9,3]) == true
-
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def forall01(): Bool & Impure = Array.forall(i -> i > 3, []: Array[Int32]) == true
-
-@test
-def forall02(): Bool & Impure = Array.forall(i -> i > 3, [1]) == false
-
-@test
-def forall03(): Bool & Impure = Array.forall(i -> i > 3, [5]) == true
-
-@test
-def forall04(): Bool & Impure = Array.forall(i -> i > 3, [1,2]) == false
-
-@test
-def forall05(): Bool & Impure = Array.forall(i -> i > 3, [1,6]) == false
-
-@test
-def forall06(): Bool & Impure = Array.forall(i -> i > 3, [6,1]) == false
-
-@test
-def forall07(): Bool & Impure = Array.forall(i -> i > 3, [16,6]) == true
-
-@test
-def forall08(): Bool & Impure = Array.forall(i -> i > 3, [1,-9,3]) == false
-
-@test
-def forall09(): Bool & Impure = Array.forall(i -> i > 3, [1,9,3]) == false
-
-@test
-def forall10(): Bool & Impure = Array.forall(i -> i > 3, [11,9,31]) == true
-
-/////////////////////////////////////////////////////////////////////////////
-// filter                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def filter01(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filter02(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filter03(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def filter04(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,3]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filter05(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,8]);
-    Array.sameElements(a, [8])
-
-@test
-def filter06(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [8,1]);
-    Array.sameElements(a, [8])
-
-@test
-def filter07(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [8,9]);
-    Array.sameElements(a, [8,9])
-
-@test
-def filter08(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,4,11,2,-22,17]);
-    Array.sameElements(a, [4,11,17])
-
-/////////////////////////////////////////////////////////////////////////////
-// partition                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def partition01(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def partition02(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1])
-
-@test
-def partition03(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [4]);
-    Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def partition04(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,2])
-
-@test
-def partition05(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1,5]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
-
-@test
-def partition06(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
-
-@test
-def partition07(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def partition08(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [4, -3, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 16, 7, 7]) and Array.sameElements(b, [-3, -5, 1, 2, 1])
-
-/////////////////////////////////////////////////////////////////////////////
-// span                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def span01(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def span02(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1]);
-    Array.sameElements(a,[]: Array[Int32]) and Array.sameElements(b, [1])
-
-@test
-def span03(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [4]);
-    Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def span04(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,2])
-
-@test
-def span05(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,5])
-
-@test
-def span06(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
-
-@test
-def span07(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def span08(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6]) and Array.sameElements(b, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
-
-/////////////////////////////////////////////////////////////////////////////
-// drop                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def drop01(): Bool & Impure =
-    let a = Array.drop(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop02(): Bool & Impure =
-    let a = Array.drop(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop03(): Bool & Impure =
-    let a = Array.drop(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop04(): Bool & Impure =
-    let a = Array.drop(-1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def drop05(): Bool & Impure =
-    let a = Array.drop(0, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def drop06(): Bool & Impure =
-    let a = Array.drop(1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop07(): Bool & Impure =
-    let a = Array.drop(2, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop08(): Bool & Impure =
-    let a = Array.drop(0, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def drop09(): Bool & Impure =
-    let a = Array.drop(1, [1,2]);
-    Array.sameElements(a, [2])
-
-@test
-def drop10(): Bool & Impure =
-    let a = Array.drop(2, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop11(): Bool & Impure =
-    let a = Array.drop(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [3,4,5,6])
-
-@test
-def drop12(): Bool & Impure =
-    let a = Array.drop(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [5,6])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropLeft01(): Bool & Impure =
-    let a = Array.dropLeft(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft02(): Bool & Impure =
-    let a = Array.dropLeft(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft03(): Bool & Impure =
-    let a = Array.dropLeft(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft04(): Bool & Impure =
-    let a = Array.dropLeft(-1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropLeft05(): Bool & Impure =
-    let a = Array.dropLeft(0, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropLeft06(): Bool & Impure =
-    let a = Array.dropLeft(1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft07(): Bool & Impure =
-    let a = Array.dropLeft(2, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft08(): Bool & Impure =
-    let a = Array.dropLeft(0, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropLeft09(): Bool & Impure =
-    let a = Array.dropLeft(1, [1,2]);
-    Array.sameElements(a, [2])
-
-@test
-def dropLeft10(): Bool & Impure =
-    let a = Array.dropLeft(2, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft11(): Bool & Impure =
-    let a = Array.dropLeft(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [3,4,5,6])
-
-@test
-def dropLeft12(): Bool & Impure =
-    let a = Array.dropLeft(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [5,6])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropRight01(): Bool & Impure =
-    let a = Array.dropRight(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight02(): Bool & Impure =
-    let a = Array.dropRight(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight03(): Bool & Impure =
-    let a = Array.dropRight(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight04(): Bool & Impure =
-    let a = Array.dropRight(-1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropRight05(): Bool & Impure =
-    let a = Array.dropRight(0, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropRight06(): Bool & Impure =
-    let a = Array.dropRight(1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight07(): Bool & Impure =
-    let a = Array.dropRight(2, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight08(): Bool & Impure =
-    let a = Array.dropRight(0, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropRight09(): Bool & Impure =
-    let a = Array.dropRight(1, [1,2]);
-    Array.sameElements(a, [1])
-
-@test
-def dropRight10(): Bool & Impure =
-    let a = Array.dropRight(2, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight11(): Bool & Impure =
-    let a = Array.dropRight(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2,3,4])
-
-@test
-def dropRight12(): Bool & Impure =
-    let a = Array.dropRight(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropWhile                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropWhile01(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhile02(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhile03(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [4]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhile04(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropWhile05(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [1,5]);
-    Array.sameElements(a, [1,5])
-
-@test
-def dropWhile06(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [5,1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhile07(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [5,8]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhile08(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropWhileLeft                                                           //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropWhileLeft01(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileLeft02(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhileLeft03(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [4]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileLeft04(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropWhileLeft05(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [1,5]);
-    Array.sameElements(a, [1,5])
-
-@test
-def dropWhileLeft06(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [5,1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhileLeft07(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [5,8]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileLeft08(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropWhileRight                                                          //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropWhileRight01(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileRight02(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhileRight03(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [4]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileRight04(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropWhileRight05(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1,5]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhileRight06(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5,1])
-
-@test
-def dropWhileRight07(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [5,8]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileRight08(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1])
-
-/////////////////////////////////////////////////////////////////////////////
-// take                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def take01(): Bool & Impure =
-    let a = Array.take(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take02(): Bool & Impure =
-    let a = Array.take(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take03(): Bool & Impure =
-    let a = Array.take(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take04(): Bool & Impure =
-    let a = Array.take(-1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take05(): Bool & Impure =
-    let a = Array.take(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take06(): Bool & Impure =
-    let a = Array.take(1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def take07(): Bool & Impure =
-    let a = Array.take(2, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def take08(): Bool & Impure =
-    let a = Array.take(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take09(): Bool & Impure =
-    let a = Array.take(1, [1,2]);
-    Array.sameElements(a, [1])
-
-@test
-def take10(): Bool & Impure =
-    let a = Array.take(2, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def take11(): Bool & Impure =
-    let a = Array.take(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2])
-
-@test
-def take12(): Bool & Impure =
-    let a = Array.take(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2,3,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeLeft01(): Bool & Impure =
-    let a = Array.takeLeft(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft02(): Bool & Impure =
-    let a = Array.takeLeft(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft03(): Bool & Impure =
-    let a = Array.takeLeft(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft04(): Bool & Impure =
-    let a = Array.takeLeft(-1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft05(): Bool & Impure =
-    let a = Array.takeLeft(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft06(): Bool & Impure =
-    let a = Array.takeLeft(1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def takeLeft07(): Bool & Impure =
-    let a = Array.takeLeft(2, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def takeLeft08(): Bool & Impure =
-    let a = Array.takeLeft(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft09(): Bool & Impure =
-    let a = Array.takeLeft(1, [1,2]);
-    Array.sameElements(a, [1])
-
-@test
-def takeLeft10(): Bool & Impure =
-    let a = Array.takeLeft(2, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def takeLeft11(): Bool & Impure =
-    let a = Array.takeLeft(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2])
-
-@test
-def takeLeft12(): Bool & Impure =
-    let a = Array.takeLeft(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2,3,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeRight01(): Bool & Impure =
-    let a = Array.takeRight(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight02(): Bool & Impure =
-    let a = Array.takeRight(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight03(): Bool & Impure =
-    let a = Array.takeRight(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight04(): Bool & Impure =
-    let a = Array.takeRight(-1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight05(): Bool & Impure =
-    let a = Array.takeRight(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight06(): Bool & Impure =
-    let a = Array.takeRight(1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def takeRight07(): Bool & Impure =
-    let a = Array.takeRight(2, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def takeRight08(): Bool & Impure =
-    let a = Array.takeRight(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight09(): Bool & Impure =
-    let a = Array.takeRight(1, [1,2]);
-    Array.sameElements(a, [2])
-
-@test
-def takeRight10(): Bool & Impure =
-    let a = Array.takeRight(2, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def takeRight11(): Bool & Impure =
-    let a = Array.takeRight(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [5,6])
-
-@test
-def takeRight12(): Bool & Impure =
-    let a = Array.takeRight(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [3,4,5,6])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeWhile                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeWhile01(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhile02(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhile03(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def takeWhile04(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhile05(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhile06(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5])
-
-@test
-def takeWhile07(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
-
-@test
-def takeWhile08(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeWhileLeft                                                           //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeWhileLeft01(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileLeft02(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileLeft03(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def takeWhileLeft04(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileLeft05(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileLeft06(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5])
-
-@test
-def takeWhileLeft07(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
-
-@test
-def takeWhileLeft08(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeWhileRight                                                          //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeWhileRight01(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileRight02(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileRight03(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def takeWhileRight04(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileRight05(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1,5]);
-    Array.sameElements(a, [5])
-
-@test
-def takeWhileRight06(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [5,1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileRight07(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
-
-@test
-def takeWhileRight08(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [7])
-
-/////////////////////////////////////////////////////////////////////////////
-// groupBy                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def groupBy01(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, []: Array[Int32]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == Nil
-
-@test
-def groupBy02(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: Nil) :: Nil
-
-@test
-def groupBy03(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,4]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: Nil) :: (4 :: Nil) :: Nil
-
-@test
-def groupBy04(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,9]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: 9 :: Nil) :: Nil
-
-@test
-def groupBy05(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
-
-@test
-def groupBy06(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > -6 or a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
-
-@test
-def groupBy07(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// zip                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def zip01(): Bool & Impure =
-    let a = Array.zip([]: Array[Int32], []: Array[Int32]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
-
-@test
-def zip02(): Bool & Impure =
-    let a = Array.zip([1], []: Array[Int32]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
-
-@test
-def zip03(): Bool & Impure =
-    let a = Array.zip([]: Array[Int32], [2]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
-
-@test
-def zip04(): Bool & Impure =
-    let a = Array.zip([1], [2]);
-    Array.sameElements(a, [(1, 2)])
-
-@test
-def zip05(): Bool & Impure =
-    let a = Array.zip([1,3], [2,4]);
-    Array.sameElements(a, [(1, 2), (3, 4)])
-
-@test
-def zip06(): Bool & Impure =
-    let a = Array.zip([1,3,5], [2,4,6]);
-    Array.sameElements(a, [(1, 2), (3, 4), (5, 6)])
-
-@test
-def zip07(): Bool & Impure =
-    let a = Array.zip([1,3,5,7], [2,4,6,8]);
-    Array.sameElements(a, [(1, 2), (3, 4), (5, 6), (7, 8)])
-
-/////////////////////////////////////////////////////////////////////////////
-// zipWith                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def zipWith01(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, []: Array[Int32], []: Array[Bool]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def zipWith02(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], []: Array[Bool]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def zipWith03(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, []: Array[Int32], [true]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def zipWith04(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], [true]);
-    Array.sameElements(arr, [2])
-
-@test
-def zipWith05(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], [false]);
-    Array.sameElements(arr, [1])
-
-@test
-def zipWith06(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a,
-                    [1, 2, 3, 4, 5, 6, 7, 8],
-                    [false, true, true, false, false, true, true, true]);
-    Array.sameElements(arr, [1, 3, 4, 4, 5, 7, 8, 9])
-
-/////////////////////////////////////////////////////////////////////////////
-// unzip                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def unzip01(): Bool & Impure =
-    let (a,b) = Array.unzip([]: Array[(Unit, Unit)]);
-    Array.sameElements(a, []) and Array.sameElements(b, [])
-
-@test
-def unzip02(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true)]);
-    Array.sameElements(a, [1]) and Array.sameElements(b, [true])
-
-@test
-def unzip03(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true), (2, true)]);
-    Array.sameElements(a, [1,2])  and Array.sameElements(b, [true,true])
-
-@test
-def unzip04(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
-    Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
-
-/////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def map201(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [], []);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def map202(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], []);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def map203(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [], [true]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def map204(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], [true]);
-    Array.sameElements(arr, [2])
-
-@test
-def map205(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], [false]);
-    Array.sameElements(arr, [1])
-
-@test
-def map206(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1,2,3,4,5,6,7,8], [false,true,true,false,false,true,true,true]);
-    Array.sameElements(arr, [1,3,4,4,5,7,8,9])
-
-/////////////////////////////////////////////////////////////////////////////
-// flatMap2                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def flatMap201(): Bool & Impure =
-    let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [], []);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def flatMap202(): Bool & Impure =
-    let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [1], []);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def flatMap203(): Bool & Impure =
-    let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [], [true]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def flatMap204(): Bool & Impure =
-    let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [2], [true]);
-    Array.sameElements(arr, [2,2])
-
-@test
-def flatMap205(): Bool & Impure =
-    let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [2], [false]);
-    Array.sameElements(arr, [3,3,3])
-
-@test
-def flatMap206(): Bool & Impure =
-    let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [1,2,3,4,5],
-                   [false,true,true,false,false]);
-    Array.sameElements(arr, [2, 2, 2, 2, 3, 3, 3, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6])
-
-/////////////////////////////////////////////////////////////////////////////
-// fold2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def fold201(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, []: Array[Int32], []: Array[Bool]) == 4
-
-@test
-def fold202(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [1], []) == 4
-
-@test
-def fold203(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [], [true]) == 4
-
-@test
-def fold204(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [2], [true]) == 6
-
-@test
-def fold205(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [2], [false]) == 8
-
-@test
-def fold206(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [true,true]) == 9
-
-@test
-def fold207(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [true,false]) == 14
-
-@test
-def fold208(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [false,true]) == 14
-
-@test
-def fold209(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [false,false]) == 24
-
-@test
-def fold210(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [6,-4,3,2],
-                    [true,false,false,true]) == -118
-
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft2                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foldLeft201(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, []: Array[Int32], []: Array[Bool]) == 4
-
-@test
-def foldLeft202(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [1], []: Array[Bool]) == 4
-
-@test
-def foldLeft203(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, []: Array[Int32], [true]) == 4
-
-@test
-def foldLeft204(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [2], [true]) == 6
-
-@test
-def foldLeft205(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [2], [false]) == 8
-
-@test
-def foldLeft206(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [true,true]) == 9
-
-@test
-def foldLeft207(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [true,false]) == 14
-
-@test
-def foldLeft208(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [false,true]) == 14
-
-@test
-def foldLeft209(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [false,false]) == 24
-
-@test
-def foldLeft210(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [6,-4,3,2],
-                        [true,false,false,true]) == -118
-
-/////////////////////////////////////////////////////////////////////////////
-// foldRight2                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foldRight201(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, []: Array[Int32], []: Array[Bool]) == 4
-
-@test
-def foldRight202(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [1], []: Array[Bool]) == 4
-
-@test
-def foldRight203(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, []: Array[Int32], [true]) == 4
-
-@test
-def foldRight204(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [2], [true]) == 6
-
-@test
-def foldRight205(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [2], [false]) == 8
-
-@test
-def foldRight206(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [3,2], [true,true]) == 9
-
-@test
-def foldRight207(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [3,2], [true,false]) == 11
-
-@test
-def foldRight208(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [3,2], [false,true]) == 18
-
-@test
-def foldRight209(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [3,2], [false,false]) == 24
-
-@test
-def foldRight210(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [6,-4,3,2],
-                         [true,false,false,true]) == -66
-
-/////////////////////////////////////////////////////////////////////////////
-// filterMap                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def filterMap01(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filterMap02(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filterMap03(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]);
-    Array.sameElements(a, [1])
-
-@test
-def filterMap04(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filterMap05(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]);
-    Array.sameElements(a, [2])
-
-@test
-def filterMap06(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]);
-    Array.sameElements(a, [3])
-
-@test
-def filterMap07(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]);
-    Array.sameElements(a, [4,3])
-
-@test
-def filterMap08(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]);
-    Array.sameElements(a, [0,1,2,5])
-
-/////////////////////////////////////////////////////////////////////////////
-// findMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def findMap01(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32]) == None
-
-@test
-def findMap02(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]) == None
-
-@test
-def findMap03(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]) == Some(1)
-
-@test
-def findMap04(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]) == None
-
-@test
-def findMap05(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]) == Some(2)
-
-@test
-def findMap06(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]) == Some(3)
-
-@test
-def findMap07(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]) == Some(4)
-
-@test
-def findMap08(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
-
-/////////////////////////////////////////////////////////////////////////////
-// toSet                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def toSet01(): Bool & Impure = Array.toSet([]: Array[Int32]) == Set#{}
-
-@test
-def toSet02(): Bool & Impure = Array.toSet([1]) == Set#{1}
-
-@test
-def toSet03(): Bool & Impure = Array.toSet([1,2]) == Set#{1, 2}
-
-@test
-def toSet04(): Bool & Impure = Array.toSet([1,1]) == Set#{1}
-
-@test
-def toSet05(): Bool & Impure = Array.toSet([1,2,3]) == Set#{1, 2, 3}
-
-@test
-def toSet06(): Bool & Impure = Array.toSet([1,2,1]) == Set#{1, 2}
-
-@test
-def toSet07(): Bool & Impure = Array.toSet([1,1,2]) == Set#{1, 2}
-
-@test
-def toSet08(): Bool & Impure = Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3, 4, 5, 6}
-
-/////////////////////////////////////////////////////////////////////////////
-// toMap                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def toMap01(): Bool & Impure = Array.toMap([]: Array[(Int32, Bool)]) == Map#{}
-
-@test
-def toMap02(): Bool & Impure = Array.toMap([(1, true)]) == Map#{1 -> true}
-
-@test
-def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 -> true, 2 -> false}
-
-@test
-def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 -> true}
-
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOf                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def findIndexOf01(): Bool & Impure = Array.findIndexOf(i -> i > 2, []: Array[Int32]) == None
-
-@test
-def findIndexOf02(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1]) == None
-
-@test
-def findIndexOf03(): Bool & Impure = Array.findIndexOf(i -> i > 2, [3]) == Some(0)
-
-@test
-def findIndexOf04(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1,2]) == None
-
-@test
-def findIndexOf05(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,-6]) == Some(0)
-
-@test
-def findIndexOf06(): Bool & Impure = Array.findIndexOf(i -> i > 2, [-6,6]) == Some(1)
-
-@test
-def findIndexOf07(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,7]) == Some(0)
-
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOfLeft                                                         //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def findIndexOfLeft01(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, []: Array[Int32]) == None
-
-@test
-def findIndexOfLeft02(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1]) == None
-
-@test
-def findIndexOfLeft03(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [3]) == Some(0)
-
-@test
-def findIndexOfLeft04(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1,2]) == None
-
-@test
-def findIndexOfLeft05(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,-6]) == Some(0)
-
-@test
-def findIndexOfLeft06(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [-6,6]) == Some(1)
-
-@test
-def findIndexOfLeft07(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,7]) == Some(0)
-
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOfRight                                                        //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def findIndexOfRight01(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, []: Array[Int32]) == None
-
-@test
-def findIndexOfRight02(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1]) == None
-
-@test
-def findIndexOfRight03(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [3]) == Some(0)
-
-@test
-def findIndexOfRight04(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1,2]) == None
-
-@test
-def findIndexOfRight05(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,-6]) == Some(0)
-
-@test
-def findIndexOfRight06(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [-6,6]) == Some(1)
-
-@test
-def findIndexOfRight07(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
-
-/////////////////////////////////////////////////////////////////////////////
-// findIndices                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def findIndices01(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def findIndices02(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def findIndices03(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [3]);
-    Array.sameElements(a, [0])
-
-@test
-def findIndices04(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [1,2]);
-    Array.sameElements(a, [] : Array[Int32])
-
-@test
-def findIndices05(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [6,-6]);
-    Array.sameElements(a, [0])
-
-@test
-def findIndices06(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [-6,6]);
-    Array.sameElements(a, [1])
-
-@test
-def findIndices07(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [6,7]);
-    Array.sameElements(a, [0,1])
-
-/////////////////////////////////////////////////////////////////////////////
-// init                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def init01(): Bool & Impure =
-    let a = Array.init(x -> x, 0);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def init02(): Bool & Impure =
-    let a = Array.init(x -> x, -1);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def init03(): Bool & Impure =
-    let a = Array.init(x -> x, 1);
-    Array.sameElements(a, [0])
-
-@test
-def init04(): Bool & Impure =
-    let a = Array.init(x -> x, 2);
-    Array.sameElements(a, [0,1])
-
-@test
-def init05(): Bool & Impure =
-    let a = Array.init(x -> x, 50);
-    Array.length(a) == 50
-
-/////////////////////////////////////////////////////////////////////////////
-// init2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def init201(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 0);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Bool])
-
-@test
-def init202(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), -1);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Bool])
-
-@test
-def init203(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 1);
-    Array.sameElements(a, [0]) and Array.sameElements(b, [true])
-
-@test
-def init204(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 2);
-    Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
-
-@test
-def init205(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 50);
-    Array.length(a) == 50 and Array.length(b) == 50
-
-
-/////////////////////////////////////////////////////////////////////////////
-// sameElements                                                            //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def sameElements01(): Bool & Impure =
-    let a = []: Array[Int32];
-    let b = []: Array[Int32];
-    Array.sameElements(a,b) == true
-
-@test
-def sameElements02(): Bool & Impure =
-    let a = [1]: Array[Int32];
-    let b = []: Array[Int32];
-    Array.sameElements(a,b) == false
-
-@test
-def sameElements03(): Bool & Impure =
-    let a = []: Array[Int32];
-    let b = [1]: Array[Int32];
-    Array.sameElements(a,b) == false
-
-@test
-def sameElements04(): Bool & Impure =
-    let a = [1]: Array[Int32];
-    let b = [1]: Array[Int32];
-    Array.sameElements(a,b) == true
-
-@test
-def sameElements05(): Bool & Impure =
-    let a = [1]: Array[Int32];
-    let b = [0]: Array[Int32];
-    Array.sameElements(a,b) == false
-
-@test
-def sameElements06(): Bool & Impure =
-    let a = [1,2]: Array[Int32];
-    let b = [1,2]: Array[Int32];
-    Array.sameElements(a,b) == true
-
-@test
-def sameElements07(): Bool & Impure =
-    let a = [1,2]: Array[Int32];
-    let b = [2,1]: Array[Int32];
-    Array.sameElements(a,b) == false
-
-/////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foreach01(): Bool & Impure =
-    let a = []: Array[Int32];
-    let sb = StringBuilder.new();
-    let fn = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreach(fn, a);
-    StringBuilder.toString(sb) == ""
-
-@test
-def foreach02(): Bool & Impure =
-    let a = [0];
-    let sb = StringBuilder.new();
-    let fn = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreach(fn, a);
-    StringBuilder.toString(sb) == "F"
-
-@test
-def foreach03(): Bool & Impure =
-    let a = [1];
-    let sb = StringBuilder.new();
-    let fn = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreach(fn, a);
-    StringBuilder.toString(sb) == "T"
-
-@test
-def foreach04(): Bool & Impure =
-    let a = [0,1];
-    let sb = StringBuilder.new();
-    let fn = x -> if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreach(fn, a);
-    StringBuilder.toString(sb) == "FT"
-
-/////////////////////////////////////////////////////////////////////////////
-// foreachWithIndex                                                        //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foreachWithIndex01(): Bool & Impure =
-    let a = []: Array[Float32];
-    let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == ""
-
-@test
-def foreachWithIndex02(): Bool & Impure =
-    let a = [0.0];
-    let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == "F"
-
-@test
-def foreachWithIndex03(): Bool & Impure =
-    let a = [0.0, 0.1];
-    let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == "FT"
-
-@test
-def foreachWithIndex04(): Bool & Impure =
-    let a = [0.0, 0.1, 0.2];
-    let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == "FTT"
-
-@test
-def foreachWithIndex05(): Bool & Impure =
-    let a = [0.0, 0.1, 0.2, 0.3];
-    let sb = StringBuilder.new();
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == "FTTT"
-
-/////////////////////////////////////////////////////////////////////////////
-// foreachAccum                                                            //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foreachAccum01(): Bool & Impure =
-    let a = []: Array[Int32];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "" and n == 0
-
-@test
-def foreachAccum02(): Bool & Impure =
-    let a = [0];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "F" and n == 1
-
-@test
-def foreachAccum03(): Bool & Impure =
-    let a = [1];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "T" and n == 1
-
-@test
-def foreachAccum04(): Bool & Impure =
-    let a = [0,1];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "FT" and n == 2
-
-/////////////////////////////////////////////////////////////////////////////
-// updateSequence                                                          //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def updateSequence01(): Bool & Impure =
-     let a = Array.updateSequence(0, []: Array[Int32], []: Array[Int32]);
-     Array.sameElements(a, []: Array[Int32])
-
-@test
-def updateSequence02(): Bool & Impure =
-    let a = Array.updateSequence(0, [1,2], []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def updateSequence03(): Bool & Impure =
-    let a = Array.updateSequence(0, [], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence04(): Bool & Impure =
-    let a = Array.updateSequence(-3, [1,2,4], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence05(): Bool & Impure =
-    let a = Array.updateSequence(2, [1,2,4], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence06(): Bool & Impure =
-    let a = Array.updateSequence(0, [], [1]);
-    Array.sameElements(a, [1])
-
-@test
-def updateSequence07(): Bool & Impure =
-    let a = Array.updateSequence(1, [2], [1]);
-    Array.sameElements(a, [1])
-
-@test
-def updateSequence08(): Bool & Impure =
-    let a = Array.updateSequence(0, [2], [1]);
-    Array.sameElements(a, [2])
-
-@test
-def updateSequence09(): Bool & Impure =
-    let a = Array.updateSequence(0, [2,4], [1]);
-    Array.sameElements(a, [2])
-
-@test
-def updateSequence10(): Bool & Impure =
-    let a = Array.updateSequence(-1, [2,4], [1]);
-    Array.sameElements(a, [4])
-
-@test
-def updateSequence11(): Bool & Impure =
-    let a = Array.updateSequence(-1, [3,4], [1,2]);
-    Array.sameElements(a, [4,2])
-
-@test
-def updateSequence12(): Bool & Impure =
-    let a = Array.updateSequence(1, [3,4], [1,2]);
-    Array.sameElements(a, [1,3])
-
-@test
-def updateSequence13(): Bool & Impure =
-    let a = Array.updateSequence(-2, [3,4], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence14(): Bool & Impure =
-    let a = Array.updateSequence(2, [3,4], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence15(): Bool & Impure =
-    let a = Array.updateSequence(1, [3], [1,2]);
-    Array.sameElements(a, [1,3])
-
-@test
-def updateSequence16(): Bool & Impure =
-    let a = Array.updateSequence(0, [3,4], [1,2]);
-    Array.sameElements(a, [3,4])
-
-@test
-def updateSequence17(): Bool & Impure =
-    let a = Array.updateSequence(0, [4], [1, 2, 3]);
-    Array.sameElements(a, [4, 2, 3])
-
-@test
-def updateSequence18(): Bool & Impure =
-    let a = Array.updateSequence(1, [4], [1, 2, 3]);
-    Array.sameElements(a, [1, 4, 3])
-
-@test
-def updateSequence19(): Bool & Impure =
-    let a = Array.updateSequence(2, [4], [1, 2, 3]);
-    Array.sameElements(a, [1, 2, 4])
-
-@test
-def updateSequence20(): Bool & Impure =
-    let a = Array.updateSequence(0, [4, 5], [1, 2, 3]);
-    Array.sameElements(a, [4, 5, 3])
-
-@test
-def updateSequence21(): Bool & Impure =
-    let a = Array.updateSequence(1, [4, 5], [1, 2, 3]);
-    Array.sameElements(a, [1, 4, 5])
-
-@test
-def updateSequence22(): Bool & Impure =
-    let a = Array.updateSequence(-1, [4, 5, 6], [1, 2, 3]);
-    Array.sameElements(a, [5, 6, 3])
-
-@test
-def updateSequence23(): Bool & Impure =
-    let a = Array.updateSequence(0, [4, 5, 6], [1, 2, 3]);
-    Array.sameElements(a, [4, 5, 6])
-
-@test
-def updateSequence24(): Bool & Impure =
-    let a = Array.updateSequence(2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
-
-@test
-def updateSequence25(): Bool & Impure =
-    let a = Array.updateSequence(-2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
-
-@test
-def updateSequence26(): Bool & Impure =
-    let a = Array.updateSequence(4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
-
-@test
-def updateSequence27(): Bool & Impure =
-    let a = Array.updateSequence(4, [14, 15], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
-
-@test
-def updateSequence28(): Bool & Impure =
-    let a = Array.updateSequence(-1, [-1, -2, -3, -4, -5, -6, -7, -8], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
-
-/////////////////////////////////////////////////////////////////////////////
-// updateSequence!                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def updateSequence01!(): Bool & Impure =
-     let a = []: Array[Int32];
-     Array.updateSequence!(0, []: Array[Int32], a);
-     Array.sameElements(a, []: Array[Int32])
-
-@test
-def updateSequence02!(): Bool & Impure =
-    let a = []: Array[Int32];
-    Array.updateSequence!(0, [1,2], a);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def updateSequence03!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(0, [], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence04!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(-3, [1,2,4], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence05!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(2, [1,2,4], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence06!(): Bool & Impure =
-    let a = [1];
-    Array.updateSequence!(0, [], a);
-    Array.sameElements(a, [1])
-
-@test
-def updateSequence07!(): Bool & Impure =
-    let a = [1];
-    Array.updateSequence!(1, [2], a);
-    Array.sameElements(a, [1])
-
-@test
-def updateSequence08!(): Bool & Impure =
-    let a = [1];
-    Array.updateSequence!(0, [2], a);
-    Array.sameElements(a, [2])
-
-@test
-def updateSequence09!(): Bool & Impure =
-    let a = [1];
-    Array.updateSequence!(0, [2,4], a);
-    Array.sameElements(a, [2])
-
-@test
-def updateSequence10!(): Bool & Impure =
-    let a = [1];
-    Array.updateSequence!(-1, [2,4], a);
-    Array.sameElements(a, [4])
-
-@test
-def updateSequence11!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(-1, [3,4], a);
-    Array.sameElements(a, [4,2])
-
-@test
-def updateSequence12!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(1, [3,4], a);
-    Array.sameElements(a, [1,3])
-
-@test
-def updateSequence13!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(-2, [3,4], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence14!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(2, [3,4], a);
-    Array.sameElements(a, [1,2])
-
-@test
-def updateSequence15!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(1, [3], a);
-    Array.sameElements(a, [1,3])
-
-@test
-def updateSequence16!(): Bool & Impure =
-    let a = [1,2];
-    Array.updateSequence!(0, [3,4], a);
-    Array.sameElements(a, [3,4])
-
-@test
-def updateSequence17!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.updateSequence!(0, [4], a);
-    Array.sameElements(a, [4, 2, 3])
-
-@test
-def updateSequence18!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.updateSequence!(1, [4], a);
-    Array.sameElements(a, [1, 4, 3])
-
-@test
-def updateSequence19!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.updateSequence!(2, [4], a);
-    Array.sameElements(a, [1, 2, 4])
-
-@test
-def updateSequence20!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.updateSequence!(0, [4, 5], a);
-    Array.sameElements(a, [4, 5, 3])
-
-@test
-def updateSequence21!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.updateSequence!(1, [4, 5], a);
-    Array.sameElements(a, [1, 4, 5])
-
-@test
-def updateSequence22!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.updateSequence!(-1, [4, 5, 6], a);
-    Array.sameElements(a, [5, 6, 3])
-
-@test
-def updateSequence23!(): Bool & Impure =
-    let a = [1, 2, 3];
-    Array.updateSequence!(0, [4, 5, 6], a);
-    Array.sameElements(a, [4, 5, 6])
-
-@test
-def updateSequence24!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.updateSequence!(2, [14, 15, 16, 17], a);
-    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
-
-@test
-def updateSequence25!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.updateSequence!(-2, [14, 15, 16, 17], a);
-    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
-
-@test
-def updateSequence26!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.updateSequence!(4, [14, 15, 16, 17], a);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
-
-@test
-def updateSequence27!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.updateSequence!(4, [14, 15], a);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
-
-@test
-def updateSequence28!(): Bool & Impure =
-    let a = [1, 2, 3, 4, 5, 6, 7];
-    Array.updateSequence!(-1, [-1, -2, -3, -4, -5, -6, -7, -8], a);
-    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
-
-/////////////////////////////////////////////////////////////////////////////
-// formatWith                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def formatWith01(): Bool & Impure =
-    let a: Array[Int32] = [];
-    let s = Array.formatWith(Int32.toString, ",", a);
-    s == ""
-
-@test
-def formatWith02(): Bool & Impure =
-    let a = [1];
-    let s = Array.formatWith(Int32.toString, ",", a);
-    s == "1"
-
-@test
-def formatWith03(): Bool & Impure =
-    let a = [1,2];
-    let s = Array.formatWith(Int32.toString, ",", a);
-    s == "1,2"
-
-@test
-def formatWith04(): Bool & Impure =
-    let a = [1,2,3];
-    let s = Array.formatWith(Int32.toString, ",", a);
-    s == "1,2,3"
-
-@test
-def formatWith05(): Bool & Impure =
-    let a = [1,2,3];
-    let s = Array.formatWith(Int32.toString, "", a);
-    s == "123"
-
-@test
-def formatWith06(): Bool & Impure =
-    let a = [1,2,3];
-    let s = Array.formatWith(Int32.toString, "..", a);
-    s == "1..2..3"
-
-/////////////////////////////////////////////////////////////////////////////
-// sortWith                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-def cmp(x: Int32, y: Int32): Comparison =
-    if (x < y) LessThan
-    else if (x == y) EqualTo
-    else GreaterThan
-
-@test
-def sortWith01(): Bool & Impure =
-    let a = Array.sortWith(cmp, []: Array[Int32]);
-    a `eq` []: Array[Int32]
-
-@test
-def sortWith02(): Bool & Impure =
-    let a = Array.sortWith(cmp, [0]);
-    a `eq` [0]
-
-@test
-def sortWith03(): Bool & Impure =
-    let a = Array.sortWith(cmp, [0,1]);
-    a `eq` [0,1]
-
-@test
-def sortWith04(): Bool & Impure =
-    let a = Array.sortWith(cmp, [1,0]);
-    a `eq` [0,1]
-
-@test
-def sortWith05(): Bool & Impure =
-    let a = Array.sortWith(cmp, [1,1]);
-    a `eq` [1,1]
-
-@test
-def sortWith06(): Bool & Impure =
-    let a = Array.sortWith(cmp, [0,1,2,3,4,5]);
-    a `eq` [0,1,2,3,4,5]
-
-@test
-def sortWith07(): Bool & Impure =
-    let a = Array.sortWith(cmp, [5,4,3,2,1,0]);
-    a `eq` [0,1,2,3,4,5]
-
-@test
-def sortWith08(): Bool & Impure =
-    let a = Array.sortWith(cmp, [5,3,0,4,1,2]);
-    a `eq` [0,1,2,3,4,5]
-
-@test
-def sortWith09(): Bool & Impure =
-    let a = Array.sortWith(cmp, [2,3,0,4,1,2]);
-    a `eq` [0,1,2,2,3,4]
-
-@test
-def sortWith10(): Bool & Impure =
-    let a = Array.sortWith(flip(cmp), [0,1,2,3,4,5]);
-    a `eq` [5,4,3,2,1,0]
-
-@test
-def sortWith11(): Bool & Impure =
-    let a = Array.sortWith(flip(cmp), [5,4,3,2,1,0]);
-    a `eq` [5,4,3,2,1,0]
-
-@test
-def sortWith12(): Bool & Impure =
-    let a = Array.sortWith(flip(cmp), [5,3,0,4,1,2]);
-    a `eq` [5,4,3,2,1,0]
-
-@test
-def sortWith13(): Bool & Impure =
-    let a = Array.sortWith(flip(cmp), [2,3,0,4,1,2]);
-    a `eq` [4,3,2,2,1,0]
-
-/////////////////////////////////////////////////////////////////////////////
-// sort                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSortVsSortWith(a: Array[Int32]) : Bool & Impure =
-    Array.sort(a) `eq` Array.sortWith(cmp, a)
-
-@test
-def sort01(): Bool & Impure = testSortVsSortWith([]: Array[Int32])
-
-@test
-def sort02(): Bool & Impure = testSortVsSortWith([0])
-
-@test
-def sort03(): Bool & Impure = testSortVsSortWith([0,1])
-
-@test
-def sort04(): Bool & Impure = testSortVsSortWith([1,0])
-
-@test
-def sort05(): Bool & Impure = testSortVsSortWith([1,1])
-
-@test
-def sort06(): Bool & Impure = testSortVsSortWith([0,1,2,3,4,5])
-
-@test
-def sort07(): Bool & Impure = testSortVsSortWith([5,4,3,2,1,0])
-
-@test
-def sort08(): Bool & Impure = testSortVsSortWith([5,3,0,4,1,2])
-
-@test
-def sort09(): Bool & Impure = testSortVsSortWith([2,3,0,4,1,2])
-
-/////////////////////////////////////////////////////////////////////////////
-// sortWith!                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def sortWith01!(): Bool & Impure =
-    let a = []: Array[Int32];
-    Array.sortWith(cmp, a);
-    a `eq` []: Array[Int32]
-
-@test
-def sortWith02!(): Bool & Impure =
-    let a = [0];
-    Array.sortWith!(cmp, a);
-    a `eq` [0]
-
-@test
-def sortWith03!(): Bool & Impure =
-    let a = [0,1];
-    Array.sortWith!(cmp, a);
-    a `eq` [0,1]
-
-@test
-def sortWith04!(): Bool & Impure =
-    let a = [1,0];
-    Array.sortWith!(cmp, a);
-    a `eq` [0,1]
-
-@test
-def sortWith05!(): Bool & Impure =
-    let a = [1,1];
-    Array.sortWith!(cmp, a);
-    a `eq` [1,1]
-
-@test
-def sortWith06!(): Bool & Impure =
-    let a = [0,1,2,3,4,5];
-    Array.sortWith!(cmp, a);
-    a `eq` [0,1,2,3,4,5]
-
-@test
-def sortWith07!(): Bool & Impure =
-    let a = [5,4,3,2,1,0];
-    Array.sortWith!(cmp, a);
-    a `eq` [0,1,2,3,4,5]
-
-@test
-def sortWith08!(): Bool & Impure =
-    let a = [5,3,0,4,1,2];
-    Array.sortWith!(cmp, a);
-    a `eq` [0,1,2,3,4,5]
-
-@test
-def sortWith09!(): Bool & Impure =
-    let a = [2,3,0,4,1,2];
-    Array.sortWith!(cmp, a);
-    a `eq` [0,1,2,2,3,4]
-
-@test
-def sortWith10!(): Bool & Impure =
-    let a = [0,1,2,3,4,5];
-    Array.sortWith!(flip(cmp), a);
-    a `eq` [5,4,3,2,1,0]
-
-@test
-def sortWith11!(): Bool & Impure =
-    let a = [5,4,3,2,1,0];
-    Array.sortWith!(flip(cmp), a);
-    a `eq` [5,4,3,2,1,0]
-
-@test
-def sortWith12!(): Bool & Impure =
-    let a = [5,3,0,4,1,2];
-    Array.sortWith!(flip(cmp), a);
-    a `eq` [5,4,3,2,1,0]
-
-@test
-def sortWith13!(): Bool & Impure =
-    let a = [2,3,0,4,1,2];
-    Array.sortWith!(flip(cmp), a);
-    a `eq` [4,3,2,2,1,0]
-
-/////////////////////////////////////////////////////////////////////////////
-// sort!                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSort!VsSortWith!(a: Array[Int32]) : Bool & Impure =
-    let b = Array.slice(0, Array.length(a), a);
-    let c = Array.slice(0, Array.length(a), a);
-    Array.sort!(b);
-    Array.sortWith!(cmp, c);
-    b `eq` c
-
-@test
-def sort!01(): Bool & Impure = testSort!VsSortWith!([]: Array[Int32])
-
-@test
-def sort!02(): Bool & Impure = testSort!VsSortWith!([0])
-
-@test
-def sort!03(): Bool & Impure = testSort!VsSortWith!([0,1])
-
-@test
-def sort!04(): Bool & Impure = testSort!VsSortWith!([1,0])
-
-@test
-def sort!05(): Bool & Impure = testSort!VsSortWith!([1,1])
-
-@test
-def sort!06(): Bool & Impure = testSort!VsSortWith!([0,1,2,3,4,5])
-
-@test
-def sort!07(): Bool & Impure = testSort!VsSortWith!([5,4,3,2,1,0])
-
-@test
-def sort!08(): Bool & Impure = testSort!VsSortWith!([5,3,0,4,1,2])
-
-@test
-def sort!09(): Bool & Impure = testSort!VsSortWith!([2,3,0,4,1,2])
-
-/////////////////////////////////////////////////////////////////////////////
-// sortBy                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSortByVsSort(a: Array[Int32]) : Bool & Impure =
-    (Array.sortBy(identity, a) `eq` Array.sort(a)) and
-    (Array.sortBy(x -> 4*x+7, a) `eq` Array.sort(a)) and
-    (Array.sortBy(x -> -x, a) `eq` Array.sortWith(flip(cmp),a))
-
-@test
-def sortBy01(): Bool & Impure = testSortByVsSort([]: Array[Int32])
-
-@test
-def sortBy02(): Bool & Impure = testSortByVsSort([0])
-
-@test
-def sortBy03(): Bool & Impure = testSortByVsSort([0,1])
-
-@test
-def sortBy04(): Bool & Impure = testSortByVsSort([1,0])
-
-@test
-def sortBy05(): Bool & Impure = testSortByVsSort([1,1])
-
-@test
-def sortBy06(): Bool & Impure = testSortByVsSort([0,1,2,3,4,5])
-
-@test
-def sortBy07(): Bool & Impure = testSortByVsSort([5,4,3,2,1,0])
-
-@test
-def sortBy08(): Bool & Impure = testSortByVsSort([5,3,0,4,1,2])
-
-@test
-def sortBy09(): Bool & Impure = testSortByVsSort([2,3,0,4,1,2])
-
-enum R {
-    case R({i :: Int32, s :: String})
-}
-
-instance Eq[R] {
-    pub def eq(a: R, b: R): Bool =
-        let R(x) = a;
-        let R(y) = b;
-        x.i == y.i and x.s == y.s
-}
-
-@test
-def sortBy10(): Bool & Impure =
-    Array.sortBy(r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
-    `eq` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
-
-/////////////////////////////////////////////////////////////////////////////
-// sortBy!                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSortBy!VsSortBy(a: Array[Int32]) : Bool & Impure =
-    let b = Array.slice(0, Array.length(a), a);
-    let c = Array.slice(0, Array.length(a), a);
-    Array.sortBy!(identity, b);
-    Array.sortBy!(x -> 4*x+7, c);
-    (b `eq` Array.sortBy(x -> 4*x+7, a)) and
-    (c `eq` Array.sortBy(identity, a))
-
-@test
-def sortBy!01(): Bool & Impure = testSortBy!VsSortBy([]: Array[Int32])
-
-@test
-def sortBy!02(): Bool & Impure = testSortBy!VsSortBy([0])
-
-@test
-def sortBy!03(): Bool & Impure = testSortBy!VsSortBy([0,1])
-
-@test
-def sortBy!04(): Bool & Impure = testSortBy!VsSortBy([1,0])
-
-@test
-def sortBy!05(): Bool & Impure = testSortBy!VsSortBy([1,1])
-
-@test
-def sortBy!06(): Bool & Impure = testSortBy!VsSortBy([0,1,2,3,4,5])
-
-@test
-def sortBy!07(): Bool & Impure = testSortBy!VsSortBy([5,4,3,2,1,0])
-
-@test
-def sortBy!08(): Bool & Impure = testSortBy!VsSortBy([5,3,0,4,1,2])
-
-@test
-def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
+mod TestArray {
+
+    use Array.sameElements;
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, assertSome, assertNone};
+    use Math.Shuffle
+
+    /////////////////////////////////////////////////////////////////////////////
+    // binarySearch                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def binarySearch01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(0, Array#{} @ rc))
+    }
+
+    @Test
+    def binarySearch02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.binarySearch(0, Array#{0} @ rc))
+    }
+
+    @Test
+    def binarySearch03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.binarySearch(0, Array#{0, 1, 2, 3} @ rc))
+    }
+
+    @Test
+    def binarySearch04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3} @ rc))
+    }
+
+    @Test
+    def binarySearch05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.binarySearch(2, Array#{0, 1, 2, 3} @ rc))
+    }
+
+    @Test
+    def binarySearch06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.binarySearch(3, Array#{0, 1, 2, 3} @ rc))
+    }
+
+    @Test
+    def binarySearch07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1} @ rc))
+    }
+
+    @Test
+    def binarySearch08(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2} @ rc))
+    }
+
+    @Test
+    def binarySearch09(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4} @ rc))
+    }
+
+    @Test
+    def binarySearch10(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5} @ rc))
+    }
+
+    @Test
+    def binarySearch11(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5, 6} @ rc))
+    }
+
+    @Test
+    def binarySearch12(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5, 6, 7} @ rc))
+    }
+
+    @Test
+    def binarySearch13(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5, 6, 7, 8} @ rc))
+    }
+
+    @Test
+    def binarySearch14(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9} @ rc))
+    }
+
+    @Test
+    def binarySearch15(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.binarySearch(4, Array#{0, 2, 4, 6, 8, 10} @ rc))
+    }
+
+    @Test
+    def binarySearch16(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(3, Array#{0, 2, 4, 6, 8, 10} @ rc))
+    }
+
+    @Test
+    def binarySearch17(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(-1, Array#{0, 2, 4, 6, 8, 10} @ rc))
+    }
+
+    @Test
+    def binarySearch18(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(11, Array#{0, 2, 4, 6, 8, 10} @ rc))
+    }
+
+    @Test
+    def binarySearch19(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(11i64, Array#{0i64, 2i64, 4i64, 6i64, 8i64, 10i64} @ rc))
+    }
+
+    @Test
+    def binarySearch20(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(2i64, Array#{0i64, 2i64, 4i64, 6i64, 8i64, 10i64} @ rc))
+    }
+
+    @Test
+    def binarySearch21(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.binarySearch("a", Array#{"a", "b", "c", "d", "e", "f"} @ rc))
+    }
+
+    @Test
+    def binarySearch22(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch("b", Array#{"a", "b", "c", "d", "e", "f"} @ rc))
+    }
+
+    @Test
+    def binarySearch23(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch("g", Array#{"a", "b", "c", "d", "e", "f"} @ rc))
+    }
+
+    @Test
+    def binarySearch24(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(1, Array#{0, 1, 1, 2, 3, 4, 5, 6} @ rc);
+        assertTrue(pos == Some(1) or pos == Some(2))
+    }
+
+    @Test
+    def binarySearch25(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.binarySearch(0, Array#{0, 1, 1, 1, 1, 1, 1, 1, 2} @ rc))
+    }
+
+    @Test
+    def binarySearch26(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(-1, Array#{0, 1, 1, 1, 1, 1, 1, 1, 2} @ rc))
+    }
+
+    @Test
+    def binarySearch27(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(4, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(0))
+    }
+
+    @Test
+    def binarySearch28(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(3, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(1))
+    }
+
+    @Test
+    def binarySearch29(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(2, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(2))
+    }
+
+    @Test
+    def binarySearch30(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(1, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(3))
+    }
+
+    @Test
+    def binarySearch31(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(0, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(4))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toString01(): Unit \ Assert = region rc {
+        assertEq(expected = "Array#{}", Array.toString((Array#{} @ rc: Array[Int32, _])))
+    }
+
+    @Test
+    def toString02(): Unit \ Assert = region rc {
+        assertEq(expected = "Array#{1}", Array.toString((Array#{1} @ rc)))
+    }
+
+    @Test
+    def toString03(): Unit \ Assert = region rc {
+        assertEq(expected = "Array#{1, 2, 3, 4}", Array.toString((Array#{1, 2, 3, 4} @ rc)))
+    }
+
+    @Test
+    def toString04(): Unit \ Assert = region rc {
+        assertEq(expected = "Array#{a, b, c, d}", Array.toString((Array#{'a', 'b', 'c', 'd'} @ rc)))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // new                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testEmpty01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.get(0, Array.empty(rc, 10)))
+    }
+
+    @Test
+    def testEmpty02(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.get(5, Array.empty(rc, 10)))
+    }
+
+    @Test
+    def testEmpty03(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.get(9, Array.empty(rc, 10)))
+    }
+
+    @Test
+    def testEmpty04(): Unit \ Assert = region rc {
+        assertEq(expected = false, Array.get(0, Array.empty(rc, 10)))
+    }
+
+    @Test
+    def testEmpty05(): Unit \ Assert = region rc {
+        assertEq(expected = false, Array.get(5, Array.empty(rc, 10)))
+    }
+
+    @Test
+    def testEmpty06(): Unit \ Assert = region rc {
+        assertEq(expected = false, Array.get(9, Array.empty(rc, 10)))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testNth01(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.nth(0, Array#{1, 2, 3} @ rc))
+    }
+
+    @Test
+    def testNth02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.nth(1, Array#{1, 2, 3} @ rc))
+    }
+
+    @Test
+    def testNth03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.nth(2, Array#{1, 2, 3} @ rc))
+    }
+
+    @Test
+    def testNth04(): Unit \ Assert = region rc {
+        assertNone(Array.nth(3, Array#{1, 2, 3} @ rc))
+    }
+
+    @Test
+    def testNth05(): Unit \ Assert = region rc {
+        assertNone(Array.nth(-2, Array#{1, 2, 3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // put                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPut01(): Unit \ Assert = region rc {
+        let a = (Array#{1} @ rc) !> Array.put(42, 0);
+        assertEq(expected = 42, Array.get(0, a))
+    }
+
+    @Test
+    def testPut02(): Unit \ Assert = region rc {
+        let a = (Array#{1, 2} @ rc) !> Array.put(42, 1);
+        assertEq(expected = 42, Array.get(1, a))
+    }
+
+    @Test
+    def testPut03(): Unit \ Assert = region rc {
+        let a = (Array#{1, 2, 3} @ rc) !> Array.put(42, 2);
+        assertEq(expected = 42, Array.get(2, a))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isEmpty                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testIsEmpty01(): Unit \ Assert = region rc {
+        assertTrue(Array.isEmpty(Array#{} @ rc))
+    }
+
+    @Test
+    def testIsEmpty02(): Unit \ Assert = region rc {
+        assertFalse(Array.isEmpty(Array#{1} @ rc))
+    }
+
+    @Test
+    def testIsEmpty03(): Unit \ Assert = region rc {
+        assertFalse(Array.isEmpty(Array#{1, 2, 3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testNonEmpty01(): Unit \ Assert = region rc {
+        assertFalse(Array.nonEmpty(Array#{} @ rc))
+    }
+
+    @Test
+    def testNonEmpty02(): Unit \ Assert = region rc {
+        assertTrue(Array.nonEmpty(Array#{1} @ rc))
+    }
+
+    @Test
+    def testNonEmpty03(): Unit \ Assert = region rc {
+        assertTrue(Array.nonEmpty(Array#{1, 2, 3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testLength01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.length(Array#{} @ rc))
+    }
+
+    @Test
+    def testLength02(): Unit \ Assert = region rc {
+        assertEq(expected = 1, Array.length(Array#{1} @ rc))
+    }
+
+    @Test
+    def testLength03(): Unit \ Assert = region rc {
+        assertEq(expected = 3, Array.length(Array#{1, 2, 3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testSize01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.size(Array#{} @ rc))
+    }
+
+    @Test
+    def testSize02(): Unit \ Assert = region rc {
+        assertEq(expected = 1, Array.size(Array#{1} @ rc))
+    }
+
+    @Test
+    def testSize03(): Unit \ Assert = region rc {
+        assertEq(expected = 3, Array.size(Array#{1, 2, 3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // slice                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testSlice01(): Unit \ Assert = region rc {
+        assertEq(expected = 1, Array.get(0, Array.slice(rc, start = 0, end = 1, Array#{1, 2, 3} @ rc)))
+    }
+
+    @Test
+    def testSlice02(): Unit \ Assert = region rc {
+        assertEq(expected = 2, Array.get(0, Array.slice(rc, start = 1, end = 2, Array#{1, 2, 3} @ rc)))
+    }
+
+    @Test
+    def testSlice03(): Unit \ Assert = region rc {
+        assertEq(expected = 3, Array.get(0, Array.slice(rc, start = 2, end = 3, Array#{1, 2, 3} @ rc)))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testToList01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Array.toList((Array#{} @ rc: Array[Unit, _])))
+    }
+
+    @Test
+    def testToList02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, Array.toList(Array#{1} @ rc))
+    }
+
+    @Test
+    def testToList03(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: Nil, Array.toList(Array#{1, 2} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toNel01(): Unit \ Assert = region rc {
+        assertNone(Array.toNel((Array#{} @ rc: Array[Unit, _])))
+    }
+
+    @Test
+    def toNel02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(Nel.singleton(1)), Array.toNel(Array#{1} @ rc))
+    }
+
+    @Test
+    def toNel03(): Unit \ Assert = region rc {
+        assertEq(expected = List.toNel(1 :: 2 :: Nil), Array.toNel(Array#{1,2} @ rc))
+    }
+
+    @Test
+    def toNel04(): Unit \ Assert = region rc {
+        assertEq(expected = List.toNel(1 :: 2 :: 3 :: Nil), Array.toNel(Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toVector01(): Unit \ Assert = region rc {
+        assertTrue(Array.toVector((Array#{} @ rc : Array[Int32, _])) `Vector.equals` Vector.empty())
+    }
+
+    @Test
+    def toVector02(): Unit \ Assert = region rc {
+        assertTrue(Array.toVector((Array#{0} @ rc : Array[Int32, _])) `Vector.equals` Vector.singleton(0))
+    }
+
+    @Test
+    def toVector03(): Unit \ Assert = region rc {
+        assertTrue(Array.toVector((Array#{1, 2, 3} @ rc : Array[Int32, _])) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def head01(): Unit \ Assert = region rc {
+        assertNone(Array.head((Array#{} @ rc: Array[Int32, _])))
+    }
+
+    @Test
+    def head02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.head(Array#{1} @ rc))
+    }
+
+    @Test
+    def head03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.head(Array#{2,1} @ rc))
+    }
+
+    @Test
+    def head04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.head(Array#{3,2,1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def last01(): Unit \ Assert = region rc {
+        assertNone((Array.last(Array#{} @ rc): Option[Unit]))
+    }
+
+    @Test
+    def last02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.last(Array#{1} @ rc))
+    }
+
+    @Test
+    def last03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.last(Array#{1,2} @ rc))
+    }
+
+    @Test
+    def last04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.last(Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // append                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def append01(): Unit \ Assert = region rc {
+        let a = Array.append(rc, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def append02(): Unit \ Assert = region rc {
+        let a = Array.append(rc, ((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def append03(): Unit \ Assert = region rc {
+        let a = Array.append(rc, ((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def append04(): Unit \ Assert = region rc {
+        let a = Array.append(rc, Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def append05(): Unit \ Assert = region rc {
+        let a = Array.append(rc, Array#{1,2} @ rc, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def append06(): Unit \ Assert = region rc {
+        let a = Array.append(rc, Array#{1} @ rc, Array#{2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def append07(): Unit \ Assert = region rc {
+        let a = Array.append(rc, Array#{1,2} @ rc, Array#{3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    @Test
+    def append08(): Unit \ Assert = region rc {
+        let a = Array.append(rc, Array#{1} @ rc, Array#{2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def memberOf01(): Unit \ Assert = region rc {
+        assertFalse(Array.memberOf(0, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def memberOf02(): Unit \ Assert = region rc {
+        assertFalse(Array.memberOf(0, Array#{1} @ rc))
+    }
+
+    @Test
+    def memberOf03(): Unit \ Assert = region rc {
+        assertTrue(Array.memberOf(0, Array#{0} @ rc))
+    }
+
+    @Test
+    def memberOf04(): Unit \ Assert = region rc {
+        assertFalse(Array.memberOf(0, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def memberOf05(): Unit \ Assert = region rc {
+        assertTrue(Array.memberOf(1, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def memberOf06(): Unit \ Assert = region rc {
+        assertTrue(Array.memberOf(2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def memberOf07(): Unit \ Assert = region rc {
+        assertFalse(Array.memberOf(3, Array#{1,2} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indexOf01(): Unit \ Assert = region rc {
+        assertNone(Array.indexOf(0, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def indexOf02(): Unit \ Assert = region rc {
+        assertNone(Array.indexOf(0, Array#{1} @ rc))
+    }
+
+    @Test
+    def indexOf03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.indexOf(1, Array#{1} @ rc))
+    }
+
+    @Test
+    def indexOf04(): Unit \ Assert = region rc {
+        assertNone(Array.indexOf(0, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def indexOf05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.indexOf(1, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def indexOf06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.indexOf(2, Array#{1,2} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfLeft                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indexOfLeft01(): Unit \ Assert = region rc {
+        assertNone(Array.indexOfLeft(0, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def indexOfLeft02(): Unit \ Assert = region rc {
+        assertNone(Array.indexOfLeft(0, Array#{1} @ rc))
+    }
+
+    @Test
+    def indexOfLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.indexOfLeft(1, Array#{1} @ rc))
+    }
+
+    @Test
+    def indexOfLeft04(): Unit \ Assert = region rc {
+        assertNone(Array.indexOfLeft(0, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def indexOfLeft05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.indexOfLeft(1, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def indexOfLeft06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.indexOfLeft(2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def indexOfLeft07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.indexOfLeft(1, Array#{1,1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfRight                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indexOfRight01(): Unit \ Assert = region rc {
+        assertNone(Array.indexOfRight(0, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def indexOfRight02(): Unit \ Assert = region rc {
+        assertNone(Array.indexOfRight(0, Array#{1} @ rc))
+    }
+
+    @Test
+    def indexOfRight03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.indexOfRight(1, Array#{1} @ rc))
+    }
+
+    @Test
+    def indexOfRight04(): Unit \ Assert = region rc {
+        assertNone(Array.indexOfRight(0, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def indexOfRight05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.indexOfRight(1, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def indexOfRight06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.indexOfRight(2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def indexOfRight07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.indexOfRight(1, Array#{1,1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, ((Array#{} @ rc): Array[Int32, rc]));
+        assertEq(expected = Vector#{}, a)
+    }
+
+    @Test
+    def indicesOf02(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, Array#{1} @ rc);
+        assertEq(expected = Vector#{}, a)
+    }
+
+    @Test
+    def indicesOf03(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1} @ rc);
+        assertEq(expected = Vector#{0}, a)
+    }
+
+    @Test
+    def indicesOf04(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{}, a)
+    }
+
+    @Test
+    def indicesOf05(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{0}, a)
+    }
+
+    @Test
+    def indicesOf06(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(2, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{1}, a)
+    }
+
+    @Test
+    def indicesOf07(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1,1} @ rc);
+        assertEq(expected = Vector#{0,1}, a)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 0), Array.indices(Array#{} @ rc))
+    }
+
+    @Test
+    def indices02(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 3), Array.indices(Array#{1, 2, 3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // find                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def find01(): Unit \ Assert = region rc {
+        assertNone(Array.find(i -> i > 2, Array#{} @ rc))
+    }
+
+    @Test
+    def find02(): Unit \ Assert = region rc {
+        assertNone(Array.find(i -> i > 2, Array#{1} @ rc))
+    }
+
+    @Test
+    def find03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.find(i -> i > 2, Array#{3} @ rc))
+    }
+
+    @Test
+    def find04(): Unit \ Assert = region rc {
+        assertNone(Array.find(i -> i > 2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def find05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(6), Array.find(i -> i > 2, Array#{6,-6} @ rc))
+    }
+
+    @Test
+    def find06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(6), Array.find(i -> i > 2, Array#{-6,6} @ rc))
+    }
+
+    @Test
+    def find07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(6), Array.find(i -> i > 2, Array#{6,7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findLeft01(): Unit \ Assert = region rc {
+        assertNone(Array.findLeft(i -> i > 2, Array#{} @ rc))
+    }
+
+    @Test
+    def findLeft02(): Unit \ Assert = region rc {
+        assertNone(Array.findLeft(i -> i > 2, Array#{1} @ rc))
+    }
+
+    @Test
+    def findLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.findLeft(i -> i > 2, Array#{3} @ rc))
+    }
+
+    @Test
+    def findLeft04(): Unit \ Assert = region rc {
+        assertNone(Array.findLeft(i -> i > 2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def findLeft05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(6), Array.findLeft(i -> i > 2, Array#{6,-6} @ rc))
+    }
+
+    @Test
+    def findLeft06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(6), Array.findLeft(i -> i > 2, Array#{-6,6} @ rc))
+    }
+
+    @Test
+    def findLeft07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(6), Array.findLeft(i -> i > 2, Array#{6,7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findRight01(): Unit \ Assert = region rc {
+        assertNone(Array.findRight(i -> i > 2, Array#{} @ rc))
+    }
+
+    @Test
+    def findRight02(): Unit \ Assert = region rc {
+        assertNone(Array.findRight(i -> i > 2, Array#{1} @ rc))
+    }
+
+    @Test
+    def findRight03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.findRight(i -> i > 2, Array#{3} @ rc))
+    }
+
+    @Test
+    def findRight04(): Unit \ Assert = region rc {
+        assertNone(Array.findRight(i -> i > 2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def findRight05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(6), Array.findRight(i -> i > 2, Array#{6,-6} @ rc))
+    }
+
+    @Test
+    def findRight06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(6), Array.findRight(i -> i > 2, Array#{-6,6} @ rc))
+    }
+
+    @Test
+    def findRight07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(7), Array.findRight(i -> i > 2, Array#{6,7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // range                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def range01(): Unit \ Assert = region rc {
+        let a = Array.range(rc, 1, 0);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def range02(): Unit \ Assert = region rc {
+        let a = Array.range(rc, 1, 1);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def range03(): Unit \ Assert = region rc {
+        let a = Array.range(rc, 1, 2);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def range04(): Unit \ Assert = region rc {
+        let a = Array.range(rc, 1, 3);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def range05(): Unit \ Assert = region rc {
+        let a = Array.range(rc, 1, 4);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    @Test
+    def range06(): Unit \ Assert = region rc {
+        let a = Array.range(rc, -1, 3);
+        assertTrue(Array.sameElements(a, Array#{-1,0,1,2} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // repeat rc,
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def repeat01(): Unit \ Assert = region rc {
+        let a = Array.repeat(rc, -1, 1);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def repeat02(): Unit \ Assert = region rc {
+        let a = Array.repeat(rc, 0, 1);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def repeat03(): Unit \ Assert = region rc {
+        let a = Array.repeat(rc, 1, 1);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def repeat04(): Unit \ Assert = region rc {
+        let a = Array.repeat(rc, 2, 1);
+        assertTrue(Array.sameElements(a, Array#{1,1} @ rc))
+    }
+
+    @Test
+    def repeat05(): Unit \ Assert = region rc {
+        let a = Array.repeat(rc, 3, 1);
+        assertTrue(Array.sameElements(a, Array#{1,1,1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // scan                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def scan01(): Unit \ Assert = region rc {
+        let a = Array.scan(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def scan02(): Unit \ Assert = region rc {
+        let a = Array.scan(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,3} @ rc))
+    }
+
+    @Test
+    def scan03(): Unit \ Assert = region rc {
+        let a = Array.scan(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def scan04(): Unit \ Assert = region rc {
+        let a = Array.scan(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,3,5} @ rc))
+    }
+
+    @Test
+    def scan05(): Unit \ Assert = region rc {
+        let a = Array.scan(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,3,4} @ rc))
+    }
+
+    @Test
+    def scan06(): Unit \ Assert = region rc {
+        let a = Array.scan(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,4} @ rc))
+    }
+
+    @Test
+    def scan07(): Unit \ Assert = region rc {
+        let a = Array.scan(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // scanLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def scanLeft01(): Unit \ Assert = region rc {
+        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, ((Array#{} @ rc): Array[Bool, _]));
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def scanLeft02(): Unit \ Assert = region rc {
+        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,3} @ rc))
+    }
+
+    @Test
+    def scanLeft03(): Unit \ Assert = region rc {
+        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def scanLeft04(): Unit \ Assert = region rc {
+        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,3,5} @ rc))
+    }
+
+    @Test
+    def scanLeft05(): Unit \ Assert = region rc {
+        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,3,4} @ rc))
+    }
+
+    @Test
+    def scanLeft06(): Unit \ Assert = region rc {
+        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,4} @ rc))
+    }
+
+    @Test
+    def scanLeft07(): Unit \ Assert = region rc {
+        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // scanRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def scanRight01(): Unit \ Assert = region rc {
+        let a = Array.scanRight(rc, (b, i) -> if (b) i + 1 else i + 2, 1, Array#{} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def scanRight02(): Unit \ Assert = region rc {
+        let a = Array.scanRight(rc, (b, i) -> if (b) i + 1 else i + 2, 1, Array#{false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{3,1} @ rc))
+    }
+
+    @Test
+    def scanRight03(): Unit \ Assert = region rc {
+        let a = Array.scanRight(rc, (b, i) -> if (b) i + 1 else i + 2, 1, Array#{true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,1} @ rc))
+    }
+
+    @Test
+    def scanRight04(): Unit \ Assert = region rc {
+        let a = Array.scanRight(rc, (b, i) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,3,1} @ rc))
+    }
+
+    @Test
+    def scanRight05(): Unit \ Assert = region rc {
+        let a = Array.scanRight(rc, (b, i) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4,2,1} @ rc))
+    }
+
+    @Test
+    def scanRight06(): Unit \ Assert = region rc {
+        let a = Array.scanRight(rc, (b, i) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4,3,1} @ rc))
+    }
+
+    @Test
+    def scanRight07(): Unit \ Assert = region rc {
+        let a = Array.scanRight(rc, (b, i) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ rc);
+        assertTrue(Array.sameElements(a, Array#{3,2,1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map01(): Unit \ Assert = region rc {
+        let a = Array.map(rc, i -> i > 2, Array#{} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Bool, _])))
+    }
+
+    @Test
+    def map02(): Unit \ Assert = region rc {
+        let a = Array.map(rc, i -> i > 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{false} @ rc))
+    }
+
+    @Test
+    def map03(): Unit \ Assert = region rc {
+        let a = Array.map(rc, i -> i > 2, Array#{3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{true} @ rc))
+    }
+
+    @Test
+    def map04(): Unit \ Assert = region rc {
+        let a = Array.map(rc, i -> i > 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{false,false} @ rc))
+    }
+
+    @Test
+    def map05(): Unit \ Assert = region rc {
+        let a = Array.map(rc, i -> i > 2, Array#{1,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{false, true} @ rc))
+    }
+
+    @Test
+    def map06(): Unit \ Assert = region rc {
+        let a = Array.map(rc, i -> i > 2, Array#{8,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{true,false} @ rc))
+    }
+
+    @Test
+    def map07(): Unit \ Assert = region rc {
+        let a = Array.map(rc, i -> i > 2, Array#{7,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{true,true} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // transform                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def transform01(): Unit \ Assert = region rc {
+        let a: Array[Int32, _] = Array#{} @ rc;
+        Array.transform(x -> x+1, a);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def transform02(): Unit \ Assert = region rc {
+        let a = Array#{0} @ rc;
+        Array.transform(x -> x+1, a);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def transform03(): Unit \ Assert = region rc {
+        let a = Array#{0,1} @ rc;
+        Array.transform(x -> x+1, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def transform04(): Unit \ Assert = region rc {
+        let a = Array#{0,1,2} @ rc;
+        Array.transform(x -> x+1, a);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def mapWithIndex01(): Unit \ Assert = region rc {
+        let a = Array.mapWithIndex(rc, (i, e) -> if (i < 1) e > 2 else e <= 2, Array#{} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Bool, _])))
+    }
+
+    @Test
+    def mapWithIndex02(): Unit \ Assert = region rc {
+        let a = Array.mapWithIndex(rc, (i, e) -> if (i < 1) e > 2 else e <= 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{false} @ rc))
+    }
+
+    @Test
+    def mapWithIndex03(): Unit \ Assert = region rc {
+        let a = Array.mapWithIndex(rc, (i, e) -> if (i < 1) e > 2 else e <= 2, Array#{3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{true} @ rc))
+    }
+
+    @Test
+    def mapWithIndex04(): Unit \ Assert = region rc {
+        let a = Array.mapWithIndex(rc, (i, e) -> if (i < 1) e > 2 else e <= 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{false,true} @ rc))
+    }
+
+    @Test
+    def mapWithIndex05(): Unit \ Assert = region rc {
+        let a = Array.mapWithIndex(rc, (i, e) -> if (i < 1) e > 2 else e <= 2, Array#{1,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{false,false} @ rc))
+    }
+
+    @Test
+    def mapWithIndex06(): Unit \ Assert = region rc {
+        let a = Array.mapWithIndex(rc, (i, e) -> if (i < 1) e > 2 else e <= 2, Array#{8,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{true,true} @ rc))
+    }
+
+    @Test
+    def mapWithIndex07(): Unit \ Assert = region rc {
+        let a = Array.mapWithIndex(rc, (i, e) -> if (i < 1) e > 2 else e <= 2, Array#{7,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{true,false} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // transformWithIndex                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def transformWithIndex01(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def transformWithIndex02(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
+        assertTrue(Array.sameElements(a, Array#{11} @ rc))
+    }
+
+    @Test
+    def transformWithIndex03(): Unit \ Assert = region rc {
+        let a = Array#{3} @ rc;
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
+        assertTrue(Array.sameElements(a, Array#{13} @ rc))
+    }
+
+    @Test
+    def transformWithIndex04(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
+        assertTrue(Array.sameElements(a, Array#{11,2} @ rc))
+    }
+
+    @Test
+    def transformWithIndex05(): Unit \ Assert = region rc {
+        let a = Array#{1,8} @ rc;
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
+        assertTrue(Array.sameElements(a, Array#{11,8} @ rc))
+    }
+
+    @Test
+    def transformWithIndex06(): Unit \ Assert = region rc {
+        let a = Array#{8,1} @ rc;
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
+        assertTrue(Array.sameElements(a, Array#{18,1} @ rc))
+    }
+
+    @Test
+    def transformWithIndex07(): Unit \ Assert = region rc {
+        let a = Array#{7,8,9} @ rc;
+        Array.transformWithIndex((i, e) -> if (i < 1) e + 10 else e, a);
+        assertTrue(Array.sameElements(a, Array#{17,8,9} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    // depends on flatten
+
+    @Test
+    def flatMap01(): Unit \ Assert = region rc {
+        let a = Array.flatMap(rc, i -> Array.repeat(rc, i, i), Array#{} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def flatMap02(): Unit \ Assert = region rc {
+        let a = Array.flatMap(rc, i -> Array.repeat(rc, i, i), Array#{0} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def flatMap03(): Unit \ Assert = region rc {
+        let a = Array.flatMap(rc, i -> Array.repeat(rc, i, i), Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def flatMap04(): Unit \ Assert = region rc {
+        let a = Array.flatMap(rc, i -> Array.repeat(rc, i, i), Array#{2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,2} @ rc))
+    }
+
+    @Test
+    def flatMap05(): Unit \ Assert = region rc {
+        let a = Array.flatMap(rc, i -> Array.repeat(rc, i, i), Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,2} @ rc))
+    }
+
+    @Test
+    def flatMap06(): Unit \ Assert = region rc {
+        let a = Array.flatMap(rc, i -> Array.repeat(rc, i, i), Array#{2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,2,3,3,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reverse                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def reverse01(): Unit \ Assert = region rc {
+        let a: Array[Int32, _] = Array#{} @ rc;
+        Array.reverse(a);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def reverse02(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.reverse(a);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def reverse03(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.reverse(a);
+        assertTrue(Array.sameElements(a, Array#{2,1} @ rc))
+    }
+
+    @Test
+    def reverse04(): Unit \ Assert = region rc {
+        let a = Array#{1,1} @ rc;
+        Array.reverse(a);
+        assertTrue(Array.sameElements(a, Array#{1,1} @ rc))
+    }
+
+    @Test
+    def reverse05(): Unit \ Assert = region rc {
+        let a = Array#{1,2,3} @ rc;
+        Array.reverse(a);
+        assertTrue(Array.sameElements(a, Array#{3,2,1} @ rc))
+    }
+
+    @Test
+    def reverse06(): Unit \ Assert = region rc {
+        let a = Array#{1,2,3,4} @ rc;
+        Array.reverse(a);
+        assertTrue(Array.sameElements(a, Array#{4,3,2,1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rotateLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def rotateLeft01(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def rotateLeft02(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def rotateLeft03(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 0, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def rotateLeft04(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 0, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def rotateLeft05(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,1} @ rc))
+    }
+
+    @Test
+    def rotateLeft06(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def rotateLeft07(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,1} @ rc))
+    }
+
+    @Test
+    def rotateLeft08(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, -1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,1} @ rc))
+    }
+
+    @Test
+    def rotateLeft09(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 0, Array#{1,2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    @Test
+    def rotateLeft10(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 1, Array#{1,2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,3,1} @ rc))
+    }
+
+    @Test
+    def rotateLeft11(): Unit \ Assert = region rc {
+        let a = Array.rotateLeft(rc, 2, Array#{1,2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{3,1,2} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rotateRight                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def rotateRight01(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def rotateRight02(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def rotateRight03(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 0, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def rotateRight04(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 0, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def rotateRight05(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,1} @ rc))
+    }
+
+    @Test
+    def rotateRight06(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def rotateRight07(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,1} @ rc))
+    }
+
+    @Test
+    def rotateRight08(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, -1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,1} @ rc))
+    }
+
+    @Test
+    def rotateRight09(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 0, Array#{1,2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    @Test
+    def rotateRight10(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 1, Array#{1,2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{3,1,2} @ rc))
+    }
+
+    @Test
+    def rotateRight11(): Unit \ Assert = region rc {
+        let a = Array.rotateRight(rc, 2, Array#{1,2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2,3,1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // update                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def update01(): Unit \ Assert = region rc {
+        let a = Array.update(rc, 0, 2, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def update02(): Unit \ Assert = region rc {
+        let a = Array.update(rc, -1, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def update03(): Unit \ Assert = region rc {
+        let a = Array.update(rc, 0, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def update04(): Unit \ Assert = region rc {
+        let a = Array.update(rc, 1, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def update05(): Unit \ Assert = region rc {
+        let a = Array.update(rc, 0, 5, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,2} @ rc))
+    }
+
+    @Test
+    def update06(): Unit \ Assert = region rc {
+        let a = Array.update(rc, 1, 5, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,5} @ rc))
+    }
+
+    @Test
+    def update07(): Unit \ Assert = region rc {
+        let a = Array.update(rc, 2, 5, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // replace                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def replace01(): Unit \ Assert = region rc {
+        let a: Array[Int32, _] = Array#{} @ rc;
+        Array.replace(src = 3, dst =  4, a);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def replace02(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.replace(src = 3, dst =  4, a);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def replace03(): Unit \ Assert = region rc {
+        let a = Array#{3} @ rc;
+        Array.replace(src = 3, dst =  4, a);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
+    }
+
+    @Test
+    def replace04(): Unit \ Assert = region rc {
+        let a = Array#{4} @ rc;
+        Array.replace(src = 3, dst =  4, a);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
+    }
+
+    @Test
+    def replace05(): Unit \ Assert = region rc {
+        let a = Array#{1, 2} @ rc;
+        Array.replace(src = 3, dst =  4, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def replace06(): Unit \ Assert = region rc {
+        let a = Array#{1,3} @ rc;
+        Array.replace(src = 3, dst =  4, a);
+        assertTrue(Array.sameElements(a, Array#{1,4} @ rc))
+    }
+
+    @Test
+    def replace07(): Unit \ Assert = region rc {
+        let a = Array#{3,4} @ rc;
+        Array.replace(src = 3, dst =  4, a);
+        assertTrue(Array.sameElements(a, Array#{4,4} @ rc))
+    }
+
+    @Test
+    def replace08(): Unit \ Assert = region rc {
+        let a = Array#{3,3} @ rc;
+        Array.replace(src = 3, dst =  4, a);
+        assertTrue(Array.sameElements(a, Array#{4,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // patch                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def patch01(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.patch(0, 0, ((Array#{} @ rc): Array[Int32, _]), a);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def patch02(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.patch(0, 2, Array#{1,2} @ rc, a);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def patch03(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(0, 2, Array#{} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def patch04(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(-3, 3, Array#{1,2,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def patch05(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(2, 3, Array#{1,2,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def patch06(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.patch(0, 0, Array#{} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def patch07(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.patch(1, 0, Array#{2} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def patch08(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.patch(0, 1, Array#{2} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def patch09(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.patch(0, 2, Array#{2,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def patch10(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.patch(-1, 2, Array#{2,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
+    }
+
+    @Test
+    def patch11(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(-1, 2, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4,2} @ rc))
+    }
+
+    @Test
+    def patch12(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(1, 2, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,3} @ rc))
+    }
+
+    @Test
+    def patch13(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(-2, 2, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def patch14(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(2, 2, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def patch15(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(1, 1, Array#{3} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,3} @ rc))
+    }
+
+    @Test
+    def patch16(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.patch(0, 2, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{3,4} @ rc))
+    }
+
+    @Test
+    def patch17(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(0, 1, Array#{4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4, 2, 3} @ rc))
+    }
+
+    @Test
+    def patch18(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(1, 1, Array#{4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 4, 3} @ rc))
+    }
+
+    @Test
+    def patch19(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(2, 1, Array#{4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 2, 4} @ rc))
+    }
+
+    @Test
+    def patch20(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(0, 2, Array#{4, 5} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4, 5, 3} @ rc))
+    }
+
+    @Test
+    def patch21(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(1, 2, Array#{4, 5} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 4, 5} @ rc))
+    }
+
+    @Test
+    def patch22(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(0, 2, Array#{4, 5, 6} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4, 5, 3} @ rc))
+    }
+
+    @Test
+    def patch23(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.patch(0, 3, Array#{4, 5, 6} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4, 5, 6} @ rc))
+    }
+
+    @Test
+    def patch24(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(2, 4, Array#{14, 15, 16, 17} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ rc))
+    }
+
+    @Test
+    def patch25(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(-2, 4, Array#{14, 15, 16, 17} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ rc))
+    }
+
+    @Test
+    def patch26(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(4, 5, Array#{14, 15, 16, 17} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ rc))
+    }
+
+    @Test
+    def patch27(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(4, 2, Array#{14, 15, 16, 17} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ rc))
+    }
+
+    @Test
+    def patch28(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.patch(-1, 10, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intersperse                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def intersperse01(): Unit \ Assert = region rc {
+        let a = Array.intersperse(rc, 11, Array#{} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def intersperse02(): Unit \ Assert = region rc {
+        let a = Array.intersperse(rc, 11, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def intersperse03(): Unit \ Assert = region rc {
+        let a = Array.intersperse(rc, 11, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,11,2} @ rc))
+    }
+
+    @Test
+    def intersperse04(): Unit \ Assert = region rc {
+        let a = Array.intersperse(rc, 11, Array#{1,2,3} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,11,2,11,3} @ rc))
+    }
+
+    @Test
+    def intersperse05(): Unit \ Assert = region rc {
+        let a = Array.intersperse(rc, 11, Array#{1,2,3,4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,11,2,11,3,11,4} @ rc))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intercalate                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def intercalate01(): Unit \ Assert = region rc {
+        let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), ((Array#{} @ rc): Array[Array[Int32, rc], rc]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+    }
+
+    @Test
+    def intercalate02(): Unit \ Assert = region rc {
+        let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def intercalate03(): Unit \ Assert = region rc {
+        let a = Array.intercalate(rc, Array#{11,12,13} @ rc, ((Array#{} @ rc): Array[Array[Int32, rc], rc]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+    }
+
+    @Test
+    def intercalate04(): Unit \ Assert = region rc {
+        let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc, Array#{2,3} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
+    }
+
+    @Test
+    def intercalate05(): Unit \ Assert = region rc {
+        let a = Array.intercalate(rc, Array#{11,12,13} @ rc, Array#{Array#{1} @ rc, Array#{2,3} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,11,12,13,2,3} @ rc))
+    }
+
+    @Test
+    def intercalate06(): Unit \ Assert = region rc {
+        let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc, Array#{2,3} @ rc, Array#{4} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4} @ rc))
+    }
+
+    @Test
+    def intercalate07(): Unit \ Assert = region rc {
+        let a = Array.intercalate(rc, Array#{11,12,13} @ rc, Array#{Array#{1} @ rc, Array#{2,3} @ rc, Array#{4} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,11,12,13,2,3,11,12,13,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // transpose                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def transpose01(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = Nil, (b: List[List[Unit]]))
+    }
+
+    @Test
+    def transpose02(): Unit \ Assert = region rc {
+        let a: Array[Array[Int32, _], _] = Array.transpose(rc, Array#{Array#{} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = Nil :: Nil, b)
+    }
+
+    @Test
+    def transpose03(): Unit \ Assert = region rc {
+        let a: Array[Array[Int32, _], _] = Array.transpose(rc, Array#{Array#{} @ rc, Array#{} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = Nil :: Nil :: Nil, b)
+    }
+
+    @Test
+    def transpose04(): Unit \ Assert = region rc {
+        let a: Array[Array[Int32, _], _] = Array.transpose(rc, Array#{Array#{} @ rc, Array#{} @ rc, Array#{} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = Nil :: Nil :: Nil :: Nil, b)
+    }
+
+    @Test
+    def transpose05(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{ Array#{1} @ rc } @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose06(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1,2} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: Nil) :: (2 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose07(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose08(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3, 4} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose09(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1} @ rc, Array#{2} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 2 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose10(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1} @ rc, Array#{2} @ rc, Array#{3} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose11(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1} @ rc, Array#{2} @ rc, Array#{3} @ rc, Array#{4} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 2 :: 3 :: 4 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose12(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2} @ rc, Array#{3, 4} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose13(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{4, 5, 6} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose14(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3, 4} @ rc, Array#{5, 6, 7, 8} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose15(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3, 4, 5} @ rc, Array#{6, 7, 8, 9, 10} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose16(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2} @ rc, Array#{3, 4} @ rc, Array#{5, 6} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose17(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2} @ rc, Array#{3, 4} @ rc, Array#{5, 6} @ rc, Array#{7,8} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose18(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2} @ rc, Array#{3, 4} @ rc, Array#{5, 6} @ rc, Array#{7, 8} @ rc, Array#{9, 10} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose19(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{4, 5, 6} @ rc, Array#{7, 8, 9} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose20(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{4, 5} @ rc, Array#{7, 8, 9} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose21(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{} @ rc, Array#{7, 8, 9} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil, b)
+    }
+
+    @Test
+    def transpose22(): Unit \ Assert = region rc {
+        let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{4, 5, 6} @ rc, Array#{7, 8, 9, 10} @ rc} @ rc);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil, b)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isPrefixOf                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def isPrefixOf01(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def isPrefixOf02(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def isPrefixOf03(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc))
+    }
+
+    @Test
+    def isPrefixOf04(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(Array#{1} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isPrefixOf05(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{2} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isPrefixOf06(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1,2} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isPrefixOf07(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isPrefixOf08(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(Array#{1} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isPrefixOf09(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{2} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isPrefixOf10(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(Array#{1,2} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isPrefixOf11(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1,3} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isPrefixOf12(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1,2,3} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isPrefixOf13(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1,2,3} @ rc, Array#{89,11,1,2,3,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isInfixOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def isInfixOf01(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def isInfixOf02(): Unit \ Assert = region rc {
+        assertFalse(Array.isInfixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def isInfixOf03(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc))
+    }
+
+    @Test
+    def isInfixOf04(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(Array#{1} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isInfixOf05(): Unit \ Assert = region rc {
+        assertFalse(Array.isInfixOf(Array#{2} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isInfixOf06(): Unit \ Assert = region rc {
+        assertFalse(Array.isInfixOf(Array#{1,2} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isInfixOf07(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isInfixOf08(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(Array#{1} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isInfixOf09(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(Array#{2} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isInfixOf10(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(Array#{1,2} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isInfixOf11(): Unit \ Assert = region rc {
+        assertFalse(Array.isInfixOf(Array#{1,3} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isInfixOf12(): Unit \ Assert = region rc {
+        assertFalse(Array.isInfixOf(Array#{1,2,3} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isInfixOf13(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(Array#{1,2,3} @ rc, Array#{89,11,1,2,3,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isSuffixOf                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def isSuffixOf01(): Unit \ Assert = region rc {
+        assertTrue(Array.isSuffixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def isSuffixOf02(): Unit \ Assert = region rc {
+        assertFalse(Array.isSuffixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def isSuffixOf03(): Unit \ Assert = region rc {
+        assertTrue(Array.isSuffixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc))
+    }
+
+    @Test
+    def isSuffixOf04(): Unit \ Assert = region rc {
+        assertTrue(Array.isSuffixOf(Array#{1} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isSuffixOf05(): Unit \ Assert = region rc {
+        assertFalse(Array.isSuffixOf(Array#{2} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isSuffixOf06(): Unit \ Assert = region rc {
+        assertFalse(Array.isSuffixOf(Array#{1,2} @ rc, Array#{1} @ rc))
+    }
+
+    @Test
+    def isSuffixOf07(): Unit \ Assert = region rc {
+        assertTrue(Array.isSuffixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isSuffixOf08(): Unit \ Assert = region rc {
+        assertFalse(Array.isSuffixOf(Array#{1} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isSuffixOf09(): Unit \ Assert = region rc {
+        assertTrue(Array.isSuffixOf(Array#{2} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isSuffixOf10(): Unit \ Assert = region rc {
+        assertTrue(Array.isSuffixOf(Array#{1,2} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isSuffixOf11(): Unit \ Assert = region rc {
+        assertFalse(Array.isSuffixOf(Array#{1,3} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isSuffixOf12(): Unit \ Assert = region rc {
+        assertFalse(Array.isSuffixOf(Array#{1,2,3} @ rc, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def isSuffixOf13(): Unit \ Assert = region rc {
+        assertTrue(Array.isSuffixOf(Array#{1,2,3} @ rc, Array#{89,11,1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // eq                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testSameElements01(): Unit \ Assert = region rc {
+        assertTrue((((Array#{} @ rc): Array[Int32, _])) `sameElements` (((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def testSameElements02(): Unit \ Assert = region rc {
+        assertFalse((Array#{1} @ rc) `sameElements` Array#{} @ rc)
+    }
+
+    @Test
+    def testSameElements03(): Unit \ Assert = region rc {
+        assertFalse((Array#{} @ rc) `sameElements` Array#{1} @ rc)
+    }
+
+    @Test
+    def testSameElements04(): Unit \ Assert = region rc {
+        assertTrue((Array#{1} @ rc) `sameElements` Array#{1} @ rc)
+    }
+
+    @Test
+    def testSameElements05(): Unit \ Assert = region rc {
+        assertFalse((Array#{1} @ rc) `sameElements` Array#{2} @ rc)
+    }
+
+    @Test
+    def testSameElements06(): Unit \ Assert = region rc {
+        assertFalse((Array#{1,2} @ rc) `sameElements` Array#{1} @ rc)
+    }
+
+    @Test
+    def testSameElements07(): Unit \ Assert = region rc {
+        assertFalse((Array#{1} @ rc) `sameElements` Array#{1,2} @ rc)
+    }
+
+    @Test
+    def testSameElements08(): Unit \ Assert = region rc {
+        assertTrue((Array#{1,2,3,4} @ rc) `sameElements` Array#{1,2,3,4} @ rc)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // compare                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testCompare01(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.EqualTo, (((Array#{} @ rc): Array[Int32, _])) `Array.compare` (((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def testCompare02(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.GreaterThan, (Array#{1} @ rc) `Array.compare` (Array#{} @ rc))
+    }
+
+    @Test
+    def testCompare03(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.LessThan, (Array#{} @ rc) `Array.compare` (Array#{1} @ rc))
+    }
+
+    @Test
+    def testCompare04(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.EqualTo, (Array#{1} @ rc) `Array.compare` (Array#{1} @ rc))
+    }
+
+    @Test
+    def testCompare05(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.LessThan, (Array#{1} @ rc) `Array.compare` (Array#{2} @ rc))
+    }
+
+    @Test
+    def testCompare06(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.GreaterThan, (Array#{2} @ rc) `Array.compare` (Array#{1} @ rc))
+    }
+
+    @Test
+    def testCompare07(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.LessThan, (Array#{1} @ rc) `Array.compare` (Array#{1,2} @ rc))
+    }
+
+    @Test
+    def testCompare08(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.GreaterThan, (Array#{1,2} @ rc) `Array.compare` (Array#{1} @ rc))
+    }
+
+    @Test
+    def testCompare09(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.GreaterThan, (Array#{1} @ rc) `Array.compare` (Array#{0,0} @ rc))
+    }
+
+    @Test
+    def testCompare10(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.LessThan, (Array#{0,0} @ rc) `Array.compare` (Array#{1} @ rc))
+    }
+
+    @Test
+    def testCompare11(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.GreaterThan, (Array#{1,2} @ rc) `Array.compare` (Array#{1,1} @ rc))
+    }
+
+    @Test
+    def testCompare12(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.LessThan, (Array#{1,2} @ rc) `Array.compare` (Array#{1,3} @ rc))
+    }
+
+    @Test
+    def testCompare13(): Unit \ Assert = region rc {
+        assertEq(expected = Comparison.EqualTo, (Array#{1,2,3,4} @ rc) `Array.compare` (Array#{1,2,3,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fold01(): Unit \ Assert = region rc {
+        assertEq(expected = (), Array.fold(((Array#{} @ rc: Array[Unit, _]))))
+    }
+
+    @Test
+    def fold02(): Unit \ Assert = region rc {
+        assertEq(expected = "a", Array.fold(Array#{"a"} @ rc))
+    }
+
+    @Test
+    def fold03(): Unit \ Assert = region rc {
+        assertEq(expected = "abc", Array.fold(Array#{"a", "b", "c"} @ rc))
+    }
+
+    @Test
+    def fold04(): Unit \ Assert = region rc {
+        assertEq(expected = ("yesno", "noyes"), Array.fold(Array#{("yes", "no"), ("no", "yes")} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def foldLeft01(): Unit \ Assert = region rc {
+        assertEq(expected = 100, Array.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{} @ rc))
+    }
+
+    @Test
+    def foldLeft02(): Unit \ Assert = region rc {
+        assertEq(expected = 198, Array.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1} @ rc))
+    }
+
+    @Test
+    def foldLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = 196, Array.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def foldLeft04(): Unit \ Assert = region rc {
+        assertEq(expected = 386, Array.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def foldRight01(): Unit \ Assert = region rc {
+        assertEq(expected = 100, Array.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{} @ rc))
+    }
+
+    @Test
+    def foldRight02(): Unit \ Assert = region rc {
+        assertEq(expected = 198, Array.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1} @ rc))
+    }
+
+    @Test
+    def foldRight03(): Unit \ Assert = region rc {
+        assertEq(expected = 194, Array.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def foldRight04(): Unit \ Assert = region rc {
+        assertEq(expected = 382, Array.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def foldMap01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.foldMap(x -> 2 * x, Array#{} @ rc))
+    }
+
+    @Test
+    def foldMap02(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.foldMap(x -> 2 * x, Array#{1, 2} @ rc))
+    }
+
+    @Test
+    def foldMap03(): Unit \ Assert = region rc {
+        assertEq(expected = "b", Array.foldMap(x -> if (x == "a") "b" else x, Array#{"a"} @ rc))
+    }
+
+    @Test
+    def foldMap04(): Unit \ Assert = region rc {
+        assertEq(expected = "abb", Array.foldMap(x -> if (x == "c") "b" else x, Array#{"a", "b", "c"} @ rc))
+    }
+
+    @Test
+    def foldMap05(): Unit \ Assert = region rc {
+        assertEq(expected = "123", Array.foldMap(Int32.toString, Array#{1, 2, 3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def reduceLeft01(): Unit \ Assert = region rc {
+        assertNone(Array.reduceLeft((a, b) -> a - b, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def reduceLeft02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.reduceLeft((a, b) -> a - b, Array#{1} @ rc))
+    }
+
+    @Test
+    def reduceLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(-1), Array.reduceLeft((a, b) -> a - b, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def reduceLeft04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(-4), Array.reduceLeft((a, b) -> a - b, Array#{1,2,3} @ rc))
+    }
+
+    @Test
+    def reduceLeft05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(-8), Array.reduceLeft((a, b) -> a - b, Array#{1,2,3,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceRight                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def reduceRight01(): Unit \ Assert = region rc {
+        assertNone(Array.reduceRight((a, b) -> a - b, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def reduceRight02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.reduceRight((a, b) -> a - b, Array#{1} @ rc))
+    }
+
+    @Test
+    def reduceRight03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(-1), Array.reduceRight((a, b) -> a - b, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def reduceRight04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.reduceRight((a, b) -> a - b, Array#{1,2,3} @ rc))
+    }
+
+    @Test
+    def reduceRight05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(-2), Array.reduceRight((a, b) -> a - b, Array#{1,2,3,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def count01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.count(i -> i > 3, Array#{} @ rc))
+    }
+
+    @Test
+    def count02(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.count(i -> i > 3, Array#{1} @ rc))
+    }
+
+    @Test
+    def count03(): Unit \ Assert = region rc {
+        assertEq(expected = 1, Array.count(i -> i > 3, Array#{4} @ rc))
+    }
+
+    @Test
+    def count04(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.count(i -> i > 3, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def count05(): Unit \ Assert = region rc {
+        assertEq(expected = 1, Array.count(i -> i > 3, Array#{1,8} @ rc))
+    }
+
+    @Test
+    def count06(): Unit \ Assert = region rc {
+        assertEq(expected = 1, Array.count(i -> i > 3, Array#{8,1} @ rc))
+    }
+
+    @Test
+    def count07(): Unit \ Assert = region rc {
+        assertEq(expected = 2, Array.count(i -> i > 3, Array#{6,7} @ rc))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def flatten01(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, ((Array#{} @ rc): Array[Array[Int32, rc], rc]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+    }
+
+    @Test
+    def flatten02(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, ((Array#{Array#{} @ rc} @ rc): Array[Array[Int32, rc], rc]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+    }
+
+    @Test
+    def flatten03(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, Array#{Array#{1} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def flatten04(): Unit \ Assert = region rc {
+        let a= Array.flatten(rc, Array#{Array#{1,2} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def flatten05(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, ((Array#{Array#{} @ rc,Array#{} @ rc} @ rc): Array[Array[Int32, rc], rc]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+    }
+
+    @Test
+    def flatten06(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, Array#{Array#{1} @ rc,Array#{} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def flatten07(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, Array#{Array#{} @ rc,Array#{1} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def flatten08(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, Array#{Array#{1} @ rc,Array#{2} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def flatten09(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, Array#{Array#{1,2} @ rc,Array#{3,4,5} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4,5} @ rc))
+    }
+
+    @Test
+    def flatten10(): Unit \ Assert = region rc {
+        let a = Array.flatten(rc, Array#{Array#{1} @ rc,Array#{2,3} @ rc,Array#{4} @ rc} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4} @ rc))
+    }
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def exists01(): Unit \ Assert = region rc {
+        assertFalse(Array.exists(i -> i > 3, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def exists02(): Unit \ Assert = region rc {
+        assertFalse(Array.exists(i -> i > 3, Array#{1} @ rc))
+    }
+
+    @Test
+    def exists03(): Unit \ Assert = region rc {
+        assertTrue(Array.exists(i -> i > 3, Array#{5} @ rc))
+    }
+
+    @Test
+    def exists04(): Unit \ Assert = region rc {
+        assertFalse(Array.exists(i -> i > 3, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def exists05(): Unit \ Assert = region rc {
+        assertTrue(Array.exists(i -> i > 3, Array#{1,6} @ rc))
+    }
+
+    @Test
+    def exists06(): Unit \ Assert = region rc {
+        assertTrue(Array.exists(i -> i > 3, Array#{6,1} @ rc))
+    }
+
+    @Test
+    def exists07(): Unit \ Assert = region rc {
+        assertTrue(Array.exists(i -> i > 3, Array#{16,6} @ rc))
+    }
+
+    @Test
+    def exists08(): Unit \ Assert = region rc {
+        assertFalse(Array.exists(i -> i > 3, Array#{1,-9,3} @ rc))
+    }
+
+    @Test
+    def exists09(): Unit \ Assert = region rc {
+        assertTrue(Array.exists(i -> i > 3, Array#{1,9,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forAll                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forAll01(): Unit \ Assert = region rc {
+        assertTrue(Array.forAll(i -> i > 3, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def forAll02(): Unit \ Assert = region rc {
+        assertFalse(Array.forAll(i -> i > 3, Array#{1} @ rc))
+    }
+
+    @Test
+    def forAll03(): Unit \ Assert = region rc {
+        assertTrue(Array.forAll(i -> i > 3, Array#{5} @ rc))
+    }
+
+    @Test
+    def forAll04(): Unit \ Assert = region rc {
+        assertFalse(Array.forAll(i -> i > 3, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def forAll05(): Unit \ Assert = region rc {
+        assertFalse(Array.forAll(i -> i > 3, Array#{1,6} @ rc))
+    }
+
+    @Test
+    def forAll06(): Unit \ Assert = region rc {
+        assertFalse(Array.forAll(i -> i > 3, Array#{6,1} @ rc))
+    }
+
+    @Test
+    def forAll07(): Unit \ Assert = region rc {
+        assertTrue(Array.forAll(i -> i > 3, Array#{16,6} @ rc))
+    }
+
+    @Test
+    def forAll08(): Unit \ Assert = region rc {
+        assertFalse(Array.forAll(i -> i > 3, Array#{1,-9,3} @ rc))
+    }
+
+    @Test
+    def forAll09(): Unit \ Assert = region rc {
+        assertFalse(Array.forAll(i -> i > 3, Array#{1,9,3} @ rc))
+    }
+
+    @Test
+    def forAll10(): Unit \ Assert = region rc {
+        assertTrue(Array.forAll(i -> i > 3, Array#{11,9,31} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def filter01(): Unit \ Assert = region rc {
+        let a = Array.filter(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def filter02(): Unit \ Assert = region rc {
+        let a = Array.filter(rc, i -> i > 3, Array#{2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def filter03(): Unit \ Assert = region rc {
+        let a = Array.filter(rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
+    }
+
+    @Test
+    def filter04(): Unit \ Assert = region rc {
+        let a = Array.filter(rc, i -> i > 3, Array#{1,3} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def filter05(): Unit \ Assert = region rc {
+        let a = Array.filter(rc, i -> i > 3, Array#{1,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{8} @ rc))
+    }
+
+    @Test
+    def filter06(): Unit \ Assert = region rc {
+        let a = Array.filter(rc, i -> i > 3, Array#{8,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{8} @ rc))
+    }
+
+    @Test
+    def filter07(): Unit \ Assert = region rc {
+        let a = Array.filter(rc, i -> i > 3, Array#{8,9} @ rc);
+        assertTrue(Array.sameElements(a, Array#{8,9} @ rc))
+    }
+
+    @Test
+    def filter08(): Unit \ Assert = region rc {
+        let a = Array.filter(rc, i -> i > 3, Array#{1,4,11,2,-22,17} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4,11,17} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // partition                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def partition01(): Unit \ Assert = region rc {
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def partition02(): Unit \ Assert = region rc {
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
+    }
+
+    @Test
+    def partition03(): Unit \ Assert = region rc {
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def partition04(): Unit \ Assert = region rc {
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def partition05(): Unit \ Assert = region rc {
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{1,5} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5} @ rc));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
+    }
+
+    @Test
+    def partition06(): Unit \ Assert = region rc {
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{5,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5} @ rc));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
+    }
+
+    @Test
+    def partition07(): Unit \ Assert = region rc {
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{5,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def partition08(): Unit \ Assert = region rc {
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{4, -3, -5, 1, 2, 16, 7, 1, 7} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4, 16, 7, 7} @ rc));
+        assertTrue(Array.sameElements(b, Array#{-3, -5, 1, 2, 1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // span                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def span01(): Unit \ Assert = region rc {
+        let (a,b) = Array.span(rc, rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def span02(): Unit \ Assert = region rc {
+        let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a,((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
+    }
+
+    @Test
+    def span03(): Unit \ Assert = region rc {
+        let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def span04(): Unit \ Assert = region rc {
+        let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def span05(): Unit \ Assert = region rc {
+        let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1,5} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1,5} @ rc))
+    }
+
+    @Test
+    def span06(): Unit \ Assert = region rc {
+        let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{5,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5} @ rc));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
+    }
+
+    @Test
+    def span07(): Unit \ Assert = region rc {
+        let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{5,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def span08(): Unit \ Assert = region rc {
+        let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4, 6} @ rc));
+        assertTrue(Array.sameElements(b, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // drop                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def drop01(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def drop02(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def drop03(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def drop04(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, -1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def drop05(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 0, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def drop06(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def drop07(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def drop08(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 0, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def drop09(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def drop10(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def drop11(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 2, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{3,4,5,6} @ rc))
+    }
+
+    @Test
+    def drop12(): Unit \ Assert = region rc {
+        let a = Array.drop(rc, 4, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,6} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def dropLeft01(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropLeft02(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropLeft03(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropLeft04(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, -1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropLeft05(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 0, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropLeft06(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropLeft07(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropLeft08(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 0, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def dropLeft09(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def dropLeft10(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropLeft11(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 2, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{3,4,5,6} @ rc))
+    }
+
+    @Test
+    def dropLeft12(): Unit \ Assert = region rc {
+        let a = Array.dropLeft(rc, 4, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,6} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def dropRight01(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropRight02(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropRight03(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropRight04(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, -1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropRight05(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 0, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropRight06(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropRight07(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropRight08(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 0, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def dropRight09(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropRight10(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropRight11(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 2, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4} @ rc))
+    }
+
+    @Test
+    def dropRight12(): Unit \ Assert = region rc {
+        let a = Array.dropRight(rc, 4, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def dropWhile01(): Unit \ Assert = region rc {
+        let a = Array.dropWhile(rc, i -> i > 3, Array#{} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhile02(): Unit \ Assert = region rc {
+        let a = Array.dropWhile(rc, i -> i > 3, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropWhile03(): Unit \ Assert = region rc {
+        let a = Array.dropWhile(rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhile04(): Unit \ Assert = region rc {
+        let a = Array.dropWhile(rc, i -> i > 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def dropWhile05(): Unit \ Assert = region rc {
+        let a = Array.dropWhile(rc, i -> i > 3, Array#{1,5} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,5} @ rc))
+    }
+
+    @Test
+    def dropWhile06(): Unit \ Assert = region rc {
+        let a = Array.dropWhile(rc, i -> i > 3, Array#{5,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropWhile07(): Unit \ Assert = region rc {
+        let a = Array.dropWhile(rc, i -> i > 3, Array#{5,8} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhile08(): Unit \ Assert = region rc {
+        let a = Array.dropWhile(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
+        assertTrue(Array.sameElements(a, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def dropWhileLeft01(): Unit \ Assert = region rc {
+        let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhileLeft02(): Unit \ Assert = region rc {
+        let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropWhileLeft03(): Unit \ Assert = region rc {
+        let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhileLeft04(): Unit \ Assert = region rc {
+        let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def dropWhileLeft05(): Unit \ Assert = region rc {
+        let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{1,5} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,5} @ rc))
+    }
+
+    @Test
+    def dropWhileLeft06(): Unit \ Assert = region rc {
+        let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{5,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropWhileLeft07(): Unit \ Assert = region rc {
+        let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{5,8} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhileLeft08(): Unit \ Assert = region rc {
+        let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
+        assertTrue(Array.sameElements(a, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def dropWhileRight01(): Unit \ Assert = region rc {
+        let a = Array.dropWhileRight(rc, i -> i > 3, Array#{} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhileRight02(): Unit \ Assert = region rc {
+        let a = Array.dropWhileRight(rc, i -> i > 3, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropWhileRight03(): Unit \ Assert = region rc {
+        let a = Array.dropWhileRight(rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhileRight04(): Unit \ Assert = region rc {
+        let a = Array.dropWhileRight(rc, i -> i > 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def dropWhileRight05(): Unit \ Assert = region rc {
+        let a = Array.dropWhileRight(rc, i -> i > 3, Array#{1,5} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def dropWhileRight06(): Unit \ Assert = region rc {
+        let a = Array.dropWhileRight(rc, i -> i > 3, Array#{5,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,1} @ rc))
+    }
+
+    @Test
+    def dropWhileRight07(): Unit \ Assert = region rc {
+        let a = Array.dropWhileRight(rc, i -> i > 3, Array#{5,8} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def dropWhileRight08(): Unit \ Assert = region rc {
+        let a = Array.dropWhileRight(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def take01(): Unit \ Assert = region rc {
+        let a = Array.take(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def take02(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def take03(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def take04(): Unit \ Assert = region rc {
+        let a = Array.take(rc, -1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def take05(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 0, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+
+    }
+    @Test
+    def take06(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+    @Test
+    def take07(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+    @Test
+    def take08(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 0, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def take09(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def take10(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def take11(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 2, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def take12(): Unit \ Assert = region rc {
+        let a = Array.take(rc, 4, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def takeLeft01(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeLeft02(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeLeft03(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeLeft04(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, -1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeLeft05(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 0, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeLeft06(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def takeLeft07(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def takeLeft08(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 0, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeLeft09(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def takeLeft10(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def takeLeft11(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 2, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def takeLeft12(): Unit \ Assert = region rc {
+        let a = Array.takeLeft(rc, 4, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def takeRight01(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeRight02(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeRight03(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeRight04(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, -1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeRight05(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 0, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeRight06(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 1, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def takeRight07(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 2, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def takeRight08(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 0, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeRight09(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 1, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def takeRight10(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 2, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def takeRight11(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 2, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,6} @ rc))
+    }
+
+    @Test
+    def takeRight12(): Unit \ Assert = region rc {
+        let a = Array.takeRight(rc, 4, Array#{1,2,3,4,5,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{3,4,5,6} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def takeWhile01(): Unit \ Assert = region rc {
+        let a = Array.takeWhile(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhile02(): Unit \ Assert = region rc {
+        let a = Array.takeWhile(rc, i -> i > 3, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhile03(): Unit \ Assert = region rc {
+        let a = Array.takeWhile(rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
+    }
+
+    @Test
+    def takeWhile04(): Unit \ Assert = region rc {
+        let a = Array.takeWhile(rc, i -> i > 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhile05(): Unit \ Assert = region rc {
+        let a = Array.takeWhile(rc, i -> i > 3, Array#{1,5} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhile06(): Unit \ Assert = region rc {
+        let a = Array.takeWhile(rc, i -> i > 3, Array#{5,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5} @ rc))
+    }
+
+    @Test
+    def takeWhile07(): Unit \ Assert = region rc {
+        let a = Array.takeWhile(rc, i -> i > 3, Array#{5,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc))
+    }
+
+    @Test
+    def takeWhile08(): Unit \ Assert = region rc {
+        let a = Array.takeWhile(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4, 6} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def takeWhileLeft01(): Unit \ Assert = region rc {
+        let a = Array.takeWhileLeft(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhileLeft02(): Unit \ Assert = region rc {
+        let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhileLeft03(): Unit \ Assert = region rc {
+        let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
+    }
+
+    @Test
+    def takeWhileLeft04(): Unit \ Assert = region rc {
+        let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhileLeft05(): Unit \ Assert = region rc {
+        let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1,5} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhileLeft06(): Unit \ Assert = region rc {
+        let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{5,1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5} @ rc))
+    }
+
+    @Test
+    def takeWhileLeft07(): Unit \ Assert = region rc {
+        let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{5,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc))
+    }
+
+    @Test
+    def takeWhileLeft08(): Unit \ Assert = region rc {
+        let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4, 6} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def takeWhileRight01(): Unit \ Assert = region rc {
+        let a = Array.takeWhileRight(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhileRight02(): Unit \ Assert = region rc {
+        let a = Array.takeWhileRight(rc, i -> i > 3, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhileRight03(): Unit \ Assert = region rc {
+        let a = Array.takeWhileRight(rc, i -> i > 3, Array#{4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
+    }
+
+    @Test
+    def takeWhileRight04(): Unit \ Assert = region rc {
+        let a = Array.takeWhileRight(rc, i -> i > 3, Array#{1,2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhileRight05(): Unit \ Assert = region rc {
+        let a = Array.takeWhileRight(rc, i -> i > 3, Array#{1,5} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5} @ rc))
+    }
+
+    @Test
+    def takeWhileRight06(): Unit \ Assert = region rc {
+        let a = Array.takeWhileRight(rc, i -> i > 3, Array#{5,1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def takeWhileRight07(): Unit \ Assert = region rc {
+        let a = Array.takeWhileRight(rc, i -> i > 3, Array#{5,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc))
+    }
+
+    @Test
+    def takeWhileRight08(): Unit \ Assert = region rc {
+        let a = Array.takeWhileRight(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
+        assertTrue(Array.sameElements(a, Array#{7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // groupBy                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    enum A with ToString {
+        case A(Int32, Int32)
+    }
+
+    instance Eq[A] {
+        pub def eq(l1: A, l2: A): Bool = match (l1, l2) {
+            case (A.A(x, _), A.A(y, _)) => x == y
+        }
+    }
+
+    @Test
+    def groupBy01(): Unit \ Assert = region rc {
+        let arr = Array.groupBy(rc, identity, (Array#{} @ rc: Array[A, rc]));
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = Nil, xs)
+    }
+
+    @Test
+    def groupBy02(): Unit \ Assert = region rc {
+        let arr = Array.groupBy(rc, identity, Array#{A.A(1, 1)} @ rc);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = (A.A(1, 1) :: Nil) :: Nil, xs)
+    }
+
+    @Test
+    def groupBy03(): Unit \ Assert = region rc {
+        let arr = Array.groupBy(rc, identity, Array#{A.A(1, 1), A.A(2, 1), A.A(1, 2), A.A(1, 1), A.A(2, 4)} @ rc);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = (A.A(1, 1) :: A.A(1, 2) :: A.A(1, 1) :: Nil) :: (A.A(2, 1) :: A.A(2, 4) :: Nil) :: Nil, xs)
+    }
+
+    // /////////////////////////////////////////////////////////////////////////////
+    // // groupWith                                                               //
+    // /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def groupWith01(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> a > 3 and b > 3, (Array#{} @ rc: Array[Int32, rc]));
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = Nil, xs)
+    }
+
+    @Test
+    def groupWith02(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> a > 3 and b > 3, Array#{1} @ rc);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = (1 :: Nil) :: Nil, xs)
+    }
+
+    @Test
+    def groupWith03(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> a > 3 and b > 3, Array#{1, 4} @ rc);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = (1 :: Nil) :: (4 :: Nil) :: Nil, xs)
+    }
+
+    @Test
+    def groupWith04(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> a > 3 and b > 3, Array#{4, 9} @ rc);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = (4 :: 9 :: Nil) :: Nil, xs)
+    }
+
+    @Test
+    def groupWith05(): Unit \ Assert = region rc {
+        let arr = Array.groupWith(rc, (a, b) -> (a > 3 and b > 3) or (a < 1 and b < 1) or ((a >= 1 and a <= 3) and (b >= 1 and b <= 3)), Array#{1, 4, 7, 6, 9, 2, 4, -1, 4, -5, 8, 16, 0} @ rc);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        assertEq(expected = (1 :: 2 :: Nil) :: (4 :: 7 :: 6 :: 9 :: 4 :: 4 :: 8 :: 16 :: Nil) :: (-1 :: -5 :: 0 :: Nil) :: Nil, xs)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def zip01(): Unit \ Assert = region rc {
+        let a = Array.zip(rc, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _])))
+    }
+
+    @Test
+    def zip02(): Unit \ Assert = region rc {
+        let a = Array.zip(rc, Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _])))
+    }
+
+    @Test
+    def zip03(): Unit \ Assert = region rc {
+        let a = Array.zip(rc, ((Array#{} @ rc): Array[Int32, _]), Array#{2} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _])))
+    }
+
+    @Test
+    def zip04(): Unit \ Assert = region rc {
+        let a = Array.zip(rc, Array#{1} @ rc, Array#{2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{(1, 2)} @ rc))
+    }
+
+    @Test
+    def zip05(): Unit \ Assert = region rc {
+        let a = Array.zip(rc, Array#{1,3} @ rc, Array#{2,4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{(1, 2), (3, 4)} @ rc))
+    }
+
+    @Test
+    def zip06(): Unit \ Assert = region rc {
+        let a = Array.zip(rc, Array#{1,3,5} @ rc, Array#{2,4,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{(1, 2), (3, 4), (5, 6)} @ rc))
+    }
+
+    @Test
+    def zip07(): Unit \ Assert = region rc {
+        let a = Array.zip(rc, Array#{1,3,5,7} @ rc, Array#{2,4,6,8} @ rc);
+        assertTrue(Array.sameElements(a, Array#{(1, 2), (3, 4), (5, 6), (7, 8)} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def zipWith01(): Unit \ Assert = region rc {
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _]));
+        assertTrue(Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def zipWith02(): Unit \ Assert = region rc {
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _]));
+        assertTrue(Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def zipWith03(): Unit \ Assert = region rc {
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc);
+        assertTrue(Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def zipWith04(): Unit \ Assert = region rc {
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, Array#{1} @ rc, Array#{true} @ rc);
+        assertTrue(Array.sameElements(arr, Array#{2} @ rc))
+    }
+
+    @Test
+    def zipWith05(): Unit \ Assert = region rc {
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, Array#{1} @ rc, Array#{false} @ rc);
+        assertTrue(Array.sameElements(arr, Array#{1} @ rc))
+    }
+
+    @Test
+    def zipWith06(): Unit \ Assert = region rc {
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a,
+                        Array#{1, 2, 3, 4, 5, 6, 7, 8} @ rc,
+                        Array#{false, true, true, false, false, true, true, true} @ rc);
+        assertTrue(Array.sameElements(arr, Array#{1, 3, 4, 4, 5, 7, 8, 9} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unzip                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def unzip01(): Unit \ Assert = region rc {
+        let (a,b) = Array.unzip(rc, rc, ((Array#{} @ rc): Array[(Unit, Unit), _]));
+        assertTrue(Array.sameElements(a, Array#{} @ rc));
+        assertTrue(Array.sameElements(b, Array#{} @ rc))
+    }
+
+    @Test
+    def unzip02(): Unit \ Assert = region rc {
+        let (a,b) = Array.unzip(rc, rc, Array#{(1, true)} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc));
+        assertTrue(Array.sameElements(b, Array#{true} @ rc))
+    }
+
+    @Test
+    def unzip03(): Unit \ Assert = region rc {
+        let (a,b) = Array.unzip(rc, rc, Array#{(1, true), (2, true)} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc));
+        assertTrue(Array.sameElements(b, Array#{true,true} @ rc))
+    }
+
+    @Test
+    def unzip04(): Unit \ Assert = region rc {
+        let (a,b) = Array.unzip(rc, rc, Array#{(1, true), (2, true), (3, false)} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc));
+        assertTrue(Array.sameElements(b, Array#{true,true,false} @ rc))
+    }
+
+    @Test
+    def unzip05(): Unit \ Assert = region rc1 { region rc2 {
+        assertTrue(unzip05Aux(rc1, Array#{(1, "1"), (2, "2"), (3, "3")} @ rc2) `Array.sameElements` (Array#{1, 2, 3} @ rc2))
+    }}
+
+    def unzip05Aux(rc1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { r1, r2 } =
+        region rc3 {
+            // snd is local, fst is for caller
+            Array.unzip(rc1, rc3, a) |> fst
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fold2                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fold201(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])))
+    }
+
+    @Test
+    def fold202(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{1} @ rc, Array#{} @ rc))
+    }
+
+    @Test
+    def fold203(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{} @ rc, Array#{true} @ rc))
+    }
+
+    @Test
+    def fold204(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc))
+    }
+
+    @Test
+    def fold205(): Unit \ Assert = region rc {
+        assertEq(expected = 8, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc))
+    }
+
+    @Test
+    def fold206(): Unit \ Assert = region rc {
+        assertEq(expected = 9, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc))
+    }
+
+    @Test
+    def fold207(): Unit \ Assert = region rc {
+        assertEq(expected = 14, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc))
+    }
+
+    @Test
+    def fold208(): Unit \ Assert = region rc {
+        assertEq(expected = 14, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc))
+    }
+
+    @Test
+    def fold209(): Unit \ Assert = region rc {
+        assertEq(expected = 24, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc))
+    }
+
+    @Test
+    def fold210(): Unit \ Assert = region rc {
+        assertEq(expected = -118, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
+            Array#{true,false,false,true} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft2                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def foldLeft201(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])))
+    }
+
+    @Test
+    def foldLeft202(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _])))
+    }
+
+    @Test
+    def foldLeft203(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc))
+    }
+
+    @Test
+    def foldLeft204(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc))
+    }
+
+    @Test
+    def foldLeft205(): Unit \ Assert = region rc {
+        assertEq(expected = 8, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc))
+    }
+
+    @Test
+    def foldLeft206(): Unit \ Assert = region rc {
+        assertEq(expected = 9, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc))
+    }
+
+    @Test
+    def foldLeft207(): Unit \ Assert = region rc {
+        assertEq(expected = 14, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc))
+    }
+
+    @Test
+    def foldLeft208(): Unit \ Assert = region rc {
+        assertEq(expected = 14, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc))
+    }
+
+    @Test
+    def foldLeft209(): Unit \ Assert = region rc {
+        assertEq(expected = 24, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc))
+    }
+
+    @Test
+    def foldLeft210(): Unit \ Assert = region rc {
+        assertEq(expected = -118, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
+            Array#{true,false,false,true} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight2                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def foldRight201(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])))
+    }
+
+    @Test
+    def foldRight202(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _])))
+    }
+
+    @Test
+    def foldRight203(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc))
+    }
+
+    @Test
+    def foldRight204(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc))
+    }
+
+    @Test
+    def foldRight205(): Unit \ Assert = region rc {
+        assertEq(expected = 8, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc))
+    }
+
+    @Test
+    def foldRight206(): Unit \ Assert = region rc {
+        assertEq(expected = 9, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc))
+    }
+
+    @Test
+    def foldRight207(): Unit \ Assert = region rc {
+        assertEq(expected = 11, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc))
+    }
+
+    @Test
+    def foldRight208(): Unit \ Assert = region rc {
+        assertEq(expected = 18, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc))
+    }
+
+    @Test
+    def foldRight209(): Unit \ Assert = region rc {
+        assertEq(expected = 24, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc))
+    }
+
+    @Test
+    def foldRight210(): Unit \ Assert = region rc {
+        assertEq(expected = -66, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
+            Array#{true,false,false,true} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filterMap                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def filterMap01(): Unit \ Assert = region rc {
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, ((Array#{} @ rc): Array[Int32, _]));
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def filterMap02(): Unit \ Assert = region rc {
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def filterMap03(): Unit \ Assert = region rc {
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{2} @ rc);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def filterMap04(): Unit \ Assert = region rc {
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,3} @ rc);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def filterMap05(): Unit \ Assert = region rc {
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,4} @ rc);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def filterMap06(): Unit \ Assert = region rc {
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{6,-1} @ rc);
+        assertTrue(Array.sameElements(a, Array#{3} @ rc))
+    }
+
+    @Test
+    def filterMap07(): Unit \ Assert = region rc {
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{8,6} @ rc);
+        assertTrue(Array.sameElements(a, Array#{4,3} @ rc))
+    }
+
+    @Test
+    def filterMap08(): Unit \ Assert = region rc {
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ rc);
+        assertTrue(Array.sameElements(a, Array#{0,1,2,5} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findMap01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def findMap02(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1} @ rc))
+    }
+
+    @Test
+    def findMap03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{2} @ rc))
+    }
+
+    @Test
+    def findMap04(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,3} @ rc))
+    }
+
+    @Test
+    def findMap05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,4} @ rc))
+    }
+
+    @Test
+    def findMap06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{6,-1} @ rc))
+    }
+
+    @Test
+    def findMap07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{8,6} @ rc))
+    }
+
+    @Test
+    def findMap08(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toSet01(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{}, Array.toSet(((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def toSet02(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1}, Array.toSet(Array#{1} @ rc))
+    }
+
+    @Test
+    def toSet03(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2}, Array.toSet(Array#{1,2} @ rc))
+    }
+
+    @Test
+    def toSet04(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1}, Array.toSet(Array#{1,1} @ rc))
+    }
+
+    @Test
+    def toSet05(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2, 3}, Array.toSet(Array#{1,2,3} @ rc))
+    }
+
+    @Test
+    def toSet06(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2}, Array.toSet(Array#{1,2,1} @ rc))
+    }
+
+    @Test
+    def toSet07(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2}, Array.toSet(Array#{1,1,2} @ rc))
+    }
+
+    @Test
+    def toSet08(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2, 3, 4, 5, 6}, Array.toSet(Array#{2,1,2,3,4,5,6,3,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMap                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toMap01(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{}, Array.toMap(((Array#{} @ rc): Array[(Int32, Bool), _])))
+    }
+
+    @Test
+    def toMap02(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{1 => true}, Array.toMap(Array#{(1, true)} @ rc))
+    }
+
+    @Test
+    def toMap03(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{1 => true, 2 => false}, Array.toMap(Array#{(1, true), (2, false)} @ rc))
+    }
+
+    @Test
+    def toMap04(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{1 => true}, Array.toMap(Array#{(1, true), (1, false)} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOf                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findIndexOf01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOf(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def findIndexOf02(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOf(i -> i > 2, Array#{1} @ rc))
+    }
+
+    @Test
+    def findIndexOf03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOf(i -> i > 2, Array#{3} @ rc))
+    }
+
+    @Test
+    def findIndexOf04(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOf(i -> i > 2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def findIndexOf05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOf(i -> i > 2, Array#{6,-6} @ rc))
+    }
+
+    @Test
+    def findIndexOf06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findIndexOf(i -> i > 2, Array#{-6,6} @ rc))
+    }
+
+    @Test
+    def findIndexOf07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOf(i -> i > 2, Array#{6,7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOfLeft                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findIndexOfLeft01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfLeft(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def findIndexOfLeft02(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfLeft(i -> i > 2, Array#{1} @ rc))
+    }
+
+    @Test
+    def findIndexOfLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfLeft(i -> i > 2, Array#{3} @ rc))
+    }
+
+    @Test
+    def findIndexOfLeft04(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfLeft(i -> i > 2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def findIndexOfLeft05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfLeft(i -> i > 2, Array#{6,-6} @ rc))
+    }
+
+    @Test
+    def findIndexOfLeft06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findIndexOfLeft(i -> i > 2, Array#{-6,6} @ rc))
+    }
+
+    @Test
+    def findIndexOfLeft07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfLeft(i -> i > 2, Array#{6,7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOfRight                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findIndexOfRight01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfRight(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def findIndexOfRight02(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfRight(i -> i > 2, Array#{1} @ rc))
+    }
+
+    @Test
+    def findIndexOfRight03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfRight(i -> i > 2, Array#{3} @ rc))
+    }
+
+    @Test
+    def findIndexOfRight04(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfRight(i -> i > 2, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def findIndexOfRight05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfRight(i -> i > 2, Array#{6,-6} @ rc))
+    }
+
+    @Test
+    def findIndexOfRight06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findIndexOfRight(i -> i > 2, Array#{-6,6} @ rc))
+    }
+
+    @Test
+    def findIndexOfRight07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findIndexOfRight(i -> i > 2, Array#{6,7} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndices                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findIndices01(): Unit \ Assert = region rc {
+        let v = Array.findIndices(i -> i > 2, ((Array#{} @ rc): Array[Int32, rc]));
+        assertEq(expected = Vector#{}, v)
+    }
+
+    @Test
+    def findIndices02(): Unit \ Assert = region rc {
+        let v = Array.findIndices(i -> i > 2, Array#{1} @ rc);
+        assertEq(expected = Vector#{}, v)
+    }
+
+    @Test
+    def findIndices03(): Unit \ Assert = region rc {
+        let v = Array.findIndices(i -> i > 2, Array#{3} @ rc);
+        assertEq(expected = Vector#{0}, v)
+    }
+
+    @Test
+    def findIndices04(): Unit \ Assert = region rc {
+        let v = Array.findIndices(i -> i > 2, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{}, v)
+    }
+
+    @Test
+    def findIndices05(): Unit \ Assert = region rc {
+        let v = Array.findIndices(i -> i > 2, Array#{6,-6} @ rc);
+        assertEq(expected = Vector#{0}, v)
+    }
+
+    @Test
+    def findIndices06(): Unit \ Assert = region rc {
+        let v = Array.findIndices(i -> i > 2, Array#{-6,6} @ rc);
+        assertEq(expected = Vector#{1}, v)
+    }
+
+    @Test
+    def findIndices07(): Unit \ Assert = region rc {
+        let v = Array.findIndices(i -> i > 2, Array#{6,7} @ rc);
+        assertEq(expected = Vector#{0, 1}, v)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // init                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def init01(): Unit \ Assert = region rc {
+        let a = Array.init(rc, x -> x, 0);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def init02(): Unit \ Assert = region rc {
+        let a = Array.init(rc, x -> x, -1);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def init03(): Unit \ Assert = region rc {
+        let a = Array.init(rc, x -> x, 1);
+        assertTrue(Array.sameElements(a, Array#{0} @ rc))
+    }
+
+    @Test
+    def init04(): Unit \ Assert = region rc {
+        let a = Array.init(rc, x -> x, 2);
+        assertTrue(Array.sameElements(a, Array#{0,1} @ rc))
+    }
+
+    @Test
+    def init05(): Unit \ Assert = region rc {
+        let a = Array.init(rc, x -> x, 50);
+        assertEq(expected = 50, Array.length(a))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sameElements                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def sameElements01(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        let b = ((Array#{} @ rc): Array[Int32, _]);
+        assertTrue(Array.sameElements(a,b))
+    }
+
+    @Test
+    def sameElements02(): Unit \ Assert = region rc {
+        let a = (Array#{1} @ rc: Array[Int32, _]);
+        let b = (Array#{} @ rc: Array[Int32, _]);
+        assertFalse(Array.sameElements(a,b))
+    }
+
+    @Test
+    def sameElements03(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        let b = ((Array#{1} @ rc): Array[Int32, _]);
+        assertFalse(Array.sameElements(a,b))
+    }
+
+    @Test
+    def sameElements04(): Unit \ Assert = region rc {
+        let a = ((Array#{1} @ rc): Array[Int32, _]);
+        let b = ((Array#{1} @ rc): Array[Int32, _]);
+        assertTrue(Array.sameElements(a,b))
+    }
+
+    @Test
+    def sameElements05(): Unit \ Assert = region rc {
+        let a = ((Array#{1} @ rc): Array[Int32, _]);
+        let b = ((Array#{0} @ rc): Array[Int32, _]);
+        assertFalse(Array.sameElements(a,b))
+    }
+
+    @Test
+    def sameElements06(): Unit \ Assert = region rc {
+        let a = ((Array#{1,2} @ rc): Array[Int32, _]);
+        let b = ((Array#{1,2} @ rc): Array[Int32, _]);
+        assertTrue(Array.sameElements(a,b))
+    }
+
+    @Test
+    def sameElements07(): Unit \ Assert = region rc {
+        let a = ((Array#{1,2} @ rc): Array[Int32, _]);
+        let b = ((Array#{2,1} @ rc): Array[Int32, _]);
+        assertFalse(Array.sameElements(a,b))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        let sb = StringBuilder.empty(rc);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEach(fn, a);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
+        let a = Array#{0} @ rc;
+        let sb = StringBuilder.empty(rc);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEach(fn, a);
+        assertEq(expected = "F", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEach03(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        let sb = StringBuilder.empty(rc);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEach(fn, a);
+        assertEq(expected = "T", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEach04(): Unit \ Assert = region rc {
+        let a = Array#{0,1} @ rc;
+        let sb = StringBuilder.empty(rc);
+        let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEach(fn, a);
+        assertEq(expected = "FT", StringBuilder.toString(sb))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forEachWithIndex01(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Float32, _]);
+        let sb = StringBuilder.empty(rc);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEachWithIndex(fn, a);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEachWithIndex02(): Unit \ Assert = region rc {
+        let a = Array#{0.0} @ rc;
+        let sb = StringBuilder.empty(rc);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEachWithIndex(fn, a);
+        assertEq(expected = "F", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEachWithIndex03(): Unit \ Assert = region rc {
+        let a = Array#{0.0, 0.1} @ rc;
+        let sb = StringBuilder.empty(rc);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEachWithIndex(fn, a);
+        assertEq(expected = "FT", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEachWithIndex04(): Unit \ Assert = region rc {
+        let a = Array#{0.0, 0.1, 0.2} @ rc;
+        let sb = StringBuilder.empty(rc);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEachWithIndex(fn, a);
+        assertEq(expected = "FTT", StringBuilder.toString(sb))
+    }
+
+    @Test
+    def forEachWithIndex05(): Unit \ Assert = region rc {
+        let a = Array#{0.0, 0.1, 0.2, 0.3} @ rc;
+        let sb = StringBuilder.empty(rc);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
+        Array.forEachWithIndex(fn, a);
+        assertEq(expected = "FTTT", StringBuilder.toString(sb))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // updateSequence                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def updateSequence01(): Unit \ Assert = region rc {
+         let a = ((Array#{} @ rc): Array[Int32, _]);
+         Array.updateSequence(0, ((Array#{} @ rc): Array[Int32, _]), a);
+         assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+     }
+
+    @Test
+    def updateSequence02(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.updateSequence(0, Array#{1,2} @ rc, a);
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def updateSequence03(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(0, Array#{} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def updateSequence04(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(-3, Array#{1,2,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def updateSequence05(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(2, Array#{1,2,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def updateSequence06(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.updateSequence(0, Array#{} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def updateSequence07(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.updateSequence(1, Array#{2} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    }
+
+    @Test
+    def updateSequence08(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.updateSequence(0, Array#{2} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def updateSequence09(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.updateSequence(0, Array#{2,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
+    }
+
+    @Test
+    def updateSequence10(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        Array.updateSequence(-1, Array#{2,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
+    }
+
+    @Test
+    def updateSequence11(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(-1, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4,2} @ rc))
+    }
+
+    @Test
+    def updateSequence12(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(1, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,3} @ rc))
+    }
+
+    @Test
+    def updateSequence13(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(-2, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def updateSequence14(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(2, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
+    }
+
+    @Test
+    def updateSequence15(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(1, Array#{3} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1,3} @ rc))
+    }
+
+    @Test
+    def updateSequence16(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        Array.updateSequence(0, Array#{3,4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{3,4} @ rc))
+    }
+
+    @Test
+    def updateSequence17(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(0, Array#{4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4, 2, 3} @ rc))
+    }
+
+    @Test
+    def updateSequence18(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(1, Array#{4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 4, 3} @ rc))
+    }
+
+    @Test
+    def updateSequence19(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(2, Array#{4} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 2, 4} @ rc))
+    }
+
+    @Test
+    def updateSequence20(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(0, Array#{4, 5} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4, 5, 3} @ rc))
+    }
+
+    @Test
+    def updateSequence21(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(1, Array#{4, 5} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 4, 5} @ rc))
+    }
+
+    @Test
+    def updateSequence22(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(-1, Array#{4, 5, 6} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{5, 6, 3} @ rc))
+    }
+
+    @Test
+    def updateSequence23(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3} @ rc;
+        Array.updateSequence(0, Array#{4, 5, 6} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{4, 5, 6} @ rc))
+    }
+
+    @Test
+    def updateSequence24(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(2, Array#{14, 15, 16, 17} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ rc))
+    }
+
+    @Test
+    def updateSequence25(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(-2, Array#{14, 15, 16, 17} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ rc))
+    }
+
+    @Test
+    def updateSequence26(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(4, Array#{14, 15, 16, 17} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ rc))
+    }
+
+    @Test
+    def updateSequence27(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(4, Array#{14, 15} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ rc))
+    }
+
+    @Test
+    def updateSequence28(): Unit \ Assert = region rc {
+        let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
+        Array.updateSequence(-1, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, a);
+        assertTrue(Array.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sortWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def cmp(x: Int32, y: Int32): Comparison =
+        if (x < y) Comparison.LessThan
+        else if (x == y) Comparison.EqualTo
+        else Comparison.GreaterThan
+
+    @Test
+    def sortWith01(): Unit \ Assert = region rc {
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` ((Array#{} @ rc): Array[Int32, _]))
+    }
+
+    @Test
+    def sortWith02(): Unit \ Assert = region rc {
+        let a = Array#{0} @ rc;
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` Array#{0} @ rc)
+    }
+
+    @Test
+    def sortWith03(): Unit \ Assert = region rc {
+        let a = Array#{0,1} @ rc;
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` Array#{0,1} @ rc)
+    }
+
+    @Test
+    def sortWith04(): Unit \ Assert = region rc {
+        let a = Array#{1,0} @ rc;
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` Array#{0,1} @ rc)
+    }
+
+    @Test
+    def sortWith05(): Unit \ Assert = region rc {
+        let a = Array#{1,1} @ rc;
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` Array#{1,1} @ rc)
+    }
+
+    @Test
+    def sortWith06(): Unit \ Assert = region rc {
+        let a = Array#{0,1,2,3,4,5} @ rc;
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+    }
+
+    @Test
+    def sortWith07(): Unit \ Assert = region rc {
+        let a = Array#{5,4,3,2,1,0} @ rc;
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+    }
+
+    @Test
+    def sortWith08(): Unit \ Assert = region rc {
+        let a = Array#{5,3,0,4,1,2} @ rc;
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+    }
+
+    @Test
+    def sortWith09(): Unit \ Assert = region rc {
+        let a = Array#{2,3,0,4,1,2} @ rc;
+        Array.sortWith(cmp, a);
+        assertTrue(a `sameElements` Array#{0,1,2,2,3,4} @ rc)
+    }
+
+    @Test
+    def sortWith10(): Unit \ Assert = region rc {
+        let a = Array#{0,1,2,3,4,5} @ rc;
+        Array.sortWith(flip(cmp), a);
+        assertTrue(a `sameElements` Array#{5,4,3,2,1,0} @ rc)
+    }
+
+    @Test
+    def sortWith11(): Unit \ Assert = region rc {
+        let a = Array#{5,4,3,2,1,0} @ rc;
+        Array.sortWith(flip(cmp), a);
+        assertTrue(a `sameElements` Array#{5,4,3,2,1,0} @ rc)
+    }
+
+    @Test
+    def sortWith12(): Unit \ Assert = region rc {
+        let a = Array#{5,3,0,4,1,2} @ rc;
+        Array.sortWith(flip(cmp), a);
+        assertTrue(a `sameElements` Array#{5,4,3,2,1,0} @ rc)
+    }
+
+    @Test
+    def sortWith13(): Unit \ Assert = region rc {
+        let a = Array#{2,3,0,4,1,2} @ rc;
+        Array.sortWith(flip(cmp), a);
+        assertTrue(a `sameElements` Array#{4,3,2,2,1,0} @ rc)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sort                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def testSortVsSortWith(a: Array[Int32, r]): Bool \ r = region rc1 {
+        let b = Array.slice(rc1, start = 0, end = Array.length(a), a);
+        let c = Array.slice(rc1, start = 0, end = Array.length(a), a);
+        Array.sort(b);
+        Array.sortWith(cmp, c);
+        b `sameElements` c
+    }
+
+    @Test
+    def sort01(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(((Array#{} @ rc): Array[Int32, _])))
+    }
+
+    @Test
+    def sort02(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{0} @ rc))
+    }
+
+    @Test
+    def sort03(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{0,1} @ rc))
+    }
+
+    @Test
+    def sort04(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{1,0} @ rc))
+    }
+
+    @Test
+    def sort05(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{1,1} @ rc))
+    }
+
+    @Test
+    def sort06(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{0,1,2,3,4,5} @ rc))
+    }
+
+    @Test
+    def sort07(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{5,4,3,2,1,0} @ rc))
+    }
+
+    @Test
+    def sort08(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{5,3,0,4,1,2} @ rc))
+    }
+
+    @Test
+    def sort09(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{2,3,0,4,1,2} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sortBy                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def sortBy01(): Unit \ Assert = region rc {
+        let a: Array[Int32, rc] = Array#{} @ rc;
+        Array.sortBy(identity, a);
+        let b: Array[Int32, rc] = Array#{} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{} @ rc)
+            and (b `sameElements` Array#{} @ rc))
+    }
+
+    @Test
+    def sortBy02(): Unit \ Assert = region rc {
+        let a = Array#{0} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{0} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{0} @ rc)
+            and (b `sameElements` Array#{0} @ rc))
+    }
+
+    @Test
+    def sortBy03(): Unit \ Assert = region rc {
+        let a = Array#{0,1} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{0,1} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{0,1} @ rc)
+            and (b `sameElements` Array#{0,1} @ rc))
+    }
+
+    @Test
+    def sortBy04(): Unit \ Assert = region rc {
+        let a = Array#{1,0} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{1,0} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{0,1} @ rc)
+            and (b `sameElements` Array#{0,1} @ rc))
+    }
+
+    @Test
+    def sortBy05(): Unit \ Assert = region rc {
+        let a = Array#{1,1} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{1,1} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{1,1} @ rc)
+            and (b `sameElements` Array#{1,1} @ rc))
+    }
+
+    @Test
+    def sortBy06(): Unit \ Assert = region rc {
+        let a = Array#{0,1,2,3,4,5} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{0,1,2,3,4,5} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc))
+    }
+
+    @Test
+    def sortBy07(): Unit \ Assert = region rc {
+        let a = Array#{5,4,3,2,1,0} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{5,4,3,2,1,0} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc))
+    }
+
+    @Test
+    def sortBy08(): Unit \ Assert = region rc {
+        let a = Array#{5,3,0,4,1,2} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{5,3,0,4,1,2} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc))
+    }
+
+    @Test
+    def sortBy09(): Unit \ Assert = region rc {
+        let a = Array#{2,3,0,4,1,2} @ rc;
+        Array.sortBy(identity, a);
+        let b = Array#{2,3,0,4,1,2} @ rc;
+        Array.sortBy(x -> 4 * x + 7, b);
+        assertTrue((a `sameElements` Array#{0,1,2,2,3,4} @ rc)
+            and (b `sameElements` Array#{0,1,2,2,3,4} @ rc))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def minimumBy01(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+    @Test
+    def minimumBy01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.minimumBy((x, y) -> x <=> y, ((Array#{} @ rc): Array[Int32, _])))
+    }
 
-    @test
-    def minimumBy02(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5)) == Some(0)
+    @Test
+    def minimumBy02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.minimumBy((x, y) -> x <=> y, Array.range(rc, 0, 5)))
+    }
 
-    @test
-    def minimumBy03(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10)) == Some(4)
+    @Test
+    def minimumBy03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), Array.minimumBy((x, y) -> x <=> y, Array.range(rc, 4, 10)))
+    }
 
-    @test
-    def minimumBy04(): Bool & Impure =
-        let a = Array.range(10, 20);
-        a[5] = -22;
-        Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
+    @Test
+    def minimumBy04(): Unit \ Assert = region rc {
+        let a = Array.range(rc, 10, 20);
+        Array.put(-22, 5, a);
+        assertEq(expected = Some(-22), Array.minimumBy((x, y) -> x <=> y, a))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def maximumBy01(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+    @Test
+    def maximumBy01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.maximumBy((x, y) -> x <=> y, ((Array#{} @ rc): Array[Int32, _])))
+    }
 
-    @test
-    def maximumBy02(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5)) == Some(4)
+    @Test
+    def maximumBy02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), Array.maximumBy((x, y) -> x <=> y, Array.range(rc, 0, 5)))
+    }
 
-    @test
-    def maximumBy03(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10)) == Some(9)
+    @Test
+    def maximumBy03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(9), Array.maximumBy((x, y) -> x <=> y, Array.range(rc, 4, 10)))
+    }
 
-    @test
-    def maximumBy04(): Bool & Impure =
-        let a = Array.range(10, 20);
-        a[5] = 42;
-        Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
+    @Test
+    def maximumBy04(): Unit \ Assert = region rc {
+        let a = Array.range(rc, 10, 20);
+        Array.put(42, 5, a);
+        assertEq(expected = Some(42), Array.maximumBy((x, y) -> x <=> y, a))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool & Impure =
-        Array.sum([]) == 0
+    @Test
+    def sum01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.sum(Array#{} @ rc))
+    }
 
-    @test
-    def sum02(): Bool & Impure =
-        Array.sum([1]) == 1
+    @Test
+    def sum02(): Unit \ Assert = region rc {
+        assertEq(expected = 1, Array.sum(Array#{1} @ rc))
+    }
 
-    @test
-    def sum03(): Bool & Impure =
-        Array.sum([1, 2, 3]) == 6
+    @Test
+    def sum03(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.sum(Array#{1, 2, 3} @ rc))
+    }
 
-    @test
-    def sum04(): Bool & Impure =
-        Array.sum([1, 2, 3, -3]) == 3
+    @Test
+    def sum04(): Unit \ Assert = region rc {
+        assertEq(expected = 3, Array.sum(Array#{1, 2, 3, -3} @ rc))
+    }
 
-    @test
-    def sum05(): Bool & Impure =
-        Array.sum([-1, -2, -3, -4]) == -10
-    @test
-    def sum06(): Bool & Impure =
-        Array.sum([10, -10]) == 0
+    @Test
+    def sum05(): Unit \ Assert = region rc {
+        assertEq(expected = -10, Array.sum(Array#{-1, -2, -3, -4} @ rc))
+    }
+    @Test
+    def sum06(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.sum(Array#{10, -10} @ rc))
+    }
 
-    @test
-    def sum07(): Bool & Impure =
-        Array.range(1, 101) |> Array.sum == 5050
+    @Test
+    def sum07(): Unit \ Assert = region rc {
+        assertEq(expected = 5050, Array.range(rc, 1, 101) |> Array.sum)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toLazyList01(): Bool & Impure =
-        []: Array[Unit] |> Array.toLazyList == LazyList.empty()
+    @Test
+    def sumWith01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.sumWith(x -> x + 1, Array#{} @ rc))
+    }
 
-    @test
-    def toLazyList02(): Bool & Impure =
-        Array.new(0, 0) |> Array.toLazyList == LazyList.empty()
+    @Test
+    def sumWith02(): Unit \ Assert = region rc {
+        assertEq(expected = 2, Array.sumWith(x -> x + 1, Array#{1} @ rc))
+    }
 
-    @test
-    def toLazyList03(): Bool & Impure =
-        Array.range(-1000, 1000) |> Array.toLazyList == LazyList.range(-1000, 1000)
+    @Test
+    def sumWith03(): Unit \ Assert = region rc {
+        assertEq(expected = 9, Array.sumWith(x -> x + 1, Array#{1, 2, 3} @ rc))
+    }
 
-    @test
-    def toLazyList04(): Bool & Impure =
-        Array.range(-1000, 1000) |> Array.toLazyList |> LazyList.toArray `eq` Array.range(-1000, 1000)
+    @Test
+    def sumWith04(): Unit \ Assert = region rc {
+        assertEq(expected = 7, Array.sumWith(x -> x + 1, Array#{1, 2, 3, -3} @ rc))
+    }
+
+    @Test
+    def sumWith05(): Unit \ Assert = region rc {
+        assertEq(expected = -6, Array.sumWith(x -> x + 1, Array#{-1, -2, -3, -4} @ rc))
+    }
+
+    @Test
+    def sumWith06(): Unit \ Assert = region rc {
+        assertEq(expected = 2, Array.sumWith(x -> x + 1, Array#{10, -10} @ rc))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toChain01(): Bool & Impure =
-        Array.toChain([]: Array[Unit]) == Chain.empty(): Chain[Unit]
+    @Test
+    def toChain01(): Unit \ Assert = region rc {
+        assertEq(expected = (Chain.empty(): Chain[Unit]), Array.toChain(((Array#{} @ rc: Array[Unit, _]))))
+    }
 
-    @test
-    def toChain02(): Bool & Impure =
-        Array.toChain([1]) == Chain.singleton(1)
+    @Test
+    def toChain02(): Unit \ Assert = region rc {
+        assertEq(expected = Chain.singleton(1), Array.toChain(Array#{1} @ rc))
+    }
 
-    @test
-    def toChain03(): Bool & Impure =
-        Array.toChain([1,2]) == List.toChain(1 :: 2 :: Nil)
+    @Test
+    def toChain03(): Unit \ Assert = region rc {
+        assertEq(expected = List.toChain(1 :: 2 :: Nil), Array.toChain(Array#{1,2} @ rc))
+    }
 
-    @test
-    def toChain04(): Bool & Impure =
-        Array.toChain([1,2,3]) == List.toChain(1 :: 2 :: 3 :: Nil)
+    @Test
+    def toChain04(): Unit \ Assert = region rc {
+        assertEq(expected = List.toChain(1 :: 2 :: 3 :: Nil), Array.toChain(Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toNec01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.toNec(((Array#{} @ rc: Array[Unit, _]))))
+    }
+
+    @Test
+    def toNec02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(Nec.singleton(1)), Array.toNec(Array#{1} @ rc))
+    }
+
+    @Test
+    def toNec03(): Unit \ Assert = region rc {
+        assertEq(expected = List.toNec(1 :: 2 :: Nil), Array.toNec(Array#{1,2} @ rc))
+    }
+
+    @Test
+    def toNec04(): Unit \ Assert = region rc {
+        assertEq(expected = List.toNec(1 :: 2 :: 3 :: Nil), Array.toNec(Array#{1,2,3} @ rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // copyInto                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    // Test copying between arrays for primitive values
+    @Test
+    def copyInto01(): Unit \ Assert = region rc {
+        let src = Array#{true, false, true, false, false} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        assertTrue(src `sameElements` dst)
+    }
+
+    @Test
+    def copyInto02(): Unit \ Assert = region rc {
+        let src = Array#{1i8, 4i8, 5i8, 42i8, 123i8} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        assertTrue(src `sameElements` dst)
+    }
+
+    @Test
+    def copyInto04(): Unit \ Assert = region rc {
+        let src = Array#{1i16, 4i16, 5i16, 42i16, 123i16} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        assertTrue(src `sameElements` dst)
+    }
+
+    @Test
+    def copyInto05(): Unit \ Assert = region rc {
+        let src = Array#{1i32, 4i32, 5i32, 42i32, 123i32} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        assertTrue(src `sameElements` dst)
+    }
+
+
+    @Test
+    def copyInto06(): Unit \ Assert = region rc {
+        let src = Array#{1i64, 4i64, 5i64, 42i64, 123i64} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        assertTrue(src `sameElements` dst)
+    }
+
+
+    @Test
+    def copyInto07(): Unit \ Assert = region rc {
+        let src = Array#{1f32, 4f32, 5f32, 42f32, 123f32} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        assertTrue(src `sameElements` dst)
+    }
+
+    @Test
+    def copyInto08(): Unit \ Assert = region rc {
+        let src = Array#{1f64, 4f64, 5f64, 42f64, 123f64} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        assertTrue(src `sameElements` dst)
+    }
+
+    @Test
+    def copyInto09(): Unit \ Assert = region rc {
+        let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
+        let dst = Array#{0, 0, 0, 0} @ rc;
+        Array.copyInto(srcPos = 3, dstPos = 1, len = 2, src = src, dst);
+        let copiedCorrectly = dst `sameElements` Array#{0, 4, 5, 0} @ rc;
+        let sourceUnchanged = src `sameElements` Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
+        assertTrue(copiedCorrectly);
+        assertTrue(sourceUnchanged)
+    }
+
+    @Test
+    def copyInto10(): Unit \ Assert = region rc {
+        let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
+        let dst = Array#{0,0,0,0} @ rc;
+        Array.copyInto(srcPos = 3, dstPos = 1, len = 0, src = src, dst);
+        assertTrue(dst `sameElements` Array#{0,0,0,0} @ rc)
+    }
+
+    @Test
+    def copyInto11(): Unit \ Assert = region rc {
+        let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
+        Array.copyInto(srcPos = 0, dstPos = 5, len = 5, src = src, src);
+        assertTrue(src `sameElements` Array#{1, 2, 3, 4, 5, 1, 2, 3, 4, 5} @ rc)
+    }
+
+    @Test
+    def copyInto12(): Unit \ Assert = region rc {
+        let src = Array#{1, 2, 3, 4, 5} @ rc;
+        Array.copyInto(srcPos = 0, dstPos = 1, len = 4, src = src, src);
+        assertTrue(src `sameElements` Array#{1, 1, 2, 3, 4} @ rc)
+    }
+
+    @Test
+    def copyInto13(): Unit \ Assert = region rc {
+        let src = Array#{Some(1), None, Some(2), None, Some(3), None, Some(4)} @ rc;
+        let dst = Array#{Some(-1),Some(-1),Some(-1),Some(-1),Some(-1),Some(-1)} @ rc;
+        Array.copyInto(srcPos = 1, dstPos = 2, len = 4, src = src, dst);
+        assertTrue(dst `sameElements` Array#{Some(-1), Some(-1), None, Some(2), None, Some(3)} @ rc)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // copy                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def copy01(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{true, false, true} @ rc) `sameElements` Array#{true, false, true} @ rc)
+    }
+
+    @Test
+    def copy02(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{'a', 'b', 'c'} @ rc) `sameElements` Array#{'a', 'b', 'c'} @ rc)
+    }
+
+    @Test
+    def copy03(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1.0f32, 2.0f32, 3.0f32} @ rc) `sameElements` Array#{1.0f32, 2.0f32, 3.0f32} @ rc)
+    }
+
+    @Test
+    def copy04(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1.0f64, 2.0f64, 3.0f64} @ rc) `sameElements` Array#{1.0f64, 2.0f64, 3.0f64} @ rc)
+    }
+
+    @Test
+    def copy05(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1i8, 2i8, 3i8} @ rc) `sameElements` Array#{1i8, 2i8, 3i8} @ rc)
+    }
+
+    @Test
+    def copy06(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1i16, 2i16, 3i16} @ rc) `sameElements` Array#{1i16, 2i16, 3i16} @ rc)
+    }
+
+    @Test
+    def copy07(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1, 2, 3} @ rc) `sameElements` Array#{1, 2, 3} @ rc)
+    }
+
+    @Test
+    def copy08(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1i64, 2i64, 3i64} @ rc) `sameElements` Array#{1i64, 2i64, 3i64} @ rc)
+    }
+
+    @Test
+    def copy09(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{Some(1), Some(2), None} @ rc) `sameElements` Array#{Some(1), Some(2), None} @ rc)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // copyOfRange                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def copyOfRange01(): Bool & Impure =
-        Array.copyOfRange(0, 3, [true, false, true]) `eq` [true, false, true]
+    // depends on flatten
 
-    @test
-    def copyOfRange02(): Bool & Impure =
-        Array.copyOfRange(1, 3, [true, false, true]) `eq` [false, true]
+    @Test
+    def copyOfRange01(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{true, false, true} @ rc) `sameElements` Array#{true, false, true} @ rc)
+    }
 
-    @test
-    def copyOfRange03(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [true, false, true]);
-        Array.length(a) == 3 and Array.memberOf(true, a)
+    @Test
+    def copyOfRange02(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{true, false, true} @ rc) `sameElements` Array#{false, true} @ rc)
+    }
 
-    @test
-    def copyOfRange04(): Bool & Impure =
-        Array.copyOfRange(0, 3, ['a', 'b', 'c']) `eq` ['a', 'b', 'c']
+    @Test
+    def copyOfRange03(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{true, false, true} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf(true, a))
+    }
 
-    @test
-    def copyOfRange05(): Bool & Impure =
-        Array.copyOfRange(1, 3, ['a', 'b', 'c']) `eq` ['b', 'c']
+    @Test
+    def copyOfRange04(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{'a', 'b', 'c'} @ rc) `sameElements` Array#{'a', 'b', 'c'} @ rc)
+    }
 
-    @test
-    def copyOfRange06(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, ['a', 'b', 'c']);
-        Array.length(a) == 3 and Array.memberOf('c', a)
+    @Test
+    def copyOfRange05(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{'a', 'b', 'c'} @ rc) `sameElements` Array#{'b', 'c'} @ rc)
+    }
 
-    @test
-    def copyOfRange07(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32]) `eq` [1.0f32, 2.0f32, 3.0f32]
+    @Test
+    def copyOfRange06(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{'a', 'b', 'c'} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf('c', a))
+    }
 
-    @test
-    def copyOfRange08(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32]) `eq` [2.0f32, 3.0f32]
+    @Test
+    def copyOfRange07(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{1.0f32, 2.0f32, 3.0f32} @ rc) `sameElements` Array#{1.0f32, 2.0f32, 3.0f32} @ rc)
+    }
 
-    @test
-    def copyOfRange09(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1.0f32, 2.0f32, 3.0f32]);
-        Array.length(a) == 3 and Array.memberOf(3.0f32, a)
+    @Test
+    def copyOfRange08(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{1.0f32, 2.0f32, 3.0f32} @ rc) `sameElements` Array#{2.0f32, 3.0f32} @ rc)
+    }
 
-    @test
-    def copyOfRange10(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64]) `eq` [1.0f64, 2.0f64, 3.0f64]
+    @Test
+    def copyOfRange09(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{1.0f32, 2.0f32, 3.0f32} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf(3.0f32, a))
+    }
 
-    @test
-    def copyOfRange11(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64]) `eq` [2.0f64, 3.0f64]
+    @Test
+    def copyOfRange10(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{1.0f64, 2.0f64, 3.0f64} @ rc) `sameElements` Array#{1.0f64, 2.0f64, 3.0f64} @ rc)
+    }
 
-    @test
-    def copyOfRange12(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1.0f64, 2.0f64, 3.0f64]);
-        Array.length(a) == 3 and Array.memberOf(3.0f64, a)
+    @Test
+    def copyOfRange11(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{1.0f64, 2.0f64, 3.0f64} @ rc) `sameElements` Array#{2.0f64, 3.0f64} @ rc)
+    }
 
-    @test
-    def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8]) `eq` [1i8, 2i8, 3i8]
+    @Test
+    def copyOfRange12(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{1.0f64, 2.0f64, 3.0f64} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf(3.0f64, a))
+    }
 
-    @test
-    def copyOfRange14(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8]) `eq` [2i8, 3i8]
+    @Test
+    def copyOfRange13(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{1i8, 2i8, 3i8} @ rc) `sameElements` Array#{1i8, 2i8, 3i8} @ rc)
+    }
 
-    @test
-    def copyOfRange15(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i8, 2i8, 3i8]);
-        Array.length(a) == 3 and Array.memberOf(3i8, a)
+    @Test
+    def copyOfRange14(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{1i8, 2i8, 3i8} @ rc) `sameElements` Array#{2i8, 3i8} @ rc)
+    }
 
-    @test
-    def copyOfRange16(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16]) `eq` [1i16, 2i16, 3i16]
+    @Test
+    def copyOfRange15(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{1i8, 2i8, 3i8} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf(3i8, a))
+    }
 
-    @test
-    def copyOfRange17(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16]) `eq` [2i16, 3i16]
+    @Test
+    def copyOfRange16(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{1i16, 2i16, 3i16} @ rc) `sameElements` Array#{1i16, 2i16, 3i16} @ rc)
+    }
 
-    @test
-    def copyOfRange18(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i16, 2i16, 3i16]);
-        Array.length(a) == 3 and Array.memberOf(3i16, a)
+    @Test
+    def copyOfRange17(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{1i16, 2i16, 3i16} @ rc) `sameElements` Array#{2i16, 3i16} @ rc)
+    }
 
-    @test
-    def copyOfRange19(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1, 2, 3]) `eq` [1, 2, 3]
+    @Test
+    def copyOfRange18(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{1i16, 2i16, 3i16} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf(3i16, a))
+    }
 
-    @test
-    def copyOfRange20(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1, 2, 3]) `eq` [2, 3]
+    @Test
+    def copyOfRange19(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{1, 2, 3} @ rc) `sameElements` Array#{1, 2, 3} @ rc)
+    }
 
-    @test
-    def copyOfRange21(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1, 2, 3]);
-        Array.length(a) == 3 and Array.memberOf(3, a)
+    @Test
+    def copyOfRange20(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{1, 2, 3} @ rc) `sameElements` Array#{2, 3} @ rc)
+    }
 
-    @test
-    def copyOfRange22(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64]) `eq` [1i64, 2i64, 3i64]
+    @Test
+    def copyOfRange21(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{1, 2, 3} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf(3, a))
+    }
 
-    @test
-    def copyOfRange23(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64]) `eq` [2i64, 3i64]
+    @Test
+    def copyOfRange22(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{1i64, 2i64, 3i64} @ rc) `sameElements` Array#{1i64, 2i64, 3i64} @ rc)
+    }
 
-    @test
-    def copyOfRange24(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i64, 2i64, 3i64]);
-        Array.length(a) == 3 and Array.memberOf(3i64, a)
+    @Test
+    def copyOfRange23(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{1i64, 2i64, 3i64} @ rc) `sameElements` Array#{2i64, 3i64} @ rc)
+    }
 
-    @test
-    def copyOfRange25(): Bool & Impure =
-        let a = Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
-        let b = [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']];
-        Array.flatten(a) `eq` Array.flatten(b)
+    @Test
+    def copyOfRange24(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{1i64, 2i64, 3i64} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf(3i64, a))
+    }
 
-    @test
-    def copyOfRange26(): Bool & Impure =
-        let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
-        let b = [['d', 'e', 'f', 'g'], ['h']];
-        Array.flatten(a) `eq` Array.flatten(b)
+    @Test
+    def copyOfRange25(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 0, 3, Array#{Array#{'a', 'b', 'c'} @ rc, Array#{'d', 'e', 'f', 'g'} @ rc, Array#{'h'} @ rc} @ rc);
+        let b = Array#{Array#{'a', 'b', 'c'} @ rc, Array#{'d', 'e', 'f', 'g'} @ rc, Array#{'h'} @ rc} @ rc;
+        assertTrue(Array.flatten(rc, a) `sameElements` Array.flatten(rc, b))
+    }
 
-    @test
-    def copyOfRange27(): Bool & Impure =
-        Array.copyOfRange(0, 3, [Some(1), Some(2), None]) `eq` [Some(1), Some(2), None]
+    @Test
+    def copyOfRange26(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 1, 3, Array#{Array#{'a', 'b', 'c'} @ rc, Array#{'d', 'e', 'f', 'g'} @ rc, Array#{'h'} @ rc} @ rc);
+        let b = Array#{Array#{'d', 'e', 'f', 'g'} @ rc, Array#{'h'} @ rc } @ rc;
+        assertTrue(Array.flatten(rc, a) `sameElements` Array.flatten(rc, b))
+    }
 
-    @test
-    def copyOfRange28(): Bool & Impure =
-        Array.copyOfRange(1, 3, [Some(1), Some(2), None]) `eq` [Some(2), None]
+    @Test
+    def copyOfRange27(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 0, 3, Array#{Some(1), Some(2), None} @ rc) `sameElements` Array#{Some(1), Some(2), None} @ rc)
+    }
 
-    @test
-    def copyOfRange29(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None]);
-        Array.length(a) == 3 and Array.memberOf(None, a)
+    @Test
+    def copyOfRange28(): Unit \ Assert = region rc {
+        assertTrue(Array.copyOfRange(rc, 1, 3, Array#{Some(1), Some(2), None} @ rc) `sameElements` Array#{Some(2), None} @ rc)
+    }
 
-    @test
-    def copyOfRange30(): Bool & Impure =
-        let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
-        let b = [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]];
-        Array.flatten(a) `eq` Array.flatten(b)
+    @Test
+    def copyOfRange29(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 2, 5, Array#{Some(1), Some(2), None} @ rc);
+        assertTrue(Array.length(a) == 3 and Array.memberOf(None, a))
+    }
 
-    @test
-    def copyOfRange31(): Bool & Impure =
-        let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
-        let b = [[Some('d'), Some('e'), Some('f'), Some('g')], [None]];
-        Array.flatten(a) `eq` Array.flatten(b)
+    @Test
+    def copyOfRange30(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 0, 3, Array#{Array#{Some('a'), Some('b'), Some('c')} @ rc, Array#{Some('d'), Some('e'), Some('f'), Some('g')} @ rc, Array#{None} @ rc} @ rc);
+        let b = Array#{Array#{Some('a'), Some('b'), Some('c')} @ rc, Array#{Some('d'), Some('e'), Some('f'), Some('g')} @ rc, Array#{None} @ rc } @ rc;
+        assertTrue(Array.flatten(rc, a) `sameElements` Array.flatten(rc, b))
+    }
+
+    @Test
+    def copyOfRange31(): Unit \ Assert = region rc {
+        let a = Array.copyOfRange(rc, 1, 3, Array#{Array#{Some('a'), Some('b'), Some('c')} @ rc, Array#{Some('d'), Some('e'), Some('f'), Some('g')} @ rc, Array#{None} @ rc} @ rc);
+        let b = Array#{Array#{Some('d'), Some('e'), Some('f'), Some('g')} @ rc, Array#{None} @ rc} @ rc;
+        assertTrue(Array.flatten(rc, a) `sameElements` Array.flatten(rc, b))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterator01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, ((Array#{} @ rc): Array[Int32, rc]) |> Array.iterator(rc) |> Iterator.toList)
+    }
+
+    @Test
+    def iterator02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, (Array#{1, 2, 3} @ rc) |> Array.iterator(rc) |> Iterator.toList)
+    }
+
+    @Test
+    def iterator03(): Unit \ Assert = region rc {
+        assertTrue((Array#{1, 2, 3} @ rc) |> Array.iterator(rc) |> Iterator.toArray(rc) `sameElements` Array#{1, 2, 3} @ rc)
+    }
+
+    @Test
+    def iterator04(): Unit \ Assert = region rc {
+        assertTrue(Array.range(rc, -100, 100) |> Array.iterator(rc) |> Iterator.toArray(rc) `sameElements` Array.range(rc, -100, 100))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toIterator01(): Bool & Impure =
-        []: Array[Int32] |> Array.toIterator |> Iterator.toList == Nil
+    @Test
+    def join01(): Unit \ Assert = region rc {
+        assertEq(expected = "", Array.join(",", ((Array#{} @ rc): Array[Int32, _])))
+    }
 
-    @test
-    def toIterator02(): Bool & Impure =
-        [1, 2, 3] |> Array.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    @Test
+    def join02(): Unit \ Assert = region rc {
+        assertEq(expected = "1", Array.join(",", Array#{1} @ rc))
+    }
 
-    @test
-    def toIterator03(): Bool & Impure =
-        [1, 2, 3] |> Array.toIterator |> Iterator.toArray `eq` [1, 2, 3]
+    @Test
+    def join03(): Unit \ Assert = region rc {
+        assertEq(expected = "1,2,3", Array.join(",", Array#{1, 2, 3} @ rc))
+    }
 
-    @test
-    def toIterator04(): Bool & Impure =
-        Array.range(-100, 100) |> Array.toIterator |> Iterator.toArray `eq` Array.range(-100, 100)
+    @Test
+    def join04(): Unit \ Assert = region rc {
+        assertEq(expected = "1,2,3", Array.join(",", Array#{"1", "2", "3"} @ rc))
+    }
 
-    @test
-    def toIterator05(): Bool & Impure = {
-        let a = [1, 2, 3];
-        let iter = Array.toIterator(a);
-        a[0] = 10000;
-        Iterator.toArray(iter) `eq` [1, 2, 3]
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def joinWith01(): Unit \ Assert = region rc {
+        assertEq(expected = "", Array.joinWith(x -> "${x + 1}", ",", Array#{} @ rc))
+    }
+
+    @Test
+    def joinWith02(): Unit \ Assert = region rc {
+        assertEq(expected = "2", Array.joinWith(x -> "${x + 1}", ",", Array#{1} @ rc))
+    }
+
+    @Test
+    def joinWith03(): Unit \ Assert = region rc {
+        assertEq(expected = "2,3,4", Array.joinWith(x -> "${x + 1}", ",", Array#{1, 2, 3} @ rc))
+    }
+
+    @Test
+    def joinWith04(): Unit \ Assert = region rc {
+        assertEq(expected = "11,22,33", Array.joinWith(x -> x + x, ",", Array#{"1", "2", "3"} @ rc))
+    }
+
+    @Test
+    def joinWith05(): Unit \ Assert = region rc {
+        let a: Array[Int32, _] = Array#{} @ rc;
+        let s = Array.joinWith(Int32.toString, ",", a);
+        assertEq(expected = "", s)
+    }
+
+    @Test
+    def joinWith06(): Unit \ Assert = region rc {
+        let a = Array#{1} @ rc;
+        let s = Array.joinWith(Int32.toString, ",", a);
+        assertEq(expected = "1", s)
+    }
+
+    @Test
+    def joinWith07(): Unit \ Assert = region rc {
+        let a = Array#{1,2} @ rc;
+        let s = Array.joinWith(Int32.toString, ",", a);
+        assertEq(expected = "1,2", s)
+    }
+
+    @Test
+    def joinWith08(): Unit \ Assert = region rc {
+        let a = Array#{1,2,3} @ rc;
+        let s = Array.joinWith(Int32.toString, ",", a);
+        assertEq(expected = "1,2,3", s)
+    }
+
+    @Test
+    def joinWith09(): Unit \ Assert = region rc {
+        let a = Array#{1,2,3} @ rc;
+        let s = Array.joinWith(Int32.toString, "", a);
+        assertEq(expected = "123", s)
+    }
+
+    @Test
+    def joinWith10(): Unit \ Assert = region rc {
+        let a = Array#{1,2,3} @ rc;
+        let s = Array.joinWith(Int32.toString, "..", a);
+        assertEq(expected = "1..2..3", s)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def shuffle01(): Unit \ Assert + NonDet = region rc {
+        run {
+            let a = ((Array#{} @ rc): Array[Int32, _]);
+            Array.shuffle(a);
+            assertTrue(Array.length(a) == 0 and Array.toSet(a) == Set#{})
+        } with Shuffle.runWithIO
+    }
+
+    @Test
+    def shuffle02(): Unit \ Assert + NonDet = region rc {
+        run {
+            let a = (Array#{0} @ rc);
+            Array.shuffle(a);
+            assertTrue(Array.length(a) == 1 and Array.toSet(a) == Set#{0})
+        } with Shuffle.runWithIO
+    }
+
+    @Test
+    def shuffle03(): Unit \ Assert + NonDet = region rc {
+        run {
+            let a = (Array#{0, 1, 2, 3} @ rc);
+            Array.shuffle(a);
+            assertTrue(Array.length(a) == 4 and Array.toSet(a) == Set#{0, 1, 2, 3})
+        } with Shuffle.runWithIO
+    }
+
+    @Test
+    def shuffle04(): Unit \ Assert + NonDet = region rc {
+        run {
+            let a = (Array#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9} @ rc);
+            Array.shuffle(a);
+            assertTrue(Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+        } with Shuffle.runWithIO
     }
 
 }

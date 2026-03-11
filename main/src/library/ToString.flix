@@ -14,10 +14,18 @@
  *  limitations under the License.
  */
 
+import java.lang.Byte
+import java.lang.Character
+import java.lang.Double
+import java.lang.Float
+import java.lang.Integer
+import java.lang.Long
+import java.lang.Short
+
 ///
-/// A type class for types that can be converted to strings.
+/// A trait for types that can be converted to strings.
 ///
-pub lawless class ToString[a] {
+pub trait ToString[a] {
     ///
     /// Returns a string representation of the given x.
     ///
@@ -36,45 +44,31 @@ instance ToString[Bool] {
 }
 
 instance ToString[Char] {
-    pub def toString(x: Char): String =
-        import static java.lang.Character.toString(Char);
-        toString(x) as & Pure
+    pub def toString(x: Char): String = Character.toString(x)
 }
 
 instance ToString[Float32] {
-    pub def toString(x: Float32): String =
-        import static java.lang.Float.toString(Float32);
-        toString(x) as & Pure
+    pub def toString(x: Float32): String = Float.toString(x)
 }
 
 instance ToString[Float64] {
-    pub def toString(x: Float64): String =
-        import static java.lang.Double.toString(Float64);
-        toString(x) as & Pure
+    pub def toString(x: Float64): String = Double.toString(x)
 }
 
 instance ToString[Int8] {
-    pub def toString(x: Int8): String =
-        import static java.lang.Byte.toString(Int8);
-        toString(x) as & Pure
+    pub def toString(x: Int8): String = Byte.toString(x)
 }
 
 instance ToString[Int16] {
-    pub def toString(x: Int16): String =
-        import static java.lang.Short.toString(Int16);
-        toString(x) as & Pure
+    pub def toString(x: Int16): String = Short.toString(x)
 }
 
 instance ToString[Int32] {
-    pub def toString(x: Int32): String =
-        import static java.lang.Integer.toString(Int32);
-        toString(x) as & Pure
+    pub def toString(x: Int32): String = Integer.toString(x)
 }
 
 instance ToString[Int64] {
-    pub def toString(x: Int64): String =
-        import static java.lang.Long.toString(Int64);
-        toString(x) as & Pure
+    pub def toString(x: Int64): String = Long.toString(x)
 }
 
 instance ToString[String] {
@@ -82,9 +76,15 @@ instance ToString[String] {
 }
 
 instance ToString[BigInt] {
-    pub def toString(x: BigInt): String =
-        import java.math.BigInteger.toString();
-        toString(x) as & Pure
+    pub def toString(x: BigInt): String = x.toString()
+}
+
+instance ToString[BigDecimal] {
+    pub def toString(x: BigDecimal): String = x.toString()
+}
+
+instance ToString[Regex] {
+    pub def toString(x: Regex): String = x.toString()
 }
 
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
@@ -183,18 +183,4 @@ instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, 
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) =>
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12}, ${x13}, ${x14}, ${x15})"
     }
-}
-
-instance ToString[Array[a]] with ToString[a] {
-    pub def toString(a: Array[a]): String = ToStringOps.arrayToStringHelper(a, 0, "")
-}
-
-namespace ToStringOps {
-    pub def arrayToStringHelper(a: Array[a], i: Int32, acc: String): String with ToString[a] =
-        if (i < a.length) {
-            if (i == 0) arrayToStringHelper(a, i + 1, "${a[i]}") as & Pure
-            else arrayToStringHelper(a, i + 1, "${acc}, ${a[i]}") as & Pure
-        } else {
-            "[${acc}]"
-        }
 }

@@ -1,0 +1,356 @@
+/*
+ * Copyright 2022 Paul Butcher, Lukas Rønn, Magnus Madsen
+ * Copyright 2025 Chenhao Gao
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ca.uwaterloo.flix.api.lsp.provider.completion
+
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst.Decl
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
+
+import scala.annotation.tailrec
+
+object CompletionUtils {
+
+  private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
+
+  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
+
+  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
+      val args = if (isUnitFunction(fparams))
+        Nil
+      else
+        fparams.map {
+          fparam => s"${fparam.bnd.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+        }
+
+      val retTpe = FormatType.formatType(retTpe0)
+
+      val eff = eff0 match {
+        case Type.Cst(TypeConstructor.Pure, _) => ""
+        case p => raw" \ " + FormatType.formatType(p)
+      }
+
+      s"(${args.mkString(", ")}): $retTpe$eff"
+  }
+
+  /**
+    * Generate a snippet which represents calling a function.
+    */
+  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
+    val functionIsUnit = isUnitFunction(fparams)
+
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
+    }
+    if (functionIsUnit)
+      s"$name()"
+    else if (args.nonEmpty)
+      s"$name(${args.mkString(", ")})"
+    else
+      name
+  }
+
+  /**
+    * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
+    */
+  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
+    val functionIsUnit = isUnitFunction(fparams)
+
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
+    } :+ s"$${${fparams.length + 1}:resume}"
+    if (functionIsUnit)
+      s"$name($${1:resume}) = "
+    else
+      s"$name(${args.mkString(", ")}) = "
+  }
+
+  /**
+    * Under some circumstances, even though we set `isIncomplete`, which is supposed to opt-out
+    * of this behaviour, VSCode filters returned completions when the user types more text
+    * without calling the language server again (so it has no chance to return different
+    * completions).
+    *
+    * If we use `label` as filter text (which is the default), this can result in many false
+    * positives, e.g. if the user types "MyList[t", the "t" will result in many potential Def
+    * and Sig completions. If the user then types "]" VSCode will filter this list using the
+    * "word" "t]" which will match many of these completions (e.g. "Nec.tail(c: Nec[a]): ...").
+    *
+    * To avoid this behaviour, we set `filterText` for Def and Sig completions to be just the
+    * name. The "(" is there so that they still see completions if they enter the opening
+    * bracket of a function call (but not if they start filling in the argument list).
+    */
+  def getFilterTextForName(name: String): String = {
+    s"$name("
+  }
+
+  /**
+    * Checks if we should offer AutoUseCompletion or AutoImportCompletion.
+    * Currently, we will only offer them if at least three characters have been typed.
+    */
+  def shouldComplete(word: String): Boolean = word.length >= 3
+
+  /**
+    * Returns `true` if the query is a fuzzy match for the key.
+    * After splitting query and key by camel case, every query segment must be a prefix of some key segment in order.
+    * Works for camelCase and UpperCamelCase.
+    *
+    * Example:
+    *   - fuzzyMatch("fBT",  "fooBarTest") = true
+    *   - fuzzyMatch("fBrT", "fooBarTest") = false
+    *   - fuzzyMatch("fTB",  "fooBarTest") = false
+    *
+    * @param query The query string, usually from the user input.
+    * @param key   The key string, usually from the completion item.
+    */
+  def fuzzyMatch(query: String, key: String): Boolean = {
+    @tailrec
+    def matchSegments(query: List[String], key: List[String]): Boolean = (query, key) match {
+      case (Nil, _) => true
+      case (_, Nil) => false
+      case (qHead :: qTail, kHead :: kTail) =>
+        if (kHead.startsWith(qHead))
+          matchSegments(qTail, kTail)
+        else
+          matchSegments(query, kTail)
+    }
+
+    matchSegments(splitByCamelCase(query), splitByCamelCase(key))
+  }
+
+  /**
+    * Splits a string by camel case.
+    *
+    * Example: "fooBarTest" -> List("foo", "Bar", "Test")
+    */
+  private def splitByCamelCase(input: String): List[String] = {
+    input.split("(?=[A-Z])").toList
+  }
+
+  /**
+    * Checks if the namespace and ident from the error matches the qualified name.
+    * We require a full match on the namespace and a fuzzy match on the ident.
+    *
+    * Example:
+    * matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
+    */
+  def matchesQualifiedName(targetNamespace: List[String], targetIdent: String, qn: Name.QName): Boolean = {
+    targetNamespace == qn.namespace.parts && fuzzyMatch(qn.ident.name, targetIdent)
+  }
+
+  /**
+    * Format type params in the right form to be displayed in the list of completions
+    * e.g. "[a, b, c]"
+    */
+  def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.map(_.name).mkString("[", ", ", "]")
+    }
+  }
+
+  /**
+    * Format types in the right form to be displayed in the list of completions
+    * e.g. "(Int32, String)"
+    */
+  def formatTypes(tpes: List[Type])(implicit flix: Flix): String =
+    tpes match {
+      case Nil => ""
+      case _ => tpes.map(FormatType.formatType(_)).mkString("(", ", ", ")")
+    }
+
+  /**
+    * Format type params in the right form to be inserted as a snippet
+    * e.g. "[${1:a}, ${2:b}, ${3:c}]"
+    */
+  def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.zipWithIndex.map {
+        case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
+      }.mkString("[", ", ", "]")
+    }
+  }
+
+  /**
+    * Format types in the right form to be inserted as a snippet
+    * e.g. "(${1:Int32}, ${2:String})"
+    */
+  def formatTypesSnippet(tpes: List[Type])(implicit flix: Flix): String =
+    tpes match {
+      case Nil => ""
+      case _ => tpes.zipWithIndex.map {
+        case (tpe, idx) => "$" + s"{${idx + 1}:?${FormatType.formatType(tpe)}}"
+      }.mkString("(", ", ", ")")
+    }
+
+
+  /**
+    * Checks if the given class is public.
+    */
+  def isAvailable(decl: Decl): Boolean = decl.mod.isPublic
+
+  /**
+    * Checks if the given def is public.
+    */
+  def isAvailable(defn: TypedAst.Def): Boolean = isAvailable(defn.spec)
+
+  /**
+    * Checks if the given sig is public.
+    */
+  def isAvailable(sig: TypedAst.Sig): Boolean = isAvailable(sig.spec)
+
+  /**
+    * Checks if the given op is public.
+    */
+  def isAvailable(op: TypedAst.Op): Boolean = isAvailable(op.spec)
+
+  /**
+    * Checks if the def of the given symbol is public.
+    */
+  def isAvailable(defn: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = root.defs.get(defn).exists(isAvailable)
+
+  /**
+    * Checks if the trait of the given symbol is public.
+    */
+  def isAvailable(trt: Symbol.TraitSym)(implicit root: TypedAst.Root): Boolean = root.traits.get(trt).exists(isAvailable)
+
+  /**
+    * Checks if the effect of the given symbol is public.
+    */
+  def isAvailable(eff: Symbol.EffSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isAvailable)
+
+  /**
+    * Checks if the enum of the given symbol is public.
+    */
+  def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
+
+  /**
+    * Replaces the given symbol with a variable named by the given `newText`.
+    */
+  private def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
+    implicit val scope: Scope = Scope.Top
+    tpe match {
+      case Type.Var(sym, loc) if oldSym == sym => Type.Var(sym.withText(VarText.SourceText(newText)), loc)
+      case Type.Var(_, _) => tpe
+      case Type.Cst(_, _) => tpe
+
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val t1 = replaceText(oldSym, tpe1, newText)
+        val t2 = replaceText(oldSym, tpe2, newText)
+        Type.Apply(t1, t2, loc)
+
+      case Type.Alias(cst, args0, tpe0, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          val t = replaceText(oldSym, tpe0, newText)
+          Type.Alias(cst, args, t, loc)
+        }
+
+      case Type.AssocType(cst, args0, kind, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          Type.AssocType(cst, args, kind, loc)
+        }
+
+      // Jvm types should not be exposed to the user.
+      case t: Type.JvmToType => t
+      case t: Type.JvmToEff => t
+      case t: Type.UnresolvedJvmType => t
+    }
+  }
+
+  /**
+    * Formats the given type `tpe`.
+    */
+  private def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
+    FormatType.formatType(replaced)
+  }
+
+  /**
+    * Formats the given associated type `assoc`.
+    */
+  private def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String]): String = {
+    s"    type ${assoc.sym.name} = ${holes(assoc.sym)}"
+  }
+
+  /**
+    * Formats the given formal parameters in `spec`.
+    */
+  private def fmtFormalParams(spec: TypedAst.Spec, holes: Map[Symbol, String])(implicit flix: Flix): String =
+    spec.fparams.map(fparam => s"${fparam.bnd.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
+
+  /**
+    * Formats the given signature `sig`.
+    */
+  private def fmtSignature(sig: TypedAst.Sig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val fparams = fmtFormalParams(sig.spec, holes)
+    val retTpe = fmtType(sig.spec.retTpe, holes)
+    val eff = sig.spec.eff match {
+      case Type.Cst(TypeConstructor.Pure, _) => ""
+      case e => raw" \ " + fmtType(e, holes)
+    }
+    s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
+  }
+
+  def fmtInstanceSnippet(trt: TypedAst.Trait, qualified: Boolean)(implicit flix: Flix): String = {
+    val instanceHole = "${1:t}"
+    val holes: Map[Symbol, String] = {
+      (trt.tparam.sym -> instanceHole) +:
+        trt.assocs.zipWithIndex.map { case (a, i) => a.sym -> s"$$${i + 2}" }
+    }.toMap
+
+    val traitName = if (qualified) trt.sym.toString else trt.sym.name
+    val signatures = trt.sigs.filter(_.exp.isEmpty)
+
+    val body = {
+      trt.assocs.map(a => fmtAssocType(a, holes)) ++
+        signatures.map(s => fmtSignature(s, holes))
+    }.mkString("\n\n")
+
+    s"$traitName[$instanceHole] {\n\n$body\n\n}\n"
+  }
+
+  /**
+    * Checks if the sym and the given qualified name matches.
+    *
+    * @param sym       The symbol to check, usually from root.
+    * @param qn        The qualified name to check, usually from user input.
+    * @param qualified Whether the qualified name is qualified.
+    */
+  def matchesName(sym: QualifiedSym, qn: Name.QName, qualified: Boolean): Boolean = {
+    if (qualified) {
+      matchesQualifiedName(sym.namespace, sym.name, qn)
+    } else
+      fuzzyMatch(qn.ident.name, sym.name)
+  }
+
+  /**
+    * Formats the given Op
+    */
+  def fmtOp(op: TypedAst.Op): String = {
+    val fparamsString = (op.spec.fparams.collect { case p if p.tpe != Type.Unit => p.bnd.sym.text } :+ "k").mkString(", ")
+    s"    def ${op.sym.name}($fparamsString) = ???"
+  }
+}

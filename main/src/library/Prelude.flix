@@ -1,69 +1,89 @@
-///
-/// Ref[t] is a type alias for a scoped ref with a global lifetime.
-///
-pub type alias Ref[t] = ScopedRef[t, false]
+import java.lang.System
 
 ///
-/// The Reified Flix Bools.
+/// Static denotes the region of global lifetime.
 ///
-pub enum ReifiedBool with Eq, Order, ToString {
-    case ErasedBool,
-    case ReifiedTrue,
-    case ReifiedFalse
+pub type alias Static = IO
+
+///
+/// A type alias used while we transition to a proper `Heap` effect.
+///
+type alias Heap[h: Eff] = h
+
+///
+/// An enum that holds type information where a witness is not available.
+///
+pub enum Proxy[_: Type] {
+    case Proxy
 }
 
 ///
-/// The Reified Flix Types.
+/// An enum that holds effect information where a witness is not available.
 ///
-pub enum ReifiedType with Eq, Order, ToString {
-    case ErasedType,
-    case ReifiedBool,
-    case ReifiedChar,
-    case ReifiedFloat32,
-    case ReifiedFloat64,
-    case ReifiedInt8,
-    case ReifiedInt16,
-    case ReifiedInt32,
-    case ReifiedInt64,
-    case ReifiedArray(ReifiedType)
+pub enum ProxyEff[_: Eff] {
+    case Proxy
 }
 
 ///
-/// The identity function.
+/// An enum that holds type-level Bool information where a witness is not available.
+///
+pub enum ProxyBool[_: Bool] {
+    case Proxy
+}
+
+///
+/// The uninterpretable Chan effect.
+///
+/// The `Chan` effect represents the global region of channels.
+///
+/// The `Chan` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Chan
+
+///
+/// The uninterpretable IO effect.
+///
+/// The `IO` effect represents the actions not described by any other effect.
+///
+/// The `IO` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff IO
+
+///
+/// The uninterpretable `NonDet` effect.
+///
+/// The `NonDet` effect represents one or more non-deterministic actions.
+///
+/// The `NonDet` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff NonDet
+
+///
+/// The pure identity function.
 ///
 pub def identity(x: a): a = x
 
 ///
-/// Returns the constant function with return value `y`.
-/// That is, returns `f` such that `f(x) = y` for all inputs `x`.
+/// The identity function, automatically casting to the required effect.
 ///
-pub def constant(y: a): b -> a = _ -> y
+pub def eidentity(x: a): a \ ef = checked_ecast(x)
+
+///
+/// The constant function.
+///
+pub def constant(x: a): b -> a \ ef = _ -> checked_ecast(x)
 
 ///
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///
-pub def flip(f: (a, b) -> c & ef): (b, a) -> c & ef = (x, y) -> f(y, x)
+pub def flip(f: (a, b) -> c \ ef): (b, a) -> c \ ef = (x, y) -> f(y, x)
 
-///
-/// `on(f, g, x, y) = f(g(x), g(y))`
 ///
 /// Partially applying this function in the form ``f `on` g`` lifts the binary function `f` to work on
 /// inputs transformed by `g`.
 ///
-pub def on(f: (b, b) -> c & ef1, g: a -> b & ef2, x: a, y: a): c & (ef1 and ef2) = f(g(x), g(y))
-
-///
-/// Returns the result of currying the function `f`.
-/// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
-///
-pub def curry(f: (a, b) -> c & ef): a -> (b -> c & ef) = x -> y -> f(x, y)
-
-///
-/// Returns the result of uncurrying the function `f`.
-/// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
-///
-pub def uncurry(f: a -> (b -> c & ef1) & ef2): ((a, b)) -> c & (ef1 and ef2) = match (x, y) -> f(x, y)
+pub def on(f: (b, b) -> c \ ef1, g: a -> b \ ef2, x: a, y: a): c \ { ef1, ef2 } = f(g(x), g(y))
 
 ///
 /// Returns the first component of `t`.
@@ -92,78 +112,110 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-pub def >>(f: a -> b & ef1, g: b -> c & ef2): a -> c & (ef1 and ef2) = x -> g(f(x))
+pub def >>(f: a -> b \ ef1, g: b -> c \ ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
 ///
 /// Given a value `x` and a function `f` returns `f(x)`.
 ///
-pub def |>(x: a, f: a -> b & ef): b & ef = f(x)
+pub def |>(x: a, f: a -> b \ ef): b \ ef = f(x)
 
 ///
 /// Pipes the given pair `x` into the function `f`.
 ///
 /// Given a pair `x` and a function `f` returns `f(x)`.
 ///
-pub def ||>(x: (a, b), f: ((a, b)) -> c & ef): c & ef = f(x)
+pub def ||>(x: (a, b), f: a -> (b -> c \ ef)): c \ ef = f(fst(x), snd(x))
 
 ///
-/// Converts `x` to a string and prints it to standard out.
+/// Pipes the given value `x` into the function `f`.
 ///
-pub def print(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out as getOut;
-    import java.io.PrintStream.print(String);
-    x |> ToString.toString |> print(getOut())
+/// Given a value `x` and a function `f` returns `x`.
+///
+pub def !>( x: a, f: a -> Unit \ ef): a \ ef = f(x); x
+
+///
+/// Coerces the given value `x`.
+///
+pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
 
 ///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
-pub def println(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out as getOut;
-    import java.io.PrintStream.println(String);
-    x |> ToString.toString |> println(getOut())
+pub def println(x: a): Unit \ IO with ToString[a] =
+    System.out.println(x |> ToString.toString)
 
 ///
-/// Returns `true` if `x` implies `y` logically holds.
+/// Touches the given region capability `rc`.
 ///
-pub def ==>(x: Bool, y: Bool): Bool = not x or y
-
-///
-/// Returns true if `x` implies `y` and vise versa.
-///
-pub def <==>(x: Bool, y: Bool): Bool = x == y
+pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a =
-    let f = () -> {
-        import static get java.lang.System.err as getErr;
-        import java.io.PrintStream.println(String);
-        import java.lang.String.repeat(Int32);
-        let prt = println(getErr());
-        prt(repeat("*", 80));
-        prt("**") ;
-        prt("**  BUG: ${m}") ;
-        prt("**") ;
-        prt(repeat("*", 80));
-        prt("")
-    };
-    let _ = f() as & Pure;
+pub def bug!(m: String): a = unsafe IO {
+    System.err.println("*".repeat(80));
+    System.err.println("**") ;
+    System.err.println("**  BUG: ${m}") ;
+    System.err.println("**") ;
+    System.err.println("*".repeat(80));
+    System.err.println("");
     ?panic
+}
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
 
-///
-/// Meta-programming facility to express the time complexity of a function `f`.
-///
-pub def time(_: a -> Int32): Int32 = 1
+pub enum Purity[a: Type, b: Type, ef: Eff] {
+    case Pure(a -> b)
+    case Impure(a -> b \ ef)
+}
+
+pub enum Purity2[a: Type, b: Type, c: Type, ef: Eff] {
+    case Pure(a -> b -> c)
+    case Impure(a -> b -> c \ ef)
+}
+
+pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
+    case Pure(a -> b -> c -> d)
+    case Impure(a -> b -> c -> d \ ef)
+}
 
 ///
-/// Meta-programming facility to express the space complexity of a function `f`.
+/// Returns `Purity.Pure(g)` if `f` has no effects.
+/// Returns `Purity.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
 ///
-pub def space(_: a -> Int32): Int32 = 1
+pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure => Purity.Pure(unchecked_cast (f as a -> b \ {}))
+        case Reflect.Purity.Impure => Purity.Impure(f)
+    }
+
+///
+/// Returns `Purity2.Pure(g)` if `f` has no effects.
+/// Returns `Purity2.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
+///
+pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity2.Pure(unchecked_cast (f as a -> b -> c \ {}))
+        case Reflect.Purity.Impure => Purity2.Impure(f)
+    }
+
+///
+/// Returns `Purity3.Pure(g)` if `f` has no effects.
+/// Returns `Purity3.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
+///
+pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] =
+    match Reflect.reflectEff((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity3.Pure(unchecked_cast (f as a -> b -> c -> d \ {}))
+        case Reflect.Purity.Impure => Purity3.Impure(f)
+    }

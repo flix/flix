@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,281 +16,171 @@
  */
 package ca.uwaterloo.flix.language.phase.extra
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.api.lsp.acceptors.AllAcceptor
+import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, SymUse}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 
 object CodeHinter {
 
   /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): List[CodeHint] = {
-    val codeHints = root.defs.values.flatMap(visitDef(_)(root)).toList
-    codeHints.filter(include(_, sources))
+  def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
+    val occurs = getOccurrences
+
+    val applyDefHints = occurs.applyDefOccurs.flatMap { case (sym, exps) => visitApplyDef(sym, exps) }
+    val defHints = occurs.defOccurs.flatMap(visitDefSymUse)
+    val enumHints = occurs.enumOccurs.flatMap { case (sym, loc) => visitEnumSymUse(sym, loc) }
+    val traitHints = occurs.traitOccurs.flatMap(visitTraitSymUse)
+
+    val hints = applyDefHints ++ defHints ++ enumHints ++ traitHints
+
+    hints.filter(include(_, sources))
   }
 
   /**
-    * Returns `true` if the given code `hint` should be included in the result.
+    * Returns a collection of code quality hints related to the given def application.
+    *
+    * @param sym  The [[Symbol.DefnSym]] for the function being applied.
+    * @param exps The arguments the function is being applied to.
+    * @param root The root AST node of the Flix project
+    * @return A collection of code quality hints.
     */
-  private def include(hint: CodeHint, sources: Set[String]): Boolean =
-    sources.contains(hint.loc.source.name)
-
-  /**
-    * Computes code quality hints for the given definition `def0`.
-    */
-  private def visitDef(def0: TypedAst.Def)(implicit root: Root): List[CodeHint] = {
-    visitExp(def0.impl.exp)
+  private def visitApplyDef(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
+    exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
   }
 
   /**
-    * Computes code quality hints for the given expression `exp0`.
+    * Returns a collection of code quality hints related to the given def's annotations.
+    *
+    * Note that hints related to `@LazyWhenPure` and `@ParallelWhenPure` are not included in this colleciton.
+    *
+    * @param symUse The [[SymUse.DefSymUse]] for the occurrence of the def in question.
+    * @param root   The root AST node for the Flix project.
+    * @return A collection of code quality hints
     */
-  private def visitExp(exp0: Expression)(implicit root: Root): List[CodeHint] = exp0 match {
-    case Expression.Wild(_, _) => Nil
+  private def visitDefSymUse(symUse: SymUse.DefSymUse)(implicit root: Root): List[CodeHint] = {
+    val defn = root.defs(symUse.sym)
+    val ann = defn.spec.ann
+    checkDeprecated(ann, symUse.loc) ++
+      checkExperimental(ann, symUse.loc) ++
+      checkLazy(ann, symUse.loc) ++
+      checkParallel(ann, symUse.loc)
+  }
 
-    case Expression.Var(_, _, _) => Nil
+  /**
+    * Returns a collection of code quality hints related to the given enum's annotations.
+    *
+    * @param root The root AST node for the Flix project.
+    * @param sym  The [[Symbol.EnumSym]] for the enum in quesiton.
+    * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
+    * @return A collection of code hints.
+    */
+  private def visitEnumSymUse(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val enm = root.enums(sym)
+    val ann = enm.ann
+    checkDeprecated(ann, loc) ++ checkExperimental(ann, loc)
+  }
 
-    case Expression.Def(sym, _, loc) =>
-      checkDeprecated(sym, loc)
+  /**
+    * Returns a collection of code quality hints related to a given trait's annotations.
+    *
+    * @param symUse The [[SymUse.TraitSymUse]] for the occurrence of the trait in question.
+    * @param root   The root AST node of the project.
+    * @return A collection of code quality hints.
+    */
+  private def visitTraitSymUse(symUse: SymUse.TraitSymUse)(implicit root: Root): List[CodeHint] = {
+    val trt = root.traits(symUse.sym)
+    val ann = trt.ann
+    checkDeprecated(ann, symUse.loc) ++ checkExperimental(ann, symUse.loc)
+  }
 
-    case Expression.Sig(_, _, _) => Nil
+  /**
+    * A [[Occurrences]] represents all elements that might warrant a code hint.
+    *
+    * @param applyDefOccurs All def applications.
+    * @param defOccurs      All occurrences of defs.
+    * @param enumOccurs     All occurrences of enums.
+    * @param traitOccurs    All occurrences of traits.
+    */
+  private case class Occurrences(applyDefOccurs: List[(Symbol.DefnSym, List[Expr])], defOccurs: List[DefSymUse], enumOccurs: List[(Symbol.EnumSym, SourceLocation)], traitOccurs: List[TraitSymUse])
 
-    case Expression.Hole(_, _, _) => Nil
+  /**
+    * Returns a [[Occurrences]] for the Flix project.
+    *
+    * @param root The root AST node of the Flix project
+    * @return A [[Occurrences]] for the Flix project.
+    */
+  private def getOccurrences(implicit root: Root): Occurrences = {
+    var applyDefOccurs: List[(Symbol.DefnSym, List[Expr])] = Nil
+    var defOccurs: List[DefSymUse] = Nil
+    var enumOccurs: List[(Symbol.EnumSym, SourceLocation)] = Nil
+    var traitOccurs: List[TraitSymUse] = Nil
 
-    case Expression.Unit(_) => Nil
+    object OccurConsumer extends Consumer {
+      override def consumeCaseSymUse(symUse: SymUse.CaseSymUse): Unit = enumOccurs = (symUse.sym.enumSym, symUse.loc) :: enumOccurs
 
-    case Expression.Null(_, _) => Nil
+      override def consumeDefSymUse(symUse: DefSymUse): Unit = defOccurs = symUse :: defOccurs
 
-    case Expression.True(_) => Nil
-
-    case Expression.False(_) => Nil
-
-    case Expression.Char(_, _) => Nil
-
-    case Expression.Float32(_, _) => Nil
-
-    case Expression.Float64(_, _) => Nil
-
-    case Expression.Int8(_, _) => Nil
-
-    case Expression.Int16(_, _) => Nil
-
-    case Expression.Int32(_, _) => Nil
-
-    case Expression.Int64(_, _) => Nil
-
-    case Expression.BigInt(_, _) => Nil
-
-    case Expression.Str(_, _) => Nil
-
-    case Expression.Default(_, _) => Nil
-
-    case Expression.Lambda(_, exp, _, _) =>
-      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
-
-    case Expression.Apply(exp, exps, _, eff, loc) =>
-      val hints0 = (exp, exps) match {
-        case (Expression.Def(sym, _, _), lambda :: _) =>
-          checkPurity(sym, lambda.tpe, loc)
-        case _ => Nil
-      }
-      val hints1 = checkEffect(eff, loc)
-      hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
-
-    case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Let(_, _, exp1, exp2, _, eff, loc) =>
-      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.LetRec(_, _, exp1, exp2, _, eff, loc) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.LetRegion(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-    case Expression.Stm(exp1, exp2, _, eff, loc) =>
-      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Match(matchExp, rules, _, _, _) =>
-      visitExp(matchExp) ++ rules.flatMap {
-        case MatchRule(_, guard, exp) => visitExp(guard) ++ visitExp(exp)
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _, _, _) => applyDefOccurs = (symUse.sym, exps) :: applyDefOccurs
+        case _ => ()
       }
 
-    case Expression.Choose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ rules.flatMap {
-        case ChoiceRule(_, exp) => visitExp(exp)
+      override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitOccurs = symUse :: traitOccurs
+
+      override def consumeType(tpe: Type): Unit = tpe match {
+        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => enumOccurs = (sym, loc) :: enumOccurs
+        case _ => ()
       }
+    }
 
-    case Expression.Tag(_, _, exp, _, _, _) =>
-      visitExp(exp)
+    Visitor.visitRoot(root, OccurConsumer, AllAcceptor)
 
-    case Expression.Tuple(exps, _, _, _) =>
-      visitExps(exps)
+    Occurrences(applyDefOccurs, defOccurs, enumOccurs, traitOccurs)
+  }
 
-    case Expression.RecordEmpty(_, _) => Nil
 
-    case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
-      visitExp(exp2) ++ visitExp(exp1)
-
-    case Expression.RecordRestrict(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.ArrayLit(exps, _, _, _) =>
-      visitExps(exps)
-
-    case Expression.ArrayNew(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.ArrayStore(exp1, exp2, exp3, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-    case Expression.ArrayLength(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-    case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Ascribe(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Cast(exp, _, _, tpe, eff, loc) =>
-      checkCast(tpe, eff, loc) ++ visitExp(exp)
-
-    case Expression.TryCatch(exp, rules, _, _, _) =>
-      visitExp(exp) ++ rules.flatMap {
-        case CatchRule(_, _, exp) => visitExp(exp)
-      }
-
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
-      visitExps(args)
-
-    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
-
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-      visitExps(args)
-
-    case Expression.GetField(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.GetStaticField(_, _, _, _) =>
+  private def checkDeprecated(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
+    if (ann.isDeprecated) {
+      CodeHint.Deprecated(loc) :: Nil
+    } else {
       Nil
-
-    case Expression.PutStaticField(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.NewChannel(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.GetChannel(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.SelectChannel(rules, default, _, _, _) =>
-      rules.flatMap {
-        case SelectChannelRule(_, chan, exp) => visitExp(chan) ++ visitExp(exp)
-      } ++ default.map(visitExp).getOrElse(Nil)
-
-    case Expression.Spawn(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Force(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
-      cs.flatMap(visitConstraint)
-
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.FixpointSolve(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Reify(_, _, _, _) =>
-      Nil
-
-    case Expression.ReifyType(_, _, _, _, _) =>
-      Nil
-
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+    }
   }
 
-  /**
-    * Computes code quality hints for the given list of expressions `exps`.
-    */
-  private def visitExps(exps: List[Expression])(implicit root: Root): List[CodeHint] =
-    exps.flatMap(visitExp)
-
-  /**
-    * Computes code quality hints for the given constraint `c`.
-    */
-  private def visitConstraint(c: Constraint)(implicit root: Root): List[CodeHint] =
-    visitHeadPredicate(c.head) ++ c.body.flatMap(visitBodyPredicate)
-
-  /**
-    * Computes code quality hints for the given head predicate `p`.
-    */
-  private def visitHeadPredicate(p: TypedAst.Predicate.Head)(implicit root: Root): List[CodeHint] = p match {
-    case Head.Atom(_, _, terms, _, _) => visitExps(terms)
+  private def checkExperimental(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
+    if (ann.isExperimental) {
+      CodeHint.Experimental(loc) :: Nil
+    } else {
+      Nil
+    }
   }
 
-  /**
-    * Computes code quality hints for the given body predicate `p`.
-    */
-  private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root): List[CodeHint] = p match {
-    case Body.Atom(_, _, _, _, _, _) => Nil
-    case Body.Guard(exp, _) => visitExp(exp)
+  private def checkLazy(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
+    if (ann.isLazy) {
+      CodeHint.Lazy(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  private def checkParallel(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
+    if (ann.isParallel) {
+      CodeHint.Parallel(loc) :: Nil
+    } else {
+      Nil
+    }
   }
 
   /**
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
-  private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+  private def checkEffect(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     if (lazyWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.LazyEvaluation(sym, loc) :: Nil
@@ -306,67 +197,34 @@ object CodeHinter {
   }
 
   /**
-    * Returns `true` if the the given `sym` is marked being purity polymorphic
+    * Returns `true` if the the given `sym` is marked being purity reflective
     * and uses lazy evaluation when given a pure function argument.
     */
   private def lazyWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
     val defn = root.defs(sym)
-    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyWhenPure])
+    defn.spec.ann.isLazyWhenPure
   }
 
   /**
-    * Returns `true` if the given `sym` is marked being purity polymorphic
+    * Returns `true` if the given `sym` is marked being purity reflective
     * and uses parallel evaluation when given a pure function argument.
     */
   private def parallelWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
     val defn = root.defs(sym)
-    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.ParallelWhenPure])
-  }
-
-  /**
-    * Checks whether `tpe` is a non-trivial effect.
-    *
-    * NB: Not currently checked for every expression.
-    */
-  private def checkEffect(tpe: Type, loc: SourceLocation): List[CodeHint] = {
-    if (nonTrivialEffect(tpe)) {
-      CodeHint.NonTrivialEffect(loc) :: Nil
-    } else {
-      Nil
-    }
-  }
-
-  /**
-    * Checks whether the given definition symbol `sym` is deprecated.
-    */
-  private def checkDeprecated(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
-    val defn = root.defs(sym)
-    val isDeprecated = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
-    if (isDeprecated) {
-      CodeHint.Deprecated(loc) :: Nil
-    } else {
-      Nil
-    }
-  }
-
-  /**
-    * Checks whether a cast to the given `tpe` and `eff` is an unsafe purity cast.
-    */
-  private def checkCast(tpe: Type, eff: Type, loc: SourceLocation): List[CodeHint] = {
-    eff.typeConstructor match {
-      case Some(TypeConstructor.True) => CodeHint.UnsafePurityCast(eff.loc) :: Nil
-      case _ => Nil
-    }
+    defn.spec.ann.isParallelWhenPure
   }
 
   /**
     * Returns `true` if the given function type `tpe` is pure.
     */
-  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
+  private def isPureFunction(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => tpe.arrowEffectType == Type.Pure
+    case _ => false
+  }
 
   /**
-    * Returns `true` if the given effect `tpe` is non-trivial.
+    * Returns `true` if the given code `hint` should be included in the result.
     */
-  private def nonTrivialEffect(tpe: Type): Boolean = Type.size(tpe) > 5
-
+  private def include(hint: CodeHint, sources: Set[String]): Boolean =
+    sources.contains(hint.loc.source.name)
 }

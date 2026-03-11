@@ -16,7 +16,9 @@
 
 package ca.uwaterloo.flix.util
 
-import java.nio.file.{Path, Paths}
+import ca.uwaterloo.flix.language.ast.Symbol
+
+import java.nio.file.Path
 
 object Options {
   /**
@@ -24,27 +26,32 @@ object Options {
     */
   val Default: Options = Options(
     lib = LibLevel.All,
-    debug = false,
-    documentor = false,
-    explain = false,
+    build = Build.Development,
+    entryPoint = None,
+    githubToken = None,
+    installDeps = false,
+    incremental = true,
     json = false,
+    outputJvm = false,
+    outputPath = Path.of("./build/"),
     progress = false,
-    test = false,
-    target = JvmTarget.Version18,
-    targetDirectory = Paths.get("./target/flix/"),
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
-    writeClassFiles = true,
-    xallowredundancies = false,
-    xnostratifier = false,
-    xstatistics = false,
-    xstrictmono = false
+    assumeYes = false,
+    xprintphases = false,
+    xnodeprecated = false,
+    xsummary = false,
+    xsubeffecting = Set.empty,
+    XPerfN = None,
+    XPerfFrontend = false,
+    XPerfPar = false,
+    xchaosMonkey = false
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true, xchaosMonkey = true)
 
   /**
     * Default test options with the standard library.
@@ -65,67 +72,60 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param lib                selects the level of libraries to include.
-  * @param debug              enables the emission of debugging information.
-  * @param documentor         enables generation of flixdoc.
-  * @param json               enable json output.
-  * @param progress           print progress during compilation.
-  * @param test               enables test mode.
-  * @param target             the target JVM.
-  * @param targetDirectory    the target directory for compiled code.
-  * @param threads            selects the number of threads to use.
-  * @param loadClassFiles     loads the generated class files into the JVM.
-  * @param writeClassFiles    enables output of class files.
-  * @param xallowredundancies disables the redundancy checker.
-  * @param xnostratifier      disables computation of stratification.
-  * @param xstatistics        enables statistics collection.
-  * @param xstrictmono        enables strict monomorphization.
+  * @param lib            selects the level of libraries to include.
+  * @param build          selects development or production mode.
+  * @param entryPoint     specifies the main entry point.
+  * @param githubToken    the API key to use for GitHub dependency resolution.
+  * @param incremental    enables incremental compilation.
+  * @param installDeps    enables automatic installation of dependencies.
+  * @param json           enable json output.
+  * @param outputJvm      Enable JVM bytecode output.
+  * @param outputPath     The path to the output folder.
+  * @param progress       print progress during compilation.
+  * @param threads        selects the number of threads to use.
+  * @param loadClassFiles loads the generated class files into the JVM.
+  * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
   */
 case class Options(lib: LibLevel,
-                   debug: Boolean,
-                   documentor: Boolean,
-                   explain: Boolean,
+                   build: Build,
+                   entryPoint: Option[Symbol.DefnSym],
+                   githubToken: Option[String],
+                   incremental: Boolean,
+                   installDeps: Boolean,
                    json: Boolean,
                    progress: Boolean,
-                   target: JvmTarget,
-                   targetDirectory: Path,
-                   test: Boolean,
+                   outputJvm: Boolean,
+                   outputPath: Path,
                    threads: Int,
                    loadClassFiles: Boolean,
-                   writeClassFiles: Boolean,
-                   xallowredundancies: Boolean,
-                   xnostratifier: Boolean,
-                   xstatistics: Boolean,
-                   xstrictmono: Boolean,
+                   assumeYes: Boolean,
+                   xprintphases: Boolean,
+                   xnodeprecated: Boolean,
+                   xsummary: Boolean,
+                   xsubeffecting: Set[Subeffecting],
+                   XPerfFrontend: Boolean,
+                   XPerfPar: Boolean,
+                   XPerfN: Option[Int],
+                   xchaosMonkey: Boolean
                   )
 
 /**
-  * An option to control the version of emitted JVM bytecode.
+  * An option to control whether to run in development or production mode.
   */
-sealed trait JvmTarget
+sealed trait Build
 
-object JvmTarget {
+object Build {
+  /**
+    * Run in development mode.
+    */
+  case object Development extends Build
 
   /**
-    * Emit bytecode for Java 1.6.
+    * Run in production mode.
+    *
+    * Running the compiler in production mode disables certain features that are allowed during development.
     */
-  object Version16 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.7.
-    */
-  object Version17 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.8.
-    */
-  object Version18 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.9.
-    */
-  object Version19 extends JvmTarget
-
+  case object Production extends Build
 }
 
 sealed trait LibLevel
@@ -146,4 +146,26 @@ object LibLevel {
     * Include the full standard library.
     */
   case object All extends LibLevel
+
+}
+
+sealed trait Subeffecting
+
+object Subeffecting {
+
+  /**
+    * Enable sub-effecting for module-level definitions.
+    */
+  case object ModDefs extends Subeffecting
+
+  /**
+    * Enable sub-effecting for instance-level defs.
+    */
+  case object InsDefs extends Subeffecting
+
+  /**
+    * Enable sub-effecting for lambda expressions.
+    */
+  case object Lambdas extends Subeffecting
+
 }

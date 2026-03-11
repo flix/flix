@@ -18,18 +18,382 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import ca.uwaterloo.flix.language.errors.TypeError.MismatchedTypes
+import ca.uwaterloo.flix.util.{Options, Subeffecting}
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestTyper extends FunSuite with TestUtils {
+class TestTyper extends AnyFunSuite with TestUtils {
+
+  test("Test.ExplicitlyPureUsingIO.01") {
+    val input =
+      """
+        |def f () : Unit \ {} = {
+        |    println("42")
+        |}
+        |eff IO
+        |pub def println(x: String): Unit \ IO =
+        |    System.out.println(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ {} = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.03") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ {} = println(x)
+        |}
+        |def foo(): Unit \ IO =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.04") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit \ IO
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ IO = println(x)
+        |}
+        |def foo(): Unit \ {} =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.05") {
+    val input =
+      """
+        |def a(): Unit \ IO = println(42)
+        |def b(): Unit \ {} = a()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.01") {
+    val input =
+      """
+        |def f () : Unit = {
+        |    println("42")
+        |}
+        |eff IO
+        |pub def println(x: String): Unit \ IO =
+        |    System.out.println(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.03") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit = println(x)
+        |}
+        |def foo(): Unit \ IO =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.04") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit \ IO
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ IO = println(x)
+        |}
+        |def foo(): Unit =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.05") {
+    val input =
+      """
+        |def a(): Unit \ IO = println(42)
+        |def b(): Unit = a()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.01") {
+    val input =
+      """
+        |def foo(): Unit \ {} =
+        |    Bar.buzz()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ {} = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.03") {
+    val input =
+      """
+        |def a(): Unit \ Bar = Bar.buzz()
+        |def b(): Unit \ {} = a()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.01") {
+    val input =
+      """
+        |def foo(): Unit =
+        |    Bar.buzz()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.03") {
+    val input =
+      """
+        |def a(): Unit \ Bar = Bar.buzz()
+        |def b(): Unit = a()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.RigidEffUsingOtherRigidEff.01") {
+    val input =
+      """
+        |def foo(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2): Unit \ ef1 = g()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.RigidEffUsingCstEff.01") {
+    val input =
+      """
+        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = Bar.buzz()
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.RigidEffUsingIO.01") {
+    val input =
+      """
+        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = println("42")
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.CstEffUsingOtherCstEff.01") {
+    val input =
+      """
+        |def foo(): Unit \ Foo = Bar.buzz()
+        |eff Foo
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.IOUsingCstEff.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = Bar.buzz()
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.IOUsingCstEff.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ IO = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.CstEffUsingIO.01") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ Console = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ Bar =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        | def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
 
   test("TestLeq01") {
     val input =
       """
         |def foo(): a = 21
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq02") {
@@ -42,36 +406,36 @@ class TestTyper extends FunSuite with TestUtils {
         |    case Cons(t, List[t])
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq03") {
     val input =
       """
-        |def foo(): Result[a, Int] = Ok(21)
+        |def foo(): Result[a, Int32] = Ok(21)
         |
         |enum Result[t, e] {
         |    case Ok(t),
         |    case Err(e)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq04") {
     val input =
       """
-        |def foo(): Result[Int, a] = Err(21)
+        |def foo(): Result[Int32, a] = Err(21)
         |
         |enum Result[t, e] {
         |    case Ok(t),
         |    case Err(e)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq05") {
@@ -79,8 +443,8 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): a -> a = x -> 21
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq06") {
@@ -88,62 +452,110 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): a -> a = (x: Int32) -> x
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq07") {
     val input =
       """
-        |def foo(): {x :: Int | r} = {x = 21}
+        |def foo(): {x = Int32 | r} = {x = 21}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq08") {
     val input =
       """
-        |def foo(): {x :: Int, y :: Int | r} = {y = 42, x = 21}
+        |def foo(): {x = Int32, y = Int32 | r} = {y = 42, x = 21}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestOccurs01") {
-    val input =
-      """
-        |rel A(v: Int)
-        |rel B(v: Int)
-        |
-        |def foo(a: #{A | r}, b: #{B | r}): #{A, B} = solve (a <+> b)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.OccursCheckError](result)
+    val input = "def foo(a: #{A(Int32) | r}, b: #{B(Int32) | r}): #{A(Int32), B(Int32)} = solve (a <+> b)"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestMismatchedNullaryTypes.01") {
+    val input = "def foo(): #{A(Unit)| x} = #{A.}"
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestMismatchedNullaryTypes.02") {
+    val input = "def foo(): #{A| x} = #{A()}"
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
   }
 
   test("TestMismatchedTypes.01") {
     val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestMismatchedTypes.02") {
     val input = "def foo(): #{| x} = {a = 2} <+> {a = 2}"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestMismatchedTypes.03") {
-    val input = "def foo(): {a :: Int} = {a = 2} <+> {a = 2}"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    val input = "def foo(): {a = Int32} = {a = 2} <+> {a = 2}"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestMismatchedTypes.04") {
     val input = "def foo(): String = solve \"hello\""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("MismatchedTypes.05") {
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] with A[t] {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b =
+        |        let Adapter.Adapter(x, f) = adapter;
+        |        f(A.foo(x))
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[MismatchedTypes](result)
+  }
+
+  test("MismatchedTypes.06") {
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] with A[t] where A.Typ[t] ~ Int8 {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b =
+        |        let Adapter.Adapter(x, f) = adapter;
+        |        f(A.foo(x))
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[MismatchedTypes](result)
   }
 
   test("TestOverApplied.01") {
@@ -152,8 +564,8 @@ class TestTyper extends FunSuite with TestUtils {
         |def f(s: String): String = s
         |def over(): String = f("hello", 123)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.OverApplied](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestOverApplied.02") {
@@ -162,167 +574,183 @@ class TestTyper extends FunSuite with TestUtils {
         |def f(s: String): String = s
         |def over(): String = f("hello", 123, true)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.OverApplied](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestUnderApplied.01") {
     val input =
       """
         |def f(x: String, y: Int32): Bool = true
-        |def under(): String = f("hello"): String
+        |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnderApplied](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestUnderApplied.02") {
     val input =
       """
         |def f(x: String, y: Int32, z: Bool): Bool = true
-        |def under(): String = f("hello"): String
+        |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnderApplied](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq.Wildcard.01") {
     val input = "def foo(a: _): _ = a"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq.Wildcard.02") {
-    val input = "def foo(a: Int): _ = a"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    val input = "def foo(a: Int32): _ = a"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq.Wildcard.03") {
-    val input = "def foo(a: Int): Int & _ = a"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    val input = raw"def foo(a: Int32): Int32 \ _ = a"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("TestLeq.Wildcard.04") {
-    val input = "def foo(a: Int): Int & _ = a"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    val input = raw"def foo(g: Int32 -> Int32 \ _): Int32 \ _ = g(1)"
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
-  test("TestLeq.Wildcard.05") {
-    val input = "def foo(g: Int -> Int & _): Int & _ = g(1)"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
-  }
-
-  test("TestLeq.Class.01") {
+  test("NoMatchingInstance.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |  pub def foo(x: a): String
         |}
         |def foo(x: a): String = C.foo(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MissingInstance](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
   }
 
-  test("TestLeq.Class.02") {
+  test("NoMatchingInstance.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |  pub def foo(x: a): String
         |}
-        |def foo(x: Int): String = C.foo(x)
+        |def foo(x: Int32): String = C.foo(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MissingInstance](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
   }
 
-  test("TestLeq.Class.03") {
+  test("NoMatchingInstance.03") {
     val input =
       """
         |enum Box[a] {
         |    case Box(a)
         |}
         |
-        |class C[a] {
+        |trait C[a] {
         |    pub def foo(x: a): String
         |}
         |
-        |instance C[Int] {
-        |    pub def foo(x: Int): String = "123"
+        |instance C[Int32] {
+        |    pub def foo(x: Int32): String = "123"
         |}
         |
         |instance C[Box[a]] with C[a] {
         |    pub def foo(x: Box[a]): String = match x {
-        |        case Box(y) => C.foo(y)
+        |        case Box.Box(y) => C.foo(y)
         |    }
         |}
         |
         |def doF(x: Box[Float64]): String = C.foo(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MissingInstance](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
   }
 
-  test("TestLeq.Class.04") {
+  test("NoMatchingInstance.04") {
     val input =
       """
         |enum Box[a] {
         |    case Box(a)
         |}
         |
-        |class C[a] {
+        |trait C[a] {
         |    pub def foo(x: a): String
         |}
         |
-        |instance C[Int] {
-        |    pub def foo(x: Int): String = "123"
+        |instance C[Int32] {
+        |    pub def foo(x: Int32): String = "123"
         |}
         |
         |instance C[Box[a]] with C[a] {
         |    pub def foo(x: Box[a]): String = match x {
-        |        case Box(y) => C.foo(y)
+        |        case Box.Box(y) => C.foo(y)
         |    }
         |}
         |
-        |def doF(x: Box[Int]): String = C.foo(C.foo(x))
+        |def doF(x: Box[Int32]): String = C.foo(C.foo(x))
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MissingInstance](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
   }
 
-  test("TestLeq.Class.05") {
+  test("NoMatchingInstance.05") {
     val input =
       """
-        |class C[a] {
-        |    pub def foo(x: a): Int
+        |trait C[a] {
+        |    pub def foo(x: a): Int32
         |}
         |
-        |instance C[Int] {
-        |    pub def foo(x: Int): Int = x
+        |instance C[Int32] {
+        |    pub def foo(x: Int32): Int32 = x
         |}
         |
-        |def bar(x: a, y: Int): (Int, Int) = (C.foo(x), C.foo(y))
+        |def bar(x: a, y: Int32): (Int32, Int32) = (C.foo(x), C.foo(y))
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MissingInstance](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
   }
 
-  test("TestLeq.Class.06") {
+  test("NoMatchingInstance.06") {
+    // missing constraint on C[b]
     val input =
       """
-        |class C[a] {
-        |    pub def foo(x: a): Int
+        |trait C[a] {
+        |    pub def foo(x: a): Int32
         |}
         |
-        |def bar(x: a, y: b): (Int, Int) with C[a] = (C.foo(x), C.foo(y))
+        |def bar(x: a, y: b): (Int32, Int32) with C[a] = (C.foo(x), C.foo(y))
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("NoMatchingInstance.Location.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): Unit
+        |}
+        |
+        |instance C[MyBox[a]] with C[a] {
+        |    pub def f(x: MyBox[a]): Unit = ???
+        |}
+        |
+        |enum MyBox[a](a)
+        |
+        |def foo(): Unit = {
+        |  C.f(MyBox.MyBox(123)) // ERROR
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstance](result)
   }
 
@@ -333,17 +761,15 @@ class TestTyper extends FunSuite with TestUtils {
         |   case E1
         |}
         |
-        |rel R(e: E)
-        |
         |pub def f(): Bool = {
         |   let _x = #{
-        |     R(E1).
+        |     R(E.E1).
         |   };
         |   true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingInstance](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
   }
 
   test("MissingEq.01") {
@@ -355,8 +781,8 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x == y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingEq](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingInstanceEq](result)
   }
 
   test("MissingOrder.01") {
@@ -368,8 +794,8 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x <= y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingOrder](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingInstanceOrder](result)
   }
 
   test("MissingToString.01") {
@@ -381,872 +807,2131 @@ class TestTyper extends FunSuite with TestUtils {
          |
          |def foo(x: E): String = ToString.toString(x)
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingToString](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingInstanceToString](result)
   }
 
   test("MissingArrowInstance.01") {
     val input =
-      s"""
-         |def main(_args: Array[String]): Int32 & Impure =
-         |    println(x -> x + 41i32);
-         |    0
-         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingArrowInstance](result)
+      """
+        |def main(): Unit \ IO =
+        |    println(x -> x + 41i32)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingInstanceArrow](result)
   }
 
-  test("TestChoose.Arity1.01") {
+  test("Test.UnexpectedEffect.01") {
     val input =
       """
-        |def foo(): Int =
-        |    let f = x -> {
-        |        choose x {
-        |            case Absent => 1
-        |        }
-        |    };
-        |    f(Present(123))
+        |pub def f(): Int32 = unchecked_cast(123 as _ \ IO)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedEffect.02") {
+    val input =
+      """
+        |def f(): Int32 \ {} = unchecked_cast(123 as _ \ IO)
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedEffect.03") {
+    // Regression test. See https://github.com/flix/flix/issues/4062
+    val input =
+      """
+        |def mkArray(): Array[Int32, Static] \ IO = Array#{} @ Static
+        |
+        |def zero(): Int32 \ {} = %%ARRAY_LENGTH%%(mkArray())
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedEffect.04") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 \ ef): Int32 = g(123)
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedEffect.05") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 \ ef): Int32 \ {} = g(123)
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedEffect.06") {
+    val input =
+      """
+        |eff Print {
+        |    pub def print(): Unit
         |}
         |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.Arity1.02") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = x -> {
-        |        choose x {
-        |            case Present(_) => 1
-        |        }
-        |    };
-        |    f(Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
+        |eff Exc {
+        |    pub def raise(): Unit
         |}
         |
+        |def f(): Unit =
+        |    Print.print();
+        |    Exc.raise()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
-  test("TestChoose.Arity1.03") {
+  test("Test.UnexpectedEffect.07") {
+    // guards must be pure
     val input =
       """
-        |def foo(): Int =
-        |    let f = x -> {
-        |        choose x {
-        |            case Absent => 1
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123))
+        |eff E
+        |def impureBool(): Bool \ E = checked_ecast(???)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.Arity1.04") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = x -> {
-        |        choose x {
-        |            case Present(_) => 1
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.01") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(Absent, Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.02") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(Present(123), Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.03") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.IfThenElse.01") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123), Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.IfThenElse.02") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(Absent, if (true) Absent else Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.01") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(Absent, Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.02") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(Present(123), Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.03") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.IfThenElse.01") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.IfThenElse.02") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(Present(123), if (true) Absent else Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.TwoCases.01") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent)         => 1
-        |            case (Present(_), Present(_)) => 2
-        |        }
-        |    };
-        |    f(Absent, Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.TwoCases.02") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent)         => 1
-        |            case (Present(_), Present(_)) => 2
-        |        }
-        |    };
-        |    f(Present(123), Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.TwoCases.03") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |            case (Present(_), Absent) => 2
-        |        }
-        |    };
-        |    f(Absent, Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.TwoCases.04") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |            case (Present(_), Absent) => 2
-        |        }
-        |    };
-        |    f(Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.ThreeCases.01") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Present(_))       => 1
-        |            case (Present(_), Absent)       => 2
-        |            case (Present(_), Present(_))   => 3
-        |        }
-        |    };
-        |    f(Absent, Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.ThreeCases.02") {
-    val input =
-      """
-        |def foo(): Int =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent)           => 1
-        |            case (Absent, Present(_))       => 2
-        |            case (Present(_), Absent)       => 3
-        |        }
-        |    };
-        |    f(Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.01") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent)    => 1
-        |            case (Present(_), Absent)    => 2
-        |        }
-        |    };
-        |    f(Absent, if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.02") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent)    => 1
-        |            case (Present(_), Absent)    => 2
-        |        }
-        |    };
-        |    f(Present(123), if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.03") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (Absent, Absent)    => 1
-        |            case (Present(_), Absent)    => 2
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.04") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (_, Absent)    => 1
-        |            case (_, Absent)    => 2
-        |        }
-        |    };
-        |    f(Absent, if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.05") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (_, Absent)    => 1
-        |            case (_, Absent)    => 2
-        |        }
-        |    };
-        |    f(Present(123), if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.06") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        choose (x, y) {
-        |            case (_, Absent)    => 1
-        |            case (_, Absent)    => 2
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestLeq.Choice.01") {
-    val input =
-      """
-        |pub def foo(x: Choice[String, true, _]): Int32 =
-        |    choose x {
-        |        case Absent => 1
+        |def foo(): Int32 \ E = {
+        |    match 0 {
+        |        case 0 if impureBool() => 0
+        |        case _ => 1
         |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedEffect.08") {
+    val input =
+      """
+        |import java.lang.Object
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
+        |eff IO
+        |
+        |def impureX(): String \ IO = checked_ecast("x")
+        |
+        |def f(): Object \ IO = {
+        |    let x = new Object {
+        |        def toString(_this: Object): String = impureX()
+        |    };
+        |    x
         |}
         |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
-  }
-
-  test("TestLeq.Choice.02") {
-    val input =
-      """
-        |pub def foo(x: Choice[String, _, true]): Int32 =
-        |    choose x {
-        |        case Present(_) => 1
-        |    }
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
-  }
-
-  test("Test.Choice.Empty.01") {
-    val input =
-      """
-        |def foo(): Unit =
-        |    let f = x -> {
-        |        choose x {
-        |            case Absent     => 1 as & Impure
-        |        };
-        |        choose x {
-        |            case Present(_) => 2 as & Impure
-        |        }
-        |    };
-        |    f(Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.Choice.Empty.02") {
-    val input =
-      """
-        |def foo(): Unit =
-        |    let f = x -> {
-        |        choose x {
-        |            case Absent     => 1 as & Impure
-        |        };
-        |        choose x {
-        |            case Present(_) => 2 as & Impure
-        |        }
-        |    };
-        |    f(Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.MismatchedTypes.Law.01") {
-    val input =
-      """
-        |def f(x: Bool, y: Bool): Bool = ???
-        |
-        |law l: forall (x: Int, y: Bool) . f(x, y)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
-  }
-
-  test("Test.ChooseStar.01") {
-    val input =
-      """
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |pub def f(): Bool =
-        |    let f = x -> {
-        |        choose* x {
-        |            case Absent     => Absent
-        |            case Present(v) => Present(v)
-        |        }
-        |    };
-        |    let isAbsent = x -> choose x {
-        |        case Absent => true
-        |    };
-        |    isAbsent(f(Present(123)))
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.ChooseStar.02") {
-    val input =
-      """
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |pub def f(): Bool =
-        |    let f = x -> {
-        |        choose* x {
-        |            case Absent     => Present(123)
-        |            case Present(_) => Absent
-        |        }
-        |    };
-        |    let isAbsent = x -> choose x {
-        |        case Absent => true
-        |    };
-        |    isAbsent(f(Absent))
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.ChooseStar.03") {
-    val input =
-      """
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |pub def f(): Bool =
-        |    let f = (x, y) -> {
-        |        choose* (x, y) {
-        |            case (Absent, Absent)         => Absent
-        |            case (Present(_), Present(_)) => Present(42)
-        |        }
-        |    };
-        |    let isAbsent = x -> choose x {
-        |        case Absent => true
-        |    };
-        |    isAbsent(f(Present(123), Present(456)))
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.IllegalMain.01") {
-    val input =
-      """
-        |def main(blah: Array[String]): Int32 = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.02") {
-    val input =
-      """
-        |def main(blah: Array[Char]): Int32 & Impure = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.03") {
-    val input =
-      """
-        |def main(blah: Array[String]): Int64 & Impure = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.04") {
-    val input =
-      """
-        |def main(blah: Array[a]): Int32 & Impure = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.05") {
-    val input =
-      """
-        |class C[a]
-        |
-        |def main(blah: Array[a]): Int32 & Impure with C[a] = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.06") {
-    val input =
-      """
-        |def main(blah: Array[String]): a & Impure = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.07") {
-    val input =
-      """
-        |def main(blah: Array[String]): Int & ef = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.ImpureDeclaredAsPure.01") {
-    val input =
-      """
-        |pub def f(): Int32 = 123 as & Impure
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.ImpureDeclaredAsPure](result)
-  }
-
-  test("Test.ImpureDeclaredAsPure.02") {
-    val input =
-      """
-        |def f(): Int32 & Pure = 123 as & Impure
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.ImpureDeclaredAsPure](result)
-  }
-
-  test("Test.EffectPolymorphicDeclaredAsPure.01") {
-    val input =
-      """
-        |def f(g: Int32 -> Int32 & ef): Int32 = g(123)
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
-  }
-
-  test("Test.EffectPolymorphicDeclaredAsPure.02") {
-    val input =
-      """
-        |def f(g: Int32 -> Int32 & ef): Int32 & Pure = g(123)
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("Test.EffectGeneralizationError.01") {
     val input =
       """
-        |def f(g: Int32 -> Int32 & ef): Int32 & ef = 123
+        |def f(g: Int32 -> Int32 \ ef): Int32 \ ef = 123
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
   }
 
   test("Test.EffectGeneralizationError.02") {
     val input =
       """
-        |def f(g: Int32 -> Int32 & ef1, h: Int32 -> Int32 & ef2): Int32 & (ef1 and ef2) = 123
+        |def f(g: Int32 -> Int32 \ ef1, h: Int32 -> Int32 \ ef2): Int32 \ {ef1, ef2} = 123
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.RegionVarEscapes.01") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let _ = {
+        |        region rc {
+        |            let x = Ref.fresh(rc, 123);
+        |            x
+        |        }
+        |    };
+        |    42
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("Test.RegionVarEscapes.02") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let _ = {
+        |        region rc {
+        |            let x = Ref.fresh(rc, 123);
+        |            (123, x)
+        |        }
+        |    };
+        |    42
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("Test.RegionVarEscapes.03") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let _ = {
+        |        region rc {
+        |            let x = Ref.fresh(rc, 123);
+        |            _w -> x
+        |        }
+        |    };
+        |    42
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("Test.RegionVarEscapes.04") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let _ = {
+        |        region rc {
+        |            let x = Ref.fresh(rc, 123);
+        |            w -> {
+        |                discard Ref.get(x);
+        |                w
+        |            }
+        |        }
+        |    };
+        |    42
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("RegionVarEscapes.05") {
+    val input =
+      """
+        |pub enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let m = Ref.fresh(Static, None);
+        |    region rc {
+        |        let x = Ref.fresh(rc, 123);
+        |        Ref.put(Some(x), m);
+        |        ()
+        |    }
+    """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("RegionVarEscapes.06") {
+    val input =
+      """
+        |pub enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let m = Ref.fresh(Static, None);
+        |    region rc {
+        |        let x = Ref.fresh(rc, 123);
+        |        Ref.put(Some(_ -> x), m);
+        |        ()
+        |    }
+    """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+
+  test("Test.UnexpectedType.OpParam.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit \ E = E.op(123)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+
+  test("Test.MismatchedEff.Apply.02") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def disjoint(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2 - ef1): Unit = ???
+        |
+        |def foo(): Unit = disjoint(_ -> E.op(), _ -> E.op())
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.MismatchedEff.Recursion.01") {
+    // Regression test. See https://github.com/flix/flix/issues/10185
+    val input =
+      """
+        |eff Something
+        |def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef - Something =
+        |    def loop(ll, k) = match ll {
+        |        case Nil     => k(s)
+        |        case x :: xs => loop(xs, ks -> k(f(x, ks)))
+        |    };
+        |    loop(l, x -> checked_ecast(x))
+        |
+        |enum List[a] {
+        |    case Nil
+        |    case Cons(a, List[a])
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.GeneralizationError.Eff.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |eff F {
+        |    pub def op(): Unit
+        |}
+        |
+        |def doBoth(f: Unit -> Unit \ {ef - E}, g: Unit -> Unit \ {ef - F}): Unit \ {ef - E - F} = g(); f()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestParYield.01") {
+    val input =
+      """
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
+        |     g()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestParYield.02") {
+    val input =
+      """
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
+        |     g()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestParYield.03") {
+    val input =
+      """
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ IO) }) yield (a, b);
+        |     g()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestParYield.04") {
+    val input =
+      """
+        | def f(): Int32 =
+        |     par (a <- true) yield a + 1
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedArgument.01") {
+    val input =
+      """
+        |def f[m: Eff -> Type, a: Eff](_: m[a]): m[a] = ???
+        |
+        |enum Box[a](a)
+        |
+        |def g(): Box[Int32] = f(Box.Box(123))
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedArgument.02") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def noE(f: Unit -> Unit \ ef - E): Unit = ???
+        |
+        |def foo(): Unit = noE(_ -> E.op())
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedArgument.03") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def mustE(f: Unit -> Unit \ {ef, E}): Unit = ???
+        |
+        |def foo(): Unit = mustE(x -> x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedArgument.04") {
+    val input =
+      """
+        |trait A[a] {
+        |    pub def f(x: Bool, y: a): Bool
+        |    law l: forall (x: Int32, y: Bool) A.f(x, y)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedArgument.05") {
+    // Regression test.
+    // See https://github.com/flix/flix/issues/3634
+    val input =
+      """
+        |enum E[a: Type, ef: Eff](Unit)
+        |def f(g: E[Int32, Pure]): Bool = ???
+        |def mkE(): E[Int32, Pure] \ ef = ???
+        |
+        |def g(): Bool = f(mkE)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestChoose.01") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def foo(): Bool = choose Expr.Cst {
+        |    case Expr.Var(_) => true
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestChoose.02") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        | pub def testChoose06(): Bool = {
+        |     let f = x -> choose x {
+        |         case Expr.Cst(_) => false
+        |         case Expr.Var(_) => true
+        |     };
+        |     let g = x -> choose x {
+        |         case Expr.Cst(_) => false
+        |         case Expr.Xor(_) => true
+        |     };
+        |     let h = if (true) f else g;
+        |     h(Expr.Var)
+        | }
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestChoose.03") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        | pub def testChoose06(): Bool = {
+        |     let f = x -> choose x {
+        |         case Expr.Cst(_) => false
+        |         case Expr.Var(_) => true
+        |         case Expr.Not(_) => false
+        |     };
+        |     let g = x -> choose x {
+        |         case Expr.Cst(_) => false
+        |         case Expr.Xor(_) => true
+        |         case Expr.Not(_) => false
+        |     };
+        |     let h = if (true) f else g;
+        |
+        |     let cstOrNotOrVar = if (true) open_variant Expr.Cst else if (true) open_variant Expr.Not else open_variant Expr.Var;
+        |
+        |     h(cstOrNotOrVar)
+        | }
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.01") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def foo(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Cst(_) => Expr.Var()
+        |    };
+        |    choose star {
+        |        case Expr.Cst(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.02") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def quack(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Cst(_) => Expr.Var()
+        |        case Expr.Not(_) => Expr.Var()
+        |        case Expr.Xor(_) => Expr.Var()
+        |    };
+        |    choose star {
+        |        case Expr.Xor(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.03") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def liquorice(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Cst(_) => Expr.Var()
+        |        case Expr.Not(_) => Expr.Var()
+        |        case Expr.Xor(_) => Expr.Not()
+        |    };
+        |    choose star {
+        |        case Expr.Not(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.04") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def testChooseStar4(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Cst(_) => Expr.Var()
+        |        case Expr.Not(_) => Expr.Var()
+        |        case Expr.Xor(_) => Expr.Not()
+        |    };
+        |    choose star {
+        |        case Expr.Var(_) => true
+        |        case Expr.Xor(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.05") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def foo(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Not(_) => Expr.Not()
+        |        case Expr.Cst(_) => Expr.Var()
+        |    };
+        |    choose star {
+        |        case Expr.Cst(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.06") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case N(E[s])
+        |    case C
+        |}
+        |
+        |def n(e: E[s rvand <E.N>]): _ = ???
+        |
+        |def foo(e: E[s]): E[s] = choose* e {
+        |    case E.N(x) => n(x)            // must have x <: <E.N> but this doesn't hold
+        |    case E.C    => E.C
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.01") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Not all cases caught
+        |def isRed(c: Color[s]): Bool = choose c {
+        |    case Color.Red => true
+        |    case Color.Green => false
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.02") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// forgot Green intro
+        |def redToGreen(c: Color[s]): Color[s rvsub <Color.Red>] = choose* c {
+        |    case Color.Red => Color.Green
+        |    case Color.Green => Color.Green
+        |    case Color.Blue => Color.Blue
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.03") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Wrong minus
+        |def isRed(c: Color[s rvsub <Color.Blue>]): Bool = choose* c {
+        |    case Color.Red => true
+        |    case Color.Blue => false
+        |}
+        |""".stripMargin
+    expectError[TypeError](check(input, Options.TestWithLibNix))
+  }
+
+  test("TestLetRec.01") {
+    val input =
+      """
+        |def f(): Int32 = {
+        |    def g(): Bool = 123;
+        |    g()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |def g(x: a): String with C[a] = C.f(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |def g(x: a): String with C[a] where C.T[a] ~ Int32 = C.f(x)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.03") {
+    val input =
+      """
+        |pub enum Maybe[a] {
+        |    case Just(a),
+        |    case Nothing
+        |}
+        |
+        |trait C[a] {
+        |    type S : Type
+        |    type T : Type -> Type
+        |    pub def f(x: a): C.T[a][C.S[a]]
+        |}
+        |
+        |instance C[Int32] {
+        |    type S = Int32
+        |    type T = Maybe
+        |    pub def f(x: Int32): Maybe[Int64] = x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.04") {
+    val input =
+      """
+        |trait A[a] {
+        |    type A : Type -> Type -> Type
+        |    type B : Type -> Type
+        |    type C : Type
+        |    pub def f(x: a): A.A[a][A.A[a][A.B[a][A.A[a][A.B[a][A.C[a]]][A.B[a][A.C[a]]]]][A.B[a][A.C[a]]]][A.A[a][A.B[a][A.C[a]]][A.C[a]]]
+        |    pub def g(x: a): A.A[a][A.B[a][A.C[a]]][A.C[a]] = A.f(x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestRecordPattern.01") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1 } {
+        |    case { x = false } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestRecordPattern.02") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = false } {
+        |    case { x = _ } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestRecordPattern.03") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = false } {
+        |    case { } => false
+        |    case { x = _ | r } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestRecordPattern.04") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = false } {
+        |    case { x = _ | r } => false
+        |    case { x = _ } => true
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestIOAndCustomEffect.01") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    Gen.gen();
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestIOAndCustomEffect.02") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = run {
+        |        Gen.gen()
+        |    } with handler Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    Gen.gen();
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestIOAndCustomEffect.03") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = run {
+        |        Gen.gen();
+        |        AskTell.askTell(42)
+        |    } with handler Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestIOAndCustomEffect.04") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = run {
+        |        Gen.gen();
+        |        AskTell.askTell(42)
+        |    } with handler Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    Gen.gen();
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestIOAndCustomEffect.05") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = run {
+        |        Gen.gen();
+        |        AskTell.askTell(42)
+        |    } with handler Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    AskTell.askTell(42);
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestIOAndCustomEffect.06") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = run {
+        |        Gen.gen();
+        |        AskTell.askTell(42)
+        |    } with handler Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    Gen.gen();
+        |    AskTell.askTell(42);
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+  test("TestIOAndCustomEffect.07") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = run {
+        |        Gen.gen()
+        |    } with handler Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    AskTell.askTell(42);
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestIOAndCustomEffect.08") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: String): String
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = run {
+        |        Gen.gen()
+        |    } with handler Gen {
+        |        def gen(k) = AskTell.askTell(k("a"))
+        |    };
+        |    ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestTryCatch.01") {
+    val input =
+      """
+        |import java.io.IOError
+        |
+        |enum Res { case Err(String), case Ok }
+        |
+        |pub def catchIO(f: Unit -> Unit \ ef): Res = {
+        |    try {f(); Res.Ok} catch {
+        |        case ex: IOError =>
+        |            Res.Err(ex.getMessage())
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MissingConstraint.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |def foo(): C.T[a] = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingTraitConstraint](result)
+  }
+
+  test("TypeError.MissingConstraint.02") {
+    // missing constraint on A[t]
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] where A.Typ[t] ~ Int8 {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b = ???
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingTraitConstraint](result)
+  }
+
+  test("TypeError.NewStruct.01") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S @ rc {a = 3, b = 4, c = "hello"};
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.NewStruct.02") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S @ rc {a = (), b = "hi", c = "hello"};
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.NewStruct.03") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S @ rc {a = 3, b = "hi", c = new S @ rc {a = 4, b = 3, c = ()}};
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructGet.01") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
+        |            s->a + s->b;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructGet.02") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s1 = new S @ rc {c = 3};
+        |            let s2 = new S @ rc {c = "hello"};
+        |            s1->c + s2->c;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.01") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    mut a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
+        |            s->a = s->b;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.02") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    mut c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s1 = new S @ rc {c = 3};
+        |            let s2 = new S @ rc {c = "hello"};
+        |            s1->c = s2->c;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.ConstructorBoxing.01") {
+    val input =
+      """
+        |import java.util.{AbstractMap$SimpleEntry => SimpleEntry}
+        |
+        |def f(): Int32 \ IO = new SimpleEntry(12, true).hashCode()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.ConstructorUnboxing.01") {
+    val input =
+      """
+        |import java.lang.Boolean
+        |
+        |def f(): Bool \ IO =
+        |    let boxed = new Boolean(true);
+        |    new Boolean(boxed).booleanValue()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MethodBoxing.01") {
+    val input =
+      """
+        |import java.lang.Boolean
+        |
+        |def f(): Int32 \ IO =
+        |    let boxed = new Boolean(true);
+        |    boxed.compareTo(false)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MethodBoxing.02") {
+    val input =
+      """
+        |import java.util.Objects
+        |
+        |def f(): Bool \ IO = Objects.isNull(true)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MethodUnboxing.01") {
+    val input =
+      """
+        |import java.lang.Integer
+        |
+        |def f(): Char \ IO =
+        |    let boxed = new Integer(0);
+        |    "s".charAt(boxed)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MethodUnboxing.02") {
+    val input =
+      """
+        |import java.lang.Boolean
+        |
+        |def f(): Int32 \ IO =
+        |    let boxed = new Boolean(true);
+        |    Boolean.compare(true, boxed)
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.IllegalSpawn.01") {
+    val input =
+      """
+        |eff Ask {
+        |    pub def ask(): String
+        |}
+        |
+        |def foo(): Unit \ Ask =
+        |    region rc {
+        |        spawn Ask.ask() @ rc
+        |    }
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Def.01") {
+    val input =
+      """
+        |def f(): Unit \ IO = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Def.02") {
+    val input =
+      """
+        |def f(): Unit \ IO = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas, Subeffecting.InsDefs)))
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Lambda.01") {
+    val input =
+      """
+        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |def f(): Unit \ IO =
+        |  mustBeIO(() -> ())
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Lambda.02") {
+    val input =
+      """
+        |def mustBeIO(f: Unit -> Unit \ IO): Unit \ IO = f()
+        |def f(): Unit \ IO =
+        |  mustBeIO(() -> ())
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
+    expectError[TypeError](result)
+  }
+
+  test("Subeffecting.Instance.01") {
+    val input =
+      """
+        |trait T[t] { pub def f(x: t): Unit \ IO }
+        |instance T[Char] {
+        |  pub def f(_x: Char): Unit \ IO = ()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
+    expectSuccess(result)
+  }
+
+  test("Subeffecting.Instance.02") {
+    val input =
+      """
+        |trait T[t] { pub def f(x: t): Unit \ IO }
+        |instance T[Char] {
+        |  pub def f(_x: Char): Unit \ IO = ()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.Lambdas)))
+    expectError[TypeError](result)
+  }
+
+  test("ErrorType.01") {
+    // There should be no type error because Abc does not resolve.
+    val input =
+      """
+        |def foo(): Abc = "hello"
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("ErrorType.02") {
+    // There should be no type error because Abc does not resolve.
+    // Related issue: https://github.com/flix/flix/issues/10176
+    val input =
+      """
+        |def foo(): Abc = ???
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("UndefinedLabel.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {x = 1};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.02") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {y = 2};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.03") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, x = String} = {x = 1};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.04") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 42})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.05") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({y = 42})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.06") {
+    val input =
+      """
+        |def foo(r: {x = Int32, x = String}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 42})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("ExtraLabel.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {x = 1, y = 2, z = 3};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.02") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {w = 0, x = 1, y = 2, z = 3};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.03") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {x = 1, y = 2, z = 3, z = "foo"};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.04") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 1, y = 2, z = 3})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.05") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({w = 0, x = 1, y = 2, z = 3})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.06") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 1, y = 2, z = 3, z = "foo"})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {x = 1, z = 3};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.02") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {w = 0, z = 3};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.03") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, x = String} = {x = 1, z = 3, z = "foo"};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.04") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 1, z = 3})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.05") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({w = 0, z = 3})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.06") {
+    val input =
+      """
+        |def foo(r: {x = Int32, x = String}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 1, z = 3, z = "foo"})
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtMatchError#11283") {
+    val input =
+      """
+        |def f(): Bool = {
+        |    ematch xvar A(1) {
+        |        case A() => true
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X("hello") {
+        |        case A() => ()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(42i32, "test", true) {
+        |        case B(x, y)       => ()
+        |        case A(a, b, c, d) => ()
+        |        case C()           => ()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(true, 'a', 3.14f64, "hello", 100i8) {
+        |        case C(b, c, d)    => ()
+        |        case A(x, y, z, w) => ()
+        |        case B()           => ()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(3.14f64, 42i16, 'x', true, "world", 999i64) {
+        |        case A(s, t)                => ()
+        |        case C(a, b, c, d, e)       => ()
+        |        case B()                    => ()
+        |        case X(p, q, r, s, t, u, v) => ()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.05") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(1i32, 2i32, 3i32, 4i32) {
+        |        case C(x, y, z)       => ()
+        |        case A(a, b, c, d, e) => ()
+        |        case B()              => ()
+        |        case X(p, q)          => ()
+        |    }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.06") {
+    val input =
+      """
+        |def f(): Bool = {
+        |    let scrutinee = if (true) xvar A(1) else xvar B(1);
+        |    ematch scrutinee {
+        |        case A(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.07") {
+    val input =
+      """
+        |def f(var: #| A(Int32), B(Int32) | r |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.08") {
+    val input =
+      """
+        |def f(var: #| A(Int32), B(Int32) | r |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |        case B(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.09") {
+    val input =
+      """
+        |def g(): Bool = f(xvar C(1))
+        |
+        |def f(var: #| A(Int32), B(Int32) |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |        case B(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedArg](result)
+  }
+
+  test("TypeError.ExtMatch.10") {
+    val input =
+      """
+        |def f(): Bool = {
+        |    let scrutinee = if (true) xvar A(false) else xvar B(true);
+        |    (ematch A(x) -> x)(scrutinee)
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1).
+        |        Foo(1, 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1).
+        |        Foo(1, 2).
+        |        Foo(1, 2, 3).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.03") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(;1).
+        |        Foo(1; 2).
+        |        Foo(1, 2; 3).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1, 2).
+        |        Foo(1; 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1; 2).
+        |        Foo(1, 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("Test.DefaultHandlerNotInModule.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |@DefaultHandler
+        |pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.DefaultHandlerNotInModule](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.02") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef, u: a): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.03") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: a): a \ (ef - E) + IO =
+        |            checked_ecast(f)
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.04") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): Bool \ (ef - E) + IO =
+        |            run {
+        |                true
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.05") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ {}): a \ IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.06") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Bool -> a \ ef, u: a): a \ (ef - E) + IO =
+        |            run {
+        |                f(true)
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.07") {
+    val input =
+      """
+        |pub eff E1 {
+        |   def op(): Unit
+        |}
+        |
+        |pub eff E2 {
+        |   def op(): Unit
+        |}
+        |
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO + E2 =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.NonPublicDefaultHandler.01") {
+    val input =
+      """
+        |pub eff E1 {
+        |   def op(): Unit
+        |}
+        |
+        |mod E1 {
+        |    @DefaultHandler
+        |    def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.NonPublicDefaultHandler](result)
+  }
+
+  test("Test.DuplicateDefaultHandler.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |
+        |    @DefaultHandler
+        |    pub def runWithIO2(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.DuplicateDefaultHandler](result)
+  }
+
+  test("TypeError.NonUnitStatement.01") {
+    val input =
+      """
+        |def f(): String = 123; "hi"
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.NonUnitStatement](result)
+  }
+
+  test("TypeError.NonUnitStatement.Jvm.01") {
+    val input =
+      """
+        |def f(): String \ IO = "".toString(); ""
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("TypeError.NonUnitStatement.Jvm.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): String \ IO = Objects.toString(""); ""
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
   }
 
 }

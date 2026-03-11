@@ -1,48 +1,113 @@
-namespace Test/Exp/Jvm/InvokeConstructor {
+mod Test.Exp.Jvm.InvokeConstructor {
 
-    @test
-    def testInvokeConstructor01(): ##java.lang.Boolean & Impure =
-        import new java.lang.Boolean(Bool) as newBoolean;
-        newBoolean(true)
+    import java.lang.Boolean
+    import java.lang.Byte
+    import java.lang.Character
+    import java.lang.Double
+    import java.lang.Float
+    import java.lang.Integer
+    import java.lang.Long
+    import java.lang.Object
+    import java.lang.ProcessBuilder
+    import java.lang.Short
+    import java.lang.{String => JString}
+    import java.io.File
+    import java.math.BigDecimal
+    import java.math.BigInteger
+    import java.net.InetSocketAddress
+    import java.net.URL
+    import java.net.URLClassLoader
+    import java.util.HashMap
+    import java.util.{Locale$Builder => Builder}
+    import java.util.StringTokenizer
 
-    @test
-    def testInvokeConstructor02(): ##java.lang.Character & Impure =
-        import new java.lang.Character(Char) as newCharacter;
-        newCharacter('a')
+    @CompileTest
+    def testInvokeBigDecimalConstructor01(): BigDecimal =
+        new BigDecimal(new BigInteger("12345"), 2)
 
-    @test
-    def testInvokeConstructor03(): ##java.lang.Float & Impure =
-        import new java.lang.Float(Float32) as newFloat;
-        newFloat(123.456f32)
+    @CompileTest
+    def testInvokeBigIntegerConstructor01(): BigInteger =
+        new BigInteger("FF", 16)
 
-    @test
-    def testInvokeConstructor04(): ##java.lang.Double & Impure =
-        import new java.lang.Double(Float64) as newDouble;
-        newDouble(123.456f64)
+    @CompileTest
+    def testInvokeBooleanConstructor01(): Boolean =
+        new Boolean(true)
 
-    @test
-    def testInvokeConstructor05(): ##java.lang.Byte & Impure =
-        import new java.lang.Byte(Int8) as newByte;
-        newByte(123i8)
+    @CompileTest
+    def testInvokeByteConstructor01(): Byte =
+        new Byte(123i8)
 
-    @test
-    def testInvokeConstructor06(): ##java.lang.Short & Impure =
-        import new java.lang.Short(Int16) as newShort;
-        newShort(123i16)
+    @CompileTest
+    def testInvokeCharacterConstructor01(): Character =
+        new Character('a')
 
-    @test
-    def testInvokeConstructor07(): ##java.lang.Integer & Impure =
-        import new java.lang.Integer(Int32) as newInteger;
-        newInteger(123i32)
+    @CompileTest
+    def testInvokeDoubleConstructor01(): Double =
+        new Double(123.456f64)
 
-    @test
-    def testInvokeConstructor08(): ##java.lang.Long & Impure =
-        import new java.lang.Long(Int64) as newLong;
-        newLong(123i64)
+    @CompileTest
+    def testInvokeFileConstructor01(): File \ IO =
+        new File("/tmp", "test.txt")
 
-    @test
-    def testInvokeConstructor09(): ##java.lang.String & Impure =
-        import new java.lang.String(String) as newString;
-        newString("Hello World")
+    @CompileTest
+    def testInvokeFloatConstructor01(): Float =
+        new Float(123.456f32)
+
+    @CompileTest
+    def testInvokeHashMapConstructor01(): HashMap \ IO =
+        new HashMap(16, 0.75f32)
+
+    @CompileTest
+    def testInvokeInetSocketAddressConstructor01(): InetSocketAddress \ IO =
+        new InetSocketAddress("localhost", 8080)
+
+    @CompileTest
+    def testInvokeIntegerConstructor01(): Integer =
+        new Integer(123i32)
+
+    @CompileTest
+    def testInvokeLocaleBuilderConstructor01(): Builder \ IO =
+        new Builder()
+
+    @CompileTest
+    def testInvokeLongConstructor01(): Long =
+        new Long(123i64)
+
+    @CompileTest
+    def testInvokeObjectConstructor01(): Object \ IO =
+        let obj = new JString("Hello World");
+        (checked_cast(obj) : Object)
+
+    @CompileTest
+    def testInvokeProcessBuilderConstructor01(): ProcessBuilder \ IO =
+        new ProcessBuilder(...{"echo"})
+
+    @CompileTest
+    def testInvokeProcessBuilderConstructor02(): ProcessBuilder \ IO =
+        new ProcessBuilder(...{"echo", "hello"})
+
+    @CompileTest
+    def testInvokeProcessBuilderConstructor03(): ProcessBuilder \ IO =
+        new ProcessBuilder(...{"echo", "hello", "world"})
+
+    @CompileTest
+    def testInvokeShortConstructor01(): Short =
+        new Short(123i16)
+
+    @CompileTest
+    def testInvokeStringConstructor01(): JString \ IO =
+        new JString("Hello World")
+
+    @CompileTest
+    def testInvokeStringTokenizerConstructor01(): StringTokenizer \ IO =
+        new StringTokenizer("hello,world", ",")
+
+    @CompileTest
+    def testInvokeURLClassLoaderConstructor01(): URLClassLoader \ IO =
+        new URLClassLoader((...{}: Vector[URL]))
+
+    @CompileTest
+    def testInvokeURLConstructor01(): URL \ IO =
+        new URL("http", "example.com", 80, "/path")
 
 }

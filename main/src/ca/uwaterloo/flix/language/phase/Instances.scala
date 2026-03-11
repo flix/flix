@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Matthew Lutze
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,210 +17,322 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.errors.InstanceError.MissingEqualityConstraint
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, ConstraintSolverInterface, TypeConstraint}
+import ca.uwaterloo.flix.language.phase.unification.*
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
-object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
+object Instances {
+
+  // We use top scope everywhere here since we are only looking at declarations.
+  private implicit val S: Scope = Scope.Top
 
   /**
-    * Validates instances and classes in the given AST root.
+    * Validates instances and traits in the given AST root.
     */
-  override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Instances") {
-    Validation.sequenceX(List(
-      visitInstances(root),
-      visitClasses(root)
-    )).map(_ => root)
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[InstanceError]) = {
+    implicit val sctx: SharedContext = SharedContext.mk()
+    flix.phaseNew("Instances") {
+      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList2(_)(checkInstancesOfTrait(_, root)))
+      val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+      (root.copy(instances = instances, traits = traits), sctx.errors.asScala.toList)
+    }
+  }
+
+
+  /**
+    * Checks that all signatures in `trait0` are used in laws if `trait0` is marked `lawful`.
+    */
+  private def checkLawApplication(trait0: TypedAst.Trait)(implicit sctx: SharedContext): Unit = trait0 match {
+    // Case 1: lawful trait
+    case TypedAst.Trait(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
+      val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
+        case (acc, TypedAst.Def(_, _, exp, _)) => acc ++ TypedAstOps.sigSymsOf(exp)
+      }
+      val unusedSigs = sigs.map(_.sym).toSet -- usedSigs
+      unusedSigs.toList.foreach {
+        sig => sctx.errors.add(InstanceError.UnlawfulSignature(sig, sig.loc))
+      }
+    // Case 2: non-lawful trait
+    case _ => ()
   }
 
   /**
-    * Validates all instances in the given AST root.
+    * Performs validations on a single trait.
     */
-  private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
-
-    /**
-      * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
-      */
-    def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
-      case TypedAst.Class(_, _, _, _, _, sigs, laws, _) =>
-        val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
-          case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
-        }
-        val unusedSigs = sigs.map(_.sym).toSet.removedAll(usedSigs)
-        Validation.traverseX(unusedSigs) {
-          sig => InstanceError.UnlawfulSignature(sig, sig.loc).toFailure
-        }
-    }
-
-    /**
-      * Performs validations on a single class.
-      */
-    def visitClass(class0: TypedAst.Class): Validation[Unit, InstanceError] = {
-      checkLawApplication(class0)
-    }
-
-    val results = ParOps.parMap(root.classes.values, visitClass)
-    Validation.sequenceX(results)
+  private def visitTrait(trait0: TypedAst.Trait)(implicit sctx: SharedContext): TypedAst.Trait = {
+    checkLawApplication(trait0)
+    trait0
   }
 
   /**
-    * Validates all instances in the given AST root.
+    * Checks that an instance is not an orphan.
+    * It is declared in either:
+    * * The trait's companion namespace.
+    * * The same namespace as its type.
     */
-  private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
+  private def checkOrphan(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
+    case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, ns, _) => tpe.typeConstructor match {
+      // Case 1: Enum type in the same namespace as the instance: not an orphan
+      case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ()
+      // Case 2: Struct type in the same namespace as the instance: not an orphan
+      case Some(TypeConstructor.Struct(structSym, _)) if structSym.namespace == ns.idents.map(_.name) => ()
+      // Case 3: Any type in the trait namespace: not an orphan
+      case _ if trt.sym.namespace == ns.idents.map(_.name) => ()
+      // Case 4: Any type outside the trait companion namespace and enum declaration namespace: orphan
+      case _ => sctx.errors.add(InstanceError.OrphanInstance(trt.sym, tpe, trt.loc))
+    }
+  }
 
-    /**
-      * Checks that an instance is not an orphan.
-      * It is declared in either:
-      * * The class's companion namespace.
-      * * The same namespace as its type.
-      */
-    def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, ns, _) => tpe.typeConstructor match {
-        // Case 1: Enum type in the same namespace as the instance: not an orphan
-        case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
-        // Case 2: Any type in the class namespace: not an orphan
-        case _ if (sym.clazz.namespace) == ns.idents.map(_.name) => ().toSuccess
-        // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
-        case _ => InstanceError.OrphanInstance(tpe, sym, sym.loc).toFailure
+  /**
+    * Returns a Boolean to indicate if no error is found.
+    *
+    * Checks that the instance type is simple:
+    * * all type variables are unique
+    * * all type arguments are variables
+    */
+  private def checkSimple(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Boolean = inst match {
+    case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, _, _) => tpe match {
+      case _: Type.Cst => true
+      case _: Type.Var =>
+        sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+        false
+      case _: Type.Apply =>
+        var notFound = true
+        // ensure that the head is a concrete type
+        tpe.typeConstructor match {
+          case None =>
+            sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+            notFound = false
+          case Some(_) => ()
+        }
+        tpe.typeArguments.foldLeft(List.empty[Type.Var]) {
+          // Case 1: Type variable
+          case (seen, tvar: Type.Var) =>
+            // Case 1.1 We've seen it already. Error.
+            if (seen.contains(tvar)) {
+              sctx.errors.add(InstanceError.DuplicateTypeVar(tvar, trt.sym, tvar.loc))
+              notFound = false
+              seen
+            }
+            // Case 1.2 We haven't seen it before. Add it to the list.
+            else
+              tvar :: seen
+          // Case 2: Non-variable. Error.
+          case (seen, _) =>
+            sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+            notFound = false
+            seen
+        }
+        notFound
+
+      case Type.Alias(alias, _, _, _) =>
+        sctx.errors.add(InstanceError.IllegalTypeAliasInstance(alias.sym, trt.sym, trt.loc))
+        false
+      case Type.AssocType(assoc, _, _, loc) =>
+        sctx.errors.add(InstanceError.IllegalAssocTypeInstance(assoc.sym, trt.sym, loc))
+        false
+
+      case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type in instance declaration", loc)
+      case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff in instance declaration", loc)
+      case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type in instance declaration", loc)
+    }
+  }
+
+  /**
+    * Checks for overlap of instance types, assuming the instances are of the same trait.
+    */
+  private def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit sctx: SharedContext): Unit = {
+    // Note: We have that Type.Error unifies with any other type, hence we filter such instances here.
+    unsafeGetHead(inst1) match {
+      case TypeConstructor.Error(_, _) =>
+        // Suppress error for Type.Error.
+        ()
+      case tc => heads.get(tc) match {
+        // Case 1: No match. No Error.
+        case None =>
+          ()
+        // Case 2: An instance matching this type exists. Error.
+        case Some(inst2) =>
+          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, tc, inst1.trt.loc, inst2.trt.loc))
+          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, tc, inst2.trt.loc, inst1.trt.loc))
       }
     }
+  }
 
-    /**
-      * Checks that the instance type is simple:
-      * * all type variables are unique
-      * * all type arguments are variables
-      */
-    def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, _, _) => tpe match {
-        case _: Type.Cst => ().toSuccess
-        case _: Type.KindedVar => InstanceError.ComplexInstanceType(tpe, sym, sym.loc).toFailure
-        case _: Type.Apply =>
-          Validation.fold(tpe.typeArguments, List.empty[Type.KindedVar]) {
-            // Case 1: Type variable
-            case (seen, tvar: Type.KindedVar) =>
-              // Case 1.1 We've seen it already. Error.
-              if (seen.contains(tvar))
-                InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, sym.loc).toFailure
-              // Case 1.2 We haven't seen it before. Add it to the list.
-              else
-                (tvar :: seen).toSuccess
-            // Case 2: Non-type variable. Error.
-            case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, sym.loc).toFailure
-          }.map(_ => ())
-        case Type.Alias(alias, _, _, _) => InstanceError.IllegalTypeAliasInstance(alias.sym, sym, sym.loc).toFailure
-        case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
-        case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
-      }
-    }
+  /**
+    * Checks that every signature in `trt` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
+    */
+  private def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Unit = {
+    val trt = root.traits(inst.trt.sym)
 
-    /**
-      * Checks for overlap of instance types, assuming the instances are of the same class.
-      */
-    def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
-      Unification.unifyTypes(inst1.tpe, inst2.tpe) match {
-        case Ok(_) =>
-          Validation.Failure(LazyList(
-            InstanceError.OverlappingInstances(inst1.sym.loc, inst2.sym.loc),
-            InstanceError.OverlappingInstances(inst2.sym.loc, inst1.sym.loc)
-          ))
-        case Err(_) => ().toSuccess
-      }
-    }
-
-    /**
-      * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
-      */
-    def checkSigMatch(inst: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
-      val clazz = root.classes(inst.sym.clazz)
-
-      // Step 1: check that each signature has an implementation.
-      val sigMatchVal = Validation.traverseX(clazz.signatures) {
-        sig =>
-          (inst.defs.find(_.sym.name == sig.sym.name), sig.impl) match {
-            // Case 1: there is no definition with the same name, and no default implementation
-            case (None, None) => InstanceError.MissingImplementation(sig.sym, inst.sym.loc).toFailure
-            // Case 2: there is no definition with the same name, but there is a default implementation
-            case (None, Some(_)) => ().toSuccess
-            // Case 3: there is an implementation marked override, but no default implementation
-            case (Some(defn), None) if defn.spec.mod.isOverride => InstanceError.IllegalOverride(defn.sym, defn.sym.loc).toFailure
-            // Case 4: there is an overriding implementation, but no override modifier
-            case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc).toFailure
-            // Case 5: there is an implementation with the right modifier
-            case (Some(defn), _) =>
-              val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.tpe, inst.tpe)
-              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)) {
-                // Case 5.1: the schemes match. Success!
-                ().toSuccess
-              } else {
-                // Case 5.2: the schemes do not match
-                InstanceError.MismatchedSignatures(sig.sym, defn.sym.loc, expectedScheme, defn.spec.declaredScheme).toFailure
-              }
-          }
-      }
-      // Step 2: check that there are no extra definitions
-      val extraDefVal = Validation.traverseX(inst.defs) {
-        defn =>
-          clazz.signatures.find(_.sym.name == defn.sym.name) match {
-            case None => InstanceError.ExtraneousDefinition(defn.sym, defn.sym.loc).toFailure
-            case _ => ().toSuccess
-          }
-      }
-
-      Validation.sequenceX(List(sigMatchVal, extraDefVal))
-    }
-
-    /**
-      * Checks that there is an instance for each super class of the class of `inst`.
-      */
-    def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, _, _) =>
-        val superClasses = root.classEnv(sym.clazz).superClasses
-        Validation.traverseX(superClasses) {
-          superClass =>
-            val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
-            // Check each instance of the super class
-            if (superInsts.exists(superInst => Unification.unifiesWith(tpe, superInst.tpe))) {
-              // Case 1: An instance matches. Success.
-              ().toSuccess
+    // Step 1: check that each signature has an implementation.
+    trt.sigs.foreach {
+      sig =>
+        (inst.defs.find(_.sym.text == sig.sym.name), sig.exp) match {
+          // Case 1: there is no definition with the same name, and no default implementation
+          case (None, None) => sctx.errors.add(InstanceError.MissingImplementation(sig.sym, inst.trt.loc))
+          // Case 2: there is no definition with the same name, but there is a default implementation
+          case (None, Some(_)) => ()
+          // Case 3: there is an implementation marked override, but no default implementation
+          case (Some(defn), None) if defn.spec.mod.isOverride => sctx.errors.add(InstanceError.IllegalRedef(defn.sym, defn.sym.loc))
+          // Case 4: there is an overriding implementation, but no override modifier
+          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
+          // Case 5: there is an implementation with the right modifier
+          case (Some(defn), _) =>
+            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
+            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, eqEnv, inst.econstrs)) {
+              // Case 5.1: the schemes match. Success!
+              ()
             } else {
-              // Case 2: No instance matches. Error.
-              InstanceError.MissingSuperClassInstance(tpe, sym, superClass, sym.loc).toFailure
+              // Case 5.2: the schemes do not match
+              sctx.errors.add(InstanceError.MismatchedSignatures(sig.sym, defn.sym.loc, expectedScheme, defn.spec.declaredScheme))
             }
         }
     }
+    // Step 2: check that there are no extra definitions
+    inst.defs.foreach {
+      defn =>
+        trt.sigs.find(_.sym.name == defn.sym.text) match {
+          case None => sctx.errors.add(InstanceError.ExtraneousDef(defn.sym, inst.trt.sym, defn.sym.loc))
+          case _ => ()
+        }
+    }
+  }
 
-    /**
-      * Reassembles a set of instances of the same class.
-      */
-    def checkInstancesOfClass(insts0: List[TypedAst.Instance]): Validation[Unit, InstanceError] = {
-      val insts = insts0
-      // Check each instance against each instance that hasn't been checked yet
-      val checks = insts.tails.toSeq
-      Validation.traverseX(checks) {
-        case inst :: unchecked =>
-          // check that the instance is on a valid type, suppressing other errors if not
-          checkSimple(inst) flatMap {
-            _ =>
-              Validation.sequenceX(List(
-                Validation.traverse(unchecked)(checkOverlap(_, inst)),
-                checkSigMatch(inst),
-                checkOrphan(inst),
-                checkSuperInstances(inst),
-              ))
+  /**
+    * Finds an instance of the trait for a given type.
+    */
+  private def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Instance, Substitution)] = {
+    val instOpt = root.traitEnv.getInstance(trt, tpe)
+    // lazily find the instance whose type unifies and save the substitution
+    instOpt.flatMap {
+      superInst =>
+        // Rigidify sub-instance constraint vars in the substitution to ensure that they appear as-written in compiler errors
+        val rigidityEnv = RigidityEnv.ofRigidVars(tpe.typeVars.map(_.sym))
+        ConstraintSolver2.fullyUnify(tpe, superInst.tpe, Scope.Top, rigidityEnv)(root.eqEnv, flix).map {
+          case subst => (superInst, subst)
+        }
+    }
+  }
+
+  /**
+    * Checks that there is an instance for each super trait of the trait of `inst`,
+    * and that the constraints on `inst` entail the constraints on the super instance.
+    */
+  private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
+    case TypedAst.Instance(_, _, _, trt, _, tpe, tconstrs, econstrs, _, _, _, _) =>
+      val superTraits = root.traitEnv.getSuperTraits(trt.sym)
+      superTraits.foreach {
+        superTrait =>
+          // Find the instance of the super trait matching the type of this instance.
+          findInstanceForType(tpe, superTrait, root) match {
+            case Some((superInst, subst)) =>
+              // Case 1: An instance matches. Check that its constraints are entailed by this instance.
+              val substTconstrs = tconstrs.map(subst.apply)
+              superInst.tconstrs.foreach {
+                tconstr =>
+                  TraitEnvironment.entail(substTconstrs, subst(tconstr), root.traitEnv, eqEnv) match {
+                    case Result.Ok(_) => Nil
+                    case Result.Err(errors) => errors.foreach {
+                      case TypeConstraint.Trait(sym, traitTpe, loc) =>
+                        sctx.errors.add(InstanceError.MissingTraitConstraint(TraitConstraint(TraitSymUse(sym, loc), traitTpe, loc), superTrait, trt.loc))
+                      case _ =>
+                        throw InternalCompilerException("Unexpected type constraint", inst.loc)
+                    }
+                  }
+              }
+              val substEconstrs = econstrs.map(subst.apply)
+              superInst.econstrs.foreach {
+                econstr =>
+                  val substEconstr = subst(econstr)
+                  EqualityEnvironment.entail(substEconstrs, substEconstr, root.traitEnv, eqEnv) match {
+                    case Result.Ok(_) => Nil
+                    case Result.Err(errors) => errors.foreach {
+                      case TypeConstraint.Equality(_, _, _) =>
+                        sctx.errors.add(MissingEqualityConstraint(substEconstr, superTrait, trt.loc))
+                      case _ =>
+                        throw InternalCompilerException("Unexpected type constraint", inst.loc)
+                    }
+                  }
+              }
+            case None =>
+              // Case 2: No instance matches. Error
+              sctx.errors.add(InstanceError.MissingSuperTraitInstance(tpe, trt.sym, superTrait, trt.loc))
           }
-
-        case Nil => ().toSuccess
       }
+  }
+
+  /**
+    * Reassembles an instance
+    */
+  private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): Unit = {
+    val eqEnv = ConstraintSolverInterface.expandEqualityEnv(root.eqEnv, inst.econstrs)
+    checkSigMatch(inst, root, eqEnv)
+    checkOrphan(inst)
+    checkSuperInstances(inst, root, eqEnv)
+  }
+
+  /**
+    * Reassembles a set of instances of the same trait.
+    */
+  private def checkInstancesOfTrait(insts0: List[TypedAst.Instance], root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[TypedAst.Instance] = {
+
+    // Instances can be uniquely identified by their heads,
+    // due to the non-complexity rule and non-overlap rule.
+    // This maps each instance head to its corresponding instance.
+    var heads = Map.empty[TypeConstructor, TypedAst.Instance]
+
+    insts0.foreach {
+      // check that the instance is on a valid type, suppressing other errors if not
+      case inst =>
+        if (checkSimple(inst)) {
+          checkOverlap(inst, heads)
+          checkInstance(inst, root)
+          heads += (unsafeGetHead(inst) -> inst)
+        }
     }
 
-    // Check the instances of each class in parallel.
-    val results = ParOps.parMap(root.instances.values, checkInstancesOfClass)
-    Validation.traverseX(results)(identity)
+    insts0
   }
+
+  /**
+    * Retrieves the head of a simple instance.
+    *
+    * The head of an instance `Trait[T[a, b, c]]` is T
+    */
+  private def unsafeGetHead(inst: TypedAst.Instance): TypeConstructor = {
+    inst.tpe.typeConstructor match {
+      case Some(tc) => tc
+      case None => throw InternalCompilerException("unexpected non-simple type", inst.trt.loc)
+    }
+  }
+
+  /**
+    * Companion object for [[SharedContext]]
+    */
+  private object SharedContext {
+
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[InstanceError]]s in the AST, if any.
+    */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[InstanceError])
+
 }

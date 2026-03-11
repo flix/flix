@@ -20,12 +20,12 @@ object Version {
   /**
     * Represents the current version of Flix.
     */
-  val CurrentVersion: Version = Version(major = 0, minor = 25, revision = 0)
+  val CurrentVersion: Version = Version(major = 0, minor = 69, revision = 1)
 }
 
 /**
   * A case class to represent versions.
   */
 case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"v$major.$minor.$revision"
+  override val toString: String = s"$major.$minor.$revision"
 }

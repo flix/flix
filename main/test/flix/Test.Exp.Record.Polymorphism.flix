@@ -1,6 +1,8 @@
-namespace Test/Exp/Record/Polymorphism {
+mod Test.Exp.Record.Polymorphism {
 
-    @test
+    use Assert.assertEq
+
+    @CompileTest
     def testRecordNonPolyExtend01(): Unit =
         let p1 = { x = 0, y = 0 };
         let p2 = { x = 1, y = 2 };
@@ -10,10 +12,10 @@ namespace Test/Exp/Record/Polymorphism {
         let _p6 = withZ(p3, 84);
         ()
 
-    def withZ(rec: { x :: Int, y :: Int }, z: Int): { x :: Int, y :: Int, z :: Int } =
+    def withZ(rec: { x = Int32, y = Int32 }, z: Int32): { x = Int32, y = Int32, z = Int32 } =
         { +z = z | rec }
 
-    @test
+    @CompileTest
     def testRecordNonPolyExtend02(): Unit =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = { fstName = "Lucky", lstName = "Luke" };
@@ -23,10 +25,10 @@ namespace Test/Exp/Record/Polymorphism {
         let _p6 = withAge(p3, 84);
         ()
 
-    def withAge(rec: { fstName :: String, lstName :: String }, age: Int): { fstName :: String, lstName :: String, age :: Int } =
+    def withAge(rec: { fstName = String, lstName = String }, age: Int32): { fstName = String, lstName = String, age = Int32 } =
         { +age = age | rec }
 
-    @test
+    @CompileTest
     def testRecordPolyExtend01(): Unit =
         let p1 = { x = 0, y = 0 };
         let p2 = { x = 0, y = 0, z = 0};
@@ -38,14 +40,14 @@ namespace Test/Exp/Record/Polymorphism {
         let _p8 = withColor(p4, "Black");
         ()
 
-    def withColor(rec: {| r}, col: String): { color :: String | r } =
+    def withColor(rec: {| r}, col: String): { color = String | r } =
         { +color = col | rec }
 
-    @test
+    @CompileTest
     def testRecordPolyExtend02(): Unit =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = { fstName = "Lucky", lstName = "Luke" };
-        let p3 = { fstName = "Bruce", lstName = "Wayne", alias = "Batman" };
+        let p3 = { fstName = "Bruce", lstName = "Wayne", aka = "Batman" };
         let p4 = { name = "Cher" };
         let _p5 = withAgeAndSex(21, "m", p1);
         let _p6 = withAgeAndSex(42, "m", p2);
@@ -53,44 +55,44 @@ namespace Test/Exp/Record/Polymorphism {
         let _p8 = withAgeAndSex(42, "f", p4);
         ()
 
-    def withAgeAndSex(age: Int, sex: String, rec: {| r}): { age :: Int, sex :: String | r } =
+    def withAgeAndSex(age: Int32, sex: String, rec: {| r}): { age = Int32, sex = String | r } =
         { +age = age, +sex = sex | rec }
 
-    @test
-    def testRecordPolySelect01(): Bool =
+    @Test
+    def testRecordPolySelect01(): Unit \ Assert =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
-        withAgeAndSex(21, "m", p1).fstName == "Luke"
+        assertEq(expected = "Luke", withAgeAndSex(21, "m", p1)#fstName)
 
-    @test
-    def testRecordPolySelect02(): Bool =
+    @Test
+    def testRecordPolySelect02(): Unit \ Assert =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
-        withAgeAndSex(21, "m", p1).lstName == "Skywalker"
+        assertEq(expected = "Skywalker", withAgeAndSex(21, "m", p1)#lstName)
 
-    @test
-    def testRecordPolySelect03(): Bool =
+    @Test
+    def testRecordPolySelect03(): Unit \ Assert =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
-        withAgeAndSex(21, "m", p1).age == 21
+        assertEq(expected = 21, withAgeAndSex(21, "m", p1)#age)
 
-    @test
-    def testRecordPolySelect04(): Bool =
+    @Test
+    def testRecordPolySelect04(): Unit \ Assert =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
-        withAgeAndSex(21, "m", p1).sex == "m"
+        assertEq(expected = "m", withAgeAndSex(21, "m", p1)#sex)
 
-    @test
-    def testRecordPolySelectDuplicate01(): Bool =
+    @Test
+    def testRecordPolySelectDuplicate01(): Unit \ Assert =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = p1 |> withAgeAndSex(21, "m");
         let p3 = p2 |> withAgeAndSex(22, "f");
-        p3.age == 22 and p3.sex == "f"
+        assertEq(expected = 22, p3#age);
+        assertEq(expected = "f", p3#sex)
 
-    @test
-    def testRecordPolySelectDuplicate02(): Bool =
+    @Test
+    def testRecordPolySelectDuplicate02(): Unit \ Assert =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = p1 |> withAgeAndSex(21, "m");
         let p3 = p2 |> withAgeAndSex(22, "f");
         let p4 = p3 |> withAgeAndSex(23, "m");
-        p4.age == 23 and p4.sex == "m"
-
-    def |>(x: a, f: a -> b & e): b & e = f(x)
+        assertEq(expected = 23, p4#age);
+        assertEq(expected = "m", p4#sex)
 
 }

@@ -22,43 +22,42 @@ instance UpperBound[Int16] {
     pub def maxValue(): Int16 = Int16.maxValue()
 }
 
-namespace Int16 {
+pub mod Int16 {
+
+    import java.lang.NumberFormatException
+    import java.lang.Short
+    import java.math.BigDecimal
+    import java.math.BigInteger
 
     ///
     /// Returns the number of bits used to represent an `Int16`.
     ///
-    @Time(1) @Space(1)
     pub def size(): Int32 = 16
 
     ///
     /// Returns the minimum number representable by an `Int16`.
     ///
-    @Time(1) @Space(1)
-    pub def minValue(): Int16 = 1i16 <<< (size() - 1)
+    pub def minValue(): Int16 = leftShift(1i16, size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int16`.
     ///
-    @Time(1) @Space(1)
-    pub def maxValue(): Int16 = ~~~minValue()
+    pub def maxValue(): Int16 = bitwiseNot(minValue())
 
     ///
     /// Returns the smaller of `x` and `y`.
     ///
-    @Time(1) @Space(1)
     pub def min(x: Int16, y: Int16): Int16 = if (x <= y) x else y
 
     ///
     /// Returns the larger of `x` and `y`.
     ///
-    @Time(1) @Space(1)
     pub def max(x: Int16, y: Int16): Int16 = if (x >= y) x else y
 
     ///
     /// Returns the absolute value of `x`.
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
-    @Time(1) @Space(1)
     pub def abs(x: Int16): Int16 = {
         if      (x >= 0i16)         x
         else if (x == minValue())   -1i16
@@ -66,13 +65,34 @@ namespace Int16 {
     }
 
     ///
+    /// Returns the Euclidean modulo of `x` and `n`.
+    /// The result is always non-negative.
+    ///
+    pub def modulo(x: Int16, n: Int16): Int16 =
+        if (n == 0i16)
+            0i16
+        else
+            %%INT16_REM%%(%%INT16_REM%%(x, n) + n, n)
+
+    ///
+    /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `Int16.modulo`.
+    ///
+    pub def remainder(x: Int16, n: Int16): Int16 =
+        if (n == 0i16)
+            0i16
+        else
+            %%INT16_REM%%(x, n)
+
+    ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
-    @Time(1) @Space(1)
     pub def dist(x: Int16, y: Int16): Int16 = {
-        if      (x >= 0i16 and y >= 0i16)                abs(x - y)
-        else if (x < 0i16 and y < 0i16)                  abs(x - y)
+        if      (x >= 0i16 and y >= 0i16)               abs(x - y)
+        else if (x < 0i16 and y < 0i16)                 abs(x - y)
         else if (x == minValue() or y == minValue())    -1i16
         else if (minValue() + abs(x) + abs(y) >= 0i16)  -1i16
         else                                            abs(x - y)
@@ -82,7 +102,6 @@ namespace Int16 {
     /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
     /// The sign of x - y.
     ///
-    @Time(1) @Space(1)
     pub def compare(x: Int16, y: Int16): Int32 = {
         if      (x == y)    0
         else if (x < y)     -1
@@ -93,57 +112,56 @@ namespace Int16 {
     /// Returns 1 if x > 0, -1 if x < 0, and 0 if x = 0.
     /// The sign of x.
     ///
-    @Time(1) @Space(1)
     pub def signum(x: Int16): Int32 = compare(x, 0i16)
+
+    ///
+    /// Returns `base` raised to the power of `n`.
+    ///
+    pub def pow(base: {base = Int16}, n: Int16): Int16 = %%INT16_EXP%%(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
-    @Time(1) @Space(1)
-    pub def logicalRightShift(x: Int16, distance: Int32): Int16 =
-        if (x < 0i16 and distance rem 32 != 0)
-            ((x >>> 1) &&& maxValue()) >>> (distance - 1)
+    pub def logicalRightShift(dist: {dist = Int32}, x: Int16): Int16 =
+        if (x < 0i16 and Int32.remainder(dist#dist, 32) != 0)
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist#dist - 1)
         else
-            x >>> distance
+            rightShift(x, dist#dist)
 
     ///
     /// Returns the number of one-bits in the two's complement binary
     /// representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def bitCount(x: Int16): Int32 = {
-        if      (x == 0i16)         0
-        else if (x rem 2i16 != 0i16)  bitCount(logicalRightShift(x, 1)) + 1
-        else                        bitCount(logicalRightShift(x, 1))
+        if      (x == 0i16)            0
+        else if (x `remainder` 2i16 != 0i16) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                           bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    @Time(1) @Space(1)
-    pub def rotateRight(x: Int16, distance: Int32): Int16 =
-        let rem = distance rem size();
-        let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(x, rot)) ||| (x <<< (size() - rot))
+    pub def rotateRight(dist: {dist = Int32}, x: Int16): Int16 =
+        let rem1 = dist#dist `Int32.remainder` size();
+        let rot = if (rem1 >= 0) rem1 else rem1 + size();
+        bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
-    @Time(1) @Space(1)
-    pub def rotateLeft(x: Int16, distance: Int32): Int16 =
-        let rem = distance rem size();
-        let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(x, size() - rot)) ||| (x <<< rot)
+    pub def rotateLeft(dist: {dist = Int32}, x: Int16): Int16 =
+        let rem1 = dist#dist `Int32.remainder` size();
+        let rot = if (rem1 >= 0) rem1 else rem1 + size();
+        bitwiseOr(logicalRightShift(dist = size() - rot, x), leftShift(x, rot))
 
     ///
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def reverse(x: Int16): Int16 = reverseHelper(x, 0, size()-1)
 
     ///
@@ -155,9 +173,9 @@ namespace Int16 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(x, l), getBit(x, r)) {
-        case (1, 0) => clearBit(setBit(x, r), l)
-        case (0, 1) => clearBit(setBit(x, l), r)
+    def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(pos = l, x), getBit(pos = r, x)) {
+        case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
+        case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
         case _ => x
     }
 
@@ -166,7 +184,6 @@ namespace Int16 {
     /// Possible return values: 0 (rightmost bit) - 15 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    @Time(1) @Space(1)
     pub def highestOneBitPosition(x: Int16): Int32 =
         // Start at bit 15 and scan right
         oneBitPositionHelper(x, size() - 1, -1)
@@ -176,7 +193,6 @@ namespace Int16 {
     /// Possible return values: 0 (rightmost bit) - 15 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    @Time(1) @Space(1)
     pub def lowestOneBitPosition(x: Int16): Int32 =
         // Start at bit 0 and scan left
         oneBitPositionHelper(x, 0, 1)
@@ -187,11 +203,11 @@ namespace Int16 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int16, position: Int32, delta: Int32): Int32 = {
-        if      (position < 0)              -1
-        else if (position > (size() - 1))   -1
-        else if (getBit(x, position) == 1)  position
-        else if (delta == 0)                -1
-        else                                oneBitPositionHelper(x, position + delta, delta)
+        if      (position < 0)                   -1
+        else if (position > (size() - 1))        -1
+        else if (getBit(pos = position, x) == 1) position
+        else if (delta == 0)                     -1
+        else                                     oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -199,33 +215,30 @@ namespace Int16 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def highestOneBit(x: Int16): Int16 =
-        bitPositionToInt(highestOneBitPosition(x))
+        bitPositionToInt16(highestOneBitPosition(x))
 
     ///
     /// Returns a value with at most a single one-bit, in the position
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def lowestOneBit(x: Int16): Int16 =
-        bitPositionToInt(lowestOneBitPosition(x))
+        bitPositionToInt16(lowestOneBitPosition(x))
 
     ///
     /// Helper function for highestOneBit and lowestOneBit.
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-15 inclusive.
     ///
-    def bitPositionToInt(position: Int32): Int16 =
-        if (position < 0 or position > size() - 1) 0i16 else 1i16 <<< position
+    def bitPositionToInt16(position: Int32): Int16 =
+        if (position < 0 or position > size() - 1) 0i16 else leftShift(1i16, position)
 
     ///
     /// Returns the number of zero bits preceding the
     /// highest-order/leftmost one-bit in `x`.
     /// Returns 16 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def numberOfLeadingZeros(x: Int16): Int32 =
         if (x == 0i16) size() else size() - 1 - highestOneBitPosition(x)
 
@@ -234,60 +247,98 @@ namespace Int16 {
     /// lowest-order/rightmost one-bit in `x`.
     /// Returns 16 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def numberOfTrailingZeros(x: Int16): Int32 =
         if (x == 0i16) size() else lowestOneBitPosition(x)
 
     ///
-    /// Returns the bit of `x` at `position` (either 0 or 1).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns the bit of `x` at `pos` (either 0 or 1).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
-    @Time(1) @Space(1)
-    pub def getBit(x: Int16, position: Int32): Int32 =
-        if ((x >>> position) rem 2i16 == 0i16) 0 else 1
+    pub def getBit(pos: {pos = Int32}, x: Int16): Int32 =
+        if (rightShift(x, pos#pos) `remainder` 2i16 == 0i16) 0 else 1
 
     ///
-    /// Returns `x` with the bit at position `position` set (to 1).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` set (to 1).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
-    @Time(1) @Space(1)
-    pub def setBit(x: Int16, position: Int32): Int16 = x ||| (1i16 <<< position)
+    pub def setBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseOr(x, leftShift(1i16, pos#pos))
 
     ///
-    /// Returns `x` with the bit at position `position` cleared (to 0).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` cleared (to 0).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
-    @Time(1) @Space(1)
-    pub def clearBit(x: Int16, position: Int32): Int16 = x &&& ~~~(1i16 <<< position)
+    pub def clearBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseAnd(x, bitwiseNot(leftShift(1i16, pos#pos)))
 
     ///
-    /// Returns `x` with the bit at position `position` flipped.
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` flipped.
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
-    @Time(1) @Space(1)
-    pub def flipBit(x: Int16, position: Int32): Int16 = x ^^^ (1i16 <<< position)
+    pub def flipBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseXor(x, leftShift(1i16, pos#pos))
+
+    ///
+    /// Returns the integer binary logarithm of `x`.
+    /// If the given value is 0 or negative, 0 is returned.
+    ///
+    pub def log2(x: Int16): Int16 =
+        if (x <= 0i16) {
+            0i16
+        } else {
+            let position = highestOneBitPosition(x);
+            Int32.clampToInt16(min = 0i16, max = Int16.maxValue(), position)
+        }
+
+    ///
+    /// Returns `x` with the bits shifted left by `y` places
+    ///
+    pub def leftShift(x: Int16, y: Int32): Int16 = %%INT16_SHL%%(x, y)
+
+    ///
+    /// Returns `x` with the bits shifted right by `y` places
+    ///
+    pub def rightShift(x: Int16, y: Int32): Int16 = %%INT16_SHR%%(x, y)
+
+    ///
+    /// Returns the bitwise AND of `x` and `y`.
+    ///
+    pub def bitwiseAnd(x: Int16, y: Int16): Int16 = %%INT16_AND%%(x, y)
+
+    ///
+    /// Returns the bitwise NOT of `x`.
+    ///
+    pub def bitwiseNot(x: Int16): Int16 = %%INT16_NOT%%(x)
+
+    ///
+    /// Returns the bitwise OR of `x` and `y`.
+    ///
+    pub def bitwiseOr(x: Int16, y: Int16): Int16 = %%INT16_OR%%(x, y)
+
+    ///
+    /// Returns the bitwise XOR of `x` and `y`.
+    ///
+    pub def bitwiseXor(x: Int16, y: Int16): Int16 = %%INT16_XOR%%(x, y)
+
+    ///
+    /// Returns the factorial of `x`.
+    ///
+    pub def factorial(x: Int16): Int32 = toInt32(x) |> Int32.factorial
 
     ///
     /// Return a string representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def toString(x: Int16): String = ToString.toString(x)
 
     ///
     /// Parse the string `s` as an Int16, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    @Time(1) @Space(1)
-    pub def fromString(s: String): Result[Int16, String] = try {
-        import java.lang.String.strip();
-        import static java.lang.Short.parseShort(String);
-        Ok(s |> strip |> parseShort) as & Pure
+    pub def fromString(s: String): Option[Int16] = try {
+        Some(Short.parseShort(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
+        case _: NumberFormatException => None
     }
 
     ///
@@ -298,94 +349,98 @@ namespace Int16 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127).
     ///
-    @Time(1) @Space(1)
     pub def tryToInt8(x: Int16): Option[Int8] =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.byteValue();
         if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
-            Some(valueOf(x) |> byteValue) as & Pure
+            Some(Short.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to a Int32.
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toInt32(x: Int16): Int32 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.intValue();
-        (valueOf(x) |> intValue) as & Pure
+        Short.valueOf(x).intValue()
 
     ///
     /// Convert `x` to a Int64.
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toInt64(x: Int16): Int64 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.longValue();
-        (valueOf(x) |> longValue) as & Pure
+        Short.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toBigInt(x: Int16): BigInt =
-        import static java.lang.Short.valueOf(Int16) as i16ValueOf;
-        import java.lang.Short.longValue();
-        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
-        (i16ValueOf(x) |> longValue |> asBigInt) as & Pure
+        BigInteger.valueOf(Short.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toFloat32(x: Int16): Float32 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.floatValue();
-        (valueOf(x) |> floatValue) as & Pure
+        Short.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toFloat64(x: Int16): Float64 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.doubleValue();
-        (valueOf(x) |> doubleValue) as & Pure
+        Short.valueOf(x).doubleValue()
+
+    ///
+    /// Convert `x` to a BigDecimal.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
+    pub def toBigDecimal(x: Int16): BigDecimal =
+        new BigDecimal(Int16.toInt32(x))
 
     ///
     /// Helper function for the `clamp` conversion function.
     ///
-    def clamp(x: Int16, minimum: Int16, maximum: Int16): Int16 =
-        if (x < minimum)
-             minimum
+    def clamp(min: {min = Int16}, max: {max = Int16}, x: Int16): Int16 =
+        if (x < min#min)
+             min#min
         else
-            if (x > maximum)
-                maximum
+            if (x > max#max)
+                max#max
             else
                 x
 
     ///
     /// Convert `x` to an `Int8`.
     ///
-    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
-    @Time(1) @Space(1)
-    pub def clampToInt8(x: Int16, minimum: Int8, maximum: Int8): Int8 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.byteValue();
-        let mini16 = Int8.toInt16(minimum);
-        let maxi16 = Int8.toInt16(maximum);
-        (valueOf(clamp(x, mini16, maxi16)) |> byteValue) as & Pure
+    pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int16): Int8 =
+        let mini16 = Int8.toInt16(min#min);
+        let maxi16 = Int8.toInt16(max#max);
+        Short.valueOf(clamp(min = mini16, max = maxi16, x)).byteValue()
+
+    ///
+    /// Get the primitive Int16 value from its object representation (i.e. Short).
+    ///
+    /// This function is expected to be used when marshaling Int16s from Java. Generally in Flix
+    /// code you should not need to use `Short`.
+    ///
+    pub def shortValue(i: Short): Int16 =
+        i.shortValue()
+
+    ///
+    /// Convert an Int16 value to its object representation (i.e. Short).
+    ///
+    /// This function is expected to be used when marshaling Int16s to Java. Generally in Flix
+    /// code you should not need to use `Short`.
+    ///
+    pub def valueOf(i: Int16): Short =
+        Short.valueOf(i)
 
 }

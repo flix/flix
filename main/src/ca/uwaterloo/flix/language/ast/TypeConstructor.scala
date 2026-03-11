@@ -1,8 +1,11 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Resolver}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.phase.monomorph.Specialization
+import ca.uwaterloo.flix.language.phase.{Kinder, monomorph, Simplifier}
+
+import java.lang.reflect.{Constructor, Field, Method}
+import scala.collection.immutable.SortedSet
 
 /**
   * Representation of type constructors.
@@ -12,6 +15,23 @@ sealed trait TypeConstructor {
 }
 
 object TypeConstructor {
+
+  /**
+    * A type constructor that represent the Void type.
+    *
+    * The `Void` type is uninhabited and should not be confused which Java's `void` which is `Unit` in Flix.
+    */
+  case object Void extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor that represent an unconstrained type after monomorphization.
+    */
+  @IntroducedBy(Specialization.getClass)
+  case object AnyType extends TypeConstructor {
+    override def kind: Kind = Kind.Star
+  }
 
   /**
     * A type constructor that represent the Unit type.
@@ -56,6 +76,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of arbitrary-precision floating point numbers.
+    */
+  case object BigDecimal extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of 8-bit integers.
     */
   case object Int8 extends TypeConstructor {
@@ -91,17 +118,35 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of strings.
+    * A type constructor that represents the type of strings.
     */
   case object Str extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
   /**
+    * A type constructor that represents the type of regex patterns.
+    */
+  case object Regex extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represents the type of functions.
     */
+  @IntroducedBy(Kinder.getClass)
   case class Arrow(arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.mkArrow(arity)
+    def kind: Kind = Kind.Eff ->: Kind.mkArrow(arity)
+  }
+
+  /**
+    * A type constructor that represents an arrow type where the effect has been removed.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case class ArrowWithoutEffect(arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrow(arity)
   }
 
   /**
@@ -114,9 +159,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of extended record rows.
     */
-  case class RecordRowExtend(field: Name.Field) extends TypeConstructor {
+  case class RecordRowExtend(label: Name.Label) extends TypeConstructor {
     /**
-      * The shape of an extended record is { field :: type | rest }
+      * The shape of an extended record is { label = type | rest }
       */
     def kind: Kind = Kind.Star ->: Kind.RecordRow ->: Kind.RecordRow
   }
@@ -129,6 +174,16 @@ object TypeConstructor {
       * The shape of a record constructor is Record[row]
       */
     def kind: Kind = Kind.RecordRow ->: Kind.Star
+  }
+
+  /**
+   * A type constructor that represents the type of extensible variants.
+   */
+  case object Extensible extends TypeConstructor {
+    /**
+     * The shape of an extensible variant constructor is Extensible[schemaRow]
+     */
+    def kind: Kind = Kind.SchemaRow ->: Kind.Star
   }
 
   /**
@@ -159,21 +214,23 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of arrays.
+    * A type constructor that represent the type of channel senders.
     */
-  case object Array extends TypeConstructor {
+  @EliminatedBy(monomorph.Lowering.getClass)
+  case object Sender extends TypeConstructor {
     /**
-      * The shape of an array is Array[t].
+      * The shape of a sender is Sender[t].
       */
     def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
-    * A type constructor that represent the type of channels.
+    * A type constructor that represent the type of channel receivers.
     */
-  case object Channel extends TypeConstructor {
+  @EliminatedBy(monomorph.Lowering.getClass)
+  case object Receiver extends TypeConstructor {
     /**
-      * The shape of a channel is Channel[t].
+      * The shape of a sender is Receiver[t].
       */
     def kind: Kind = Kind.Star ->: Kind.Star
   }
@@ -189,123 +246,270 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of tags.
+    * A type constructor that represents the type of enums.
     */
-  case class Tag(sym: Symbol.EnumSym, tag: Name.Tag) extends TypeConstructor {
-    /**
-      * The shape of a tag is "like" a function `caseType` -> (`resultType`) -> *.
-      */
-    def kind: Kind = Kind.Star ->: Kind.Star ->: Kind.Star
-  }
+  @IntroducedBy(Kinder.getClass)
+  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
+
+  /**
+   * A type constructor that represents the type of structs.
+   */
+  @IntroducedBy(Kinder.getClass)
+  case class Struct(sym: Symbol.StructSym, kind: Kind) extends TypeConstructor
 
   /**
     * A type constructor that represents the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
-  case class KindedEnum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
-
-  /**
-    * An unkinded type constructor that represents the type of enums.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class UnkindedEnum(sym: Symbol.EnumSym) extends TypeConstructor {
-    override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
-  }
-
-  /**
-    * A type alias that has not yet been applied.
-    *
-    * Only exists temporarily in the Resolver.
-    */
-  @EliminatedBy(Resolver.getClass)
-  case class UnappliedAlias(sym: Symbol.TypeAliasSym) extends TypeConstructor {
-    override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
-  }
+  case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, kind: Kind) extends TypeConstructor
 
   /**
     * A type constructor that represent the type of JVM classes.
     */
-  case class Native(clazz: Class[_]) extends TypeConstructor {
+  case class Native(clazz: Class[?]) extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
   /**
-    * A type constructor that represent the type of scoped references.
+   * A type constructor that represents the type of a Java constructor.
+   * */
+  case class JvmConstructor(constructor: Constructor[?]) extends TypeConstructor {
+    def kind: Kind = Kind.Jvm
+  }
+
+  /**
+   * A type constructor that represents the type of a Java method.
+   */
+  case class JvmMethod(method: Method) extends TypeConstructor {
+    def kind: Kind = Kind.Jvm
+  }
+
+  /**
+    * A type constructor that represents the type of a Java field.
     */
-  case object ScopedRef extends TypeConstructor {
+  case class JvmField(field: Field) extends TypeConstructor {
+    def kind: Kind = Kind.Jvm
+  }
+
+  /**
+    * A type constructor that represent the type of arrays.
+    */
+  case object Array extends TypeConstructor {
     /**
-      * The shape of a reference is `ScopedRef[t, l]`.
+      * The shape of an array is `Array[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that represents that represents an array type where the region has been
+    * removed.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case object ArrayWithoutRegion extends TypeConstructor {
+    /**
+      * The shape of an array is `ArrayWithoutRegion[t]`.
+      */
+    def kind: Kind = Kind.Star ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that represent the type of vectors.
+    */
+  case object Vector extends TypeConstructor {
+    /**
+      * The shape of a vector is `Vector[t]`.
+      */
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
     * A type constructor that represent the type of tuples.
     */
-  case class Tuple(l: Int) extends TypeConstructor {
+  case class Tuple(arity: Int) extends TypeConstructor {
     /**
       * The shape of a tuple is (t1, ..., tn).
       */
-    def kind: Kind = Kind.mkArrow(l)
+    def kind: Kind = Kind.mkArrow(arity)
   }
 
   /**
     * A type constructor for relations.
     */
-  case object Relation extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Predicate
+  case class Relation(arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrowTo(arity, Kind.Predicate)
   }
 
   /**
     * A type constructor for lattices.
     */
-  case object Lattice extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Predicate
+  case class Lattice(arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrowTo(arity, Kind.Predicate)
   }
 
   /**
-    * A type constructor that represent the Boolean True.
+    * A type constructor that represents the Boolean value TRUE.
     */
   case object True extends TypeConstructor {
     def kind: Kind = Kind.Bool
   }
 
   /**
-    * A type constructor that represents the Boolean False.
+    * A type constructor that represents the Boolean value FALSE.
     */
   case object False extends TypeConstructor {
     def kind: Kind = Kind.Bool
   }
 
   /**
-    * A type constructor that represents the negation of an effect.
+    * A type constructor that represents Boolean negation.
     */
   case object Not extends TypeConstructor {
     def kind: Kind = Kind.Bool ->: Kind.Bool
   }
 
   /**
-    * A type constructor that represents the conjunction of two effects.
+    * A type constructor that represents Boolean conjunction.
     */
   case object And extends TypeConstructor {
     def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
   }
 
   /**
-    * A type constructor that represents the disjunction of two effects.
+    * A type constructor that represents Boolean disjunction.
     */
   case object Or extends TypeConstructor {
     def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
   }
 
   /**
-    * A type constructor that represent the type of regions.
+    * A type constructor that represents the empty effect set.
     */
-  case object Region extends TypeConstructor {
-    /**
-      * The shape of a region is Region[l].
-      */
-    def kind: Kind = Kind.Bool ->: Kind.Star
+  case object Pure extends TypeConstructor {
+    def kind: Kind = Kind.Eff
   }
+
+  /**
+    * A type constructor that represents the universal effect set.
+    */
+  case object Univ extends TypeConstructor {
+    def kind: Kind = Kind.Eff
+  }
+
+  /**
+    * A type constructor that represents the complement of an effect set.
+    */
+  case object Complement extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff
+  }
+
+  /**
+    * A type constructor that represents the union of two effect sets.
+    */
+  case object Union extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
+  }
+
+  /**
+    * A type constructor that represents the intersection of two effect sets.
+    */
+  case object Intersection extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
+  }
+
+  /**
+    * A type constructor that represents the difference of two effect sets.
+    */
+  case object Difference extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
+  }
+
+  /**
+    * A type constructor that represents the exclusive or (symmetric difference) of two effect sets.
+    */
+  case object SymmetricDiff extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
+  }
+
+  /**
+    * A type constructor that represents a single effect.
+    */
+  @IntroducedBy(Kinder.getClass)
+  case class Effect(sym: Symbol.EffSym, kind: Kind) extends TypeConstructor
+
+  /**
+    * A type constructor that represents the complement of a case set.
+    */
+  case class CaseComplement(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
+    * A type constructor that represents the union of two case sets.
+    */
+  case class CaseUnion(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
+    * A type constructor that represents the intersection of two case sets.
+    */
+  case class CaseIntersection(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
+    * A type constructor that represents the symmetric difference of two case sets.
+    */
+  case class CaseSymmetricDiff(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
+    * A type constructor that represents a case constant.
+    */
+  case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(enumSym)
+  }
+
+  /**
+    * A type constructor that represents a region.
+    */
+  case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
+    def kind: Kind = Kind.Eff
+  }
+
+  /**
+    * A type constructor that converts a region to a Star type.
+    */
+  case object RegionToStar extends TypeConstructor {
+    /**
+      * The shape of a star-kind region is Region[l].
+      */
+    def kind: Kind = Kind.Eff ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that represents that a region type where the region argument has been
+    * removed.
+    *
+    * I.e., The normal `Region[r]` type is `RegionWithoutRegion` where `r` has been removed.
+    *
+    * Warning: This is not part of the frontend; it only exists post Simplification.
+    */
+  @IntroducedBy(Simplifier.getClass)
+  case object RegionWithoutRegion extends TypeConstructor {
+    /**
+      * The shape of a region is RegionWithoutRegion.
+      */
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor which represents an erroneous type of the given `kind`.
+    */
+  case class Error(id: Int, kind: Kind) extends TypeConstructor
 
 }

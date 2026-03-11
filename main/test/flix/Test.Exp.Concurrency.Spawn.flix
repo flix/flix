@@ -1,57 +1,93 @@
-namespace Test/Exp/Concurrency/Spawn {
+mod Test.Exp.Concurrency.Spawn {
 
-    @test
-    def testSpawn01(): Unit & Impure = spawn ()
+    import java.lang.NullPointerException
+    import java.lang.{Thread => JThread}
 
-    @test
-    def testSpawn02(): Unit & Impure = spawn true
+    use Assert.assertTrue
 
-    @test
-    def testSpawn03(): Unit & Impure = spawn 'a'
+    @Test
+    def testSpawn01(): Unit = region rc { spawn () @ rc }
 
-    @test
-    def testSpawn04(): Unit & Impure = spawn 1.0f32 + 2.0f32
+    @Test
+    def testSpawn02(): Unit = region rc { spawn true @ rc }
 
-    @test
-    def testSpawn05(): Unit & Impure = spawn 1.0f64 + 2.0f64
+    @Test
+    def testSpawn03(): Unit = region rc { spawn 'a' @ rc }
 
-    @test
-    def testSpawn06(): Unit & Impure = spawn 1i8 + 2i8
+    @Test
+    def testSpawn04(): Unit = region rc { spawn 1.0f32 + 2.0f32 @ rc }
 
-    @test
-    def testSpawn07(): Unit & Impure = spawn 1i16 + 2i16
+    @Test
+    def testSpawn05(): Unit = region rc { spawn 1.0f64 + 2.0f64 @ rc }
 
-    @test
-    def testSpawn08(): Unit & Impure = spawn 1i32 + 2i32
+    @Test
+    def testSpawn06(): Unit = region rc { spawn 1i8 + 2i8 @ rc }
 
-    @test
-    def testSpawn09(): Unit & Impure = spawn 1i64 + 2i64
+    @Test
+    def testSpawn07(): Unit = region rc { spawn 1i16 + 2i16 @ rc }
 
-    @test
-    def testSpawn10(): Unit & Impure = spawn 1ii + 2ii
+    @Test
+    def testSpawn08(): Unit = region rc { spawn 1i32 + 2i32 @ rc }
 
-    @test
-    def testSpawn11(): Unit & Impure = spawn "Hello World!"
+    @Test
+    def testSpawn09(): Unit = region rc { spawn 1i64 + 2i64 @ rc }
 
-    @test
-    def testSpawn12(): Unit & Impure = spawn (123, 456)
+    @Test
+    def testSpawn10(): Unit = region rc { spawn 1ii + 2ii @ rc }
 
-    @test
-    def testSpawn13(): Unit & Impure = spawn None
+    @Test
+    def testSpawn11(): Unit = region rc { spawn "Hello World!" @ rc }
 
-    @test
-    def testSpawn14(): Unit & Impure = spawn Some(42)
+    @Test
+    def testSpawn12(): Unit = region rc { spawn (123, 456) @ rc }
 
-    @test
-    def testSpawn15(): Unit & Impure = spawn Ok(42)
+    @Test
+    def testSpawn13(): Unit = region rc { spawn None @ rc }
 
-    @test
-    def testSpawn16(): Unit & Impure = spawn Err(42)
+    @Test
+    def testSpawn14(): Unit = region rc { spawn Some(42) @ rc }
 
-    @test
-    def testSpawn17(): Unit & Impure = spawn spawn 123
+    @Test
+    def testSpawn15(): Unit = region rc { spawn Ok(42) @ rc }
 
-    @test
-    def testSpawn18(): Unit & Impure = spawn spawn spawn 123
+    @Test
+    def testSpawn16(): Unit = region rc { spawn Err(42) @ rc }
+
+    @Test
+    def testSpawn17(): Unit = region rc { spawn spawn 123 @ rc @ rc }
+
+    @Test
+    def testSpawn18(): Unit = region rc { spawn spawn spawn 123 @ rc @ rc @ rc }
+
+    @Test
+    def testExceptionsInChildThread01(): Unit \ (Assert + IO) =
+        let r = try {
+            region rc {
+                spawn {
+                    spawn { println(String.concat(checked_cast(null), "foo")) } @ rc
+                } @ rc;
+                JThread.sleep(1_000i64);
+                false
+            }
+        } catch {
+            case _: NullPointerException => true
+        };
+        assertTrue(r)
+
+
+    @Test
+    def testExceptionsInChildThread02(): Unit \ (Assert + IO) = region rc {
+        spawn {
+            spawn {
+                try {
+                    println(String.concat(checked_cast(null), "foo"))
+                } catch {
+                    case _: NullPointerException => ()
+                }
+            } @ rc
+        } @ rc;
+        JThread.sleep(1_000i64);
+        assertTrue(true)
+    }
 
 }

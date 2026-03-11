@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.eclipse.lsp4j
+import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Represents a `CodeLens` in LSP.
@@ -26,4 +27,11 @@ import org.json4s._
   */
 case class CodeLens(range: Range, command: Option[Command]) {
   def toJSON: JValue = ("range" -> range.toJSON) ~ ("command" -> command.map(_.toJSON))
+
+  def toLsp4j: lsp4j.CodeLens = {
+    val codeLens = new lsp4j.CodeLens()
+    codeLens.setRange(range.toLsp4j)
+    command.foreach(cmd => codeLens.setCommand(cmd.toLsp4j))
+    codeLens
+  }
 }

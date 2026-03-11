@@ -1,12 +1,13 @@
-use A.Color;
-use A/B.Currency;
-use A/B.Kelvin;
-use A.{Color => MyColor};
-use A/B.{Currency => MyCurrency};
-use A/B.Meter;
-use A/B.{Meter => MyMeter};
 
-namespace X {
+mod X {
+    use A.Color
+    use A.B.Currency
+    use A.B.Kelvin
+    use A.{Color => MyColor}
+    use A.B.{Currency => MyCurrency}
+    use A.B.Meter
+    use A.B.{Meter => MyMeter}
+
     pub def f(): Color = Color.Red
     pub def g(): Color = Color.Red
     pub def h(): Currency = Currency.USD
@@ -19,30 +20,30 @@ namespace X {
     pub def o(): MyMeter = 123
 }
 
-namespace Y {
-    use B.Kilogram;
-    use B.Acre;
+mod Y {
+    use B.Kilogram
+    use B.Acre
 
     pub def f(): Kilogram = Kilogram.Kilogram(123)
     pub def g(): Acre = 123
 }
 
-namespace A {
+mod A {
     pub enum Color {
         case Red,
         case Blu
     }
-    namespace B {
+    mod B {
         pub enum Currency {
             case USD,
             case CAD
         }
-        pub opaque type Kelvin = Int
-        pub type alias Meter = Int
+        pub enum Kelvin(Int32)
+        pub type alias Meter = Int32
     }
 }
 
-namespace B {
-    pub opaque type Kilogram = Int
-    pub type alias Acre = Int
+mod B {
+    pub enum Kilogram(Int32)
+    pub type alias Acre = Int32
 }

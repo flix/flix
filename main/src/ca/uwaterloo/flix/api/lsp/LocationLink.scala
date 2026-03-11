@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +17,31 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
-import org.json4s.JsonDSL._
-import org.json4s._
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+
+import org.eclipse.lsp4j
+import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Companion object of [[LocationLink]]
   */
 object LocationLink {
+  /**
+    * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.AssocTypeSym]] `sym`.
+    *
+    * @param sym        target [[Symbol.AssocTypeSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
+    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    */
+  def fromAssocTypeSym(sym: Symbol.AssocTypeSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
 
   /**
     * Returns a location link to the given symbol `sym`.
@@ -64,13 +82,38 @@ object LocationLink {
   /**
     * Returns a location link to the given symbol `sym`.
     */
-  def fromEnumAndTag(sym: Symbol.EnumSym, tag: Name.Tag, loc: SourceLocation)(implicit root: Root): LocationLink = {
-    val enumDecl = root.enums(sym)
-    val caseDecl = enumDecl.cases(tag)
+  def fromStructSym(sym: Symbol.StructSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
+    val structDecl = root.structs(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(structDecl.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  def fromCaseSym(sym: Symbol.CaseSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
+    val enumDecl = root.enums(sym.enumSym)
+    val caseDecl = enumDecl.cases(sym)
     val originSelectionRange = Range.from(loc)
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(caseDecl.loc)
     val targetSelectionRange = Range.from(caseDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  def fromStructFieldSym(sym: Symbol.StructFieldSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
+    val structDecl = root.structs(sym.structSym)
+    val fieldDecl = structDecl.fields(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(fieldDecl.loc)
+    val targetSelectionRange = Range.from(fieldDecl.loc)
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
@@ -86,9 +129,9 @@ object LocationLink {
   }
 
   /**
-    * Returns a reference to the instance node `instance`.
+    * Returns a reference to the type variable symbol `sym`.
     */
-  def fromInstanceSym(sym: Symbol.InstanceSym, originLoc: SourceLocation): LocationLink = {
+  def fromTypeVarSym(sym: Symbol.KindedTypeVarSym, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(sym.loc)
@@ -96,6 +139,53 @@ object LocationLink {
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
+  /**
+    * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.TraitSym]] `sym`.
+    *
+    * @param sym        target [[Symbol.TraitSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
+    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    */
+  def fromTraitSym(sym: Symbol.TraitSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a reference to the instance node `instance`.
+    */
+  def fromInstanceTraitSymUse(symUse: TraitSymUse, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = symUse.loc.source.name
+    val targetRange = Range.from(symUse.loc)
+    val targetSelectionRange = Range.from(symUse.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a reference to the effect symbol `sym`.
+    */
+  def fromEffSym(sym: Symbol.EffSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a reference to the effect operation symbol `sym`.
+    */
+  def fromOpSym(sym: Symbol.OpSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
 }
 
 /**
@@ -118,4 +208,13 @@ case class LocationLink(originSelectionRange: Range, targetUri: String, targetRa
       ("targetUri" -> targetUri) ~
       ("targetRange" -> targetRange.toJSON) ~
       ("targetSelectionRange" -> targetSelectionRange.toJSON)
+
+  def toLsp4j: lsp4j.LocationLink = {
+    val locationLink = new lsp4j.LocationLink()
+    locationLink.setOriginSelectionRange(originSelectionRange.toLsp4j)
+    locationLink.setTargetUri(targetUri)
+    locationLink.setTargetRange(targetRange.toLsp4j)
+    locationLink.setTargetSelectionRange(targetSelectionRange.toLsp4j)
+    locationLink
+  }
 }

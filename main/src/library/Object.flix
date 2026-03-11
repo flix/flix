@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Object {
+pub mod Object {
+
+    import java.util.Objects
+    import java.lang.Object
 
     ///
     /// Returns `true` if the given value `x` is `null`.
     ///
+    @Inline
     pub def isNull(x: a): Bool =
-        import static java.util.Objects.isNull(##java.lang.Object);
-        isNull(x as ##java.lang.Object) as & Pure
+        match Reflect.reflectValue(x) {
+            case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
+            case _ => false
+        }
 
     ///
     /// Returns `None` if the given value `x` is `null`, otherwise returns `Some(x)`.
     ///
     pub def toOption(x: a): Option[a] =
         if (isNull(x)) None else Some(x)
-
-    ///
-    /// Unsafely converts `x` to a string using Java's built-in toString.
-    ///
-    pub def toString(x: a): String =
-        import static java.util.Objects.toString(##java.lang.Object);
-        toString(x as ##java.lang.Object) as & Pure
 
 }

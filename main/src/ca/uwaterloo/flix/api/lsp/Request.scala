@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
 import org.json4s.JsonAST.{JString, JValue}
-
+import org.json4s.jvalue2monadic
 import java.util.Base64
 
 /**
@@ -73,6 +73,12 @@ object Request {
     * A request to shutdown the language server.
     */
   case class Shutdown(requestId: String) extends Request
+
+  /**
+    * A request to temporarily disconnect from the socket.
+    * Used for testing purposes.
+    */
+  case class Disconnect(requestId: String) extends Request
 
   /**
     * A request to compile and check all source files.
@@ -130,9 +136,35 @@ object Request {
   case class SemanticTokens(requestId: String, uri: String) extends Request
 
   /**
+    * A request to get the signature information.
+    */
+  case class Signature(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
     * A request to get workspace symbols information.
     */
   case class WorkspaceSymbols(requestId: String, query: String) extends Request
+
+  /**
+    * A request to get the inlay hints for the given [[range]] in a file denoted by [[uri]]
+    */
+  case class InlayHint(requestId: String, uri: String, range: Range) extends Request
+
+  /**
+    * A request to print the ASTs following each phase.
+    * Returns the folder path that holds the ASTs.
+    */
+  case class ShowAst(requestId: String) extends Request
+
+  /**
+    * A request to view available code actions.
+    */
+  case class CodeAction(requestId: String, uri: String, range: Range, context: CodeActionContext) extends Request
+
+  /**
+    * A request to format a file.
+    */
+  case class Formatting(requestId: String, uri: String, options: FormattingOptions) extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
@@ -236,6 +268,15 @@ object Request {
     for {
       id <- parseId(json)
     } yield Request.Shutdown(id)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Disconnect]] request.
+    */
+  def parseDisconnect(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.Disconnect(id)
   }
 
   /**
@@ -366,6 +407,37 @@ object Request {
   }
 
   /**
+    * Tries to parse the given `json` value as a [[Signature]] request.
+    */
+  def parseSignature(json: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Signature(id, uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[InlayHint]] request.
+    */
+  def parseInlayHint(json: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      range <- Range.parse(json \\ "range")
+    } yield Request.InlayHint(id, uri, range)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[ShowAst]] request.
+    */
+  def parseShowAst(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.ShowAst(id)
+  }
+
+  /**
     * Attempts to parse the `id` from the given JSON value `v`.
     */
   private def parseId(v: JValue): Result[String, String] = {
@@ -396,13 +468,29 @@ object Request {
   }
 
   /**
-    * Attempts to parse the `projectRootUri` from the given JSON value `v`.
+    * Tries to parse the given `json` value as a [[CodeAction]] request.
     */
-  private def parseProjectRootUri(v: JValue): Result[String, String] = {
-    v \\ "projectRootUri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected projectRootUri: '$s'.")
-    }
+  def parseCodeAction(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      range <- Range.parse(json \ "range")
+      context <- CodeActionContext.parse(json \ "context")
+    } yield Request.CodeAction(id, uri, range, context)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Formatting]] request.
+    *
+    * @param json the json value
+    * @return the formatting request
+    */
+  def parseFormatting(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      options = FormattingOptions.parse(json \ "options")
+    } yield Request.Formatting(id, uri, options)
   }
 
 }

@@ -1,199 +1,209 @@
-namespace Test/Exp/Interpolation {
+mod Test.Exp.Interpolation {
 
-    @test
-    def interpolation01(): Bool =
+    use Assert.assertEq
+
+    @Test
+    def interpolation01(): Unit \ Assert =
         let x = "a";
-        "${x}" == "a"
+        assertEq(expected = "a", "${x}")
 
-    @test
-    def interpolation02(): Bool =
+    @Test
+    def interpolation02(): Unit \ Assert =
         let x = "a";
-        "${x}${x}" == "aa"
+        assertEq(expected = "aa", "${x}${x}")
 
-    @test
-    def interpolation03(): Bool =
+    @Test
+    def interpolation03(): Unit \ Assert =
         let x = "a";
-        "${x}${x}${x}" == "aaa"
+        assertEq(expected = "aaa", "${x}${x}${x}")
 
-    @test
-    def interpolation04(): Bool =
+    @Test
+    def interpolation04(): Unit \ Assert =
         let x = "a";
-        "${x}x${x}y${x}" == "axaya"
+        assertEq(expected = "axaya", "${x}x${x}y${x}")
 
-    @test
-    def interpolation05(): Bool =
-        let x = "a";
-        let y = "b";
-        "${x}${y}" == "ab"
-
-    @test
-    def interpolation06(): Bool =
+    @Test
+    def interpolation05(): Unit \ Assert =
         let x = "a";
         let y = "b";
-        "${x}${y}${x}" == "aba"
+        assertEq(expected = "ab", "${x}${y}")
 
-    @test
-    def interpolation07(): Bool =
+    @Test
+    def interpolation06(): Unit \ Assert =
         let x = "a";
         let y = "b";
-        "${x}${x}${y}${y}" == "aabb"
+        assertEq(expected = "aba", "${x}${y}${x}")
 
-    @test
-    def interpolation08(): Bool =
+    @Test
+    def interpolation07(): Unit \ Assert =
         let x = "a";
         let y = "b";
-        "${x}${y}${x}${y}" == "abab"
+        assertEq(expected = "aabb", "${x}${x}${y}${y}")
 
-    @test
-    def interpolation09(): Bool =
+    @Test
+    def interpolation08(): Unit \ Assert =
         let x = "a";
         let y = "b";
-        "${x}u${y}v${x}w${y}" == "aubvawb"
+        assertEq(expected = "abab", "${x}${y}${x}${y}")
 
-    @test
-    def interpolation10(): Bool =
+    @Test
+    def interpolation09(): Unit \ Assert =
         let x = "a";
         let y = "b";
-        let z = "c";
-        "${x}${y}${z}" == "abc"
+        assertEq(expected = "aubvawb", "${x}u${y}v${x}w${y}")
 
-    @test
-    def interpolation11(): Bool =
+    @Test
+    def interpolation10(): Unit \ Assert =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${z}${y}${x}" == "cba"
+        assertEq(expected = "abc", "${x}${y}${z}")
 
-    @test
-    def interpolation12(): Bool =
+    @Test
+    def interpolation11(): Unit \ Assert =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${toUpperCase(x)}${y}${z}" == "Abc"
+        assertEq(expected = "cba", "${z}${y}${x}")
 
-    @test
-    def interpolation13(): Bool =
+    @Test
+    def interpolation12(): Unit \ Assert =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${x}${toUpperCase(y)}${z}" == "aBc"
+        assertEq(expected = "Abc", "${String.toUpperCase(x)}${y}${z}")
 
-    @test
-    def interpolation14(): Bool =
+    @Test
+    def interpolation13(): Unit \ Assert =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${x}${y}${toUpperCase(z)}" == "abC"
+        assertEq(expected = "aBc", "${x}${String.toUpperCase(y)}${z}")
 
-    @test
-    def interpolation15(): Bool =
-        "${toUpperCase("w")}" == "W"
+    @Test
+    def interpolation14(): Unit \ Assert =
+        let x = "a";
+        let y = "b";
+        let z = "c";
+        assertEq(expected = "abC", "${x}${y}${String.toUpperCase(z)}")
 
-    @test
-    def interpolation16(): Bool =
-        "${toLowerCase("W")}" == "w"
+    @Test
+    def interpolation15(): Unit \ Assert =
+        assertEq(expected = "W", "${String.toUpperCase("w")}")
 
-    @test
-    def interpolation17(): Bool =
-        "$" == "$"
+    @Test
+    def interpolation16(): Unit \ Assert =
+        assertEq(expected = "w", "${String.toLowerCase("W")}")
 
-    @test
-    def interpolation18(): Bool =
-        "{}" == "{}"
+    @Test
+    def interpolation17(): Unit \ Assert =
+        assertEq(expected = "$", "$")
 
-    @test
-    def interpolation19(): Bool =
+    @Test
+    def interpolation18(): Unit \ Assert =
+        assertEq(expected = "{}", "{}")
+
+    @Test
+    def interpolation19(): Unit \ Assert =
         let x = "42";
-        "USD $${x}" == "USD $42"
+        assertEq(expected = "USD $42", "USD $${x}")
 
-    @test
-    def interpolation20(): Bool =
+    @Test
+    def interpolation20(): Unit \ Assert =
         let x = "a";
-        "$${x}$" == "$a$"
+        assertEq(expected = "$a$", "$${x}$")
 
-    @test
-    def interpolation21(): Bool =
+    @Test
+    def interpolation21(): Unit \ Assert =
         let x = true;
-        "${x}" == "true"
+        assertEq(expected = "true", "${x}")
 
-    @test
-    def interpolation22(): Bool =
+    @Test
+    def interpolation22(): Unit \ Assert =
         let x = false;
-        "${x}" == "false"
+        assertEq(expected = "false", "${x}")
 
-    @test
-    def interpolation23(): Bool =
+    @Test
+    def interpolation23(): Unit \ Assert =
         let x = 1;
-        "${x}" == "1"
+        assertEq(expected = "1", "${x}")
 
-    @test
-    def interpolation24(): Bool =
+    @Test
+    def interpolation24(): Unit \ Assert =
         let x = 123;
         let y = 456;
-        "${x}${y}" == "123456"
+        assertEq(expected = "123456", "${x}${y}")
 
-    @test
-    def interpolation25(): Bool =
+    @Test
+    def interpolation25(): Unit \ Assert =
         let x = 123;
         let y = 456;
-        "${y - x}" == "333"
+        assertEq(expected = "333", "${y - x}")
 
-    @test
-    def interpolation26(): Bool =
-        let x = Red;
-        "${x}" == "r"
+    @Test
+    def interpolation26(): Unit \ Assert =
+        let x = Color.Red;
+        assertEq(expected = "r", "${x}")
 
-    @test
-    def interpolation27(): Bool =
-        let x = Green;
-        "${x}" == "g"
+    @Test
+    def interpolation27(): Unit \ Assert =
+        let x = Color.Green;
+        assertEq(expected = "g", "${x}")
 
-    @test
-    def interpolation28(): Bool =
-        let x = Blue;
-        "${x}" == "b"
+    @Test
+    def interpolation28(): Unit \ Assert =
+        let x = Color.Blue;
+        assertEq(expected = "b", "${x}")
 
-    @test
-    def interpolation29(): Bool =
-        let x = Red;
-        let y = Green;
-        let z = Blue;
-        "${x}${y}${z}" == "rgb"
+    @Test
+    def interpolation29(): Unit \ Assert =
+        let x = Color.Red;
+        let y = Color.Green;
+        let z = Color.Blue;
+        assertEq(expected = "rgb", "${x}${y}${z}")
 
-    @test
-    def interpolation30(): Bool =
-        let x = None : Option[Int32];
-        "${x}" == "None"
+    @Test
+    def interpolation30(): Unit \ Assert =
+        let x = (None : Option[Int32]);
+        assertEq(expected = "None", "${x}")
 
-    @test
-    def interpolation31(): Bool =
+    @Test
+    def interpolation31(): Unit \ Assert =
         let x = Some(123);
-        "${x}" == "Some(123)"
+        assertEq(expected = "Some(123)", "${x}")
 
-    @test
-    def interpolation32(): Bool =
+    @Test
+    def interpolation32(): Unit \ Assert =
         let x = Some(Some(123));
-        "${x}" == "Some(Some(123))"
+        assertEq(expected = "Some(Some(123))", "${x}")
 
-    @test
-    def interpolation33(): Bool =
-        let x = Ok(123): Result[Int32, Int32];
-        "${x}" == "Ok(123)"
+    @Test
+    def interpolation33(): Unit \ Assert =
+        let x = (Ok(123): Result[Int32, Int32]);
+        assertEq(expected = "Ok(123)", "${x}")
 
-    @test
-    def interpolation34(): Bool =
-        let x = Err(123): Result[Int32, Int32];
-        "${x}" == "Err(123)"
+    @Test
+    def interpolation34(): Unit \ Assert =
+        let x = (Err(123): Result[Int32, Int32]);
+        assertEq(expected = "Err(123)", "${x}")
 
-    @test
-    def interpolation35(): Bool =
-        let x = Ok(Some(123)): Result[Option[Int], Int32];
-        "${x}" == "Ok(Some(123))"
+    @Test
+    def interpolation35(): Unit \ Assert =
+        let x = (Ok(Some(123)): Result[Int32, Option[Int32]]);
+        assertEq(expected = "Ok(Some(123))", "${x}")
 
-    @test
-    def interpolation36(): Bool =
+    @Test
+    def interpolation36(): Unit \ Assert =
         let x = "abc";
-        "\"${x}\"" == "\"abc\""
+        assertEq(expected = "\"abc\"", "\"${x}\"")
+
+    @Test
+    def interpolation37(): Unit \ Assert =
+        assertEq(expected = String.concat("$", "{"), "\${")
+
+    @Test
+    def interpolation38(): Unit \ Assert =
+        assertEq(expected = String.concat("\\$", "{"), "\\\${")
 
     pub enum Color {
         case Red,
@@ -201,75 +211,17 @@ namespace Test/Exp/Interpolation {
         case Blue
     }
 
-    pub enum Option[t] {
-        case None,
-        case Some(t)
+    instance ToString[Color] {
+        pub def toString(c: Color): String =
+            match c {
+                case Color.Red   => "r"
+                case Color.Green => "g"
+                case Color.Blue  => "b"
+            }
     }
 
-    pub enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
+    pub enum EnumSansToString {
+        case CaseSansToString(Int32)
     }
 
-    def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase();
-        (s |> toLowerCase) as & Pure
-
-    def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase();
-        (s |> toUpperCase) as & Pure
-
-}
-
-///pub class ToString[a] {
-///    pub def toString(x: a): String
-///}
-///
-///instance ToString[Bool] {
-///    def toString(x: Bool): String = match x {
-///        case true => "true"
-///        case false => "false"
-///    }
-///}
-///
-///instance ToString[Int32] {
-///    def toString(x: Int32): String =
-///        import static java.lang.Integer.toString(Int32);
-///        x.toString() as & Pure
-///}
-///
-///instance ToString[String] {
-///    def toString(x: String): String = x
-///}
-
-instance ToString[Test/Exp/Interpolation.Color] {
-    pub def toString(c: Test/Exp/Interpolation.Color): String =
-        use Test/Exp/Interpolation.Color.Red;
-        use Test/Exp/Interpolation.Color.Green;
-        use Test/Exp/Interpolation.Color.Blue;
-        match c {
-            case Red   => "r"
-            case Green => "g"
-            case Blue  => "b"
-        }
-}
-
-instance ToString[Test/Exp/Interpolation.Option[a]] with ToString[a] {
-    pub def toString(o: Test/Exp/Interpolation.Option[a]): String =
-        use Test/Exp/Interpolation.Option.None;
-        use Test/Exp/Interpolation.Option.Some;
-        match o {
-            case None       => "None"
-            case Some(v)    => "Some(${v})"
-        }
-}
-
-instance ToString[Test/Exp/Interpolation.Result[t, e]] with ToString[t], ToString[e] {
-    pub def toString(r: Test/Exp/Interpolation.Result[t, e]): String =
-        use Test/Exp/Interpolation.Result.Ok;
-        use Test/Exp/Interpolation.Result.Err;
-        match r {
-            case Ok(v)  => "Ok(${v})"
-            case Err(v) => "Err(${v})"
-        }
 }

@@ -42,8 +42,10 @@ object Duration {
 
 /**
   * A simple class to format a time duration.
+  *
+  * @param d represents the duration in nanoseconds.
   */
-class Duration(val d: Long) {
+case class Duration(d: Long) {
 
   /**
     * Returns the elapsed time in nanoseconds.
@@ -56,29 +58,29 @@ class Duration(val d: Long) {
   def microseconds: Double = nanoseconds / 1000.0
 
   /**
-    * Returns the elapsed time in miliseconds.
+    * Returns the elapsed time in milliseconds.
     */
-  def miliseconds: Double = microseconds / 1000.0
+  def milliseconds: Double = microseconds / 1000.0
 
   /**
     * Returns the elapsed time in seconds.
     */
-  def seconds: Double = miliseconds / 1000.0
+  def seconds: Double = milliseconds / 1000.0
 
   /**
     * Returns a human readable string of the elapsed time.
     */
   def fmt: String = {
     val OneMicroSecond = 1000L
-    val OneMiliSecond = 1000L * OneMicroSecond
-    val OneSecond = 1000L * OneMiliSecond
+    val OneMilliSecond = 1000L * OneMicroSecond
+    val OneSecond = 1000L * OneMilliSecond
 
     if (d < OneMicroSecond)
       fmtNanoSeconds
-    else if (d < OneMiliSecond)
+    else if (d < OneMilliSecond)
       fmtMicroSeconds
     else if (d < OneSecond)
-      fmtMiliSeconds
+      fmtMilliSeconds
     else
       fmtSeconds
   }
@@ -94,9 +96,9 @@ class Duration(val d: Long) {
   def fmtMicroSeconds: String = f"$microseconds%.1f" + "us"
 
   /**
-    * Returns the elapsed time as a human readable string in miliseconds.
+    * Returns the elapsed time as a human readable string in milliseconds.
     */
-  def fmtMiliSeconds: String = f"$miliseconds%.1f" + "ms"
+  def fmtMilliSeconds: String = f"$milliseconds%.1f" + "ms"
 
   /**
     * Returns the elapsed time as a human readable string in seconds.

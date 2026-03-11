@@ -16,39 +16,39 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Formatter
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.JsonDSL.*
+import org.json4s.*
+import org.eclipse.lsp4j
+
+import scala.jdk.CollectionConverters.*
 
 /**
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def fromMessages(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
-    val formatter: Formatter = Formatter.NoFormatter
-
+  def fromMessages(errors: List[CompilationMessage], root: Option[TypedAst.Root]): List[PublishDiagnosticsParams] = {
     // Group the error messages by source.
-    val errorsBySource = errors.toList.groupBy(_.loc.source)
+    val errorsBySource = errors.groupBy(_.loc.source)
 
     // Translate each compilation message to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
       case (acc, (source, compilationMessages)) =>
-        val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, formatter))
+        val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, root))
         PublishDiagnosticsParams(source.name, diagnostics) :: acc
     }
   }
 
-  def fromCodeHints(codeHints: List[CodeHint]): List[PublishDiagnosticsParams] = {
-    val formatter: Formatter = Formatter.NoFormatter
-
+  def fromCodeHints(hints: List[CodeHint]): List[PublishDiagnosticsParams] = {
     // Group the error messages by source.
-    val errorsBySource = codeHints.groupBy(_.loc.source)
+    val errorsBySource = hints.groupBy(_.loc.source)
 
     // Translate each code hint to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
       case (acc, (source, codeHints)) =>
-        val diagnostics = codeHints.map(codeHint => Diagnostic.from(codeHint, formatter))
+        val diagnostics = codeHints.map(codeHint => Diagnostic.from(codeHint))
         PublishDiagnosticsParams(source.name, diagnostics) :: acc
     }
   }
@@ -62,4 +62,11 @@ object PublishDiagnosticsParams {
   */
 case class PublishDiagnosticsParams(uri: String, diagnostics: List[Diagnostic]) {
   def toJSON: JValue = ("uri" -> uri) ~ ("diagnostics" -> diagnostics.map(_.toJSON))
+
+  def toLsp4j: lsp4j.PublishDiagnosticsParams = {
+    val params = new lsp4j.PublishDiagnosticsParams()
+    params.setUri(uri)
+    params.setDiagnostics(diagnostics.map(_.toLsp4j).asJava)
+    params
+  }
 }
