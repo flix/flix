@@ -1,5 +1,6 @@
 mod TestBPlusTree {
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse, fail};
+    use Math.Random
     import java.lang.Object
     import java.util.Objects
     use Array.sameElements
@@ -39,7 +40,7 @@ mod TestBPlusTree {
     /// If `inserted` is Some we check that they have been inserted.
     /// For both `gen` and `inserted` every element of the vector will be called `numInserts` times and, respectively, be inserted or test membership.
     ///
-    def concurrencyWithGenerators(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Option[Vector[Unit -> (a, b) \ ef2]]): Bool \ ef2 + IO + NonDet - Random with Order[a], Eq[b] = region rc {
+    def concurrencyWithGenerators(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Option[Vector[Unit -> (a, b) \ ef2]]): Bool \ ef2 + IO - Random with Order[a], Eq[b] = region rc {
         let tree: BPlusTree[a, b, rc] = BPlusTree.emptyWithArity(rc, 10); // Small arity to get more splits.
         let seeds = Random.runWithIO(() -> Vector.map(_ -> Random.randomInt64(), gen));
         let _: Unit = region rc2 {
@@ -74,7 +75,7 @@ mod TestBPlusTree {
     /// If `inserted` is Some we check that they have been inserted.
     /// For both `gen` and `inserted` every element of the vector will be called `numInserts` times and, respectively, be inserted or test membership
     ///
-    def concurrencyWithGeneratorsAndOccasionalTests(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Vector[Unit -> (a, b) \ ef2], readEvery: Int64): Bool \ IO + NonDet - Random with Order[a], Eq[b] = region rc {
+    def concurrencyWithGeneratorsAndOccasionalTests(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Vector[Unit -> (a, b) \ ef2], readEvery: Int64): Bool \ IO - Random with Order[a], Eq[b] = region rc {
         let tree: BPlusTree[a, b, rc] = BPlusTree.emptyWithArity(rc, 10); // Small arity to get more splits.
         let seeds = Random.runWithIO(() -> Vector.map(_ -> Random.randomInt64(), gen));
         let resultVec = Vector.map(_ -> Ref.fresh(rc, false), Vector.range(0, Vector.length(gen)));
@@ -109,23 +110,23 @@ mod TestBPlusTree {
     ///
     /// Run concurrencyWithGenerators with random values as inserts.
     ///
-    def concurrencyRandomInserts(numThreads: Int32, totalInserts: Int64): Bool \ IO + NonDet =
-        let generators = Vector.map(_ -> () -> (Random.randomInt64(), Random.randomInt32()), Vector.range(0, numThreads));
-        let insertions = Vector.map(_ -> () -> (Random.randomInt64(), Random.randomInt32()), Vector.range(0, numThreads));
+    def concurrencyRandomInserts(numThreads: Int32, totalInserts: Int64): Bool \ IO =
+        let generators = Vector.map(_ -> () -> (Random.randomInt64(), randomInt32()), Vector.range(0, numThreads));
+        let insertions = Vector.map(_ -> () -> (Random.randomInt64(), randomInt32()), Vector.range(0, numThreads));
         concurrencyWithGenerators(generators, totalInserts / Int32.toInt64(numThreads), Some(insertions))
 
     ///
     /// Run concurrencyWithGenerators with random values between 0 (inclusive) and `rangeSize` (exlusive) as inserts.
     ///
-    def concurrencyRandomInsertsClamped(numThreads: Int32, totalInserts: Int64, rangeSize: Int64): Bool \ IO + NonDet =
-        let generators = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), Random.randomInt32()), Vector.range(0, numThreads));
-        let insertions = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), Random.randomInt32()), Vector.range(0, numThreads));
+    def concurrencyRandomInsertsClamped(numThreads: Int32, totalInserts: Int64, rangeSize: Int64): Bool \ IO =
+        let generators = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), randomInt32()), Vector.range(0, numThreads));
+        let insertions = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), randomInt32()), Vector.range(0, numThreads));
         concurrencyWithGenerators(generators, totalInserts / Int32.toInt64(numThreads), Some(insertions))
 
     ///
     /// Run concurrencyWithGenerators with [1, 2, ..., `numInserts`] as inserts for all threads.
     ///
-    def concurrencyLockStep(numThreads: Int32, totalInserts: Int64): Bool \ IO + NonDet = region rc {
+    def concurrencyLockStep(numThreads: Int32, totalInserts: Int64): Bool \ IO = region rc {
         let range = Vector.range(0, numThreads);
         let generators = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
         let insertions = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
@@ -135,23 +136,23 @@ mod TestBPlusTree {
     ///
     /// Run concurrencyWithGeneratorsAndOccasionalTests with random values as inserts.
     ///
-    def concurrencyRandomInsertsIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, readEvery: Int64): Bool \ IO + NonDet =
-        let generators = Vector.map(_ -> () -> (Random.randomInt64(), Random.randomInt32()), Vector.range(0, numThreads));
-        let insertions = Vector.map(_ -> () -> (Random.randomInt64(), Random.randomInt32()), Vector.range(0, numThreads));
+    def concurrencyRandomInsertsIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, readEvery: Int64): Bool \ IO =
+        let generators = Vector.map(_ -> () -> (Random.randomInt64(), randomInt32()), Vector.range(0, numThreads));
+        let insertions = Vector.map(_ -> () -> (Random.randomInt64(), randomInt32()), Vector.range(0, numThreads));
         concurrencyWithGeneratorsAndOccasionalTests(generators, totalInserts / Int32.toInt64(numThreads), insertions, readEvery)
 
     ///
     /// Run concurrencyWithGeneratorsAndOccasionalTests with random values between 0 (inclusive) and `rangeSize` (exlusive) as inserts.
     ///
-    def concurrencyRandomInsertsClampedIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, rangeSize: Int64, readEvery: Int64): Bool \ IO + NonDet =
-        let generators = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), Random.randomInt32()), Vector.range(0, numThreads));
-        let insertions = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), Random.randomInt32()), Vector.range(0, numThreads));
+    def concurrencyRandomInsertsClampedIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, rangeSize: Int64, readEvery: Int64): Bool \ IO =
+        let generators = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), randomInt32()), Vector.range(0, numThreads));
+        let insertions = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), randomInt32()), Vector.range(0, numThreads));
         concurrencyWithGeneratorsAndOccasionalTests(generators, totalInserts / Int32.toInt64(numThreads), insertions, readEvery)
 
     ///
     /// Run concurrencyWithGeneratorsAndOccasionalTests with [1, 2, ..., `numInserts`] as inserts for all threads.
     ///
-    def concurrencyLockStepIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, readEvery: Int64): Bool \ IO + NonDet = region rc {
+    def concurrencyLockStepIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, readEvery: Int64): Bool \ IO = region rc {
         let range = Vector.range(0, numThreads);
         let generators = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
         let insertions = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
@@ -160,51 +161,51 @@ mod TestBPlusTree {
 
     // Large concurrent insertion test-cases
     @Test
-    def concurrency01(): Unit \ Assert + IO + NonDet =
+    def concurrency01(): Unit \ Assert + IO =
         assertTrue(concurrencyRandomInserts(10, totalInsertNum()))
 
     @Test
-    def concurrency02(): Unit \ Assert + IO + NonDet =
+    def concurrency02(): Unit \ Assert + IO =
         assertTrue(concurrencyRandomInserts(30, totalInsertNum()))
 
     @Test
-    def concurrency03(): Unit \ Assert + IO + NonDet =
+    def concurrency03(): Unit \ Assert + IO =
         assertTrue(concurrencyRandomInsertsClamped(10, totalInsertNum(), 10_000i64))
 
     @Test
-    def concurrency04(): Unit \ Assert + IO + NonDet =
+    def concurrency04(): Unit \ Assert + IO =
         assertTrue(concurrencyRandomInsertsClamped(30, totalInsertNum(), 40_000i64))
 
     @Test
-    def concurrency05(): Unit \ Assert + IO + NonDet =
+    def concurrency05(): Unit \ Assert + IO =
         assertTrue(concurrencyLockStep(10, totalInsertNum()))
 
     @Test
-    def concurrency06(): Unit \ Assert + IO + NonDet =
+    def concurrency06(): Unit \ Assert + IO =
         assertTrue(concurrencyLockStep(30, totalInsertNum()))
 
     @Test
-    def concurrency07(): Unit \ Assert + IO + NonDet =
+    def concurrency07(): Unit \ Assert + IO =
         assertTrue(concurrencyRandomInsertsIntermittentMemberOf(10, totalInsertNum(), 10i64))
 
     @Test
-    def concurrency08(): Unit \ Assert + IO + NonDet =
+    def concurrency08(): Unit \ Assert + IO =
         assertTrue(concurrencyRandomInsertsIntermittentMemberOf(30, totalInsertNum(), 10i64))
 
     @Test
-    def concurrency09(): Unit \ Assert + IO + NonDet =
+    def concurrency09(): Unit \ Assert + IO =
         assertTrue(concurrencyRandomInsertsClampedIntermittentMemberOf(10, totalInsertNum(), 10_000i64, 10i64))
 
     @Test
-    def concurrency10(): Unit \ Assert + IO + NonDet =
+    def concurrency10(): Unit \ Assert + IO =
         assertTrue(concurrencyRandomInsertsClampedIntermittentMemberOf(30, totalInsertNum(), 40_000i64, 10i64))
 
     @Test
-    def concurrency11(): Unit \ Assert + IO + NonDet =
+    def concurrency11(): Unit \ Assert + IO =
         assertTrue(concurrencyLockStepIntermittentMemberOf(10, totalInsertNum(), 10i64))
 
     @Test
-    def concurrency12(): Unit \ Assert + IO + NonDet =
+    def concurrency12(): Unit \ Assert + IO =
         assertTrue(concurrencyLockStepIntermittentMemberOf(30, totalInsertNum(), 10i64))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -512,7 +513,7 @@ mod TestBPlusTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def parForEach01(): Unit \ Assert + IO + NonDet = region rc {
+    def parForEach01(): Unit \ Assert + IO = region rc {
         Random.runWithIO(() -> {
             let treeFrom = BPlusTree.empty(rc);
             let treeTo = BPlusTree.empty(rc);
@@ -533,7 +534,7 @@ mod TestBPlusTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def parForEachWhen01(): Unit \ Assert + IO + NonDet = region rc {
+    def parForEachWhen01(): Unit \ Assert + IO = region rc {
         Random.runWithIO(() -> {
             let treeFrom = BPlusTree.empty(rc);
             let treeTo = BPlusTree.empty(rc);
@@ -1416,29 +1417,29 @@ mod TestBPlusTree {
     }
 
     @Test
-    def size12(): Unit \ Assert + IO + NonDet = region rc {
+    def size12(): Unit \ Assert + IO = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc);
         let _: Unit = region rc2 {
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
                     List.forEach(_ ->
-                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
-            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+                        Random.runWithIO(() -> BPlusTree.put(randomInt32(), randomInt32(), tree))
+            ): _ \ rc + IO) as _ \ IO) @ rc2);
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
                     List.forEach(_ ->
-                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
-            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+                        Random.runWithIO(() -> BPlusTree.put(randomInt32(), randomInt32(), tree))
+            ): _ \ rc + IO) as _ \ IO) @ rc2);
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
                     List.forEach(_ ->
-                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
-            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+                        Random.runWithIO(() -> BPlusTree.put(randomInt32(), randomInt32(), tree))
+            ): _ \ rc + IO) as _ \ IO) @ rc2);
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
                     List.forEach(_ ->
-                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
-            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2)
+                        Random.runWithIO(() -> BPlusTree.put(randomInt32(), randomInt32(), tree))
+            ): _ \ rc + IO) as _ \ IO) @ rc2)
         };
         assertEq(expected = BPlusTree.size(tree), BPlusTree.toList(tree) |> List.size)
     }
@@ -1482,10 +1483,10 @@ mod TestBPlusTree {
     }
 
     @Test
-    def toList05(): Unit \ Assert + NonDet + IO = region rc {
+    def toList05(): Unit \ Assert + IO = region rc {
         let tree = BPlusTree.empty(rc);
         let getRandomPairs = () -> {
-            List.range(0, 10_000) |> List.map(_ -> (Random.randomInt32(), Random.randomInt32()))
+            List.range(0, 10_000) |> List.map(_ -> (randomInt32(), randomInt32()))
         };
         let pairs = Random.handle(getRandomPairs)();
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
@@ -2572,5 +2573,8 @@ mod TestBPlusTree {
         };
         Assert.assertEq(expected = Some((50, 500)), BPlusTree.maximumKey(t))
     }
+
+    def randomInt32(): Int32 \ Random =
+        Int64.clampToInt32(min = Int32.minValue(), max = Int32.maxValue(), Int64.rightShift(Random.randomInt64(), 32))
 
 }

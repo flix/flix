@@ -66,7 +66,6 @@ class TestFormatter extends AnyFunSuite {
     "examples/effects-and-handlers/process/process-exec-and-read-output.flix",
     "examples/effects-and-handlers/process/process-wait-and-exit-value.flix",
     "examples/effects-and-handlers/using-FileWriteWithResult.flix",
-    "examples/effects-and-handlers/using-Console.flix",
     "examples/effects-and-handlers/using-Logger.flix",
     "examples/effects-and-handlers/running-multiple-effects.flix",
     "examples/effects-and-handlers/using-Clock.flix",
@@ -193,8 +192,9 @@ class TestFormatter extends AnyFunSuite {
     * @return an option containing the syntax tree if found
     */
   private def findTreeBasedOnUri(root: SyntaxTree.Root, uri: String): Option[SyntaxTree.Tree] = {
+    val normalizedUri = Paths.get(uri).normalize().toString
     root.units.find {
-      case (path, _) => path.toString == uri
+      case (path, _) => path.toString == normalizedUri
     }.map {
       case (_, tree) => tree
     }

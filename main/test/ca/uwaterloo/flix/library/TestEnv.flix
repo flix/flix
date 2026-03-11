@@ -1,6 +1,7 @@
 mod TestEnv {
 
     use Assert.{assertFalse, assertNeq, assertTrue}
+    use Sys.Env
 
     @Test
     def getEnv01(): Unit \ Assert + IO = Env.handle(() ->

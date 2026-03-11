@@ -1,8 +1,9 @@
 
 mod TestMutList {
     use Assert.{assertEq, assertTrue, assertFalse, assertSome, fail};
-    use ToString.toString
+    use Math.Shuffle
     use MutList.sameElements
+    use ToString.toString
 
     /////////////////////////////////////////////////////////////////////////////
     // emptyWithCapacity                                                       //

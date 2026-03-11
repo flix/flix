@@ -16,6 +16,8 @@
 
 pub mod Time.Duration {
 
+    use Time.TimeUnit
+
     /// Returns the zero duration.
     pub def zero(): Time.Duration = Time.Duration.Duration(0i64)
 

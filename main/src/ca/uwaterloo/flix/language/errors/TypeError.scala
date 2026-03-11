@@ -34,33 +34,44 @@ sealed trait TypeError extends CompilationMessage {
 }
 
 object TypeError {
+
   /**
-    * An error raised when a function expects some effects but the call site uses differing effects
+    * An error raised when a function argument has an incompatible effect with what the function signature requires.
     *
-    * @param expected the list of effects expected to be present
-    * @param actual   the actual list of effects present
-    * @param loc      the location of the call site
-    * @param loc2     the location of the signature that is expected
-    * @param loc3     the location of the actual effect used
+    * For example, passing an argument with effect 'IO' to a function that expects a pure argument.
+    *
+    * @param expected the list of effects declared in the function signature
+    * @param actual   the list of effects present on the argument at the call site
+    * @param loc      the source location of the call site (where the argument is passed)
+    * @param loc2     the source location of the function signature (where the expected effect is declared)
+    * @param loc3     the source location of the argument definition (where the actual effect originates)
     */
   case class ArgumentGivenWrongEffect(expected: List[Symbol.EffSym], actual: List[Symbol.EffSym], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6218
 
-    private val effectsToString = (effs: List[Symbol.EffSym]) => {
+    private def effectsToString(effs: List[Symbol.EffSym]): String =
       if (effs.length == 1) s"'${effs.head.name}'"
-      else effs.map(_.name).mkString("{", ", ", "}")
-    }
-    def summary: String = s"Unexpected effect ${effectsToString(actual)} in ${effectsToString(expected)} function"
+      else effs.map(_.name).mkString("'{", ", ", "}'")
+
+    def summary: String =
+      s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s"""
-         |${highlight(loc3, s"${magenta(effectsToString(actual))} defined here", fmt)}
+      s""">> Mismatched effect(s): expected ${magenta(effectsToString(expected))}, but got ${red(effectsToString(actual))}.
          |
-         |${highlight(loc, s"caller uses argument with ${magenta(effectsToString(actual))}", fmt)}
+         |${highlight(loc2, s"function expected argument with effect(s) ${magenta(effectsToString(expected))}", fmt)}
          |
-         |${highlight(loc2, s"callee expects: ${magenta(effectsToString(expected))}", fmt)}
-      """.stripMargin
+         |${highlight(loc, s"function argument with effect(s) ${red(effectsToString(actual))} was passed", fmt)}
+         |
+         |${highlight(loc3, s"the culprit", fmt)}
+         |
+         |${underline("Explanation:")} A function with effect(s) ${magenta(effectsToString(expected))} cannot accept an argument
+         |that carries effect(s) ${red(effectsToString(actual))}. Either:
+         |
+         |  (a) Change the argument to use effect(s) ${magenta(effectsToString(expected))}, or
+         |  (b) Update the function signature to accept effect(s) ${red(effectsToString(actual))}.
+         |""".stripMargin
     }
   }
 
