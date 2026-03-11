@@ -273,8 +273,8 @@ object EffectProvenance {
             val v1 = toVertex(tpe1, loc, nt1)
             val v2 = toVertex(tpe2, loc, nt2)
             (v1, v2) match {
-              case (Nil, _) => return None
-              case (_, Nil) => return None
+              case (Nil, _) => ()
+              case (_, Nil) => ()
               case (toVertices, fromVertices) =>
                 v ++= fromVertices.toSet
                 v ++= toVertices.toSet
@@ -396,6 +396,18 @@ object EffectProvenance {
         case (RigidVarVertex(sym1, loc1), RigidVarVertex(sym2, loc2)) =>
           (kSymToEffSym(sym1), kSymToEffSym(sym2)) match {
             case (Some(effSym), Some(effSym2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(effSym2), effSym, loc2, loc1)))
+            case _ => Nil
+          }
+
+        case (RigidVarVertex(sym1, loc1), PureExplicitVertex(loc2)) =>
+          (kSymToEffSym(sym1)) match {
+            case (Some(effSym)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(effSym, loc2, loc1)))
+            case _ => Nil
+          }
+
+        case (RigidVarVertex(sym1, loc1), PureImplicitVertex(loc2)) =>
+          (kSymToEffSym(sym1)) match {
+            case (Some(effSym)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(effSym, loc2, loc1)))
             case _ => Nil
           }
         case _ => Nil
@@ -550,9 +562,16 @@ object EffectProvenance {
           *   Op
           */
         case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), Type.Var(rSym, _)) =>
-          val lhs = toVertex(nested, constLoc, vtpe)
+          val lhs = toVertex(nested, constLoc, IntermediateNode)
           tc match {
             case TypeConstructor.Union => VarVertex(rSym) :: lhs
+            case _ => List()
+          }
+
+        case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), cst@Type.Cst(_, _)) =>
+          val lhs = toVertex(nested, constLoc, IntermediateNode)
+          tc match {
+            case TypeConstructor.Union => helper(cst, constLoc, IntermediateNode) ::: lhs
             case _ => List()
           }
         case _ => List()
