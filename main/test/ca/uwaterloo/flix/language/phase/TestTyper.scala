@@ -378,7 +378,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |   case Shape.Rectangle(h, w) => h * w
         |}
         |def main(): Unit \ Bar =
-        |   println(area(Shape.Rectangle(2, 4)))
+        |   let _ = area(Shape.Rectangle(2, 4));
+        |   ()
         |eff Bar {
         | def buzz(): Unit
         |}
@@ -441,7 +442,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def hof1(f: Unit -> Unit): Unit = f()
         |def hof2(f: Unit -> Unit \ ef): Unit \ ef = f()
         |
-        |def foo(): Unit \ IO =
+        |def foo(): Unit \ Bar =
         |    let f = () -> Bar.baz();
         |    hof1(f);
         |    hof2(f)
