@@ -40,6 +40,12 @@ pub mod Ref {
 
 
     ///
+    /// Updates `rf` to reference `x`.
+    ///
+    pub def <--(rf: Ref[a, r], x: a): Unit \ r =
+        rf->v = x
+
+    ///
     /// Updates `rf` to reference `f` applied to the value referenced by `rf`.
     ///
     /// I.e. if `rf` references `x` then `rf` is updated to reference `f(x)`.

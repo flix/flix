@@ -1,6 +1,7 @@
 mod TestRef {
 
     use Assert.{assertEq, assertNeq};
+    use Ref.{<--};
 
     @Test
     def get01(): Unit \ Assert = region rc {
@@ -40,6 +41,27 @@ mod TestRef {
     def put03(): Unit \ Assert = region rc {
         let rf = Ref.fresh(rc, Ref.fresh(rc, "a"));
         Ref.put(Ref.fresh(rc, "A"), rf);
+        assertEq(expected = "A", Ref.get(Ref.get(rf)))
+    }
+
+    @Test
+    def assign01(): Unit \ Assert = region rc {
+        let rf = Ref.fresh(rc, 1);
+        rf <-- 2;
+        assertEq(expected = 2, Ref.get(rf))
+    }
+
+    @Test
+    def assign02(): Unit \ Assert = region rc {
+        let rf = Ref.fresh(rc, "a");
+        rf <-- "A";
+        assertEq(expected = "A", Ref.get(rf))
+    }
+
+    @Test
+    def assign03(): Unit \ Assert = region rc {
+        let rf = Ref.fresh(rc, Ref.fresh(rc, "a"));
+        rf <-- Ref.fresh(rc, "A");
         assertEq(expected = "A", Ref.get(Ref.get(rf)))
     }
 
