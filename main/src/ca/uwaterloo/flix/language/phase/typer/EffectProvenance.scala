@@ -69,7 +69,12 @@ object EffectProvenance {
     /**
       * represents the effects defined in a function signature's argument
       */
-    case class ArgVertex(argEff: List[Vertex], loc: SourceLocation) extends Vertex
+    case class ArgVertex(argEff: List[Vertex], loc: SourceLocation) extends Vertex {
+      def lookup(vertex: Vertex): Option[Vertex] = vertex match {
+        case ArgVertex(inner, _) => argEff.find(e => inner.contains(e))
+        case _ => argEff.find(_ == vertex)
+      }
+    }
 
     /**
       * Explicitly Pure function (has a real source location).
@@ -205,7 +210,7 @@ object EffectProvenance {
       lattice.foldLeft(None: Option[Set[(Vertex, SourceLocation)]]) {
         // An ArgVertex can appear in the middle of a graph
         // therefore we need to connect the vertices that point to the ArgVertex, with the ones that it points to
-        case (acc, (ArgVertex(effs, _), s)) => effs.foldLeft(acc) { case (acc2, e) => if (e == vertex) Some(s) else acc2 }
+        case (acc, (arg@ArgVertex(_, _), s)) => if (arg.lookup(vertex).isDefined) Some(s) else acc
         case (acc, (v, xs)) => if (v == vertex) Some(xs) else acc
       }
     }
