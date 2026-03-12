@@ -1,19 +1,24 @@
 package ca.uwaterloo.flix.tools
 
-class PrettyPrinter {
-  private sealed  trait Doc
+import ca.uwaterloo.flix.language.ast.SyntaxTree
+import ca.uwaterloo.flix.language.ast.Token
+import ca.uwaterloo.flix.tools.Doc.{empty, pretty, text}
 
-  private case object Nil extends Doc
-  private case class Cons(left: Doc, right: Doc) extends Doc
-  private case class Text(s: String) extends Doc
-  private case class Nest(indent: Int, doc: Doc) extends Doc
-  private case class SoftLine(s: String) extends Doc
-  private case class Group(doc: Doc) extends Doc
 
-  private def empty: Doc = Nil
-  private def <>(left: Doc, right: Doc): Doc = Cons(left, right)
-  private def text(s: String): Doc = Text(s)
-  private def nest(indent: Int, doc: Doc): Doc = Nest(indent, doc)
-  private def softLine(s: String): Doc = SoftLine(s)
-  private def group(doc: Doc): Doc = Group(doc)
+object PrettyPrinter {
+
+  def format(tree: SyntaxTree.Tree): String = {
+    val doc = treeToDoc(tree)
+    pretty(doc)
+  }
+
+  private def treeToDoc(tree: SyntaxTree.Tree): Doc =
+    tree.children.foldLeft(empty) { (acc, child) =>
+      acc <> childToDoc(child)
+    }
+
+  private def childToDoc(child: SyntaxTree.Child): Doc = child match {
+    case token: Token          => text(token.text)
+    case tree: SyntaxTree.Tree => treeToDoc(tree)
+  }
 }
