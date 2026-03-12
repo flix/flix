@@ -229,8 +229,11 @@ object EffectProvenance {
 
     // Naive fixed-point algorithm
     var fp = reachingDefinitions(Map.empty: MapLattice)
-    while (fp != reachingDefinitions(fp)) {
-      fp = reachingDefinitions(fp)
+    var cont = true
+    while (cont) {
+      val tmp = reachingDefinitions(fp)
+      if (fp != tmp) fp = tmp
+      else cont = false
     }
     // Solving the gathered constraints i.e.
     val res = fp.foldLeft(List.empty[EffConflicted]) {
@@ -374,8 +377,13 @@ object EffectProvenance {
       e1 ++ e2
     }
 
+    /**
+      * Creates a list of errors given a source- and a sink vertex
+      * @param v1 Source vertex
+      * @param v2 Sink vertex
+      */
     def simpleErrors(v1: Vertex, v2: Vertex): List[EffConflicted] = {
-      (v2, v1) match {
+      (v1, v2) match {
         case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
         case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
         case (IOVertex(loc1), CstVertex(sym2, loc2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(sym2), Symbol.IO, loc2, loc1)))
@@ -422,14 +430,17 @@ object EffectProvenance {
         case RigidVarVertex(_, _) :: Nil => Nil
         case VarVertex(_) :: Nil => Nil
         case _ =>
-          val ordYs = ys.sortBy(e => e._2)
-          val prov = ordYs.last match {
-            case (_, loc) => Some(loc)
+
+          val prov = ys.sortBy(e => e._2) match {
+            case (h::t) => (h::t).last match {
+              case (_, loc) => Some(loc)
+              case _ => None
+            }
             case _ => None
           }
 
           val errOpt = (v: (Vertex, SourceLocation)) => v match {
-            case (PureImplicitVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.mkEffSym("Pure")), prov.getOrElse(provLoc), aLoc, provLoc)))
+            case (PureImplicitVertex(_), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.mkEffSym("Pure")), prov.getOrElse(provLoc), aLoc, provLoc)))
             case (IOVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.IO), prov.getOrElse(provLoc), aLoc, loc)))
             case (CstVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(sym), prov.getOrElse(provLoc), aLoc, loc)))
             case (RigidVarVertex(sym, loc), provLoc) => kSymToEffSym(sym).map(
@@ -453,7 +464,7 @@ object EffectProvenance {
         case x :: Nil => mkError(x, ys.toSet)
         case _ => complexError(xs, ys, s.symbols(), sigLoc)
       }
-      case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, _) => simpleErrors(x, y) }
+      case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, _) => simpleErrors(y, x) }
       case _ => Nil
     }
   }
