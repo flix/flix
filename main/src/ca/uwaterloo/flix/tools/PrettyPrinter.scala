@@ -29,14 +29,12 @@ object PrettyPrinter {
     }
 
   private def gapDoc(prev: Token, curr: Token): Doc = {
-    val gap       = prev.src.data.slice(prev.endIndex, curr.startIndex)
-    val newlines  = gap.count(_ == '\n')
-    val spaces    = gap.reverse.takeWhile(_ == ' ').length
+    val gap = prev.src.data.slice(prev.endIndex, curr.startIndex)
 
-    if (newlines > 0)
-      List.fill(newlines)(lineBreak("\n")).foldLeft(empty)(_ <> _) <>
-        List.fill(spaces)(space).foldLeft(empty)(_ <> _)
-    else
-      List.fill(spaces)(space).foldLeft(empty)(_ <> _)
+    val newlines = gap.count(_ == '\n')
+    val spaces   = gap.reverseIterator.takeWhile(_ == ' ').length
+
+    Iterator.fill(newlines)(lineBreak("\n")).foldLeft(empty)(_ <> _) <>
+    Iterator.fill(spaces)(space).foldLeft(empty)(_ <> _)
   }
 }
