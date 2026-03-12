@@ -32,12 +32,6 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
     */
   private val N = 30
 
-  test("simple-card-game") {
-    val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
-    val lines = Files.lines(filepath)
-    compileWithDuplicateLine(lines)
-  }
-
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
@@ -45,7 +39,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
   }
 
   test("ford-fulkerson") {
-    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val filepath = Paths.get("examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
     compileWithDuplicateLine(lines)
   }
