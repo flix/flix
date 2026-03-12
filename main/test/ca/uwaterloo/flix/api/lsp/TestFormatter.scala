@@ -27,9 +27,8 @@ class TestFormatter extends AnyFunSuite {
     "examples/traits/trait-with-higher-kinded-type.flix",
 
     // Larger examples
-    "examples/larger-examples/lambda-calculus.flix",
-    "examples/larger-examples/program-analysis/IDE.flix",
-    "examples/larger-examples/restrictable-variants/sequences.flix",
+    "examples/unsorted/static-analysis/IDE.flix",
+    "examples/unsorted/restrictable-variants/sequences.flix",
 
     // Functional style
     "examples/functional-style/algebraic-data-types-and-pattern-matching.flix",
@@ -50,8 +49,8 @@ class TestFormatter extends AnyFunSuite {
     "examples/imperative-style/iterating-over-lists-with-foreach.flix",
 
     // Declarative style
-    "examples/larger-examples/datalog/connect-graph.flix",
-    "examples/larger-examples/datalog/ford-fulkerson.flix",
+    "examples/datalog/connect-graph.flix",
+    "examples/datalog/ford-fulkerson.flix",
     "examples/datalog/compiler-puzzle.flix",
     "examples/datalog/railroad-network.flix",
     "examples/datalog/train-schedule.flix",
