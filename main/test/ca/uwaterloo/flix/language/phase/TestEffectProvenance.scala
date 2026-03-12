@@ -535,4 +535,28 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ArgumentGivenWrongEffect](result)
   }
+
+  test("Test.ArgumentGivenWrongEffect.01") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |eff Bar
+        |def f(s: Shape, g: Unit -> Unit \ Bar, h: Unit -> Unit \ ef2): Unit \ Bar + ef2  = match s {
+        |   case Shape.Circle(_) => g()
+        |   case _ => h()
+        |}
+        |
+        |
+        |def foo(): Unit \ IO =
+        |    let p = println;
+        |    let q = x -> x;
+        |    f(Shape.Circle(0), p >> q, p)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ArgumentGivenWrongEffect](result)
+  }
 }
