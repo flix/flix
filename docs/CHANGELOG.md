@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.69.2:
+- Library: Restructure core effects (thanks Magnus!)
+
 Version 0.69.1:
 - Library: Add `Abort.abortWithTrace` (thanks Magnus!)
 

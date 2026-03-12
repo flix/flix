@@ -34,7 +34,7 @@ class ExampleSuite extends FlixSuite(incremental = true) {
   mkTestDir("examples/effects-and-handlers/sleep")
   mkTestDir("examples/effects-and-handlers/tcp")
 
-  mkTestDir("examples/fixpoints")
+  mkTestDir("examples/datalog")
 
   mkTestDir("examples/functional-style")
 
@@ -46,14 +46,13 @@ class ExampleSuite extends FlixSuite(incremental = true) {
   mkTestDir("examples/interoperability/files")
   mkTestDir("examples/interoperability/swing")
 
-  mkTestDir("examples/larger-examples")
-  mkTestDir("examples/larger-examples/datalog")
-  mkTestDir("examples/larger-examples/program-analysis")
-  mkTestDir("examples/larger-examples/program-analysis/domains")
-  mkTestDir("examples/larger-examples/restrictable-variants")
+  mkTestDir("examples/tail-recursion-and-termination")
 
-  mkTestDir("examples/misc")
-  mkTestDir("examples/misc/type-level-programming")
+  mkTestDir("examples/unsorted")
+  mkTestDir("examples/unsorted/restrictable-variants")
+  mkTestDir("examples/unsorted/static-analysis")
+  mkTestDir("examples/unsorted/static-analysis/domains")
+  mkTestDir("examples/unsorted/type-level-programming")
 
   mkTestDir("examples/modules")
 
