@@ -548,28 +548,28 @@ object EffectProvenance {
 
       /**
         * The basic pattern for an apply:
-        * Apply
-        * / \
-        * /   \
-        * Apply  tpe2
-        * / \
-        * /    \
-        * Cst    tpe1
-        * |
-        * Op
+        *          Apply
+        *          / \
+        *         /   \
+        *      Apply  tpe2
+        *       / \
+        *     /    \
+        *   Cst    tpe1
+        *    |
+        *   Op
         */
       case Type.Apply(tpe1, tpe2, _) => (tpe1, tpe2) match {
         /**
           * The "leaf" pattern :
-          * .
-          * / \
-          * /   \
-          * Apply  Var
-          * / \
-          * /    \
-          * Cst    Var
-          * |
-          * Op
+          *           .
+          *          / \
+          *         /   \
+          *      Apply  Var
+          *       / \
+          *     /    \
+          *   Cst    Var
+          *    |
+          *   Op
           */
         case (Type.Apply(Type.Cst(tc, _), Type.Var(lSym, _), _), Type.Var(rSym, _)) => tc match {
           case TypeConstructor.Union => List(VarVertex(lSym), VarVertex(rSym))
@@ -583,15 +583,15 @@ object EffectProvenance {
 
         /**
           * The pattern where the right-hand side is nested :
-          * .
-          * / \
-          * /   \
-          * Apply  Apply
-          * / \     ...
-          * /    \
-          * Cst    Var
-          * |
-          * Op
+          *           .
+          *          / \
+          *         /   \
+          *      Apply  Apply
+          *       / \     ...
+          *     /    \
+          *   Cst    Var
+          *    |
+          *   Op
           */
         case (Type.Apply(Type.Cst(tc, _), Type.Var(lSym, _), _), Type.Apply(_, _, _)) =>
           val rhs = toVertex(tpe2, constLoc, vtpe)
@@ -602,15 +602,15 @@ object EffectProvenance {
 
         /**
           * The pattern where the left-hand side is nested :
-          * .
-          * / \
-          * /   \
-          * Apply  Var
-          * / \
-          * /    \
-          * Cst    Apply
-          * |       ...
-          * Op
+          *           .
+          *          / \
+          *         /   \
+          *      Apply  Var
+          *       / \
+          *     /    \
+          *   Cst    Apply
+          *    |       ...
+          *   Op
           */
         case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), Type.Var(rSym, _)) =>
           val lhs = toVertex(nested, constLoc, IntermediateNode)
