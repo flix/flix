@@ -22,9 +22,21 @@ object PrettyPrinter {
     pretty(doc)
   }
 
+  /**
+    * Transforms a syntax tree into a Doc by collecting the tokens and reconstructing the original source code.
+    * @param tree
+    * @return
+    */
   private def treeToDoc(tree: SyntaxTree.Tree): Doc =
     treeToDocWithLast(tree, None)._1
 
+  /**
+    * Transforms a syntax tree into a Doc by collecting the tokens and reconstructing the original source code.
+    * It keeps track of the last token encountered to compute the [[gapDoc]] between tokens.
+    * @param tree
+    * @param prevToken
+    * @return
+    */
   private def treeToDocWithLast(tree: SyntaxTree.Tree, prevToken: Option[Token]): (Doc, Option[Token]) =
     tree.kind match {
       case TreeKind.UsesOrImports.UseOrImportList =>
@@ -48,6 +60,15 @@ object PrettyPrinter {
       case child: SyntaxTree.Tree  => collectTokens(child)
     }
 
+  /**
+    * gapDoc computes the whitespace and line breaks between two tokens by slicing the original source code between
+    * the end of the previous token and the start of the current token.
+    * In addition, it counts the number of line breaks and spaces in the gap.
+    *
+    * @param prev the previous token
+    * @param curr the current token
+    * @return a Doc representing the whitespace and line breaks between the two tokens
+    */
   private def gapDoc(prev: Token, curr: Token): Doc = {
     val gap = prev.src.data.slice(prev.endIndex, curr.startIndex)
 
@@ -58,6 +79,13 @@ object PrettyPrinter {
     Iterator.fill(spaces)(space).foldLeft(empty)(_ <> _)
   }
 
+  /**
+    * Reorder the import and use statements given a syntax tree representing a use or import list.
+    * The sorting logic is the alphabetical order of the full import path.
+    *
+    * @param tree the syntax tree representing a use or import list
+    * @return a Doc representing the sorted use and import statements
+    */
   private def reorderImportsToDoc(tree: SyntaxTree.Tree): Doc = {
     val importTrees = tree.children.toList.collect {
       case t: SyntaxTree.Tree if t.kind == TreeKind.UsesOrImports.Use || t.kind == TreeKind.UsesOrImports.UseMany || t.kind == TreeKind.UsesOrImports.Import => t
@@ -79,8 +107,8 @@ object PrettyPrinter {
 
   /**
     * Sort by alphabetical order of the full import path
-    * @param tree
-    * @return
+    * @param tree the syntax tree representing a use or import statement
+    * @return returns the full import path as a string
     */
   private def importSortKey(tree: SyntaxTree.Tree): String = {
     val tokens = collectTokens(tree)
