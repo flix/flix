@@ -1449,6 +1449,27 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (nth(0) == TokenKind.NameLowercase) {
+        // NOTE: This branch will be extended to cover more expressions.
+        val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
+        if (isNewLine) {
+          // Different line: infer a missing semicolon
+          val isReal = true
+          val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
+          closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
+          statement()
+          lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+        } else {
+          // Same line: create a Binary with a synthetic empty operator.
+          // The Weeder will detect the empty operator and emit ParseError.MissingBinaryOperator.
+          val mark = openBefore(lhs)
+          val markOp = open()
+          close(markOp, TreeKind.Operator)
+          expression()
+          lhs = close(mark, TreeKind.Expr.Binary)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+        }
       } else if (!rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
