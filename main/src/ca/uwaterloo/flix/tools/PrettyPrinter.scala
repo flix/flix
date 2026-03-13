@@ -4,8 +4,18 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree
 import ca.uwaterloo.flix.language.ast.Token
 import ca.uwaterloo.flix.tools.Doc.{pretty, empty, text, space, lineBreak}
 
+/**
+  * A pretty printer for the Flix source code.
+  * It traverses the [[SyntaxTree]] to collects [[Token]] and reconstructs the original source code by preserving the
+  * whitespace and formatting between [[Token]].
+  */
 object PrettyPrinter {
 
+  /**
+    * Formats the given syntax tree into a string by collecting the tokens and reconstructing the original source code.
+    * @param tree the syntax tree to format
+    * @return the formatted string representation of the syntax tree
+    */
   def format(tree: SyntaxTree.Tree): String = {
     val tokens = collectTokens(tree)
     val doc    = tokensToDoc(tokens)
