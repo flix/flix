@@ -1,0 +1,18 @@
+>> Unable to unify the effect formulas: 'Pure' and 'E'.
+
+5 | def foo(): Unit  = E.op() without E
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    mismatched effect formulas.
+
+Type One: Pure
+Type Two: E
+
+>> Unable to unify the effect formulas: 'E' and 'Pure'.
+
+5 | def foo(): Unit  = E.op() without E
+                                      ^
+                                      mismatched effect formulas.
+
+Type One: E
+Type Two: Pure
+

@@ -1,0 +1,14 @@
+>> Unable to unify the effect formulas: 'ef - Console' and 'ef'.
+
+>> Expected effect 'ef - Console' declared at line 1
+
+1 | def foo(f: Int32 -> b \ ef): b \ ef - Console = {
+                                     ^^^^^^^^^^^^
+
+>> Effect `ef` occurs in the body due to the following lines:
+
+1 | def foo(f: Int32 -> b \ ef): b \ ef - Console = {
+            ^^^^^^^^^^^^^^^^^^
+
+3 |     f(x)
+        ^^^^
