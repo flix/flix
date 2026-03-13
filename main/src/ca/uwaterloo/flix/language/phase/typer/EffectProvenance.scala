@@ -47,11 +47,54 @@ object EffectProvenance {
   private case class Graph(vertices: List[Vertex], edges: List[Edge])
 
   /**
-    * Represents the lattice used for analysis of effects
-    *
-    * State = Vertex -> P((Vertex, SourceLocation))
+    * Represents the lattices used for analysis of effects
     */
-  private type MapLattice = Map[Vertex, Set[(Vertex, SourceLocation)]]
+  trait Lattice {
+    type Elem
+    val bottom: Elem
+
+    def lub(x: Elem, y: Elem): Elem
+
+    def leq(x: Elem, y: Elem): Boolean
+  }
+
+  private class PowerSetLattice extends Lattice {
+    type Elem = Set[(Vertex, SourceLocation)]
+    val bottom: Elem = Set.empty
+
+    def lub(x: Elem, y: Elem): Elem = x union y
+
+    def leq(x: Elem, y: Elem): Boolean = x.subsetOf(y)
+  }
+
+  private class MapLattice(val subLattice: PowerSetLattice) extends Lattice {
+    type Elem = Map[Vertex, subLattice.Elem]
+    val bottom: Elem = Map.empty
+
+    def lub(x: Elem, y: Elem): Elem = {
+      x.foldLeft(y) {
+        case (acc, (v, set)) =>
+          val ys = lookup(v, y)
+          acc + (v -> subLattice.lub(ys, set))
+
+      }
+    }
+
+    def leq(x: Elem, y: Elem): Boolean = {
+      x.forall {
+        case (v, set) => subLattice.leq(set, lookup(v, y))
+      }
+    }
+
+    def lookup(vertex: Vertex, lattice: Elem): subLattice.Elem = {
+      lattice.foldLeft(subLattice.bottom) {
+        // An ArgVertex can appear in the middle of a graph
+        // therefore we need to connect the vertices that point to the ArgVertex, with the ones that it points to
+        case (acc, (arg@ArgVertex(_, _), s)) => if (arg.lookup(vertex).isDefined) s else acc
+        case (acc, (v, xs)) => if (v == vertex) xs else acc
+      }
+    }
+  }
 
   /**
     * Represents a vertex in the effect constraint graph.
@@ -206,34 +249,25 @@ object EffectProvenance {
     * @return option list of errors
     */
   private def analysis(graph: Graph): Option[List[EffConflicted]] = {
-    def lookup(vertex: Vertex, lattice: MapLattice): Option[Set[(Vertex, SourceLocation)]] = {
-      lattice.foldLeft(None: Option[Set[(Vertex, SourceLocation)]]) {
-        // An ArgVertex can appear in the middle of a graph
-        // therefore we need to connect the vertices that point to the ArgVertex, with the ones that it points to
-        case (acc, (arg@ArgVertex(_, _), s)) => if (arg.lookup(vertex).isDefined) Some(s) else acc
-        case (acc, (v, xs)) => if (v == vertex) Some(xs) else acc
-      }
-    }
 
-    def reachingDefinitions(ml: MapLattice): MapLattice = {
+    val lattice = new MapLattice(new PowerSetLattice)
+
+    def reachingDefinitions(ml: lattice.Elem): lattice.Elem = {
       graph.edges.foldLeft(ml) {
         case (acc, Edge(from, to, loc)) =>
           // one constraint:
           // [[v]] = (v1 -> v2, l) = JOIN(v)[v2 -> v1 U lookup(v1) U lookup(v2)]
-          val v1 = lookup(from, acc)
-          val v2 = lookup(to, acc)
-          val pointsTo = (v1, v2) match {
-            case (None, None) => Set((from, loc))
-            case (Some(sigmaV1), None) => sigmaV1 ++ Set((from, loc))
-            case (None, Some(sigmaV2)) => sigmaV2 ++ Set((from, loc))
-            case (Some(sigmaV1), Some(sigmaV2)) => sigmaV2 ++ sigmaV1 ++ Set((from, loc))
-          }
-          acc + (to -> pointsTo)
+          val v1 = lattice.lookup(from, acc)
+          val v2 = lattice.lookup(to, acc)
+          val pointsTo = lattice.subLattice.lub(lattice.subLattice.lub(v1, v2), Set((from, loc)))
+          val e: lattice.Elem = Map(to -> pointsTo)
+          lattice.lub(acc, e)
       }
     }
 
+
     // Naive fixed-point algorithm
-    var fp = reachingDefinitions(Map.empty: MapLattice)
+    var fp = reachingDefinitions(lattice.bottom)
     var cont = true
     while (cont) {
       val tmp = reachingDefinitions(fp)
@@ -384,6 +418,7 @@ object EffectProvenance {
 
     /**
       * Creates a list of errors given a source- and a sink vertex
+      *
       * @param v1 Source vertex
       * @param v2 Sink vertex
       */
@@ -437,7 +472,7 @@ object EffectProvenance {
         case _ =>
 
           val prov = ys.sortBy(e => e._2) match {
-            case (h::t) => (h::t).last match {
+            case (h :: t) => (h :: t).last match {
               case (_, loc) => Some(loc)
               case _ => None
             }
@@ -513,28 +548,28 @@ object EffectProvenance {
 
       /**
         * The basic pattern for an apply:
-        *          Apply
-        *          / \
-        *         /   \
-        *      Apply  tpe2
-        *       / \
-        *     /    \
-        *   Cst    tpe1
-        *    |
-        *   Op
+        * Apply
+        * / \
+        * /   \
+        * Apply  tpe2
+        * / \
+        * /    \
+        * Cst    tpe1
+        * |
+        * Op
         */
       case Type.Apply(tpe1, tpe2, _) => (tpe1, tpe2) match {
         /**
           * The "leaf" pattern :
-          *           .
-          *          / \
-          *         /   \
-          *      Apply  Var
-          *       / \
-          *     /    \
-          *   Cst    Var
-          *    |
-          *   Op
+          * .
+          * / \
+          * /   \
+          * Apply  Var
+          * / \
+          * /    \
+          * Cst    Var
+          * |
+          * Op
           */
         case (Type.Apply(Type.Cst(tc, _), Type.Var(lSym, _), _), Type.Var(rSym, _)) => tc match {
           case TypeConstructor.Union => List(VarVertex(lSym), VarVertex(rSym))
@@ -548,15 +583,15 @@ object EffectProvenance {
 
         /**
           * The pattern where the right-hand side is nested :
-          *           .
-          *          / \
-          *         /   \
-          *      Apply  Apply
-          *       / \     ...
-          *     /    \
-          *   Cst    Var
-          *    |
-          *   Op
+          * .
+          * / \
+          * /   \
+          * Apply  Apply
+          * / \     ...
+          * /    \
+          * Cst    Var
+          * |
+          * Op
           */
         case (Type.Apply(Type.Cst(tc, _), Type.Var(lSym, _), _), Type.Apply(_, _, _)) =>
           val rhs = toVertex(tpe2, constLoc, vtpe)
@@ -567,15 +602,15 @@ object EffectProvenance {
 
         /**
           * The pattern where the left-hand side is nested :
-          *           .
-          *          / \
-          *         /   \
-          *      Apply  Var
-          *       / \
-          *     /    \
-          *   Cst    Apply
-          *    |       ...
-          *   Op
+          * .
+          * / \
+          * /   \
+          * Apply  Var
+          * / \
+          * /    \
+          * Cst    Apply
+          * |       ...
+          * Op
           */
         case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), Type.Var(rSym, _)) =>
           val lhs = toVertex(nested, constLoc, IntermediateNode)
