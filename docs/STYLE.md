@@ -44,6 +44,10 @@
   - Variable-like nodes
   - Constant-like nodes
   - Compound nodes
+- Avoid overloading and default parameters
+- Implicit parameters should:
+  - have a specific type (`FooEnv`, not `Map[String, Int]`)
+  - only be used when the parameter does not change (or very rarely changes) in recursive calls
 
 ### Naming
 - Common methods are `visitExp`, `visitExps`, `visitPat`, etc.
