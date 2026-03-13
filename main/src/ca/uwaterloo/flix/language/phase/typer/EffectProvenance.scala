@@ -364,6 +364,138 @@ object EffectProvenance {
 
   }
 
+  private def kSymToEffSym(sym: Symbol.KindedTypeVarSym): Option[Symbol.EffSym] = sym.text match {
+    case VarText.Absent => None
+    case VarText.SourceText(s) => Some(Symbol.mkEffSym(s))
+  }
+
+  private def mkArgErrors(xs: List[Vertex], ys: List[(Vertex, SourceLocation)], aLoc: SourceLocation) = xs match {
+    case Nil => Nil
+    // If a function that expects an argument with a single rigid variable,
+    // then it is not possible to have an error
+    case RigidVarVertex(_, _) :: Nil => Nil
+    case VarVertex(_) :: Nil => Nil
+    case _ =>
+
+      val prov = ys.sortBy(e => e._2) match {
+        case (h :: t) => (h :: t).last match {
+          case (_, loc) => Some(loc)
+          case _ => None
+        }
+        case _ => None
+      }
+
+      val errOpt = (v: (Vertex, SourceLocation)) => v match {
+        case (PureImplicitVertex(_), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.mkEffSym("Pure")), prov.getOrElse(provLoc), aLoc, provLoc)))
+        case (IOVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.IO), prov.getOrElse(provLoc), aLoc, loc)))
+        case (CstVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(sym), prov.getOrElse(provLoc), aLoc, loc)))
+        case (RigidVarVertex(sym, loc), provLoc) => kSymToEffSym(sym).map(
+          effSym => TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(effSym), loc, aLoc, provLoc))
+        )
+        case _ => None
+      }
+
+      // checks if arguments are used on the right hand side
+      val a = !xs.forall(e => ys.exists(i => sameType(e, i._1)))
+      // checks if the right hand side are used in the arguments
+      val b = !ys.forall {
+        // Ignore flexible variables
+        case (VarVertex(_), _) => true
+        case i => xs.exists(e => sameType(e, i._1))
+      }
+      if (a || b) ys.flatMap(errOpt) else Nil
+  }
+
+  private def mkImplicitPureError(source: Vertex, sink: Vertex): Option[EffConflicted] = (source, sink) match {
+    case (IOVertex(loc1), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
+    case (CstVertex(sym, loc1), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
+    case (RigidVarVertex(sym1, loc1), PureImplicitVertex(loc2)) =>
+      (kSymToEffSym(sym1)) match {
+        case (Some(effSym)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(effSym, loc2, loc1)))
+        case _ => None
+      }
+    case _ => None
+  }
+
+  private def mkExplicitPureError(source: Vertex, sink: Vertex): Option[EffConflicted] = (source, sink) match {
+    case (IOVertex(loc1), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
+    case (CstVertex(sym, loc1), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
+    case (RigidVarVertex(sym1, loc1), PureExplicitVertex(loc2)) =>
+      (kSymToEffSym(sym1)) match {
+        case (Some(effSym)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(effSym, loc2, loc1)))
+        case _ => None
+      }
+    case _ => None
+  }
+
+
+  private def mkEffectfulError(sink: Vertex, symList: List[Symbol.EffSym], lhsLoc: SourceLocation): Option[EffConflicted] = sink match {
+    case IOVertex(loc) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Symbol.IO, lhsLoc, loc)))
+    case CstVertex(sym, loc) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, sym, lhsLoc, loc)))
+    case RigidVarVertex(sym, loc) => kSymToEffSym(sym).map(
+      effSym => TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, effSym, lhsLoc, loc))
+    )
+    case _ => None
+
+  }
+
+
+  private def mkEffectfulError(source: Vertex, sink: Vertex): Option[EffConflicted] = (source, sink) match {
+    case (IOVertex(loc1), CstVertex(sym2, loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(sym2), Symbol.IO, loc2, loc1)))
+    case (CstVertex(sym1, loc1), IOVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Symbol.IO), sym1, loc2, loc1)))
+    case (CstVertex(sym1, loc1), CstVertex(sym2, loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(sym2), sym1, loc2, loc1)))
+    case (IOVertex(loc1), RigidVarVertex(sym, loc2)) =>
+      kSymToEffSym(sym) match {
+        case None => None
+        case Some(varSym) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(varSym), Symbol.IO, loc2, loc1)))
+      }
+    case (CstVertex(sym1, loc1), RigidVarVertex(sym2, loc2)) =>
+      kSymToEffSym(sym2) match {
+        case None => None
+        case Some(varSym) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(varSym), sym1, loc2, loc1)))
+      }
+    case (RigidVarVertex(sym1, loc1), RigidVarVertex(sym2, loc2)) =>
+      (kSymToEffSym(sym1), kSymToEffSym(sym2)) match {
+        case (Some(effSym), Some(effSym2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(effSym2), effSym, loc2, loc1)))
+        case _ => None
+      }
+    case _ => None
+
+  }
+
+  private def mkUnusedError(sink: Vertex): Option[EffConflicted] = sink match {
+    case IOVertex(loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(Symbol.IO, loc)))
+    case CstVertex(sym, loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(sym, loc)))
+    case RigidVarVertex(sym, loc) => kSymToEffSym(sym).map(
+      effSym => TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(effSym, loc))
+    )
+    case _ => None
+
+  }
+
+  private def forwardPass(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[Vertex] = {
+    lhs.foldLeft(List.empty[Vertex]) {
+      case (acc, e) => if (!rhs.exists(i => sameType(e, i._1))) e :: acc else acc
+    }
+  }
+
+  private def backwardsPass(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[(Vertex, SourceLocation)] = {
+    rhs.foldLeft(List.empty[(Vertex, SourceLocation)]) {
+      case (acc, e) => if (!lhs.exists(i => sameType(e._1, i))) e :: acc else acc
+    }
+  }
+  private def mkSignatureErrors(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)], symList: List[Symbol.EffSym], lhsLoc: SourceLocation) = {
+    val unused = forwardPass(lhs, rhs)
+    val e1: List[EffConflicted] = if (unused.nonEmpty) unused.flatMap(mkUnusedError) else Nil
+
+    // all of the used effects must be in the signature:
+    val undefined = backwardsPass(lhs, rhs)
+    val e2: List[EffConflicted] = if (undefined.nonEmpty) undefined.flatMap(e => mkEffectfulError(e._1, symList, lhsLoc))
+
+    else Nil
+    e1 ++ e2
+  }
+
   /**
     * Converts an entrance in the map lattice to en EffConflicted if there is a conflict
     *
@@ -375,136 +507,17 @@ object EffectProvenance {
     */
   @tailrec
   private def mkError(sink: Vertex, incoming: Set[(Vertex, SourceLocation)]): List[EffConflicted] = {
-    def kSymToEffSym(sym: Symbol.KindedTypeVarSym): Option[Symbol.EffSym] = sym.text match {
-      case VarText.Absent => None
-      case VarText.SourceText(s) => Some(Symbol.mkEffSym(s))
-    }
-
-    def forwardPass(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[Vertex] = {
-      lhs.foldLeft(List.empty[Vertex]) {
-        case (acc, e) => if (!rhs.exists(i => sameType(e, i._1))) e :: acc else acc
-      }
-    }
-
-    def backwardsPass(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[(Vertex, SourceLocation)] = {
-      rhs.foldLeft(List.empty[(Vertex, SourceLocation)]) {
-        case (acc, e) => if (!lhs.exists(i => sameType(e._1, i))) e :: acc else acc
-      }
-    }
-
-    def complexError(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)], symList: List[Symbol.EffSym], lhsLoc: SourceLocation) = {
-      val unused = forwardPass(lhs, rhs)
-      val e1: List[EffConflicted] = if (unused.nonEmpty) unused.flatMap {
-        case IOVertex(loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(Symbol.IO, loc)))
-        case CstVertex(sym, loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(sym, loc)))
-        case RigidVarVertex(sym, loc) => kSymToEffSym(sym).map(
-          effSym => TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(effSym, loc))
-        )
-        case _ => None
-      } else Nil
-
-      // all of the used effects must be in the signature:
-      val undefined = backwardsPass(lhs, rhs)
-      val e2: List[EffConflicted] = if (undefined.nonEmpty) undefined.flatMap {
-        case (IOVertex(loc), _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Symbol.IO, lhsLoc, loc)))
-        case (CstVertex(sym, loc), _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, sym, lhsLoc, loc)))
-        case (RigidVarVertex(sym, loc), _) => kSymToEffSym(sym).map(
-          effSym => TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, effSym, lhsLoc, loc))
-        )
-        case _ => None
-      } else Nil
-      e1 ++ e2
-    }
-
-    /**
-      * Creates a list of errors given a source- and a sink vertex
-      *
-      * @param v1 Source vertex
-      * @param v2 Sink vertex
-      */
-    def simpleErrors(v1: Vertex, v2: Vertex): List[EffConflicted] = {
-      (v1, v2) match {
-        case (IOVertex(loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
-        case (IOVertex(loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
-        case (IOVertex(loc1), CstVertex(sym2, loc2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(sym2), Symbol.IO, loc2, loc1)))
-        case (CstVertex(sym1, loc1), IOVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Symbol.IO), sym1, loc2, loc1)))
-        case (CstVertex(sym, loc1), PureExplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
-        case (CstVertex(sym, loc1), PureImplicitVertex(loc2)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(sym, loc2, loc1)))
-        case (CstVertex(sym1, loc1), CstVertex(sym2, loc2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(sym2), sym1, loc2, loc1)))
-        case (IOVertex(loc1), RigidVarVertex(sym, loc2)) =>
-          kSymToEffSym(sym) match {
-            case None => Nil
-            case Some(varSym) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(varSym), Symbol.IO, loc2, loc1)))
-          }
-        case (CstVertex(sym1, loc1), RigidVarVertex(sym2, loc2)) =>
-          kSymToEffSym(sym2) match {
-            case None => Nil
-            case Some(varSym) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(varSym), sym1, loc2, loc1)))
-          }
-        case (RigidVarVertex(sym1, loc1), RigidVarVertex(sym2, loc2)) =>
-          (kSymToEffSym(sym1), kSymToEffSym(sym2)) match {
-            case (Some(effSym), Some(effSym2)) => List(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(effSym2), effSym, loc2, loc1)))
-            case _ => Nil
-          }
-
-        case (RigidVarVertex(sym1, loc1), PureExplicitVertex(loc2)) =>
-          (kSymToEffSym(sym1)) match {
-            case (Some(effSym)) => List(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(effSym, loc2, loc1)))
-            case _ => Nil
-          }
-
-        case (RigidVarVertex(sym1, loc1), PureImplicitVertex(loc2)) =>
-          (kSymToEffSym(sym1)) match {
-            case (Some(effSym)) => List(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(effSym, loc2, loc1)))
-            case _ => Nil
-          }
-        case _ => Nil
-      }
-    }
-
     (sink, incoming.toList) match {
-      case (ArgVertex(xs, aLoc), ys) => xs match {
-        case Nil => Nil
-        // If a function that expects an argument with a single rigid variable,
-        // then it is not possible to have an error
-        case RigidVarVertex(_, _) :: Nil => Nil
-        case VarVertex(_) :: Nil => Nil
-        case _ =>
-
-          val prov = ys.sortBy(e => e._2) match {
-            case (h :: t) => (h :: t).last match {
-              case (_, loc) => Some(loc)
-              case _ => None
-            }
-            case _ => None
-          }
-
-          val errOpt = (v: (Vertex, SourceLocation)) => v match {
-            case (PureImplicitVertex(_), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.mkEffSym("Pure")), prov.getOrElse(provLoc), aLoc, provLoc)))
-            case (IOVertex(loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(Symbol.IO), prov.getOrElse(provLoc), aLoc, loc)))
-            case (CstVertex(sym, loc), provLoc) => Some(TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(sym), prov.getOrElse(provLoc), aLoc, loc)))
-            case (RigidVarVertex(sym, loc), provLoc) => kSymToEffSym(sym).map(
-              effSym => TypeConstraint.EffConflicted(TypeError.ArgumentGivenWrongEffect(xs.flatMap(Vertex.symbol), List(effSym), loc, aLoc, provLoc))
-            )
-            case _ => None
-          }
-
-          // checks if arguments are used on the right hand side
-          val a = !xs.forall(e => ys.exists(i => sameType(e, i._1)))
-          // checks if the right hand side are used in the arguments
-          val b = !ys.forall {
-            // Ignore flexible variables
-            case (VarVertex(_), _) => true
-            case i => xs.exists(e => sameType(e, i._1))
-          }
-          if (a || b) ys.flatMap(errOpt) else Nil
-      }
+      case (ArgVertex(xs, aLoc), ys) => mkArgErrors(xs, ys, aLoc)
       case (s@SignatureVertex(xs, sigLoc), ys) => xs match {
         case Nil => Nil
         case x :: Nil => mkError(x, ys.toSet)
-        case _ => complexError(xs, ys, s.symbols(), sigLoc)
+        case _ => mkSignatureErrors(xs, ys, s.symbols(), sigLoc)
       }
-      case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, _) => simpleErrors(y, x) }
+      case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, _) =>
+        val a = mkEffectfulError(y, x) :: mkExplicitPureError(y, x) :: mkImplicitPureError(y, x) :: Nil
+        a.flatten
+      }
       case _ => Nil
     }
   }
