@@ -16,18 +16,7 @@
 
 pub mod Fs.FileStat {
 
-    import java.io.IOException
-    import java.lang.Class
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.LinkOption
-    import java.nio.file.Path
-    import java.nio.file.Paths
-    import java.nio.file.attribute.BasicFileAttributes
-
     use Fs.FileSystem
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `FileStat` effect of the given function `f`.
@@ -35,112 +24,11 @@ pub mod Fs.FileStat {
     /// In other words, re-interprets the `FileStat` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileStat) + IO = x ->
-        run {
-            f(x)
-        } with handler FileStat {
-            def exists(filename, k) = {
-                let res = try {
-                    Ok(Files.exists(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isDirectory(filename, k) = {
-                let res = try {
-                    Ok(Files.isDirectory(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isRegularFile(filename, k) = {
-                let res = try {
-                    Ok(Files.isRegularFile(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isSymbolicLink(filename, k) = {
-                let res = try {
-                    Ok(Files.isSymbolicLink(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isReadable(filename, k) = {
-                let res = try {
-                    Ok(Files.isReadable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isWritable(filename, k) = {
-                let res = try {
-                    Ok(Files.isWritable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isExecutable(filename, k) = {
-                let res = try {
-                    Ok(Files.isExecutable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def accessTime(filename, k) = {
-                let res = try {
-                    Ok(fileAttributes(Paths.get(filename)).lastAccessTime().toMillis())
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def creationTime(filename, k) = {
-                let res = try {
-                    Ok(fileAttributes(Paths.get(filename)).creationTime().toMillis())
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def modificationTime(filename, k) = {
-                let res = try {
-                    Ok(fileAttributes(Paths.get(filename)).lastModifiedTime().toMillis())
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def size(filename, k) = {
-                let res = try {
-                    Ok(Files.size(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
+        checked_ecast(
+            Fs.FileSystem.handle(
+                handleWithFileSystem(f)
+            )(x)
+        )
 
     ///
     /// Runs the `FileStat` effect of the given function `f`.
@@ -167,16 +55,5 @@ pub mod Fs.FileStat {
             def modificationTime(filename, k) = k(Fs.FileSystem.modificationTime(filename))
             def size(filename, k)             = k(Fs.FileSystem.size(filename))
         }
-
-    ///
-    /// Returns the attributes of the given file `f`.
-    /// May throw `IOException` and `SecurityException`.
-    ///
-    def fileAttributes(path: Path): BasicFileAttributes \ IO =
-        Files.readAttributes(
-            path,
-            Class.forName("java.nio.file.attribute.BasicFileAttributes"),
-            (...{}: Vector[LinkOption])
-        )
 
 }

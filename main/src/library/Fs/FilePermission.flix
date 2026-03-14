@@ -16,13 +16,7 @@
 
 pub mod Fs.FilePermission {
 
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileStat
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `FilePermission` effect of the given function `f`.
@@ -30,36 +24,15 @@ pub mod Fs.FilePermission {
     /// In other words, re-interprets the `FilePermission` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FilePermission) + IO = x ->
-        run {
-            f(x)
-        } with handler FilePermission {
-            def isReadable(filename, k) = {
-                let res = try {
-                    Ok(Files.isReadable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isWritable(filename, k) = {
-                let res = try {
-                    Ok(Files.isWritable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isExecutable(filename, k) = {
-                let res = try {
-                    Ok(Files.isExecutable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
+        checked_ecast(
+            Fs.FileSystem.handle(
+                y -> checked_ecast(
+                    Fs.FileStat.handleWithFileSystem(
+                        handleWithFileStat(f)
+                    )(y)
+                )
+            )(x)
+        )
 
     ///
     /// Runs the `FilePermission` effect of the given function `f`.

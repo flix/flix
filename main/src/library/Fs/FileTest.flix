@@ -16,14 +16,7 @@
 
 pub mod Fs.FileTest {
 
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.LinkOption
-    import java.nio.file.Paths
-
     use Fs.FileStat
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `FileTest` effect of the given function `f`.
@@ -31,45 +24,15 @@ pub mod Fs.FileTest {
     /// In other words, re-interprets the `FileTest` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileTest) + IO = x ->
-        run {
-            f(x)
-        } with handler FileTest {
-            def exists(filename, k) = {
-                let res = try {
-                    Ok(Files.exists(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isDirectory(filename, k) = {
-                let res = try {
-                    Ok(Files.isDirectory(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isRegularFile(filename, k) = {
-                let res = try {
-                    Ok(Files.isRegularFile(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isSymbolicLink(filename, k) = {
-                let res = try {
-                    Ok(Files.isSymbolicLink(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
+        checked_ecast(
+            Fs.FileSystem.handle(
+                y -> checked_ecast(
+                    Fs.FileStat.handleWithFileSystem(
+                        handleWithFileStat(f)
+                    )(y)
+                )
+            )(x)
+        )
 
     ///
     /// Runs the `FileTest` effect of the given function `f`.
@@ -84,9 +47,9 @@ pub mod Fs.FileTest {
     ///
     pub def handleWithFileStat(f: a -> b \ ef): a -> b \ (ef - FileTest) + FileStat = x ->
         run { f(x) } with handler FileTest {
-            def exists(filename, k)        = k(Fs.FileStat.exists(filename))
-            def isDirectory(filename, k)   = k(Fs.FileStat.isDirectory(filename))
-            def isRegularFile(filename, k) = k(Fs.FileStat.isRegularFile(filename))
+            def exists(filename, k)         = k(Fs.FileStat.exists(filename))
+            def isDirectory(filename, k)    = k(Fs.FileStat.isDirectory(filename))
+            def isRegularFile(filename, k)  = k(Fs.FileStat.isRegularFile(filename))
             def isSymbolicLink(filename, k) = k(Fs.FileStat.isSymbolicLink(filename))
         }
 

@@ -16,14 +16,7 @@
 
 pub mod Fs.FileRead {
 
-    import java.io.IOException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileSystem
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `FileRead` effect of the given function `f`.
@@ -31,39 +24,11 @@ pub mod Fs.FileRead {
     /// In other words, re-interprets the `FileRead` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileRead) + IO = x ->
-        run {
-            f(x)
-        } with handler FileRead {
-            def read(filename, k) = {
-                let res = try {
-                    Ok(String.fromBytes(Array.toVector(Files.readAllBytes(Paths.get(filename)))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def readLines(filename, k) = {
-                let res = try {
-                    Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(filename))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def readBytes(filename, k) = {
-                let res = try {
-                    Ok(Array.toVector(Files.readAllBytes(Paths.get(filename))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
+        checked_ecast(
+            Fs.FileSystem.handle(
+                handleWithFileSystem(f)
+            )(x)
+        )
 
     ///
     /// Runs the `FileRead` effect of the given function `f`.
