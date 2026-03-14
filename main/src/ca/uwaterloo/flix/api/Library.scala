@@ -90,8 +90,6 @@ object Library {
     "Discrete.flix" -> LocalResource.get("/src/library/Discrete.flix"),
     "Down.flix" -> LocalResource.get("/src/library/Down.flix"),
     "EncodingWriter.flix" -> LocalResource.get("/src/library/EncodingWriter.flix"),
-    "FileRead.flix" -> LocalResource.get("/src/library/FileRead.flix"),
-    "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
     "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
     "Fs.flix" -> LocalResource.get("/src/library/Fs.flix"),
     "Fs/AccessTime.flix" -> LocalResource.get("/src/library/Fs/AccessTime.flix"),
