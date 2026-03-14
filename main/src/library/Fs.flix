@@ -18,7 +18,7 @@ pub mod Fs {
 
     // Effect Hierarchy:
     //
-    // FileSystem                          (15 ops — root)
+    // FileSystem                          (25 ops — unified root)
     // ├── FileStat                        (11 ops)
     // │   ├── FileTest                    (4 ops)
     // │   │   ├── FileExists                    — exists
@@ -38,7 +38,18 @@ pub mod Fs {
     // │   ├── ReadFile                          — read
     // │   ├── ReadLines                         — readLines
     // │   └── ReadBytes                         — readBytes
-    // └── DirList                               — list
+    // ├── DirList                               — list
+    // └── FileWrite                       (10 ops)
+    //     ├── WriteFile                         — write
+    //     ├── WriteLines                        — writeLines
+    //     ├── WriteBytes                        — writeBytes
+    //     ├── AppendFile                        — append
+    //     ├── AppendLines                       — appendLines
+    //     ├── AppendBytes                       — appendBytes
+    //     ├── Truncate                          — truncate
+    //     ├── MkDir                             — mkDir
+    //     ├── MkDirs                            — mkDirs
+    //     └── MkTempDir                         — mkTempDir
 
     ///
     /// An effect used to check if a file exists.
@@ -221,6 +232,140 @@ pub mod Fs {
     }
 
     ///
+    /// An effect used to write the contents of a file as a string.
+    ///
+    pub eff WriteFile {
+
+        ///
+        /// Writes `str` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def write(data: {str = String}, f: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to write lines to a file.
+    ///
+    pub eff WriteLines {
+
+        ///
+        /// Writes `lines` to the given file `f`.
+        ///
+        /// Creates `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to write bytes to a file.
+    ///
+    pub eff WriteBytes {
+
+        ///
+        /// Writes `data` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to append a string to a file.
+    ///
+    pub eff AppendFile {
+
+        ///
+        /// Appends `str` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def append(data: {str = String}, f: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to append lines to a file.
+    ///
+    pub eff AppendLines {
+
+        ///
+        /// Appends `lines` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to append bytes to a file.
+    ///
+    pub eff AppendBytes {
+
+        ///
+        /// Appends `data` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to truncate a file.
+    ///
+    pub eff Truncate {
+
+        ///
+        /// Truncates the given file `f`.
+        ///
+        def truncate(f: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to create a directory.
+    ///
+    pub eff MkDir {
+
+        ///
+        /// Creates the directory `d`.
+        ///
+        def mkDir(d: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to create a directory and all its parent directories.
+    ///
+    pub eff MkDirs {
+
+        ///
+        /// Creates the directory `d` and all its parent directories.
+        ///
+        def mkDirs(d: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to create a temporary directory.
+    ///
+    pub eff MkTempDir {
+
+        ///
+        /// Creates a new temporary directory with the given prefix.
+        ///
+        /// Returns the path to the directory.
+        ///
+        def mkTempDir(prefix: String): Result[IoError, String]
+
+    }
+
+    ///
     /// An effect used to test file properties (exists, directory, regular file, symbolic link).
     ///
     pub eff FileTest {
@@ -376,6 +521,77 @@ pub mod Fs {
     }
 
     ///
+    /// An effect used to write files, append to files, truncate files, and create directories.
+    ///
+    pub eff FileWrite {
+
+        ///
+        /// Writes `str` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def write(data: {str = String}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Writes `lines` to the given file `f`.
+        ///
+        /// Creates `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Writes `data` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `str` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def append(data: {str = String}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `lines` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `data` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+        ///
+        /// Truncates the given file `f`.
+        ///
+        def truncate(f: String): Result[IoError, Unit]
+
+        ///
+        /// Creates the directory `d`.
+        ///
+        def mkDir(d: String): Result[IoError, Unit]
+
+        ///
+        /// Creates the directory `d` and all its parent directories.
+        ///
+        def mkDirs(d: String): Result[IoError, Unit]
+
+        ///
+        /// Creates a new temporary directory with the given prefix.
+        ///
+        /// Returns the path to the directory.
+        ///
+        def mkTempDir(prefix: String): Result[IoError, String]
+
+    }
+
+    ///
     /// An effect used to perform all filesystem operations.
     ///
     pub eff FileSystem {
@@ -454,6 +670,70 @@ pub mod Fs {
         /// Returns a list with the names of all files and directories in the given directory `f`.
         ///
         def list(f: String): Result[IoError, List[String]]
+
+        ///
+        /// Writes `str` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def write(data: {str = String}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Writes `lines` to the given file `f`.
+        ///
+        /// Creates `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Writes `data` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `str` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def append(data: {str = String}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `lines` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `data` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+        ///
+        /// Truncates the given file `f`.
+        ///
+        def truncate(f: String): Result[IoError, Unit]
+
+        ///
+        /// Creates the directory `d`.
+        ///
+        def mkDir(d: String): Result[IoError, Unit]
+
+        ///
+        /// Creates the directory `d` and all its parent directories.
+        ///
+        def mkDirs(d: String): Result[IoError, Unit]
+
+        ///
+        /// Creates a new temporary directory with the given prefix.
+        ///
+        /// Returns the path to the directory.
+        ///
+        def mkTempDir(prefix: String): Result[IoError, String]
 
     }
 

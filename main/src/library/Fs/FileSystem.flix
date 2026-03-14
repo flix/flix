@@ -19,13 +19,20 @@ pub mod Fs.FileSystem {
     import java.io.File
     import java.io.IOException
     import java.lang.Class
+    import java.lang.IllegalArgumentException
+    import java.lang.UnsupportedOperationException
+    import java.nio.charset.StandardCharsets
+    import java.nio.file.attribute.BasicFileAttributes
+    import java.nio.file.attribute.FileAttribute
+    import java.nio.file.FileAlreadyExistsException
     import java.nio.file.Files
     import java.nio.file.InvalidPathException
     import java.nio.file.LinkOption
     import java.nio.file.NotDirectoryException
+    import java.nio.file.OpenOption
     import java.nio.file.Path
     import java.nio.file.Paths
-    import java.nio.file.attribute.BasicFileAttributes
+    import java.nio.file.StandardOpenOption
 
     use IoError.IoError
     use IoError.ErrorKind
@@ -180,6 +187,162 @@ pub mod Fs.FileSystem {
                     case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: NotDirectoryException => Err(IoError(ErrorKind.NotDirectory, ex.getMessage()))
                     case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def write(data, file, k) = {
+                let res = try {
+                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+                    Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
+                    Ok(())
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def writeLines(data, file, k) = {
+                let res = try {
+                    let bf = Files.newBufferedWriter(Paths.get(file), (...{}: Vector[OpenOption]));
+                    List.forEach(line -> {
+                        bf.write(line, 0, String.length(line));
+                        bf.newLine()
+                    }, data#lines);
+                    bf.close();
+                    Ok(())
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def writeBytes(data, file, k) = {
+                let res = try {
+                    region rc {
+                        let bytes = Vector.toArray(rc, data);
+                        Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
+                        Ok(())
+                    }
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def append(data, file, k) = {
+                let res = try {
+                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
+                    let opts: Vector[OpenOption] = ...{
+                        checked_cast(StandardOpenOption.APPEND),
+                        checked_cast(StandardOpenOption.CREATE)
+                    };
+                    Files.write(Paths.get(file), bytes, opts);
+                    Ok(())
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def appendLines(data, file, k) = {
+                let res = try {
+                    let opts: Vector[OpenOption] = ...{
+                        checked_cast(StandardOpenOption.APPEND),
+                        checked_cast(StandardOpenOption.CREATE)
+                    };
+                    let bf = Files.newBufferedWriter(Paths.get(file), opts);
+                    List.forEach(line -> {
+                        bf.write(line, 0, String.length(line));
+                        bf.newLine()
+                    }, data#lines);
+                    bf.close();
+                    Ok(())
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def appendBytes(data, file, k) = {
+                let res = try {
+                    region rc {
+                        let bytes = Vector.toArray(rc, data);
+                        let opts: Vector[OpenOption] = ...{
+                            checked_cast(StandardOpenOption.APPEND),
+                            checked_cast(StandardOpenOption.CREATE)
+                        };
+                        Files.write(Paths.get(file), bytes, opts);
+                        Ok(())
+                    }
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def truncate(file, k) = {
+                let res = try {
+                    region rc {
+                        let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
+                        let arr: Array[Int8, rc] = Array#{} @ rc;
+                        Files.write(Paths.get(file), arr, ...{opt});
+                        Ok(())
+                    }
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def mkDir(d, k) = {
+                let res = try {
+                    Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
+                    Ok(())
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def mkDirs(d, k) = {
+                let res = try {
+                    Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute]));
+                    Ok(())
+                } catch {
+                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                };
+                k(res)
+            }
+
+            def mkTempDir(prefix, k) = {
+                let res = try {
+                    let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
+                    Ok(path.toString())
+                } catch {
+                    case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
                 k(res)
             }
