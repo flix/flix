@@ -2,7 +2,6 @@ mod TestFileReadWithResult {
 
     use IoError.IoError;
     use IoError.ErrorKind;
-    use Monad.{>>=};
     use Assert.{assertEq, fail};
 
     /////////////////////////////////////////////////////////////////////////////
@@ -11,14 +10,18 @@ mod TestFileReadWithResult {
 
     @Test
     def exists01(): Unit \ {Assert, IO} = {
-        let result = Result.flatten(
-            FileWrite.handle(() -> {
-                let dir = FileWrite.mkTempDir("flix");
-                let path = "${dir}/flix-tmpfile-68975";
-                FileWrite.write({ str = "content" }, path);
-                FileReadWithResult.handle(() -> FileReadWithResult.exists(path))()
-            })()
-        );
+        let result = FileWriteWithResult.handle(() -> {
+            match FileWriteWithResult.mkTempDir("flix") {
+                case Ok(dir) =>
+                    let path = "${dir}/flix-tmpfile-68975";
+                    match FileWriteWithResult.write({ str = "content" }, path) {
+                        case Ok(_) =>
+                            FileReadWithResult.handle(() -> FileReadWithResult.exists(path))()
+                        case Err(e) => Err(e)
+                    }
+                case Err(e) => Err(e)
+            }
+        })();
         assertEq(expected = Ok(true), result)
     }
 
