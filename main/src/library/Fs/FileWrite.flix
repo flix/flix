@@ -52,6 +52,8 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k) = k(Fs.FileSystem.appendLines(data, file))
             def appendBytes(data, file, k) = k(Fs.FileSystem.appendBytes(data, file))
             def truncate(file, k)          = k(Fs.FileSystem.truncate(file))
+            def move(src, dst, k)          = k(Fs.FileSystem.move(src, dst))
+            def delete(file, k)            = k(Fs.FileSystem.delete(file))
             def mkDir(d, k)                = k(Fs.FileSystem.mkDir(d))
             def mkDirs(d, k)               = k(Fs.FileSystem.mkDirs(d))
             def mkTempDir(prefix, k)       = k(Fs.FileSystem.mkTempDir(prefix))
@@ -107,6 +109,18 @@ pub mod Fs.FileWrite {
                 logPost("truncate", file, _ -> "done", result);
                 k(result)
             }
+            def move(src, dst, k) = {
+                logPre("move", src#src);
+                let result = FileWrite.move(src, dst);
+                logPost("move", src#src, _ -> dst, result);
+                k(result)
+            }
+            def delete(file, k) = {
+                logPre("delete", file);
+                let result = FileWrite.delete(file);
+                logPost("delete", file, _ -> "done", result);
+                k(result)
+            }
             def mkDir(d, k) = {
                 logPre("mkDir", d);
                 let result = FileWrite.mkDir(d);
@@ -143,6 +157,8 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k) = k(FileWrite.appendLines(data, r(file)))
             def appendBytes(data, file, k) = k(FileWrite.appendBytes(data, r(file)))
             def truncate(file, k)          = k(FileWrite.truncate(r(file)))
+            def move(src, dst, k)          = k(FileWrite.move(src = r(src#src), r(dst)))
+            def delete(file, k)            = k(FileWrite.delete(r(file)))
             def mkDir(d, k)                = k(FileWrite.mkDir(r(d)))
             def mkDirs(d, k)               = k(FileWrite.mkDirs(r(d)))
             def mkTempDir(prefix, k)       = k(FileWrite.mkTempDir(prefix))
@@ -167,6 +183,8 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k) = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
             def appendBytes(data, file, k) = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
             def truncate(file, k)          = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def move(src, dst, k)          = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.move(src = s, d), c(dst)), c(src#src)))
+            def delete(file, k)            = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
             def mkDir(d, k)                = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
             def mkDirs(d, k)               = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
             def mkTempDir(_prefix, k)      = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted inside a chroot")))
@@ -191,6 +209,8 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k) = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
             def appendBytes(data, file, k) = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
             def truncate(file, k)          = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def move(src, dst, k)          = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.move(src = s, d), c(dst)), c(src#src)))
+            def delete(file, k)            = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
             def mkDir(d, k)                = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
             def mkDirs(d, k)               = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
             def mkTempDir(_prefix, k)      = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow list")))
@@ -213,6 +233,8 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k) = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
             def appendBytes(data, file, k) = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
             def truncate(file, k)          = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def move(src, dst, k)          = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.move(src = s, d), c(dst)), c(src#src)))
+            def delete(file, k)            = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
             def mkDir(d, k)                = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
             def mkDirs(d, k)               = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
             def mkTempDir(prefix, k)       = k(FileWrite.mkTempDir(prefix))
@@ -254,6 +276,14 @@ pub mod Fs.FileWrite {
             }
             def truncate(file, k) = {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("truncate") + text(" ") + cyan(file));
+                k(Ok(()))
+            }
+            def move(src, dst, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("move") + text(" ") + cyan(src#src) + gray(" -> ") + cyan(dst));
+                k(Ok(()))
+            }
+            def delete(file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("delete") + text(" ") + cyan(file));
                 k(Ok(()))
             }
             def mkDir(d, k) = {
