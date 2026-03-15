@@ -362,6 +362,50 @@ mod Fs.FsLayer {
                     "Path '${path}' escapes chroot '${chrootDir}'"))
         }
 
+    ///
+    /// Resolves `path` to an absolute, normalized form and checks that it falls within
+    /// at least one of the `allowedDirs`. Returns `Ok(resolvedPath)` if allowed,
+    /// or `Err(PermissionDenied)` if the path is outside every allowed directory.
+    ///
+    pub def allowList(allowedDirs: Nel[String], path: String): Result[IoError, String] =
+        unsafe IO {
+            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let allowed = Nel.exists(
+                dir -> {
+                    let base = Paths.get(dir).toAbsolutePath().normalize();
+                    resolved.startsWith(base)
+                },
+                allowedDirs
+            );
+            if (allowed)
+                Ok(resolved.toString())
+            else
+                Err(IoError(ErrorKind.PermissionDenied,
+                    "Path '${path}' is not within any allowed directory"))
+        }
+
+    ///
+    /// Resolves `path` to an absolute, normalized form and checks that it does not fall
+    /// within any of the `deniedDirs`. Returns `Ok(resolvedPath)` if permitted,
+    /// or `Err(PermissionDenied)` if the path is within a denied directory.
+    ///
+    pub def denyList(deniedDirs: Nel[String], path: String): Result[IoError, String] =
+        unsafe IO {
+            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let denied = Nel.exists(
+                dir -> {
+                    let base = Paths.get(dir).toAbsolutePath().normalize();
+                    resolved.startsWith(base)
+                },
+                deniedDirs
+            );
+            if (denied)
+                Err(IoError(ErrorKind.PermissionDenied,
+                    "Path '${path}' is within a denied directory"))
+            else
+                Ok(resolved.toString())
+        }
+
     // ─── Private helper ────────────────────────────────────────────────
 
     ///

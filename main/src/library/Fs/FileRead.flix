@@ -105,4 +105,30 @@ pub mod Fs.FileRead {
             def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileRead` effect, validating that all file paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileRead` effect, validating that all file paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
+
 }
