@@ -134,4 +134,26 @@ pub mod Fs.FileStat {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileStat` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler FileStat {
+            def exists(filename, k)           = k(FileStat.exists(r(filename)))
+            def isDirectory(filename, k)      = k(FileStat.isDirectory(r(filename)))
+            def isRegularFile(filename, k)    = k(FileStat.isRegularFile(r(filename)))
+            def isSymbolicLink(filename, k)   = k(FileStat.isSymbolicLink(r(filename)))
+            def isReadable(filename, k)       = k(FileStat.isReadable(r(filename)))
+            def isWritable(filename, k)       = k(FileStat.isWritable(r(filename)))
+            def isExecutable(filename, k)     = k(FileStat.isExecutable(r(filename)))
+            def accessTime(filename, k)       = k(FileStat.accessTime(r(filename)))
+            def creationTime(filename, k)     = k(FileStat.creationTime(r(filename)))
+            def modificationTime(filename, k) = k(FileStat.modificationTime(r(filename)))
+            def size(filename, k)             = k(FileStat.size(r(filename)))
+        }
+
 }

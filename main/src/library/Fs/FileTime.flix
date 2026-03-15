@@ -82,4 +82,18 @@ pub mod Fs.FileTime {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileTime` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler FileTime {
+            def accessTime(filename, k)       = k(FileTime.accessTime(r(filename)))
+            def creationTime(filename, k)     = k(FileTime.creationTime(r(filename)))
+            def modificationTime(filename, k) = k(FileTime.modificationTime(r(filename)))
+        }
+
 }

@@ -224,4 +224,40 @@ pub mod Fs.FileSystem {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged. The `mkTempDir` prefix is not resolved.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler FileSystem {
+            def exists(filename, k)           = k(FileSystem.exists(r(filename)))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(r(filename)))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(r(filename)))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(r(filename)))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(r(filename)))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(r(filename)))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(r(filename)))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(r(filename)))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(r(filename)))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(r(filename)))
+            def size(filename, k)             = k(FileSystem.size(r(filename)))
+            def read(filename, k)             = k(FileSystem.read(r(filename)))
+            def readLines(filename, k)        = k(FileSystem.readLines(r(filename)))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(r(filename)))
+            def list(filename, k)             = k(FileSystem.list(r(filename)))
+            def write(data, file, k)          = k(FileSystem.write(data, r(file)))
+            def writeLines(data, file, k)     = k(FileSystem.writeLines(data, r(file)))
+            def writeBytes(data, file, k)     = k(FileSystem.writeBytes(data, r(file)))
+            def append(data, file, k)         = k(FileSystem.append(data, r(file)))
+            def appendLines(data, file, k)    = k(FileSystem.appendLines(data, r(file)))
+            def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, r(file)))
+            def truncate(file, k)             = k(FileSystem.truncate(r(file)))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(r(d)))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(r(d)))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
 }

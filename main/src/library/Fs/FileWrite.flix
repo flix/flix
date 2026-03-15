@@ -127,4 +127,25 @@ pub mod Fs.FileWrite {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged. The `mkTempDir` prefix is not resolved.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)       = k(FileWrite.write(data, r(file)))
+            def writeLines(data, file, k)  = k(FileWrite.writeLines(data, r(file)))
+            def writeBytes(data, file, k)  = k(FileWrite.writeBytes(data, r(file)))
+            def append(data, file, k)      = k(FileWrite.append(data, r(file)))
+            def appendLines(data, file, k) = k(FileWrite.appendLines(data, r(file)))
+            def appendBytes(data, file, k) = k(FileWrite.appendBytes(data, r(file)))
+            def truncate(file, k)          = k(FileWrite.truncate(r(file)))
+            def mkDir(d, k)                = k(FileWrite.mkDir(r(d)))
+            def mkDirs(d, k)               = k(FileWrite.mkDirs(r(d)))
+            def mkTempDir(prefix, k)       = k(FileWrite.mkTempDir(prefix))
+        }
+
 }

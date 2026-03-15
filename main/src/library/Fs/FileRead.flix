@@ -78,4 +78,18 @@ pub mod Fs.FileRead {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileRead` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(FileRead.read(r(filename)))
+            def readLines(filename, k) = k(FileRead.readLines(r(filename)))
+            def readBytes(filename, k) = k(FileRead.readBytes(r(filename)))
+        }
+
 }

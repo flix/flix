@@ -62,4 +62,16 @@ pub mod Fs.DirList {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `DirList` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(DirList.list(r(filename)))
+        }
+
 }
