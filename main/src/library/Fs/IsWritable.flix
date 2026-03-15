@@ -16,13 +16,7 @@
 
 pub mod Fs.IsWritable {
 
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FilePermission
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `IsWritable` effect of the given function `f`.
@@ -30,17 +24,8 @@ pub mod Fs.IsWritable {
     /// In other words, re-interprets the `IsWritable` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - IsWritable) + IO = x ->
-        run {
-            f(x)
-        } with handler IsWritable {
-            def isWritable(filename, k) = {
-                let res = try {
-                    Ok(Files.isWritable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler IsWritable {
+            def isWritable(filename, k) = k(Fs.FsClient.isWritable(filename))
         }
 
     ///

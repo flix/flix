@@ -16,17 +16,7 @@
 
 pub mod Fs.MkDir {
 
-    import java.io.IOException
-    import java.lang.UnsupportedOperationException
-    import java.nio.file.attribute.FileAttribute
-    import java.nio.file.FileAlreadyExistsException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileWrite
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `MkDir` effect of the given function `f`.
@@ -34,21 +24,8 @@ pub mod Fs.MkDir {
     /// In other words, re-interprets the `MkDir` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - MkDir) + IO = x ->
-        run {
-            f(x)
-        } with handler MkDir {
-            def mkDir(d, k) = {
-                let res = try {
-                    Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler MkDir {
+            def mkDir(d, k) = k(Fs.FsClient.mkDir(d))
         }
 
     ///
