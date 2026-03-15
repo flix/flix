@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub mod Net.HttpClient {
+pub mod Net.HttpLayer {
 
     use IoError.ErrorKind
     use IoError.IoError
