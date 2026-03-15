@@ -18,7 +18,7 @@ pub mod Fs.FilePermission {
 
     use Fs.FilePermission
     use Fs.FileStat
-    use Fs.FsClient.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPost}
 
     ///
     /// Handles the `FilePermission` effect of the given function `f`.

@@ -25,7 +25,7 @@ pub mod Fs.WriteBytes {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - WriteBytes) + IO = x ->
         run { f(x) } with handler WriteBytes {
-            def writeBytes(data, file, k) = k(Fs.FsClient.writeBytes(data, file))
+            def writeBytes(data, file, k) = k(Fs.FsLayer.writeBytes(data, file))
         }
 
     ///

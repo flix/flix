@@ -25,7 +25,7 @@ pub mod Fs.CreationTime {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - CreationTime) + IO = x ->
         run { f(x) } with handler CreationTime {
-            def creationTime(filename, k) = k(Fs.FsClient.creationTime(filename))
+            def creationTime(filename, k) = k(Fs.FsLayer.creationTime(filename))
         }
 
     ///

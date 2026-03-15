@@ -25,7 +25,7 @@ pub mod Fs.IsWritable {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - IsWritable) + IO = x ->
         run { f(x) } with handler IsWritable {
-            def isWritable(filename, k) = k(Fs.FsClient.isWritable(filename))
+            def isWritable(filename, k) = k(Fs.FsLayer.isWritable(filename))
         }
 
     ///

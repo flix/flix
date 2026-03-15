@@ -25,7 +25,7 @@ pub mod Fs.FileExists {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileExists) + IO = x ->
         run { f(x) } with handler FileExists {
-            def exists(filename, k) = k(Fs.FsClient.exists(filename))
+            def exists(filename, k) = k(Fs.FsLayer.exists(filename))
         }
 
     ///

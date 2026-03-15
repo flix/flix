@@ -18,7 +18,7 @@ pub mod Fs.FileRead {
 
     use Fs.FileRead
     use Fs.FileSystem
-    use Fs.FsClient.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPost}
 
     ///
     /// Handles the `FileRead` effect of the given function `f`.

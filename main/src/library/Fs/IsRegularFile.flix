@@ -25,7 +25,7 @@ pub mod Fs.IsRegularFile {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - IsRegularFile) + IO = x ->
         run { f(x) } with handler IsRegularFile {
-            def isRegularFile(filename, k) = k(Fs.FsClient.isRegularFile(filename))
+            def isRegularFile(filename, k) = k(Fs.FsLayer.isRegularFile(filename))
         }
 
     ///

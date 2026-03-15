@@ -25,7 +25,7 @@ pub mod Fs.MkDir {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - MkDir) + IO = x ->
         run { f(x) } with handler MkDir {
-            def mkDir(d, k) = k(Fs.FsClient.mkDir(d))
+            def mkDir(d, k) = k(Fs.FsLayer.mkDir(d))
         }
 
     ///

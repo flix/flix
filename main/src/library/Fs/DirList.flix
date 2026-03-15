@@ -18,7 +18,7 @@ pub mod Fs.DirList {
 
     use Fs.DirList
     use Fs.FileSystem
-    use Fs.FsClient.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPost}
 
     ///
     /// Handles the `DirList` effect of the given function `f`.
@@ -27,7 +27,7 @@ pub mod Fs.DirList {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - DirList) + IO = x ->
         run { f(x) } with handler DirList {
-            def list(filename, k) = k(Fs.FsClient.list(filename))
+            def list(filename, k) = k(Fs.FsLayer.list(filename))
         }
 
     ///

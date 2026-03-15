@@ -18,7 +18,7 @@ pub mod Fs.FileTest {
 
     use Fs.FileStat
     use Fs.FileTest
-    use Fs.FsClient.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPost}
 
     ///
     /// Handles the `FileTest` effect of the given function `f`.

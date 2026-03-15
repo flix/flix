@@ -25,7 +25,7 @@ pub mod Fs.ReadBytes {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - ReadBytes) + IO = x ->
         run { f(x) } with handler ReadBytes {
-            def readBytes(filename, k) = k(Fs.FsClient.readBytes(filename))
+            def readBytes(filename, k) = k(Fs.FsLayer.readBytes(filename))
         }
 
     ///

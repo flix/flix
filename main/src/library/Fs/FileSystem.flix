@@ -17,7 +17,7 @@
 pub mod Fs.FileSystem {
 
     use Fs.FileSystem
-    use Fs.FsClient.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPost}
     use IoError.IoError
 
     ///
@@ -29,31 +29,31 @@ pub mod Fs.FileSystem {
         run {
             f(x)
         } with handler FileSystem {
-            def exists(filename, k)           = k(Fs.FsClient.exists(filename))
-            def isDirectory(filename, k)      = k(Fs.FsClient.isDirectory(filename))
-            def isRegularFile(filename, k)    = k(Fs.FsClient.isRegularFile(filename))
-            def isSymbolicLink(filename, k)   = k(Fs.FsClient.isSymbolicLink(filename))
-            def isReadable(filename, k)       = k(Fs.FsClient.isReadable(filename))
-            def isWritable(filename, k)       = k(Fs.FsClient.isWritable(filename))
-            def isExecutable(filename, k)     = k(Fs.FsClient.isExecutable(filename))
-            def accessTime(filename, k)       = k(Fs.FsClient.accessTime(filename))
-            def creationTime(filename, k)     = k(Fs.FsClient.creationTime(filename))
-            def modificationTime(filename, k) = k(Fs.FsClient.modificationTime(filename))
-            def size(filename, k)             = k(Fs.FsClient.size(filename))
-            def read(filename, k)             = k(Fs.FsClient.read(filename))
-            def readLines(filename, k)        = k(Fs.FsClient.readLines(filename))
-            def readBytes(filename, k)        = k(Fs.FsClient.readBytes(filename))
-            def list(filename, k)             = k(Fs.FsClient.list(filename))
-            def write(data, file, k)          = k(Fs.FsClient.write(data, file))
-            def writeLines(data, file, k)     = k(Fs.FsClient.writeLines(data, file))
-            def writeBytes(data, file, k)     = k(Fs.FsClient.writeBytes(data, file))
-            def append(data, file, k)         = k(Fs.FsClient.append(data, file))
-            def appendLines(data, file, k)    = k(Fs.FsClient.appendLines(data, file))
-            def appendBytes(data, file, k)    = k(Fs.FsClient.appendBytes(data, file))
-            def truncate(file, k)             = k(Fs.FsClient.truncate(file))
-            def mkDir(d, k)                   = k(Fs.FsClient.mkDir(d))
-            def mkDirs(d, k)                  = k(Fs.FsClient.mkDirs(d))
-            def mkTempDir(prefix, k)          = k(Fs.FsClient.mkTempDir(prefix))
+            def exists(filename, k)           = k(Fs.FsLayer.exists(filename))
+            def isDirectory(filename, k)      = k(Fs.FsLayer.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(Fs.FsLayer.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(Fs.FsLayer.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(Fs.FsLayer.isReadable(filename))
+            def isWritable(filename, k)       = k(Fs.FsLayer.isWritable(filename))
+            def isExecutable(filename, k)     = k(Fs.FsLayer.isExecutable(filename))
+            def accessTime(filename, k)       = k(Fs.FsLayer.accessTime(filename))
+            def creationTime(filename, k)     = k(Fs.FsLayer.creationTime(filename))
+            def modificationTime(filename, k) = k(Fs.FsLayer.modificationTime(filename))
+            def size(filename, k)             = k(Fs.FsLayer.size(filename))
+            def read(filename, k)             = k(Fs.FsLayer.read(filename))
+            def readLines(filename, k)        = k(Fs.FsLayer.readLines(filename))
+            def readBytes(filename, k)        = k(Fs.FsLayer.readBytes(filename))
+            def list(filename, k)             = k(Fs.FsLayer.list(filename))
+            def write(data, file, k)          = k(Fs.FsLayer.write(data, file))
+            def writeLines(data, file, k)     = k(Fs.FsLayer.writeLines(data, file))
+            def writeBytes(data, file, k)     = k(Fs.FsLayer.writeBytes(data, file))
+            def append(data, file, k)         = k(Fs.FsLayer.append(data, file))
+            def appendLines(data, file, k)    = k(Fs.FsLayer.appendLines(data, file))
+            def appendBytes(data, file, k)    = k(Fs.FsLayer.appendBytes(data, file))
+            def truncate(file, k)             = k(Fs.FsLayer.truncate(file))
+            def mkDir(d, k)                   = k(Fs.FsLayer.mkDir(d))
+            def mkDirs(d, k)                  = k(Fs.FsLayer.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(Fs.FsLayer.mkTempDir(prefix))
         }
 
     ///
