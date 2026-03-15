@@ -260,4 +260,43 @@ pub mod Fs.FileSystem {
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
         }
 
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    /// The `mkTempDir` operation is blocked since it creates directories outside the chroot.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        use IoError.IoError;
+        use IoError.ErrorKind;
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler FileSystem {
+            def exists(filename, k)           = k(Result.flatMap(p -> FileSystem.exists(p), c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileSystem.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileSystem.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileSystem.isSymbolicLink(p), c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(p -> FileSystem.isReadable(p), c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(p -> FileSystem.isWritable(p), c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileSystem.isExecutable(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), c(filename)))
+            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), c(filename)))
+            def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), c(filename)))
+            def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
+            def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
+            def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+            def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
+            def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
+            def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
+            def append(data, file, k)         = k(Result.flatMap(p -> FileSystem.append(data, p), c(file)))
+            def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
+            def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
+            def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+            def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
+            def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
+            def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted inside a chroot")))
+        }
+
 }

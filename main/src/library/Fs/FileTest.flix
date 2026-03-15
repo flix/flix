@@ -104,4 +104,18 @@ pub mod Fs.FileTest {
             def isSymbolicLink(filename, k) = k(FileTest.isSymbolicLink(r(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileTest` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler FileTest {
+            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+        }
+
 }
