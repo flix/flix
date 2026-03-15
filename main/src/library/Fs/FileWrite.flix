@@ -300,4 +300,28 @@ pub mod Fs.FileWrite {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, blocking all write
+    /// operations with a `PermissionDenied` error. This is useful for
+    /// sandboxing code that should only observe the filesystem.
+    ///
+    pub def withReadOnly(f: Unit -> a \ ef): a \ (ef - FileWrite) =
+        use IoError.IoError;
+        use IoError.ErrorKind;
+        let denied = op -> Err(IoError(ErrorKind.PermissionDenied, "read-only: ${op} is not permitted"));
+        run { f() } with handler FileWrite {
+            def write(_data, _file, k)       = k(denied("write"))
+            def writeLines(_data, _file, k)  = k(denied("writeLines"))
+            def writeBytes(_data, _file, k)  = k(denied("writeBytes"))
+            def append(_data, _file, k)      = k(denied("append"))
+            def appendLines(_data, _file, k) = k(denied("appendLines"))
+            def appendBytes(_data, _file, k) = k(denied("appendBytes"))
+            def truncate(_file, k)           = k(denied("truncate"))
+            def move(_src, _dst, k)          = k(denied("move"))
+            def delete(_file, k)             = k(denied("delete"))
+            def mkDir(_d, k)                 = k(denied("mkDir"))
+            def mkDirs(_d, k)                = k(denied("mkDirs"))
+            def mkTempDir(_prefix, k)        = k(Err(IoError(ErrorKind.PermissionDenied, "read-only: mkTempDir is not permitted")))
+        }
+
 }

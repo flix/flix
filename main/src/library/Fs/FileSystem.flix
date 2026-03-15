@@ -475,4 +475,47 @@ pub mod Fs.FileSystem {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, blocking all write
+    /// operations with a `PermissionDenied` error while passing read, stat,
+    /// and test operations through to the underlying `FileSystem` effect
+    /// unchanged. This is useful for sandboxing code that should only observe
+    /// the filesystem.
+    ///
+    pub def withReadOnly(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        use IoError.IoError;
+        use IoError.ErrorKind;
+        let denied = op -> Err(IoError(ErrorKind.PermissionDenied, "read-only: ${op} is not permitted"));
+        run { f() } with handler FileSystem {
+            // Read/stat/test ops — pass through
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def read(filename, k)             = k(FileSystem.read(filename))
+            def readLines(filename, k)        = k(FileSystem.readLines(filename))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            // Write ops — blocked
+            def write(_data, _file, k)        = k(denied("write"))
+            def writeLines(_data, _file, k)   = k(denied("writeLines"))
+            def writeBytes(_data, _file, k)   = k(denied("writeBytes"))
+            def append(_data, _file, k)       = k(denied("append"))
+            def appendLines(_data, _file, k)  = k(denied("appendLines"))
+            def appendBytes(_data, _file, k)  = k(denied("appendBytes"))
+            def truncate(_file, k)            = k(denied("truncate"))
+            def move(_src, _dst, k)           = k(denied("move"))
+            def delete(_file, k)              = k(denied("delete"))
+            def mkDir(_d, k)                  = k(denied("mkDir"))
+            def mkDirs(_d, k)                 = k(denied("mkDirs"))
+            def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "read-only: mkTempDir is not permitted")))
+        }
+
 }
