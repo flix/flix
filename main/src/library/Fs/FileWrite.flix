@@ -17,6 +17,8 @@
 pub mod Fs.FileWrite {
 
     use Fs.FileSystem
+    use Fs.FileWrite
+    use Fs.FsClient.{logPre, logPost}
 
     ///
     /// Handles the `FileWrite` effect of the given function `f`.
@@ -53,6 +55,76 @@ pub mod Fs.FileWrite {
             def mkDir(d, k)                = k(Fs.FileSystem.mkDir(d))
             def mkDirs(d, k)               = k(Fs.FileSystem.mkDirs(d))
             def mkTempDir(prefix, k)       = k(Fs.FileSystem.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, logging each operation
+    /// and its result via the `Logger` effect.
+    ///
+    /// Successful operations are logged at `Debug` level; errors at `Warn`.
+    ///
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, Logger} =
+        run { f() } with handler FileWrite {
+            def write(data, file, k) = {
+                logPre("write", file);
+                let result = FileWrite.write(data, file);
+                logPost("write", file, _ -> "${String.length(data#str)} chars", result);
+                k(result)
+            }
+            def writeLines(data, file, k) = {
+                logPre("writeLines", file);
+                let result = FileWrite.writeLines(data, file);
+                logPost("writeLines", file, _ -> "${List.length(data#lines)} lines", result);
+                k(result)
+            }
+            def writeBytes(data, file, k) = {
+                logPre("writeBytes", file);
+                let result = FileWrite.writeBytes(data, file);
+                logPost("writeBytes", file, _ -> "${Vector.length(data)} bytes", result);
+                k(result)
+            }
+            def append(data, file, k) = {
+                logPre("append", file);
+                let result = FileWrite.append(data, file);
+                logPost("append", file, _ -> "${String.length(data#str)} chars", result);
+                k(result)
+            }
+            def appendLines(data, file, k) = {
+                logPre("appendLines", file);
+                let result = FileWrite.appendLines(data, file);
+                logPost("appendLines", file, _ -> "${List.length(data#lines)} lines", result);
+                k(result)
+            }
+            def appendBytes(data, file, k) = {
+                logPre("appendBytes", file);
+                let result = FileWrite.appendBytes(data, file);
+                logPost("appendBytes", file, _ -> "${Vector.length(data)} bytes", result);
+                k(result)
+            }
+            def truncate(file, k) = {
+                logPre("truncate", file);
+                let result = FileWrite.truncate(file);
+                logPost("truncate", file, _ -> "done", result);
+                k(result)
+            }
+            def mkDir(d, k) = {
+                logPre("mkDir", d);
+                let result = FileWrite.mkDir(d);
+                logPost("mkDir", d, _ -> "done", result);
+                k(result)
+            }
+            def mkDirs(d, k) = {
+                logPre("mkDirs", d);
+                let result = FileWrite.mkDirs(d);
+                logPost("mkDirs", d, _ -> "done", result);
+                k(result)
+            }
+            def mkTempDir(prefix, k) = {
+                logPre("mkTempDir", prefix);
+                let result = FileWrite.mkTempDir(prefix);
+                logPost("mkTempDir", prefix, path -> path, result);
+                k(result)
+            }
         }
 
 }

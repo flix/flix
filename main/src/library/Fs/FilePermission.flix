@@ -16,7 +16,9 @@
 
 pub mod Fs.FilePermission {
 
+    use Fs.FilePermission
     use Fs.FileStat
+    use Fs.FsClient.{logPre, logPost}
 
     ///
     /// Handles the `FilePermission` effect of the given function `f`.
@@ -50,6 +52,34 @@ pub mod Fs.FilePermission {
             def isReadable(filename, k)  = k(Fs.FileStat.isReadable(filename))
             def isWritable(filename, k)  = k(Fs.FileStat.isWritable(filename))
             def isExecutable(filename, k) = k(Fs.FileStat.isExecutable(filename))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, logging each operation
+    /// and its result via the `Logger` effect.
+    ///
+    /// Successful operations are logged at `Debug` level; errors at `Warn`.
+    ///
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FilePermission) + {FilePermission, Logger} =
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k) = {
+                logPre("isReadable", filename);
+                let result = FilePermission.isReadable(filename);
+                logPost("isReadable", filename, b -> "${b}", result);
+                k(result)
+            }
+            def isWritable(filename, k) = {
+                logPre("isWritable", filename);
+                let result = FilePermission.isWritable(filename);
+                logPost("isWritable", filename, b -> "${b}", result);
+                k(result)
+            }
+            def isExecutable(filename, k) = {
+                logPre("isExecutable", filename);
+                let result = FilePermission.isExecutable(filename);
+                logPost("isExecutable", filename, b -> "${b}", result);
+                k(result)
+            }
         }
 
 }

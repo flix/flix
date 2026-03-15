@@ -21,7 +21,9 @@ pub mod Fs.DirList {
     import java.nio.file.InvalidPathException
     import java.nio.file.NotDirectoryException
 
+    use Fs.DirList
     use Fs.FileSystem
+    use Fs.FsClient.{logPre, logPost}
     use IoError.IoError
     use IoError.ErrorKind
 
@@ -61,6 +63,22 @@ pub mod Fs.DirList {
     pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - DirList) + FileSystem = x ->
         run { f(x) } with handler DirList {
             def list(filename, k) = k(Fs.FileSystem.list(filename))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, logging each operation
+    /// and its result via the `Logger` effect.
+    ///
+    /// Successful operations are logged at `Debug` level; errors at `Warn`.
+    ///
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + {DirList, Logger} =
+        run { f() } with handler DirList {
+            def list(filename, k) = {
+                logPre("list", filename);
+                let result = DirList.list(filename);
+                logPost("list", filename, ls -> "${List.length(ls)} entries", result);
+                k(result)
+            }
         }
 
 }

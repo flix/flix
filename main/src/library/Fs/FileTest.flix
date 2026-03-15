@@ -17,6 +17,8 @@
 pub mod Fs.FileTest {
 
     use Fs.FileStat
+    use Fs.FileTest
+    use Fs.FsClient.{logPre, logPost}
 
     ///
     /// Handles the `FileTest` effect of the given function `f`.
@@ -51,6 +53,40 @@ pub mod Fs.FileTest {
             def isDirectory(filename, k)    = k(Fs.FileStat.isDirectory(filename))
             def isRegularFile(filename, k)  = k(Fs.FileStat.isRegularFile(filename))
             def isSymbolicLink(filename, k) = k(Fs.FileStat.isSymbolicLink(filename))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileTest` effect, logging each operation
+    /// and its result via the `Logger` effect.
+    ///
+    /// Successful operations are logged at `Debug` level; errors at `Warn`.
+    ///
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTest) + {FileTest, Logger} =
+        run { f() } with handler FileTest {
+            def exists(filename, k) = {
+                logPre("exists", filename);
+                let result = FileTest.exists(filename);
+                logPost("exists", filename, b -> "${b}", result);
+                k(result)
+            }
+            def isDirectory(filename, k) = {
+                logPre("isDirectory", filename);
+                let result = FileTest.isDirectory(filename);
+                logPost("isDirectory", filename, b -> "${b}", result);
+                k(result)
+            }
+            def isRegularFile(filename, k) = {
+                logPre("isRegularFile", filename);
+                let result = FileTest.isRegularFile(filename);
+                logPost("isRegularFile", filename, b -> "${b}", result);
+                k(result)
+            }
+            def isSymbolicLink(filename, k) = {
+                logPre("isSymbolicLink", filename);
+                let result = FileTest.isSymbolicLink(filename);
+                logPost("isSymbolicLink", filename, b -> "${b}", result);
+                k(result)
+            }
         }
 
 }

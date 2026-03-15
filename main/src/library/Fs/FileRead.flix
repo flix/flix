@@ -16,7 +16,9 @@
 
 pub mod Fs.FileRead {
 
+    use Fs.FileRead
     use Fs.FileSystem
+    use Fs.FsClient.{logPre, logPost}
 
     ///
     /// Handles the `FileRead` effect of the given function `f`.
@@ -46,6 +48,34 @@ pub mod Fs.FileRead {
             def read(filename, k)      = k(Fs.FileSystem.read(filename))
             def readLines(filename, k) = k(Fs.FileSystem.readLines(filename))
             def readBytes(filename, k) = k(Fs.FileSystem.readBytes(filename))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileRead` effect, logging each operation
+    /// and its result via the `Logger` effect.
+    ///
+    /// Successful operations are logged at `Debug` level; errors at `Warn`.
+    ///
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, Logger} =
+        run { f() } with handler FileRead {
+            def read(filename, k) = {
+                logPre("read", filename);
+                let result = FileRead.read(filename);
+                logPost("read", filename, s -> "${String.length(s)} chars", result);
+                k(result)
+            }
+            def readLines(filename, k) = {
+                logPre("readLines", filename);
+                let result = FileRead.readLines(filename);
+                logPost("readLines", filename, ls -> "${List.length(ls)} lines", result);
+                k(result)
+            }
+            def readBytes(filename, k) = {
+                logPre("readBytes", filename);
+                let result = FileRead.readBytes(filename);
+                logPost("readBytes", filename, bs -> "${Vector.length(bs)} bytes", result);
+                k(result)
+            }
         }
 
 }
