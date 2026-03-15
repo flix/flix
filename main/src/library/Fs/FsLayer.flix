@@ -333,6 +333,17 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    // ─── Path helper ────────────────────────────────────────────────────
+
+    ///
+    /// Resolves `path` against `baseDir` using Java's `Path.resolve` semantics:
+    ///
+    ///   - If `path` is absolute, it is returned as-is.
+    ///   - If `path` is relative, it is joined to `baseDir`.
+    ///
+    pub def resolve(baseDir: String, path: String): String =
+        unsafe IO { Paths.get(baseDir).resolve(path).toString() }
+
     // ─── Private helper ────────────────────────────────────────────────
 
     ///

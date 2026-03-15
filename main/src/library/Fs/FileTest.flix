@@ -89,4 +89,19 @@ pub mod Fs.FileTest {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileTest` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler FileTest {
+            def exists(filename, k)         = k(FileTest.exists(r(filename)))
+            def isDirectory(filename, k)    = k(FileTest.isDirectory(r(filename)))
+            def isRegularFile(filename, k)  = k(FileTest.isRegularFile(r(filename)))
+            def isSymbolicLink(filename, k) = k(FileTest.isSymbolicLink(r(filename)))
+        }
+
 }

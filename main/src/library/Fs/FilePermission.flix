@@ -82,4 +82,18 @@ pub mod Fs.FilePermission {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(FilePermission.isReadable(r(filename)))
+            def isWritable(filename, k)   = k(FilePermission.isWritable(r(filename)))
+            def isExecutable(filename, k) = k(FilePermission.isExecutable(r(filename)))
+        }
+
 }
