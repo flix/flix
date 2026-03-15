@@ -206,7 +206,7 @@ object Library {
     "Net/Ipv4Addr.flix" -> LocalResource.get("/src/library/Net/Ipv4Addr.flix"),
     "Net/Ipv6Addr.flix" -> LocalResource.get("/src/library/Net/Ipv6Addr.flix"),
     "Net/Http.flix" -> LocalResource.get("/src/library/Net/Http.flix"),
-    "Net/HttpClient.flix" -> LocalResource.get("/src/library/Net/HttpClient.flix"),
+    "Net/HttpLayer.flix" -> LocalResource.get("/src/library/Net/HttpLayer.flix"),
     "Net/Https.flix" -> LocalResource.get("/src/library/Net/Https.flix"),
     "Net/HttpRequest.flix" -> LocalResource.get("/src/library/Net/HttpRequest.flix"),
     "Net/HttpResponse.flix" -> LocalResource.get("/src/library/Net/HttpResponse.flix"),
