@@ -16,13 +16,7 @@
 
 pub mod Fs.IsSymbolicLink {
 
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileTest
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `IsSymbolicLink` effect of the given function `f`.
@@ -30,17 +24,8 @@ pub mod Fs.IsSymbolicLink {
     /// In other words, re-interprets the `IsSymbolicLink` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - IsSymbolicLink) + IO = x ->
-        run {
-            f(x)
-        } with handler IsSymbolicLink {
-            def isSymbolicLink(filename, k) = {
-                let res = try {
-                    Ok(Files.isSymbolicLink(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler IsSymbolicLink {
+            def isSymbolicLink(filename, k) = k(Fs.FsClient.isSymbolicLink(filename))
         }
 
     ///

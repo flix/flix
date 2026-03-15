@@ -16,16 +16,9 @@
 
 pub mod Fs.DirList {
 
-    import java.io.File
-    import java.io.IOException
-    import java.nio.file.InvalidPathException
-    import java.nio.file.NotDirectoryException
-
     use Fs.DirList
     use Fs.FileSystem
     use Fs.FsClient.{logPre, logPost}
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `DirList` effect of the given function `f`.
@@ -33,20 +26,8 @@ pub mod Fs.DirList {
     /// In other words, re-interprets the `DirList` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - DirList) + IO = x ->
-        run {
-            f(x)
-        } with handler DirList {
-            def list(filename, k) = {
-                let res = try {
-                    let file = new File(filename);
-                    Ok(Array.toList(file.list()))
-                } catch {
-                    case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: NotDirectoryException => Err(IoError(ErrorKind.NotDirectory, ex.getMessage()))
-                    case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler DirList {
+            def list(filename, k) = k(Fs.FsClient.list(filename))
         }
 
     ///

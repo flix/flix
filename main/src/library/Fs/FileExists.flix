@@ -16,14 +16,7 @@
 
 pub mod Fs.FileExists {
 
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.LinkOption
-    import java.nio.file.Paths
-
     use Fs.FileTest
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `FileExists` effect of the given function `f`.
@@ -31,17 +24,8 @@ pub mod Fs.FileExists {
     /// In other words, re-interprets the `FileExists` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileExists) + IO = x ->
-        run {
-            f(x)
-        } with handler FileExists {
-            def exists(filename, k) = {
-                let res = try {
-                    Ok(Files.exists(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler FileExists {
+            def exists(filename, k) = k(Fs.FsClient.exists(filename))
         }
 
     ///

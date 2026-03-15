@@ -16,18 +16,7 @@
 
 pub mod Fs.AccessTime {
 
-    import java.io.IOException
-    import java.lang.Class
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.LinkOption
-    import java.nio.file.Path
-    import java.nio.file.Paths
-    import java.nio.file.attribute.BasicFileAttributes
-
     use Fs.FileTime
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `AccessTime` effect of the given function `f`.
@@ -35,18 +24,8 @@ pub mod Fs.AccessTime {
     /// In other words, re-interprets the `AccessTime` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - AccessTime) + IO = x ->
-        run {
-            f(x)
-        } with handler AccessTime {
-            def accessTime(filename, k) = {
-                let res = try {
-                    Ok(fileAttributes(Paths.get(filename)).lastAccessTime().toMillis())
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler AccessTime {
+            def accessTime(filename, k) = k(Fs.FsClient.accessTime(filename))
         }
 
     ///
@@ -64,16 +43,5 @@ pub mod Fs.AccessTime {
         run { f(x) } with handler AccessTime {
             def accessTime(filename, k) = k(Fs.FileTime.accessTime(filename))
         }
-
-    ///
-    /// Returns the attributes of the given file `f`.
-    /// May throw `IOException` and `SecurityException`.
-    ///
-    def fileAttributes(path: Path): BasicFileAttributes \ IO =
-        Files.readAttributes(
-            path,
-            Class.forName("java.nio.file.attribute.BasicFileAttributes"),
-            (...{}: Vector[LinkOption])
-        )
 
 }

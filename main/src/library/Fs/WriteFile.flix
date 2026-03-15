@@ -16,17 +16,7 @@
 
 pub mod Fs.WriteFile {
 
-    import java.io.IOException
-    import java.lang.UnsupportedOperationException
-    import java.nio.charset.StandardCharsets
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.OpenOption
-    import java.nio.file.Paths
-
     use Fs.FileWrite
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `WriteFile` effect of the given function `f`.
@@ -34,21 +24,8 @@ pub mod Fs.WriteFile {
     /// In other words, re-interprets the `WriteFile` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - WriteFile) + IO = x ->
-        run {
-            f(x)
-        } with handler WriteFile {
-            def write(data, file, k) = {
-                let res = try {
-                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-                    Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler WriteFile {
+            def write(data, file, k) = k(Fs.FsClient.write(data, file))
         }
 
     ///

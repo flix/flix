@@ -16,14 +16,7 @@
 
 pub mod Fs.ReadLines {
 
-    import java.io.IOException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileRead
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `ReadLines` effect of the given function `f`.
@@ -31,18 +24,8 @@ pub mod Fs.ReadLines {
     /// In other words, re-interprets the `ReadLines` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - ReadLines) + IO = x ->
-        run {
-            f(x)
-        } with handler ReadLines {
-            def readLines(filename, k) = {
-                let res = try {
-                    Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(filename))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler ReadLines {
+            def readLines(filename, k) = k(Fs.FsClient.readLines(filename))
         }
 
     ///

@@ -16,17 +16,7 @@
 
 pub mod Fs.AppendLines {
 
-    import java.io.IOException
-    import java.lang.UnsupportedOperationException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.OpenOption
-    import java.nio.file.Paths
-    import java.nio.file.StandardOpenOption
-
     use Fs.FileWrite
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `AppendLines` effect of the given function `f`.
@@ -34,29 +24,8 @@ pub mod Fs.AppendLines {
     /// In other words, re-interprets the `AppendLines` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - AppendLines) + IO = x ->
-        run {
-            f(x)
-        } with handler AppendLines {
-            def appendLines(data, file, k) = {
-                let res = try {
-                    let opts: Vector[OpenOption] = ...{
-                        checked_cast(StandardOpenOption.APPEND),
-                        checked_cast(StandardOpenOption.CREATE)
-                    };
-                    let bf = Files.newBufferedWriter(Paths.get(file), opts);
-                    List.forEach(line -> {
-                        bf.write(line, 0, String.length(line));
-                        bf.newLine()
-                    }, data#lines);
-                    bf.close();
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler AppendLines {
+            def appendLines(data, file, k) = k(Fs.FsClient.appendLines(data, file))
         }
 
     ///
