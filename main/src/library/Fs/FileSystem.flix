@@ -16,28 +16,9 @@
 
 pub mod Fs.FileSystem {
 
-    import java.io.File
-    import java.io.IOException
-    import java.lang.Class
-    import java.lang.IllegalArgumentException
-    import java.lang.UnsupportedOperationException
-    import java.nio.charset.StandardCharsets
-    import java.nio.file.attribute.BasicFileAttributes
-    import java.nio.file.attribute.FileAttribute
-    import java.nio.file.FileAlreadyExistsException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.LinkOption
-    import java.nio.file.NotDirectoryException
-    import java.nio.file.OpenOption
-    import java.nio.file.Path
-    import java.nio.file.Paths
-    import java.nio.file.StandardOpenOption
-
     use Fs.FileSystem
     use Fs.FsClient.{logPre, logPost}
     use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `FileSystem` effect of the given function `f`.
@@ -48,306 +29,31 @@ pub mod Fs.FileSystem {
         run {
             f(x)
         } with handler FileSystem {
-            def exists(filename, k) = {
-                let res = try {
-                    Ok(Files.exists(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isDirectory(filename, k) = {
-                let res = try {
-                    Ok(Files.isDirectory(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isRegularFile(filename, k) = {
-                let res = try {
-                    Ok(Files.isRegularFile(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isSymbolicLink(filename, k) = {
-                let res = try {
-                    Ok(Files.isSymbolicLink(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isReadable(filename, k) = {
-                let res = try {
-                    Ok(Files.isReadable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isWritable(filename, k) = {
-                let res = try {
-                    Ok(Files.isWritable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def isExecutable(filename, k) = {
-                let res = try {
-                    Ok(Files.isExecutable(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def accessTime(filename, k) = {
-                let res = try {
-                    Ok(fileAttributes(Paths.get(filename)).lastAccessTime().toMillis())
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def creationTime(filename, k) = {
-                let res = try {
-                    Ok(fileAttributes(Paths.get(filename)).creationTime().toMillis())
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def modificationTime(filename, k) = {
-                let res = try {
-                    Ok(fileAttributes(Paths.get(filename)).lastModifiedTime().toMillis())
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def size(filename, k) = {
-                let res = try {
-                    Ok(Files.size(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def read(filename, k) = {
-                let res = try {
-                    Ok(String.fromBytes(Array.toVector(Files.readAllBytes(Paths.get(filename)))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def readLines(filename, k) = {
-                let res = try {
-                    Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(filename))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def readBytes(filename, k) = {
-                let res = try {
-                    Ok(Array.toVector(Files.readAllBytes(Paths.get(filename))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def list(filename, k) = {
-                let res = try {
-                    let file = new File(filename);
-                    Ok(Array.toList(file.list()))
-                } catch {
-                    case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: NotDirectoryException => Err(IoError(ErrorKind.NotDirectory, ex.getMessage()))
-                    case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def write(data, file, k) = {
-                let res = try {
-                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-                    Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def writeLines(data, file, k) = {
-                let res = try {
-                    let bf = Files.newBufferedWriter(Paths.get(file), (...{}: Vector[OpenOption]));
-                    List.forEach(line -> {
-                        bf.write(line, 0, String.length(line));
-                        bf.newLine()
-                    }, data#lines);
-                    bf.close();
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def writeBytes(data, file, k) = {
-                let res = try {
-                    region rc {
-                        let bytes = Vector.toArray(rc, data);
-                        Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
-                        Ok(())
-                    }
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def append(data, file, k) = {
-                let res = try {
-                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-                    let opts: Vector[OpenOption] = ...{
-                        checked_cast(StandardOpenOption.APPEND),
-                        checked_cast(StandardOpenOption.CREATE)
-                    };
-                    Files.write(Paths.get(file), bytes, opts);
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def appendLines(data, file, k) = {
-                let res = try {
-                    let opts: Vector[OpenOption] = ...{
-                        checked_cast(StandardOpenOption.APPEND),
-                        checked_cast(StandardOpenOption.CREATE)
-                    };
-                    let bf = Files.newBufferedWriter(Paths.get(file), opts);
-                    List.forEach(line -> {
-                        bf.write(line, 0, String.length(line));
-                        bf.newLine()
-                    }, data#lines);
-                    bf.close();
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def appendBytes(data, file, k) = {
-                let res = try {
-                    region rc {
-                        let bytes = Vector.toArray(rc, data);
-                        let opts: Vector[OpenOption] = ...{
-                            checked_cast(StandardOpenOption.APPEND),
-                            checked_cast(StandardOpenOption.CREATE)
-                        };
-                        Files.write(Paths.get(file), bytes, opts);
-                        Ok(())
-                    }
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def truncate(file, k) = {
-                let res = try {
-                    region rc {
-                        let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
-                        let arr: Array[Int8, rc] = Array#{} @ rc;
-                        Files.write(Paths.get(file), arr, ...{opt});
-                        Ok(())
-                    }
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def mkDir(d, k) = {
-                let res = try {
-                    Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def mkDirs(d, k) = {
-                let res = try {
-                    Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute]));
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-
-            def mkTempDir(prefix, k) = {
-                let res = try {
-                    let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
-                    Ok(path.toString())
-                } catch {
-                    case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+            def exists(filename, k)           = k(Fs.FsClient.exists(filename))
+            def isDirectory(filename, k)      = k(Fs.FsClient.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(Fs.FsClient.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(Fs.FsClient.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(Fs.FsClient.isReadable(filename))
+            def isWritable(filename, k)       = k(Fs.FsClient.isWritable(filename))
+            def isExecutable(filename, k)     = k(Fs.FsClient.isExecutable(filename))
+            def accessTime(filename, k)       = k(Fs.FsClient.accessTime(filename))
+            def creationTime(filename, k)     = k(Fs.FsClient.creationTime(filename))
+            def modificationTime(filename, k) = k(Fs.FsClient.modificationTime(filename))
+            def size(filename, k)             = k(Fs.FsClient.size(filename))
+            def read(filename, k)             = k(Fs.FsClient.read(filename))
+            def readLines(filename, k)        = k(Fs.FsClient.readLines(filename))
+            def readBytes(filename, k)        = k(Fs.FsClient.readBytes(filename))
+            def list(filename, k)             = k(Fs.FsClient.list(filename))
+            def write(data, file, k)          = k(Fs.FsClient.write(data, file))
+            def writeLines(data, file, k)     = k(Fs.FsClient.writeLines(data, file))
+            def writeBytes(data, file, k)     = k(Fs.FsClient.writeBytes(data, file))
+            def append(data, file, k)         = k(Fs.FsClient.append(data, file))
+            def appendLines(data, file, k)    = k(Fs.FsClient.appendLines(data, file))
+            def appendBytes(data, file, k)    = k(Fs.FsClient.appendBytes(data, file))
+            def truncate(file, k)             = k(Fs.FsClient.truncate(file))
+            def mkDir(d, k)                   = k(Fs.FsClient.mkDir(d))
+            def mkDirs(d, k)                  = k(Fs.FsClient.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(Fs.FsClient.mkTempDir(prefix))
         }
 
     ///
@@ -517,16 +223,5 @@ pub mod Fs.FileSystem {
                 k(result)
             }
         }
-
-    ///
-    /// Returns the attributes of the given file `f`.
-    /// May throw `IOException` and `SecurityException`.
-    ///
-    def fileAttributes(path: Path): BasicFileAttributes \ IO =
-        Files.readAttributes(
-            path,
-            Class.forName("java.nio.file.attribute.BasicFileAttributes"),
-            (...{}: Vector[LinkOption])
-        )
 
 }

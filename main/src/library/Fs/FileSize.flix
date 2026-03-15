@@ -16,14 +16,7 @@
 
 pub mod Fs.FileSize {
 
-    import java.io.IOException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileStat
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `FileSize` effect of the given function `f`.
@@ -31,18 +24,8 @@ pub mod Fs.FileSize {
     /// In other words, re-interprets the `FileSize` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileSize) + IO = x ->
-        run {
-            f(x)
-        } with handler FileSize {
-            def size(filename, k) = {
-                let res = try {
-                    Ok(Files.size(Paths.get(filename)))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler FileSize {
+            def size(filename, k) = k(Fs.FsClient.size(filename))
         }
 
     ///

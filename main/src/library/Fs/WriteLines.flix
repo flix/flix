@@ -16,16 +16,7 @@
 
 pub mod Fs.WriteLines {
 
-    import java.io.IOException
-    import java.lang.UnsupportedOperationException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.OpenOption
-    import java.nio.file.Paths
-
     use Fs.FileWrite
-    use IoError.IoError
-    use IoError.ErrorKind
 
     ///
     /// Handles the `WriteLines` effect of the given function `f`.
@@ -33,25 +24,8 @@ pub mod Fs.WriteLines {
     /// In other words, re-interprets the `WriteLines` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - WriteLines) + IO = x ->
-        run {
-            f(x)
-        } with handler WriteLines {
-            def writeLines(data, file, k) = {
-                let res = try {
-                    let bf = Files.newBufferedWriter(Paths.get(file), (...{}: Vector[OpenOption]));
-                    List.forEach(line -> {
-                        bf.write(line, 0, String.length(line));
-                        bf.newLine()
-                    }, data#lines);
-                    bf.close();
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler WriteLines {
+            def writeLines(data, file, k) = k(Fs.FsClient.writeLines(data, file))
         }
 
     ///
