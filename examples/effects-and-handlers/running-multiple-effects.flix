@@ -1,5 +1,6 @@
 use Net.Http
 use Net.HttpResponse
+use Fs.WriteFile
 
 def main(): Unit \ { Http, Logger, IO } =
     run {
@@ -10,7 +11,7 @@ def main(): Unit \ { Http, Logger, IO } =
                 let file = "data.txt";
                 Logger.info("Saving response to file: '${file}'");
                 let body = HttpResponse.body(resp);
-                match FileWriteWithResult.write(str = body, file) {
+                match WriteFile.write(str = body, file) {
                     case Ok(_) =>
                         Logger.info("Response saved to file: '${file}'")
                     case Err(err) =>
@@ -19,4 +20,4 @@ def main(): Unit \ { Http, Logger, IO } =
             case Err(err) =>
                 Logger.fatal("Unable to download URL: '${err}'")
         }
-    } with FileWriteWithResult.runWithIO
+    } with WriteFile.runWithIO
