@@ -47,7 +47,7 @@ pub mod Fs {
     //     ├── AppendLines                       — appendLines
     //     ├── AppendBytes                       — appendBytes
     //     ├── Truncate                          — truncate
-    //     ├── MoveFile                          — move(src, dst)
+    //     ├── MoveFile                          — move
     //     ├── DeleteFile                        — delete
     //     ├── MkDir                             — mkDir
     //     ├── MkDirs                            — mkDirs
