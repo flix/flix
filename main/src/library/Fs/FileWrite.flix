@@ -218,4 +218,56 @@ pub mod Fs.FileWrite {
             def mkTempDir(prefix, k)       = k(FileWrite.mkTempDir(prefix))
         }
 
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, logging each write
+    /// operation via the `Logger` effect at `Debug` level without performing
+    /// the actual filesystem modification. All write operations return `Ok(())`;
+    /// `mkTempDir` returns `Ok("<dry-run>")`.
+    ///
+    pub def withDryRun(f: Unit -> a \ ef): a \ (ef - FileWrite) + Logger =
+        use RichString.{text, bold, cyan, yellow, gray};
+        let tag = yellow("[dry-run]");
+        run { f() } with handler FileWrite {
+            def write(data, file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("write") + text(" ") + cyan(file) + gray(" (${String.length(data#str)} chars)"));
+                k(Ok(()))
+            }
+            def writeLines(data, file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("writeLines") + text(" ") + cyan(file) + gray(" (${List.length(data#lines)} lines)"));
+                k(Ok(()))
+            }
+            def writeBytes(data, file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("writeBytes") + text(" ") + cyan(file) + gray(" (${Vector.length(data)} bytes)"));
+                k(Ok(()))
+            }
+            def append(data, file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("append") + text(" ") + cyan(file) + gray(" (${String.length(data#str)} chars)"));
+                k(Ok(()))
+            }
+            def appendLines(data, file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("appendLines") + text(" ") + cyan(file) + gray(" (${List.length(data#lines)} lines)"));
+                k(Ok(()))
+            }
+            def appendBytes(data, file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("appendBytes") + text(" ") + cyan(file) + gray(" (${Vector.length(data)} bytes)"));
+                k(Ok(()))
+            }
+            def truncate(file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("truncate") + text(" ") + cyan(file));
+                k(Ok(()))
+            }
+            def mkDir(d, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("mkDir") + text(" ") + cyan(d));
+                k(Ok(()))
+            }
+            def mkDirs(d, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("mkDirs") + text(" ") + cyan(d));
+                k(Ok(()))
+            }
+            def mkTempDir(prefix, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("mkTempDir") + text(" ") + cyan(prefix));
+                k(Ok("<dry-run>"))
+            }
+        }
+
 }
