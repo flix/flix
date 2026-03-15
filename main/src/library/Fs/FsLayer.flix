@@ -32,6 +32,8 @@ mod Fs.FsLayer {
     import java.nio.file.OpenOption
     import java.nio.file.Path
     import java.nio.file.Paths
+    import java.nio.file.CopyOption
+    import java.nio.file.NoSuchFileException
     import java.nio.file.StandardOpenOption
 
     use IoError.IoError
@@ -297,6 +299,30 @@ mod Fs.FsLayer {
             case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+        }
+
+    // ─── Move operation ────────────────────────────────────────────────
+
+    pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
+        try {
+            discard Files.move(Paths.get(src#src), Paths.get(dst), (...{}: Vector[CopyOption]));
+            Ok(())
+        } catch {
+            case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
+        }
+
+    // ─── Delete operation ────────────────────────────────────────────────
+
+    pub def delete(f: String): Result[IoError, Unit] \ IO =
+        try {
+            Files.delete(Paths.get(f));
+            Ok(())
+        } catch {
+            case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException   => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     // ─── Directory operations ──────────────────────────────────────────

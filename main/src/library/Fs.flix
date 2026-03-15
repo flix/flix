@@ -18,7 +18,7 @@ pub mod Fs {
 
     // Effect Hierarchy:
     //
-    // FileSystem                          (25 ops — unified root)
+    // FileSystem                          (27 ops — unified root)
     // ├── FileStat                        (11 ops)
     // │   ├── FileTest                    (4 ops)
     // │   │   ├── FileExists                    — exists
@@ -39,7 +39,7 @@ pub mod Fs {
     // │   ├── ReadLines                         — readLines
     // │   └── ReadBytes                         — readBytes
     // ├── DirList                               — list
-    // └── FileWrite                       (10 ops)
+    // └── FileWrite                       (12 ops)
     //     ├── WriteFile                         — write
     //     ├── WriteLines                        — writeLines
     //     ├── WriteBytes                        — writeBytes
@@ -47,6 +47,8 @@ pub mod Fs {
     //     ├── AppendLines                       — appendLines
     //     ├── AppendBytes                       — appendBytes
     //     ├── Truncate                          — truncate
+    //     ├── MoveFile                          — move
+    //     ├── DeleteFile                        — delete
     //     ├── MkDir                             — mkDir
     //     ├── MkDirs                            — mkDirs
     //     └── MkTempDir                         — mkTempDir
@@ -328,6 +330,34 @@ pub mod Fs {
     }
 
     ///
+    /// An effect used to move (rename) a file or directory.
+    ///
+    pub eff MoveFile {
+
+        ///
+        /// Moves (renames) the file or directory `src` to `dst`.
+        ///
+        /// Fails if `dst` already exists.
+        ///
+        def move(src: {src = String}, dst: String): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to delete a file.
+    ///
+    pub eff DeleteFile {
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
+
+    }
+
+    ///
     /// An effect used to create a directory.
     ///
     pub eff MkDir {
@@ -573,6 +603,20 @@ pub mod Fs {
         def truncate(f: String): Result[IoError, Unit]
 
         ///
+        /// Moves (renames) the file or directory `src` to `dst`.
+        ///
+        /// Fails if `dst` already exists.
+        ///
+        def move(src: {src = String}, dst: String): Result[IoError, Unit]
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
+
+        ///
         /// Creates the directory `d`.
         ///
         def mkDir(d: String): Result[IoError, Unit]
@@ -717,6 +761,20 @@ pub mod Fs {
         /// Truncates the given file `f`.
         ///
         def truncate(f: String): Result[IoError, Unit]
+
+        ///
+        /// Moves (renames) the file or directory `src` to `dst`.
+        ///
+        /// Fails if `dst` already exists.
+        ///
+        def move(src: {src = String}, dst: String): Result[IoError, Unit]
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
 
         ///
         /// Creates the directory `d`.

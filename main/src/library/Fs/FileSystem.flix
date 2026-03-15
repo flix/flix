@@ -51,6 +51,8 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(Fs.FsLayer.appendLines(data, file))
             def appendBytes(data, file, k)    = k(Fs.FsLayer.appendBytes(data, file))
             def truncate(file, k)             = k(Fs.FsLayer.truncate(file))
+            def move(src, dst, k)             = k(Fs.FsLayer.move(src, dst))
+            def delete(file, k)               = k(Fs.FsLayer.delete(file))
             def mkDir(d, k)                   = k(Fs.FsLayer.mkDir(d))
             def mkDirs(d, k)                  = k(Fs.FsLayer.mkDirs(d))
             def mkTempDir(prefix, k)          = k(Fs.FsLayer.mkTempDir(prefix))
@@ -204,6 +206,18 @@ pub mod Fs.FileSystem {
                 logPost("truncate", file, _ -> "done", result);
                 k(result)
             }
+            def move(src, dst, k) = {
+                logPre("move", src#src);
+                let result = FileSystem.move(src, dst);
+                logPost("move", src#src, _ -> dst, result);
+                k(result)
+            }
+            def delete(file, k) = {
+                logPre("delete", file);
+                let result = FileSystem.delete(file);
+                logPost("delete", file, _ -> "done", result);
+                k(result)
+            }
             def mkDir(d, k) = {
                 logPre("mkDir", d);
                 let result = FileSystem.mkDir(d);
@@ -255,6 +269,8 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(FileSystem.appendLines(data, r(file)))
             def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, r(file)))
             def truncate(file, k)             = k(FileSystem.truncate(r(file)))
+            def move(src, dst, k)             = k(FileSystem.move(src = r(src#src), r(dst)))
+            def delete(file, k)               = k(FileSystem.delete(r(file)))
             def mkDir(d, k)                   = k(FileSystem.mkDir(r(d)))
             def mkDirs(d, k)                  = k(FileSystem.mkDirs(r(d)))
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
@@ -294,6 +310,8 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+            def move(src, dst, k)             = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.move(src = s, d), c(dst)), c(src#src)))
+            def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
             def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted inside a chroot")))
@@ -333,6 +351,8 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+            def move(src, dst, k)             = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.move(src = s, d), c(dst)), c(src#src)))
+            def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
             def mkTempDir(_prefix, k)         = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow list")))
@@ -370,6 +390,8 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+            def move(src, dst, k)             = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.move(src = s, d), c(dst)), c(src#src)))
+            def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
@@ -429,6 +451,14 @@ pub mod Fs.FileSystem {
             }
             def truncate(file, k) = {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("truncate") + text(" ") + cyan(file));
+                k(Ok(()))
+            }
+            def move(src, dst, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("move") + text(" ") + cyan(src#src) + gray(" -> ") + cyan(dst));
+                k(Ok(()))
+            }
+            def delete(file, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("delete") + text(" ") + cyan(file));
                 k(Ok(()))
             }
             def mkDir(d, k) = {
