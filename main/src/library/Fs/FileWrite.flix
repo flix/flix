@@ -172,4 +172,50 @@ pub mod Fs.FileWrite {
             def mkTempDir(_prefix, k)      = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted inside a chroot")))
         }
 
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, validating that all file paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    /// The `mkTempDir` operation is blocked since the temp directory location cannot be verified.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        use IoError.IoError;
+        use IoError.ErrorKind;
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)       = k(Result.flatMap(p -> FileWrite.write(data, p), c(file)))
+            def writeLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeLines(data, p), c(file)))
+            def writeBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeBytes(data, p), c(file)))
+            def append(data, file, k)      = k(Result.flatMap(p -> FileWrite.append(data, p), c(file)))
+            def appendLines(data, file, k) = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
+            def appendBytes(data, file, k) = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
+            def truncate(file, k)          = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def mkDir(d, k)                = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
+            def mkDirs(d, k)               = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
+            def mkTempDir(_prefix, k)      = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow list")))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, validating that all file paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    /// The `mkTempDir` operation is allowed since deny lists are default-allow.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)       = k(Result.flatMap(p -> FileWrite.write(data, p), c(file)))
+            def writeLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeLines(data, p), c(file)))
+            def writeBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeBytes(data, p), c(file)))
+            def append(data, file, k)      = k(Result.flatMap(p -> FileWrite.append(data, p), c(file)))
+            def appendLines(data, file, k) = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
+            def appendBytes(data, file, k) = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
+            def truncate(file, k)          = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def mkDir(d, k)                = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
+            def mkDirs(d, k)               = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
+            def mkTempDir(prefix, k)       = k(FileWrite.mkTempDir(prefix))
+        }
+
 }

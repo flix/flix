@@ -118,4 +118,32 @@ pub mod Fs.FileTest {
             def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileTest` effect, validating that all file paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler FileTest {
+            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileTest` effect, validating that all file paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler FileTest {
+            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+        }
+
 }
