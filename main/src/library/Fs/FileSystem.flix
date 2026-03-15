@@ -601,6 +601,112 @@ pub mod Fs.FileSystem {
         }
 
     ///
+    /// Middleware that intercepts the `FileSystem` effect, layering an in-memory
+    /// writable store on top of the real filesystem. Writes are captured in memory
+    /// (never touching disk), and subsequent reads see the written data. The real
+    /// filesystem is never modified. This is useful for safe experimentation,
+    /// testing, and sandboxing.
+    ///
+    pub def withOverlay(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        region rc {
+            let o = Fs.Overlay.fresh(rc);
+            run { f() } with handler FileSystem {
+                // ── Stat/test ops — delegate on None ───────────────
+                def exists(f1, k) = k(match Fs.Overlay.tryExists(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.exists(f1)
+                })
+                def isDirectory(f1, k) = k(match Fs.Overlay.tryIsDirectory(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isDirectory(f1)
+                })
+                def isRegularFile(f1, k) = k(match Fs.Overlay.tryIsRegularFile(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isRegularFile(f1)
+                })
+                def isSymbolicLink(f1, k) = k(match Fs.Overlay.tryIsSymbolicLink(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isSymbolicLink(f1)
+                })
+                def isReadable(f1, k) = k(match Fs.Overlay.tryIsReadable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isReadable(f1)
+                })
+                def isWritable(f1, k) = k(match Fs.Overlay.tryIsWritable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isWritable(f1)
+                })
+                def isExecutable(f1, k) = k(match Fs.Overlay.tryIsExecutable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isExecutable(f1)
+                })
+                def accessTime(f1, k) = k(match Fs.Overlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.accessTime(f1)
+                })
+                def creationTime(f1, k) = k(match Fs.Overlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.creationTime(f1)
+                })
+                def modificationTime(f1, k) = k(match Fs.Overlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.modificationTime(f1)
+                })
+                def size(f1, k) = k(match Fs.Overlay.trySize(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.size(f1)
+                })
+                def read(f1, k) = k(match Fs.Overlay.tryRead(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.read(f1)
+                })
+                def readLines(f1, k) = k(match Fs.Overlay.tryReadLines(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.readLines(f1)
+                })
+                def readBytes(f1, k) = k(match Fs.Overlay.tryReadBytes(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.readBytes(f1)
+                })
+
+                // ── List — pass lower result to Overlay ────────────
+                def list(f1, k) = k(Fs.Overlay.list(f1, FileSystem.list(f1), o))
+
+                // ── Write ops — direct forwarding ──────────────────
+                def write(data, file, k)      = k(Fs.Overlay.write(file, data#str, o))
+                def writeLines(data, file, k) = k(Fs.Overlay.writeLines(file, data#lines, o))
+                def writeBytes(data, file, k) = k(Fs.Overlay.writeBytes(file, data, o))
+                def truncate(file, k)         = k(Fs.Overlay.truncate(file, o))
+                def delete(file, k)           = k(Fs.Overlay.delete(file, o))
+                def mkDir(d, k)               = k(Fs.Overlay.mkDir(d, o))
+                def mkDirs(d, k)              = k(Fs.Overlay.mkDirs(d, o))
+                def mkTempDir(prefix, k)      = k(Fs.Overlay.mkTempDir(prefix, o))
+
+                // ── Append ops — fetch lower content if needed ─────
+                def append(data, file, k) = {
+                    let lower = if (Fs.Overlay.needsLower(file, o)) Result.toOption(FileSystem.read(file)) else None;
+                    k(Fs.Overlay.append(file, data#str, lower, o))
+                }
+                def appendLines(data, file, k) = {
+                    let lower = if (Fs.Overlay.needsLower(file, o)) Result.toOption(FileSystem.read(file)) else None;
+                    k(Fs.Overlay.appendLines(file, data#lines, lower, o))
+                }
+                def appendBytes(data, file, k) = {
+                    let lower = if (Fs.Overlay.needsLower(file, o)) Result.toOption(FileSystem.readBytes(file)) else None;
+                    k(Fs.Overlay.appendBytes(file, data, lower, o))
+                }
+
+                // ── Move — fetch lower content if needed ───────────
+                def move(src, dst, k) = {
+                    let lower = if (Fs.Overlay.needsLower(src#src, o))
+                        Result.toOption(FileSystem.readBytes(src#src))
+                    else None;
+                    k(Fs.Overlay.move(src#src, dst, lower, o))
+                }
+            }
+        }
+
+    ///
     /// Middleware that intercepts the `FileSystem` effect, blocking all write
     /// operations with a `PermissionDenied` error while passing read, stat,
     /// and test operations through to the underlying `FileSystem` effect

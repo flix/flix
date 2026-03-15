@@ -16,6 +16,14 @@
 
 pub mod Fs {
 
+    /// In-memory overlay state, parameterized by region.
+    pub struct Overlay[r: Region] {
+        mut files: Map[String, Overlay.OverlayEntry],
+        mut dirs: Set[String],
+        mut whiteouts: Set[String],
+        mut counter: Int32
+    }
+
     // Effect Hierarchy:
     //
     // FileSystem                          (29 ops — unified root)
