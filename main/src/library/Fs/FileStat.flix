@@ -156,4 +156,25 @@ pub mod Fs.FileStat {
             def size(filename, k)             = k(FileStat.size(r(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileStat` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler FileStat {
+            def exists(filename, k)           = k(Result.flatMap(p -> FileStat.exists(p), c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileStat.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileStat.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileStat.isSymbolicLink(p), c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(p -> FileStat.isReadable(p), c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(p -> FileStat.isWritable(p), c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileStat.isExecutable(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
+            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+        }
+
 }

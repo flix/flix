@@ -92,4 +92,17 @@ pub mod Fs.FileRead {
             def readBytes(filename, k) = k(FileRead.readBytes(r(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileRead` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
+
 }

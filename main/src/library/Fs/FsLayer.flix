@@ -344,6 +344,24 @@ mod Fs.FsLayer {
     pub def resolve(baseDir: String, path: String): String =
         unsafe IO { Paths.get(baseDir).resolve(path).toString() }
 
+    ///
+    /// Resolves `path` against `chrootDir` and validates that the normalized result
+    /// stays within the chroot directory.
+    ///
+    /// Returns `Ok(resolvedPath)` if the path is within bounds,
+    /// or `Err(PermissionDenied)` if the path escapes the chroot.
+    ///
+    pub def chroot(chrootDir: String, path: String): Result[IoError, String] =
+        unsafe IO {
+            let base = Paths.get(chrootDir).toAbsolutePath().normalize();
+            let resolved = base.resolve(path).normalize();
+            if (resolved.startsWith(base))
+                Ok(resolved.toString())
+            else
+                Err(IoError(ErrorKind.PermissionDenied,
+                    "Path '${path}' escapes chroot '${chrootDir}'"))
+        }
+
     // ─── Private helper ────────────────────────────────────────────────
 
     ///
