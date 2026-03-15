@@ -15,4 +15,4 @@ def main(): Unit \ Net + IO =
     with Display.displayWithIO
     with HttpWithResult.runWithIO
     with Logger.runWithIO
-    with FileReadWithResult.runWithIO
+    with Fs.ReadFile.runWithIO
