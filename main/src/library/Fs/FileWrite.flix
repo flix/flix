@@ -16,19 +16,9 @@
 
 pub mod Fs.FileWrite {
 
-    use Fs.AppendBytes
-    use Fs.AppendFile
-    use Fs.AppendLines
     use Fs.FileSystem
     use Fs.FileWrite
     use Fs.FsClient.{logPre, logPost}
-    use Fs.MkDir
-    use Fs.MkDirs
-    use Fs.MkTempDir
-    use Fs.Truncate
-    use Fs.WriteBytes
-    use Fs.WriteFile
-    use Fs.WriteLines
 
     ///
     /// Handles the `FileWrite` effect of the given function `f`.
@@ -73,10 +63,7 @@ pub mod Fs.FileWrite {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    /// The function `f` must not use the leaf effects directly — those are
-    /// excluded from the effect row to ensure all write operations are logged.
-    ///
-    pub def withLogging(f: Unit -> a \ ef - {WriteFile, WriteLines, WriteBytes, AppendFile, AppendLines, AppendBytes, Truncate, MkDir, MkDirs, MkTempDir}): a \ (ef - FileWrite) + {FileWrite, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, Logger} =
         run { f() } with handler FileWrite {
             def write(data, file, k) = {
                 logPre("write", file);

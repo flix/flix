@@ -34,39 +34,8 @@ pub mod Fs.FileSystem {
     import java.nio.file.Paths
     import java.nio.file.StandardOpenOption
 
-    use Fs.AccessTime
-    use Fs.AppendBytes
-    use Fs.AppendFile
-    use Fs.AppendLines
-    use Fs.CreationTime
-    use Fs.DirList
-    use Fs.FileExists
-    use Fs.FilePermission
-    use Fs.FileRead
-    use Fs.FileSize
-    use Fs.FileStat
     use Fs.FileSystem
-    use Fs.FileTest
-    use Fs.FileTime
-    use Fs.FileWrite
     use Fs.FsClient.{logPre, logPost}
-    use Fs.IsDirectory
-    use Fs.IsExecutable
-    use Fs.IsReadable
-    use Fs.IsRegularFile
-    use Fs.IsSymbolicLink
-    use Fs.IsWritable
-    use Fs.MkDir
-    use Fs.MkDirs
-    use Fs.MkTempDir
-    use Fs.ModificationTime
-    use Fs.ReadBytes
-    use Fs.ReadFile
-    use Fs.ReadLines
-    use Fs.Truncate
-    use Fs.WriteBytes
-    use Fs.WriteFile
-    use Fs.WriteLines
     use IoError.IoError
     use IoError.ErrorKind
 
@@ -395,10 +364,7 @@ pub mod Fs.FileSystem {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    /// The function `f` must not use leaf or intermediate effects directly —
-    /// those are excluded from the effect row to ensure all operations are logged.
-    ///
-    pub def withLogging(f: Unit -> a \ ef - {FileExists, IsDirectory, IsRegularFile, IsSymbolicLink, IsReadable, IsWritable, IsExecutable, AccessTime, CreationTime, ModificationTime, FileSize, ReadFile, ReadLines, ReadBytes, DirList, WriteFile, WriteLines, WriteBytes, AppendFile, AppendLines, AppendBytes, Truncate, MkDir, MkDirs, MkTempDir, FileTest, FilePermission, FileTime, FileStat, FileRead, FileWrite}): a \ (ef - FileSystem) + {FileSystem, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileSystem) + {FileSystem, Logger} =
         run { f() } with handler FileSystem {
             def exists(filename, k) = {
                 logPre("exists", filename);

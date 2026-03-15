@@ -16,12 +16,9 @@
 
 pub mod Fs.FileTime {
 
-    use Fs.AccessTime
-    use Fs.CreationTime
     use Fs.FileStat
     use Fs.FileTime
     use Fs.FsClient.{logPre, logPost}
-    use Fs.ModificationTime
 
     ///
     /// Handles the `FileTime` effect of the given function `f`.
@@ -63,7 +60,7 @@ pub mod Fs.FileTime {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef - {AccessTime, CreationTime, ModificationTime}): a \ (ef - FileTime) + {FileTime, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTime) + {FileTime, Logger} =
         run { f() } with handler FileTime {
             def accessTime(filename, k) = {
                 logPre("accessTime", filename);

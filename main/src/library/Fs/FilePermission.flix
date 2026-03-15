@@ -19,9 +19,6 @@ pub mod Fs.FilePermission {
     use Fs.FilePermission
     use Fs.FileStat
     use Fs.FsClient.{logPre, logPost}
-    use Fs.IsExecutable
-    use Fs.IsReadable
-    use Fs.IsWritable
 
     ///
     /// Handles the `FilePermission` effect of the given function `f`.
@@ -63,7 +60,7 @@ pub mod Fs.FilePermission {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef - {IsReadable, IsWritable, IsExecutable}): a \ (ef - FilePermission) + {FilePermission, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FilePermission) + {FilePermission, Logger} =
         run { f() } with handler FilePermission {
             def isReadable(filename, k) = {
                 logPre("isReadable", filename);

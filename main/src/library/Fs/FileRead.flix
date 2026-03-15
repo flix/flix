@@ -19,9 +19,6 @@ pub mod Fs.FileRead {
     use Fs.FileRead
     use Fs.FileSystem
     use Fs.FsClient.{logPre, logPost}
-    use Fs.ReadBytes
-    use Fs.ReadFile
-    use Fs.ReadLines
 
     ///
     /// Handles the `FileRead` effect of the given function `f`.
@@ -59,11 +56,7 @@ pub mod Fs.FileRead {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    /// The function `f` must not use the leaf effects `ReadFile`, `ReadLines`,
-    /// or `ReadBytes` directly — those are excluded from the effect row to
-    /// ensure all read operations are logged.
-    ///
-    pub def withLogging(f: Unit -> a \ ef - {ReadFile, ReadLines, ReadBytes}): a \ (ef - FileRead) + {FileRead, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, Logger} =
         run { f() } with handler FileRead {
             def read(filename, k) = {
                 logPre("read", filename);

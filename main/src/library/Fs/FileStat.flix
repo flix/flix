@@ -16,23 +16,9 @@
 
 pub mod Fs.FileStat {
 
-    use Fs.AccessTime
-    use Fs.CreationTime
-    use Fs.FileExists
-    use Fs.FilePermission
-    use Fs.FileSize
     use Fs.FileStat
     use Fs.FileSystem
-    use Fs.FileTest
-    use Fs.FileTime
     use Fs.FsClient.{logPre, logPost}
-    use Fs.IsDirectory
-    use Fs.IsExecutable
-    use Fs.IsReadable
-    use Fs.IsRegularFile
-    use Fs.IsSymbolicLink
-    use Fs.IsWritable
-    use Fs.ModificationTime
 
     ///
     /// Handles the `FileStat` effect of the given function `f`.
@@ -78,7 +64,7 @@ pub mod Fs.FileStat {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef - {FileExists, IsDirectory, IsRegularFile, IsSymbolicLink, IsReadable, IsWritable, IsExecutable, AccessTime, CreationTime, ModificationTime, FileSize, FileTest, FilePermission, FileTime}): a \ (ef - FileStat) + {FileStat, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileStat) + {FileStat, Logger} =
         run { f() } with handler FileStat {
             def exists(filename, k) = {
                 logPre("exists", filename);

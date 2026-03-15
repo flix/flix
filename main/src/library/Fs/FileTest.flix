@@ -16,13 +16,9 @@
 
 pub mod Fs.FileTest {
 
-    use Fs.FileExists
     use Fs.FileStat
     use Fs.FileTest
     use Fs.FsClient.{logPre, logPost}
-    use Fs.IsDirectory
-    use Fs.IsRegularFile
-    use Fs.IsSymbolicLink
 
     ///
     /// Handles the `FileTest` effect of the given function `f`.
@@ -65,7 +61,7 @@ pub mod Fs.FileTest {
     ///
     /// Successful operations are logged at `Debug` level; errors at `Warn`.
     ///
-    pub def withLogging(f: Unit -> a \ ef - {FileExists, IsDirectory, IsRegularFile, IsSymbolicLink}): a \ (ef - FileTest) + {FileTest, Logger} =
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - FileTest) + {FileTest, Logger} =
         run { f() } with handler FileTest {
             def exists(filename, k) = {
                 logPre("exists", filename);
