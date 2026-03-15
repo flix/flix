@@ -18,7 +18,7 @@ pub mod Fs.FileTime {
 
     use Fs.FileStat
     use Fs.FileTime
-    use Fs.FsClient.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPost}
 
     ///
     /// Handles the `FileTime` effect of the given function `f`.

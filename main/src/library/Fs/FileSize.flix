@@ -25,7 +25,7 @@ pub mod Fs.FileSize {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileSize) + IO = x ->
         run { f(x) } with handler FileSize {
-            def size(filename, k) = k(Fs.FsClient.size(filename))
+            def size(filename, k) = k(Fs.FsLayer.size(filename))
         }
 
     ///

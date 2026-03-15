@@ -25,7 +25,7 @@ pub mod Fs.MkTempDir {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - MkTempDir) + IO = x ->
         run { f(x) } with handler MkTempDir {
-            def mkTempDir(prefix, k) = k(Fs.FsClient.mkTempDir(prefix))
+            def mkTempDir(prefix, k) = k(Fs.FsLayer.mkTempDir(prefix))
         }
 
     ///

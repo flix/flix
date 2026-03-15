@@ -18,7 +18,7 @@ pub mod Fs.FileWrite {
 
     use Fs.FileSystem
     use Fs.FileWrite
-    use Fs.FsClient.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPost}
 
     ///
     /// Handles the `FileWrite` effect of the given function `f`.

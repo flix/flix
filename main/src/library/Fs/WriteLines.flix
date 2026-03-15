@@ -25,7 +25,7 @@ pub mod Fs.WriteLines {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - WriteLines) + IO = x ->
         run { f(x) } with handler WriteLines {
-            def writeLines(data, file, k) = k(Fs.FsClient.writeLines(data, file))
+            def writeLines(data, file, k) = k(Fs.FsLayer.writeLines(data, file))
         }
 
     ///

@@ -25,7 +25,7 @@ pub mod Fs.IsReadable {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - IsReadable) + IO = x ->
         run { f(x) } with handler IsReadable {
-            def isReadable(filename, k) = k(Fs.FsClient.isReadable(filename))
+            def isReadable(filename, k) = k(Fs.FsLayer.isReadable(filename))
         }
 
     ///

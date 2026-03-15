@@ -18,7 +18,7 @@ pub mod Fs.FileStat {
 
     use Fs.FileStat
     use Fs.FileSystem
-    use Fs.FsClient.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPost}
 
     ///
     /// Handles the `FileStat` effect of the given function `f`.

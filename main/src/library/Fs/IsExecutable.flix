@@ -25,7 +25,7 @@ pub mod Fs.IsExecutable {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - IsExecutable) + IO = x ->
         run { f(x) } with handler IsExecutable {
-            def isExecutable(filename, k) = k(Fs.FsClient.isExecutable(filename))
+            def isExecutable(filename, k) = k(Fs.FsLayer.isExecutable(filename))
         }
 
     ///

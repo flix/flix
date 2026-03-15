@@ -25,7 +25,7 @@ pub mod Fs.ModificationTime {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - ModificationTime) + IO = x ->
         run { f(x) } with handler ModificationTime {
-            def modificationTime(filename, k) = k(Fs.FsClient.modificationTime(filename))
+            def modificationTime(filename, k) = k(Fs.FsLayer.modificationTime(filename))
         }
 
     ///

@@ -25,7 +25,7 @@ pub mod Fs.ReadLines {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - ReadLines) + IO = x ->
         run { f(x) } with handler ReadLines {
-            def readLines(filename, k) = k(Fs.FsClient.readLines(filename))
+            def readLines(filename, k) = k(Fs.FsLayer.readLines(filename))
         }
 
     ///

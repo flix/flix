@@ -25,7 +25,7 @@ pub mod Fs.IsSymbolicLink {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - IsSymbolicLink) + IO = x ->
         run { f(x) } with handler IsSymbolicLink {
-            def isSymbolicLink(filename, k) = k(Fs.FsClient.isSymbolicLink(filename))
+            def isSymbolicLink(filename, k) = k(Fs.FsLayer.isSymbolicLink(filename))
         }
 
     ///

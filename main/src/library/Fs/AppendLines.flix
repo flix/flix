@@ -25,7 +25,7 @@ pub mod Fs.AppendLines {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - AppendLines) + IO = x ->
         run { f(x) } with handler AppendLines {
-            def appendLines(data, file, k) = k(Fs.FsClient.appendLines(data, file))
+            def appendLines(data, file, k) = k(Fs.FsLayer.appendLines(data, file))
         }
 
     ///

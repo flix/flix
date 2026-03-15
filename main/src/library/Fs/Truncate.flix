@@ -25,7 +25,7 @@ pub mod Fs.Truncate {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Truncate) + IO = x ->
         run { f(x) } with handler Truncate {
-            def truncate(file, k) = k(Fs.FsClient.truncate(file))
+            def truncate(file, k) = k(Fs.FsLayer.truncate(file))
         }
 
     ///

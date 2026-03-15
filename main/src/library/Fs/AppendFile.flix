@@ -25,7 +25,7 @@ pub mod Fs.AppendFile {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - AppendFile) + IO = x ->
         run { f(x) } with handler AppendFile {
-            def append(data, file, k) = k(Fs.FsClient.append(data, file))
+            def append(data, file, k) = k(Fs.FsLayer.append(data, file))
         }
 
     ///

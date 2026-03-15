@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Fs.FsClient {
+mod Fs.FsLayer {
 
     import java.io.File
     import java.io.IOException

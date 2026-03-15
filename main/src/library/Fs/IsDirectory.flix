@@ -25,7 +25,7 @@ pub mod Fs.IsDirectory {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - IsDirectory) + IO = x ->
         run { f(x) } with handler IsDirectory {
-            def isDirectory(filename, k) = k(Fs.FsClient.isDirectory(filename))
+            def isDirectory(filename, k) = k(Fs.FsLayer.isDirectory(filename))
         }
 
     ///

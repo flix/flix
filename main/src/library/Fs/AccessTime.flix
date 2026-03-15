@@ -25,7 +25,7 @@ pub mod Fs.AccessTime {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - AccessTime) + IO = x ->
         run { f(x) } with handler AccessTime {
-            def accessTime(filename, k) = k(Fs.FsClient.accessTime(filename))
+            def accessTime(filename, k) = k(Fs.FsLayer.accessTime(filename))
         }
 
     ///
