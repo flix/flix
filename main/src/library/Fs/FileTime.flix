@@ -16,7 +16,12 @@
 
 pub mod Fs.FileTime {
 
+    use Fs.AccessTime
+    use Fs.CreationTime
     use Fs.FileStat
+    use Fs.FileTime
+    use Fs.FsClient.{logPre, logPost}
+    use Fs.ModificationTime
 
     ///
     /// Handles the `FileTime` effect of the given function `f`.
@@ -50,6 +55,34 @@ pub mod Fs.FileTime {
             def accessTime(filename, k)       = k(Fs.FileStat.accessTime(filename))
             def creationTime(filename, k)     = k(Fs.FileStat.creationTime(filename))
             def modificationTime(filename, k) = k(Fs.FileStat.modificationTime(filename))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileTime` effect, logging each operation
+    /// and its result via the `Logger` effect.
+    ///
+    /// Successful operations are logged at `Debug` level; errors at `Warn`.
+    ///
+    pub def withLogging(f: Unit -> a \ ef - {AccessTime, CreationTime, ModificationTime}): a \ (ef - FileTime) + {FileTime, Logger} =
+        run { f() } with handler FileTime {
+            def accessTime(filename, k) = {
+                logPre("accessTime", filename);
+                let result = FileTime.accessTime(filename);
+                logPost("accessTime", filename, t -> "${t}ms", result);
+                k(result)
+            }
+            def creationTime(filename, k) = {
+                logPre("creationTime", filename);
+                let result = FileTime.creationTime(filename);
+                logPost("creationTime", filename, t -> "${t}ms", result);
+                k(result)
+            }
+            def modificationTime(filename, k) = {
+                logPre("modificationTime", filename);
+                let result = FileTime.modificationTime(filename);
+                logPost("modificationTime", filename, t -> "${t}ms", result);
+                k(result)
+            }
         }
 
 }
