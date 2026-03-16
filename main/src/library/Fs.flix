@@ -18,7 +18,7 @@ pub mod Fs {
 
     // Effect Hierarchy:
     //
-    // FileSystem                          (27 ops — unified root)
+    // FileSystem                          (28 ops — unified root)
     // ├── FileStat                        (11 ops)
     // │   ├── FileTest                    (4 ops)
     // │   │   ├── FileExists                    — exists
@@ -39,6 +39,7 @@ pub mod Fs {
     // │   ├── ReadLines                         — readLines
     // │   └── ReadBytes                         — readBytes
     // ├── DirList                               — list
+    // ├── Glob                                — glob
     // └── FileWrite                       (12 ops)
     //     ├── WriteFile                         — write
     //     ├── WriteLines                        — writeLines
@@ -230,6 +231,18 @@ pub mod Fs {
         /// Returns a list with the names of all files and directories in the given directory `f`.
         ///
         def list(f: String): Result[IoError, List[String]]
+
+    }
+
+    ///
+    /// An effect used to find files matching a glob pattern.
+    ///
+    pub eff Glob {
+
+        ///
+        /// Returns a list of paths under `base` that match the given glob `pattern`.
+        ///
+        def glob(base: String, pattern: String): Result[IoError, List[String]]
 
     }
 
@@ -714,6 +727,11 @@ pub mod Fs {
         /// Returns a list with the names of all files and directories in the given directory `f`.
         ///
         def list(f: String): Result[IoError, List[String]]
+
+        ///
+        /// Returns a list of paths under `base` that match the given glob `pattern`.
+        ///
+        def glob(base: String, pattern: String): Result[IoError, List[String]]
 
         ///
         /// Writes `str` to the given file `f`.
