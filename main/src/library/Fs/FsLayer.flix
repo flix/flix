@@ -33,6 +33,7 @@ mod Fs.FsLayer {
     import java.nio.file.Path
     import java.nio.file.Paths
     import java.nio.file.CopyOption
+    import java.nio.file.StandardCopyOption
     import java.nio.file.FileSystems
     import java.nio.file.FileVisitOption
     import java.nio.file.NoSuchFileException
@@ -335,15 +336,22 @@ mod Fs.FsLayer {
 
     // ─── Move operation ────────────────────────────────────────────────
 
-    pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
+    pub def moveWith(src: {src = String}, dst: String, opts: Set[Fs.MoveOption]): Result[IoError, Unit] \ IO =
         try {
-            discard Files.move(Paths.get(src#src), Paths.get(dst), (...{}: Vector[CopyOption]));
+            let copyOpts: Vector[CopyOption] = Set.foldLeft((acc, opt) -> match opt {
+                case Fs.MoveOption.AtomicMove      => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.ATOMIC_MOVE)})
+                case Fs.MoveOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
+            }, (Vector#{}: Vector[CopyOption]), opts);
+            discard Files.move(Paths.get(src#src), Paths.get(dst), copyOpts);
             Ok(())
         } catch {
             case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
             case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
+
+    pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
+        moveWith(src, dst, Set.empty())
 
     // ─── Delete operation ────────────────────────────────────────────────
 

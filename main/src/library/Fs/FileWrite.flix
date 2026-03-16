@@ -21,6 +21,12 @@ pub mod Fs.FileWrite {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
+    /// Convenience function: moves `src` to `dst` with no options.
+    ///
+    pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ FileWrite =
+        Fs.FileWrite.moveWith(src, dst, Set.empty())
+
+    ///
     /// Handles the `FileWrite` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `FileWrite` effect using the `IO` effect.
@@ -45,18 +51,18 @@ pub mod Fs.FileWrite {
     ///
     pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - FileWrite) + FileSystem = x ->
         run { f(x) } with handler FileWrite {
-            def write(data, file, k)       = k(Fs.FileSystem.write(data, file))
-            def writeLines(data, file, k)  = k(Fs.FileSystem.writeLines(data, file))
-            def writeBytes(data, file, k)  = k(Fs.FileSystem.writeBytes(data, file))
-            def append(data, file, k)      = k(Fs.FileSystem.append(data, file))
-            def appendLines(data, file, k) = k(Fs.FileSystem.appendLines(data, file))
-            def appendBytes(data, file, k) = k(Fs.FileSystem.appendBytes(data, file))
-            def truncate(file, k)          = k(Fs.FileSystem.truncate(file))
-            def move(src, dst, k)          = k(Fs.FileSystem.move(src, dst))
-            def delete(file, k)            = k(Fs.FileSystem.delete(file))
-            def mkDir(d, k)                = k(Fs.FileSystem.mkDir(d))
-            def mkDirs(d, k)               = k(Fs.FileSystem.mkDirs(d))
-            def mkTempDir(prefix, k)       = k(Fs.FileSystem.mkTempDir(prefix))
+            def write(data, file, k)        = k(Fs.FileSystem.write(data, file))
+            def writeLines(data, file, k)   = k(Fs.FileSystem.writeLines(data, file))
+            def writeBytes(data, file, k)   = k(Fs.FileSystem.writeBytes(data, file))
+            def append(data, file, k)       = k(Fs.FileSystem.append(data, file))
+            def appendLines(data, file, k)  = k(Fs.FileSystem.appendLines(data, file))
+            def appendBytes(data, file, k)  = k(Fs.FileSystem.appendBytes(data, file))
+            def truncate(file, k)           = k(Fs.FileSystem.truncate(file))
+            def moveWith(src, dst, opts, k) = k(Fs.FileSystem.moveWith(src, dst, opts))
+            def delete(file, k)             = k(Fs.FileSystem.delete(file))
+            def mkDir(d, k)                 = k(Fs.FileSystem.mkDir(d))
+            def mkDirs(d, k)                = k(Fs.FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(Fs.FileSystem.mkTempDir(prefix))
         }
 
     ///
@@ -109,9 +115,9 @@ pub mod Fs.FileWrite {
                 logPost("truncate", file, _ -> "done", result);
                 k(result)
             }
-            def move(src, dst, k) = {
+            def moveWith(src, dst, opts, k) = {
                 logPre("move", src#src);
-                let result = FileWrite.move(src, dst);
+                let result = FileWrite.moveWith(src, dst, opts);
                 logPost("move", src#src, _ -> dst, result);
                 k(result)
             }
@@ -150,18 +156,18 @@ pub mod Fs.FileWrite {
     pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
         let r = p -> Fs.FsLayer.resolve(baseDir, p);
         run { f() } with handler FileWrite {
-            def write(data, file, k)       = k(FileWrite.write(data, r(file)))
-            def writeLines(data, file, k)  = k(FileWrite.writeLines(data, r(file)))
-            def writeBytes(data, file, k)  = k(FileWrite.writeBytes(data, r(file)))
-            def append(data, file, k)      = k(FileWrite.append(data, r(file)))
-            def appendLines(data, file, k) = k(FileWrite.appendLines(data, r(file)))
-            def appendBytes(data, file, k) = k(FileWrite.appendBytes(data, r(file)))
-            def truncate(file, k)          = k(FileWrite.truncate(r(file)))
-            def move(src, dst, k)          = k(FileWrite.move(src = r(src#src), r(dst)))
-            def delete(file, k)            = k(FileWrite.delete(r(file)))
-            def mkDir(d, k)                = k(FileWrite.mkDir(r(d)))
-            def mkDirs(d, k)               = k(FileWrite.mkDirs(r(d)))
-            def mkTempDir(prefix, k)       = k(FileWrite.mkTempDir(prefix))
+            def write(data, file, k)        = k(FileWrite.write(data, r(file)))
+            def writeLines(data, file, k)   = k(FileWrite.writeLines(data, r(file)))
+            def writeBytes(data, file, k)   = k(FileWrite.writeBytes(data, r(file)))
+            def append(data, file, k)       = k(FileWrite.append(data, r(file)))
+            def appendLines(data, file, k)  = k(FileWrite.appendLines(data, r(file)))
+            def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, r(file)))
+            def truncate(file, k)           = k(FileWrite.truncate(r(file)))
+            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src = r(src#src), r(dst), opts))
+            def delete(file, k)             = k(FileWrite.delete(r(file)))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(r(d)))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(r(d)))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
         }
 
     ///
@@ -176,18 +182,18 @@ pub mod Fs.FileWrite {
         use IoError.ErrorKind;
         let c = p -> Fs.FsLayer.chroot(chrootDir, p);
         run { f() } with handler FileWrite {
-            def write(data, file, k)       = k(Result.flatMap(p -> FileWrite.write(data, p), c(file)))
-            def writeLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeLines(data, p), c(file)))
-            def writeBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeBytes(data, p), c(file)))
-            def append(data, file, k)      = k(Result.flatMap(p -> FileWrite.append(data, p), c(file)))
-            def appendLines(data, file, k) = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
-            def appendBytes(data, file, k) = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
-            def truncate(file, k)          = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
-            def move(src, dst, k)          = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.move(src = s, d), c(dst)), c(src#src)))
-            def delete(file, k)            = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
-            def mkDir(d, k)                = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
-            def mkDirs(d, k)               = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
-            def mkTempDir(_prefix, k)      = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted inside a chroot")))
+            def write(data, file, k)        = k(Result.flatMap(p -> FileWrite.write(data, p), c(file)))
+            def writeLines(data, file, k)   = k(Result.flatMap(p -> FileWrite.writeLines(data, p), c(file)))
+            def writeBytes(data, file, k)   = k(Result.flatMap(p -> FileWrite.writeBytes(data, p), c(file)))
+            def append(data, file, k)       = k(Result.flatMap(p -> FileWrite.append(data, p), c(file)))
+            def appendLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
+            def appendBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
+            def truncate(file, k)           = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def moveWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.moveWith(src = s, d, opts), c(dst)), c(src#src)))
+            def delete(file, k)             = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
+            def mkDir(d, k)                 = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
+            def mkDirs(d, k)                = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
+            def mkTempDir(_prefix, k)       = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted inside a chroot")))
         }
 
     ///
@@ -202,18 +208,18 @@ pub mod Fs.FileWrite {
         use IoError.ErrorKind;
         let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
         run { f() } with handler FileWrite {
-            def write(data, file, k)       = k(Result.flatMap(p -> FileWrite.write(data, p), c(file)))
-            def writeLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeLines(data, p), c(file)))
-            def writeBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeBytes(data, p), c(file)))
-            def append(data, file, k)      = k(Result.flatMap(p -> FileWrite.append(data, p), c(file)))
-            def appendLines(data, file, k) = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
-            def appendBytes(data, file, k) = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
-            def truncate(file, k)          = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
-            def move(src, dst, k)          = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.move(src = s, d), c(dst)), c(src#src)))
-            def delete(file, k)            = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
-            def mkDir(d, k)                = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
-            def mkDirs(d, k)               = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
-            def mkTempDir(_prefix, k)      = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow list")))
+            def write(data, file, k)        = k(Result.flatMap(p -> FileWrite.write(data, p), c(file)))
+            def writeLines(data, file, k)   = k(Result.flatMap(p -> FileWrite.writeLines(data, p), c(file)))
+            def writeBytes(data, file, k)   = k(Result.flatMap(p -> FileWrite.writeBytes(data, p), c(file)))
+            def append(data, file, k)       = k(Result.flatMap(p -> FileWrite.append(data, p), c(file)))
+            def appendLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
+            def appendBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
+            def truncate(file, k)           = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def moveWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.moveWith(src = s, d, opts), c(dst)), c(src#src)))
+            def delete(file, k)             = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
+            def mkDir(d, k)                 = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
+            def mkDirs(d, k)                = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
+            def mkTempDir(_prefix, k)       = k(Err(IoError(ErrorKind.PermissionDenied, "mkTempDir is not permitted with an allow list")))
         }
 
     ///
@@ -226,18 +232,18 @@ pub mod Fs.FileWrite {
     pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
         let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
         run { f() } with handler FileWrite {
-            def write(data, file, k)       = k(Result.flatMap(p -> FileWrite.write(data, p), c(file)))
-            def writeLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeLines(data, p), c(file)))
-            def writeBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.writeBytes(data, p), c(file)))
-            def append(data, file, k)      = k(Result.flatMap(p -> FileWrite.append(data, p), c(file)))
-            def appendLines(data, file, k) = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
-            def appendBytes(data, file, k) = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
-            def truncate(file, k)          = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
-            def move(src, dst, k)          = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.move(src = s, d), c(dst)), c(src#src)))
-            def delete(file, k)            = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
-            def mkDir(d, k)                = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
-            def mkDirs(d, k)               = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
-            def mkTempDir(prefix, k)       = k(FileWrite.mkTempDir(prefix))
+            def write(data, file, k)        = k(Result.flatMap(p -> FileWrite.write(data, p), c(file)))
+            def writeLines(data, file, k)   = k(Result.flatMap(p -> FileWrite.writeLines(data, p), c(file)))
+            def writeBytes(data, file, k)   = k(Result.flatMap(p -> FileWrite.writeBytes(data, p), c(file)))
+            def append(data, file, k)       = k(Result.flatMap(p -> FileWrite.append(data, p), c(file)))
+            def appendLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
+            def appendBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
+            def truncate(file, k)           = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def moveWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.moveWith(src = s, d, opts), c(dst)), c(src#src)))
+            def delete(file, k)             = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
+            def mkDir(d, k)                 = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
+            def mkDirs(d, k)                = k(Result.flatMap(p -> FileWrite.mkDirs(p), c(d)))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
         }
 
     ///
@@ -278,7 +284,7 @@ pub mod Fs.FileWrite {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("truncate") + text(" ") + cyan(file));
                 k(Ok(()))
             }
-            def move(src, dst, k) = {
+            def moveWith(src, dst, _opts, k) = {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("move") + text(" ") + cyan(src#src) + gray(" -> ") + cyan(dst));
                 k(Ok(()))
             }
@@ -310,18 +316,18 @@ pub mod Fs.FileWrite {
         use IoError.ErrorKind;
         let denied = op -> Err(IoError(ErrorKind.PermissionDenied, "read-only: ${op} is not permitted"));
         run { f() } with handler FileWrite {
-            def write(_data, _file, k)       = k(denied("write"))
-            def writeLines(_data, _file, k)  = k(denied("writeLines"))
-            def writeBytes(_data, _file, k)  = k(denied("writeBytes"))
-            def append(_data, _file, k)      = k(denied("append"))
-            def appendLines(_data, _file, k) = k(denied("appendLines"))
-            def appendBytes(_data, _file, k) = k(denied("appendBytes"))
-            def truncate(_file, k)           = k(denied("truncate"))
-            def move(_src, _dst, k)          = k(denied("move"))
-            def delete(_file, k)             = k(denied("delete"))
-            def mkDir(_d, k)                 = k(denied("mkDir"))
-            def mkDirs(_d, k)                = k(denied("mkDirs"))
-            def mkTempDir(_prefix, k)        = k(Err(IoError(ErrorKind.PermissionDenied, "read-only: mkTempDir is not permitted")))
+            def write(_data, _file, k)         = k(denied("write"))
+            def writeLines(_data, _file, k)    = k(denied("writeLines"))
+            def writeBytes(_data, _file, k)    = k(denied("writeBytes"))
+            def append(_data, _file, k)        = k(denied("append"))
+            def appendLines(_data, _file, k)   = k(denied("appendLines"))
+            def appendBytes(_data, _file, k)   = k(denied("appendBytes"))
+            def truncate(_file, k)             = k(denied("truncate"))
+            def moveWith(_src, _dst, _opts, k) = k(denied("move"))
+            def delete(_file, k)               = k(denied("delete"))
+            def mkDir(_d, k)                   = k(denied("mkDir"))
+            def mkDirs(_d, k)                  = k(denied("mkDirs"))
+            def mkTempDir(_prefix, k)          = k(Err(IoError(ErrorKind.PermissionDenied, "read-only: mkTempDir is not permitted")))
         }
 
 }
