@@ -33,8 +33,13 @@ mod Fs.FsLayer {
     import java.nio.file.Path
     import java.nio.file.Paths
     import java.nio.file.CopyOption
+    import java.nio.file.FileSystems
+    import java.nio.file.FileVisitOption
     import java.nio.file.NoSuchFileException
+    import java.nio.file.PathMatcher
     import java.nio.file.StandardOpenOption
+    import java.util.stream.BaseStream
+    import java.util.stream.Stream
 
     use IoError.IoError
     use IoError.ErrorKind
@@ -189,6 +194,33 @@ mod Fs.FsLayer {
             case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: NotDirectoryException => Err(IoError(ErrorKind.NotDirectory, ex.getMessage()))
             case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
+        }
+
+    // ─── Glob operation ─────────────────────────────────────────────────
+
+    pub def glob(base: String, pattern: String): Result[IoError, List[String]] \ IO =
+        try {
+            region rc {
+                let basePath = Paths.get(base);
+                let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                let stream = Files.walk(basePath, (...{}: Vector[FileVisitOption]));
+                let iter = Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[Path]), stream);
+                let result = iter
+                    |> Iterator.filterMap(path -> {
+                        let rel = basePath.relativize(path);
+                        if (matcher.matches(rel))
+                            Some(path.toString())
+                        else
+                            None
+                    })
+                    |> Iterator.toList;
+                let bs: BaseStream = checked_cast(stream);
+                bs.close();
+                Ok(result)
+            }
+        } catch {
+            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     // ─── Write operations ──────────────────────────────────────────────

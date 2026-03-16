@@ -44,6 +44,7 @@ pub mod Fs.FileSystem {
             def readLines(filename, k)        = k(Fs.FsLayer.readLines(filename))
             def readBytes(filename, k)        = k(Fs.FsLayer.readBytes(filename))
             def list(filename, k)             = k(Fs.FsLayer.list(filename))
+            def glob(base, pattern, k)        = k(Fs.FsLayer.glob(base, pattern))
             def write(data, file, k)          = k(Fs.FsLayer.write(data, file))
             def writeLines(data, file, k)     = k(Fs.FsLayer.writeLines(data, file))
             def writeBytes(data, file, k)     = k(Fs.FsLayer.writeBytes(data, file))
@@ -164,6 +165,12 @@ pub mod Fs.FileSystem {
                 logPost("list", filename, ls -> "${List.length(ls)} entries", result);
                 k(result)
             }
+            def glob(base, pattern, k) = {
+                logPre("glob", base);
+                let result = FileSystem.glob(base, pattern);
+                logPost("glob", base, ls -> "${List.length(ls)} matches", result);
+                k(result)
+            }
             def write(data, file, k) = {
                 logPre("write", file);
                 let result = FileSystem.write(data, file);
@@ -262,6 +269,7 @@ pub mod Fs.FileSystem {
             def readLines(filename, k)        = k(FileSystem.readLines(r(filename)))
             def readBytes(filename, k)        = k(FileSystem.readBytes(r(filename)))
             def list(filename, k)             = k(FileSystem.list(r(filename)))
+            def glob(base, pattern, k)        = k(FileSystem.glob(r(base), pattern))
             def write(data, file, k)          = k(FileSystem.write(data, r(file)))
             def writeLines(data, file, k)     = k(FileSystem.writeLines(data, r(file)))
             def writeBytes(data, file, k)     = k(FileSystem.writeBytes(data, r(file)))
@@ -303,6 +311,7 @@ pub mod Fs.FileSystem {
             def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
             def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
             def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+            def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
             def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
             def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
             def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
@@ -344,6 +353,7 @@ pub mod Fs.FileSystem {
             def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
             def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
             def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+            def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
             def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
             def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
             def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
@@ -383,6 +393,7 @@ pub mod Fs.FileSystem {
             def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), c(filename)))
             def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), c(filename)))
             def list(filename, k)             = k(Result.flatMap(p -> FileSystem.list(p), c(filename)))
+            def glob(base, pattern, k)        = k(Result.flatMap(p -> FileSystem.glob(p, pattern), c(base)))
             def write(data, file, k)          = k(Result.flatMap(p -> FileSystem.write(data, p), c(file)))
             def writeLines(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeLines(data, p), c(file)))
             def writeBytes(data, file, k)     = k(Result.flatMap(p -> FileSystem.writeBytes(data, p), c(file)))
@@ -424,6 +435,7 @@ pub mod Fs.FileSystem {
             def readLines(filename, k)        = k(FileSystem.readLines(filename))
             def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
             def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
             // Write ops — dry-run (log + return Ok)
             def write(data, file, k) = {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("write") + text(" ") + cyan(file) + gray(" (${String.length(data#str)} chars)"));
@@ -503,6 +515,7 @@ pub mod Fs.FileSystem {
             def readLines(filename, k)        = k(FileSystem.readLines(filename))
             def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
             def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
             // Write ops — blocked
             def write(_data, _file, k)        = k(denied("write"))
             def writeLines(_data, _file, k)   = k(denied("writeLines"))
