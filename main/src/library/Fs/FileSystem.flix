@@ -21,6 +21,12 @@ pub mod Fs.FileSystem {
     use IoError.IoError
 
     ///
+    /// Convenience function: copies `src` to `dst` with no options.
+    ///
+    pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ FileSystem =
+        Fs.FileSystem.copyWith(src, dst, Set.empty())
+
+    ///
     /// Convenience function: moves `src` to `dst` with no options.
     ///
     pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ FileSystem =
@@ -58,6 +64,7 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(Fs.FsLayer.appendLines(data, file))
             def appendBytes(data, file, k)    = k(Fs.FsLayer.appendBytes(data, file))
             def truncate(file, k)             = k(Fs.FsLayer.truncate(file))
+            def copyWith(src, dst, opts, k)   = k(Fs.FsLayer.copyWith(src, dst, opts))
             def moveWith(src, dst, opts, k)   = k(Fs.FsLayer.moveWith(src, dst, opts))
             def delete(file, k)               = k(Fs.FsLayer.delete(file))
             def mkDir(d, k)                   = k(Fs.FsLayer.mkDir(d))
@@ -219,6 +226,12 @@ pub mod Fs.FileSystem {
                 logPost("truncate", file, _ -> "done", result);
                 k(result)
             }
+            def copyWith(src, dst, opts, k) = {
+                logPre("copy", src#src);
+                let result = FileSystem.copyWith(src, dst, opts);
+                logPost("copy", src#src, _ -> dst, result);
+                k(result)
+            }
             def moveWith(src, dst, opts, k) = {
                 logPre("move", src#src);
                 let result = FileSystem.moveWith(src, dst, opts);
@@ -283,6 +296,7 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(FileSystem.appendLines(data, r(file)))
             def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, r(file)))
             def truncate(file, k)             = k(FileSystem.truncate(r(file)))
+            def copyWith(src, dst, opts, k)   = k(FileSystem.copyWith(src = r(src#src), r(dst), opts))
             def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src = r(src#src), r(dst), opts))
             def delete(file, k)               = k(FileSystem.delete(r(file)))
             def mkDir(d, k)                   = k(FileSystem.mkDir(r(d)))
@@ -325,6 +339,7 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+            def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
             def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
@@ -367,6 +382,7 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+            def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
             def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
@@ -407,6 +423,7 @@ pub mod Fs.FileSystem {
             def appendLines(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)    = k(Result.flatMap(p -> FileSystem.appendBytes(data, p), c(file)))
             def truncate(file, k)             = k(Result.flatMap(p -> FileSystem.truncate(p), c(file)))
+            def copyWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.copyWith(src = s, d, opts), c(dst)), c(src#src)))
             def moveWith(src, dst, opts, k)   = k(Result.flatMap(s -> Result.flatMap(d -> FileSystem.moveWith(src = s, d, opts), c(dst)), c(src#src)))
             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
@@ -471,6 +488,10 @@ pub mod Fs.FileSystem {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("truncate") + text(" ") + cyan(file));
                 k(Ok(()))
             }
+            def copyWith(src, dst, _opts, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("copy") + text(" ") + cyan(src#src) + gray(" -> ") + cyan(dst));
+                k(Ok(()))
+            }
             def moveWith(src, dst, _opts, k) = {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("move") + text(" ") + cyan(src#src) + gray(" -> ") + cyan(dst));
                 k(Ok(()))
@@ -530,6 +551,7 @@ pub mod Fs.FileSystem {
             def appendLines(_data, _file, k)    = k(denied("appendLines"))
             def appendBytes(_data, _file, k)    = k(denied("appendBytes"))
             def truncate(_file, k)              = k(denied("truncate"))
+            def copyWith(_src, _dst, _opts, k)  = k(denied("copy"))
             def moveWith(_src, _dst, _opts, k)  = k(denied("move"))
             def delete(_file, k)                = k(denied("delete"))
             def mkDir(_d, k)                    = k(denied("mkDir"))

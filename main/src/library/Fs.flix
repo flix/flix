@@ -18,7 +18,7 @@ pub mod Fs {
 
     // Effect Hierarchy:
     //
-    // FileSystem                          (28 ops — unified root)
+    // FileSystem                          (29 ops — unified root)
     // ├── FileStat                        (11 ops)
     // │   ├── FileTest                    (4 ops)
     // │   │   ├── FileExists                    — exists
@@ -39,8 +39,8 @@ pub mod Fs {
     // │   ├── ReadLines                         — readLines
     // │   └── ReadBytes                         — readBytes
     // ├── DirList                               — list
-    // ├── Glob                                — glob
-    // └── FileWrite                       (12 ops)
+    // ├── Glob                                  — glob
+    // └── FileWrite                       (13 ops)
     //     ├── WriteFile                         — write
     //     ├── WriteLines                        — writeLines
     //     ├── WriteBytes                        — writeBytes
@@ -48,11 +48,20 @@ pub mod Fs {
     //     ├── AppendLines                       — appendLines
     //     ├── AppendBytes                       — appendBytes
     //     ├── Truncate                          — truncate
+    //     ├── CopyFile                          — copyWith
     //     ├── MoveFile                          — moveWith
     //     ├── DeleteFile                        — delete
     //     ├── MkDir                             — mkDir
     //     ├── MkDirs                            — mkDirs
     //     └── MkTempDir                         — mkTempDir
+
+    ///
+    /// Options for the `copyWith` operation.
+    ///
+    pub enum CopyOption with Eq, Order, ToString {
+        case CopyAttributes
+        case ReplaceExisting
+    }
 
     ///
     /// Options for the `moveWith` operation.
@@ -351,6 +360,18 @@ pub mod Fs {
     }
 
     ///
+    /// An effect used to copy a file.
+    ///
+    pub eff CopyFile {
+
+        ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+    }
+
+    ///
     /// An effect used to move (rename) a file or directory.
     ///
     pub eff MoveFile {
@@ -622,6 +643,11 @@ pub mod Fs {
         def truncate(f: String): Result[IoError, Unit]
 
         ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+        ///
         /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
         ///
         def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
@@ -783,6 +809,11 @@ pub mod Fs {
         /// Truncates the given file `f`.
         ///
         def truncate(f: String): Result[IoError, Unit]
+
+        ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
 
         ///
         /// Moves (renames) the file or directory `src` to `dst` with the given `options`.

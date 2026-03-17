@@ -21,6 +21,12 @@ pub mod Fs.FileWrite {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
+    /// Convenience function: copies `src` to `dst` with no options.
+    ///
+    pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ FileWrite =
+        Fs.FileWrite.copyWith(src, dst, Set.empty())
+
+    ///
     /// Convenience function: moves `src` to `dst` with no options.
     ///
     pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ FileWrite =
@@ -58,6 +64,7 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k)  = k(Fs.FileSystem.appendLines(data, file))
             def appendBytes(data, file, k)  = k(Fs.FileSystem.appendBytes(data, file))
             def truncate(file, k)           = k(Fs.FileSystem.truncate(file))
+            def copyWith(src, dst, opts, k) = k(Fs.FileSystem.copyWith(src, dst, opts))
             def moveWith(src, dst, opts, k) = k(Fs.FileSystem.moveWith(src, dst, opts))
             def delete(file, k)             = k(Fs.FileSystem.delete(file))
             def mkDir(d, k)                 = k(Fs.FileSystem.mkDir(d))
@@ -115,6 +122,12 @@ pub mod Fs.FileWrite {
                 logPost("truncate", file, _ -> "done", result);
                 k(result)
             }
+            def copyWith(src, dst, opts, k) = {
+                logPre("copy", src#src);
+                let result = FileWrite.copyWith(src, dst, opts);
+                logPost("copy", src#src, _ -> dst, result);
+                k(result)
+            }
             def moveWith(src, dst, opts, k) = {
                 logPre("move", src#src);
                 let result = FileWrite.moveWith(src, dst, opts);
@@ -163,6 +176,7 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k)  = k(FileWrite.appendLines(data, r(file)))
             def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, r(file)))
             def truncate(file, k)           = k(FileWrite.truncate(r(file)))
+            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src = r(src#src), r(dst), opts))
             def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src = r(src#src), r(dst), opts))
             def delete(file, k)             = k(FileWrite.delete(r(file)))
             def mkDir(d, k)                 = k(FileWrite.mkDir(r(d)))
@@ -189,6 +203,7 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
             def truncate(file, k)           = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def copyWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.copyWith(src = s, d, opts), c(dst)), c(src#src)))
             def moveWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.moveWith(src = s, d, opts), c(dst)), c(src#src)))
             def delete(file, k)             = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
             def mkDir(d, k)                 = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
@@ -215,6 +230,7 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
             def truncate(file, k)           = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def copyWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.copyWith(src = s, d, opts), c(dst)), c(src#src)))
             def moveWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.moveWith(src = s, d, opts), c(dst)), c(src#src)))
             def delete(file, k)             = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
             def mkDir(d, k)                 = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
@@ -239,6 +255,7 @@ pub mod Fs.FileWrite {
             def appendLines(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendLines(data, p), c(file)))
             def appendBytes(data, file, k)  = k(Result.flatMap(p -> FileWrite.appendBytes(data, p), c(file)))
             def truncate(file, k)           = k(Result.flatMap(p -> FileWrite.truncate(p), c(file)))
+            def copyWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.copyWith(src = s, d, opts), c(dst)), c(src#src)))
             def moveWith(src, dst, opts, k) = k(Result.flatMap(s -> Result.flatMap(d -> FileWrite.moveWith(src = s, d, opts), c(dst)), c(src#src)))
             def delete(file, k)             = k(Result.flatMap(p -> FileWrite.delete(p), c(file)))
             def mkDir(d, k)                 = k(Result.flatMap(p -> FileWrite.mkDir(p), c(d)))
@@ -284,6 +301,10 @@ pub mod Fs.FileWrite {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("truncate") + text(" ") + cyan(file));
                 k(Ok(()))
             }
+            def copyWith(src, dst, _opts, k) = {
+                Logger.log(Severity.Debug, tag + text(" ") + bold("copy") + text(" ") + cyan(src#src) + gray(" -> ") + cyan(dst));
+                k(Ok(()))
+            }
             def moveWith(src, dst, _opts, k) = {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("move") + text(" ") + cyan(src#src) + gray(" -> ") + cyan(dst));
                 k(Ok(()))
@@ -323,6 +344,7 @@ pub mod Fs.FileWrite {
             def appendLines(_data, _file, k)   = k(denied("appendLines"))
             def appendBytes(_data, _file, k)   = k(denied("appendBytes"))
             def truncate(_file, k)             = k(denied("truncate"))
+            def copyWith(_src, _dst, _opts, k) = k(denied("copy"))
             def moveWith(_src, _dst, _opts, k) = k(denied("move"))
             def delete(_file, k)               = k(denied("delete"))
             def mkDir(_d, k)                   = k(denied("mkDir"))

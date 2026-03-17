@@ -334,6 +334,25 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    // ─── Copy operation ────────────────────────────────────────────────
+
+    pub def copyWith(src: {src = String}, dst: String, opts: Set[Fs.CopyOption]): Result[IoError, Unit] \ IO =
+        try {
+            let copyOpts: Vector[CopyOption] = Set.foldLeft((acc, opt) -> match opt {
+                case Fs.CopyOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
+                case Fs.CopyOption.CopyAttributes  => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.COPY_ATTRIBUTES)})
+            }, (Vector#{}: Vector[CopyOption]), opts);
+            discard Files.copy(Paths.get(src#src), Paths.get(dst), copyOpts);
+            Ok(())
+        } catch {
+            case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
+        }
+
+    pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
+        copyWith(src, dst, Set.empty())
+
     // ─── Move operation ────────────────────────────────────────────────
 
     pub def moveWith(src: {src = String}, dst: String, opts: Set[Fs.MoveOption]): Result[IoError, Unit] \ IO =
