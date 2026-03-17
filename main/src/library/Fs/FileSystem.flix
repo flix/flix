@@ -608,4 +608,62 @@ pub mod Fs.FileSystem {
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
         }
 
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, creating a backup
+    /// of existing files before destructive operations. Before `write`,
+    /// `writeLines`, `writeBytes`, `truncate`, and `delete`, the existing
+    /// file is copied to `file + suffix` (e.g., `"data.txt.bak"` when
+    /// suffix is `".bak"`).
+    ///
+    /// For `copyWith` and `moveWith`, the destination file is backed up.
+    ///
+    /// If the file does not exist, no backup is created and the operation
+    /// proceeds normally. If the backup fails for any other reason, the
+    /// original operation is aborted and the backup error is returned.
+    ///
+    /// If a backup file already exists, it is overwritten. Only the most
+    /// recent previous version of each file is preserved.
+    ///
+    /// Read, stat, test, list, glob, append, mkdir, and mkTempDir operations
+    /// are passed through unchanged.
+    ///
+    pub def withBackup(suffix: String, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let doCopy = (src, dst) -> FileSystem.copyWith(src = src, dst, Set#{Fs.CopyOption.ReplaceExisting});
+        run { f() } with handler FileSystem {
+            // Read/stat/test ops — pass through
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def read(filename, k)             = k(FileSystem.read(filename))
+            def readLines(filename, k)        = k(FileSystem.readLines(filename))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // Destructive ops — backup then proceed
+            def write(data, file, k)          = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileSystem.write(data, file)))
+            def writeLines(data, file, k)     = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileSystem.writeLines(data, file)))
+            def writeBytes(data, file, k)     = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileSystem.writeBytes(data, file)))
+            def truncate(file, k)             = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileSystem.truncate(file)))
+            def delete(file, k)               = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileSystem.delete(file)))
+            def copyWith(src, dst, opts, k)   = k(Fs.FsLayer.backup(dst, suffix, doCopy, () -> FileSystem.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k)   = k(Fs.FsLayer.backup(dst, suffix, doCopy, () -> FileSystem.moveWith(src, dst, opts)))
+
+            // Non-destructive write ops — pass through
+            def append(data, file, k)         = k(FileSystem.append(data, file))
+            def appendLines(data, file, k)    = k(FileSystem.appendLines(data, file))
+            def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, file))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
 }

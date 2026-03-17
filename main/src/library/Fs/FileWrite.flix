@@ -380,4 +380,40 @@ pub mod Fs.FileWrite {
             def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
         }
 
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, creating a backup
+    /// of existing files before destructive operations. Before `write`,
+    /// `writeLines`, `writeBytes`, `truncate`, and `delete`, the existing
+    /// file is copied to `file + suffix` (e.g., `"data.txt.bak"` when
+    /// suffix is `".bak"`).
+    ///
+    /// For `copyWith` and `moveWith`, the destination file is backed up.
+    ///
+    /// If the file does not exist, no backup is created and the operation
+    /// proceeds normally. If the backup fails for any other reason, the
+    /// original operation is aborted and the backup error is returned.
+    ///
+    /// If a backup file already exists, it is overwritten. Only the most
+    /// recent previous version of each file is preserved.
+    ///
+    /// Append, mkdir, and mkTempDir operations are passed through unchanged.
+    ///
+    pub def withBackup(suffix: String, f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let doCopy = (src, dst) -> FileWrite.copyWith(src = src, dst, Set#{Fs.CopyOption.ReplaceExisting});
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileWrite.write(data, file)))
+            def writeLines(data, file, k)   = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileWrite.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileWrite.writeBytes(data, file)))
+            def truncate(file, k)           = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileWrite.truncate(file)))
+            def delete(file, k)             = k(Fs.FsLayer.backup(file, suffix, doCopy, () -> FileWrite.delete(file)))
+            def copyWith(src, dst, opts, k) = k(Fs.FsLayer.backup(dst, suffix, doCopy, () -> FileWrite.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.backup(dst, suffix, doCopy, () -> FileWrite.moveWith(src, dst, opts)))
+            def append(data, file, k)       = k(FileWrite.append(data, file))
+            def appendLines(data, file, k)  = k(FileWrite.appendLines(data, file))
+            def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
 }

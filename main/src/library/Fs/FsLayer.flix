@@ -348,6 +348,7 @@ mod Fs.FsLayer {
         } catch {
             case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: NoSuchFileException        => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -367,6 +368,7 @@ mod Fs.FsLayer {
         } catch {
             case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: NoSuchFileException        => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -534,6 +536,30 @@ mod Fs.FsLayer {
             let name = path.getFileName().toString();
             let uuid = UUID.randomUUID().toString();
             parentDir.resolve(".~atomic~${name}.${uuid}.tmp").toString()
+        }
+
+    // ─── Backup helper ───────────────────────────────────────────────
+
+    ///
+    /// Performs a backup of `file` to `file + suffix` before executing `doAction`.
+    ///
+    /// - `doCopy(file, bak)` copies the file to the backup path.
+    /// - If the copy succeeds, `doAction()` is executed.
+    /// - If the copy fails with `NotFound`, the file doesn't exist yet, so
+    ///   `doAction()` proceeds without backup.
+    /// - If the copy fails with any other error, the operation is aborted.
+    ///
+    pub def backup(
+        file: String,
+        suffix: String,
+        doCopy: String -> String -> Result[IoError, Unit] \ ef,
+        doAction: Unit -> Result[IoError, a] \ ef
+    ): Result[IoError, a] \ ef =
+        let bak = file + suffix;
+        match doCopy(file, bak) {
+            case Ok(_)                              => doAction()
+            case Err(IoError(ErrorKind.NotFound, _)) => doAction()
+            case Err(e)                             => Err(e)
         }
 
     // ─── Private helper ────────────────────────────────────────────────
