@@ -352,4 +352,32 @@ pub mod Fs.FileWrite {
             def mkTempDir(_prefix, k)          = k(Err(IoError(ErrorKind.PermissionDenied, "read-only: mkTempDir is not permitted")))
         }
 
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, making `write`,
+    /// `writeLines`, and `writeBytes` atomic. Data is first written to a
+    /// temporary file in the same directory, then atomically moved into place.
+    /// On failure the temporary file is cleaned up.
+    ///
+    /// All other operations (append, truncate, copy, move, delete, mkdir) are
+    /// passed through unchanged.
+    ///
+    pub def withAtomicWrite(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let mv  = (tmp, dst) -> FileWrite.moveWith(src = tmp, dst, Set#{Fs.MoveOption.AtomicMove, Fs.MoveOption.ReplaceExisting});
+        let del = tmp -> FileWrite.delete(tmp);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(Fs.FsLayer.atomicWrite(file, tmp -> FileWrite.write(data, tmp), mv, del))
+            def writeLines(data, file, k)   = k(Fs.FsLayer.atomicWrite(file, tmp -> FileWrite.writeLines(data, tmp), mv, del))
+            def writeBytes(data, file, k)   = k(Fs.FsLayer.atomicWrite(file, tmp -> FileWrite.writeBytes(data, tmp), mv, del))
+            def append(data, file, k)       = k(FileWrite.append(data, file))
+            def appendLines(data, file, k)  = k(FileWrite.appendLines(data, file))
+            def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, file))
+            def truncate(file, k)           = k(FileWrite.truncate(file))
+            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src, dst, opts))
+            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src, dst, opts))
+            def delete(file, k)             = k(FileWrite.delete(file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
 }

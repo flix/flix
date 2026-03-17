@@ -40,6 +40,7 @@ mod Fs.FsLayer {
     import java.nio.file.PathMatcher
     import java.nio.file.StandardOpenOption
     import java.util.stream.BaseStream
+    import java.util.UUID
     import java.util.stream.Stream
 
     use IoError.IoError
@@ -489,6 +490,50 @@ mod Fs.FsLayer {
                     "Path '${path}' is within a denied directory"))
             else
                 Ok(resolved.toString())
+        }
+
+    // ─── Atomic write helper ────────────────────────────────────────────
+
+    ///
+    /// Performs an atomic write to `file` by writing to a temporary sibling path
+    /// first, then atomically moving it into place.
+    ///
+    /// - `doWrite(tmp)` writes data to the temporary path.
+    /// - `doMoveAtomic(tmp, file)` atomically moves the temp file to the target.
+    /// - `doDelete(tmp)` cleans up the temp file on failure.
+    ///
+    /// The caller supplies these as effect operations so that this helper works
+    /// with any effect (`FileWrite`, `FileSystem`, etc.).
+    ///
+    pub def atomicWrite(
+        file: String,
+        doWrite: String -> Result[IoError, Unit] \ ef,
+        doMoveAtomic: String -> String -> Result[IoError, Unit] \ ef,
+        doDelete: String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        let tmp = tempPathFor(file);
+        match doWrite(tmp) {
+            case Ok(_) => match doMoveAtomic(tmp, file) {
+                case Ok(_)  => Ok(())
+                case Err(e) => { discard doDelete(tmp); Err(e) }
+            }
+            case Err(e) => { discard doDelete(tmp); Err(e) }
+        }
+
+    ///
+    /// Generates a unique temporary file path in the same directory as `target`.
+    ///
+    /// Uses UUID for uniqueness. The result is a sibling of `target` with the
+    /// pattern `.~atomic~<name>.<uuid>.tmp`.
+    ///
+    def tempPathFor(target: String): String =
+        unsafe IO {
+            let path = Paths.get(target);
+            let parent = path.getParent();
+            let parentDir = if (Object.isNull(parent)) Paths.get(".") else parent;
+            let name = path.getFileName().toString();
+            let uuid = UUID.randomUUID().toString();
+            parentDir.resolve(".~atomic~${name}.${uuid}.tmp").toString()
         }
 
     // ─── Private helper ────────────────────────────────────────────────
