@@ -48,11 +48,19 @@ pub mod Fs {
     //     ├── AppendLines                       — appendLines
     //     ├── AppendBytes                       — appendBytes
     //     ├── Truncate                          — truncate
-    //     ├── MoveFile                          — move
+    //     ├── MoveFile                          — moveWith
     //     ├── DeleteFile                        — delete
     //     ├── MkDir                             — mkDir
     //     ├── MkDirs                            — mkDirs
     //     └── MkTempDir                         — mkTempDir
+
+    ///
+    /// Options for the `moveWith` operation.
+    ///
+    pub enum MoveOption with Eq, Order, ToString {
+        case AtomicMove
+        case ReplaceExisting
+    }
 
     ///
     /// An effect used to check if a file exists.
@@ -348,11 +356,9 @@ pub mod Fs {
     pub eff MoveFile {
 
         ///
-        /// Moves (renames) the file or directory `src` to `dst`.
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
         ///
-        /// Fails if `dst` already exists.
-        ///
-        def move(src: {src = String}, dst: String): Result[IoError, Unit]
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
 
     }
 
@@ -616,11 +622,9 @@ pub mod Fs {
         def truncate(f: String): Result[IoError, Unit]
 
         ///
-        /// Moves (renames) the file or directory `src` to `dst`.
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
         ///
-        /// Fails if `dst` already exists.
-        ///
-        def move(src: {src = String}, dst: String): Result[IoError, Unit]
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
 
         ///
         /// Deletes the given file `f`.
@@ -781,11 +785,9 @@ pub mod Fs {
         def truncate(f: String): Result[IoError, Unit]
 
         ///
-        /// Moves (renames) the file or directory `src` to `dst`.
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
         ///
-        /// Fails if `dst` already exists.
-        ///
-        def move(src: {src = String}, dst: String): Result[IoError, Unit]
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
 
         ///
         /// Deletes the given file `f`.

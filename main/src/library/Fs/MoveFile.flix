@@ -17,6 +17,13 @@
 pub mod Fs.MoveFile {
 
     use Fs.FileWrite
+    use Fs.MoveFile
+
+    ///
+    /// Convenience function: moves `src` to `dst` with no options.
+    ///
+    pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ MoveFile =
+        Fs.MoveFile.moveWith(src, dst, Set.empty())
 
     ///
     /// Handles the `MoveFile` effect of the given function `f`.
@@ -25,7 +32,7 @@ pub mod Fs.MoveFile {
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - MoveFile) + IO = x ->
         run { f(x) } with handler MoveFile {
-            def move(src, dst, k) = k(Fs.FsLayer.move(src, dst))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.moveWith(src, dst, opts))
         }
 
     ///
@@ -41,7 +48,7 @@ pub mod Fs.MoveFile {
     ///
     pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - MoveFile) + FileWrite = x ->
         run { f(x) } with handler MoveFile {
-            def move(src, dst, k) = k(Fs.FileWrite.move(src, dst))
+            def moveWith(src, dst, opts, k) = k(Fs.FileWrite.moveWith(src, dst, opts))
         }
 
 }
