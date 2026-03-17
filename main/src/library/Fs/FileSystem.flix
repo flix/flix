@@ -559,4 +559,53 @@ pub mod Fs.FileSystem {
             def mkTempDir(_prefix, k)           = k(Err(IoError(ErrorKind.PermissionDenied, "read-only: mkTempDir is not permitted")))
         }
 
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, making `write`,
+    /// `writeLines`, and `writeBytes` atomic. Data is first written to a
+    /// temporary file in the same directory, then atomically moved into place.
+    /// On failure the temporary file is cleaned up.
+    ///
+    /// All other operations (read, stat, test, list, glob, append, truncate,
+    /// copy, move, delete, mkdir) are passed through unchanged.
+    ///
+    pub def withAtomicWrite(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let mv  = (tmp, dst) -> FileSystem.moveWith(src = tmp, dst, Set#{Fs.MoveOption.AtomicMove, Fs.MoveOption.ReplaceExisting});
+        let del = tmp -> FileSystem.delete(tmp);
+        run { f() } with handler FileSystem {
+            // Read/stat/test ops — pass through
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def read(filename, k)             = k(FileSystem.read(filename))
+            def readLines(filename, k)        = k(FileSystem.readLines(filename))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // Overwrite ops — atomic write-to-temp then rename
+            def write(data, file, k)          = k(Fs.FsLayer.atomicWrite(file, tmp -> FileSystem.write(data, tmp), mv, del))
+            def writeLines(data, file, k)     = k(Fs.FsLayer.atomicWrite(file, tmp -> FileSystem.writeLines(data, tmp), mv, del))
+            def writeBytes(data, file, k)     = k(Fs.FsLayer.atomicWrite(file, tmp -> FileSystem.writeBytes(data, tmp), mv, del))
+
+            // Other write ops — pass through
+            def append(data, file, k)         = k(FileSystem.append(data, file))
+            def appendLines(data, file, k)    = k(FileSystem.appendLines(data, file))
+            def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, file))
+            def truncate(file, k)             = k(FileSystem.truncate(file))
+            def copyWith(src, dst, opts, k)   = k(FileSystem.copyWith(src, dst, opts))
+            def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src, dst, opts))
+            def delete(file, k)               = k(FileSystem.delete(file))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
 }
