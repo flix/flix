@@ -21,24 +21,6 @@ pub mod Fs.Glob {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
-    /// Handles the `Glob` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `Glob` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Glob) + IO = x ->
-        run { f(x) } with handler Glob {
-            def glob(base, pattern, k) = k(Fs.FsLayer.glob(base, pattern))
-        }
-
-    ///
-    /// Runs the `Glob` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `Glob` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Glob) + IO = handle(f)()
-
-    ///
     /// Handles the `Glob` effect of the given function `f` using the `FileSystem` effect.
     ///
     pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - Glob) + FileSystem = x ->

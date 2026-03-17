@@ -26,24 +26,6 @@ pub mod Fs.CopyFile {
         Fs.CopyFile.copyWith(src, dst, Set.empty())
 
     ///
-    /// Handles the `CopyFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `CopyFile` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - CopyFile) + IO = x ->
-        run { f(x) } with handler CopyFile {
-            def copyWith(src, dst, opts, k) = k(Fs.FsLayer.copyWith(src, dst, opts))
-        }
-
-    ///
-    /// Runs the `CopyFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `CopyFile` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - CopyFile) + IO = handle(f)()
-
-    ///
     /// Handles the `CopyFile` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - CopyFile) + FileWrite = x ->

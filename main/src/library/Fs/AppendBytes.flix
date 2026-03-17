@@ -19,24 +19,6 @@ pub mod Fs.AppendBytes {
     use Fs.FileWrite
 
     ///
-    /// Handles the `AppendBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `AppendBytes` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - AppendBytes) + IO = x ->
-        run { f(x) } with handler AppendBytes {
-            def appendBytes(data, file, k) = k(Fs.FsLayer.appendBytes(data, file))
-        }
-
-    ///
-    /// Runs the `AppendBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `AppendBytes` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - AppendBytes) + IO = handle(f)()
-
-    ///
     /// Handles the `AppendBytes` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - AppendBytes) + FileWrite = x ->
