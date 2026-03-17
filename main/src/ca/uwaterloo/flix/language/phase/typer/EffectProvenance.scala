@@ -515,7 +515,7 @@ object EffectProvenance {
         case _ => mkSignatureErrors(xs, ys, s.symbols(), sigLoc)
       }
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, _) =>
-        val a = mkEffectfulError(y, x) :: mkExplicitPureError(y, x) :: mkImplicitPureError(y, x) :: Nil
+        val a = mkEffectfulError(y, x) :: mkExplicitPureError(y, x) :: mkImplicitPureError(y, x) :: mkUnusedError(x) :: Nil
         a.flatten
       }
       case _ => Nil
