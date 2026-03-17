@@ -19,24 +19,6 @@ pub mod Fs.CreationTime {
     use Fs.FileTime
 
     ///
-    /// Handles the `CreationTime` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `CreationTime` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - CreationTime) + IO = x ->
-        run { f(x) } with handler CreationTime {
-            def creationTime(filename, k) = k(Fs.FsLayer.creationTime(filename))
-        }
-
-    ///
-    /// Runs the `CreationTime` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `CreationTime` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - CreationTime) + IO = handle(f)()
-
-    ///
     /// Handles the `CreationTime` effect of the given function `f` using the `FileTime` effect.
     ///
     pub def handleWithFileTime(f: a -> b \ ef): a -> b \ (ef - CreationTime) + FileTime = x ->

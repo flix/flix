@@ -74,6 +74,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a file exists.
     ///
+    /// Use the `FileExists.handleWithFileTest` handler.
+    ///
     pub eff FileExists {
 
         ///
@@ -85,6 +87,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a path is a directory.
+    ///
+    /// Use the `IsDirectory.handleWithFileTest` handler.
     ///
     pub eff IsDirectory {
 
@@ -98,6 +102,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a path is a regular file.
     ///
+    /// Use the `IsRegularFile.handleWithFileTest` handler.
+    ///
     pub eff IsRegularFile {
 
         ///
@@ -109,6 +115,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a path is a symbolic link.
+    ///
+    /// Use the `IsSymbolicLink.handleWithFileTest` handler.
     ///
     pub eff IsSymbolicLink {
 
@@ -122,6 +130,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a file is readable.
     ///
+    /// Use the `IsReadable.handleWithFilePermission` handler.
+    ///
     pub eff IsReadable {
 
         ///
@@ -133,6 +143,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a file is writable.
+    ///
+    /// Use the `IsWritable.handleWithFilePermission` handler.
     ///
     pub eff IsWritable {
 
@@ -146,6 +158,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a file is executable.
     ///
+    /// Use the `IsExecutable.handleWithFilePermission` handler.
+    ///
     pub eff IsExecutable {
 
         ///
@@ -157,6 +171,8 @@ pub mod Fs {
 
     ///
     /// An effect used to read the last access time of a file.
+    ///
+    /// Use the `AccessTime.handleWithFileTime` handler.
     ///
     pub eff AccessTime {
 
@@ -170,6 +186,8 @@ pub mod Fs {
     ///
     /// An effect used to read the creation time of a file.
     ///
+    /// Use the `CreationTime.handleWithFileTime` handler.
+    ///
     pub eff CreationTime {
 
         ///
@@ -181,6 +199,8 @@ pub mod Fs {
 
     ///
     /// An effect used to read the last modification time of a file.
+    ///
+    /// Use the `ModificationTime.handleWithFileTime` handler.
     ///
     pub eff ModificationTime {
 
@@ -194,6 +214,8 @@ pub mod Fs {
     ///
     /// An effect used to read the size of a file.
     ///
+    /// Use the `FileSize.handleWithFileStat` handler.
+    ///
     pub eff FileSize {
 
         ///
@@ -205,6 +227,8 @@ pub mod Fs {
 
     ///
     /// An effect used to read the contents of a file as a string.
+    ///
+    /// Use the `ReadFile.handleWithFileRead` handler.
     ///
     pub eff ReadFile {
 
@@ -218,6 +242,8 @@ pub mod Fs {
     ///
     /// An effect used to read the lines of a file.
     ///
+    /// Use the `ReadLines.handleWithFileRead` handler.
+    ///
     pub eff ReadLines {
 
         ///
@@ -229,6 +255,8 @@ pub mod Fs {
 
     ///
     /// An effect used to read the bytes of a file.
+    ///
+    /// Use the `ReadBytes.handleWithFileRead` handler.
     ///
     pub eff ReadBytes {
 
@@ -242,6 +270,8 @@ pub mod Fs {
     ///
     /// An effect used to list the contents of a directory.
     ///
+    /// Use the `DirList.handleWithFileSystem` handler.
+    ///
     pub eff DirList {
 
         ///
@@ -254,6 +284,8 @@ pub mod Fs {
     ///
     /// An effect used to find files matching a glob pattern.
     ///
+    /// Use the `Glob.handleWithFileSystem` handler.
+    ///
     pub eff Glob {
 
         ///
@@ -265,6 +297,8 @@ pub mod Fs {
 
     ///
     /// An effect used to write the contents of a file as a string.
+    ///
+    /// Use the `WriteFile.handleWithFileWrite` handler.
     ///
     pub eff WriteFile {
 
@@ -280,6 +314,8 @@ pub mod Fs {
     ///
     /// An effect used to write lines to a file.
     ///
+    /// Use the `WriteLines.handleWithFileWrite` handler.
+    ///
     pub eff WriteLines {
 
         ///
@@ -293,6 +329,8 @@ pub mod Fs {
 
     ///
     /// An effect used to write bytes to a file.
+    ///
+    /// Use the `WriteBytes.handleWithFileWrite` handler.
     ///
     pub eff WriteBytes {
 
@@ -308,6 +346,8 @@ pub mod Fs {
     ///
     /// An effect used to append a string to a file.
     ///
+    /// Use the `AppendFile.handleWithFileWrite` handler.
+    ///
     pub eff AppendFile {
 
         ///
@@ -321,6 +361,8 @@ pub mod Fs {
 
     ///
     /// An effect used to append lines to a file.
+    ///
+    /// Use the `AppendLines.handleWithFileWrite` handler.
     ///
     pub eff AppendLines {
 
@@ -336,6 +378,8 @@ pub mod Fs {
     ///
     /// An effect used to append bytes to a file.
     ///
+    /// Use the `AppendBytes.handleWithFileWrite` handler.
+    ///
     pub eff AppendBytes {
 
         ///
@@ -350,6 +394,8 @@ pub mod Fs {
     ///
     /// An effect used to truncate a file.
     ///
+    /// Use the `Truncate.handleWithFileWrite` handler.
+    ///
     pub eff Truncate {
 
         ///
@@ -361,6 +407,8 @@ pub mod Fs {
 
     ///
     /// An effect used to copy a file.
+    ///
+    /// Use the `CopyFile.handleWithFileWrite` handler.
     ///
     pub eff CopyFile {
 
@@ -374,6 +422,8 @@ pub mod Fs {
     ///
     /// An effect used to move (rename) a file or directory.
     ///
+    /// Use the `MoveFile.handleWithFileWrite` handler.
+    ///
     pub eff MoveFile {
 
         ///
@@ -385,6 +435,8 @@ pub mod Fs {
 
     ///
     /// An effect used to delete a file.
+    ///
+    /// Use the `DeleteFile.handleWithFileWrite` handler.
     ///
     pub eff DeleteFile {
 
@@ -400,6 +452,8 @@ pub mod Fs {
     ///
     /// An effect used to create a directory.
     ///
+    /// Use the `MkDir.handleWithFileWrite` handler.
+    ///
     pub eff MkDir {
 
         ///
@@ -412,6 +466,8 @@ pub mod Fs {
     ///
     /// An effect used to create a directory and all its parent directories.
     ///
+    /// Use the `MkDirs.handleWithFileWrite` handler.
+    ///
     pub eff MkDirs {
 
         ///
@@ -423,6 +479,8 @@ pub mod Fs {
 
     ///
     /// An effect used to create a temporary directory.
+    ///
+    /// Use the `MkTempDir.handleWithFileWrite` handler.
     ///
     pub eff MkTempDir {
 

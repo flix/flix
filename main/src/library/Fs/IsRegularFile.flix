@@ -19,24 +19,6 @@ pub mod Fs.IsRegularFile {
     use Fs.FileTest
 
     ///
-    /// Handles the `IsRegularFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsRegularFile` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - IsRegularFile) + IO = x ->
-        run { f(x) } with handler IsRegularFile {
-            def isRegularFile(filename, k) = k(Fs.FsLayer.isRegularFile(filename))
-        }
-
-    ///
-    /// Runs the `IsRegularFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsRegularFile` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - IsRegularFile) + IO = handle(f)()
-
-    ///
     /// Handles the `IsRegularFile` effect of the given function `f` using the `FileTest` effect.
     ///
     pub def handleWithFileTest(f: a -> b \ ef): a -> b \ (ef - IsRegularFile) + FileTest = x ->

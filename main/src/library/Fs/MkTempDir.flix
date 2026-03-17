@@ -19,24 +19,6 @@ pub mod Fs.MkTempDir {
     use Fs.FileWrite
 
     ///
-    /// Handles the `MkTempDir` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `MkTempDir` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - MkTempDir) + IO = x ->
-        run { f(x) } with handler MkTempDir {
-            def mkTempDir(prefix, k) = k(Fs.FsLayer.mkTempDir(prefix))
-        }
-
-    ///
-    /// Runs the `MkTempDir` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `MkTempDir` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - MkTempDir) + IO = handle(f)()
-
-    ///
     /// Handles the `MkTempDir` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - MkTempDir) + FileWrite = x ->

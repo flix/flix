@@ -19,24 +19,6 @@ pub mod Fs.IsExecutable {
     use Fs.FilePermission
 
     ///
-    /// Handles the `IsExecutable` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsExecutable` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - IsExecutable) + IO = x ->
-        run { f(x) } with handler IsExecutable {
-            def isExecutable(filename, k) = k(Fs.FsLayer.isExecutable(filename))
-        }
-
-    ///
-    /// Runs the `IsExecutable` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsExecutable` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - IsExecutable) + IO = handle(f)()
-
-    ///
     /// Handles the `IsExecutable` effect of the given function `f` using the `FilePermission` effect.
     ///
     pub def handleWithFilePermission(f: a -> b \ ef): a -> b \ (ef - IsExecutable) + FilePermission = x ->

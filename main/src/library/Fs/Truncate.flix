@@ -19,24 +19,6 @@ pub mod Fs.Truncate {
     use Fs.FileWrite
 
     ///
-    /// Handles the `Truncate` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `Truncate` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Truncate) + IO = x ->
-        run { f(x) } with handler Truncate {
-            def truncate(file, k) = k(Fs.FsLayer.truncate(file))
-        }
-
-    ///
-    /// Runs the `Truncate` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `Truncate` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Truncate) + IO = handle(f)()
-
-    ///
     /// Handles the `Truncate` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - Truncate) + FileWrite = x ->
