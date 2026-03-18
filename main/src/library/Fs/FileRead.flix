@@ -17,6 +17,7 @@
 pub mod Fs.FileRead {
 
     use Fs.FileRead
+    use Fs.FileStat
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
 
@@ -129,6 +130,24 @@ pub mod Fs.FileRead {
             def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
             def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
             def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileRead` effect, rejecting reads of files
+    /// larger than `maxBytes`. The file size is checked via `FileStat.size` before
+    /// reading. For string-based reads, the limit applies to the on-disk file size
+    /// (not the in-memory string length).
+    ///
+    pub def withTransferLimit(maxBytes: Int64, f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, FileStat} =
+        let check = filename -> {
+            Result.flatMap(sz ->
+                Result.map(_ -> filename, Fs.FsLayer.checkTransferLimit(maxBytes, sz)),
+                FileStat.size(filename))
+        };
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), check(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), check(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), check(filename)))
         }
 
 }

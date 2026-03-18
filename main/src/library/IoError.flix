@@ -44,6 +44,7 @@ pub mod IoError {
         case NotFile,
         case NotDirectory,
         case PermissionDenied,
+        case TransferLimitExceeded,
         case Timeout,
         case UnexpectedEof,
         case Unsupported,

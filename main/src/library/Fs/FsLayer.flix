@@ -562,6 +562,19 @@ mod Fs.FsLayer {
             case Err(e)                             => Err(e)
         }
 
+    // ─── Transfer limit helper ──────────────────────────────────────────
+
+    ///
+    /// Checks that `actualBytes` does not exceed `maxBytes`.
+    /// Returns `Ok(())` if within the limit, or `Err(TransferLimitExceeded)` otherwise.
+    ///
+    pub def checkTransferLimit(maxBytes: Int64, actualBytes: Int64): Result[IoError, Unit] =
+        if (actualBytes <= maxBytes)
+            Ok(())
+        else
+            Err(IoError(ErrorKind.TransferLimitExceeded,
+                "transfer limit exceeded: ${actualBytes} bytes > ${maxBytes} bytes"))
+
     // ─── Private helper ────────────────────────────────────────────────
 
     ///
