@@ -96,4 +96,43 @@ pub mod Fs.FileTime {
             def modificationTime(filename, k) = k(FileTime.modificationTime(r(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileTime` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler FileTime {
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileTime` effect, validating that all file paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler FileTime {
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileTime` effect, validating that all file paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler FileTime {
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
+        }
+
 }

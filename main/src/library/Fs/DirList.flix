@@ -56,4 +56,37 @@ pub mod Fs.DirList {
             def list(filename, k) = k(DirList.list(r(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `DirList` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, validating that all file paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, validating that all file paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
+
 }
