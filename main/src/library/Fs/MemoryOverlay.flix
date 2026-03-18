@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-mod Fs.Overlay {
+mod Fs.MemoryOverlay {
 
+    import java.nio.file.FileSystems
+    import java.nio.file.PathMatcher
     import java.nio.file.Paths
 
     use IoError.IoError
@@ -28,8 +30,8 @@ mod Fs.Overlay {
     }
 
     /// Creates a fresh, empty overlay in region `rc`.
-    pub def fresh(rc: Region[r]): Fs.Overlay[r] \ r =
-        new Fs.Overlay @ rc { files = Map.empty(), dirs = Set.empty(), whiteouts = Set.empty(), counter = 0 }
+    pub def fresh(rc: Region[r]): Fs.MemoryOverlay[r] \ r =
+        new Fs.MemoryOverlay @ rc { files = Map.empty(), dirs = Set.empty(), whiteouts = Set.empty(), counter = 0 }
 
     // ─── Path helpers (private) ───────────────────────────────────────
 
@@ -53,83 +55,84 @@ mod Fs.Overlay {
 
     // ─── Low-level state queries (private) ────────────────────────────
 
-    def hasFile(path: String, o: Fs.Overlay[r]): Bool \ r =
+    def hasFile(path: String, o: Fs.MemoryOverlay[r]): Bool \ r =
         Map.memberOf(normalize(path), o->files)
 
-    def hasDir(path: String, o: Fs.Overlay[r]): Bool \ r =
+    def hasDir(path: String, o: Fs.MemoryOverlay[r]): Bool \ r =
         Set.memberOf(normalize(path), o->dirs)
 
-    def hasEntry(path: String, o: Fs.Overlay[r]): Bool \ r =
+    def hasEntry(path: String, o: Fs.MemoryOverlay[r]): Bool \ r =
         hasFile(path, o) or hasDir(path, o)
 
-    def isWhiteout(path: String, o: Fs.Overlay[r]): Bool \ r =
+    def isWhiteout(path: String, o: Fs.MemoryOverlay[r]): Bool \ r =
         Set.memberOf(normalize(path), o->whiteouts)
 
     // ─── Handler-level methods — reads return Option[Result] ──────────
 
     /// Overlay-aware exists check.
-    pub def tryExists(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Bool]] \ r =
+    pub def tryExists(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Bool]] \ r =
         if (hasEntry(path, o))        Some(Ok(true))
         else if (isWhiteout(path, o)) Some(Ok(false))
         else                          None
 
     /// Overlay-aware isDirectory check.
-    pub def tryIsDirectory(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Bool]] \ r =
+    pub def tryIsDirectory(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Bool]] \ r =
         if (hasDir(path, o))          Some(Ok(true))
         else if (hasFile(path, o))    Some(Ok(false))
         else if (isWhiteout(path, o)) Some(Ok(false))
         else                          None
 
     /// Overlay-aware isRegularFile check.
-    pub def tryIsRegularFile(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Bool]] \ r =
+    pub def tryIsRegularFile(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Bool]] \ r =
         if (hasFile(path, o))         Some(Ok(true))
         else if (hasDir(path, o))     Some(Ok(false))
         else if (isWhiteout(path, o)) Some(Ok(false))
         else                          None
 
     /// Overlay-aware isSymbolicLink check. In-memory entries are never symlinks.
-    pub def tryIsSymbolicLink(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Bool]] \ r =
+    pub def tryIsSymbolicLink(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Bool]] \ r =
         if (hasEntry(path, o))        Some(Ok(false))
         else if (isWhiteout(path, o)) Some(Ok(false))
         else                          None
 
     /// Overlay-aware isReadable. In-memory entries are always readable.
-    pub def tryIsReadable(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Bool]] \ r =
+    pub def tryIsReadable(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Bool]] \ r =
         if (hasEntry(path, o))        Some(Ok(true))
         else if (isWhiteout(path, o)) Some(notFound(path))
         else                          None
 
     /// Overlay-aware isWritable. In-memory entries are always writable.
-    pub def tryIsWritable(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Bool]] \ r =
+    pub def tryIsWritable(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Bool]] \ r =
         if (hasEntry(path, o))        Some(Ok(true))
         else if (isWhiteout(path, o)) Some(notFound(path))
         else                          None
 
     /// Overlay-aware isExecutable. In-memory entries are never executable.
-    pub def tryIsExecutable(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Bool]] \ r =
+    pub def tryIsExecutable(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Bool]] \ r =
         if (hasEntry(path, o))        Some(Ok(false))
         else if (isWhiteout(path, o)) Some(notFound(path))
         else                          None
 
     /// Overlay-aware time query. In-memory entries return 0.
-    pub def tryTime(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Int64]] \ r =
+    pub def tryTime(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Int64]] \ r =
         if (hasEntry(path, o))        Some(Ok(0i64))
         else if (isWhiteout(path, o)) Some(notFound(path))
         else                          None
 
     /// Overlay-aware size query. Computes from content length.
-    pub def trySize(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Int64]] \ r =
+    pub def trySize(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Fs.Size]] \ r =
+        use Fs.Size.bytes;
         let norm = normalize(path);
         match Map.get(norm, o->files) {
-            case Some(OverlayEntry.TextEntry(s))  => Some(Ok(Int32.toInt64(String.length(s))))
-            case Some(OverlayEntry.BytesEntry(b)) => Some(Ok(Int32.toInt64(Vector.length(b))))
+            case Some(OverlayEntry.TextEntry(s))  => Some(Ok(Fs.FsLayer.estimateStringBytes(s)))
+            case Some(OverlayEntry.BytesEntry(b)) => Some(Ok(bytes(Int32.toInt64(Vector.length(b)))))
             case None =>
                 if (isWhiteout(path, o)) Some(notFound(path))
                 else None
         }
 
     /// Overlay-aware read (text).
-    pub def tryRead(path: String, o: Fs.Overlay[r]): Option[Result[IoError, String]] \ r =
+    pub def tryRead(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, String]] \ r =
         let norm = normalize(path);
         match Map.get(norm, o->files) {
             case Some(OverlayEntry.TextEntry(s))  => Some(Ok(s))
@@ -140,7 +143,7 @@ mod Fs.Overlay {
         }
 
     /// Overlay-aware readLines.
-    pub def tryReadLines(path: String, o: Fs.Overlay[r]): Option[Result[IoError, List[String]]] \ r =
+    pub def tryReadLines(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, List[String]]] \ r =
         match tryRead(path, o) {
             case Some(Ok(s))  => Some(Ok(String.lines(s)))
             case Some(Err(e)) => Some(Err(e))
@@ -148,7 +151,7 @@ mod Fs.Overlay {
         }
 
     /// Overlay-aware readBytes.
-    pub def tryReadBytes(path: String, o: Fs.Overlay[r]): Option[Result[IoError, Vector[Int8]]] \ r =
+    pub def tryReadBytes(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Vector[Int8]]] \ r =
         let norm = normalize(path);
         match Map.get(norm, o->files) {
             case Some(OverlayEntry.BytesEntry(b)) => Some(Ok(b))
@@ -161,25 +164,25 @@ mod Fs.Overlay {
     // ─── Handler-level methods — writes return Result directly ────────
 
     /// Stores text content.
-    pub def write(path: String, data: String, o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def write(path: String, data: String, o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
         o->files = Map.insert(norm, OverlayEntry.TextEntry(data), o->files);
         o->whiteouts = Set.remove(norm, o->whiteouts);
         Ok(())
 
     /// Stores lines as text content.
-    pub def writeLines(path: String, lines: List[String], o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def writeLines(path: String, lines: List[String], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         write(path, String.intercalate(String.lineSeparator(), lines), o)
 
     /// Stores byte content.
-    pub def writeBytes(path: String, data: Vector[Int8], o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def writeBytes(path: String, data: Vector[Int8], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
         o->files = Map.insert(norm, OverlayEntry.BytesEntry(data), o->files);
         o->whiteouts = Set.remove(norm, o->whiteouts);
         Ok(())
 
     /// Appends text. `lower` is the current content from the lower layer (if not in overlay/whiteout).
-    pub def append(path: String, data: String, lower: Option[String], o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def append(path: String, data: String, lower: Option[String], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
         let current = match Map.get(norm, o->files) {
             case Some(OverlayEntry.TextEntry(s))  => s
@@ -189,12 +192,12 @@ mod Fs.Overlay {
         write(path, current + data, o)
 
     /// Appends lines. `lower` is the current content from the lower layer.
-    pub def appendLines(path: String, lines: List[String], lower: Option[String], o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def appendLines(path: String, lines: List[String], lower: Option[String], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let suffix = String.intercalate(String.lineSeparator(), lines);
         append(path, suffix, lower, o)
 
     /// Appends bytes. `lower` is the current content from the lower layer.
-    pub def appendBytes(path: String, data: Vector[Int8], lower: Option[Vector[Int8]], o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def appendBytes(path: String, data: Vector[Int8], lower: Option[Vector[Int8]], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
         let current = match Map.get(norm, o->files) {
             case Some(OverlayEntry.BytesEntry(b)) => b
@@ -204,11 +207,11 @@ mod Fs.Overlay {
         writeBytes(path, Vector.append(current, data), o)
 
     /// Truncates a file (stores empty content).
-    pub def truncate(path: String, o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def truncate(path: String, o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         write(path, "", o)
 
     /// Moves an entry. `lower` is the source bytes from the lower layer if not in overlay.
-    pub def move(src: String, dst: String, lower: Option[Vector[Int8]], o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def move(src: String, dst: String, lower: Option[Vector[Int8]], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let normSrc = normalize(src);
         let entry = match Map.get(normSrc, o->files) {
             case Some(e) => Some(e)
@@ -226,8 +229,24 @@ mod Fs.Overlay {
             case None => notFound(src)
         }
 
+    /// Copies an entry. `lower` is the source bytes from the lower layer if not in overlay.
+    pub def copy(src: String, dst: String, lower: Option[Vector[Int8]], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
+        let normSrc = normalize(src);
+        let entry = match Map.get(normSrc, o->files) {
+            case Some(e) => Some(e)
+            case None    => Option.map(b -> OverlayEntry.BytesEntry(b), lower)
+        };
+        match entry {
+            case Some(e) =>
+                let normDst = normalize(dst);
+                o->files = Map.insert(normDst, e, o->files);
+                o->whiteouts = Set.remove(normDst, o->whiteouts);
+                Ok(())
+            case None => notFound(src)
+        }
+
     /// Deletes an entry (adds whiteout).
-    pub def delete(path: String, o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def delete(path: String, o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
         o->files = Map.remove(norm, o->files);
         o->dirs = Set.remove(norm, o->dirs);
@@ -235,14 +254,14 @@ mod Fs.Overlay {
         Ok(())
 
     /// Creates a directory.
-    pub def mkDir(path: String, o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def mkDir(path: String, o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
         o->dirs = Set.insert(norm, o->dirs);
         o->whiteouts = Set.remove(norm, o->whiteouts);
         Ok(())
 
     /// Creates a directory and all parents.
-    pub def mkDirs(path: String, o: Fs.Overlay[r]): Result[IoError, Unit] \ r =
+    pub def mkDirs(path: String, o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
         o->dirs = Set.insert(norm, o->dirs);
         o->whiteouts = Set.remove(norm, o->whiteouts);
@@ -253,7 +272,7 @@ mod Fs.Overlay {
         }
 
     /// Generates a unique temp directory and registers it.
-    pub def mkTempDir(prefix: String, o: Fs.Overlay[r]): Result[IoError, String] \ r =
+    pub def mkTempDir(prefix: String, o: Fs.MemoryOverlay[r]): Result[IoError, String] \ r =
         let n = o->counter;
         o->counter = n + 1;
         let name = "${prefix}overlay-${n}";
@@ -262,7 +281,7 @@ mod Fs.Overlay {
 
     /// Merges overlay listing with lower-layer listing.
     /// `lower` is the result of listing from the real filesystem.
-    pub def list(dir: String, lower: Result[IoError, List[String]], o: Fs.Overlay[r]): Result[IoError, List[String]] \ r =
+    pub def list(dir: String, lower: Result[IoError, List[String]], o: Fs.MemoryOverlay[r]): Result[IoError, List[String]] \ r =
         let norm = normalize(dir);
         if (isWhiteout(dir, o)) notFound(dir)
         else {
@@ -284,10 +303,38 @@ mod Fs.Overlay {
             Ok(merged)
         }
 
+    /// Merges overlay entries with lower-layer glob results.
+    /// `lower` is the result of globbing from the real filesystem.
+    pub def glob(base: String, pattern: String, lower: Result[IoError, List[String]], o: Fs.MemoryOverlay[r]): Result[IoError, List[String]] \ r =
+        if (isWhiteout(base, o)) notFound(base)
+        else {
+            let basePath = unsafe IO { Paths.get(normalize(base)) };
+            let matcher: PathMatcher = unsafe IO { FileSystems.getDefault().getPathMatcher("glob:${pattern}") };
+            let matchesPattern = path -> {
+                let p = unsafe IO { Paths.get(path) };
+                let starts = unsafe IO { p.startsWith(basePath) };
+                if (starts) {
+                    let rel = unsafe IO { basePath.relativize(p) };
+                    unsafe IO { matcher.matches(rel) }
+                } else false
+            };
+            let overlayPaths = Set.union(
+                Map.keysOf(o->files) |> Set.filter(matchesPattern),
+                o->dirs              |> Set.filter(matchesPattern)
+            );
+            let whiteouts = o->whiteouts;
+            let lowerPaths = match lower {
+                case Ok(paths) => List.filter(p -> not Set.memberOf(normalize(p), whiteouts), paths)
+                case Err(_)    => Nil
+            };
+            let merged = List.append(Set.toList(overlayPaths), lowerPaths) |> List.distinct;
+            Ok(merged)
+        }
+
     // ─── Helper for handler ───────────────────────────────────────────
 
     /// Returns true if the path needs lower-layer content (not in overlay, not whiteout'd).
-    pub def needsLower(path: String, o: Fs.Overlay[r]): Bool \ r =
+    pub def needsLower(path: String, o: Fs.MemoryOverlay[r]): Bool \ r =
         let norm = normalize(path);
         not Map.memberOf(norm, o->files) and not Set.memberOf(norm, o->whiteouts)
 

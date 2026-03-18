@@ -17,10 +17,15 @@
 pub mod Fs {
 
     /// In-memory overlay state, parameterized by region.
-    pub struct Overlay[r: Region] {
-        mut files: Map[String, Overlay.OverlayEntry],
+    pub struct MemoryOverlay[r: Region] {
+        /// A map from normalized absolute paths to their in-memory content (text or bytes).
+        mut files: Map[String, MemoryOverlay.OverlayEntry],
+        /// A set of normalized absolute paths registered as directories in the overlay.
         mut dirs: Set[String],
+        /// A set of normalized absolute paths that have been deleted in the overlay.
+        /// Whiteout entries hide the corresponding lower-layer entries.
         mut whiteouts: Set[String],
+        /// A monotonically increasing counter used to generate unique temp directory names.
         mut counter: Int32
     }
 
