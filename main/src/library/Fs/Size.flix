@@ -36,16 +36,16 @@ pub mod Fs.Size {
     pub def bytes(n: Int64): Size = Size(n)
 
     /// Returns a size of `n` kilobytes.
-    pub def kiloBytes(n: Int32): Size = Size(Int32.toInt64(n) * 1_024i64)
+    pub def kiloBytes(n: Int32): Size = Size(Int32.toInt64(n) * (1_024i64))
 
     /// Returns a size of `n` megabytes.
-    pub def megaBytes(n: Int32): Size = Size(Int32.toInt64(n) * 1_048_576i64)
+    pub def megaBytes(n: Int32): Size = Size(Int32.toInt64(n) * (1_024i64 * 1_024i64))
 
     /// Returns a size of `n` gigabytes.
-    pub def gigaBytes(n: Int32): Size = Size(Int32.toInt64(n) * 1_073_741_824i64)
+    pub def gigaBytes(n: Int32): Size = Size(Int32.toInt64(n) * (1_024i64 * 1_024i64 * 1_024i64))
 
     /// Returns a size of `n` terabytes.
-    pub def teraBytes(n: Int32): Size = Size(Int32.toInt64(n) * 1_099_511_627_776i64)
+    pub def teraBytes(n: Int32): Size = Size(Int32.toInt64(n) * (1_024i64 * 1_024i64 * 1_024i64 * 1_024i64))
 
     /// Returns the total number of bytes in `s`.
     pub def toBytes(s: Size): Int64 =
@@ -55,22 +55,22 @@ pub mod Fs.Size {
     /// Returns the total number of kilobytes in `s` (truncated).
     pub def toKiloBytes(s: Size): Int64 =
         let Size(n) = s;
-        n / 1_024i64
+        n / (1_024i64)
 
     /// Returns the total number of megabytes in `s` (truncated).
     pub def toMegaBytes(s: Size): Int64 =
         let Size(n) = s;
-        n / 1_048_576i64
+        n / (1_024i64 * 1_024i64)
 
     /// Returns the total number of gigabytes in `s` (truncated).
     pub def toGigaBytes(s: Size): Int64 =
         let Size(n) = s;
-        n / 1_073_741_824i64
+        n / (1_024i64 * 1_024i64 * 1_024i64)
 
     /// Returns the total number of terabytes in `s` (truncated).
     pub def toTeraBytes(s: Size): Int64 =
         let Size(n) = s;
-        n / 1_099_511_627_776i64
+        n / (1_024i64 * 1_024i64 * 1_024i64 * 1_024i64)
 
     /// Returns `true` if `s` is zero.
     pub def isZero(s: Size): Bool =

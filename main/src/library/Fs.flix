@@ -947,24 +947,28 @@ instance ToString[Fs.Size] {
         else
             let abs = Int64.abs(b);
             let sign = if (b < 0i64) "-" else "";
-            if (abs >= 1_099_511_627_776i64)
-                let tb = abs / 1_099_511_627_776i64;
-                let rem = abs - (tb * 1_099_511_627_776i64);
-                let gb = rem / 1_073_741_824i64;
+            let tb1 = 1_024i64 * 1_024i64 * 1_024i64 * 1_024i64;
+            let gb1 = 1_024i64 * 1_024i64 * 1_024i64;
+            let mb1 = 1_024i64 * 1_024i64;
+            let kb1 = 1_024i64;
+            if (abs >= tb1)
+                let tb = abs / tb1;
+                let rem = abs - (tb * tb1);
+                let gb = rem / gb1;
                 "${sign}${tb} TB ${gb} GB"
-            else if (abs >= 1_073_741_824i64)
-                let gb = abs / 1_073_741_824i64;
-                let rem = abs - (gb * 1_073_741_824i64);
-                let mb = rem / 1_048_576i64;
+            else if (abs >= gb1)
+                let gb = abs / gb1;
+                let rem = abs - (gb * gb1);
+                let mb = rem / mb1;
                 "${sign}${gb} GB ${mb} MB"
-            else if (abs >= 1_048_576i64)
-                let mb = abs / 1_048_576i64;
-                let rem = abs - (mb * 1_048_576i64);
-                let kb = rem / 1_024i64;
+            else if (abs >= mb1)
+                let mb = abs / mb1;
+                let rem = abs - (mb * mb1);
+                let kb = rem / kb1;
                 "${sign}${mb} MB ${kb} KB"
-            else if (abs >= 1_024i64)
-                let kb = abs / 1_024i64;
-                let rem = abs - (kb * 1_024i64);
+            else if (abs >= kb1)
+                let kb = abs / kb1;
+                let rem = abs - (kb * kb1);
                 "${sign}${kb} KB ${rem} B"
             else
                 "${sign}${abs} B"

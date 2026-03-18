@@ -24,9 +24,9 @@ pub mod Fs.SizeUnit {
     pub def toBytes(u: SizeUnit): Int64 = match u {
         case SizeUnit.Bytes     => 1i64,
         case SizeUnit.KiloBytes => 1_024i64,
-        case SizeUnit.MegaBytes => 1_048_576i64,
-        case SizeUnit.GigaBytes => 1_073_741_824i64,
-        case SizeUnit.TeraBytes => 1_099_511_627_776i64
+        case SizeUnit.MegaBytes => 1_024i64 * 1_024i64,
+        case SizeUnit.GigaBytes => 1_024i64 * 1_024i64 * 1_024i64,
+        case SizeUnit.TeraBytes => 1_024i64 * 1_024i64 * 1_024i64 * 1_024i64
     }
 
 }
