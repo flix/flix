@@ -666,4 +666,64 @@ pub mod Fs.FileSystem {
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
         }
 
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, rejecting read, write,
+    /// and append operations where the data exceeds `maxBytes`. For reads and
+    /// `copyWith`, the file size is checked via `FileSystem.size`.
+    ///
+    /// String-based operations estimate byte count as `charCount * 4` (the
+    /// maximum bytes per character in UTF-8). Use byte-based operations for
+    /// exact enforcement.
+    ///
+    /// Operations that don't transfer data (`truncate`, `moveWith`, `delete`,
+    /// `mkDir`, `mkDirs`, `mkTempDir`) and metadata operations are passed
+    /// through unchanged.
+    ///
+    pub def withTransferLimit(maxBytes: Int64, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let check = sz -> Fs.FsLayer.checkTransferLimit(maxBytes, sz);
+        let estStr = s -> Fs.FsLayer.estimateStringBytes(s);
+        let checkFile = filename -> {
+            Result.flatMap(sz ->
+                Result.map(_ -> filename, check(sz)),
+                FileSystem.size(filename))
+        };
+        run { f() } with handler FileSystem {
+            // Stat/test/metadata ops — pass through
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // Read ops — check file size before reading
+            def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), checkFile(filename)))
+            def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), checkFile(filename)))
+            def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), checkFile(filename)))
+
+            // Write ops — check payload size
+            def write(data, file, k)          = k(Result.flatMap(_ -> FileSystem.write(data, file), check(estStr(data#str))))
+            def writeLines(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
+            def writeBytes(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeBytes(data, file), check(Int32.toInt64(Vector.length(data)))))
+            def append(data, file, k)         = k(Result.flatMap(_ -> FileSystem.append(data, file), check(estStr(data#str))))
+            def appendLines(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
+            def appendBytes(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendBytes(data, file), check(Int32.toInt64(Vector.length(data)))))
+            def copyWith(src, dst, opts, k)   = k(Result.flatMap(sz -> Result.flatMap(_ -> FileSystem.copyWith(src, dst, opts), check(sz)), FileSystem.size(src#src)))
+
+            // Non-data-transfer ops — pass through
+            def truncate(file, k)             = k(FileSystem.truncate(file))
+            def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src, dst, opts))
+            def delete(file, k)               = k(FileSystem.delete(file))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
 }

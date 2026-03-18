@@ -575,6 +575,20 @@ mod Fs.FsLayer {
             Err(IoError(ErrorKind.TransferLimitExceeded,
                 "transfer limit exceeded: ${actualBytes} bytes > ${maxBytes} bytes"))
 
+    ///
+    /// Estimates the UTF-8 byte size of a string by multiplying the character
+    /// count by 4 (the maximum bytes per character in UTF-8).
+    ///
+    pub def estimateStringBytes(s: String): Int64 =
+        Int32.toInt64(String.length(s)) * 4i64
+
+    ///
+    /// Estimates the UTF-8 byte size of a list of strings by multiplying the
+    /// total character count by 4 (the maximum bytes per character in UTF-8).
+    ///
+    pub def estimateStringListBytes(l: List[String]): Int64 =
+        Int32.toInt64(List.sumWith(String.length, l)) * 4i64
+
     // ─── Private helper ────────────────────────────────────────────────
 
     ///
