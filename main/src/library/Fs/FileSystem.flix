@@ -807,4 +807,109 @@ pub mod Fs.FileSystem {
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
         }
 
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, providing optimistic
+    /// concurrency control. When a file is read (`read`, `readLines`,
+    /// `readBytes`), its modification time is snapshotted. When a file is
+    /// subsequently written, the current modification time is compared against
+    /// the snapshot. If the file was modified externally, the operation returns
+    /// `Err(Conflict(...))`.
+    ///
+    /// After a successful write, the modification time is re-snapshotted to
+    /// prevent false positives on subsequent writes to the same file.
+    ///
+    /// Files that were never read have no snapshot and are written without
+    /// conflict checks.
+    ///
+    /// The following operations are passed through unchanged:
+    /// `exists`, `isDirectory`, `isRegularFile`, `isSymbolicLink`,
+    /// `isReadable`, `isWritable`, `isExecutable`, `accessTime`,
+    /// `creationTime`, `modificationTime`, `size`, `list`, `glob`,
+    /// `mkDir`, `mkDirs`, and `mkTempDir`.
+    ///
+    pub def withConflictCheck(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        region rc {
+            let snapshots: MutMap[String, Int64, rc] = MutMap.empty(rc);
+            let getModTime = file -> FileSystem.modificationTime(file);
+            let snap = file -> Fs.FsLayer.snapshotModTime(file, snapshots, getModTime);
+            let check = file -> Fs.FsLayer.conflictCheck(file, snapshots, getModTime);
+            let checkAndResnap = (file, doWrite) ->
+                forM (_ <- check(file); v <- doWrite())
+                    yield { snap(file); v };
+            run { f() } with handler FileSystem {
+                // ── Stat/test/perm/time/size — pass through ──
+                def exists(filename, k)           = k(FileSystem.exists(filename))
+                def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+                def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+                def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+                def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+                def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+                def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+                def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+                def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+                def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+                def size(filename, k)             = k(FileSystem.size(filename))
+
+                // ── List/glob — pass through ──
+                def list(filename, k)             = k(FileSystem.list(filename))
+                def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+                // ── Read ops — snapshot mod time after success ──
+                def read(filename, k) = {
+                    let result = FileSystem.read(filename);
+                    match result {
+                        case Ok(_) => snap(filename)
+                        case _     => ()
+                    };
+                    k(result)
+                }
+                def readLines(filename, k) = {
+                    let result = FileSystem.readLines(filename);
+                    match result {
+                        case Ok(_) => snap(filename)
+                        case _     => ()
+                    };
+                    k(result)
+                }
+                def readBytes(filename, k) = {
+                    let result = FileSystem.readBytes(filename);
+                    match result {
+                        case Ok(_) => snap(filename)
+                        case _     => ()
+                    };
+                    k(result)
+                }
+
+                // ── Write ops — conflict check before, re-snapshot after ──
+                def write(data, file, k)          = k(checkAndResnap(file, () -> FileSystem.write(data, file)))
+                def writeLines(data, file, k)     = k(checkAndResnap(file, () -> FileSystem.writeLines(data, file)))
+                def writeBytes(data, file, k)     = k(checkAndResnap(file, () -> FileSystem.writeBytes(data, file)))
+                def append(data, file, k)         = k(checkAndResnap(file, () -> FileSystem.append(data, file)))
+                def appendLines(data, file, k)    = k(checkAndResnap(file, () -> FileSystem.appendLines(data, file)))
+                def appendBytes(data, file, k)    = k(checkAndResnap(file, () -> FileSystem.appendBytes(data, file)))
+                def truncate(file, k)             = k(checkAndResnap(file, () -> FileSystem.truncate(file)))
+                def delete(file, k) = {
+                    match check(file) {
+                        case Err(e) => k(Err(e))
+                        case Ok(_)  =>
+                            let result = FileSystem.delete(file);
+                            match result {
+                                case Ok(_) => MutMap.remove(file, snapshots)
+                                case _     => ()
+                            };
+                            k(result)
+                    }
+                }
+
+                // ── Copy/move — conflict check on destination ──
+                def copyWith(src, dst, opts, k)   = k(checkAndResnap(dst, () -> FileSystem.copyWith(src, dst, opts)))
+                def moveWith(src, dst, opts, k)   = k(checkAndResnap(dst, () -> FileSystem.moveWith(src, dst, opts)))
+
+                // ── Directory ops — pass through ──
+                def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+                def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+                def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+            }
+        }
+
 }

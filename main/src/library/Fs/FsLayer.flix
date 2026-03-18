@@ -641,6 +641,52 @@ mod Fs.FsLayer {
     pub def estimateStringListBytes(l: List[String]): Size =
         bytes(Int32.toInt64(List.sumWith(String.length, l)) * 4i64)
 
+    // ─── Conflict check helpers ────────────────────────────────────────
+
+    ///
+    /// Snapshots the modification time of `file` into `snapshots`.
+    ///
+    /// If `getModTime` fails (file deleted, etc.), silently skips.
+    ///
+    pub def snapshotModTime(
+        file: String,
+        snapshots: MutMap[String, Int64, r],
+        getModTime: String -> Result[IoError, Int64] \ ef
+    ): Unit \ { ef, r } =
+        match getModTime(file) {
+            case Ok(t) => MutMap.put(file, t, snapshots)
+            case _     => ()
+        }
+
+    ///
+    /// Checks whether `file` was modified externally since last snapshot.
+    ///
+    /// - No snapshot → `Ok()` (file was never read, nothing to conflict with).
+    /// - Mod time matches snapshot → `Ok()`.
+    /// - Mod time differs → `Err(Conflict(...))`.
+    /// - File deleted (`NotFound`) → `Ok()` (file gone, proceed).
+    /// - Other `getModTime` error → propagated.
+    ///
+    pub def conflictCheck(
+        file: String,
+        snapshots: MutMap[String, Int64, r],
+        getModTime: String -> Result[IoError, Int64] \ ef
+    ): Result[IoError, Unit] \ { ef, r } =
+        match MutMap.get(file, snapshots) {
+            case None          => Ok(())
+            case Some(oldTime) =>
+                match getModTime(file) {
+                    case Ok(curTime) =>
+                        if (curTime == oldTime)
+                            Ok(())
+                        else
+                            Err(IoError(ErrorKind.Conflict,
+                                "Conflict on '${file}': expected mtime ${oldTime}, found ${curTime}"))
+                    case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+                    case Err(e) => Err(e)
+                }
+        }
+
     // ─── Private helper ────────────────────────────────────────────────
 
     ///
