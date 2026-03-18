@@ -682,11 +682,6 @@ pub mod Fs.FileSystem {
     pub def withTransferLimit(maxBytes: Int64, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
         let check = sz -> Fs.FsLayer.checkTransferLimit(maxBytes, sz);
         let estStr = s -> Fs.FsLayer.estimateStringBytes(s);
-        let checkFile = filename -> {
-            Result.flatMap(sz ->
-                Result.map(_ -> filename, check(sz)),
-                FileSystem.size(filename))
-        };
         run { f() } with handler FileSystem {
             // Stat/test/metadata ops — pass through
             def exists(filename, k)           = k(FileSystem.exists(filename))
@@ -704,9 +699,9 @@ pub mod Fs.FileSystem {
             def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
 
             // Read ops — check file size before reading
-            def read(filename, k)             = k(Result.flatMap(p -> FileSystem.read(p), checkFile(filename)))
-            def readLines(filename, k)        = k(Result.flatMap(p -> FileSystem.readLines(p), checkFile(filename)))
-            def readBytes(filename, k)        = k(Result.flatMap(p -> FileSystem.readBytes(p), checkFile(filename)))
+            def read(filename, k)             = k(Result.flatMap(_ -> FileSystem.read(filename), Result.flatMap(check, FileSystem.size(filename))))
+            def readLines(filename, k)        = k(Result.flatMap(_ -> FileSystem.readLines(filename), Result.flatMap(check, FileSystem.size(filename))))
+            def readBytes(filename, k)        = k(Result.flatMap(_ -> FileSystem.readBytes(filename), Result.flatMap(check, FileSystem.size(filename))))
 
             // Write ops — check payload size
             def write(data, file, k)          = k(Result.flatMap(_ -> FileSystem.write(data, file), check(estStr(data#str))))

@@ -139,15 +139,11 @@ pub mod Fs.FileRead {
     /// (not the in-memory string length).
     ///
     pub def withTransferLimit(maxBytes: Int64, f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, FileStat} =
-        let check = filename -> {
-            Result.flatMap(sz ->
-                Result.map(_ -> filename, Fs.FsLayer.checkTransferLimit(maxBytes, sz)),
-                FileStat.size(filename))
-        };
+        let check = sz -> Fs.FsLayer.checkTransferLimit(maxBytes, sz);
         run { f() } with handler FileRead {
-            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), check(filename)))
-            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), check(filename)))
-            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), check(filename)))
+            def read(filename, k)      = k(Result.flatMap(_ -> FileRead.read(filename), Result.flatMap(check, FileStat.size(filename))))
+            def readLines(filename, k) = k(Result.flatMap(_ -> FileRead.readLines(filename), Result.flatMap(check, FileStat.size(filename))))
+            def readBytes(filename, k) = k(Result.flatMap(_ -> FileRead.readBytes(filename), Result.flatMap(check, FileStat.size(filename))))
         }
 
 }
