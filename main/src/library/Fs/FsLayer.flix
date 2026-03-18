@@ -44,7 +44,7 @@ mod Fs.FsLayer {
     import java.util.stream.Stream
 
     use Fs.Size
-    use Fs.Size.Size
+    use Fs.Size.bytes
     use Fs.Size.toBytes
     use IoError.IoError
     use IoError.ErrorKind
@@ -157,7 +157,7 @@ mod Fs.FsLayer {
 
     pub def size(f: String): Result[IoError, Size] \ IO =
         try {
-            Ok(Size(Files.size(Paths.get(f))))
+            Ok(bytes(Files.size(Paths.get(f))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -585,14 +585,14 @@ mod Fs.FsLayer {
     /// count by 4 (the maximum bytes per character in UTF-8).
     ///
     pub def estimateStringBytes(s: String): Size =
-        Size(Int32.toInt64(String.length(s)) * 4i64)
+        bytes(Int32.toInt64(String.length(s)) * 4i64)
 
     ///
     /// Estimates the UTF-8 byte size of a list of strings by multiplying the
     /// total character count by 4 (the maximum bytes per character in UTF-8).
     ///
     pub def estimateStringListBytes(l: List[String]): Size =
-        Size(Int32.toInt64(List.sumWith(String.length, l)) * 4i64)
+        bytes(Int32.toInt64(List.sumWith(String.length, l)) * 4i64)
 
     // ─── Private helper ────────────────────────────────────────────────
 
