@@ -19,24 +19,6 @@ pub mod Fs.FileExists {
     use Fs.FileTest
 
     ///
-    /// Handles the `FileExists` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `FileExists` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - FileExists) + IO = x ->
-        run { f(x) } with handler FileExists {
-            def exists(filename, k) = k(Fs.FsLayer.exists(filename))
-        }
-
-    ///
-    /// Runs the `FileExists` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `FileExists` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileExists) + IO = handle(f)()
-
-    ///
     /// Handles the `FileExists` effect of the given function `f` using the `FileTest` effect.
     ///
     pub def handleWithFileTest(f: a -> b \ ef): a -> b \ (ef - FileExists) + FileTest = x ->

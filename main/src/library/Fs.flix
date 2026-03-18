@@ -18,7 +18,7 @@ pub mod Fs {
 
     // Effect Hierarchy:
     //
-    // FileSystem                          (28 ops — unified root)
+    // FileSystem                          (29 ops — unified root)
     // ├── FileStat                        (11 ops)
     // │   ├── FileTest                    (4 ops)
     // │   │   ├── FileExists                    — exists
@@ -39,8 +39,8 @@ pub mod Fs {
     // │   ├── ReadLines                         — readLines
     // │   └── ReadBytes                         — readBytes
     // ├── DirList                               — list
-    // ├── Glob                                — glob
-    // └── FileWrite                       (12 ops)
+    // ├── Glob                                  — glob
+    // └── FileWrite                       (13 ops)
     //     ├── WriteFile                         — write
     //     ├── WriteLines                        — writeLines
     //     ├── WriteBytes                        — writeBytes
@@ -48,11 +48,20 @@ pub mod Fs {
     //     ├── AppendLines                       — appendLines
     //     ├── AppendBytes                       — appendBytes
     //     ├── Truncate                          — truncate
+    //     ├── CopyFile                          — copyWith
     //     ├── MoveFile                          — moveWith
     //     ├── DeleteFile                        — delete
     //     ├── MkDir                             — mkDir
     //     ├── MkDirs                            — mkDirs
     //     └── MkTempDir                         — mkTempDir
+
+    ///
+    /// Options for the `copyWith` operation.
+    ///
+    pub enum CopyOption with Eq, Order, ToString {
+        case CopyAttributes
+        case ReplaceExisting
+    }
 
     ///
     /// Options for the `moveWith` operation.
@@ -63,7 +72,25 @@ pub mod Fs {
     }
 
     ///
+    /// Represents a file size stored as bytes (Int64).
+    ///
+    pub enum Size(Int64) with Eq, Order, Hash
+
+    ///
+    /// Represents a size unit.
+    ///
+    pub enum SizeUnit with Eq, ToString {
+        case Bytes,
+        case KiloBytes,
+        case MegaBytes,
+        case GigaBytes,
+        case TeraBytes
+    }
+
+    ///
     /// An effect used to check if a file exists.
+    ///
+    /// Use the `FileExists.handleWithFileTest` handler.
     ///
     pub eff FileExists {
 
@@ -77,6 +104,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a path is a directory.
     ///
+    /// Use the `IsDirectory.handleWithFileTest` handler.
+    ///
     pub eff IsDirectory {
 
         ///
@@ -88,6 +117,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a path is a regular file.
+    ///
+    /// Use the `IsRegularFile.handleWithFileTest` handler.
     ///
     pub eff IsRegularFile {
 
@@ -101,6 +132,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a path is a symbolic link.
     ///
+    /// Use the `IsSymbolicLink.handleWithFileTest` handler.
+    ///
     pub eff IsSymbolicLink {
 
         ///
@@ -112,6 +145,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a file is readable.
+    ///
+    /// Use the `IsReadable.handleWithFilePermission` handler.
     ///
     pub eff IsReadable {
 
@@ -125,6 +160,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a file is writable.
     ///
+    /// Use the `IsWritable.handleWithFilePermission` handler.
+    ///
     pub eff IsWritable {
 
         ///
@@ -136,6 +173,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a file is executable.
+    ///
+    /// Use the `IsExecutable.handleWithFilePermission` handler.
     ///
     pub eff IsExecutable {
 
@@ -149,6 +188,8 @@ pub mod Fs {
     ///
     /// An effect used to read the last access time of a file.
     ///
+    /// Use the `AccessTime.handleWithFileTime` handler.
+    ///
     pub eff AccessTime {
 
         ///
@@ -160,6 +201,8 @@ pub mod Fs {
 
     ///
     /// An effect used to read the creation time of a file.
+    ///
+    /// Use the `CreationTime.handleWithFileTime` handler.
     ///
     pub eff CreationTime {
 
@@ -173,6 +216,8 @@ pub mod Fs {
     ///
     /// An effect used to read the last modification time of a file.
     ///
+    /// Use the `ModificationTime.handleWithFileTime` handler.
+    ///
     pub eff ModificationTime {
 
         ///
@@ -185,17 +230,21 @@ pub mod Fs {
     ///
     /// An effect used to read the size of a file.
     ///
+    /// Use the `FileSize.handleWithFileStat` handler.
+    ///
     pub eff FileSize {
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
     }
 
     ///
     /// An effect used to read the contents of a file as a string.
+    ///
+    /// Use the `ReadFile.handleWithFileRead` handler.
     ///
     pub eff ReadFile {
 
@@ -209,6 +258,8 @@ pub mod Fs {
     ///
     /// An effect used to read the lines of a file.
     ///
+    /// Use the `ReadLines.handleWithFileRead` handler.
+    ///
     pub eff ReadLines {
 
         ///
@@ -220,6 +271,8 @@ pub mod Fs {
 
     ///
     /// An effect used to read the bytes of a file.
+    ///
+    /// Use the `ReadBytes.handleWithFileRead` handler.
     ///
     pub eff ReadBytes {
 
@@ -233,6 +286,8 @@ pub mod Fs {
     ///
     /// An effect used to list the contents of a directory.
     ///
+    /// Use the `DirList.handleWithFileSystem` handler.
+    ///
     pub eff DirList {
 
         ///
@@ -245,6 +300,8 @@ pub mod Fs {
     ///
     /// An effect used to find files matching a glob pattern.
     ///
+    /// Use the `Glob.handleWithFileSystem` handler.
+    ///
     pub eff Glob {
 
         ///
@@ -256,6 +313,8 @@ pub mod Fs {
 
     ///
     /// An effect used to write the contents of a file as a string.
+    ///
+    /// Use the `WriteFile.handleWithFileWrite` handler.
     ///
     pub eff WriteFile {
 
@@ -271,6 +330,8 @@ pub mod Fs {
     ///
     /// An effect used to write lines to a file.
     ///
+    /// Use the `WriteLines.handleWithFileWrite` handler.
+    ///
     pub eff WriteLines {
 
         ///
@@ -284,6 +345,8 @@ pub mod Fs {
 
     ///
     /// An effect used to write bytes to a file.
+    ///
+    /// Use the `WriteBytes.handleWithFileWrite` handler.
     ///
     pub eff WriteBytes {
 
@@ -299,6 +362,8 @@ pub mod Fs {
     ///
     /// An effect used to append a string to a file.
     ///
+    /// Use the `AppendFile.handleWithFileWrite` handler.
+    ///
     pub eff AppendFile {
 
         ///
@@ -312,6 +377,8 @@ pub mod Fs {
 
     ///
     /// An effect used to append lines to a file.
+    ///
+    /// Use the `AppendLines.handleWithFileWrite` handler.
     ///
     pub eff AppendLines {
 
@@ -327,6 +394,8 @@ pub mod Fs {
     ///
     /// An effect used to append bytes to a file.
     ///
+    /// Use the `AppendBytes.handleWithFileWrite` handler.
+    ///
     pub eff AppendBytes {
 
         ///
@@ -341,6 +410,8 @@ pub mod Fs {
     ///
     /// An effect used to truncate a file.
     ///
+    /// Use the `Truncate.handleWithFileWrite` handler.
+    ///
     pub eff Truncate {
 
         ///
@@ -351,7 +422,23 @@ pub mod Fs {
     }
 
     ///
+    /// An effect used to copy a file.
+    ///
+    /// Use the `CopyFile.handleWithFileWrite` handler.
+    ///
+    pub eff CopyFile {
+
+        ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+    }
+
+    ///
     /// An effect used to move (rename) a file or directory.
+    ///
+    /// Use the `MoveFile.handleWithFileWrite` handler.
     ///
     pub eff MoveFile {
 
@@ -364,6 +451,8 @@ pub mod Fs {
 
     ///
     /// An effect used to delete a file.
+    ///
+    /// Use the `DeleteFile.handleWithFileWrite` handler.
     ///
     pub eff DeleteFile {
 
@@ -379,6 +468,8 @@ pub mod Fs {
     ///
     /// An effect used to create a directory.
     ///
+    /// Use the `MkDir.handleWithFileWrite` handler.
+    ///
     pub eff MkDir {
 
         ///
@@ -391,6 +482,8 @@ pub mod Fs {
     ///
     /// An effect used to create a directory and all its parent directories.
     ///
+    /// Use the `MkDirs.handleWithFileWrite` handler.
+    ///
     pub eff MkDirs {
 
         ///
@@ -402,6 +495,8 @@ pub mod Fs {
 
     ///
     /// An effect used to create a temporary directory.
+    ///
+    /// Use the `MkTempDir.handleWithFileWrite` handler.
     ///
     pub eff MkTempDir {
 
@@ -541,9 +636,9 @@ pub mod Fs {
         def modificationTime(f: String): Result[IoError, Int64]
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
     }
 
@@ -620,6 +715,11 @@ pub mod Fs {
         /// Truncates the given file `f`.
         ///
         def truncate(f: String): Result[IoError, Unit]
+
+        ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
 
         ///
         /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
@@ -708,9 +808,9 @@ pub mod Fs {
         def modificationTime(f: String): Result[IoError, Int64]
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
         ///
         /// Returns a string of all the contents of the given file `f`.
@@ -785,6 +885,11 @@ pub mod Fs {
         def truncate(f: String): Result[IoError, Unit]
 
         ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+        ///
         /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
         ///
         def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
@@ -815,4 +920,60 @@ pub mod Fs {
 
     }
 
+}
+
+instance Add[Fs.Size] {
+    pub def add(x: Fs.Size, y: Fs.Size): Fs.Size =
+        use Fs.Size.Size;
+        let Size(x1) = x;
+        let Size(y1) = y;
+        Size(x1 + y1)
+}
+
+instance Sub[Fs.Size] {
+    pub def sub(x: Fs.Size, y: Fs.Size): Fs.Size =
+        use Fs.Size.Size;
+        let Size(x1) = x;
+        let Size(y1) = y;
+        Size(x1 - y1)
+}
+
+instance ToString[Fs.Size] {
+    pub def toString(s: Fs.Size): String =
+        use Fs.Size.Size;
+        let Size(b) = s;
+        if (b == 0i64)
+            "0 B"
+        else
+            let abs = Int64.abs(b);
+            let sign = if (b < 0i64) "-" else "";
+            let tb1 = 1_024i64 * 1_024i64 * 1_024i64 * 1_024i64;
+            let gb1 = 1_024i64 * 1_024i64 * 1_024i64;
+            let mb1 = 1_024i64 * 1_024i64;
+            let kb1 = 1_024i64;
+            if (abs >= tb1)
+                let tb = abs / tb1;
+                let rem = abs - (tb * tb1);
+                let gb = rem / gb1;
+                "${sign}${tb} TB ${gb} GB"
+            else if (abs >= gb1)
+                let gb = abs / gb1;
+                let rem = abs - (gb * gb1);
+                let mb = rem / mb1;
+                "${sign}${gb} GB ${mb} MB"
+            else if (abs >= mb1)
+                let mb = abs / mb1;
+                let rem = abs - (mb * mb1);
+                let kb = rem / kb1;
+                "${sign}${mb} MB ${kb} KB"
+            else if (abs >= kb1)
+                let kb = abs / kb1;
+                let rem = abs - (kb * kb1);
+                "${sign}${kb} KB ${rem} B"
+            else
+                "${sign}${abs} B"
+}
+
+instance Formattable[Fs.Size] {
+    pub def format(s: Fs.Size): RichString = RichString.fromString(ToString.toString(s))
 }

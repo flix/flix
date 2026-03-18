@@ -19,24 +19,6 @@ pub mod Fs.ModificationTime {
     use Fs.FileTime
 
     ///
-    /// Handles the `ModificationTime` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `ModificationTime` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - ModificationTime) + IO = x ->
-        run { f(x) } with handler ModificationTime {
-            def modificationTime(filename, k) = k(Fs.FsLayer.modificationTime(filename))
-        }
-
-    ///
-    /// Runs the `ModificationTime` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `ModificationTime` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ModificationTime) + IO = handle(f)()
-
-    ///
     /// Handles the `ModificationTime` effect of the given function `f` using the `FileTime` effect.
     ///
     pub def handleWithFileTime(f: a -> b \ ef): a -> b \ (ef - ModificationTime) + FileTime = x ->

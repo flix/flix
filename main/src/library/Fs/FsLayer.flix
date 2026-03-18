@@ -40,8 +40,12 @@ mod Fs.FsLayer {
     import java.nio.file.PathMatcher
     import java.nio.file.StandardOpenOption
     import java.util.stream.BaseStream
+    import java.util.UUID
     import java.util.stream.Stream
 
+    use Fs.Size
+    use Fs.Size.bytes
+    use Fs.Size.toBytes
     use IoError.IoError
     use IoError.ErrorKind
     use RichString.{text, bold, cyan, green, red, gray}
@@ -151,9 +155,9 @@ mod Fs.FsLayer {
 
     // ─── File-stat operations ──────────────────────────────────────────
 
-    pub def size(f: String): Result[IoError, Int64] \ IO =
+    pub def size(f: String): Result[IoError, Size] \ IO =
         try {
-            Ok(Files.size(Paths.get(f)))
+            Ok(bytes(Files.size(Paths.get(f))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -166,6 +170,7 @@ mod Fs.FsLayer {
             Ok(String.fromBytes(Array.toVector(Files.readAllBytes(Paths.get(f)))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -174,6 +179,7 @@ mod Fs.FsLayer {
             Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -182,6 +188,7 @@ mod Fs.FsLayer {
             Ok(Array.toVector(Files.readAllBytes(Paths.get(f))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -334,6 +341,26 @@ mod Fs.FsLayer {
             case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
+    // ─── Copy operation ────────────────────────────────────────────────
+
+    pub def copyWith(src: {src = String}, dst: String, opts: Set[Fs.CopyOption]): Result[IoError, Unit] \ IO =
+        try {
+            let copyOpts: Vector[CopyOption] = Set.foldLeft((acc, opt) -> match opt {
+                case Fs.CopyOption.ReplaceExisting => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.REPLACE_EXISTING)})
+                case Fs.CopyOption.CopyAttributes  => Vector.append(acc, Vector#{checked_cast(StandardCopyOption.COPY_ATTRIBUTES)})
+            }, (Vector#{}: Vector[CopyOption]), opts);
+            discard Files.copy(Paths.get(src#src), Paths.get(dst), copyOpts);
+            Ok(())
+        } catch {
+            case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: NoSuchFileException        => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
+        }
+
+    pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
+        copyWith(src, dst, Set.empty())
+
     // ─── Move operation ────────────────────────────────────────────────
 
     pub def moveWith(src: {src = String}, dst: String, opts: Set[Fs.MoveOption]): Result[IoError, Unit] \ IO =
@@ -347,6 +374,7 @@ mod Fs.FsLayer {
         } catch {
             case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: NoSuchFileException        => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -470,6 +498,193 @@ mod Fs.FsLayer {
                     "Path '${path}' is within a denied directory"))
             else
                 Ok(resolved.toString())
+        }
+
+    ///
+    /// Resolves `path` to an absolute, normalized form and checks that it matches
+    /// at least one of the given glob `patterns`. Returns `Ok(resolvedPath)` if allowed,
+    /// or `Err(PermissionDenied)` if the path does not match any pattern.
+    ///
+    pub def allowGlob(patterns: Nel[String], path: String): Result[IoError, String] =
+        unsafe IO {
+            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let allowed = Nel.exists(
+                pattern -> {
+                    let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                    matcher.matches(resolved)
+                },
+                patterns
+            );
+            if (allowed)
+                Ok(resolved.toString())
+            else
+                Err(IoError(ErrorKind.PermissionDenied,
+                    "Path '${path}' does not match any allowed glob pattern"))
+        }
+
+    ///
+    /// Resolves `path` to an absolute, normalized form and checks that it does not match
+    /// any of the given glob `patterns`. Returns `Ok(resolvedPath)` if permitted,
+    /// or `Err(PermissionDenied)` if the path matches a denied pattern.
+    ///
+    pub def denyGlob(patterns: Nel[String], path: String): Result[IoError, String] =
+        unsafe IO {
+            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let denied = Nel.exists(
+                pattern -> {
+                    let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                    matcher.matches(resolved)
+                },
+                patterns
+            );
+            if (denied)
+                Err(IoError(ErrorKind.PermissionDenied,
+                    "Path '${path}' matches a denied glob pattern"))
+            else
+                Ok(resolved.toString())
+        }
+
+    // ─── Atomic write helper ────────────────────────────────────────────
+
+    ///
+    /// Performs an atomic write to `file` by writing to a temporary sibling path
+    /// first, then atomically moving it into place.
+    ///
+    /// - `doWrite(tmp)` writes data to the temporary path.
+    /// - `doMoveAtomic(tmp, file)` atomically moves the temp file to the target.
+    /// - `doDelete(tmp)` cleans up the temp file on failure.
+    ///
+    /// The caller supplies these as effect operations so that this helper works
+    /// with any effect (`FileWrite`, `FileSystem`, etc.).
+    ///
+    pub def atomicWrite(
+        file: String,
+        doWrite: String -> Result[IoError, Unit] \ ef,
+        doMoveAtomic: String -> String -> Result[IoError, Unit] \ ef,
+        doDelete: String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        let tmp = tempPathFor(file);
+        match doWrite(tmp) {
+            case Ok(_) => match doMoveAtomic(tmp, file) {
+                case Ok(_)  => Ok(())
+                case Err(e) => { discard doDelete(tmp); Err(e) }
+            }
+            case Err(e) => { discard doDelete(tmp); Err(e) }
+        }
+
+    ///
+    /// Generates a unique temporary file path in the same directory as `target`.
+    ///
+    /// Uses UUID for uniqueness. The result is a sibling of `target` with the
+    /// pattern `.~atomic~<name>.<uuid>.tmp`.
+    ///
+    def tempPathFor(target: String): String =
+        unsafe IO {
+            let path = Paths.get(target);
+            let parent = path.getParent();
+            let parentDir = if (Object.isNull(parent)) Paths.get(".") else parent;
+            let name = path.getFileName().toString();
+            let uuid = UUID.randomUUID().toString();
+            parentDir.resolve(".~atomic~${name}.${uuid}.tmp").toString()
+        }
+
+    // ─── Backup helper ───────────────────────────────────────────────
+
+    ///
+    /// Performs a backup of `file` to `file + suffix` before executing `doAction`.
+    ///
+    /// - `doCopy(file, bak)` copies the file to the backup path.
+    /// - If the copy succeeds, `doAction()` is executed.
+    /// - If the copy fails with `NotFound`, the file doesn't exist yet, so
+    ///   `doAction()` proceeds without backup.
+    /// - If the copy fails with any other error, the operation is aborted.
+    ///
+    pub def backup(
+        file: String,
+        suffix: String,
+        doCopy: String -> String -> Result[IoError, Unit] \ ef,
+        doAction: Unit -> Result[IoError, a] \ ef
+    ): Result[IoError, a] \ ef =
+        let bak = file + suffix;
+        match doCopy(file, bak) {
+            case Ok(_)                              => doAction()
+            case Err(IoError(ErrorKind.NotFound, _)) => doAction()
+            case Err(e)                             => Err(e)
+        }
+
+    // ─── Transfer limit helper ──────────────────────────────────────────
+
+    ///
+    /// Checks that `actualSize` does not exceed `maxSize`.
+    /// Returns `Ok(())` if within the limit, or `Err(TransferLimitExceeded)` otherwise.
+    ///
+    pub def checkTransferLimit(maxSize: Size, actualSize: Size): Result[IoError, Unit] =
+        let maxBytes = toBytes(maxSize);
+        let actualBytes = toBytes(actualSize);
+        if (actualBytes <= maxBytes)
+            Ok(())
+        else
+            Err(IoError(ErrorKind.TransferLimitExceeded,
+                "transfer limit exceeded: ${actualSize} > ${maxSize}"))
+
+    ///
+    /// Estimates the UTF-8 byte size of a string by multiplying the character
+    /// count by 4 (the maximum bytes per character in UTF-8).
+    ///
+    pub def estimateStringBytes(s: String): Size =
+        bytes(Int32.toInt64(String.length(s)) * 4i64)
+
+    ///
+    /// Estimates the UTF-8 byte size of a list of strings by multiplying the
+    /// total character count by 4 (the maximum bytes per character in UTF-8).
+    ///
+    pub def estimateStringListBytes(l: List[String]): Size =
+        bytes(Int32.toInt64(List.sumWith(String.length, l)) * 4i64)
+
+    // ─── Conflict check helpers ────────────────────────────────────────
+
+    ///
+    /// Snapshots the modification time of `file` into `snapshots`.
+    ///
+    /// If `getModTime` fails (file deleted, etc.), silently skips.
+    ///
+    pub def snapshotModTime(
+        file: String,
+        snapshots: MutMap[String, Int64, r],
+        getModTime: String -> Result[IoError, Int64] \ ef
+    ): Unit \ { ef, r } =
+        match getModTime(file) {
+            case Ok(t) => MutMap.put(file, t, snapshots)
+            case _     => ()
+        }
+
+    ///
+    /// Checks whether `file` was modified externally since last snapshot.
+    ///
+    /// - No snapshot → `Ok()` (file was never read, nothing to conflict with).
+    /// - Mod time matches snapshot → `Ok()`.
+    /// - Mod time differs → `Err(Conflict(...))`.
+    /// - File deleted (`NotFound`) → `Ok()` (file gone, proceed).
+    /// - Other `getModTime` error → propagated.
+    ///
+    pub def conflictCheck(
+        file: String,
+        snapshots: MutMap[String, Int64, r],
+        getModTime: String -> Result[IoError, Int64] \ ef
+    ): Result[IoError, Unit] \ { ef, r } =
+        match MutMap.get(file, snapshots) {
+            case None          => Ok(())
+            case Some(oldTime) =>
+                match getModTime(file) {
+                    case Ok(curTime) =>
+                        if (curTime == oldTime)
+                            Ok(())
+                        else
+                            Err(IoError(ErrorKind.Conflict,
+                                "Conflict on '${file}': expected mtime ${oldTime}, found ${curTime}"))
+                    case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+                    case Err(e) => Err(e)
+                }
         }
 
     // ─── Private helper ────────────────────────────────────────────────

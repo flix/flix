@@ -19,24 +19,6 @@ pub mod Fs.IsWritable {
     use Fs.FilePermission
 
     ///
-    /// Handles the `IsWritable` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsWritable` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - IsWritable) + IO = x ->
-        run { f(x) } with handler IsWritable {
-            def isWritable(filename, k) = k(Fs.FsLayer.isWritable(filename))
-        }
-
-    ///
-    /// Runs the `IsWritable` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsWritable` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - IsWritable) + IO = handle(f)()
-
-    ///
     /// Handles the `IsWritable` effect of the given function `f` using the `FilePermission` effect.
     ///
     pub def handleWithFilePermission(f: a -> b \ ef): a -> b \ (ef - IsWritable) + FilePermission = x ->

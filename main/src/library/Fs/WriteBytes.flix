@@ -19,24 +19,6 @@ pub mod Fs.WriteBytes {
     use Fs.FileWrite
 
     ///
-    /// Handles the `WriteBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `WriteBytes` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - WriteBytes) + IO = x ->
-        run { f(x) } with handler WriteBytes {
-            def writeBytes(data, file, k) = k(Fs.FsLayer.writeBytes(data, file))
-        }
-
-    ///
-    /// Runs the `WriteBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `WriteBytes` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - WriteBytes) + IO = handle(f)()
-
-    ///
     /// Handles the `WriteBytes` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - WriteBytes) + FileWrite = x ->

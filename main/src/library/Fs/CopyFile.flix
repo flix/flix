@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-pub mod Fs.Truncate {
+pub mod Fs.CopyFile {
 
     use Fs.FileWrite
+    use Fs.CopyFile
 
     ///
-    /// Handles the `Truncate` effect of the given function `f` using the `FileWrite` effect.
+    /// Convenience function: copies `src` to `dst` with no options.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - Truncate) + FileWrite = x ->
-        run { f(x) } with handler Truncate {
-            def truncate(file, k) = k(Fs.FileWrite.truncate(file))
+    pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ CopyFile =
+        Fs.CopyFile.copyWith(src, dst, Set.empty())
+
+    ///
+    /// Handles the `CopyFile` effect of the given function `f` using the `FileWrite` effect.
+    ///
+    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - CopyFile) + FileWrite = x ->
+        run { f(x) } with handler CopyFile {
+            def copyWith(src, dst, opts, k) = k(Fs.FileWrite.copyWith(src, dst, opts))
         }
 
 }

@@ -19,24 +19,6 @@ pub mod Fs.MkDirs {
     use Fs.FileWrite
 
     ///
-    /// Handles the `MkDirs` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `MkDirs` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - MkDirs) + IO = x ->
-        run { f(x) } with handler MkDirs {
-            def mkDirs(d, k) = k(Fs.FsLayer.mkDirs(d))
-        }
-
-    ///
-    /// Runs the `MkDirs` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `MkDirs` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - MkDirs) + IO = handle(f)()
-
-    ///
     /// Handles the `MkDirs` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - MkDirs) + FileWrite = x ->

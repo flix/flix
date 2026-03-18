@@ -19,24 +19,6 @@ pub mod Fs.ReadBytes {
     use Fs.FileRead
 
     ///
-    /// Handles the `ReadBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `ReadBytes` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - ReadBytes) + IO = x ->
-        run { f(x) } with handler ReadBytes {
-            def readBytes(filename, k) = k(Fs.FsLayer.readBytes(filename))
-        }
-
-    ///
-    /// Runs the `ReadBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `ReadBytes` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ReadBytes) + IO = handle(f)()
-
-    ///
     /// Handles the `ReadBytes` effect of the given function `f` using the `FileRead` effect.
     ///
     pub def handleWithFileRead(f: a -> b \ ef): a -> b \ (ef - ReadBytes) + FileRead = x ->

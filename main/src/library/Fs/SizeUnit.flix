@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-pub mod Fs.Truncate {
+pub mod Fs.SizeUnit {
 
-    use Fs.FileWrite
+    use Fs.SizeUnit
 
     ///
-    /// Handles the `Truncate` effect of the given function `f` using the `FileWrite` effect.
+    /// Returns the number of bytes for the given size unit `u`.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - Truncate) + FileWrite = x ->
-        run { f(x) } with handler Truncate {
-            def truncate(file, k) = k(Fs.FileWrite.truncate(file))
-        }
+    pub def toBytes(u: SizeUnit): Int64 = match u {
+        case SizeUnit.Bytes     => 1i64,
+        case SizeUnit.KiloBytes => 1_024i64,
+        case SizeUnit.MegaBytes => 1_024i64 * 1_024i64,
+        case SizeUnit.GigaBytes => 1_024i64 * 1_024i64 * 1_024i64,
+        case SizeUnit.TeraBytes => 1_024i64 * 1_024i64 * 1_024i64 * 1_024i64
+    }
 
 }

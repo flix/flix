@@ -19,24 +19,6 @@ pub mod Fs.DeleteFile {
     use Fs.FileWrite
 
     ///
-    /// Handles the `DeleteFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `DeleteFile` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - DeleteFile) + IO = x ->
-        run { f(x) } with handler DeleteFile {
-            def delete(file, k) = k(Fs.FsLayer.delete(file))
-        }
-
-    ///
-    /// Runs the `DeleteFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `DeleteFile` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - DeleteFile) + IO = handle(f)()
-
-    ///
     /// Handles the `DeleteFile` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - DeleteFile) + FileWrite = x ->

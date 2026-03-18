@@ -96,4 +96,69 @@ pub mod Fs.FilePermission {
             def isExecutable(filename, k) = k(FilePermission.isExecutable(r(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// match at least one of the given glob `patterns`. Rejects paths that do not match
+    /// with a `PermissionDenied` error.
+    ///
+    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+    /// pattern with a `PermissionDenied` error.
+    ///
+    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
 }
