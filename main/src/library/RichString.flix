@@ -95,6 +95,16 @@ pub mod RichString {
     }
 
     ///
+    /// Converts a Color-enum to a string 
+    ///
+    instance ToString[Color] {
+        pub def toString(x: RichString.Color): String = match x {
+                case Color.Rgb(r, g, b) => "rgb(${r},${g},${b})"
+                case Color.Default => "default"
+            }
+    }
+
+    ///
     /// Returns an empty `RichString`.
     ///
     pub def empty(): RichString =
@@ -410,5 +420,26 @@ pub mod RichString {
             not (noColor or isDumbTerm)
         } with Env.runWithIO
     }
+
+    ///
+    /// Returns a string representing a HTML `p` element that corresponds to the given `RichString`
+    ///
+    pub def toHTMLParagraph(r: RichString): String = 
+        let RichString(c) = r;
+        let cs = Chain.map(spanToHTMLString, c);
+        let res = Chain.foldLeft(acc -> str -> "${acc}${str}", "", cs);
+        "<p>${res}</p>"
+
+    /// 
+    /// Returns a string representing a HTML `span` element with styling
+    /// that corresponds to the styling of the given `RichString`
+    ///
+    def spanToHTMLString(s: Span): String = 
+        let Span.Span({text = t, fgColor = fc, bgColor = bg, styles = st}) = s;
+        let tColor = if (fc == Color.Default) {""} else {"color: ${fc};"};
+        let bgColor = if (bg == Color.Default) {""} else {"background-color: ${bg};"};
+        let bold = if (Set.memberOf(Style.Bold, st)) {"font-weight: bold;"} else {""};
+        let underline = if (Set.memberOf(Style.Underline, st)) {"text-decoration: underline;"} else {""};
+        "<span style=\"${tColor}${bgColor}${bold}${underline}\">${t}</span>"
 
 }
