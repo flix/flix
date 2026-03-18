@@ -50,6 +50,17 @@ mod Fs.FsLayer {
     use IoError.ErrorKind
     use RichString.{text, bold, cyan, green, red, gray}
 
+    // ─── Symlink safety ────────────────────────────────────────────────
+
+    ///
+    /// Returns a singleton vector containing `NOFOLLOW_LINKS`.
+    ///
+    /// Used by file-test and attribute operations so they inspect the
+    /// symbolic link itself rather than silently dereferencing to its target.
+    ///
+    def noFollow(): Vector[LinkOption] =
+        ...{LinkOption.NOFOLLOW_LINKS}
+
     // ─── Logging helpers ───────────────────────────────────────────────
 
     ///
@@ -80,21 +91,21 @@ mod Fs.FsLayer {
 
     pub def exists(f: String): Result[IoError, Bool] \ IO =
         try {
-            Ok(Files.exists(Paths.get(f), (...{}: Vector[LinkOption])))
+            Ok(Files.exists(Paths.get(f), noFollow()))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
 
     pub def isDirectory(f: String): Result[IoError, Bool] \ IO =
         try {
-            Ok(Files.isDirectory(Paths.get(f), (...{}: Vector[LinkOption])))
+            Ok(Files.isDirectory(Paths.get(f), noFollow()))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
 
     pub def isRegularFile(f: String): Result[IoError, Bool] \ IO =
         try {
-            Ok(Files.isRegularFile(Paths.get(f), (...{}: Vector[LinkOption])))
+            Ok(Files.isRegularFile(Paths.get(f), noFollow()))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
         }
@@ -157,7 +168,7 @@ mod Fs.FsLayer {
 
     pub def size(f: String): Result[IoError, Size] \ IO =
         try {
-            Ok(bytes(Files.size(Paths.get(f))))
+            Ok(bytes(fileAttributes(Paths.get(f)).size()))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -439,16 +450,47 @@ mod Fs.FsLayer {
         unsafe IO { Paths.get(baseDir).resolve(path).toString() }
 
     ///
-    /// Resolves `path` against `chrootDir` and validates that the normalized result
-    /// stays within the chroot directory.
+    /// Resolves `path` to its real filesystem location by following all symbolic links.
+    ///
+    /// Uses Java's `Path.toRealPath` to resolve every symlink component in the path.
+    /// If the file does not exist yet (e.g., a write target), the parent directory is
+    /// resolved instead and the filename is appended. This ensures that a symlink in
+    /// an ancestor directory is still caught, while allowing writes to new files.
+    ///
+    /// Falls back to `normalize()` only when neither the path nor its parent can be
+    /// resolved (e.g., the entire directory tree is missing).
+    ///
+    def resolveSymLink(path: String): Path =
+        unsafe IO {
+            let p = Paths.get(path).toAbsolutePath();
+            try {
+                p.toRealPath((...{}: Vector[LinkOption]))
+            } catch {
+                case _: IOException =>
+                    let parent = p.getParent();
+                    if (Object.isNull(parent))
+                        p.normalize()
+                    else
+                        try {
+                            parent.toRealPath((...{}: Vector[LinkOption])).resolve(p.getFileName())
+                        } catch {
+                            case _: IOException => p.normalize()
+                        }
+            }
+        }
+
+    ///
+    /// Resolves `path` against `chrootDir` and validates that the resolved result
+    /// stays within the chroot directory. Symlinks are resolved to their real
+    /// filesystem targets before the boundary check.
     ///
     /// Returns `Ok(resolvedPath)` if the path is within bounds,
     /// or `Err(PermissionDenied)` if the path escapes the chroot.
     ///
     pub def chroot(chrootDir: String, path: String): Result[IoError, String] =
         unsafe IO {
-            let base = Paths.get(chrootDir).toAbsolutePath().normalize();
-            let resolved = base.resolve(path).normalize();
+            let base = Paths.get(chrootDir).toRealPath((...{}: Vector[LinkOption]));
+            let resolved = resolveSymLink(Fs.FsLayer.resolve(chrootDir, path));
             if (resolved.startsWith(base))
                 Ok(resolved.toString())
             else
@@ -463,10 +505,10 @@ mod Fs.FsLayer {
     ///
     pub def allowList(allowedDirs: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let resolved = resolveSymLink(path);
             let allowed = Nel.exists(
                 dir -> {
-                    let base = Paths.get(dir).toAbsolutePath().normalize();
+                    let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
                     resolved.startsWith(base)
                 },
                 allowedDirs
@@ -485,10 +527,10 @@ mod Fs.FsLayer {
     ///
     pub def denyList(deniedDirs: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let resolved = resolveSymLink(path);
             let denied = Nel.exists(
                 dir -> {
-                    let base = Paths.get(dir).toAbsolutePath().normalize();
+                    let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
                     resolved.startsWith(base)
                 },
                 deniedDirs
@@ -507,7 +549,7 @@ mod Fs.FsLayer {
     ///
     pub def allowGlob(patterns: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let resolved = resolveSymLink(path);
             let allowed = Nel.exists(
                 pattern -> {
                     let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
@@ -529,7 +571,7 @@ mod Fs.FsLayer {
     ///
     pub def denyGlob(patterns: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let resolved = resolveSymLink(path);
             let denied = Nel.exists(
                 pattern -> {
                     let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
@@ -697,7 +739,7 @@ mod Fs.FsLayer {
         Files.readAttributes(
             path,
             Class.forName("java.nio.file.attribute.BasicFileAttributes"),
-            (...{}: Vector[LinkOption])
+            noFollow()
         )
 
 }
