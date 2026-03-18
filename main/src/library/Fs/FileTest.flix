@@ -146,4 +146,32 @@ pub mod Fs.FileTest {
             def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileTest` effect, validating that all file paths
+    /// match at least one of the given glob `patterns`. Rejects paths that do not match
+    /// with a `PermissionDenied` error.
+    ///
+    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
+        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+        run { f() } with handler FileTest {
+            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileTest` effect, validating that all file paths
+    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+    /// pattern with a `PermissionDenied` error.
+    ///
+    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
+        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+        run { f() } with handler FileTest {
+            def exists(filename, k)         = k(Result.flatMap(p -> FileTest.exists(p), c(filename)))
+            def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+        }
+
 }

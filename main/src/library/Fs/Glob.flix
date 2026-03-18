@@ -89,4 +89,26 @@ pub mod Fs.Glob {
             def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
         }
 
+    ///
+    /// Middleware that intercepts the `Glob` effect, validating that all base paths
+    /// match at least one of the given glob `patterns`. Rejects paths that do not match
+    /// with a `PermissionDenied` error.
+    ///
+    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+        }
+
+    ///
+    /// Middleware that intercepts the `Glob` effect, validating that all base paths
+    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+    /// pattern with a `PermissionDenied` error.
+    ///
+    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+        }
+
 }
