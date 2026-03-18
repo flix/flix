@@ -106,6 +106,8 @@ object Library {
     "Fs/FilePermission.flix" -> LocalResource.get("/src/library/Fs/FilePermission.flix"),
     "Fs/FileRead.flix" -> LocalResource.get("/src/library/Fs/FileRead.flix"),
     "Fs/FileSize.flix" -> LocalResource.get("/src/library/Fs/FileSize.flix"),
+    "Fs/Size.flix" -> LocalResource.get("/src/library/Fs/Size.flix"),
+    "Fs/SizeUnit.flix" -> LocalResource.get("/src/library/Fs/SizeUnit.flix"),
     "Fs/FileStat.flix" -> LocalResource.get("/src/library/Fs/FileStat.flix"),
     "Fs/FileSystem.flix" -> LocalResource.get("/src/library/Fs/FileSystem.flix"),
     "Fs/FileTest.flix" -> LocalResource.get("/src/library/Fs/FileTest.flix"),

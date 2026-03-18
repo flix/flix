@@ -72,6 +72,22 @@ pub mod Fs {
     }
 
     ///
+    /// Represents a file size stored as bytes (Int64).
+    ///
+    pub enum Size(Int64) with Eq, Order, Hash
+
+    ///
+    /// Represents a size unit.
+    ///
+    pub enum SizeUnit with Eq, ToString {
+        case Bytes,
+        case KiloBytes,
+        case MegaBytes,
+        case GigaBytes,
+        case TeraBytes
+    }
+
+    ///
     /// An effect used to check if a file exists.
     ///
     /// Use the `FileExists.handleWithFileTest` handler.
@@ -219,9 +235,9 @@ pub mod Fs {
     pub eff FileSize {
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
     }
 
@@ -620,9 +636,9 @@ pub mod Fs {
         def modificationTime(f: String): Result[IoError, Int64]
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
     }
 
@@ -792,9 +808,9 @@ pub mod Fs {
         def modificationTime(f: String): Result[IoError, Int64]
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
         ///
         /// Returns a string of all the contents of the given file `f`.
@@ -904,4 +920,53 @@ pub mod Fs {
 
     }
 
+}
+
+instance Add[Fs.Size] {
+    pub def add(x: Fs.Size, y: Fs.Size): Fs.Size =
+        let Fs.Size.Size(x1) = x;
+        let Fs.Size.Size(y1) = y;
+        Fs.Size.Size(x1 + y1)
+}
+
+instance Sub[Fs.Size] {
+    pub def sub(x: Fs.Size, y: Fs.Size): Fs.Size =
+        let Fs.Size.Size(x1) = x;
+        let Fs.Size.Size(y1) = y;
+        Fs.Size.Size(x1 - y1)
+}
+
+instance ToString[Fs.Size] {
+    pub def toString(s: Fs.Size): String =
+        let Fs.Size.Size(b) = s;
+        if (b == 0i64)
+            "0 B"
+        else
+            let abs = Int64.abs(b);
+            let sign = if (b < 0i64) "-" else "";
+            if (abs >= 1_099_511_627_776i64)
+                let tb = abs / 1_099_511_627_776i64;
+                let rem = abs - (tb * 1_099_511_627_776i64);
+                let gb = rem / 1_073_741_824i64;
+                "${sign}${tb} TB ${gb} GB"
+            else if (abs >= 1_073_741_824i64)
+                let gb = abs / 1_073_741_824i64;
+                let rem = abs - (gb * 1_073_741_824i64);
+                let mb = rem / 1_048_576i64;
+                "${sign}${gb} GB ${mb} MB"
+            else if (abs >= 1_048_576i64)
+                let mb = abs / 1_048_576i64;
+                let rem = abs - (mb * 1_048_576i64);
+                let kb = rem / 1_024i64;
+                "${sign}${mb} MB ${kb} KB"
+            else if (abs >= 1_024i64)
+                let kb = abs / 1_024i64;
+                let rem = abs - (kb * 1_024i64);
+                "${sign}${kb} KB ${rem} B"
+            else
+                "${sign}${abs} B"
+}
+
+instance Formattable[Fs.Size] {
+    pub def format(s: Fs.Size): RichString = RichString.fromString(ToString.toString(s))
 }

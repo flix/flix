@@ -138,8 +138,8 @@ pub mod Fs.FileRead {
     /// reading. For string-based reads, the limit applies to the on-disk file size
     /// (not the in-memory string length).
     ///
-    pub def withTransferLimit(maxBytes: Int64, f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, FileStat} =
-        let check = sz -> Fs.FsLayer.checkTransferLimit(maxBytes, sz);
+    pub def withTransferLimit(maxSize: Fs.Size, f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, FileStat} =
+        let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
         run { f() } with handler FileRead {
             def read(filename, k)      = k(Result.flatMap(_ -> FileRead.read(filename), Result.flatMap(check, FileStat.size(filename))))
             def readLines(filename, k) = k(Result.flatMap(_ -> FileRead.readLines(filename), Result.flatMap(check, FileStat.size(filename))))

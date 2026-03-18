@@ -429,16 +429,16 @@ pub mod Fs.FileWrite {
     /// Operations that don't transfer data (`truncate`, `moveWith`, `delete`,
     /// `mkDir`, `mkDirs`, `mkTempDir`) are passed through unchanged.
     ///
-    pub def withTransferLimit(maxBytes: Int64, f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
-        let check = sz -> Fs.FsLayer.checkTransferLimit(maxBytes, sz);
+    pub def withTransferLimit(maxSize: Fs.Size, f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
+        let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
         let estStr = s -> Fs.FsLayer.estimateStringBytes(s);
         run { f() } with handler FileWrite {
             def write(data, file, k)        = k(Result.flatMap(_ -> FileWrite.write(data, file), check(estStr(data#str))))
             def writeLines(data, file, k)   = k(Result.flatMap(_ -> FileWrite.writeLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
-            def writeBytes(data, file, k)   = k(Result.flatMap(_ -> FileWrite.writeBytes(data, file), check(Int32.toInt64(Vector.length(data)))))
+            def writeBytes(data, file, k)   = k(Result.flatMap(_ -> FileWrite.writeBytes(data, file), check(Fs.Size.bytes(Int32.toInt64(Vector.length(data))))))
             def append(data, file, k)       = k(Result.flatMap(_ -> FileWrite.append(data, file), check(estStr(data#str))))
             def appendLines(data, file, k)  = k(Result.flatMap(_ -> FileWrite.appendLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
-            def appendBytes(data, file, k)  = k(Result.flatMap(_ -> FileWrite.appendBytes(data, file), check(Int32.toInt64(Vector.length(data)))))
+            def appendBytes(data, file, k)  = k(Result.flatMap(_ -> FileWrite.appendBytes(data, file), check(Fs.Size.bytes(Int32.toInt64(Vector.length(data))))))
             def truncate(file, k)           = k(FileWrite.truncate(file))
             def copyWith(src, dst, opts, k) = k(Result.flatMap(sz -> Result.flatMap(_ -> FileWrite.copyWith(src, dst, opts), check(sz)), FileStat.size(src#src)))
             def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src, dst, opts))
