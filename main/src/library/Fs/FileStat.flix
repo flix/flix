@@ -129,7 +129,7 @@ pub mod Fs.FileStat {
             def size(filename, k) = {
                 logPre("size", filename);
                 let result = FileStat.size(filename);
-                logPost("size", filename, s -> "${s} bytes", result);
+                logPost("size", filename, s -> "${s}", result);
                 k(result)
             }
         }
