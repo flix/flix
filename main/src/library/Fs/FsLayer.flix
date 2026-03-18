@@ -170,6 +170,7 @@ mod Fs.FsLayer {
             Ok(String.fromBytes(Array.toVector(Files.readAllBytes(Paths.get(f)))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -178,6 +179,7 @@ mod Fs.FsLayer {
             Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -186,6 +188,7 @@ mod Fs.FsLayer {
             Ok(Array.toVector(Files.readAllBytes(Paths.get(f))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -493,6 +496,50 @@ mod Fs.FsLayer {
             if (denied)
                 Err(IoError(ErrorKind.PermissionDenied,
                     "Path '${path}' is within a denied directory"))
+            else
+                Ok(resolved.toString())
+        }
+
+    ///
+    /// Resolves `path` to an absolute, normalized form and checks that it matches
+    /// at least one of the given glob `patterns`. Returns `Ok(resolvedPath)` if allowed,
+    /// or `Err(PermissionDenied)` if the path does not match any pattern.
+    ///
+    pub def allowGlob(patterns: Nel[String], path: String): Result[IoError, String] =
+        unsafe IO {
+            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let allowed = Nel.exists(
+                pattern -> {
+                    let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                    matcher.matches(resolved)
+                },
+                patterns
+            );
+            if (allowed)
+                Ok(resolved.toString())
+            else
+                Err(IoError(ErrorKind.PermissionDenied,
+                    "Path '${path}' does not match any allowed glob pattern"))
+        }
+
+    ///
+    /// Resolves `path` to an absolute, normalized form and checks that it does not match
+    /// any of the given glob `patterns`. Returns `Ok(resolvedPath)` if permitted,
+    /// or `Err(PermissionDenied)` if the path matches a denied pattern.
+    ///
+    pub def denyGlob(patterns: Nel[String], path: String): Result[IoError, String] =
+        unsafe IO {
+            let resolved = Paths.get(path).toAbsolutePath().normalize();
+            let denied = Nel.exists(
+                pattern -> {
+                    let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                    matcher.matches(resolved)
+                },
+                patterns
+            );
+            if (denied)
+                Err(IoError(ErrorKind.PermissionDenied,
+                    "Path '${path}' matches a denied glob pattern"))
             else
                 Ok(resolved.toString())
         }

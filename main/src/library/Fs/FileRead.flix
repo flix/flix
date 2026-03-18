@@ -134,6 +134,32 @@ pub mod Fs.FileRead {
         }
 
     ///
+    /// Middleware that intercepts the `FileRead` effect, validating that all file paths
+    /// match at least one of the given glob `patterns`. Rejects paths that do not match
+    /// with a `PermissionDenied` error.
+    ///
+    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileRead` effect, validating that all file paths
+    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+    /// pattern with a `PermissionDenied` error.
+    ///
+    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(Result.flatMap(p -> FileRead.read(p), c(filename)))
+            def readLines(filename, k) = k(Result.flatMap(p -> FileRead.readLines(p), c(filename)))
+            def readBytes(filename, k) = k(Result.flatMap(p -> FileRead.readBytes(p), c(filename)))
+        }
+
+    ///
     /// Middleware that intercepts the `FileRead` effect, rejecting reads of files
     /// larger than `maxBytes`. The file size is checked via `FileStat.size` before
     /// reading. For string-based reads, the limit applies to the on-disk file size
