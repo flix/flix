@@ -737,8 +737,11 @@ pub mod Fs.FileSystem {
     /// Files that were never read have no snapshot and are written without
     /// conflict checks.
     ///
-    /// Stat, test, permission, time, size, list, glob, mkdir, and mkTempDir
-    /// operations are passed through unchanged.
+    /// The following operations are passed through unchanged:
+    /// `exists`, `isDirectory`, `isRegularFile`, `isSymbolicLink`,
+    /// `isReadable`, `isWritable`, `isExecutable`, `accessTime`,
+    /// `creationTime`, `modificationTime`, `size`, `list`, `glob`,
+    /// `mkDir`, `mkDirs`, and `mkTempDir`.
     ///
     pub def withConflictCheck(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
         region rc {
@@ -746,18 +749,9 @@ pub mod Fs.FileSystem {
             let getModTime = file -> FileSystem.modificationTime(file);
             let snap = file -> Fs.FsLayer.snapshotModTime(file, snapshots, getModTime);
             let check = file -> Fs.FsLayer.conflictCheck(file, snapshots, getModTime);
-            let checkAndResnap = (file, doWrite) -> {
-                match check(file) {
-                    case Err(e) => Err(e)
-                    case Ok(_)  =>
-                        let result = doWrite();
-                        match result {
-                            case Ok(_) => snap(file)
-                            case _     => ()
-                        };
-                        result
-                }
-            };
+            let checkAndResnap = (file, doWrite) ->
+                forM (_ <- check(file); v <- doWrite())
+                    yield { snap(file); v };
             run { f() } with handler FileSystem {
                 // ── Stat/test/perm/time/size — pass through ──
                 def exists(filename, k)           = k(FileSystem.exists(filename))
