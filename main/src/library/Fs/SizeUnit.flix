@@ -21,7 +21,7 @@ pub mod Fs.SizeUnit {
     ///
     /// Returns the number of bytes for the given size unit `u`.
     ///
-    pub def toBytes(u: Fs.SizeUnit): Int64 = match u {
+    pub def toBytes(u: SizeUnit): Int64 = match u {
         case SizeUnit.Bytes     => 1i64,
         case SizeUnit.KiloBytes => 1_024i64,
         case SizeUnit.MegaBytes => 1_048_576i64,

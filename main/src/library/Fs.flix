@@ -924,21 +924,24 @@ pub mod Fs {
 
 instance Add[Fs.Size] {
     pub def add(x: Fs.Size, y: Fs.Size): Fs.Size =
-        let Fs.Size.Size(x1) = x;
-        let Fs.Size.Size(y1) = y;
-        Fs.Size.Size(x1 + y1)
+        use Fs.Size.Size;
+        let Size(x1) = x;
+        let Size(y1) = y;
+        Size(x1 + y1)
 }
 
 instance Sub[Fs.Size] {
     pub def sub(x: Fs.Size, y: Fs.Size): Fs.Size =
-        let Fs.Size.Size(x1) = x;
-        let Fs.Size.Size(y1) = y;
-        Fs.Size.Size(x1 - y1)
+        use Fs.Size.Size;
+        let Size(x1) = x;
+        let Size(y1) = y;
+        Size(x1 - y1)
 }
 
 instance ToString[Fs.Size] {
     pub def toString(s: Fs.Size): String =
-        let Fs.Size.Size(b) = s;
+        use Fs.Size.Size;
+        let Size(b) = s;
         if (b == 0i64)
             "0 B"
         else

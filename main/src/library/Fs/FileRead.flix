@@ -20,6 +20,7 @@ pub mod Fs.FileRead {
     use Fs.FileStat
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
+    use Fs.Size
 
     ///
     /// Handles the `FileRead` effect of the given function `f`.
@@ -138,7 +139,7 @@ pub mod Fs.FileRead {
     /// reading. For string-based reads, the limit applies to the on-disk file size
     /// (not the in-memory string length).
     ///
-    pub def withTransferLimit(maxSize: Fs.Size, f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, FileStat} =
+    pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileRead) + {FileRead, FileStat} =
         let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
         run { f() } with handler FileRead {
             def read(filename, k)      = k(Result.flatMap(_ -> FileRead.read(filename), Result.flatMap(check, FileStat.size(filename))))

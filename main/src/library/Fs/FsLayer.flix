@@ -43,6 +43,9 @@ mod Fs.FsLayer {
     import java.util.UUID
     import java.util.stream.Stream
 
+    use Fs.Size
+    use Fs.Size.Size
+    use Fs.Size.toBytes
     use IoError.IoError
     use IoError.ErrorKind
     use RichString.{text, bold, cyan, green, red, gray}
@@ -152,9 +155,9 @@ mod Fs.FsLayer {
 
     // ─── File-stat operations ──────────────────────────────────────────
 
-    pub def size(f: String): Result[IoError, Fs.Size] \ IO =
+    pub def size(f: String): Result[IoError, Size] \ IO =
         try {
-            Ok(Fs.Size.Size(Files.size(Paths.get(f))))
+            Ok(Size(Files.size(Paths.get(f))))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -568,9 +571,9 @@ mod Fs.FsLayer {
     /// Checks that `actualSize` does not exceed `maxSize`.
     /// Returns `Ok(())` if within the limit, or `Err(TransferLimitExceeded)` otherwise.
     ///
-    pub def checkTransferLimit(maxSize: Fs.Size, actualSize: Fs.Size): Result[IoError, Unit] =
-        let maxBytes = Fs.Size.toBytes(maxSize);
-        let actualBytes = Fs.Size.toBytes(actualSize);
+    pub def checkTransferLimit(maxSize: Size, actualSize: Size): Result[IoError, Unit] =
+        let maxBytes = toBytes(maxSize);
+        let actualBytes = toBytes(actualSize);
         if (actualBytes <= maxBytes)
             Ok(())
         else
@@ -581,15 +584,15 @@ mod Fs.FsLayer {
     /// Estimates the UTF-8 byte size of a string by multiplying the character
     /// count by 4 (the maximum bytes per character in UTF-8).
     ///
-    pub def estimateStringBytes(s: String): Fs.Size =
-        Fs.Size.Size(Int32.toInt64(String.length(s)) * 4i64)
+    pub def estimateStringBytes(s: String): Size =
+        Size(Int32.toInt64(String.length(s)) * 4i64)
 
     ///
     /// Estimates the UTF-8 byte size of a list of strings by multiplying the
     /// total character count by 4 (the maximum bytes per character in UTF-8).
     ///
-    pub def estimateStringListBytes(l: List[String]): Fs.Size =
-        Fs.Size.Size(Int32.toInt64(List.sumWith(String.length, l)) * 4i64)
+    pub def estimateStringListBytes(l: List[String]): Size =
+        Size(Int32.toInt64(List.sumWith(String.length, l)) * 4i64)
 
     // ─── Private helper ────────────────────────────────────────────────
 

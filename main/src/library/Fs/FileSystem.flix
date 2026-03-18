@@ -18,6 +18,8 @@ pub mod Fs.FileSystem {
 
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
+    use Fs.Size
+    use Fs.Size.bytes
     use IoError.IoError
 
     ///
@@ -679,7 +681,7 @@ pub mod Fs.FileSystem {
     /// `mkDir`, `mkDirs`, `mkTempDir`) and metadata operations are passed
     /// through unchanged.
     ///
-    pub def withTransferLimit(maxSize: Fs.Size, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+    pub def withTransferLimit(maxSize: Size, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
         let check = sz -> Fs.FsLayer.checkTransferLimit(maxSize, sz);
         let estStr = s -> Fs.FsLayer.estimateStringBytes(s);
         run { f() } with handler FileSystem {
@@ -706,10 +708,10 @@ pub mod Fs.FileSystem {
             // Write ops — check payload size
             def write(data, file, k)          = k(Result.flatMap(_ -> FileSystem.write(data, file), check(estStr(data#str))))
             def writeLines(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
-            def writeBytes(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeBytes(data, file), check(Fs.Size.bytes(Int32.toInt64(Vector.length(data))))))
+            def writeBytes(data, file, k)     = k(Result.flatMap(_ -> FileSystem.writeBytes(data, file), check(bytes(Int32.toInt64(Vector.length(data))))))
             def append(data, file, k)         = k(Result.flatMap(_ -> FileSystem.append(data, file), check(estStr(data#str))))
             def appendLines(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendLines(data, file), check(Fs.FsLayer.estimateStringListBytes(data#lines))))
-            def appendBytes(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendBytes(data, file), check(Fs.Size.bytes(Int32.toInt64(Vector.length(data))))))
+            def appendBytes(data, file, k)    = k(Result.flatMap(_ -> FileSystem.appendBytes(data, file), check(bytes(Int32.toInt64(Vector.length(data))))))
             def copyWith(src, dst, opts, k)   = k(Result.flatMap(sz -> Result.flatMap(_ -> FileSystem.copyWith(src, dst, opts), check(sz)), FileSystem.size(src#src)))
 
             // Non-data-transfer ops — pass through
