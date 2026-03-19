@@ -29,6 +29,17 @@ pub mod Fs {
         mut counter: Int32
     }
 
+    /// Fully in-memory filesystem state, parameterized by region.
+    ///
+    /// - `files`:   map from normalized absolute paths to in-memory content (text or bytes).
+    /// - `dirs`:    set of normalized absolute paths registered as directories.
+    /// - `counter`: monotonically increasing counter for generating unique temp directory names.
+    pub struct InMemoryFs[r: Region] {
+        mut files: Map[String, InMemoryFs.Entry],
+        mut dirs: Set[String],
+        mut counter: Int32
+    }
+
     // Effect Hierarchy:
     //
     // FileSystem                          (29 ops — unified root)

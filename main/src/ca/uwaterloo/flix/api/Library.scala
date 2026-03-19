@@ -121,6 +121,7 @@ object Library {
     "Fs/IsSymbolicLink.flix" -> LocalResource.get("/src/library/Fs/IsSymbolicLink.flix"),
     "Fs/IsWritable.flix" -> LocalResource.get("/src/library/Fs/IsWritable.flix"),
     "Fs/ModificationTime.flix" -> LocalResource.get("/src/library/Fs/ModificationTime.flix"),
+    "Fs/InMemoryFs.flix" -> LocalResource.get("/src/library/Fs/InMemoryFs.flix"),
     "Fs/MemoryOverlay.flix" -> LocalResource.get("/src/library/Fs/MemoryOverlay.flix"),
     "Fs/ReadBytes.flix" -> LocalResource.get("/src/library/Fs/ReadBytes.flix"),
     "Fs/ReadFile.flix" -> LocalResource.get("/src/library/Fs/ReadFile.flix"),
