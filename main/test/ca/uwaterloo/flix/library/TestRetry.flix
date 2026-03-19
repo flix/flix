@@ -3,34 +3,38 @@
 
 @Test
 def test01(): Unit \ IO = 
-    let retry = Retry.retry(Retry.limitRetries(100));
+    let pol = Retry.limitRetries(100);
     let res = run {
-        retry(Net.Dns.lookup)("Somesitehere.nothing")
-    } with Net.Dns.runWithIO
+        Net.Dns.lookup("Somesitehere.nothing")
+    } with dnsHandleWithRetry(pol)
+    with Net.Dns.runWithIO
     with Time.Sleep.runWithIO
     with Sys.Console.runWithIO;
     println(res)
 
 @Test
 def test02(): Unit \ IO =
-    let retry = Retry.retry(Retry.combine(Retry.expBackoff(), Retry.limitRetries(5)));
+    let pol = Retry.combine(Retry.expBackoff(), Retry.limitRetries(5));
     let res = run {
-        retry(Net.Dns.lookup)("Somesitehere.nothing")
-    } with Net.Dns.runWithIO
+        Net.Dns.lookup("Somesitehere.nothing")
+    } with dnsHandleWithRetry(pol) 
+    with Net.Dns.runWithIO
     with Time.Sleep.runWithIO
     with Sys.Console.runWithIO;
     println(res)
 
 @Test
 def test03(): Unit \ IO =
-    let retry = Retry.retry(Retry.combine(Retry.constantBackoff(Time.Duration.milliseconds(5)), Retry.until(() -> false)));
+    let pol = Retry.combine(Retry.constantBackoff(Time.Duration.milliseconds(5)), Retry.until(() -> false));
     let res = run {
-        retry(Net.Dns.lookup)("Somesitehere.nothing")
-    } with Net.Dns.runWithIO
+        Net.Dns.lookup("Somesitehere.nothing")
+    } with dnsHandleWithRetry(pol) 
+    with Net.Dns.runWithIO
     with Time.Sleep.runWithIO
     with Sys.Console.runWithIO;
     println(res)
 
+//manually using the retry "engine"
 @Test
 def test04(): Unit \ IO =
     let retry = Retry.retry(Retry.combine(Retry.constantBackoff(Time.Duration.milliseconds(5)), Retry.until(() -> false)));
