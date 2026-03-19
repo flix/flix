@@ -480,6 +480,33 @@ mod Fs.FsLayer {
         }
 
     ///
+    /// Resolves `path` to its real filesystem target by following all symlinks.
+    /// Returns `Ok(realPath)` if the path exists, or an appropriate `IoError` if the
+    /// path is invalid, does not exist, or cannot be resolved.
+    ///
+    pub def resolveRealPath(path: String): Result[IoError, String] =
+        unsafe IO {
+            try {
+                Ok(Paths.get(path).toRealPath((...{}: Vector[LinkOption])).toString())
+            } catch {
+                case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+                case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+        }
+
+    ///
+    /// Resolves `path` to its real filesystem target by following all symlinks.
+    /// Falls back to the original `path` if resolution fails (e.g., the file does not
+    /// exist yet). Useful for write/create operations where the target may not exist.
+    ///
+    pub def resolveRealPathOrSelf(path: String): String =
+        match resolveRealPath(path) {
+            case Ok(p) => p
+            case _     => path
+        }
+
+    ///
     /// Resolves `path` against `chrootDir` and validates that the resolved result
     /// stays within the chroot directory. Symlinks are resolved to their real
     /// filesystem targets before the boundary check.

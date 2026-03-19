@@ -161,4 +161,17 @@ pub mod Fs.FileTime {
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileTime` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Value ops (`accessTime`, `creationTime`, `modificationTime`): resolve path; propagate all errors.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
+        run { f() } with handler FileTime {
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+        }
+
 }

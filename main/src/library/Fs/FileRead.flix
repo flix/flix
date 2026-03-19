@@ -160,6 +160,20 @@ pub mod Fs.FileRead {
         }
 
     ///
+    /// Middleware that intercepts the `FileRead` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Action ops (`read`, `readLines`, `readBytes`): resolve path with fallback to original.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let r = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(FileRead.read(r(filename)))
+            def readLines(filename, k) = k(FileRead.readLines(r(filename)))
+            def readBytes(filename, k) = k(FileRead.readBytes(r(filename)))
+        }
+
+    ///
     /// Middleware that intercepts the `FileRead` effect, rejecting reads of files
     /// larger than `maxBytes`. The file size is checked via `FileStat.size` before
     /// reading. For string-based reads, the limit applies to the on-disk file size

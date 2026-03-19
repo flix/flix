@@ -174,4 +174,26 @@ pub mod Fs.FileTest {
             def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FileTest` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// - Bool ops (`exists`, `isDirectory`, `isRegularFile`): resolve path; return `Ok(false)` for dangling symlinks.
+    /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
+        use IoError.IoError;
+        use IoError.ErrorKind;
+        let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+            case Ok(p)                          => op(p)
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
+            case Err(e)                         => Err(e)
+        };
+        run { f() } with handler FileTest {
+            def exists(filename, k)         = k(rBool(filename, p -> FileTest.exists(p)))
+            def isDirectory(filename, k)    = k(rBool(filename, p -> FileTest.isDirectory(p)))
+            def isRegularFile(filename, k)  = k(rBool(filename, p -> FileTest.isRegularFile(p)))
+            def isSymbolicLink(filename, k) = k(FileTest.isSymbolicLink(filename))
+        }
+
 }

@@ -161,4 +161,24 @@ pub mod Fs.FilePermission {
             def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Bool ops (`isReadable`, `isWritable`, `isExecutable`): resolve path; return `Ok(false)` for dangling symlinks.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        use IoError.IoError;
+        use IoError.ErrorKind;
+        let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+            case Ok(p)                          => op(p)
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
+            case Err(e)                         => Err(e)
+        };
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(rBool(filename, p -> FilePermission.isReadable(p)))
+            def isWritable(filename, k)   = k(rBool(filename, p -> FilePermission.isWritable(p)))
+            def isExecutable(filename, k) = k(rBool(filename, p -> FilePermission.isExecutable(p)))
+        }
+
 }

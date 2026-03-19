@@ -111,4 +111,14 @@ pub mod Fs.DirList {
             def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
         }
 
+    ///
+    /// Middleware that intercepts the `DirList` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let r = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(DirList.list(r(filename)))
+        }
+
 }

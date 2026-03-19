@@ -518,6 +518,58 @@ pub mod Fs.FileSystem {
         }
 
     ///
+    /// Middleware that intercepts the `FileSystem` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks. This gives opt-in
+    /// "follow symlinks" behavior (traditional Unix `stat` vs `lstat` semantics).
+    ///
+    /// - Bool ops (`exists`, `isDirectory`, etc.): resolve path; return `Ok(false)` for dangling symlinks.
+    /// - Value ops (`accessTime`, `size`, etc.): resolve path; propagate all errors.
+    /// - Action ops (`read`, `write`, etc.): resolve path with fallback to original (for file creation).
+    /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
+    /// - `mkTempDir`: passed through unchanged (no path to resolve).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        use IoError.IoError;
+        use IoError.ErrorKind;
+        let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+            case Ok(p)                          => op(p)
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
+            case Err(e)                         => Err(e)
+        };
+        let r = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler FileSystem {
+            def exists(filename, k)           = k(rBool(filename, p -> FileSystem.exists(p)))
+            def isDirectory(filename, k)      = k(rBool(filename, p -> FileSystem.isDirectory(p)))
+            def isRegularFile(filename, k)    = k(rBool(filename, p -> FileSystem.isRegularFile(p)))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(rBool(filename, p -> FileSystem.isReadable(p)))
+            def isWritable(filename, k)       = k(rBool(filename, p -> FileSystem.isWritable(p)))
+            def isExecutable(filename, k)     = k(rBool(filename, p -> FileSystem.isExecutable(p)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), Fs.FsLayer.resolveRealPath(filename)))
+            def read(filename, k)             = k(FileSystem.read(r(filename)))
+            def readLines(filename, k)        = k(FileSystem.readLines(r(filename)))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(r(filename)))
+            def list(filename, k)             = k(FileSystem.list(r(filename)))
+            def glob(base, pattern, k)        = k(FileSystem.glob(r(base), pattern))
+            def write(data, file, k)          = k(FileSystem.write(data, r(file)))
+            def writeLines(data, file, k)     = k(FileSystem.writeLines(data, r(file)))
+            def writeBytes(data, file, k)     = k(FileSystem.writeBytes(data, r(file)))
+            def append(data, file, k)         = k(FileSystem.append(data, r(file)))
+            def appendLines(data, file, k)    = k(FileSystem.appendLines(data, r(file)))
+            def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, r(file)))
+            def truncate(file, k)             = k(FileSystem.truncate(r(file)))
+            def copyWith(src, dst, opts, k)   = k(FileSystem.copyWith(src = r(src#src), r(dst), opts))
+            def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src = r(src#src), r(dst), opts))
+            def delete(file, k)               = k(FileSystem.delete(r(file)))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(r(d)))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(r(d)))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileSystem` effect, logging each write
     /// operation via the `Logger` effect at `Debug` level without performing
     /// the actual filesystem modification. All write operations return `Ok(())`;
