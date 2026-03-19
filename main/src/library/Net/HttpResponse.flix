@@ -19,7 +19,7 @@ pub mod Net.HttpResponse {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.Body
-    use Net.HttpClient
+    use Net.HttpLayer
     use Net.HttpResponse
     use Net.HttpResponse.HttpResponse
 
@@ -52,7 +52,7 @@ pub mod Net.HttpResponse {
     pub def body(r: HttpResponse): String = match r {
         case HttpResponse(x) => match x#body {
             case Body.Text(s)  => s
-            case Body.Bytes(v) => HttpClient.bytesToString(v)
+            case Body.Bytes(v) => HttpLayer.bytesToString(v)
         }
     }
 
@@ -64,7 +64,7 @@ pub mod Net.HttpResponse {
     pub def bodyBytes(r: HttpResponse): Vector[Int8] = match r {
         case HttpResponse(x) => match x#body {
             case Body.Bytes(v) => v
-            case Body.Text(s)  => HttpClient.stringToBytes(s)
+            case Body.Text(s)  => HttpLayer.stringToBytes(s)
         }
     }
 

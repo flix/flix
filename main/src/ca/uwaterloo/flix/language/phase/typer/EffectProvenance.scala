@@ -49,16 +49,13 @@ object EffectProvenance {
   /**
     * Represents the lattices used for analysis of effects
     */
-  trait Lattice {
-    type Elem
-    val bottom: Elem
-
-    def lub(x: Elem, y: Elem): Elem
-
-    def leq(x: Elem, y: Elem): Boolean
+  trait Lattice[A] {
+    val bottom: A
+    def lub(x: A, y: A): A
+    def leq(x: A, y: A): Boolean
   }
 
-  private class PowerSetLattice extends Lattice {
+  private class PowerSetLattice extends Lattice[Set[(Vertex, SourceLocation)]] {
     type Elem = Set[(Vertex, SourceLocation)]
     val bottom: Elem = Set.empty
 
@@ -67,29 +64,25 @@ object EffectProvenance {
     def leq(x: Elem, y: Elem): Boolean = x.subsetOf(y)
   }
 
-  private class MapLattice(val subLattice: PowerSetLattice) extends Lattice {
-    type Elem = Map[Vertex, subLattice.Elem]
-    val bottom: Elem = Map.empty
+  private class MapLattice[A](val subLattice: Lattice[A]) extends Lattice[Map[Vertex, A]] {
+    val bottom: Map[Vertex, A] = Map.empty
 
-    def lub(x: Elem, y: Elem): Elem = {
+    def lub(x: Map[Vertex, A], y: Map[Vertex, A]): Map[Vertex, A] = {
       x.foldLeft(y) {
         case (acc, (v, set)) =>
           val ys = lookup(v, y)
           acc + (v -> subLattice.lub(ys, set))
-
       }
     }
 
-    def leq(x: Elem, y: Elem): Boolean = {
+    def leq(x: Map[Vertex, A], y: Map[Vertex, A]): Boolean = {
       x.forall {
         case (v, set) => subLattice.leq(set, lookup(v, y))
       }
     }
 
-    def lookup(vertex: Vertex, lattice: Elem): subLattice.Elem = {
+    def lookup(vertex: Vertex, lattice: Map[Vertex, A]): A = {
       lattice.foldLeft(subLattice.bottom) {
-        // An ArgVertex can appear in the middle of a graph
-        // therefore we need to connect the vertices that point to the ArgVertex, with the ones that it points to
         case (acc, (arg@ArgVertex(_, _), s)) => if (arg.lookup(vertex).isDefined) s else acc
         case (acc, (v, xs)) => if (v == vertex) xs else acc
       }
@@ -249,24 +242,23 @@ object EffectProvenance {
     * @return option list of errors
     */
   private def analysis(graph: Graph): Option[List[EffConflicted]] = {
+    type S = Set[(Vertex, SourceLocation)]
+    type M = Map[Vertex, S]
 
-    val lattice = new MapLattice(new PowerSetLattice)
+    val subLattice = new PowerSetLattice
+    val lattice = new MapLattice[S](subLattice)
 
-    def reachingDefinitions(ml: lattice.Elem): lattice.Elem = {
+    def reachingDefinitions(ml: M): M = {
       graph.edges.foldLeft(ml) {
         case (acc, Edge(from, to, loc)) =>
-          // one constraint:
-          // [[v]] = (v1 -> v2, l) = JOIN(v)[v2 -> v1 U lookup(v1) U lookup(v2)]
           val v1 = lattice.lookup(from, acc)
           val v2 = lattice.lookup(to, acc)
-          val pointsTo = lattice.subLattice.lub(lattice.subLattice.lub(v1, v2), Set((from, loc)))
-          val e: lattice.Elem = Map(to -> pointsTo)
+          val pointsTo = subLattice.lub(subLattice.lub(v1, v2), Set((from, loc)))
+          val e: M = Map(to -> pointsTo)
           lattice.lub(acc, e)
       }
     }
 
-
-    // Naive fixed-point algorithm
     var fp = reachingDefinitions(lattice.bottom)
     var cont = true
     while (cont) {
@@ -274,10 +266,10 @@ object EffectProvenance {
       if (fp != tmp) fp = tmp
       else cont = false
     }
-    // Solving the gathered constraints i.e.
+
     val res = fp.foldLeft(List.empty[EffConflicted]) {
       case (acc, (v, vs)) =>
-        val filtered = vs.filterNot {
+        val filtered: S = vs.filterNot {
           case (VarVertex(_), _) => true
           case _ => false
         }
