@@ -19,6 +19,8 @@ pub mod Sys.Console {
     use Sys.Console
 
     import java.lang.System
+    import java.io.BufferedReader
+    import java.io.InputStreamReader
 
     ///
     /// An effect used to interact with the console.
@@ -28,7 +30,9 @@ pub mod Sys.Console {
         ///
         /// Reads a single line from the console.
         ///
-        def readln(): String
+        /// Returns `None` if the end of input has been reached.
+        ///
+        def readln(): Option[String]
 
         ///
         /// Prints the given string `s` to the standard out.
@@ -57,9 +61,12 @@ pub mod Sys.Console {
     ///
     pub def readlnWithDefault(p: a, default: String): String \ Console + Formattable.Aef[a] with Formattable[a] =
         Console.print(prompt(p));
-        let input = Console.readln();
-        let trimmed = String.trim(input);
-        if (String.isEmpty(trimmed)) default else trimmed
+        match Console.readln() {
+            case None        => default
+            case Some(input) =>
+                let trimmed = String.trim(input);
+                if (String.isEmpty(trimmed)) default else trimmed
+        }
 
     ///
     /// Prints prompt `p`, reads a line, and applies `f` to the input.
@@ -69,12 +76,15 @@ pub mod Sys.Console {
     ///
     pub def readlnWith(p: a, f: String -> Result[String, b]): b \ Console + Formattable.Aef[a] with Formattable[a] =
         Console.print(prompt(p));
-        let input = Console.readln();
-        match f(input) {
-            case Ok(v)    => v
-            case Err(msg) =>
-                Console.eprintln(msg);
-                readlnWith(p, f)
+        match Console.readln() {
+            case None        => readlnWith(p, f)
+            case Some(input) =>
+                match f(input) {
+                    case Ok(v)    => v
+                    case Err(msg) =>
+                        Console.eprintln(msg);
+                        readlnWith(p, f)
+                }
         }
 
     ///
@@ -87,15 +97,19 @@ pub mod Sys.Console {
     pub def confirm(p: a, default: {default = Bool}): Bool \ Console + Formattable.Aef[a] with Formattable[a] =
         let hint = if (default#default) " [Y/n] " else " [y/N] ";
         Console.print(prompt(p) + hint);
-        let input = String.toLowerCase(String.trim(Console.readln()));
-        if (String.isEmpty(input))
-            default#default
-        else if (input == "y" or input == "yes")
-            true
-        else if (input == "n" or input == "no")
-            false
-        else
-            default#default
+        match Console.readln() {
+            case None        => default#default
+            case Some(raw)   =>
+                let input = String.toLowerCase(String.trim(raw));
+                if (String.isEmpty(input))
+                    default#default
+                else if (input == "y" or input == "yes")
+                    true
+                else if (input == "n" or input == "no")
+                    false
+                else
+                    default#default
+        }
 
     ///
     /// Prints prompt `p` followed by a numbered list of `options`, then reads a selection.
@@ -107,14 +121,18 @@ pub mod Sys.Console {
         foreach ((i, opt) <- ForEach.withIndex(choices))
             Console.println("  ${i + 1}) ${prompt(opt)}");
         Console.print("> ");
-        let input = String.trim(Console.readln());
-        match Int32.fromString(input) {
-            case None    => None
-            case Some(n) =>
-                if (1 <= n and n <= List.length(choices))
-                    List.head(List.drop(n - 1, choices))
-                else
-                    None
+        match Console.readln() {
+            case None        => None
+            case Some(raw)   =>
+                let input = String.trim(raw);
+                match Int32.fromString(input) {
+                    case None    => None
+                    case Some(n) =>
+                        if (1 <= n and n <= List.length(choices))
+                            List.head(List.drop(n - 1, choices))
+                        else
+                            None
+                }
         }
 
     ///
@@ -132,10 +150,17 @@ pub mod Sys.Console {
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Console) + IO = x ->
+        // NB: System.console() returns null when there is no interactive terminal (e.g. IDE, piped input).
+        let reader = match Object.toOption(System.console()) {
+            case Some(c) => () -> Object.toOption(c.readLine())
+            case None    =>
+                let br = new BufferedReader(new InputStreamReader(System.in));
+                () -> Object.toOption(br.readLine())
+        };
         run {
             f(x)
         } with handler Console {
-            def readln(k)      = { k(System.console().readLine()) }
+            def readln(k)      = k(reader())
             def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
             def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
             def println(s, k)  = { System.out.println(s); System.out.flush(); k() }
