@@ -116,9 +116,9 @@ pub mod Fs.Glob {
     /// to their real filesystem targets by following symlinks.
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
-        let r = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
         run { f() } with handler Glob {
-            def glob(base, pattern, k) = k(Glob.glob(r(base), pattern))
+            def glob(base, pattern, k) = k(Glob.glob(resolve(base), pattern))
         }
 
 }

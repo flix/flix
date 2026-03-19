@@ -166,11 +166,11 @@ pub mod Fs.FileRead {
     /// Action ops (`read`, `readLines`, `readBytes`): resolve path with fallback to original.
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
-        let r = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
         run { f() } with handler FileRead {
-            def read(filename, k)      = k(FileRead.read(r(filename)))
-            def readLines(filename, k) = k(FileRead.readLines(r(filename)))
-            def readBytes(filename, k) = k(FileRead.readBytes(r(filename)))
+            def read(filename, k)      = k(FileRead.read(resolve(filename)))
+            def readLines(filename, k) = k(FileRead.readLines(resolve(filename)))
+            def readBytes(filename, k) = k(FileRead.readBytes(resolve(filename)))
         }
 
     ///

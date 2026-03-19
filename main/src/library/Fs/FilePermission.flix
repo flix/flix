@@ -170,15 +170,15 @@ pub mod Fs.FilePermission {
     /// Bool ops (`isReadable`, `isWritable`, `isExecutable`): resolve path; return `Ok(false)` for dangling symlinks.
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
-        let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+        let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
             case Ok(p)                          => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
             case Err(e)                         => Err(e)
         };
         run { f() } with handler FilePermission {
-            def isReadable(filename, k)   = k(rBool(filename, p -> FilePermission.isReadable(p)))
-            def isWritable(filename, k)   = k(rBool(filename, p -> FilePermission.isWritable(p)))
-            def isExecutable(filename, k) = k(rBool(filename, p -> FilePermission.isExecutable(p)))
+            def isReadable(filename, k)   = k(resolveBool(filename, p -> FilePermission.isReadable(p)))
+            def isWritable(filename, k)   = k(resolveBool(filename, p -> FilePermission.isWritable(p)))
+            def isExecutable(filename, k) = k(resolveBool(filename, p -> FilePermission.isExecutable(p)))
         }
 
 }

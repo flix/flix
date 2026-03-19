@@ -272,19 +272,19 @@ pub mod Fs.FileStat {
     /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
-        let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+        let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
             case Ok(p)                          => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
             case Err(e)                         => Err(e)
         };
         run { f() } with handler FileStat {
-            def exists(filename, k)           = k(rBool(filename, p -> FileStat.exists(p)))
-            def isDirectory(filename, k)      = k(rBool(filename, p -> FileStat.isDirectory(p)))
-            def isRegularFile(filename, k)    = k(rBool(filename, p -> FileStat.isRegularFile(p)))
+            def exists(filename, k)           = k(resolveBool(filename, p -> FileStat.exists(p)))
+            def isDirectory(filename, k)      = k(resolveBool(filename, p -> FileStat.isDirectory(p)))
+            def isRegularFile(filename, k)    = k(resolveBool(filename, p -> FileStat.isRegularFile(p)))
             def isSymbolicLink(filename, k)   = k(FileStat.isSymbolicLink(filename))
-            def isReadable(filename, k)       = k(rBool(filename, p -> FileStat.isReadable(p)))
-            def isWritable(filename, k)       = k(rBool(filename, p -> FileStat.isWritable(p)))
-            def isExecutable(filename, k)     = k(rBool(filename, p -> FileStat.isExecutable(p)))
+            def isReadable(filename, k)       = k(resolveBool(filename, p -> FileStat.isReadable(p)))
+            def isWritable(filename, k)       = k(resolveBool(filename, p -> FileStat.isWritable(p)))
+            def isExecutable(filename, k)     = k(resolveBool(filename, p -> FileStat.isExecutable(p)))
             def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
             def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))

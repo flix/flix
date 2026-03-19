@@ -326,20 +326,20 @@ pub mod Fs.FileWrite {
     /// `mkTempDir`: passed through unchanged (no path to resolve).
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
-        let r = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
         run { f() } with handler FileWrite {
-            def write(data, file, k)        = k(FileWrite.write(data, r(file)))
-            def writeLines(data, file, k)   = k(FileWrite.writeLines(data, r(file)))
-            def writeBytes(data, file, k)   = k(FileWrite.writeBytes(data, r(file)))
-            def append(data, file, k)       = k(FileWrite.append(data, r(file)))
-            def appendLines(data, file, k)  = k(FileWrite.appendLines(data, r(file)))
-            def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, r(file)))
-            def truncate(file, k)           = k(FileWrite.truncate(r(file)))
-            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src = r(src#src), r(dst), opts))
-            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src = r(src#src), r(dst), opts))
-            def delete(file, k)             = k(FileWrite.delete(r(file)))
-            def mkDir(d, k)                 = k(FileWrite.mkDir(r(d)))
-            def mkDirs(d, k)                = k(FileWrite.mkDirs(r(d)))
+            def write(data, file, k)        = k(FileWrite.write(data, resolve(file)))
+            def writeLines(data, file, k)   = k(FileWrite.writeLines(data, resolve(file)))
+            def writeBytes(data, file, k)   = k(FileWrite.writeBytes(data, resolve(file)))
+            def append(data, file, k)       = k(FileWrite.append(data, resolve(file)))
+            def appendLines(data, file, k)  = k(FileWrite.appendLines(data, resolve(file)))
+            def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, resolve(file)))
+            def truncate(file, k)           = k(FileWrite.truncate(resolve(file)))
+            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src = resolve(src#src), resolve(dst), opts))
+            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src = resolve(src#src), resolve(dst), opts))
+            def delete(file, k)             = k(FileWrite.delete(resolve(file)))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(resolve(d)))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(resolve(d)))
             def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
         }
 

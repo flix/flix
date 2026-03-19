@@ -184,15 +184,15 @@ pub mod Fs.FileTest {
     /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
-        let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+        let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
             case Ok(p)                          => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
             case Err(e)                         => Err(e)
         };
         run { f() } with handler FileTest {
-            def exists(filename, k)         = k(rBool(filename, p -> FileTest.exists(p)))
-            def isDirectory(filename, k)    = k(rBool(filename, p -> FileTest.isDirectory(p)))
-            def isRegularFile(filename, k)  = k(rBool(filename, p -> FileTest.isRegularFile(p)))
+            def exists(filename, k)         = k(resolveBool(filename, p -> FileTest.exists(p)))
+            def isDirectory(filename, k)    = k(resolveBool(filename, p -> FileTest.isDirectory(p)))
+            def isRegularFile(filename, k)  = k(resolveBool(filename, p -> FileTest.isRegularFile(p)))
             def isSymbolicLink(filename, k) = k(FileTest.isSymbolicLink(filename))
         }
 

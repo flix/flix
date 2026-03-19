@@ -116,9 +116,9 @@ pub mod Fs.DirList {
     /// to their real filesystem targets by following symlinks.
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
-        let r = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
         run { f() } with handler DirList {
-            def list(filename, k) = k(DirList.list(r(filename)))
+            def list(filename, k) = k(DirList.list(resolve(filename)))
         }
 
 }
