@@ -29,6 +29,7 @@ pub eff Assert {
 
 pub mod Assert {
 
+    use Sys.Console
     use RichString.{blue, red, text, yellow};
     import java.lang.AssertionError;
 
@@ -196,6 +197,11 @@ pub mod Assert {
         }
 
     ///
+    /// Runs the `Assert` effect of the given function `f` by ignoring all assertions (no-op).
+    ///
+    pub def runWithNoOp(f: Unit -> a \ ef): a \ (ef - Assert) = handleWithNoOp(f)()
+
+    ///
     /// Handles the `Assert` effect by logging assertion failures using the `Logger` effect.
     ///
     /// Assertions continue execution after logging the assertion failure.
@@ -215,6 +221,13 @@ pub mod Assert {
         }
 
     ///
+    /// Runs the `Assert` effect of the given function `f` by logging assertion failures using the `Logger` effect.
+    ///
+    /// Assertions continue execution after logging the assertion failure.
+    ///
+    pub def runWithLogger(f: Unit -> a \ ef): a \ (ef - Assert) + Logger = handleWithLogger(f)()
+
+    ///
     /// Handles the `Assert` effect by printing assertion failures to stdout.
     ///
     /// Assertions continue execution after printing the assertion failure.
@@ -232,6 +245,13 @@ pub mod Assert {
                 }
             }
         }
+
+    ///
+    /// Runs the `Assert` effect of the given function `f` by printing assertion failures to stdout.
+    ///
+    /// Assertions continue execution after printing the assertion failure.
+    ///
+    pub def runWithStdOut(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handleWithStdOut(f)()
 
     ///
     /// Handles the `Assert` effect by printing assertion failures to stderr.
@@ -254,6 +274,13 @@ pub mod Assert {
                 }
             }
         }
+
+    ///
+    /// Runs the `Assert` effect of the given function `f` by printing assertion failures to stderr.
+    ///
+    /// Assertions continue execution after printing the assertion failure.
+    ///
+    pub def runWithStdErr(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handleWithStdErr(f)()
 
     ///
     /// Handles the `Assert` effect by prompting the user whether to continue execution.
@@ -285,5 +312,13 @@ pub mod Assert {
                 }
             }
         }
+
+    ///
+    /// Runs the `Assert` effect of the given function `f` by prompting the user whether to continue execution.
+    ///
+    /// When an assertion fails, prints the assertion failure and asks the user if they want to continue.
+    /// If the user chooses not to continue, the program throws an exception.
+    ///
+    pub def runWithPrompt(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handleWithPrompt(f)()
 
 }

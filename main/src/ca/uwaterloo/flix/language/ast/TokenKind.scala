@@ -479,6 +479,18 @@ sealed trait TokenKind {
     case _ => false
   }
 
+  /**
+    * Returns `true` if this token is not a binary operator. If such a token is encountered
+    * without a preceding semicolon, we assume the semicolon was forgotten.
+    *
+    * Note that this list should be extended in the future with more TokenKinds.
+    */
+  def notBinaryOperator: Boolean = this match {
+    case TokenKind.KeywordLet     => true
+    case TokenKind.KeywordForeach => true
+    case _ => false
+  }
+
   /** Returns `true` if this token can validly appear as the first token of a type. */
   def isFirstInType: Boolean = this match {
     case TokenKind.AngleL => true

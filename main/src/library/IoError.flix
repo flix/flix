@@ -35,6 +35,7 @@ pub mod IoError {
 
     pub enum ErrorKind with Eq, ToString {
         case AlreadyExists,
+        case Conflict,
         case ConnectionFailed,
         case Interrupted,
         case InvalidPath,
@@ -44,6 +45,7 @@ pub mod IoError {
         case NotFile,
         case NotDirectory,
         case PermissionDenied,
+        case TransferLimitExceeded,
         case Timeout,
         case UnexpectedEof,
         case Unsupported,

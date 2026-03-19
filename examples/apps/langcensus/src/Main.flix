@@ -6,6 +6,8 @@
 ///   - The total adds and dels of the user for each language.
 ///   - The total bytes of code for each language for all the reporitorites the user has participated in.
 ///
+use Sys.{Env, Exit}
+
 def main(): Unit \ IO + Sys + Net =
     run {
         let repos = Github.getRepos();

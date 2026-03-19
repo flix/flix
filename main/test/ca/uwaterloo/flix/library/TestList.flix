@@ -1,8 +1,9 @@
 mod TestList {
 
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse};
-    use ToString.toString;
     use Hash.hash;
+    use Math.Shuffle
+    use ToString.toString;
 
     /////////////////////////////////////////////////////////////////////////////
     // Collectable.collect                                                     //

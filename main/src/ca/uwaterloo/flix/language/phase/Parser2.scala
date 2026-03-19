@@ -1439,6 +1439,16 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (nth(0).notBinaryOperator) {
+        // This token can only appear as a follow token after an expression within a statement,
+        // so we assume the user forgot a semicolon.
+        // We create the error and continue parsing as if the semicolon was present.
+        val isReal = true
+        val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
+        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
+        statement()
+        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       } else if (!rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
@@ -3345,6 +3355,11 @@ object Parser2 {
     def typeAndEffect()(implicit s: State): Mark.Closed = {
       val lhs = ttype()
       if (eat(TokenKind.Backslash)) {
+        val mark = open()
+        ttype()
+        close(mark, TreeKind.Type.Effect)
+      } else if (eat(TokenKind.Slash)) {
+        closeWithError(open(), ParseError.ExpectedBackslashGotSlash(SyntacticContext.Unknown, previousSourceLocation()))
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)

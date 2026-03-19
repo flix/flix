@@ -62,6 +62,7 @@ instance Formattable[MutList[a, r]] with Formattable[a] {
 }
 
 pub mod MutList {
+    use Math.Shuffle
 
     ///
     /// Constant which stores the minimum capacity of a MutList.

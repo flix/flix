@@ -28,6 +28,7 @@ pub eff Logger {
 
 pub mod Logger {
 
+    use Sys.Console
     use RichString.{gray, cyan, green, yellow, red, bold, text};
     use Severity.{Warn, Fatal, Trace, Debug, Info}
 
@@ -199,5 +200,39 @@ pub mod Logger {
     /// In other words, returns a list of `(Severity, RichString)` that represents and is ordered by the calls to log.
     ///
     pub def runWithList(f: Unit -> b \ ef): (b, List[(Severity, RichString)]) \ (ef - Logger) = handleWithList(f)()
+
+    ///
+    /// Handles the `Logger` effect of the given function `f`.
+    ///
+    /// Filters the logging, by the `filter` function.
+    ///
+    pub def handleWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: a -> b \ ef2): a -> b \ (ef2 - Logger) + Logger + ef1 = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                if (filter(s, m)) {
+                    Logger.log(s, m);
+                    k()
+                } else {
+                    k()
+                }
+            }
+        }
+
+    ///
+    /// Runs the `Logger` effect of the given function `f`.
+    ///
+    /// Filters the logging, by the `filter` function.
+    ///
+    pub def runWithFilter(filter: (Severity, RichString) -> Bool \ ef1, f: Unit -> b \ ef2): b \ (ef2 - Logger) + Logger + ef1 = handleWithFilter(filter, f)()
+    
+    ///
+    /// Filters logs with greater or equal severity level
+    ///
+    pub def runWithSeverityFilter(s: Severity, f: Unit -> b \ ef): b \ (ef - Logger) + Logger =
+        run {
+            f()
+        } with runWithFilter((sev, _) -> Order.greaterEqual(sev, s))
 
 }

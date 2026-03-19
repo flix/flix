@@ -1,6 +1,7 @@
 mod TestMutDeque {
 
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse, fail}
+    use Math.Shuffle
 
     /////////////////////////////////////////////////////////////////////////////
     // emptyWithCapacity                                                       //

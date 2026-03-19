@@ -2,6 +2,7 @@ mod TestNec {
 
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse, fail};
     use Hash.hash
+    use Math.Shuffle
 
     use Nec.ViewLeft.{OneLeft, SomeLeft}
     use Nec.ViewRight.{OneRight, SomeRight}
