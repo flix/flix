@@ -302,12 +302,16 @@ pub mod Assert {
                         println(RichString.toString(msg));
                         println("");
                         print(RichString.toString(yellow("Continue execution? (Y/n): ")));
-                        let input = readln();
-                        let trimmed = String.trim(input);
-                        if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
-                            throw new AssertionError("Execution aborted by user after the following assertion failure: ${RichString.toString(msg)}")
-                        else
-                            resume()
+                        match readln() {
+                            case None =>
+                                throw new AssertionError("Execution aborted (no interactive console) after the following assertion failure: ${RichString.toString(msg)}")
+                            case Some(input) =>
+                                let trimmed = String.toLowerCase(String.trim(input));
+                                if (trimmed == "n" or trimmed == "no")
+                                    throw new AssertionError("Execution aborted by user after the following assertion failure: ${RichString.toString(msg)}")
+                                else
+                                    resume()
+                        }
                     } with Console.runWithIO
                 }
             }

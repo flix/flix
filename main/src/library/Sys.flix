@@ -225,7 +225,9 @@ pub mod Sys {
         ///
         /// Reads a single line from the console.
         ///
-        def readln(): String
+        /// Returns `None` if the end of input has been reached.
+        ///
+        def readln(): Option[String]
 
         ///
         /// Prints the given string `s` to the standard out.
