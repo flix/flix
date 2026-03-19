@@ -319,6 +319,31 @@ pub mod Fs.FileWrite {
         }
 
     ///
+    /// Middleware that intercepts the `FileWrite` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Action ops (`write`, `append`, `copy`, etc.): resolve path with fallback to original.
+    /// `mkTempDir`: passed through unchanged (no path to resolve).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(FileWrite.write(data, resolve(file)))
+            def writeLines(data, file, k)   = k(FileWrite.writeLines(data, resolve(file)))
+            def writeBytes(data, file, k)   = k(FileWrite.writeBytes(data, resolve(file)))
+            def append(data, file, k)       = k(FileWrite.append(data, resolve(file)))
+            def appendLines(data, file, k)  = k(FileWrite.appendLines(data, resolve(file)))
+            def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, resolve(file)))
+            def truncate(file, k)           = k(FileWrite.truncate(resolve(file)))
+            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src = resolve(src#src), resolve(dst), opts))
+            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src = resolve(src#src), resolve(dst), opts))
+            def delete(file, k)             = k(FileWrite.delete(resolve(file)))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(resolve(d)))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(resolve(d)))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileWrite` effect, logging each write
     /// operation via the `Logger` effect at `Debug` level without performing
     /// the actual filesystem modification. All write operations return `Ok(())`;
@@ -466,6 +491,39 @@ pub mod Fs.FileWrite {
             def append(data, file, k)       = k(FileWrite.append(data, file))
             def appendLines(data, file, k)  = k(FileWrite.appendLines(data, file))
             def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, automatically creating
+    /// parent directories before write, append, copy, and move operations.
+    ///
+    /// Before `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, `copyWith`, and `moveWith`, the parent directory of the
+    /// target file is created via `mkDirs`. If the parent directory already
+    /// exists, this is a no-op.
+    ///
+    /// If parent directory creation fails, the original operation is aborted
+    /// and the error is returned.
+    ///
+    /// `truncate`, `delete`, `mkDir`, `mkDirs`, and `mkTempDir` are passed
+    /// through unchanged.
+    ///
+    pub def withMkParentDirs(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let mk = d -> FileWrite.mkDirs(d);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.write(data, file)))
+            def writeLines(data, file, k)   = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.writeBytes(data, file)))
+            def append(data, file, k)       = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.append(data, file)))
+            def appendLines(data, file, k)  = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.appendBytes(data, file)))
+            def copyWith(src, dst, opts, k) = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileWrite.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileWrite.moveWith(src, dst, opts)))
+            def truncate(file, k)           = k(FileWrite.truncate(file))
+            def delete(file, k)             = k(FileWrite.delete(file))
             def mkDir(d, k)                 = k(FileWrite.mkDir(d))
             def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
             def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))

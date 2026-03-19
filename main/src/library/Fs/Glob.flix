@@ -111,4 +111,14 @@ pub mod Fs.Glob {
             def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
         }
 
+    ///
+    /// Middleware that intercepts the `Glob` effect, resolving all base paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Glob.glob(resolve(base), pattern))
+        }
+
 }

@@ -16,6 +16,19 @@
 
 pub mod Fs {
 
+    /// In-memory overlay state, parameterized by region.
+    ///
+    /// - `files`:     map from normalized absolute paths to in-memory content (text or bytes).
+    /// - `dirs`:      set of normalized absolute paths registered as directories.
+    /// - `whiteouts`: set of normalized absolute paths deleted in the overlay (hides lower-layer entries).
+    /// - `counter`:   monotonically increasing counter for generating unique temp directory names.
+    pub struct MemoryOverlay[r: Region] {
+        mut files: Map[String, MemoryOverlay.OverlayEntry],
+        mut dirs: Set[String],
+        mut whiteouts: Set[String],
+        mut counter: Int32
+    }
+
     // Effect Hierarchy:
     //
     // FileSystem                          (29 ops — unified root)

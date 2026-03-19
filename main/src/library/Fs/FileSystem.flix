@@ -21,6 +21,7 @@ pub mod Fs.FileSystem {
     use Fs.Size
     use Fs.Size.bytes
     use IoError.IoError
+    use IoError.ErrorKind
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.
@@ -518,6 +519,56 @@ pub mod Fs.FileSystem {
         }
 
     ///
+    /// Middleware that intercepts the `FileSystem` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks. This gives opt-in
+    /// "follow symlinks" behavior (traditional Unix `stat` vs `lstat` semantics).
+    ///
+    /// - Bool ops (`exists`, `isDirectory`, etc.): resolve path; return `Ok(false)` for dangling symlinks.
+    /// - Value ops (`accessTime`, `size`, etc.): resolve path; propagate all errors.
+    /// - Action ops (`read`, `write`, etc.): resolve path with fallback to original (for file creation).
+    /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
+    /// - `mkTempDir`: passed through unchanged (no path to resolve).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+            case Ok(p)                               => op(p)
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
+            case Err(e)                              => Err(e)
+        };
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler FileSystem {
+            def exists(filename, k)           = k(resolveBool(filename, p -> FileSystem.exists(p)))
+            def isDirectory(filename, k)      = k(resolveBool(filename, p -> FileSystem.isDirectory(p)))
+            def isRegularFile(filename, k)    = k(resolveBool(filename, p -> FileSystem.isRegularFile(p)))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(resolveBool(filename, p -> FileSystem.isReadable(p)))
+            def isWritable(filename, k)       = k(resolveBool(filename, p -> FileSystem.isWritable(p)))
+            def isExecutable(filename, k)     = k(resolveBool(filename, p -> FileSystem.isExecutable(p)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), Fs.FsLayer.resolveRealPath(filename)))
+            def read(filename, k)             = k(FileSystem.read(resolve(filename)))
+            def readLines(filename, k)        = k(FileSystem.readLines(resolve(filename)))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(resolve(filename)))
+            def list(filename, k)             = k(FileSystem.list(resolve(filename)))
+            def glob(base, pattern, k)        = k(FileSystem.glob(resolve(base), pattern))
+            def write(data, file, k)          = k(FileSystem.write(data, resolve(file)))
+            def writeLines(data, file, k)     = k(FileSystem.writeLines(data, resolve(file)))
+            def writeBytes(data, file, k)     = k(FileSystem.writeBytes(data, resolve(file)))
+            def append(data, file, k)         = k(FileSystem.append(data, resolve(file)))
+            def appendLines(data, file, k)    = k(FileSystem.appendLines(data, resolve(file)))
+            def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, resolve(file)))
+            def truncate(file, k)             = k(FileSystem.truncate(resolve(file)))
+            def copyWith(src, dst, opts, k)   = k(FileSystem.copyWith(src = resolve(src#src), resolve(dst), opts))
+            def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src = resolve(src#src), resolve(dst), opts))
+            def delete(file, k)               = k(FileSystem.delete(resolve(file)))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(resolve(d)))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(resolve(d)))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileSystem` effect, logging each write
     /// operation via the `Logger` effect at `Debug` level without performing
     /// the actual filesystem modification. All write operations return `Ok(())`;
@@ -597,6 +648,121 @@ pub mod Fs.FileSystem {
             def mkTempDir(prefix, k) = {
                 Logger.log(Severity.Debug, tag + text(" ") + bold("mkTempDir") + text(" ") + cyan(prefix));
                 k(Ok("<dry-run>"))
+            }
+        }
+
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, layering an in-memory
+    /// writable store on top of the real filesystem. Writes are captured in memory
+    /// (never touching disk), and subsequent reads see the written data. The real
+    /// filesystem is never modified. This is useful for safe experimentation,
+    /// testing, and sandboxing.
+    ///
+    pub def withMemoryOverlay(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        region rc {
+            let o = Fs.MemoryOverlay.fresh(rc);
+            run { f() } with handler FileSystem {
+                // ── Stat/test ops — delegate on None ───────────────
+                def exists(f1, k) = k(match Fs.MemoryOverlay.tryExists(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.exists(f1)
+                })
+                def isDirectory(f1, k) = k(match Fs.MemoryOverlay.tryIsDirectory(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isDirectory(f1)
+                })
+                def isRegularFile(f1, k) = k(match Fs.MemoryOverlay.tryIsRegularFile(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isRegularFile(f1)
+                })
+                def isSymbolicLink(f1, k) = k(match Fs.MemoryOverlay.tryIsSymbolicLink(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isSymbolicLink(f1)
+                })
+                def isReadable(f1, k) = k(match Fs.MemoryOverlay.tryIsReadable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isReadable(f1)
+                })
+                def isWritable(f1, k) = k(match Fs.MemoryOverlay.tryIsWritable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isWritable(f1)
+                })
+                def isExecutable(f1, k) = k(match Fs.MemoryOverlay.tryIsExecutable(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.isExecutable(f1)
+                })
+                def accessTime(f1, k) = k(match Fs.MemoryOverlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.accessTime(f1)
+                })
+                def creationTime(f1, k) = k(match Fs.MemoryOverlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.creationTime(f1)
+                })
+                def modificationTime(f1, k) = k(match Fs.MemoryOverlay.tryTime(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.modificationTime(f1)
+                })
+                def size(f1, k) = k(match Fs.MemoryOverlay.trySize(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.size(f1)
+                })
+                def read(f1, k) = k(match Fs.MemoryOverlay.tryRead(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.read(f1)
+                })
+                def readLines(f1, k) = k(match Fs.MemoryOverlay.tryReadLines(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.readLines(f1)
+                })
+                def readBytes(f1, k) = k(match Fs.MemoryOverlay.tryReadBytes(f1, o) {
+                    case Some(r) => r
+                    case None    => FileSystem.readBytes(f1)
+                })
+
+                // ── List/glob — pass lower result to Overlay ────────
+                def list(f1, k) = k(Fs.MemoryOverlay.list(f1, FileSystem.list(f1), o))
+                def glob(base, pattern, k) = k(Fs.MemoryOverlay.glob(base, pattern, FileSystem.glob(base, pattern), o))
+
+                // ── Write ops — direct forwarding ──────────────────
+                def write(data, file, k)      = k(Fs.MemoryOverlay.write(file, data#str, o))
+                def writeLines(data, file, k) = k(Fs.MemoryOverlay.writeLines(file, data#lines, o))
+                def writeBytes(data, file, k) = k(Fs.MemoryOverlay.writeBytes(file, data, o))
+                def truncate(file, k)         = k(Fs.MemoryOverlay.truncate(file, o))
+                def delete(file, k)           = k(Fs.MemoryOverlay.delete(file, o))
+                def mkDir(d, k)               = k(Fs.MemoryOverlay.mkDir(d, o))
+                def mkDirs(d, k)              = k(Fs.MemoryOverlay.mkDirs(d, o))
+                def mkTempDir(prefix, k)      = k(Fs.MemoryOverlay.mkTempDir(prefix, o))
+
+                // ── Append ops — fetch lower content if needed ─────
+                def append(data, file, k) = {
+                    let lower = if (Fs.MemoryOverlay.needsLower(file, o)) Result.toOption(FileSystem.read(file)) else None;
+                    k(Fs.MemoryOverlay.append(file, data#str, lower, o))
+                }
+                def appendLines(data, file, k) = {
+                    let lower = if (Fs.MemoryOverlay.needsLower(file, o)) Result.toOption(FileSystem.read(file)) else None;
+                    k(Fs.MemoryOverlay.appendLines(file, data#lines, lower, o))
+                }
+                def appendBytes(data, file, k) = {
+                    let lower = if (Fs.MemoryOverlay.needsLower(file, o)) Result.toOption(FileSystem.readBytes(file)) else None;
+                    k(Fs.MemoryOverlay.appendBytes(file, data, lower, o))
+                }
+
+                // ── Copy — fetch lower content if needed ────────────
+                def copyWith(src, dst, _opts, k) = {
+                    let lower = if (Fs.MemoryOverlay.needsLower(src#src, o))
+                        Result.toOption(FileSystem.readBytes(src#src))
+                    else None;
+                    k(Fs.MemoryOverlay.copy(src#src, dst, lower, o))
+                }
+
+                // ── Move — fetch lower content if needed ────────────
+                def moveWith(src, dst, _opts, k) = {
+                    let lower = if (Fs.MemoryOverlay.needsLower(src#src, o))
+                        Result.toOption(FileSystem.readBytes(src#src))
+                    else None;
+                    k(Fs.MemoryOverlay.move(src#src, dst, lower, o))
+                }
             }
         }
 
@@ -747,6 +913,60 @@ pub mod Fs.FileSystem {
             def append(data, file, k)         = k(FileSystem.append(data, file))
             def appendLines(data, file, k)    = k(FileSystem.appendLines(data, file))
             def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, file))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, automatically creating
+    /// parent directories before write, append, copy, and move operations.
+    ///
+    /// Before `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, `copyWith`, and `moveWith`, the parent directory of the
+    /// target file is created via `mkDirs`. If the parent directory already
+    /// exists, this is a no-op.
+    ///
+    /// If parent directory creation fails, the original operation is aborted
+    /// and the error is returned.
+    ///
+    /// Read, stat, test, list, glob, `truncate`, `delete`, `mkDir`, `mkDirs`,
+    /// and `mkTempDir` are passed through unchanged.
+    ///
+    pub def withMkParentDirs(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let mk = d -> FileSystem.mkDirs(d);
+        run { f() } with handler FileSystem {
+            // Read/stat/test ops — pass through
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def read(filename, k)             = k(FileSystem.read(filename))
+            def readLines(filename, k)        = k(FileSystem.readLines(filename))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // Write/append/copy/move — ensure parent dirs exist
+            def write(data, file, k)          = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.write(data, file)))
+            def writeLines(data, file, k)     = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.writeLines(data, file)))
+            def writeBytes(data, file, k)     = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.writeBytes(data, file)))
+            def append(data, file, k)         = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k)    = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k)    = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.appendBytes(data, file)))
+            def copyWith(src, dst, opts, k)   = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileSystem.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k)   = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileSystem.moveWith(src, dst, opts)))
+
+            // Other write ops — pass through
+            def truncate(file, k)             = k(FileSystem.truncate(file))
+            def delete(file, k)               = k(FileSystem.delete(file))
             def mkDir(d, k)                   = k(FileSystem.mkDir(d))
             def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
