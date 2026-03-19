@@ -25,8 +25,8 @@ mod Fs.MemoryOverlay {
 
     /// The content of an overlay entry.
     pub enum OverlayEntry with ToString {
+        case BinaryEntry(Vector[Int8]),
         case TextEntry(String)
-        case BinaryEntry(Vector[Int8])
     }
 
     /// Creates a fresh, empty overlay in region `rc`.
