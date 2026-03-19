@@ -1,9 +1,9 @@
-mod TestFileReadWithResult {
+mod TestFileRead {
 
-    use IoError.IoError;
-    use IoError.ErrorKind;
-    use Monad.{>>=};
     use Assert.{assertEq, fail};
+    use IoError.ErrorKind;
+    use IoError.IoError;
+    use Monad.{>>=};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -16,7 +16,7 @@ mod TestFileReadWithResult {
                 let dir = FileWrite.mkTempDir("flix");
                 let path = "${dir}/flix-tmpfile-68975";
                 FileWrite.write({ str = "content" }, path);
-                FileReadWithResult.handle(() -> FileReadWithResult.exists(path))()
+                FileRead.handle(() -> FileRead.exists(path))()
             })()
         );
         assertEq(expected = Ok(true), result)
@@ -24,13 +24,13 @@ mod TestFileReadWithResult {
 
     @Test
     def exists02(): Unit \ {Assert, IO} = {
-        let result = FileReadWithResult.handle(() -> FileReadWithResult.exists("SomeFileThatDoesNotExist"))();
+        let result = FileRead.handle(() -> FileRead.exists("SomeFileThatDoesNotExist"))();
         assertEq(expected = Ok(false), result)
     }
 
     @Test
     def exists03(): Unit \ {Assert, IO} = {
-        match FileReadWithResult.handle(() -> FileReadWithResult.exists("Some\\Invalid:{\u0000Path}/"))() {
+        match FileRead.handle(() -> FileRead.exists("Some\\Invalid:{\u0000Path}/"))() {
             case Ok(_) => fail("Expected error for invalid path")
             case Err(IoError(kind, _)) => assertEq(expected = ErrorKind.InvalidPath, kind)
         }
