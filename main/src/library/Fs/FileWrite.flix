@@ -319,6 +319,31 @@ pub mod Fs.FileWrite {
         }
 
     ///
+    /// Middleware that intercepts the `FileWrite` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Action ops (`write`, `append`, `copy`, etc.): resolve path with fallback to original.
+    /// `mkTempDir`: passed through unchanged (no path to resolve).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(FileWrite.write(data, resolve(file)))
+            def writeLines(data, file, k)   = k(FileWrite.writeLines(data, resolve(file)))
+            def writeBytes(data, file, k)   = k(FileWrite.writeBytes(data, resolve(file)))
+            def append(data, file, k)       = k(FileWrite.append(data, resolve(file)))
+            def appendLines(data, file, k)  = k(FileWrite.appendLines(data, resolve(file)))
+            def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, resolve(file)))
+            def truncate(file, k)           = k(FileWrite.truncate(resolve(file)))
+            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src = resolve(src#src), resolve(dst), opts))
+            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src = resolve(src#src), resolve(dst), opts))
+            def delete(file, k)             = k(FileWrite.delete(resolve(file)))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(resolve(d)))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(resolve(d)))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileWrite` effect, logging each write
     /// operation via the `Logger` effect at `Debug` level without performing
     /// the actual filesystem modification. All write operations return `Ok(())`;

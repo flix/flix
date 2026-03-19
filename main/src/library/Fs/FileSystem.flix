@@ -21,6 +21,7 @@ pub mod Fs.FileSystem {
     use Fs.Size
     use Fs.Size.bytes
     use IoError.IoError
+    use IoError.ErrorKind
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.
@@ -514,6 +515,56 @@ pub mod Fs.FileSystem {
             def delete(file, k)               = k(Result.flatMap(p -> FileSystem.delete(p), c(file)))
             def mkDir(d, k)                   = k(Result.flatMap(p -> FileSystem.mkDir(p), c(d)))
             def mkDirs(d, k)                  = k(Result.flatMap(p -> FileSystem.mkDirs(p), c(d)))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks. This gives opt-in
+    /// "follow symlinks" behavior (traditional Unix `stat` vs `lstat` semantics).
+    ///
+    /// - Bool ops (`exists`, `isDirectory`, etc.): resolve path; return `Ok(false)` for dangling symlinks.
+    /// - Value ops (`accessTime`, `size`, etc.): resolve path; propagate all errors.
+    /// - Action ops (`read`, `write`, etc.): resolve path with fallback to original (for file creation).
+    /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
+    /// - `mkTempDir`: passed through unchanged (no path to resolve).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+            case Ok(p)                               => op(p)
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
+            case Err(e)                              => Err(e)
+        };
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler FileSystem {
+            def exists(filename, k)           = k(resolveBool(filename, p -> FileSystem.exists(p)))
+            def isDirectory(filename, k)      = k(resolveBool(filename, p -> FileSystem.isDirectory(p)))
+            def isRegularFile(filename, k)    = k(resolveBool(filename, p -> FileSystem.isRegularFile(p)))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(resolveBool(filename, p -> FileSystem.isReadable(p)))
+            def isWritable(filename, k)       = k(resolveBool(filename, p -> FileSystem.isWritable(p)))
+            def isExecutable(filename, k)     = k(resolveBool(filename, p -> FileSystem.isExecutable(p)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileSystem.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileSystem.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileSystem.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def size(filename, k)             = k(Result.flatMap(p -> FileSystem.size(p), Fs.FsLayer.resolveRealPath(filename)))
+            def read(filename, k)             = k(FileSystem.read(resolve(filename)))
+            def readLines(filename, k)        = k(FileSystem.readLines(resolve(filename)))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(resolve(filename)))
+            def list(filename, k)             = k(FileSystem.list(resolve(filename)))
+            def glob(base, pattern, k)        = k(FileSystem.glob(resolve(base), pattern))
+            def write(data, file, k)          = k(FileSystem.write(data, resolve(file)))
+            def writeLines(data, file, k)     = k(FileSystem.writeLines(data, resolve(file)))
+            def writeBytes(data, file, k)     = k(FileSystem.writeBytes(data, resolve(file)))
+            def append(data, file, k)         = k(FileSystem.append(data, resolve(file)))
+            def appendLines(data, file, k)    = k(FileSystem.appendLines(data, resolve(file)))
+            def appendBytes(data, file, k)    = k(FileSystem.appendBytes(data, resolve(file)))
+            def truncate(file, k)             = k(FileSystem.truncate(resolve(file)))
+            def copyWith(src, dst, opts, k)   = k(FileSystem.copyWith(src = resolve(src#src), resolve(dst), opts))
+            def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src = resolve(src#src), resolve(dst), opts))
+            def delete(file, k)               = k(FileSystem.delete(resolve(file)))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(resolve(d)))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(resolve(d)))
             def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
         }
 
