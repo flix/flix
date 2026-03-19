@@ -22,6 +22,7 @@ mod Fs.InMemoryFs {
 
     use IoError.IoError
     use IoError.ErrorKind
+    use Time.Clock
 
     /// The content of an in-memory entry.
     pub enum Entry with ToString {
@@ -31,7 +32,7 @@ mod Fs.InMemoryFs {
 
     /// Creates a fresh, empty in-memory filesystem in region `rc`.
     pub def fresh(rc: Region[r]): Fs.InMemoryFs[r] \ r =
-        new Fs.InMemoryFs @ rc { files = Map.empty(), dirs = Set.empty(), counter = 0 }
+        new Fs.InMemoryFs @ rc { files = Map.empty(), dirs = Set.empty(), times = Map.empty(), counter = 0 }
 
     // ─── Path helpers (private) ───────────────────────────────────────
 
@@ -55,6 +56,31 @@ mod Fs.InMemoryFs {
 
     def alreadyExists(path: String): Result[IoError, a] =
         Err(IoError(ErrorKind.AlreadyExists, "in-memory fs: '${path}' already exists"))
+
+    // ─── Timestamp helpers (private) ─────────────────────────────────
+
+    /// Sets all three timestamps to now (for newly created entries).
+    def touchNew(norm: String, o: Fs.InMemoryFs[r]): Unit \ r + Clock =
+        let t = Clock.now();
+        o->times = Map.insert(norm, {atime = t, ctime = t, mtime = t}, o->times)
+
+    /// Updates atime and mtime to now, preserving ctime (for modifications).
+    def touchModify(norm: String, o: Fs.InMemoryFs[r]): Unit \ r + Clock =
+        let t = Clock.now();
+        let ts = match Map.get(norm, o->times) {
+            case Some(prev) => {atime = t, ctime = prev#ctime, mtime = t}
+            case None       => {atime = t, ctime = t, mtime = t}
+        };
+        o->times = Map.insert(norm, ts, o->times)
+
+    /// Updates atime to now, preserving ctime and mtime (for reads).
+    def touchAccess(norm: String, o: Fs.InMemoryFs[r]): Unit \ r + Clock =
+        let t = Clock.now();
+        let ts = match Map.get(norm, o->times) {
+            case Some(prev) => {atime = t, ctime = prev#ctime, mtime = prev#mtime}
+            case None       => {atime = t, ctime = t, mtime = t}
+        };
+        o->times = Map.insert(norm, ts, o->times)
 
     // ─── Low-level state queries (private) ────────────────────────────
 
@@ -92,9 +118,26 @@ mod Fs.InMemoryFs {
         discard hasEntry(path, o);
         Ok(false)
 
-    pub def time(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Int64] \ r =
-        if (hasEntry(path, o)) Ok(0i64)
-        else notFound(path)
+    pub def accessTime(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Int64] \ r =
+        let norm = normalize(path);
+        match Map.get(norm, o->times) {
+            case Some(ts) => Ok(ts#atime)
+            case None     => notFound(path)
+        }
+
+    pub def creationTime(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Int64] \ r =
+        let norm = normalize(path);
+        match Map.get(norm, o->times) {
+            case Some(ts) => Ok(ts#ctime)
+            case None     => notFound(path)
+        }
+
+    pub def modificationTime(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Int64] \ r =
+        let norm = normalize(path);
+        match Map.get(norm, o->times) {
+            case Some(ts) => Ok(ts#mtime)
+            case None     => notFound(path)
+        }
 
     pub def size(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Fs.Size] \ r =
         use Fs.Size.bytes;
@@ -107,46 +150,50 @@ mod Fs.InMemoryFs {
 
     // ─── Read ops ────────────────────────────────────────────────────
 
-    pub def read(path: String, o: Fs.InMemoryFs[r]): Result[IoError, String] \ r =
+    pub def read(path: String, o: Fs.InMemoryFs[r]): Result[IoError, String] \ r + Clock =
         let norm = normalize(path);
         match Map.get(norm, o->files) {
-            case Some(Entry.TextEntry(s))   => Ok(s)
-            case Some(Entry.BinaryEntry(b)) => Ok(String.fromBytes(b))
+            case Some(Entry.TextEntry(s))   => touchAccess(norm, o); Ok(s)
+            case Some(Entry.BinaryEntry(b)) => touchAccess(norm, o); Ok(String.fromBytes(b))
             case None                       => notFound(path)
         }
 
-    pub def readLines(path: String, o: Fs.InMemoryFs[r]): Result[IoError, List[String]] \ r =
+    pub def readLines(path: String, o: Fs.InMemoryFs[r]): Result[IoError, List[String]] \ r + Clock =
         match read(path, o) {
             case Ok(s)  => Ok(String.lines(s))
             case Err(e) => Err(e)
         }
 
-    pub def readBytes(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Vector[Int8]] \ r =
+    pub def readBytes(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Vector[Int8]] \ r + Clock =
         let norm = normalize(path);
         match Map.get(norm, o->files) {
-            case Some(Entry.BinaryEntry(b)) => Ok(b)
-            case Some(Entry.TextEntry(s))   => Ok(String.toBytes(s))
+            case Some(Entry.BinaryEntry(b)) => touchAccess(norm, o); Ok(b)
+            case Some(Entry.TextEntry(s))   => touchAccess(norm, o); Ok(String.toBytes(s))
             case None                       => notFound(path)
         }
 
     // ─── Write ops ───────────────────────────────────────────────────
 
-    pub def write(path: String, data: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def write(path: String, data: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
+        let existed = Map.memberOf(norm, o->times);
         o->files = Map.insert(norm, Entry.TextEntry(data), o->files);
+        if (existed) touchModify(norm, o) else touchNew(norm, o);
         Ok(())
 
-    pub def writeLines(path: String, lines: List[String], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def writeLines(path: String, lines: List[String], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         write(path, String.intercalate(String.lineSeparator(), lines), o)
 
-    pub def writeBytes(path: String, data: Vector[Int8], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def writeBytes(path: String, data: Vector[Int8], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
+        let existed = Map.memberOf(norm, o->times);
         o->files = Map.insert(norm, Entry.BinaryEntry(data), o->files);
+        if (existed) touchModify(norm, o) else touchNew(norm, o);
         Ok(())
 
     // ─── Append ops ──────────────────────────────────────────────────
 
-    pub def append(path: String, data: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def append(path: String, data: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
         let current = match Map.get(norm, o->files) {
             case Some(Entry.TextEntry(s))   => s
@@ -155,11 +202,11 @@ mod Fs.InMemoryFs {
         };
         write(path, current + data, o)
 
-    pub def appendLines(path: String, lines: List[String], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def appendLines(path: String, lines: List[String], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let suffix = String.intercalate(String.lineSeparator(), lines);
         append(path, suffix, o)
 
-    pub def appendBytes(path: String, data: Vector[Int8], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def appendBytes(path: String, data: Vector[Int8], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
         let current = match Map.get(norm, o->files) {
             case Some(Entry.BinaryEntry(b)) => b
@@ -170,11 +217,11 @@ mod Fs.InMemoryFs {
 
     // ─── Other write ops ─────────────────────────────────────────────
 
-    pub def truncate(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def truncate(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         if (hasFile(path, o)) write(path, "", o)
         else notFound(path)
 
-    pub def copy(src: String, dst: String, opts: Set[Fs.CopyOption], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def copy(src: String, dst: String, opts: Set[Fs.CopyOption], o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let normSrc = normalize(src);
         let normDst = normalize(dst);
         match Map.get(normSrc, o->files) {
@@ -183,6 +230,13 @@ mod Fs.InMemoryFs {
                     alreadyExists(dst)
                 else {
                     o->files = Map.insert(normDst, e, o->files);
+                    if (Set.memberOf(Fs.CopyOption.CopyAttributes, opts))
+                        match Map.get(normSrc, o->times) {
+                            case Some(ts) => o->times = Map.insert(normDst, ts, o->times)
+                            case None     => touchNew(normDst, o)
+                        }
+                    else
+                        touchNew(normDst, o);
                     Ok(())
                 }
             case None => notFound(src)
@@ -199,6 +253,11 @@ mod Fs.InMemoryFs {
                     o->files = Map.insert(normDst, e, o->files);
                     o->files = Map.remove(normSrc, o->files);
                     o->dirs = Set.remove(normSrc, o->dirs);
+                    match Map.get(normSrc, o->times) {
+                        case Some(ts) => o->times = Map.insert(normDst, ts, o->times)
+                        case None     => ()
+                    };
+                    o->times = Map.remove(normSrc, o->times);
                     Ok(())
                 }
             case None => notFound(src)
@@ -209,31 +268,36 @@ mod Fs.InMemoryFs {
         if (hasEntry(path, o)) {
             o->files = Map.remove(norm, o->files);
             o->dirs = Set.remove(norm, o->dirs);
+            o->times = Map.remove(norm, o->times);
             Ok(())
         } else notFound(path)
 
-    pub def mkDir(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def mkDir(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
         if (hasEntry(path, o)) alreadyExists(path)
         else {
             o->dirs = Set.insert(norm, o->dirs);
+            touchNew(norm, o);
             Ok(())
         }
 
-    pub def mkDirs(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r =
+    pub def mkDirs(path: String, o: Fs.InMemoryFs[r]): Result[IoError, Unit] \ r + Clock =
         let norm = normalize(path);
+        let alreadyExisted = Set.memberOf(norm, o->dirs);
         o->dirs = Set.insert(norm, o->dirs);
+        if (not alreadyExisted) touchNew(norm, o) else ();
         match parentDir(norm) {
             case Some(parent) =>
                 if (not Set.memberOf(parent, o->dirs)) mkDirs(parent, o) else Ok(())
             case None => Ok(())
         }
 
-    pub def mkTempDir(prefix: String, o: Fs.InMemoryFs[r]): Result[IoError, String] \ r =
+    pub def mkTempDir(prefix: String, o: Fs.InMemoryFs[r]): Result[IoError, String] \ r + Clock =
         let n = o->counter;
         o->counter = n + 1;
         let name = "${prefix}inmemory-${n}";
         o->dirs = Set.insert(name, o->dirs);
+        touchNew(name, o);
         Ok(name)
 
     // ─── Listing ops ─────────────────────────────────────────────────

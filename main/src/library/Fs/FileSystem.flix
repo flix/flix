@@ -22,6 +22,7 @@ pub mod Fs.FileSystem {
     use Fs.Size.bytes
     use IoError.IoError
     use IoError.ErrorKind
+    use Time.Clock
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.
@@ -772,7 +773,7 @@ pub mod Fs.FileSystem {
     /// files return `NotFound`. No real filesystem access occurs. This is
     /// useful for testing, sandboxing, and deterministic simulations.
     ///
-    pub def withInMemoryFS(f: Unit -> a \ ef): a \ (ef - FileSystem) =
+    pub def withInMemoryFS(f: Unit -> a \ ef): a \ (ef - FileSystem) + Clock =
         region rc {
             let o = Fs.InMemoryFs.fresh(rc);
             run { f() } with handler FileSystem {
@@ -783,9 +784,9 @@ pub mod Fs.FileSystem {
                 def isReadable(f1, k)           = k(Fs.InMemoryFs.isReadable(f1, o))
                 def isWritable(f1, k)           = k(Fs.InMemoryFs.isWritable(f1, o))
                 def isExecutable(f1, k)         = k(Fs.InMemoryFs.isExecutable(f1, o))
-                def accessTime(f1, k)           = k(Fs.InMemoryFs.time(f1, o))
-                def creationTime(f1, k)         = k(Fs.InMemoryFs.time(f1, o))
-                def modificationTime(f1, k)     = k(Fs.InMemoryFs.time(f1, o))
+                def accessTime(f1, k)           = k(Fs.InMemoryFs.accessTime(f1, o))
+                def creationTime(f1, k)         = k(Fs.InMemoryFs.creationTime(f1, o))
+                def modificationTime(f1, k)     = k(Fs.InMemoryFs.modificationTime(f1, o))
                 def size(f1, k)                 = k(Fs.InMemoryFs.size(f1, o))
                 def read(f1, k)                 = k(Fs.InMemoryFs.read(f1, o))
                 def readLines(f1, k)            = k(Fs.InMemoryFs.readLines(f1, o))
