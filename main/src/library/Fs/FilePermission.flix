@@ -19,6 +19,8 @@ pub mod Fs.FilePermission {
     use Fs.FilePermission
     use Fs.FileStat
     use Fs.FsLayer.{logPre, logPost}
+    use IoError.IoError
+    use IoError.ErrorKind
 
     ///
     /// Handles the `FilePermission` effect of the given function `f`.
@@ -168,8 +170,6 @@ pub mod Fs.FilePermission {
     /// Bool ops (`isReadable`, `isWritable`, `isExecutable`): resolve path; return `Ok(false)` for dangling symlinks.
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
-        use IoError.IoError;
-        use IoError.ErrorKind;
         let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
             case Ok(p)                          => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)

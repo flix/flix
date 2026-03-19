@@ -21,6 +21,7 @@ pub mod Fs.FileSystem {
     use Fs.Size
     use Fs.Size.bytes
     use IoError.IoError
+    use IoError.ErrorKind
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.
@@ -529,8 +530,6 @@ pub mod Fs.FileSystem {
     /// - `mkTempDir`: passed through unchanged (no path to resolve).
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
-        use IoError.IoError;
-        use IoError.ErrorKind;
         let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
             case Ok(p)                          => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)

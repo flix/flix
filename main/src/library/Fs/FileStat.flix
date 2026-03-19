@@ -19,6 +19,8 @@ pub mod Fs.FileStat {
     use Fs.FileStat
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
+    use IoError.IoError
+    use IoError.ErrorKind
 
     ///
     /// Handles the `FileStat` effect of the given function `f`.
@@ -270,8 +272,6 @@ pub mod Fs.FileStat {
     /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
-        use IoError.IoError;
-        use IoError.ErrorKind;
         let rBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
             case Ok(p)                          => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
