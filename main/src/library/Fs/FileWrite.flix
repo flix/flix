@@ -472,6 +472,39 @@ pub mod Fs.FileWrite {
         }
 
     ///
+    /// Middleware that intercepts the `FileWrite` effect, automatically creating
+    /// parent directories before write, append, copy, and move operations.
+    ///
+    /// Before `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, `copyWith`, and `moveWith`, the parent directory of the
+    /// target file is created via `mkDirs`. If the parent directory already
+    /// exists, this is a no-op.
+    ///
+    /// If parent directory creation fails, the original operation is aborted
+    /// and the error is returned.
+    ///
+    /// `truncate`, `delete`, `mkDir`, `mkDirs`, and `mkTempDir` are passed
+    /// through unchanged.
+    ///
+    pub def withMkParentDirs(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let mk = d -> FileWrite.mkDirs(d);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.write(data, file)))
+            def writeLines(data, file, k)   = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.writeBytes(data, file)))
+            def append(data, file, k)       = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.append(data, file)))
+            def appendLines(data, file, k)  = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.appendBytes(data, file)))
+            def copyWith(src, dst, opts, k) = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileWrite.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileWrite.moveWith(src, dst, opts)))
+            def truncate(file, k)           = k(FileWrite.truncate(file))
+            def delete(file, k)             = k(FileWrite.delete(file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileWrite` effect, rejecting write and
     /// append operations where the payload exceeds `maxBytes`. For `copyWith`,
     /// the source file size is checked via `FileStat.size`.

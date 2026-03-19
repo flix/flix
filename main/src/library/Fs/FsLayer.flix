@@ -630,6 +630,39 @@ mod Fs.FsLayer {
             parentDir.resolve(".~atomic~${name}.${uuid}.tmp").toString()
         }
 
+    // ─── Parent directory helper ────────────────────────────────────────
+
+    ///
+    /// Returns the parent directory of `path`, or `None` if the path has no parent
+    /// (e.g., a bare filename like `"test.txt"`).
+    ///
+    pub def parentDir(path: String): Option[String] =
+        unsafe IO {
+            let parent = Paths.get(path).getParent();
+            if (Object.isNull(parent)) None else Some(parent.toString())
+        }
+
+    ///
+    /// Ensures the parent directory of `file` exists before executing `doAction`.
+    ///
+    /// - If `file` has no parent (bare filename), `doAction()` proceeds directly.
+    /// - If `doMkDirs(parent)` succeeds, `doAction()` proceeds.
+    /// - If `doMkDirs(parent)` fails, the error is returned and `doAction` is
+    ///   not performed.
+    ///
+    pub def ensureParentDirs(
+        file: String,
+        doMkDirs: String -> Result[IoError, Unit] \ ef,
+        doAction: Unit -> Result[IoError, a] \ ef
+    ): Result[IoError, a] \ ef =
+        match parentDir(file) {
+            case None    => doAction()
+            case Some(d) => match doMkDirs(d) {
+                case Ok(_)  => doAction()
+                case Err(e) => Err(e)
+            }
+        }
+
     // ─── Backup helper ───────────────────────────────────────────────
 
     ///
