@@ -510,7 +510,7 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
     expectError[TypeError.UnusedEffectInSignature](result)
   }
 
-  test("Test.UnusedEffectInSignature.03") { // TODO: Failing because of mkUnusedError not called in case Pure ~ Bar
+  test("Test.UnusedEffectInSignature.03") {
     val input =
       """
         |def foo(): Int32 \ Bar =

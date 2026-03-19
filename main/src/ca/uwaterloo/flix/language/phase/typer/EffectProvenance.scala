@@ -56,7 +56,7 @@ object EffectProvenance {
   }
 
   private class PowerSetLattice extends Lattice[Set[(Vertex, SourceLocation)]] {
-    type Elem = Set[(Vertex, SourceLocation)]
+    private type Elem = Set[(Vertex, SourceLocation)]
     val bottom: Elem = Set.empty
 
     def lub(x: Elem, y: Elem): Elem = x union y
@@ -273,7 +273,7 @@ object EffectProvenance {
           case (VarVertex(_), _) => true
           case _ => false
         }
-        if (isConflicting(v, filtered)) mkError(v, vs) ::: acc else acc
+        if (isConflicting(v, filtered)) mkErrors(v, vs) ::: acc else acc
     }
     if (res.isEmpty) None else Some(res)
   }
@@ -497,13 +497,12 @@ object EffectProvenance {
     * @param incoming the set of vertices that reach the sink
     * @return a list containing the error(s) (if any)
     */
-  @tailrec
-  private def mkError(sink: Vertex, incoming: Set[(Vertex, SourceLocation)]): List[EffConflicted] = {
+  private def mkErrors(sink: Vertex, incoming: Set[(Vertex, SourceLocation)]): List[EffConflicted] = {
     (sink, incoming.toList) match {
       case (ArgVertex(xs, aLoc), ys) => mkArgErrors(xs, ys, aLoc)
       case (s@SignatureVertex(xs, sigLoc), ys) => xs match {
         case Nil => Nil
-        case x :: Nil => mkError(x, ys.toSet)
+        case x :: Nil => mkUnusedError(x).toList ::: mkErrors(x, ys.toSet)
         case _ => mkSignatureErrors(xs, ys, s.symbols(), sigLoc)
       }
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, _) =>
