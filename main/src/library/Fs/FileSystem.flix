@@ -868,6 +868,60 @@ pub mod Fs.FileSystem {
         }
 
     ///
+    /// Middleware that intercepts the `FileSystem` effect, automatically creating
+    /// parent directories before write, append, copy, and move operations.
+    ///
+    /// Before `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, `copyWith`, and `moveWith`, the parent directory of the
+    /// target file is created via `mkDirs`. If the parent directory already
+    /// exists, this is a no-op.
+    ///
+    /// If parent directory creation fails, the original operation is aborted
+    /// and the error is returned.
+    ///
+    /// Read, stat, test, list, glob, `truncate`, `delete`, `mkDir`, `mkDirs`,
+    /// and `mkTempDir` are passed through unchanged.
+    ///
+    pub def withMkParentDirs(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let mk = d -> FileSystem.mkDirs(d);
+        run { f() } with handler FileSystem {
+            // Read/stat/test ops — pass through
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def read(filename, k)             = k(FileSystem.read(filename))
+            def readLines(filename, k)        = k(FileSystem.readLines(filename))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // Write/append/copy/move — ensure parent dirs exist
+            def write(data, file, k)          = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.write(data, file)))
+            def writeLines(data, file, k)     = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.writeLines(data, file)))
+            def writeBytes(data, file, k)     = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.writeBytes(data, file)))
+            def append(data, file, k)         = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k)    = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k)    = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileSystem.appendBytes(data, file)))
+            def copyWith(src, dst, opts, k)   = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileSystem.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k)   = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileSystem.moveWith(src, dst, opts)))
+
+            // Other write ops — pass through
+            def truncate(file, k)             = k(FileSystem.truncate(file))
+            def delete(file, k)               = k(FileSystem.delete(file))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileSystem` effect, rejecting read, write,
     /// and append operations where the data exceeds `maxBytes`. For reads and
     /// `copyWith`, the file size is checked via `FileSystem.size`.
