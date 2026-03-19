@@ -307,15 +307,15 @@ mod Fs.MemoryOverlay {
     /// `lower` is the result of globbing from the real filesystem.
     pub def glob(base: String, pattern: String, lower: Result[IoError, List[String]], o: Fs.MemoryOverlay[r]): Result[IoError, List[String]] \ r =
         if (isWhiteout(base, o)) notFound(base)
-        else {
-            let basePath = unsafe IO { Paths.get(normalize(base)) };
-            let matcher: PathMatcher = unsafe IO { FileSystems.getDefault().getPathMatcher("glob:${pattern}") };
+        else unsafe IO {
+            let basePath = Paths.get(normalize(base));
+            let matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
             let matchesPattern = path -> {
-                let p = unsafe IO { Paths.get(path) };
-                let starts = unsafe IO { p.startsWith(basePath) };
+                let p = Paths.get(path);
+                let starts = p.startsWith(basePath);
                 if (starts) {
-                    let rel = unsafe IO { basePath.relativize(p) };
-                    unsafe IO { matcher.matches(rel) }
+                    let rel = basePath.relativize(p);
+                    matcher.matches(rel)
                 } else false
             };
             let overlayPaths = Set.union(
