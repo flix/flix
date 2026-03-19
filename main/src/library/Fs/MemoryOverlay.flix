@@ -26,7 +26,7 @@ mod Fs.MemoryOverlay {
     /// The content of an overlay entry.
     pub enum OverlayEntry with ToString {
         case TextEntry(String)
-        case BytesEntry(Vector[Int8])
+        case BinaryEntry(Vector[Int8])
     }
 
     /// Creates a fresh, empty overlay in region `rc`.
@@ -125,7 +125,7 @@ mod Fs.MemoryOverlay {
         let norm = normalize(path);
         match Map.get(norm, o->files) {
             case Some(OverlayEntry.TextEntry(s))  => Some(Ok(Fs.FsLayer.estimateStringBytes(s)))
-            case Some(OverlayEntry.BytesEntry(b)) => Some(Ok(bytes(Int32.toInt64(Vector.length(b)))))
+            case Some(OverlayEntry.BinaryEntry(b)) => Some(Ok(bytes(Int32.toInt64(Vector.length(b)))))
             case None =>
                 if (isWhiteout(path, o)) Some(notFound(path))
                 else None
@@ -136,7 +136,7 @@ mod Fs.MemoryOverlay {
         let norm = normalize(path);
         match Map.get(norm, o->files) {
             case Some(OverlayEntry.TextEntry(s))  => Some(Ok(s))
-            case Some(OverlayEntry.BytesEntry(b)) => Some(Ok(String.fromBytes(b)))
+            case Some(OverlayEntry.BinaryEntry(b)) => Some(Ok(String.fromBytes(b)))
             case None =>
                 if (isWhiteout(path, o)) Some(notFound(path))
                 else None
@@ -154,7 +154,7 @@ mod Fs.MemoryOverlay {
     pub def tryReadBytes(path: String, o: Fs.MemoryOverlay[r]): Option[Result[IoError, Vector[Int8]]] \ r =
         let norm = normalize(path);
         match Map.get(norm, o->files) {
-            case Some(OverlayEntry.BytesEntry(b)) => Some(Ok(b))
+            case Some(OverlayEntry.BinaryEntry(b)) => Some(Ok(b))
             case Some(OverlayEntry.TextEntry(s))  => Some(Ok(String.toBytes(s)))
             case None =>
                 if (isWhiteout(path, o)) Some(notFound(path))
@@ -177,7 +177,7 @@ mod Fs.MemoryOverlay {
     /// Stores byte content.
     pub def writeBytes(path: String, data: Vector[Int8], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
-        o->files = Map.insert(norm, OverlayEntry.BytesEntry(data), o->files);
+        o->files = Map.insert(norm, OverlayEntry.BinaryEntry(data), o->files);
         o->whiteouts = Set.remove(norm, o->whiteouts);
         Ok(())
 
@@ -186,7 +186,7 @@ mod Fs.MemoryOverlay {
         let norm = normalize(path);
         let current = match Map.get(norm, o->files) {
             case Some(OverlayEntry.TextEntry(s))  => s
-            case Some(OverlayEntry.BytesEntry(b)) => String.fromBytes(b)
+            case Some(OverlayEntry.BinaryEntry(b)) => String.fromBytes(b)
             case None => Option.getWithDefault("", lower)
         };
         write(path, current + data, o)
@@ -200,7 +200,7 @@ mod Fs.MemoryOverlay {
     pub def appendBytes(path: String, data: Vector[Int8], lower: Option[Vector[Int8]], o: Fs.MemoryOverlay[r]): Result[IoError, Unit] \ r =
         let norm = normalize(path);
         let current = match Map.get(norm, o->files) {
-            case Some(OverlayEntry.BytesEntry(b)) => b
+            case Some(OverlayEntry.BinaryEntry(b)) => b
             case Some(OverlayEntry.TextEntry(s))  => String.toBytes(s)
             case None => Option.getWithDefault(Vector.empty(), lower)
         };
@@ -215,7 +215,7 @@ mod Fs.MemoryOverlay {
         let normSrc = normalize(src);
         let entry = match Map.get(normSrc, o->files) {
             case Some(e) => Some(e)
-            case None    => Option.map(b -> OverlayEntry.BytesEntry(b), lower)
+            case None    => Option.map(b -> OverlayEntry.BinaryEntry(b), lower)
         };
         match entry {
             case Some(e) =>
@@ -234,7 +234,7 @@ mod Fs.MemoryOverlay {
         let normSrc = normalize(src);
         let entry = match Map.get(normSrc, o->files) {
             case Some(e) => Some(e)
-            case None    => Option.map(b -> OverlayEntry.BytesEntry(b), lower)
+            case None    => Option.map(b -> OverlayEntry.BinaryEntry(b), lower)
         };
         match entry {
             case Some(e) =>
