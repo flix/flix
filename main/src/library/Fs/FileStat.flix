@@ -273,9 +273,9 @@ pub mod Fs.FileStat {
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
         let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
-            case Ok(p)                          => op(p)
+            case Ok(p)                               => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
-            case Err(e)                         => Err(e)
+            case Err(e)                              => Err(e)
         };
         run { f() } with handler FileStat {
             def exists(filename, k)           = k(resolveBool(filename, p -> FileStat.exists(p)))

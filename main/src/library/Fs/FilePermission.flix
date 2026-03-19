@@ -171,9 +171,9 @@ pub mod Fs.FilePermission {
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
         let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
-            case Ok(p)                          => op(p)
+            case Ok(p)                               => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
-            case Err(e)                         => Err(e)
+            case Err(e)                              => Err(e)
         };
         run { f() } with handler FilePermission {
             def isReadable(filename, k)   = k(resolveBool(filename, p -> FilePermission.isReadable(p)))

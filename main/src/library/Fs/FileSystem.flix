@@ -531,9 +531,9 @@ pub mod Fs.FileSystem {
     ///
     pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
         let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
-            case Ok(p)                          => op(p)
+            case Ok(p)                               => op(p)
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
-            case Err(e)                         => Err(e)
+            case Err(e)                              => Err(e)
         };
         let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
         run { f() } with handler FileSystem {
