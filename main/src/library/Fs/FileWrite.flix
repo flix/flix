@@ -531,6 +531,40 @@ pub mod Fs.FileWrite {
         }
 
     ///
+    /// Middleware that intercepts the `FileWrite` effect, automatically rotating
+    /// files when they reach a size threshold before append operations.
+    ///
+    /// Before `append`, `appendLines`, and `appendBytes`, the target file's size
+    /// is checked via `FileStat.size`. If it meets or exceeds `maxSize`, existing
+    /// rotated files are shifted (`file.1` → `file.2`, etc.), the oldest
+    /// (`file.{maxFiles}`) is deleted, and the current file is moved to `file.1`.
+    /// The append then writes to the now-absent original path.
+    ///
+    /// All other operations are passed through unchanged.
+    ///
+    pub def withSizeRotation(maxSize: Size, maxFiles: Int32, f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
+        let doSize   = file -> FileStat.size(file);
+        let doMove   = (src, dst) -> FileWrite.moveWith(src = src, dst, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDelete = file -> FileWrite.delete(file);
+        run { f() } with handler FileWrite {
+            // Append ops — rotate if needed before appending
+            def append(data, file, k)       = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileWrite.append(data, file)))
+            def appendLines(data, file, k)  = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileWrite.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileWrite.appendBytes(data, file)))
+            // Other write ops — pass through
+            def write(data, file, k)        = k(FileWrite.write(data, file))
+            def writeLines(data, file, k)   = k(FileWrite.writeLines(data, file))
+            def writeBytes(data, file, k)   = k(FileWrite.writeBytes(data, file))
+            def truncate(file, k)           = k(FileWrite.truncate(file))
+            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src, dst, opts))
+            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src, dst, opts))
+            def delete(file, k)             = k(FileWrite.delete(file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileWrite` effect, rejecting write and
     /// append operations where the payload exceeds `maxBytes`. For `copyWith`,
     /// the source file size is checked via `FileStat.size`.

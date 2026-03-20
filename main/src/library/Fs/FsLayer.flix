@@ -146,6 +146,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -154,6 +155,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).creationTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -162,6 +164,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -172,6 +175,7 @@ mod Fs.FsLayer {
             Ok(bytes(fileAttributes(Paths.get(f)).size()))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -924,6 +928,62 @@ mod Fs.FsLayer {
         match deleteResult {
             case Ok(_)  => { discard doDeleteSidecar(file + sidecar); Ok(()) }
             case Err(e) => Err(e)
+        }
+
+    // ─── Size rotation helper ──────────────────────────────────────────
+
+    ///
+    /// Rotates `file` if its size meets or exceeds `maxSize`, then executes `doAction`.
+    ///
+    /// Rotation shifts existing numbered files (`file.1` … `file.{maxFiles}`)
+    /// upward by one, deletes the oldest (`file.{maxFiles}`), and moves `file`
+    /// to `file.1`. The `doAction` then writes to the now-absent original path.
+    ///
+    /// If the file does not exist (`NotFound`), rotation is skipped and
+    /// `doAction` proceeds directly (append will create it).
+    ///
+    pub def rotateIfNeeded(
+        file:     String,
+        maxSize:  Size,
+        maxFiles: Int32,
+        doSize:   String -> Result[IoError, Size] \ ef1,
+        doMove:   String -> String -> Result[IoError, Unit] \ ef2,
+        doDelete: String -> Result[IoError, Unit] \ ef2,
+        doAction: Unit -> Result[IoError, a] \ ef2
+    ): Result[IoError, a] \ ef1 + ef2 =
+        match doSize(file) {
+            case Err(IoError(ErrorKind.NotFound, _)) => doAction()
+            case Err(e)                              => Err(e)
+            case Ok(sz) =>
+                if (toBytes(sz) < toBytes(maxSize))
+                    doAction()
+                else {
+                    // Delete the oldest rotated file (ignore NotFound)
+                    discard match doDelete("${file}.${maxFiles}") {
+                        case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+                        case other                               => other
+                    };
+                    // Shift file.{i} → file.{i+1} for i from maxFiles-1 down to 1
+                    def shift(i) = {
+                        if (i < 1)
+                            Ok(())
+                        else
+                            match doMove("${file}.${i}", "${file}.${i + 1}") {
+                                case Ok(_)                               => shift(i - 1)
+                                case Err(IoError(ErrorKind.NotFound, _)) => shift(i - 1)
+                                case Err(e)                              => Err(e)
+                            }
+                    };
+                    match shift(maxFiles - 1) {
+                        case Err(e) => Err(e)
+                        case Ok(_)  =>
+                            // Move the current file to file.1
+                            match doMove(file, "${file}.1") {
+                                case Err(e) => Err(e)
+                                case Ok(_)  => doAction()
+                            }
+                    }
+                }
         }
 
     // ─── Private helper ────────────────────────────────────────────────
