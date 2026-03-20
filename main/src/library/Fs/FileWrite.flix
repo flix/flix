@@ -584,7 +584,7 @@ pub mod Fs.FileWrite {
             forM (bytes <- FileRead.readBytes(file);
                   _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
                 yield ();
-        let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
+        let afterWrite = (file, doWrite) -> Result.flatMap(_ -> updateSidecar(file), doWrite());
         let doMoveSidecar = (s, d) -> FileWrite.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
         let doDeleteSidecar = file -> FileWrite.delete(file);
         run { f() } with handler FileWrite {
