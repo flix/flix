@@ -18,9 +18,11 @@ mod Fs.FsLayer {
 
     import java.io.File
     import java.io.IOException
+    import java.io.UncheckedIOException
     import java.lang.Class
     import java.lang.IllegalArgumentException
     import java.lang.UnsupportedOperationException
+    import java.nio.charset.CharacterCodingException
     import java.nio.charset.StandardCharsets
     import java.nio.file.attribute.BasicFileAttributes
     import java.nio.file.attribute.FileAttribute
@@ -194,9 +196,10 @@ mod Fs.FsLayer {
         try {
             Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
         } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException       => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: CharacterCodingException  => Err(IoError(ErrorKind.InvalidData, ex.getMessage()))
+            case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     pub def readBytes(f: String): Result[IoError, Vector[Int8]] \ IO =
@@ -211,14 +214,17 @@ mod Fs.FsLayer {
     // ─── Directory listing ─────────────────────────────────────────────
 
     pub def list(f: String): Result[IoError, List[String]] \ IO =
-        try {
-            let file = new File(f);
-            Ok(Array.toList(file.list()))
-        } catch {
-            case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NotDirectoryException => Err(IoError(ErrorKind.NotDirectory, ex.getMessage()))
-            case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+        let file = new File(f);
+        let arr = file.list();
+        if (Object.isNull(arr))
+            if (not file.exists())
+                Err(IoError(ErrorKind.NotFound, f))
+            else if (not file.isDirectory())
+                Err(IoError(ErrorKind.NotDirectory, f))
+            else
+                Err(IoError(ErrorKind.Other, "Unable to list: ${f}"))
+        else
+            Ok(Array.toList(arr))
 
     // ─── Glob operation ─────────────────────────────────────────────────
 
@@ -243,8 +249,10 @@ mod Fs.FsLayer {
                 Ok(result)
             }
         } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException     => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+            case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     // ─── Write operations ──────────────────────────────────────────────
@@ -368,10 +376,11 @@ mod Fs.FsLayer {
             discard Files.copy(Paths.get(src#src), Paths.get(dst), copyOpts);
             Ok(())
         } catch {
-            case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-            case ex: NoSuchFileException        => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: NoSuchFileException           => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+            case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
@@ -388,10 +397,11 @@ mod Fs.FsLayer {
             discard Files.move(Paths.get(src#src), Paths.get(dst), copyOpts);
             Ok(())
         } catch {
-            case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-            case ex: NoSuchFileException        => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: NoSuchFileException           => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+            case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
@@ -521,13 +531,19 @@ mod Fs.FsLayer {
     ///
     pub def chroot(chrootDir: String, path: String): Result[IoError, String] =
         unsafe IO {
-            let base = Paths.get(chrootDir).toRealPath((...{}: Vector[LinkOption]));
-            let resolved = resolveSymLink(Fs.FsLayer.resolve(chrootDir, path));
-            if (resolved.startsWith(base))
-                Ok(resolved.toString())
-            else
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' escapes chroot '${chrootDir}'"))
+            try {
+                let base = Paths.get(chrootDir).toRealPath((...{}: Vector[LinkOption]));
+                let resolved = resolveSymLink(Fs.FsLayer.resolve(chrootDir, path));
+                if (resolved.startsWith(base))
+                    Ok(resolved.toString())
+                else
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' escapes chroot '${chrootDir}'"))
+            } catch {
+                case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+                case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
         }
 
     ///
@@ -537,19 +553,25 @@ mod Fs.FsLayer {
     ///
     pub def allowList(allowedDirs: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = resolveSymLink(path);
-            let allowed = Nel.exists(
-                dir -> {
-                    let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
-                    resolved.startsWith(base)
-                },
-                allowedDirs
-            );
-            if (allowed)
-                Ok(resolved.toString())
-            else
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' is not within any allowed directory"))
+            try {
+                let resolved = resolveSymLink(path);
+                let allowed = Nel.exists(
+                    dir -> {
+                        let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
+                        resolved.startsWith(base)
+                    },
+                    allowedDirs
+                );
+                if (allowed)
+                    Ok(resolved.toString())
+                else
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' is not within any allowed directory"))
+            } catch {
+                case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+                case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
         }
 
     ///
@@ -559,19 +581,25 @@ mod Fs.FsLayer {
     ///
     pub def denyList(deniedDirs: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = resolveSymLink(path);
-            let denied = Nel.exists(
-                dir -> {
-                    let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
-                    resolved.startsWith(base)
-                },
-                deniedDirs
-            );
-            if (denied)
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' is within a denied directory"))
-            else
-                Ok(resolved.toString())
+            try {
+                let resolved = resolveSymLink(path);
+                let denied = Nel.exists(
+                    dir -> {
+                        let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
+                        resolved.startsWith(base)
+                    },
+                    deniedDirs
+                );
+                if (denied)
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' is within a denied directory"))
+                else
+                    Ok(resolved.toString())
+            } catch {
+                case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+                case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
         }
 
     ///
@@ -581,19 +609,24 @@ mod Fs.FsLayer {
     ///
     pub def allowGlob(patterns: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = resolveSymLink(path);
-            let allowed = Nel.exists(
-                pattern -> {
-                    let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
-                    matcher.matches(resolved)
-                },
-                patterns
-            );
-            if (allowed)
-                Ok(resolved.toString())
-            else
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' does not match any allowed glob pattern"))
+            try {
+                let resolved = resolveSymLink(path);
+                let allowed = Nel.exists(
+                    pattern -> {
+                        let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                        matcher.matches(resolved)
+                    },
+                    patterns
+                );
+                if (allowed)
+                    Ok(resolved.toString())
+                else
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' does not match any allowed glob pattern"))
+            } catch {
+                case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+            }
         }
 
     ///
@@ -603,19 +636,24 @@ mod Fs.FsLayer {
     ///
     pub def denyGlob(patterns: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = resolveSymLink(path);
-            let denied = Nel.exists(
-                pattern -> {
-                    let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
-                    matcher.matches(resolved)
-                },
-                patterns
-            );
-            if (denied)
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' matches a denied glob pattern"))
-            else
-                Ok(resolved.toString())
+            try {
+                let resolved = resolveSymLink(path);
+                let denied = Nel.exists(
+                    pattern -> {
+                        let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                        matcher.matches(resolved)
+                    },
+                    patterns
+                );
+                if (denied)
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' matches a denied glob pattern"))
+                else
+                    Ok(resolved.toString())
+            } catch {
+                case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+            }
         }
 
     // ─── Atomic write helper ────────────────────────────────────────────
