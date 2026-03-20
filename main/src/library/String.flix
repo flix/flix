@@ -17,6 +17,8 @@
 pub mod String {
 
     import java.lang.System
+    import java.lang.{String => JString}
+    import java.nio.charset.StandardCharsets
     import java.util.regex.Pattern
     import java.util.regex.PatternSyntaxException
     import java.lang.IndexOutOfBoundsException
@@ -139,6 +141,20 @@ pub mod String {
     pub def toVector(s: String): Vector[Char] = region rc {
         let arr = toArray(rc, s);
         Array.toVector(arr)
+    }
+
+    ///
+    /// Returns the given string `s` as a vector of UTF-8 bytes.
+    ///
+    pub def toBytes(s: String): Vector[Int8] =
+        unsafe IO { Array.toVector(s.getBytes(StandardCharsets.UTF_8)) }
+
+    ///
+    /// Returns a string from the given vector of UTF-8 bytes `v`.
+    ///
+    pub def fromBytes(v: Vector[Int8]): String = region rc {
+        let arr = Vector.toArray(rc, v);
+        unsafe IO { new JString(arr, StandardCharsets.UTF_8) }
     }
 
     ///

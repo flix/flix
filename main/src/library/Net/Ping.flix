@@ -18,6 +18,7 @@ pub mod Net.Ping {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.IpAddr
+    use Time.TimeUnit
 
     import java.io.IOException
     import java.lang.IllegalArgumentException

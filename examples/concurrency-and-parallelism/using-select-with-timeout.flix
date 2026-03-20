@@ -1,3 +1,5 @@
+use Time.TimeUnit
+
 def sendMessage(s: Sender[String]): Unit \ {Chan, NonDet, IO} =
     Channel.recv(Channel.timeout(5, TimeUnit.Milliseconds));
     Channel.send("Hello World", s)

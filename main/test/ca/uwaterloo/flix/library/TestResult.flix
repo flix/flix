@@ -88,6 +88,24 @@ mod TestResult {
         assertTrue(Result.isErr(r))
 
     /////////////////////////////////////////////////////////////////////////////
+    // orAbort                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def orAbort01(): Unit \ Assert =
+        let r = run {
+            Result.orAbort(Ok(42))
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(()), r)
+
+    @Test
+    def orAbort02(): Unit \ Assert =
+        let r = run {
+            Result.orAbort((Err("bad"): Result[String, Int32]))
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+
+    /////////////////////////////////////////////////////////////////////////////
     // withDefault                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @Test

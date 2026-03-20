@@ -28,6 +28,7 @@ pub eff Logger {
 
 pub mod Logger {
 
+    use Sys.Console
     use RichString.{gray, cyan, green, yellow, red, bold, text};
     use Severity.{Warn, Fatal, Trace, Debug, Info}
 
@@ -92,7 +93,9 @@ pub mod Logger {
     /// 
     /// In other words, re-interprets the `Logger` effect using the `Console` effect.
     ///
-    pub def handleWithConsole(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
+    /// Prints to standard out.
+    ///
+    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
         x -> run {
             f(x)
         } with handler Logger {
@@ -109,13 +112,49 @@ pub mod Logger {
                 k()
             }
         }
+    
+    ///
+    /// Runs the `Logger` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Logger` effect using the `Console` effect.
+    ///
+    /// Prints to standard out.
+    ///
+    pub def runWithStdOut(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithStdOut(f)()
+
+    ///
+    /// Handles the `Logger` effect of the given function `f`.
+    /// 
+    /// In other words, re-interprets the `Logger` effect using the `Console` effect.
+    ///
+    /// Prints to standard error.
+    ///
+    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ ef - Logger + Console) = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let prefix = match s {
+                    case Severity.Debug => cyan("[Debug]")
+                    case Severity.Fatal => bold(red("[Fatal]"))
+                    case Severity.Info  => green("[Info]")
+                    case Severity.Trace => gray("[Trace]")
+                    case Severity.Warn  => yellow("[Warn]")
+                };
+                let output = prefix + text(" ") + m;
+                Console.eprintln(RichString.toString(output));
+                k()
+            }
+        }
 
     ///
     /// Runs the `Logger` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Logger` effect using the `Console` effect.
     ///
-    pub def runWithConsole(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithConsole(f)()
+    /// Prints to standard error.
+    ///
+    pub def runWithStdErr(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithStdErr(f)()
 
     ///
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
