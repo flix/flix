@@ -74,6 +74,14 @@ mod Fs.FsLayer {
             gray("-->") + text(" ") + bold(op) + text(" ") + cyan(path))
 
     ///
+    /// Logs a pre-operation message for two-path operations (copy/move) at `Debug` level.
+    ///
+    pub def logPre2(op: String, src: String, dst: String): Unit \ Logger =
+        Logger.log(Severity.Debug,
+            gray("-->") + text(" ") + bold(op) + text(" ") + cyan(src) +
+            gray(" -> ") + cyan(dst))
+
+    ///
     /// Logs a post-operation message: `Debug` on success, `Warn` on error.
     ///
     pub def logPost(op: String, path: String, describe: a -> String, result: Result[IoError, a]): Unit \ Logger =
@@ -87,6 +95,24 @@ mod Fs.FsLayer {
                 Logger.log(Severity.Warn,
                     gray("<--") + text(" ") + red("ERR") + text(" ") +
                     bold(op) + text(" ") + cyan(path) +
+                    text(" ") + red("${err}"))
+        }
+
+    ///
+    /// Logs a post-operation message for two-path operations (copy/move).
+    ///
+    pub def logPost2(op: String, src: String, dst: String, result: Result[IoError, Unit]): Unit \ Logger =
+        match result {
+            case Ok(_)    =>
+                Logger.log(Severity.Debug,
+                    gray("<--") + text(" ") + green("OK") + text(" ") +
+                    bold(op) + text(" ") + cyan(src) +
+                    gray(" -> ") + cyan(dst))
+            case Err(err) =>
+                Logger.log(Severity.Warn,
+                    gray("<--") + text(" ") + red("ERR") + text(" ") +
+                    bold(op) + text(" ") + cyan(src) +
+                    gray(" -> ") + cyan(dst) +
                     text(" ") + red("${err}"))
         }
 
