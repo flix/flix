@@ -827,6 +827,21 @@ mod Fs.FsLayer {
         }
 
     ///
+    /// Reads the bytes of `file`, hashes them with `computeHex`, and writes
+    /// the hex digest to the sidecar path `file + sidecar`.
+    ///
+    pub def updateSidecar(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef,
+        doWriteSidecar: (String, String) -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        forM (bytes <- doReadBytes(file);
+              _     <- doWriteSidecar(computeHex(bytes), file + sidecar))
+            yield ()
+
+    ///
     /// Performs `doWrite`, then computes and writes a checksum sidecar for `file`.
     ///
     /// `doUpdateSidecar(file)` should read the file bytes, hash them, and

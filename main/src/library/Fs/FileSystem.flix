@@ -1156,10 +1156,7 @@ pub mod Fs.FileSystem {
         let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
         let doReadBytes = file -> FileSystem.readBytes(file);
         let doReadSidecar = file -> FileSystem.read(file);
-        let updateSidecar = file ->
-            forM (bytes <- FileSystem.readBytes(file);
-                  _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
-                yield ();
+        let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, doReadBytes, (str, f1) -> FileSystem.write(str = str, f1));
         let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
         let doMoveSidecar = (s, d) -> FileSystem.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
         let doDeleteSidecar = file -> FileSystem.delete(file);

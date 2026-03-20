@@ -580,11 +580,8 @@ pub mod Fs.FileWrite {
     pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
                          f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileRead} =
         let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
-        let updateSidecar = file ->
-            forM (bytes <- FileRead.readBytes(file);
-                  _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
-                yield ();
-        let afterWrite = (file, doWrite) -> Result.flatMap(_ -> updateSidecar(file), doWrite());
+        let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, f1 -> FileRead.readBytes(f1), (str, f1) -> FileWrite.write(str = str, f1));
+        let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
         let doMoveSidecar = (s, d) -> FileWrite.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
         let doDeleteSidecar = file -> FileWrite.delete(file);
         run { f() } with handler FileWrite {
