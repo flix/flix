@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-/// Effect Hierarchy:
+/// Effect Hierarchy ([D] = has @DefaultHandler):
 ///
-/// FileSystem                          (29 ops — unified root)
-/// ├── FileStat                        (11 ops)
-/// │   ├── FileTest                    (4 ops)
+/// FileSystem [D]                      (29 ops — unified root)
+/// ├── FileStat [D]                    (11 ops)
+/// │   ├── FileTest [D]                (4 ops)
 /// │   │   ├── FileExists                    — exists
 /// │   │   ├── IsDirectory                   — isDirectory
 /// │   │   ├── IsRegularFile                 — isRegularFile
 /// │   │   └── IsSymbolicLink                — isSymbolicLink
-/// │   ├── FilePermission              (3 ops)
+/// │   ├── FilePermission [D]          (3 ops)
 /// │   │   ├── IsReadable                    — isReadable
 /// │   │   ├── IsWritable                    — isWritable
 /// │   │   └── IsExecutable                  — isExecutable
-/// │   ├── FileTime                    (3 ops)
+/// │   ├── FileTime [D]                (3 ops)
 /// │   │   ├── AccessTime                    — accessTime
 /// │   │   ├── CreationTime                  — creationTime
 /// │   │   └── ModificationTime              — modificationTime
 /// │   └── FileSize                          — size
-/// ├── FileRead                        (3 ops)
+/// ├── FileRead [D]                    (3 ops)
 /// │   ├── ReadFile                          — read
 /// │   ├── ReadLines                         — readLines
 /// │   └── ReadBytes                         — readBytes
-/// ├── DirList                               — list
-/// ├── Glob                                  — glob
-/// └── FileWrite                       (13 ops)
+/// ├── DirList [D]                           — list
+/// ├── Glob [D]                              — glob
+/// └── FileWrite [D]                   (13 ops)
 ///     ├── WriteFile                         — write
 ///     ├── WriteLines                        — writeLines
 ///     ├── WriteBytes                        — writeBytes
