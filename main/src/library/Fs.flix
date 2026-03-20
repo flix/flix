@@ -14,6 +14,67 @@
  * limitations under the License.
  */
 
+/// Effect Hierarchy:
+///
+/// FileSystem                          (29 ops — unified root)
+/// ├── FileStat                        (11 ops)
+/// │   ├── FileTest                    (4 ops)
+/// │   │   ├── FileExists                    — exists
+/// │   │   ├── IsDirectory                   — isDirectory
+/// │   │   ├── IsRegularFile                 — isRegularFile
+/// │   │   └── IsSymbolicLink                — isSymbolicLink
+/// │   ├── FilePermission              (3 ops)
+/// │   │   ├── IsReadable                    — isReadable
+/// │   │   ├── IsWritable                    — isWritable
+/// │   │   └── IsExecutable                  — isExecutable
+/// │   ├── FileTime                    (3 ops)
+/// │   │   ├── AccessTime                    — accessTime
+/// │   │   ├── CreationTime                  — creationTime
+/// │   │   └── ModificationTime              — modificationTime
+/// │   └── FileSize                          — size
+/// ├── FileRead                        (3 ops)
+/// │   ├── ReadFile                          — read
+/// │   ├── ReadLines                         — readLines
+/// │   └── ReadBytes                         — readBytes
+/// ├── DirList                               — list
+/// ├── Glob                                  — glob
+/// └── FileWrite                       (13 ops)
+///     ├── WriteFile                         — write
+///     ├── WriteLines                        — writeLines
+///     ├── WriteBytes                        — writeBytes
+///     ├── AppendFile                        — append
+///     ├── AppendLines                       — appendLines
+///     ├── AppendBytes                       — appendBytes
+///     ├── Truncate                          — truncate
+///     ├── CopyFile                          — copyWith
+///     ├── MoveFile                          — moveWith
+///     ├── DeleteFile                        — delete
+///     ├── MkDir                             — mkDir
+///     ├── MkDirs                            — mkDirs
+///     └── MkTempDir                         — mkTempDir
+///
+/// Middleware Availability:
+///
+///                    FileTest  FilePermission  FileTime  FileStat  FileRead  DirList  Glob  FileWrite  FileSystem
+/// withLogging        x         x               x         x         x         x        x     x          x
+/// withBaseDir        x         x               x         x         x         x        x     x          x
+/// withChroot         x         x               x         x         x         x        x     x          x
+/// withAllowList      x         x               x         x         x         x        x     x          x
+/// withDenyList       x         x               x         x         x         x        x     x          x
+/// withAllowGlob      x         x               x         x         x         x        x     x          x
+/// withDenyGlob       x         x               x         x         x         x        x     x          x
+/// withFollowLinks    x         x               x         x         x         x        x     x          x
+/// withTransferLimit                                                x                        x          x
+/// withChecksum                                                     x                        x          x
+/// withDryRun                                                                                x          x
+/// withReadOnly                                                                              x          x
+/// withAtomicWrite                                                                           x          x
+/// withBackup                                                                                x          x
+/// withMkParentDirs                                                                          x          x
+/// withSizeRotation                                                                          x          x
+/// withMemoryOverlay                                                                                    x
+/// withInMemoryFS                                                                                       x
+/// withConflictCheck                                                                         x          x
 pub mod Fs {
 
     /// In-memory overlay state, parameterized by region.
@@ -41,45 +102,6 @@ pub mod Fs {
         mut times: Map[String, {atime = Int64, ctime = Int64, mtime = Int64}],
         mut counter: Int32
     }
-
-    // Effect Hierarchy:
-    //
-    // FileSystem                          (29 ops — unified root)
-    // ├── FileStat                        (11 ops)
-    // │   ├── FileTest                    (4 ops)
-    // │   │   ├── FileExists                    — exists
-    // │   │   ├── IsDirectory                   — isDirectory
-    // │   │   ├── IsRegularFile                 — isRegularFile
-    // │   │   └── IsSymbolicLink                — isSymbolicLink
-    // │   ├── FilePermission              (3 ops)
-    // │   │   ├── IsReadable                    — isReadable
-    // │   │   ├── IsWritable                    — isWritable
-    // │   │   └── IsExecutable                  — isExecutable
-    // │   ├── FileTime                    (3 ops)
-    // │   │   ├── AccessTime                    — accessTime
-    // │   │   ├── CreationTime                  — creationTime
-    // │   │   └── ModificationTime              — modificationTime
-    // │   └── FileSize                          — size
-    // ├── FileRead                        (3 ops)
-    // │   ├── ReadFile                          — read
-    // │   ├── ReadLines                         — readLines
-    // │   └── ReadBytes                         — readBytes
-    // ├── DirList                               — list
-    // ├── Glob                                  — glob
-    // └── FileWrite                       (13 ops)
-    //     ├── WriteFile                         — write
-    //     ├── WriteLines                        — writeLines
-    //     ├── WriteBytes                        — writeBytes
-    //     ├── AppendFile                        — append
-    //     ├── AppendLines                       — appendLines
-    //     ├── AppendBytes                       — appendBytes
-    //     ├── Truncate                          — truncate
-    //     ├── CopyFile                          — copyWith
-    //     ├── MoveFile                          — moveWith
-    //     ├── DeleteFile                        — delete
-    //     ├── MkDir                             — mkDir
-    //     ├── MkDirs                            — mkDirs
-    //     └── MkTempDir                         — mkTempDir
 
     ///
     /// Options for the `copyWith` operation.
