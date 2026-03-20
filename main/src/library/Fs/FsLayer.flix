@@ -807,7 +807,7 @@ mod Fs.FsLayer {
     /// - If the sidecar does not exist (`NotFound`), returns `Ok(())`.
     /// - If the sidecar exists and matches, returns `Ok(())`.
     /// - If the sidecar exists and does not match, returns
-    ///   `Err(IoError(InvalidData, ...))`.
+    ///   `Err(IoError(ChecksumMismatch, ...))`.
     ///
     pub def verifyChecksum(
         file: String,
