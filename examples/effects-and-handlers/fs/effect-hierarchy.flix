@@ -4,14 +4,14 @@ use Fs.FileTest
 use Fs.ReadFile
 
 /// Demonstrates the Fs effect hierarchy by using leaf effects and
-/// handling them into parent effects via `handleWith` functions.
-/// `FileExists` is handled into `FileTest`, and `ReadFile` into `FileRead`.
+/// running them into parent effects via `runWith` functions.
+/// `FileExists` is run into `FileTest`, and `ReadFile` into `FileRead`.
 /// Both parent effects have default handlers.
 def main(): Unit \ { FileRead, FileTest, IO } =
-    let handled = safeRead
-        |> FileExists.handleWithFileTest
-        |> ReadFile.handleWithFileRead;
-    handled("example.txt")
+    run {
+        safeRead("example.txt")
+    } with FileExists.runWithFileTest
+      with ReadFile.runWithFileRead
 
 def safeRead(file: String): Unit \ { FileExists, ReadFile, IO } =
     match FileExists.exists(file) {
