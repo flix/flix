@@ -146,6 +146,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -154,6 +155,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).creationTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -162,6 +164,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -172,6 +175,7 @@ mod Fs.FsLayer {
             Ok(bytes(fileAttributes(Paths.get(f)).size()))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -942,11 +946,11 @@ mod Fs.FsLayer {
         file:     String,
         maxSize:  Size,
         maxFiles: Int32,
-        doSize:   String -> Result[IoError, Size] \ ef,
-        doMove:   String -> String -> Result[IoError, Unit] \ ef,
-        doDelete: String -> Result[IoError, Unit] \ ef,
-        doAction: Unit -> Result[IoError, a] \ ef
-    ): Result[IoError, a] \ ef =
+        doSize:   String -> Result[IoError, Size] \ ef1,
+        doMove:   String -> String -> Result[IoError, Unit] \ ef2,
+        doDelete: String -> Result[IoError, Unit] \ ef2,
+        doAction: Unit -> Result[IoError, a] \ ef2
+    ): Result[IoError, a] \ ef1 + ef2 =
         match doSize(file) {
             case Err(IoError(ErrorKind.NotFound, _)) => doAction()
             case Err(e)                              => Err(e)
