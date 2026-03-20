@@ -17,6 +17,7 @@
 pub mod Fs.FileWrite {
 
     use Fs.FileStat
+    use Fs.FileRead
     use Fs.FileSystem
     use Fs.FileWrite
     use Fs.FsLayer.{logPre, logPost}
@@ -555,6 +556,45 @@ pub mod Fs.FileWrite {
             def copyWith(src, dst, opts, k) = k(Result.flatMap(sz -> Result.flatMap(_ -> FileWrite.copyWith(src, dst, opts), check(sz)), FileStat.size(src#src)))
             def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src, dst, opts))
             def delete(file, k)             = k(FileWrite.delete(file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, computing checksums
+    /// after write operations and storing them as sidecar files.
+    ///
+    /// `hash` is a pure function from file bytes to digest bytes.
+    /// `sidecar` is the file suffix (e.g., `".sha256"`).
+    ///
+    /// After `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, `truncate`, and `copyWith`, the file is re-read and
+    /// its checksum sidecar is updated.
+    ///
+    /// After `moveWith`, the source's sidecar is moved to the destination path.
+    /// After `delete`, the sidecar file is also removed.
+    ///
+    /// `mkDir`, `mkDirs`, and `mkTempDir` are passed through unchanged.
+    ///
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileRead} =
+        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, f1 -> FileRead.readBytes(f1), (str, f1) -> FileWrite.write(str = str, f1));
+        let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
+        let doMoveSidecar = (s, d) -> FileWrite.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDeleteSidecar = file -> FileWrite.delete(file);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(afterWrite(file, () -> FileWrite.write(data, file)))
+            def writeLines(data, file, k)   = k(afterWrite(file, () -> FileWrite.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(afterWrite(file, () -> FileWrite.writeBytes(data, file)))
+            def append(data, file, k)       = k(afterWrite(file, () -> FileWrite.append(data, file)))
+            def appendLines(data, file, k)  = k(afterWrite(file, () -> FileWrite.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(afterWrite(file, () -> FileWrite.appendBytes(data, file)))
+            def truncate(file, k)           = k(afterWrite(file, () -> FileWrite.truncate(file)))
+            def copyWith(src, dst, opts, k) = k(afterWrite(dst, () -> FileWrite.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileWrite.moveWith(src, dst, opts), doMoveSidecar))
+            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileWrite.delete(file), doDeleteSidecar))
             def mkDir(d, k)                 = k(FileWrite.mkDir(d))
             def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
             def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))

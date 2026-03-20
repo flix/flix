@@ -1132,4 +1132,71 @@ pub mod Fs.FileSystem {
             }
         }
 
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, providing data integrity
+    /// via checksum sidecar files. Write operations produce checksum sidecars;
+    /// read operations verify against them.
+    ///
+    /// `hash` is a pure function from file bytes to digest bytes.
+    /// `sidecar` is the file suffix (e.g., `".sha256"`).
+    ///
+    /// After write, append, truncate, and copy operations, the file is re-read
+    /// and a sidecar containing the hex digest is written. After move, the
+    /// sidecar is moved. After delete, the sidecar is removed.
+    ///
+    /// On read, if a sidecar exists, the file's contents are hashed and compared
+    /// against the stored checksum. If no sidecar exists, the read proceeds
+    /// normally.
+    ///
+    /// Stat, test, permission, time, size, list, and glob operations are
+    /// passed through unchanged.
+    ///
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let doReadBytes = file -> FileSystem.readBytes(file);
+        let doReadSidecar = file -> FileSystem.read(file);
+        let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, doReadBytes, (str, f1) -> FileSystem.write(str = str, f1));
+        let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
+        let doMoveSidecar = (s, d) -> FileSystem.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDeleteSidecar = file -> FileSystem.delete(file);
+        run { f() } with handler FileSystem {
+            // ── Stat/test/perm/time/size — pass through ──
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // ── Read ops — verify checksum after read ──
+            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileSystem.readBytes(filename), doReadSidecar))
+
+            // ── Write ops — update checksum sidecar after write ──
+            def write(data, file, k)        = k(afterWrite(file, () -> FileSystem.write(data, file)))
+            def writeLines(data, file, k)   = k(afterWrite(file, () -> FileSystem.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(afterWrite(file, () -> FileSystem.writeBytes(data, file)))
+            def append(data, file, k)       = k(afterWrite(file, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendBytes(data, file)))
+            def truncate(file, k)           = k(afterWrite(file, () -> FileSystem.truncate(file)))
+            def copyWith(src, dst, opts, k) = k(afterWrite(dst, () -> FileSystem.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileSystem.moveWith(src, dst, opts), doMoveSidecar))
+            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileSystem.delete(file), doDeleteSidecar))
+
+            // ── Directory ops — pass through ──
+            def mkDir(d, k)       = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)      = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k) = k(FileSystem.mkTempDir(prefix))
+        }
+
 }

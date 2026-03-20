@@ -40,6 +40,7 @@ mod Fs.FsLayer {
     import java.nio.file.PathMatcher
     import java.nio.file.StandardOpenOption
     import java.util.stream.BaseStream
+    import java.util.HexFormat
     import java.util.UUID
     import java.util.stream.Stream
 
@@ -787,6 +788,142 @@ mod Fs.FsLayer {
                     case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
                     case Err(e) => Err(e)
                 }
+        }
+
+    // ─── Checksum helpers ──────────────────────────────────────────────
+
+    ///
+    /// Converts a vector of bytes to a lowercase hex string.
+    ///
+    pub def bytesToHex(v: Vector[Int8]): String = region rc {
+        let arr = Vector.toArray(rc, v);
+        unsafe IO { HexFormat.of().formatHex(arr) }
+    }
+
+    ///
+    /// Verifies `actual` (a hex digest string) against the checksum stored in
+    /// the sidecar file `file + sidecar`.
+    ///
+    /// - If the sidecar does not exist (`NotFound`), returns `Ok(())`.
+    /// - If the sidecar exists and matches, returns `Ok(())`.
+    /// - If the sidecar exists and does not match, returns
+    ///   `Err(IoError(ChecksumMismatch, ...))`.
+    ///
+    pub def verifyChecksum(
+        file: String,
+        sidecar: String,
+        actual: String,
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match doReadSidecar(file + sidecar) {
+            case Ok(expected) =>
+                if (String.trim(expected) == actual)
+                    Ok(())
+                else
+                    Err(IoError(ErrorKind.ChecksumMismatch,
+                        "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"))
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+            case Err(e) => Err(e)
+        }
+
+    ///
+    /// Reads the bytes of `file`, hashes them with `computeHex`, and writes
+    /// the hex digest to the sidecar path `file + sidecar`.
+    ///
+    pub def updateSidecar(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef1,
+        doWriteSidecar: (String, String) -> Result[IoError, Unit] \ ef2
+    ): Result[IoError, Unit] \ ef1 + ef2 =
+        forM (bytes <- doReadBytes(file);
+              _     <- doWriteSidecar(computeHex(bytes), file + sidecar))
+            yield ()
+
+    ///
+    /// Performs `doWrite`, then computes and writes a checksum sidecar for `file`.
+    ///
+    /// `doUpdateSidecar(file)` should read the file bytes, hash them, and
+    /// write the hex digest to the sidecar path.
+    ///
+    pub def checksumAfterWrite(
+        file: String,
+        doWrite: Unit -> Result[IoError, Unit] \ ef1,
+        doUpdateSidecar: String -> Result[IoError, Unit] \ ef2
+    ): Result[IoError, Unit] \ ef1 + ef2 =
+        Result.flatMap(_ -> doUpdateSidecar(file), doWrite())
+
+    ///
+    /// Verifies a `readBytes` result against a checksum sidecar.
+    ///
+    /// The returned bytes are hashed via `computeHex` and compared against
+    /// the sidecar. If no sidecar exists, the result passes through.
+    ///
+    pub def checksumOnReadBytes(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        readResult: Result[IoError, Vector[Int8]],
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, Vector[Int8]] \ ef =
+        forM (bytes <- readResult;
+              _     <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar))
+            yield bytes
+
+    ///
+    /// Verifies a `read` or `readLines` result against a checksum sidecar.
+    ///
+    /// Since the result type (`String` or `List[String]`) does not preserve
+    /// raw bytes, `doReadBytes` is called to obtain the on-disk bytes for
+    /// hashing. If no sidecar exists, the result passes through.
+    ///
+    pub def checksumOnRead(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        readResult: Result[IoError, a],
+        doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef,
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, a] \ ef =
+        forM (v     <- readResult;
+              bytes <- doReadBytes(file);
+              _     <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar))
+            yield v
+
+    ///
+    /// Moves the checksum sidecar after a successful `moveWith`.
+    ///
+    /// If the source sidecar does not exist, the move result is returned
+    /// unchanged. Sidecar move errors are discarded.
+    ///
+    pub def checksumAfterMove(
+        src: String,
+        dst: String,
+        sidecar: String,
+        moveResult: Result[IoError, Unit],
+        doMoveSidecar: String -> String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match moveResult {
+            case Ok(_)  => { discard doMoveSidecar(src + sidecar, dst + sidecar); Ok(()) }
+            case Err(e) => Err(e)
+        }
+
+    ///
+    /// Deletes the checksum sidecar after a successful `delete`.
+    ///
+    /// If the sidecar does not exist, the delete result is returned
+    /// unchanged. Sidecar delete errors are discarded.
+    ///
+    pub def checksumAfterDelete(
+        file: String,
+        sidecar: String,
+        deleteResult: Result[IoError, Unit],
+        doDeleteSidecar: String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match deleteResult {
+            case Ok(_)  => { discard doDeleteSidecar(file + sidecar); Ok(()) }
+            case Err(e) => Err(e)
         }
 
     // ─── Private helper ────────────────────────────────────────────────
