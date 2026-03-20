@@ -35,6 +35,7 @@ pub mod IoError {
 
     pub enum ErrorKind with Eq, ToString {
         case AlreadyExists,
+        case ChecksumMismatch,
         case Conflict,
         case ConnectionFailed,
         case Interrupted,

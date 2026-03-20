@@ -18,9 +18,11 @@ mod Fs.FsLayer {
 
     import java.io.File
     import java.io.IOException
+    import java.io.UncheckedIOException
     import java.lang.Class
     import java.lang.IllegalArgumentException
     import java.lang.UnsupportedOperationException
+    import java.nio.charset.CharacterCodingException
     import java.nio.charset.StandardCharsets
     import java.nio.file.attribute.BasicFileAttributes
     import java.nio.file.attribute.FileAttribute
@@ -40,6 +42,7 @@ mod Fs.FsLayer {
     import java.nio.file.PathMatcher
     import java.nio.file.StandardOpenOption
     import java.util.stream.BaseStream
+    import java.util.HexFormat
     import java.util.UUID
     import java.util.stream.Stream
 
@@ -145,6 +148,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -153,6 +157,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).creationTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -161,6 +166,7 @@ mod Fs.FsLayer {
             Ok(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -171,6 +177,7 @@ mod Fs.FsLayer {
             Ok(bytes(fileAttributes(Paths.get(f)).size()))
         } catch {
             case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
             case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
@@ -189,9 +196,10 @@ mod Fs.FsLayer {
         try {
             Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
         } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: NoSuchFileException       => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: CharacterCodingException  => Err(IoError(ErrorKind.InvalidData, ex.getMessage()))
+            case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     pub def readBytes(f: String): Result[IoError, Vector[Int8]] \ IO =
@@ -206,14 +214,17 @@ mod Fs.FsLayer {
     // ─── Directory listing ─────────────────────────────────────────────
 
     pub def list(f: String): Result[IoError, List[String]] \ IO =
-        try {
-            let file = new File(f);
-            Ok(Array.toList(file.list()))
-        } catch {
-            case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: NotDirectoryException => Err(IoError(ErrorKind.NotDirectory, ex.getMessage()))
-            case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
+        let file = new File(f);
+        let arr = file.list();
+        if (Object.isNull(arr))
+            if (not file.exists())
+                Err(IoError(ErrorKind.NotFound, f))
+            else if (not file.isDirectory())
+                Err(IoError(ErrorKind.NotDirectory, f))
+            else
+                Err(IoError(ErrorKind.Other, "Unable to list: ${f}"))
+        else
+            Ok(Array.toList(arr))
 
     // ─── Glob operation ─────────────────────────────────────────────────
 
@@ -238,8 +249,10 @@ mod Fs.FsLayer {
                 Ok(result)
             }
         } catch {
-            case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException     => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+            case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     // ─── Write operations ──────────────────────────────────────────────
@@ -363,10 +376,11 @@ mod Fs.FsLayer {
             discard Files.copy(Paths.get(src#src), Paths.get(dst), copyOpts);
             Ok(())
         } catch {
-            case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-            case ex: NoSuchFileException        => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: NoSuchFileException           => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+            case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     pub def copy(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
@@ -383,10 +397,11 @@ mod Fs.FsLayer {
             discard Files.move(Paths.get(src#src), Paths.get(dst), copyOpts);
             Ok(())
         } catch {
-            case ex: InvalidPathException       => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-            case ex: FileAlreadyExistsException => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
-            case ex: NoSuchFileException        => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
-            case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+            case ex: FileAlreadyExistsException    => Err(IoError(ErrorKind.AlreadyExists, ex.getMessage()))
+            case ex: NoSuchFileException           => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+            case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+            case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
 
     pub def move(src: {src = String}, dst: String): Result[IoError, Unit] \ IO =
@@ -516,13 +531,19 @@ mod Fs.FsLayer {
     ///
     pub def chroot(chrootDir: String, path: String): Result[IoError, String] =
         unsafe IO {
-            let base = Paths.get(chrootDir).toRealPath((...{}: Vector[LinkOption]));
-            let resolved = resolveSymLink(Fs.FsLayer.resolve(chrootDir, path));
-            if (resolved.startsWith(base))
-                Ok(resolved.toString())
-            else
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' escapes chroot '${chrootDir}'"))
+            try {
+                let base = Paths.get(chrootDir).toRealPath((...{}: Vector[LinkOption]));
+                let resolved = resolveSymLink(Fs.FsLayer.resolve(chrootDir, path));
+                if (resolved.startsWith(base))
+                    Ok(resolved.toString())
+                else
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' escapes chroot '${chrootDir}'"))
+            } catch {
+                case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+                case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
         }
 
     ///
@@ -532,19 +553,25 @@ mod Fs.FsLayer {
     ///
     pub def allowList(allowedDirs: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = resolveSymLink(path);
-            let allowed = Nel.exists(
-                dir -> {
-                    let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
-                    resolved.startsWith(base)
-                },
-                allowedDirs
-            );
-            if (allowed)
-                Ok(resolved.toString())
-            else
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' is not within any allowed directory"))
+            try {
+                let resolved = resolveSymLink(path);
+                let allowed = Nel.exists(
+                    dir -> {
+                        let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
+                        resolved.startsWith(base)
+                    },
+                    allowedDirs
+                );
+                if (allowed)
+                    Ok(resolved.toString())
+                else
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' is not within any allowed directory"))
+            } catch {
+                case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+                case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
         }
 
     ///
@@ -554,19 +581,25 @@ mod Fs.FsLayer {
     ///
     pub def denyList(deniedDirs: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = resolveSymLink(path);
-            let denied = Nel.exists(
-                dir -> {
-                    let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
-                    resolved.startsWith(base)
-                },
-                deniedDirs
-            );
-            if (denied)
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' is within a denied directory"))
-            else
-                Ok(resolved.toString())
+            try {
+                let resolved = resolveSymLink(path);
+                let denied = Nel.exists(
+                    dir -> {
+                        let base = Paths.get(dir).toRealPath((...{}: Vector[LinkOption]));
+                        resolved.startsWith(base)
+                    },
+                    deniedDirs
+                );
+                if (denied)
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' is within a denied directory"))
+                else
+                    Ok(resolved.toString())
+            } catch {
+                case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                case ex: NoSuchFileException  => Err(IoError(ErrorKind.NotFound, ex.getMessage()))
+                case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
         }
 
     ///
@@ -576,19 +609,24 @@ mod Fs.FsLayer {
     ///
     pub def allowGlob(patterns: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = resolveSymLink(path);
-            let allowed = Nel.exists(
-                pattern -> {
-                    let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
-                    matcher.matches(resolved)
-                },
-                patterns
-            );
-            if (allowed)
-                Ok(resolved.toString())
-            else
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' does not match any allowed glob pattern"))
+            try {
+                let resolved = resolveSymLink(path);
+                let allowed = Nel.exists(
+                    pattern -> {
+                        let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                        matcher.matches(resolved)
+                    },
+                    patterns
+                );
+                if (allowed)
+                    Ok(resolved.toString())
+                else
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' does not match any allowed glob pattern"))
+            } catch {
+                case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+            }
         }
 
     ///
@@ -598,19 +636,24 @@ mod Fs.FsLayer {
     ///
     pub def denyGlob(patterns: Nel[String], path: String): Result[IoError, String] =
         unsafe IO {
-            let resolved = resolveSymLink(path);
-            let denied = Nel.exists(
-                pattern -> {
-                    let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
-                    matcher.matches(resolved)
-                },
-                patterns
-            );
-            if (denied)
-                Err(IoError(ErrorKind.PermissionDenied,
-                    "Path '${path}' matches a denied glob pattern"))
-            else
-                Ok(resolved.toString())
+            try {
+                let resolved = resolveSymLink(path);
+                let denied = Nel.exists(
+                    pattern -> {
+                        let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+                        matcher.matches(resolved)
+                    },
+                    patterns
+                );
+                if (denied)
+                    Err(IoError(ErrorKind.PermissionDenied,
+                        "Path '${path}' matches a denied glob pattern"))
+                else
+                    Ok(resolved.toString())
+            } catch {
+                case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+            }
         }
 
     // ─── Atomic write helper ────────────────────────────────────────────
@@ -786,6 +829,198 @@ mod Fs.FsLayer {
                                 "Conflict on '${file}': expected mtime ${oldTime}, found ${curTime}"))
                     case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
                     case Err(e) => Err(e)
+                }
+        }
+
+    // ─── Checksum helpers ──────────────────────────────────────────────
+
+    ///
+    /// Converts a vector of bytes to a lowercase hex string.
+    ///
+    pub def bytesToHex(v: Vector[Int8]): String = region rc {
+        let arr = Vector.toArray(rc, v);
+        unsafe IO { HexFormat.of().formatHex(arr) }
+    }
+
+    ///
+    /// Verifies `actual` (a hex digest string) against the checksum stored in
+    /// the sidecar file `file + sidecar`.
+    ///
+    /// - If the sidecar does not exist (`NotFound`), returns `Ok(())`.
+    /// - If the sidecar exists and matches, returns `Ok(())`.
+    /// - If the sidecar exists and does not match, returns
+    ///   `Err(IoError(ChecksumMismatch, ...))`.
+    ///
+    pub def verifyChecksum(
+        file: String,
+        sidecar: String,
+        actual: String,
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match doReadSidecar(file + sidecar) {
+            case Ok(expected) =>
+                if (String.trim(expected) == actual)
+                    Ok(())
+                else
+                    Err(IoError(ErrorKind.ChecksumMismatch,
+                        "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"))
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+            case Err(e) => Err(e)
+        }
+
+    ///
+    /// Reads the bytes of `file`, hashes them with `computeHex`, and writes
+    /// the hex digest to the sidecar path `file + sidecar`.
+    ///
+    pub def updateSidecar(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef1,
+        doWriteSidecar: (String, String) -> Result[IoError, Unit] \ ef2
+    ): Result[IoError, Unit] \ ef1 + ef2 =
+        forM (bytes <- doReadBytes(file);
+              _     <- doWriteSidecar(computeHex(bytes), file + sidecar))
+            yield ()
+
+    ///
+    /// Performs `doWrite`, then computes and writes a checksum sidecar for `file`.
+    ///
+    /// `doUpdateSidecar(file)` should read the file bytes, hash them, and
+    /// write the hex digest to the sidecar path.
+    ///
+    pub def checksumAfterWrite(
+        file: String,
+        doWrite: Unit -> Result[IoError, Unit] \ ef1,
+        doUpdateSidecar: String -> Result[IoError, Unit] \ ef2
+    ): Result[IoError, Unit] \ ef1 + ef2 =
+        Result.flatMap(_ -> doUpdateSidecar(file), doWrite())
+
+    ///
+    /// Verifies a `readBytes` result against a checksum sidecar.
+    ///
+    /// The returned bytes are hashed via `computeHex` and compared against
+    /// the sidecar. If no sidecar exists, the result passes through.
+    ///
+    pub def checksumOnReadBytes(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        readResult: Result[IoError, Vector[Int8]],
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, Vector[Int8]] \ ef =
+        forM (bytes <- readResult;
+              _     <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar))
+            yield bytes
+
+    ///
+    /// Verifies a `read` or `readLines` result against a checksum sidecar.
+    ///
+    /// Since the result type (`String` or `List[String]`) does not preserve
+    /// raw bytes, `doReadBytes` is called to obtain the on-disk bytes for
+    /// hashing. If no sidecar exists, the result passes through.
+    ///
+    pub def checksumOnRead(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        readResult: Result[IoError, a],
+        doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef,
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, a] \ ef =
+        forM (v     <- readResult;
+              bytes <- doReadBytes(file);
+              _     <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar))
+            yield v
+
+    ///
+    /// Moves the checksum sidecar after a successful `moveWith`.
+    ///
+    /// If the source sidecar does not exist, the move result is returned
+    /// unchanged. Sidecar move errors are discarded.
+    ///
+    pub def checksumAfterMove(
+        src: String,
+        dst: String,
+        sidecar: String,
+        moveResult: Result[IoError, Unit],
+        doMoveSidecar: String -> String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match moveResult {
+            case Ok(_)  => { discard doMoveSidecar(src + sidecar, dst + sidecar); Ok(()) }
+            case Err(e) => Err(e)
+        }
+
+    ///
+    /// Deletes the checksum sidecar after a successful `delete`.
+    ///
+    /// If the sidecar does not exist, the delete result is returned
+    /// unchanged. Sidecar delete errors are discarded.
+    ///
+    pub def checksumAfterDelete(
+        file: String,
+        sidecar: String,
+        deleteResult: Result[IoError, Unit],
+        doDeleteSidecar: String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match deleteResult {
+            case Ok(_)  => { discard doDeleteSidecar(file + sidecar); Ok(()) }
+            case Err(e) => Err(e)
+        }
+
+    // ─── Size rotation helper ──────────────────────────────────────────
+
+    ///
+    /// Rotates `file` if its size meets or exceeds `maxSize`, then executes `doAction`.
+    ///
+    /// Rotation shifts existing numbered files (`file.1` … `file.{maxFiles}`)
+    /// upward by one, deletes the oldest (`file.{maxFiles}`), and moves `file`
+    /// to `file.1`. The `doAction` then writes to the now-absent original path.
+    ///
+    /// If the file does not exist (`NotFound`), rotation is skipped and
+    /// `doAction` proceeds directly (append will create it).
+    ///
+    pub def rotateIfNeeded(
+        file:     String,
+        maxSize:  Size,
+        maxFiles: Int32,
+        doSize:   String -> Result[IoError, Size] \ ef1,
+        doMove:   String -> String -> Result[IoError, Unit] \ ef2,
+        doDelete: String -> Result[IoError, Unit] \ ef2,
+        doAction: Unit -> Result[IoError, a] \ ef2
+    ): Result[IoError, a] \ ef1 + ef2 =
+        match doSize(file) {
+            case Err(IoError(ErrorKind.NotFound, _)) => doAction()
+            case Err(e)                              => Err(e)
+            case Ok(sz) =>
+                if (toBytes(sz) < toBytes(maxSize))
+                    doAction()
+                else {
+                    // Delete the oldest rotated file (ignore NotFound)
+                    discard match doDelete("${file}.${maxFiles}") {
+                        case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+                        case other                               => other
+                    };
+                    // Shift file.{i} → file.{i+1} for i from maxFiles-1 down to 1
+                    def shift(i) = {
+                        if (i < 1)
+                            Ok(())
+                        else
+                            match doMove("${file}.${i}", "${file}.${i + 1}") {
+                                case Ok(_)                               => shift(i - 1)
+                                case Err(IoError(ErrorKind.NotFound, _)) => shift(i - 1)
+                                case Err(e)                              => Err(e)
+                            }
+                    };
+                    match shift(maxFiles - 1) {
+                        case Err(e) => Err(e)
+                        case Ok(_)  =>
+                            // Move the current file to file.1
+                            match doMove(file, "${file}.1") {
+                                case Err(e) => Err(e)
+                                case Ok(_)  => doAction()
+                            }
+                    }
                 }
         }
 

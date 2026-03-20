@@ -22,6 +22,7 @@ pub mod Fs.FileSystem {
     use Fs.Size.bytes
     use IoError.IoError
     use IoError.ErrorKind
+    use Time.Clock
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.
@@ -767,6 +768,48 @@ pub mod Fs.FileSystem {
         }
 
     ///
+    /// Terminal handler that intercepts the `FileSystem` effect with a fully
+    /// in-memory filesystem. The filesystem starts empty; reads of non-written
+    /// files return `NotFound`. No real filesystem access occurs. This is
+    /// useful for testing, sandboxing, and deterministic simulations.
+    ///
+    pub def withInMemoryFS(f: Unit -> a \ ef): a \ (ef - FileSystem) + Clock =
+        region rc {
+            let o = Fs.InMemoryFs.fresh(rc);
+            run { f() } with handler FileSystem {
+                def exists(f1, k)               = k(Fs.InMemoryFs.exists(f1, o))
+                def isDirectory(f1, k)          = k(Fs.InMemoryFs.isDirectory(f1, o))
+                def isRegularFile(f1, k)        = k(Fs.InMemoryFs.isRegularFile(f1, o))
+                def isSymbolicLink(f1, k)       = k(Fs.InMemoryFs.isSymbolicLink(f1, o))
+                def isReadable(f1, k)           = k(Fs.InMemoryFs.isReadable(f1, o))
+                def isWritable(f1, k)           = k(Fs.InMemoryFs.isWritable(f1, o))
+                def isExecutable(f1, k)         = k(Fs.InMemoryFs.isExecutable(f1, o))
+                def accessTime(f1, k)           = k(Fs.InMemoryFs.accessTime(f1, o))
+                def creationTime(f1, k)         = k(Fs.InMemoryFs.creationTime(f1, o))
+                def modificationTime(f1, k)     = k(Fs.InMemoryFs.modificationTime(f1, o))
+                def size(f1, k)                 = k(Fs.InMemoryFs.size(f1, o))
+                def read(f1, k)                 = k(Fs.InMemoryFs.read(f1, o))
+                def readLines(f1, k)            = k(Fs.InMemoryFs.readLines(f1, o))
+                def readBytes(f1, k)            = k(Fs.InMemoryFs.readBytes(f1, o))
+                def list(f1, k)                 = k(Fs.InMemoryFs.list(f1, o))
+                def glob(base, pattern, k)      = k(Fs.InMemoryFs.glob(base, pattern, o))
+                def write(data, file, k)        = k(Fs.InMemoryFs.write(file, data#str, o))
+                def writeLines(data, file, k)   = k(Fs.InMemoryFs.writeLines(file, data#lines, o))
+                def writeBytes(data, file, k)   = k(Fs.InMemoryFs.writeBytes(file, data, o))
+                def append(data, file, k)       = k(Fs.InMemoryFs.append(file, data#str, o))
+                def appendLines(data, file, k)  = k(Fs.InMemoryFs.appendLines(file, data#lines, o))
+                def appendBytes(data, file, k)  = k(Fs.InMemoryFs.appendBytes(file, data, o))
+                def truncate(file, k)           = k(Fs.InMemoryFs.truncate(file, o))
+                def copyWith(src, dst, opts, k) = k(Fs.InMemoryFs.copy(src#src, dst, opts, o))
+                def moveWith(src, dst, opts, k) = k(Fs.InMemoryFs.move(src#src, dst, opts, o))
+                def delete(file, k)             = k(Fs.InMemoryFs.delete(file, o))
+                def mkDir(d, k)                 = k(Fs.InMemoryFs.mkDir(d, o))
+                def mkDirs(d, k)                = k(Fs.InMemoryFs.mkDirs(d, o))
+                def mkTempDir(prefix, k)        = k(Fs.InMemoryFs.mkTempDir(prefix, o))
+            }
+        }
+
+    ///
     /// Middleware that intercepts the `FileSystem` effect, blocking all write
     /// operations with a `PermissionDenied` error while passing read, stat,
     /// and test operations through to the underlying `FileSystem` effect
@@ -1130,6 +1173,126 @@ pub mod Fs.FileSystem {
                 def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
                 def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
             }
+        }
+
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, automatically rotating
+    /// files when they reach a size threshold before append operations.
+    ///
+    /// Before `append`, `appendLines`, and `appendBytes`, the target file's size
+    /// is checked. If it meets or exceeds `maxSize`, existing rotated files are
+    /// shifted (`file.1` → `file.2`, etc.), the oldest (`file.{maxFiles}`) is
+    /// deleted, and the current file is moved to `file.1`. The append then
+    /// writes to the now-absent original path.
+    ///
+    /// All other operations are passed through unchanged.
+    ///
+    pub def withSizeRotation(maxSize: Size, maxFiles: Int32, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let doSize   = file -> FileSystem.size(file);
+        let doMove   = (src, dst) -> FileSystem.moveWith(src = src, dst, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDelete = file -> FileSystem.delete(file);
+        run { f() } with handler FileSystem {
+            // Read/stat/test ops — pass through
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def read(filename, k)             = k(FileSystem.read(filename))
+            def readLines(filename, k)        = k(FileSystem.readLines(filename))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // Append ops — rotate if needed before appending
+            def append(data, file, k)      = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k) = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k) = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.appendBytes(data, file)))
+
+            // Other write ops — pass through
+            def write(data, file, k)          = k(FileSystem.write(data, file))
+            def writeLines(data, file, k)     = k(FileSystem.writeLines(data, file))
+            def writeBytes(data, file, k)     = k(FileSystem.writeBytes(data, file))
+            def truncate(file, k)             = k(FileSystem.truncate(file))
+            def copyWith(src, dst, opts, k)   = k(FileSystem.copyWith(src, dst, opts))
+            def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src, dst, opts))
+            def delete(file, k)               = k(FileSystem.delete(file))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileSystem` effect, providing data integrity
+    /// via checksum sidecar files. Write operations produce checksum sidecars;
+    /// read operations verify against them.
+    ///
+    /// `hash` is a pure function from file bytes to digest bytes.
+    /// `sidecar` is the file suffix (e.g., `".sha256"`).
+    ///
+    /// After write, append, truncate, and copy operations, the file is re-read
+    /// and a sidecar containing the hex digest is written. After move, the
+    /// sidecar is moved. After delete, the sidecar is removed.
+    ///
+    /// On read, if a sidecar exists, the file's contents are hashed and compared
+    /// against the stored checksum. If no sidecar exists, the read proceeds
+    /// normally.
+    ///
+    /// Stat, test, permission, time, size, list, and glob operations are
+    /// passed through unchanged.
+    ///
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let doReadBytes = file -> FileSystem.readBytes(file);
+        let doReadSidecar = file -> FileSystem.read(file);
+        let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, doReadBytes, (str, f1) -> FileSystem.write(str = str, f1));
+        let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
+        let doMoveSidecar = (s, d) -> FileSystem.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDeleteSidecar = file -> FileSystem.delete(file);
+        run { f() } with handler FileSystem {
+            // ── Stat/test/perm/time/size — pass through ──
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // ── Read ops — verify checksum after read ──
+            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileSystem.readBytes(filename), doReadSidecar))
+
+            // ── Write ops — update checksum sidecar after write ──
+            def write(data, file, k)        = k(afterWrite(file, () -> FileSystem.write(data, file)))
+            def writeLines(data, file, k)   = k(afterWrite(file, () -> FileSystem.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(afterWrite(file, () -> FileSystem.writeBytes(data, file)))
+            def append(data, file, k)       = k(afterWrite(file, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendBytes(data, file)))
+            def truncate(file, k)           = k(afterWrite(file, () -> FileSystem.truncate(file)))
+            def copyWith(src, dst, opts, k) = k(afterWrite(dst, () -> FileSystem.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileSystem.moveWith(src, dst, opts), doMoveSidecar))
+            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileSystem.delete(file), doDeleteSidecar))
+
+            // ── Directory ops — pass through ──
+            def mkDir(d, k)       = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)      = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k) = k(FileSystem.mkTempDir(prefix))
         }
 
 }
