@@ -29,9 +29,9 @@ pub mod Fs.FileTime {
         checked_ecast(
             Fs.FileSystem.handle(
                 y -> checked_ecast(
-                    Fs.FileStat.handleWithFileSystem(
-                        handleWithFileStat(f)
-                    )(y)
+                    Fs.FileStat.runWithFileSystem(
+                        () -> runWithFileStat(() -> f(y))
+                    )
                 )
             )(x)
         )
@@ -47,8 +47,8 @@ pub mod Fs.FileTime {
     ///
     /// Handles the `FileTime` effect of the given function `f` using the `FileStat` effect.
     ///
-    pub def handleWithFileStat(f: a -> b \ ef): a -> b \ (ef - FileTime) + FileStat = x ->
-        run { f(x) } with handler FileTime {
+    pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FileTime) + FileStat =
+        run { f() } with handler FileTime {
             def accessTime(filename, k)       = k(Fs.FileStat.accessTime(filename))
             def creationTime(filename, k)     = k(Fs.FileStat.creationTime(filename))
             def modificationTime(filename, k) = k(Fs.FileStat.modificationTime(filename))

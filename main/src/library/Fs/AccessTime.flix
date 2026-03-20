@@ -21,8 +21,8 @@ pub mod Fs.AccessTime {
     ///
     /// Handles the `AccessTime` effect of the given function `f` using the `FileTime` effect.
     ///
-    pub def handleWithFileTime(f: a -> b \ ef): a -> b \ (ef - AccessTime) + FileTime = x ->
-        run { f(x) } with handler AccessTime {
+    pub def runWithFileTime(f: Unit -> a \ ef): a \ (ef - AccessTime) + FileTime =
+        run { f() } with handler AccessTime {
             def accessTime(filename, k) = k(Fs.FileTime.accessTime(filename))
         }
 

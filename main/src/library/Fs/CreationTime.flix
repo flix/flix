@@ -21,8 +21,8 @@ pub mod Fs.CreationTime {
     ///
     /// Handles the `CreationTime` effect of the given function `f` using the `FileTime` effect.
     ///
-    pub def handleWithFileTime(f: a -> b \ ef): a -> b \ (ef - CreationTime) + FileTime = x ->
-        run { f(x) } with handler CreationTime {
+    pub def runWithFileTime(f: Unit -> a \ ef): a \ (ef - CreationTime) + FileTime =
+        run { f() } with handler CreationTime {
             def creationTime(filename, k) = k(Fs.FileTime.creationTime(filename))
         }
 

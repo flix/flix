@@ -21,8 +21,8 @@ pub mod Fs.IsRegularFile {
     ///
     /// Handles the `IsRegularFile` effect of the given function `f` using the `FileTest` effect.
     ///
-    pub def handleWithFileTest(f: a -> b \ ef): a -> b \ (ef - IsRegularFile) + FileTest = x ->
-        run { f(x) } with handler IsRegularFile {
+    pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - IsRegularFile) + FileTest =
+        run { f() } with handler IsRegularFile {
             def isRegularFile(filename, k) = k(Fs.FileTest.isRegularFile(filename))
         }
 

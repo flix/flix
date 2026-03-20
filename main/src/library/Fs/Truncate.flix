@@ -21,8 +21,8 @@ pub mod Fs.Truncate {
     ///
     /// Handles the `Truncate` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - Truncate) + FileWrite = x ->
-        run { f(x) } with handler Truncate {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - Truncate) + FileWrite =
+        run { f() } with handler Truncate {
             def truncate(file, k) = k(Fs.FileWrite.truncate(file))
         }
 
