@@ -1133,6 +1133,59 @@ pub mod Fs.FileSystem {
         }
 
     ///
+    /// Middleware that intercepts the `FileSystem` effect, automatically rotating
+    /// files when they reach a size threshold before append operations.
+    ///
+    /// Before `append`, `appendLines`, and `appendBytes`, the target file's size
+    /// is checked. If it meets or exceeds `maxSize`, existing rotated files are
+    /// shifted (`file.1` → `file.2`, etc.), the oldest (`file.{maxFiles}`) is
+    /// deleted, and the current file is moved to `file.1`. The append then
+    /// writes to the now-absent original path.
+    ///
+    /// All other operations are passed through unchanged.
+    ///
+    pub def withSizeRotation(maxSize: Size, maxFiles: Int32, f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
+        let doSize   = file -> FileSystem.size(file);
+        let doMove   = (src, dst) -> FileSystem.moveWith(src = src, dst, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDelete = file -> FileSystem.delete(file);
+        run { f() } with handler FileSystem {
+            // Read/stat/test ops — pass through
+            def exists(filename, k)           = k(FileSystem.exists(filename))
+            def isDirectory(filename, k)      = k(FileSystem.isDirectory(filename))
+            def isRegularFile(filename, k)    = k(FileSystem.isRegularFile(filename))
+            def isSymbolicLink(filename, k)   = k(FileSystem.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(FileSystem.isReadable(filename))
+            def isWritable(filename, k)       = k(FileSystem.isWritable(filename))
+            def isExecutable(filename, k)     = k(FileSystem.isExecutable(filename))
+            def accessTime(filename, k)       = k(FileSystem.accessTime(filename))
+            def creationTime(filename, k)     = k(FileSystem.creationTime(filename))
+            def modificationTime(filename, k) = k(FileSystem.modificationTime(filename))
+            def size(filename, k)             = k(FileSystem.size(filename))
+            def read(filename, k)             = k(FileSystem.read(filename))
+            def readLines(filename, k)        = k(FileSystem.readLines(filename))
+            def readBytes(filename, k)        = k(FileSystem.readBytes(filename))
+            def list(filename, k)             = k(FileSystem.list(filename))
+            def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
+
+            // Append ops — rotate if needed before appending
+            def append(data, file, k)      = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k) = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k) = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileSystem.appendBytes(data, file)))
+
+            // Other write ops — pass through
+            def write(data, file, k)          = k(FileSystem.write(data, file))
+            def writeLines(data, file, k)     = k(FileSystem.writeLines(data, file))
+            def writeBytes(data, file, k)     = k(FileSystem.writeBytes(data, file))
+            def truncate(file, k)             = k(FileSystem.truncate(file))
+            def copyWith(src, dst, opts, k)   = k(FileSystem.copyWith(src, dst, opts))
+            def moveWith(src, dst, opts, k)   = k(FileSystem.moveWith(src, dst, opts))
+            def delete(file, k)               = k(FileSystem.delete(file))
+            def mkDir(d, k)                   = k(FileSystem.mkDir(d))
+            def mkDirs(d, k)                  = k(FileSystem.mkDirs(d))
+            def mkTempDir(prefix, k)          = k(FileSystem.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileSystem` effect, providing data integrity
     /// via checksum sidecar files. Write operations produce checksum sidecars;
     /// read operations verify against them.
