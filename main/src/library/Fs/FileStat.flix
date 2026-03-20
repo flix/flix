@@ -30,7 +30,7 @@ pub mod Fs.FileStat {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileStat) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                handleWithFileSystem(f)
+                y -> runWithFileSystem(() -> f(y))
             )(x)
         )
 
@@ -45,8 +45,8 @@ pub mod Fs.FileStat {
     ///
     /// Handles the `FileStat` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - FileStat) + FileSystem = x ->
-        run { f(x) } with handler FileStat {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - FileStat) + FileSystem =
+        run { f() } with handler FileStat {
             def exists(filename, k)           = k(Fs.FileSystem.exists(filename))
             def isDirectory(filename, k)      = k(Fs.FileSystem.isDirectory(filename))
             def isRegularFile(filename, k)    = k(Fs.FileSystem.isRegularFile(filename))

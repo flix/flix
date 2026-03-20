@@ -21,8 +21,8 @@ pub mod Fs.ReadFile {
     ///
     /// Handles the `ReadFile` effect of the given function `f` using the `FileRead` effect.
     ///
-    pub def handleWithFileRead(f: a -> b \ ef): a -> b \ (ef - ReadFile) + FileRead = x ->
-        run { f(x) } with handler ReadFile {
+    pub def runWithFileRead(f: Unit -> a \ ef): a \ (ef - ReadFile) + FileRead =
+        run { f() } with handler ReadFile {
             def read(filename, k) = k(Fs.FileRead.read(filename))
         }
 

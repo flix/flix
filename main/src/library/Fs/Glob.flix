@@ -41,8 +41,8 @@ pub mod Fs.Glob {
     ///
     /// Handles the `Glob` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - Glob) + FileSystem = x ->
-        run { f(x) } with handler Glob {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - Glob) + FileSystem =
+        run { f() } with handler Glob {
             def glob(base, pattern, k) = k(Fs.FileSystem.glob(base, pattern))
         }
 

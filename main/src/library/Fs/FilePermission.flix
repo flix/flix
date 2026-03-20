@@ -31,9 +31,9 @@ pub mod Fs.FilePermission {
         checked_ecast(
             Fs.FileSystem.handle(
                 y -> checked_ecast(
-                    Fs.FileStat.handleWithFileSystem(
-                        handleWithFileStat(f)
-                    )(y)
+                    Fs.FileStat.runWithFileSystem(
+                        () -> runWithFileStat(() -> f(y))
+                    )
                 )
             )(x)
         )
@@ -49,8 +49,8 @@ pub mod Fs.FilePermission {
     ///
     /// Handles the `FilePermission` effect of the given function `f` using the `FileStat` effect.
     ///
-    pub def handleWithFileStat(f: a -> b \ ef): a -> b \ (ef - FilePermission) + FileStat = x ->
-        run { f(x) } with handler FilePermission {
+    pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FilePermission) + FileStat =
+        run { f() } with handler FilePermission {
             def isReadable(filename, k)  = k(Fs.FileStat.isReadable(filename))
             def isWritable(filename, k)  = k(Fs.FileStat.isWritable(filename))
             def isExecutable(filename, k) = k(Fs.FileStat.isExecutable(filename))

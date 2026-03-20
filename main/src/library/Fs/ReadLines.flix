@@ -21,8 +21,8 @@ pub mod Fs.ReadLines {
     ///
     /// Handles the `ReadLines` effect of the given function `f` using the `FileRead` effect.
     ///
-    pub def handleWithFileRead(f: a -> b \ ef): a -> b \ (ef - ReadLines) + FileRead = x ->
-        run { f(x) } with handler ReadLines {
+    pub def runWithFileRead(f: Unit -> a \ ef): a \ (ef - ReadLines) + FileRead =
+        run { f() } with handler ReadLines {
             def readLines(filename, k) = k(Fs.FileRead.readLines(filename))
         }
 

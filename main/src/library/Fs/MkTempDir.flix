@@ -21,8 +21,8 @@ pub mod Fs.MkTempDir {
     ///
     /// Handles the `MkTempDir` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - MkTempDir) + FileWrite = x ->
-        run { f(x) } with handler MkTempDir {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - MkTempDir) + FileWrite =
+        run { f() } with handler MkTempDir {
             def mkTempDir(prefix, k) = k(Fs.FileWrite.mkTempDir(prefix))
         }
 

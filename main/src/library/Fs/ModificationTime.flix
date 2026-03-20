@@ -21,8 +21,8 @@ pub mod Fs.ModificationTime {
     ///
     /// Handles the `ModificationTime` effect of the given function `f` using the `FileTime` effect.
     ///
-    pub def handleWithFileTime(f: a -> b \ ef): a -> b \ (ef - ModificationTime) + FileTime = x ->
-        run { f(x) } with handler ModificationTime {
+    pub def runWithFileTime(f: Unit -> a \ ef): a \ (ef - ModificationTime) + FileTime =
+        run { f() } with handler ModificationTime {
             def modificationTime(filename, k) = k(Fs.FileTime.modificationTime(filename))
         }
 

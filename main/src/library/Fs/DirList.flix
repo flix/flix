@@ -41,8 +41,8 @@ pub mod Fs.DirList {
     ///
     /// Handles the `DirList` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - DirList) + FileSystem = x ->
-        run { f(x) } with handler DirList {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - DirList) + FileSystem =
+        run { f() } with handler DirList {
             def list(filename, k) = k(Fs.FileSystem.list(filename))
         }
 

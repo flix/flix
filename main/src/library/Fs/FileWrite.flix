@@ -44,7 +44,7 @@ pub mod Fs.FileWrite {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWrite) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                handleWithFileSystem(f)
+                y -> runWithFileSystem(() -> f(y))
             )(x)
         )
 
@@ -59,8 +59,8 @@ pub mod Fs.FileWrite {
     ///
     /// Handles the `FileWrite` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - FileWrite) + FileSystem = x ->
-        run { f(x) } with handler FileWrite {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileSystem =
+        run { f() } with handler FileWrite {
             def write(data, file, k)        = k(Fs.FileSystem.write(data, file))
             def writeLines(data, file, k)   = k(Fs.FileSystem.writeLines(data, file))
             def writeBytes(data, file, k)   = k(Fs.FileSystem.writeBytes(data, file))
