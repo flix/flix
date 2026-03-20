@@ -92,6 +92,14 @@ pub mod Result {
     }
 
     ///
+    /// Aborts with a stack trace if `r` is `Err`.
+    ///
+    pub def orAbort(r: Result[e, t]): Unit \ Abort = match r {
+        case Ok(_)  => ()
+        case Err(_) => Abort.abortWithTrace("Result.orAbort(): called on Err")
+    }
+
+    ///
     /// Returns `Ok(v)` if `r` is `Ok(v)`. Otherwise returns `default`.
     ///
     pub def withDefault(default: {default = Result[e2, t]}, r: Result[e1, t]): Result[e2, t] = match r {
