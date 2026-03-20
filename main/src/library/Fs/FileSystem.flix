@@ -1154,8 +1154,15 @@ pub mod Fs.FileSystem {
     pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
                          f: Unit -> a \ ef): a \ (ef - FileSystem) + FileSystem =
         let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
-        let verify = (file, bytes) -> Fs.FsLayer.verifyChecksum(file, sidecar, computeHex(bytes),
-            f1 -> FileSystem.read(f1));
+        let doReadBytes = file -> FileSystem.readBytes(file);
+        let doReadSidecar = file -> FileSystem.read(file);
+        let updateSidecar = file ->
+            forM (bytes <- FileSystem.readBytes(file);
+                  _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
+                yield ();
+        let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
+        let doMoveSidecar = (s, d) -> FileSystem.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDeleteSidecar = file -> FileSystem.delete(file);
         run { f() } with handler FileSystem {
             // ── Stat/test/perm/time/size — pass through ──
             def exists(filename, k)           = k(FileSystem.exists(filename))
@@ -1173,97 +1180,26 @@ pub mod Fs.FileSystem {
             def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
 
             // ── Read ops — verify checksum after read ──
-            def read(filename, k) = {
-                let result = FileSystem.read(filename);
-                k(Result.flatMap(v ->
-                    Result.flatMap(bytes ->
-                        Result.map(_ -> v, verify(filename, bytes)),
-                    FileSystem.readBytes(filename)),
-                result))
-            }
-            def readLines(filename, k) = {
-                let result = FileSystem.readLines(filename);
-                k(Result.flatMap(v ->
-                    Result.flatMap(bytes ->
-                        Result.map(_ -> v, verify(filename, bytes)),
-                    FileSystem.readBytes(filename)),
-                result))
-            }
-            def readBytes(filename, k) = {
-                let result = FileSystem.readBytes(filename);
-                k(Result.flatMap(bytes ->
-                    Result.map(_ -> bytes, verify(filename, bytes)),
-                result))
-            }
+            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex,
+                FileSystem.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex,
+                FileSystem.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex,
+                FileSystem.readBytes(filename), doReadSidecar))
 
             // ── Write ops — update checksum sidecar after write ──
-            def write(data, file, k) = k(
-                forM (_ <- FileSystem.write(data, file);
-                      bytes <- FileSystem.readBytes(file);
-                      _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
-                    yield ()
-            )
-            def writeLines(data, file, k) = k(
-                forM (_ <- FileSystem.writeLines(data, file);
-                      bytes <- FileSystem.readBytes(file);
-                      _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
-                    yield ()
-            )
-            def writeBytes(data, file, k) = k(
-                forM (_ <- FileSystem.writeBytes(data, file);
-                      bytes <- FileSystem.readBytes(file);
-                      _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
-                    yield ()
-            )
-            def append(data, file, k) = k(
-                forM (_ <- FileSystem.append(data, file);
-                      bytes <- FileSystem.readBytes(file);
-                      _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
-                    yield ()
-            )
-            def appendLines(data, file, k) = k(
-                forM (_ <- FileSystem.appendLines(data, file);
-                      bytes <- FileSystem.readBytes(file);
-                      _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
-                    yield ()
-            )
-            def appendBytes(data, file, k) = k(
-                forM (_ <- FileSystem.appendBytes(data, file);
-                      bytes <- FileSystem.readBytes(file);
-                      _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
-                    yield ()
-            )
-            def truncate(file, k) = k(
-                forM (_ <- FileSystem.truncate(file);
-                      bytes <- FileSystem.readBytes(file);
-                      _ <- FileSystem.write(str = computeHex(bytes), file + sidecar))
-                    yield ()
-            )
-            def copyWith(src, dst, opts, k) = k(
-                forM (_ <- FileSystem.copyWith(src, dst, opts);
-                      bytes <- FileSystem.readBytes(dst);
-                      _ <- FileSystem.write(str = computeHex(bytes), dst + sidecar))
-                    yield ()
-            )
-            def moveWith(src, dst, opts, k) = {
-                let result = FileSystem.moveWith(src, dst, opts);
-                match result {
-                    case Ok(_) =>
-                        discard FileSystem.moveWith(src = src#src + sidecar, dst + sidecar,
-                            Set#{Fs.MoveOption.ReplaceExisting});
-                        k(Ok(()))
-                    case Err(e) => k(Err(e))
-                }
-            }
-            def delete(file, k) = {
-                let result = FileSystem.delete(file);
-                match result {
-                    case Ok(_) =>
-                        discard FileSystem.delete(file + sidecar);
-                        k(Ok(()))
-                    case Err(e) => k(Err(e))
-                }
-            }
+            def write(data, file, k)        = k(afterWrite(file, () -> FileSystem.write(data, file)))
+            def writeLines(data, file, k)   = k(afterWrite(file, () -> FileSystem.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(afterWrite(file, () -> FileSystem.writeBytes(data, file)))
+            def append(data, file, k)       = k(afterWrite(file, () -> FileSystem.append(data, file)))
+            def appendLines(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendBytes(data, file)))
+            def truncate(file, k)           = k(afterWrite(file, () -> FileSystem.truncate(file)))
+            def copyWith(src, dst, opts, k) = k(afterWrite(dst, () -> FileSystem.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar,
+                FileSystem.moveWith(src, dst, opts), doMoveSidecar))
+            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar,
+                FileSystem.delete(file), doDeleteSidecar))
 
             // ── Directory ops — pass through ──
             def mkDir(d, k)       = k(FileSystem.mkDir(d))

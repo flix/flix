@@ -826,6 +826,92 @@ mod Fs.FsLayer {
             case Err(e) => Err(e)
         }
 
+    ///
+    /// Performs `doWrite`, then computes and writes a checksum sidecar for `file`.
+    ///
+    /// `doUpdateSidecar(file)` should read the file bytes, hash them, and
+    /// write the hex digest to the sidecar path.
+    ///
+    pub def checksumAfterWrite(
+        file: String,
+        doWrite: Unit -> Result[IoError, Unit] \ ef,
+        doUpdateSidecar: String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        Result.flatMap(_ -> doUpdateSidecar(file), doWrite())
+
+    ///
+    /// Verifies a `readBytes` result against a checksum sidecar.
+    ///
+    /// The returned bytes are hashed via `computeHex` and compared against
+    /// the sidecar. If no sidecar exists, the result passes through.
+    ///
+    pub def checksumOnReadBytes(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        readResult: Result[IoError, Vector[Int8]],
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, Vector[Int8]] \ ef =
+        Result.flatMap(bytes ->
+            Result.map(_ -> bytes, verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar)),
+        readResult)
+
+    ///
+    /// Verifies a `read` or `readLines` result against a checksum sidecar.
+    ///
+    /// Since the result type (`String` or `List[String]`) does not preserve
+    /// raw bytes, `doReadBytes` is called to obtain the on-disk bytes for
+    /// hashing. If no sidecar exists, the result passes through.
+    ///
+    pub def checksumOnRead(
+        file: String,
+        sidecar: String,
+        computeHex: Vector[Int8] -> String,
+        readResult: Result[IoError, a],
+        doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef,
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, a] \ ef =
+        Result.flatMap(v ->
+            Result.flatMap(bytes ->
+                Result.map(_ -> v, verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar)),
+            doReadBytes(file)),
+        readResult)
+
+    ///
+    /// Moves the checksum sidecar after a successful `moveWith`.
+    ///
+    /// If the source sidecar does not exist, the move result is returned
+    /// unchanged. Sidecar move errors are discarded.
+    ///
+    pub def checksumAfterMove(
+        src: String,
+        dst: String,
+        sidecar: String,
+        moveResult: Result[IoError, Unit],
+        doMoveSidecar: String -> String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match moveResult {
+            case Ok(_)  => { discard doMoveSidecar(src + sidecar, dst + sidecar); Ok(()) }
+            case Err(e) => Err(e)
+        }
+
+    ///
+    /// Deletes the checksum sidecar after a successful `delete`.
+    ///
+    /// If the sidecar does not exist, the delete result is returned
+    /// unchanged. Sidecar delete errors are discarded.
+    ///
+    pub def checksumAfterDelete(
+        file: String,
+        sidecar: String,
+        deleteResult: Result[IoError, Unit],
+        doDeleteSidecar: String -> Result[IoError, Unit] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match deleteResult {
+            case Ok(_)  => { discard doDeleteSidecar(file + sidecar); Ok(()) }
+            case Err(e) => Err(e)
+        }
+
     // ─── Private helper ────────────────────────────────────────────────
 
     ///

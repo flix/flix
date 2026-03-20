@@ -202,31 +202,15 @@ pub mod Fs.FileRead {
     pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
                          f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
         let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
-        let verify = (file, bytes) -> Fs.FsLayer.verifyChecksum(file, sidecar, computeHex(bytes),
-            f1 -> FileRead.read(f1));
+        let doReadBytes = file -> FileRead.readBytes(file);
+        let doReadSidecar = file -> FileRead.read(file);
         run { f() } with handler FileRead {
-            def read(filename, k) = {
-                let result = FileRead.read(filename);
-                k(Result.flatMap(v ->
-                    Result.flatMap(bytes ->
-                        Result.map(_ -> v, verify(filename, bytes)),
-                    FileRead.readBytes(filename)),
-                result))
-            }
-            def readLines(filename, k) = {
-                let result = FileRead.readLines(filename);
-                k(Result.flatMap(v ->
-                    Result.flatMap(bytes ->
-                        Result.map(_ -> v, verify(filename, bytes)),
-                    FileRead.readBytes(filename)),
-                result))
-            }
-            def readBytes(filename, k) = {
-                let result = FileRead.readBytes(filename);
-                k(Result.flatMap(bytes ->
-                    Result.map(_ -> bytes, verify(filename, bytes)),
-                result))
-            }
+            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex,
+                FileRead.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex,
+                FileRead.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex,
+                FileRead.readBytes(filename), doReadSidecar))
         }
 
 }
