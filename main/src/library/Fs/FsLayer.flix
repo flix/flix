@@ -40,6 +40,7 @@ mod Fs.FsLayer {
     import java.nio.file.PathMatcher
     import java.nio.file.StandardOpenOption
     import java.util.stream.BaseStream
+    import java.util.HexFormat
     import java.util.UUID
     import java.util.stream.Stream
 
@@ -787,6 +788,42 @@ mod Fs.FsLayer {
                     case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
                     case Err(e) => Err(e)
                 }
+        }
+
+    // ─── Checksum helpers ──────────────────────────────────────────────
+
+    ///
+    /// Converts a vector of bytes to a lowercase hex string.
+    ///
+    pub def bytesToHex(v: Vector[Int8]): String = region rc {
+        let arr = Vector.toArray(rc, v);
+        unsafe IO { HexFormat.of().formatHex(arr) }
+    }
+
+    ///
+    /// Verifies `actual` (a hex digest string) against the checksum stored in
+    /// the sidecar file `file + sidecar`.
+    ///
+    /// - If the sidecar does not exist (`NotFound`), returns `Ok(())`.
+    /// - If the sidecar exists and matches, returns `Ok(())`.
+    /// - If the sidecar exists and does not match, returns
+    ///   `Err(IoError(InvalidData, ...))`.
+    ///
+    pub def verifyChecksum(
+        file: String,
+        sidecar: String,
+        actual: String,
+        doReadSidecar: String -> Result[IoError, String] \ ef
+    ): Result[IoError, Unit] \ ef =
+        match doReadSidecar(file + sidecar) {
+            case Ok(expected) =>
+                if (String.trim(expected) == actual)
+                    Ok(())
+                else
+                    Err(IoError(ErrorKind.InvalidData,
+                        "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"))
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
+            case Err(e) => Err(e)
         }
 
     // ─── Private helper ────────────────────────────────────────────────

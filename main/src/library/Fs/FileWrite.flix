@@ -17,6 +17,7 @@
 pub mod Fs.FileWrite {
 
     use Fs.FileStat
+    use Fs.FileRead
     use Fs.FileSystem
     use Fs.FileWrite
     use Fs.FsLayer.{logPre, logPost}
@@ -558,6 +559,98 @@ pub mod Fs.FileWrite {
             def mkDir(d, k)                 = k(FileWrite.mkDir(d))
             def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
             def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, computing checksums
+    /// after write operations and storing them as sidecar files.
+    ///
+    /// `hash` is a pure function from file bytes to digest bytes.
+    /// `sidecar` is the file suffix (e.g., `".sha256"`).
+    ///
+    /// After `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, `truncate`, and `copyWith`, the file is re-read and
+    /// its checksum sidecar is updated.
+    ///
+    /// After `moveWith`, the source's sidecar is moved to the destination path.
+    /// After `delete`, the sidecar file is also removed.
+    ///
+    /// `mkDir`, `mkDirs`, and `mkTempDir` are passed through unchanged.
+    ///
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileRead} =
+        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        run { f() } with handler FileWrite {
+            def write(data, file, k) = k(
+                forM (_ <- FileWrite.write(data, file);
+                      bytes <- FileRead.readBytes(file);
+                      _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
+                    yield ()
+            )
+            def writeLines(data, file, k) = k(
+                forM (_ <- FileWrite.writeLines(data, file);
+                      bytes <- FileRead.readBytes(file);
+                      _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
+                    yield ()
+            )
+            def writeBytes(data, file, k) = k(
+                forM (_ <- FileWrite.writeBytes(data, file);
+                      bytes <- FileRead.readBytes(file);
+                      _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
+                    yield ()
+            )
+            def append(data, file, k) = k(
+                forM (_ <- FileWrite.append(data, file);
+                      bytes <- FileRead.readBytes(file);
+                      _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
+                    yield ()
+            )
+            def appendLines(data, file, k) = k(
+                forM (_ <- FileWrite.appendLines(data, file);
+                      bytes <- FileRead.readBytes(file);
+                      _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
+                    yield ()
+            )
+            def appendBytes(data, file, k) = k(
+                forM (_ <- FileWrite.appendBytes(data, file);
+                      bytes <- FileRead.readBytes(file);
+                      _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
+                    yield ()
+            )
+            def truncate(file, k) = k(
+                forM (_ <- FileWrite.truncate(file);
+                      bytes <- FileRead.readBytes(file);
+                      _ <- FileWrite.write(str = computeHex(bytes), file + sidecar))
+                    yield ()
+            )
+            def copyWith(src, dst, opts, k) = k(
+                forM (_ <- FileWrite.copyWith(src, dst, opts);
+                      bytes <- FileRead.readBytes(dst);
+                      _ <- FileWrite.write(str = computeHex(bytes), dst + sidecar))
+                    yield ()
+            )
+            def moveWith(src, dst, opts, k) = {
+                let result = FileWrite.moveWith(src, dst, opts);
+                match result {
+                    case Ok(_) =>
+                        discard FileWrite.moveWith(src = src#src + sidecar, dst + sidecar,
+                            Set#{Fs.MoveOption.ReplaceExisting});
+                        k(Ok(()))
+                    case Err(e) => k(Err(e))
+                }
+            }
+            def delete(file, k) = {
+                let result = FileWrite.delete(file);
+                match result {
+                    case Ok(_) =>
+                        discard FileWrite.delete(file + sidecar);
+                        k(Ok(()))
+                    case Err(e) => k(Err(e))
+                }
+            }
+            def mkDir(d, k)       = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)      = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k) = k(FileWrite.mkTempDir(prefix))
         }
 
 }

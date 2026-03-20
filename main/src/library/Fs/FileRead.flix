@@ -187,4 +187,46 @@ pub mod Fs.FileRead {
             def readBytes(filename, k) = k(Result.flatMap(_ -> FileRead.readBytes(filename), Result.flatMap(check, FileStat.size(filename))))
         }
 
+    ///
+    /// Middleware that intercepts the `FileRead` effect, verifying file checksums
+    /// on read. If a sidecar checksum file exists (e.g., `"data.txt.sha256"` when
+    /// `sidecar` is `".sha256"`), the file's contents are hashed and compared
+    /// against the stored checksum.
+    ///
+    /// `hash` is a pure function from file bytes to digest bytes.
+    /// `sidecar` is the file suffix (e.g., `".sha256"`).
+    ///
+    /// If no sidecar file exists, the read proceeds normally.
+    /// If the checksum does not match, returns `Err(IoError(InvalidData, ...))`.
+    ///
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let verify = (file, bytes) -> Fs.FsLayer.verifyChecksum(file, sidecar, computeHex(bytes),
+            f1 -> FileRead.read(f1));
+        run { f() } with handler FileRead {
+            def read(filename, k) = {
+                let result = FileRead.read(filename);
+                k(Result.flatMap(v ->
+                    Result.flatMap(bytes ->
+                        Result.map(_ -> v, verify(filename, bytes)),
+                    FileRead.readBytes(filename)),
+                result))
+            }
+            def readLines(filename, k) = {
+                let result = FileRead.readLines(filename);
+                k(Result.flatMap(v ->
+                    Result.flatMap(bytes ->
+                        Result.map(_ -> v, verify(filename, bytes)),
+                    FileRead.readBytes(filename)),
+                result))
+            }
+            def readBytes(filename, k) = {
+                let result = FileRead.readBytes(filename);
+                k(Result.flatMap(bytes ->
+                    Result.map(_ -> bytes, verify(filename, bytes)),
+                result))
+            }
+        }
+
 }
