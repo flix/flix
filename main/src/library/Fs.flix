@@ -70,11 +70,12 @@
 /// withReadOnly                                                                              x          x
 /// withAtomicWrite                                                                           x          x
 /// withBackup                                                                                x          x
+/// withConflictCheck                                                                         x          x
 /// withMkParentDirs                                                                          x          x
 /// withSizeRotation                                                                          x          x
 /// withMemoryOverlay                                                                                    x
 /// withInMemoryFS                                                                                       x
-/// withConflictCheck                                                                         x          x
+//
 pub mod Fs {
 
     /// In-memory overlay state, parameterized by region.
