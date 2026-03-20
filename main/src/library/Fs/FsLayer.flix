@@ -852,9 +852,9 @@ mod Fs.FsLayer {
         readResult: Result[IoError, Vector[Int8]],
         doReadSidecar: String -> Result[IoError, String] \ ef
     ): Result[IoError, Vector[Int8]] \ ef =
-        Result.flatMap(bytes ->
-            Result.map(_ -> bytes, verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar)),
-        readResult)
+        forM (bytes <- readResult;
+              _     <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar))
+            yield bytes
 
     ///
     /// Verifies a `read` or `readLines` result against a checksum sidecar.
@@ -871,11 +871,10 @@ mod Fs.FsLayer {
         doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef,
         doReadSidecar: String -> Result[IoError, String] \ ef
     ): Result[IoError, a] \ ef =
-        Result.flatMap(v ->
-            Result.flatMap(bytes ->
-                Result.map(_ -> v, verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar)),
-            doReadBytes(file)),
-        readResult)
+        forM (v     <- readResult;
+              bytes <- doReadBytes(file);
+              _     <- verifyChecksum(file, sidecar, computeHex(bytes), doReadSidecar))
+            yield v
 
     ///
     /// Moves the checksum sidecar after a successful `moveWith`.
