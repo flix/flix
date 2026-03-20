@@ -596,6 +596,67 @@ pub mod Fs.FileWrite {
         }
 
     ///
+    /// Middleware that intercepts the `FileWrite` effect, tracking file modification
+    /// times across writes and checking for external modifications before each write.
+    ///
+    /// Before `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, and `truncate`, the file's current modification time is
+    /// compared against the last recorded snapshot. If they differ, a `Conflict`
+    /// error is returned. After a successful write, the modification time is
+    /// re-snapshotted for subsequent checks.
+    ///
+    /// For `copyWith` and `moveWith`, the conflict check is applied to the
+    /// destination path.
+    ///
+    /// After `delete`, the snapshot for that file is removed.
+    ///
+    /// `mkDir`, `mkDirs`, and `mkTempDir` are passed through unchanged.
+    ///
+    /// Note: Unlike the `FileSystem` version, this middleware does not snapshot
+    /// on read operations. Conflict detection begins after the first write to
+    /// each file, catching write-write conflicts from external processes.
+    ///
+    pub def withConflictCheck(f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
+        region rc {
+            let snapshots: MutMap[String, Int64, rc] = MutMap.empty(rc);
+            let getModTime = file -> FileStat.modificationTime(file);
+            let snap = file -> Fs.FsLayer.snapshotModTime(file, snapshots, getModTime);
+            let check = file -> Fs.FsLayer.conflictCheck(file, snapshots, getModTime);
+            let checkAndResnap = (file, doWrite) ->
+                forM (_ <- check(file); v <- doWrite())
+                    yield { snap(file); v };
+            run { f() } with handler FileWrite {
+                // ── Write ops — conflict check before, re-snapshot after ──
+                def write(data, file, k)        = k(checkAndResnap(file, () -> FileWrite.write(data, file)))
+                def writeLines(data, file, k)   = k(checkAndResnap(file, () -> FileWrite.writeLines(data, file)))
+                def writeBytes(data, file, k)   = k(checkAndResnap(file, () -> FileWrite.writeBytes(data, file)))
+                def append(data, file, k)       = k(checkAndResnap(file, () -> FileWrite.append(data, file)))
+                def appendLines(data, file, k)  = k(checkAndResnap(file, () -> FileWrite.appendLines(data, file)))
+                def appendBytes(data, file, k)  = k(checkAndResnap(file, () -> FileWrite.appendBytes(data, file)))
+                def truncate(file, k)           = k(checkAndResnap(file, () -> FileWrite.truncate(file)))
+                def delete(file, k) = {
+                    match check(file) {
+                        case Err(e) => k(Err(e))
+                        case Ok(_)  =>
+                            let result = FileWrite.delete(file);
+                            match result {
+                                case Ok(_) => MutMap.remove(file, snapshots)
+                                case _     => ()
+                            };
+                            k(result)
+                    }
+                }
+                // ── Copy/move — conflict check on destination ──
+                def copyWith(src, dst, opts, k) = k(checkAndResnap(dst, () -> FileWrite.copyWith(src, dst, opts)))
+                def moveWith(src, dst, opts, k) = k(checkAndResnap(dst, () -> FileWrite.moveWith(src, dst, opts)))
+                // ── Directory ops — pass through ──
+                def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+                def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+                def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+            }
+        }
+
+    ///
     /// Middleware that intercepts the `FileWrite` effect, computing checksums
     /// after write operations and storing them as sidecar files.
     ///
