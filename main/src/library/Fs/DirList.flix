@@ -21,6 +21,24 @@ pub mod Fs.DirList {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
+    /// Handles the `DirList` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `DirList` effect using the `IO` effect.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - DirList) + IO = x ->
+        run { f(x) } with handler DirList {
+            def list(filename, k) = k(Fs.FsLayer.list(filename))
+        }
+
+    ///
+    /// Runs the `DirList` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `DirList` effect using the `IO` effect.
+    ///
+    @DefaultHandler
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - DirList) + IO = handle(f)()
+
+    ///
     /// Handles the `DirList` effect of the given function `f` using the `FileSystem` effect.
     ///
     pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - DirList) + FileSystem = x ->
