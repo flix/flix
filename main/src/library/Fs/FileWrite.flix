@@ -596,10 +596,8 @@ pub mod Fs.FileWrite {
             def appendBytes(data, file, k)  = k(afterWrite(file, () -> FileWrite.appendBytes(data, file)))
             def truncate(file, k)           = k(afterWrite(file, () -> FileWrite.truncate(file)))
             def copyWith(src, dst, opts, k) = k(afterWrite(dst, () -> FileWrite.copyWith(src, dst, opts)))
-            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar,
-                FileWrite.moveWith(src, dst, opts), doMoveSidecar))
-            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar,
-                FileWrite.delete(file), doDeleteSidecar))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileWrite.moveWith(src, dst, opts), doMoveSidecar))
+            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileWrite.delete(file), doDeleteSidecar))
             def mkDir(d, k)                 = k(FileWrite.mkDir(d))
             def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
             def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))

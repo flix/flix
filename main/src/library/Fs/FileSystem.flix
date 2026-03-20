@@ -1180,12 +1180,9 @@ pub mod Fs.FileSystem {
             def glob(base, pattern, k)        = k(FileSystem.glob(base, pattern))
 
             // ── Read ops — verify checksum after read ──
-            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex,
-                FileSystem.read(filename), doReadBytes, doReadSidecar))
-            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex,
-                FileSystem.readLines(filename), doReadBytes, doReadSidecar))
-            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex,
-                FileSystem.readBytes(filename), doReadSidecar))
+            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileSystem.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileSystem.readBytes(filename), doReadSidecar))
 
             // ── Write ops — update checksum sidecar after write ──
             def write(data, file, k)        = k(afterWrite(file, () -> FileSystem.write(data, file)))
@@ -1196,10 +1193,8 @@ pub mod Fs.FileSystem {
             def appendBytes(data, file, k)  = k(afterWrite(file, () -> FileSystem.appendBytes(data, file)))
             def truncate(file, k)           = k(afterWrite(file, () -> FileSystem.truncate(file)))
             def copyWith(src, dst, opts, k) = k(afterWrite(dst, () -> FileSystem.copyWith(src, dst, opts)))
-            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar,
-                FileSystem.moveWith(src, dst, opts), doMoveSidecar))
-            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar,
-                FileSystem.delete(file), doDeleteSidecar))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileSystem.moveWith(src, dst, opts), doMoveSidecar))
+            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileSystem.delete(file), doDeleteSidecar))
 
             // ── Directory ops — pass through ──
             def mkDir(d, k)       = k(FileSystem.mkDir(d))

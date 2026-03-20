@@ -205,12 +205,9 @@ pub mod Fs.FileRead {
         let doReadBytes = file -> FileRead.readBytes(file);
         let doReadSidecar = file -> FileRead.read(file);
         run { f() } with handler FileRead {
-            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex,
-                FileRead.read(filename), doReadBytes, doReadSidecar))
-            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex,
-                FileRead.readLines(filename), doReadBytes, doReadSidecar))
-            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex,
-                FileRead.readBytes(filename), doReadSidecar))
+            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileRead.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileRead.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileRead.readBytes(filename), doReadSidecar))
         }
 
 }
