@@ -70,6 +70,24 @@ mod TestOption {
         assertTrue(Result.isErr(r))
 
     /////////////////////////////////////////////////////////////////////////////
+    // orAbort                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def orAbort01(): Unit \ Assert =
+        let r = run {
+            Option.orAbort(Some(42))
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(()), r)
+
+    @Test
+    def orAbort02(): Unit \ Assert =
+        let r = run {
+            Option.orAbort((None: Option[Int32]))
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+
+    /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

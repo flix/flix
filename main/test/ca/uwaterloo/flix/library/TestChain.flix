@@ -1,6 +1,7 @@
 mod TestChain {
 
     use Assert.{assertEq, assertTrue, assertFalse, fail};
+    use Math.Shuffle
 
     /////////////////////////////////////////////////////////////////////////////
     // Collectable.collect                                                     //

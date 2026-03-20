@@ -35,12 +35,6 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
   // For instance numSwapLines = 10 gives a total of 330 swaps per file.
   private val numSwapLines = 15
 
-  test("simple-card-game") {
-    val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
-    val lines = Files.lines(filepath)
-    compileWithSwappedLines(lines)
-  }
-
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
@@ -48,7 +42,7 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
   }
 
   test("ford-fulkerson") {
-    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val filepath = Paths.get("examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
     compileWithSwappedLines(lines)
   }

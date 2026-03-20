@@ -27,9 +27,8 @@ class TestFormatter extends AnyFunSuite {
     "examples/traits/trait-with-higher-kinded-type.flix",
 
     // Larger examples
-    "examples/larger-examples/lambda-calculus.flix",
-    "examples/larger-examples/program-analysis/IDE.flix",
-    "examples/larger-examples/restrictable-variants/sequences.flix",
+    "examples/unsorted/static-analysis/IDE.flix",
+    "examples/unsorted/restrictable-variants/sequences.flix",
 
     // Functional style
     "examples/functional-style/algebraic-data-types-and-pattern-matching.flix",
@@ -50,8 +49,8 @@ class TestFormatter extends AnyFunSuite {
     "examples/imperative-style/iterating-over-lists-with-foreach.flix",
 
     // Declarative style
-    "examples/larger-examples/datalog/connect-graph.flix",
-    "examples/larger-examples/datalog/ford-fulkerson.flix",
+    "examples/datalog/connect-graph.flix",
+    "examples/datalog/ford-fulkerson.flix",
     "examples/datalog/compiler-puzzle.flix",
     "examples/datalog/railroad-network.flix",
     "examples/datalog/train-schedule.flix",
@@ -66,7 +65,6 @@ class TestFormatter extends AnyFunSuite {
     "examples/effects-and-handlers/process/process-exec-and-read-output.flix",
     "examples/effects-and-handlers/process/process-wait-and-exit-value.flix",
     "examples/effects-and-handlers/using-FileWriteWithResult.flix",
-    "examples/effects-and-handlers/using-Console.flix",
     "examples/effects-and-handlers/using-Logger.flix",
     "examples/effects-and-handlers/running-multiple-effects.flix",
     "examples/effects-and-handlers/using-Clock.flix",
@@ -193,8 +191,9 @@ class TestFormatter extends AnyFunSuite {
     * @return an option containing the syntax tree if found
     */
   private def findTreeBasedOnUri(root: SyntaxTree.Root, uri: String): Option[SyntaxTree.Tree] = {
+    val normalizedUri = Paths.get(uri).normalize().toString
     root.units.find {
-      case (path, _) => path.toString == uri
+      case (path, _) => path.toString == normalizedUri
     }.map {
       case (_, tree) => tree
     }

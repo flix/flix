@@ -19,7 +19,7 @@ pub mod Net.Http {
     use IoError.ErrorKind
     use IoError.IoError
     use Net.Http
-    use Net.HttpClient
+    use Net.HttpLayer
     use Net.HttpRequest
     use Net.HttpRequest.HttpRequest
     use Net.HttpResponse
@@ -27,6 +27,7 @@ pub mod Net.Http {
     use Net.RetryDecision
     use Net.RetryOutcome
     use RichString.{text, bold, cyan, green, yellow, red, gray}
+    use Time.Clock
     use Time.Duration
     use Time.Duration.toMillis
 
@@ -85,11 +86,11 @@ pub mod Net.Http {
     /// Re-interprets the `Http` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Http) + IO = x ->
-        let client = HttpClient.newDefaultClient();
+        let client = HttpLayer.newDefaultClient();
         run {
             f(x)
         } with handler Http {
-            def request(req, k) = k(HttpClient.execute((_) -> Ok(), client, req))
+            def request(req, k) = k(HttpLayer.execute((_) -> Ok(), client, req))
         }
 
     ///
@@ -112,7 +113,7 @@ pub mod Net.Http {
                 def request(req, k) =
                     let now = Clock.now();
                     let wait = intervalMs - (now - Ref.get(last));
-                    if (wait > 0i64) { unsafe IO { HttpClient.sleep(wait) } };
+                    if (wait > 0i64) { unsafe IO { HttpLayer.sleep(wait) } };
                     Ref.put(Clock.now(), last);
                     k(Http.request(req))
             }
@@ -143,7 +144,7 @@ pub mod Net.Http {
                             Ref.put(Ref.get(tokens) - 1, tokens)
                         } else {
                             let wait = intervalMs - (Clock.now() - Ref.get(lastTime));
-                            if (wait > 0i64) { unsafe IO { HttpClient.sleep(wait) } };
+                            if (wait > 0i64) { unsafe IO { HttpLayer.sleep(wait) } };
                             acquire()
                         }
                     };
@@ -179,11 +180,11 @@ pub mod Net.Http {
                             match MutDeque.peekFront(timestamps) {
                                 case Some(oldest) =>
                                     let wait = windowMs - (now - oldest);
-                                    if (wait > 0i64) { unsafe IO { HttpClient.sleep(wait) } };
+                                    if (wait > 0i64) { unsafe IO { HttpLayer.sleep(wait) } };
                                     acquire()
                                 case None =>
                                     // maxRequests <= 0: sleep for the full window and retry.
-                                    unsafe IO { HttpClient.sleep(windowMs) };
+                                    unsafe IO { HttpLayer.sleep(windowMs) };
                                     acquire()
                             }
                         }
@@ -261,12 +262,12 @@ pub mod Net.Http {
                         case Ok(resp) if HttpResponse.isSuccess(resp) => Ok(resp)
                         case Ok(resp) =>
                             match strategy(attempt, req, RetryOutcome.HttpError(resp)) {
-                                case RetryDecision.Retry(d) => unsafe IO { HttpClient.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
+                                case RetryDecision.Retry(d) => unsafe IO { HttpLayer.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
                                 case RetryDecision.Stop     => Ok(resp)
                             }
                         case Err(error) =>
                             match strategy(attempt, req, RetryOutcome.TransportError(error)) {
-                                case RetryDecision.Retry(d) => unsafe IO { HttpClient.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
+                                case RetryDecision.Retry(d) => unsafe IO { HttpLayer.sleep(toMillis(d)); loop(attempt + 1) } // sleep is pure here
                                 case RetryDecision.Stop     => Err(error)
                             }
                     };

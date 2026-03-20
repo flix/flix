@@ -1,6 +1,8 @@
-def main(): Unit \ {NonDet, IO} =
+use Math.Random
+
+def main(): Unit \ IO =
     run {
-        let flip = Random.randomBool();
+        let flip = Random.randomFloat64() > 0.5;
         if (flip)
             println("heads")
         else

@@ -2,6 +2,7 @@ mod TestArray {
 
     use Array.sameElements;
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse, assertSome, assertNone};
+    use Math.Shuffle
 
     /////////////////////////////////////////////////////////////////////////////
     // binarySearch                                                            //
