@@ -197,7 +197,7 @@ pub mod Fs.FileRead {
     /// `sidecar` is the file suffix (e.g., `".sha256"`).
     ///
     /// If no sidecar file exists, the read proceeds normally.
-    /// If the checksum does not match, returns `Err(IoError(InvalidData, ...))`.
+    /// If the checksum does not match, returns `Err(IoError(ChecksumMismatch, ...))`.
     ///
     pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
                          f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =

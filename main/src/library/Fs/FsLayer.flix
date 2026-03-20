@@ -820,7 +820,7 @@ mod Fs.FsLayer {
                 if (String.trim(expected) == actual)
                     Ok(())
                 else
-                    Err(IoError(ErrorKind.InvalidData,
+                    Err(IoError(ErrorKind.ChecksumMismatch,
                         "Checksum mismatch for '${file}': expected ${String.trim(expected)}, got ${actual}"))
             case Err(IoError(ErrorKind.NotFound, _)) => Ok(())
             case Err(e) => Err(e)
