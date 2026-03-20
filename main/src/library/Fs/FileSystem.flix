@@ -17,7 +17,7 @@
 pub mod Fs.FileSystem {
 
     use Fs.FileSystem
-    use Fs.FsLayer.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPre2, logPost, logPost2}
     use Fs.Size
     use Fs.Size.bytes
     use IoError.IoError
@@ -231,15 +231,15 @@ pub mod Fs.FileSystem {
                 k(result)
             }
             def copyWith(src, dst, opts, k) = {
-                logPre("copy", src#src);
+                logPre2("copy", src#src, dst);
                 let result = FileSystem.copyWith(src, dst, opts);
-                logPost("copy", src#src, _ -> dst, result);
+                logPost2("copy", src#src, dst, result);
                 k(result)
             }
             def moveWith(src, dst, opts, k) = {
-                logPre("move", src#src);
+                logPre2("move", src#src, dst);
                 let result = FileSystem.moveWith(src, dst, opts);
-                logPost("move", src#src, _ -> dst, result);
+                logPost2("move", src#src, dst, result);
                 k(result)
             }
             def delete(file, k) = {
