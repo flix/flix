@@ -834,9 +834,9 @@ mod Fs.FsLayer {
         file: String,
         sidecar: String,
         computeHex: Vector[Int8] -> String,
-        doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef,
-        doWriteSidecar: (String, String) -> Result[IoError, Unit] \ ef
-    ): Result[IoError, Unit] \ ef =
+        doReadBytes: String -> Result[IoError, Vector[Int8]] \ ef1,
+        doWriteSidecar: (String, String) -> Result[IoError, Unit] \ ef2
+    ): Result[IoError, Unit] \ ef1 + ef2 =
         forM (bytes <- doReadBytes(file);
               _     <- doWriteSidecar(computeHex(bytes), file + sidecar))
             yield ()
@@ -849,9 +849,9 @@ mod Fs.FsLayer {
     ///
     pub def checksumAfterWrite(
         file: String,
-        doWrite: Unit -> Result[IoError, Unit] \ ef,
-        doUpdateSidecar: String -> Result[IoError, Unit] \ ef
-    ): Result[IoError, Unit] \ ef =
+        doWrite: Unit -> Result[IoError, Unit] \ ef1,
+        doUpdateSidecar: String -> Result[IoError, Unit] \ ef2
+    ): Result[IoError, Unit] \ ef1 + ef2 =
         Result.flatMap(_ -> doUpdateSidecar(file), doWrite())
 
     ///
