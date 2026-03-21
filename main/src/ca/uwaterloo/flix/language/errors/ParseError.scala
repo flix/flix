@@ -376,7 +376,7 @@ object ParseError {
   case class MissingBinaryOperator(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
     def code: ErrorCode = ErrorCode.E9061
-    def summary: String = s"Missing operator between expression."
+    def summary: String = s"Missing operator between expressions."
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
       s""">> Missing operator.
