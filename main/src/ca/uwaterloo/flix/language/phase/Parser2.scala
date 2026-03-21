@@ -1452,8 +1452,7 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      } else if ((nth(0) == TokenKind.NameLowercase || nth(0) == TokenKind.NameUppercase) && s.inBlock) {
-        // NOTE: This branch will be extended to cover more expressions.
+      } else if (nth(0).canFollowBinaryOperator && s.inBlock) {
         val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
         if (isNewLine) {
           // Different line: infer a missing semicolon

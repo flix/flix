@@ -543,4 +543,15 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     rejectError[ResolutionError.UndefinedName](result)
     expectError[ParseError.MissingBinaryOperator](result)
   }
+
+  test("MissingBinaryOperator.03") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    bar 2
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBinaryOperator](error)
+  }
 }

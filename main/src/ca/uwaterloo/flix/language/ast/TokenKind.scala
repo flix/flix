@@ -491,6 +491,31 @@ sealed trait TokenKind {
     case _ => false
   }
 
+  /**
+    * Returns `true` if this token can follow a binary operator.
+    * This is used to determine whether a binary operator could be missing.
+    * Used by the parser's same-line missing-operator.
+    */
+  def canFollowBinaryOperator: Boolean = this match {
+    case TokenKind.NameLowercase                => true
+    case TokenKind.NameUppercase                => true
+    case TokenKind.NameMath                     => true
+    case TokenKind.LiteralInt                   => true
+    case TokenKind.LiteralInt8                  => true
+    case TokenKind.LiteralInt16                 => true
+    case TokenKind.LiteralInt32                 => true
+    case TokenKind.LiteralInt64                 => true
+    case TokenKind.LiteralBigInt                => true
+    case TokenKind.LiteralFloat                 => true
+    case TokenKind.LiteralFloat32               => true
+    case TokenKind.LiteralFloat64               => true
+    case TokenKind.LiteralBigDecimal            => true
+    case TokenKind.LiteralChar                  => true
+    case TokenKind.LiteralString                => true
+    case TokenKind.LiteralStringInterpolationL  => true
+    case _                                      => false
+  }
+
   /** Returns `true` if this token can validly appear as the first token of a type. */
   def isFirstInType: Boolean = this match {
     case TokenKind.AngleL => true
