@@ -1332,7 +1332,6 @@ object Weeder2 {
                   throw InternalCompilerException(s"Expr.Binary operator not recognized", tree.loc)
               }
           }
-
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
     }
