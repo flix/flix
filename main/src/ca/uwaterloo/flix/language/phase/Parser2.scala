@@ -93,6 +93,9 @@ object Parser2 {
       * a list there.
       */
     val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
+
+    /** True when the parser is currently inside a block expression. */
+    var inBlock: Boolean = false
   }
 
   /**
@@ -1449,7 +1452,7 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      } else if (nth(0) == TokenKind.NameLowercase) {
+      } else if ((nth(0) == TokenKind.NameLowercase || nth(0) == TokenKind.NameUppercase) && s.inBlock) {
         // NOTE: This branch will be extended to cover more expressions.
         val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
         if (isNewLine) {
@@ -1461,14 +1464,22 @@ object Parser2 {
           lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
         } else {
-          // Same line: create a Binary with a synthetic empty operator.
-          // The Weeder will detect the empty operator and emit ParseError.MissingBinaryOperator.
+          // Same line: create a Binary with an explicit ErrorOperator child.
+          // The Weeder will detect ErrorOperator and emit ParseError.MissingBinaryOperator,
+          // then produce LetMatch(Wild) so both expressions can be evaluated.
           val mark = openBefore(lhs)
           val markOp = open()
+          close(open(), TreeKind.ErrorOperator)
           close(markOp, TreeKind.Operator)
           expression()
           lhs = close(mark, TreeKind.Expr.Binary)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          // Continue parsing statements if ';' appears after Binary Expression
+          if (eat(TokenKind.Semi)) {
+            statement()
+            lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          }
         }
       } else if (!rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
@@ -2232,7 +2243,10 @@ object Parser2 {
       if (eat(TokenKind.CurlyR)) { // Handle an empty block.
         return close(mark, TreeKind.Expr.RecordOperation)
       }
+      val wasInBlock = s.inBlock
+      s.inBlock = true
       statement()
+      s.inBlock = wasInBlock
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Block)
     }

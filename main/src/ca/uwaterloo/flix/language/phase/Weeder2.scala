@@ -1277,12 +1277,7 @@ object Weeder2 {
       flatMapN(op0, traverse(exprs)(visitExpr)) {
         case (op, e1 :: e2 :: Nil) =>
           if (op.children.isEmpty) {
-            // Synthetic empty operator inserted by the parser for a missing binary operator.
-            // Highlight the space between the two expressions.
-            val betweenLoc = SourceLocation(isReal = true, e1.loc.source, e1.loc.end, e2.loc.start)
-            val error = ParseError.MissingBinaryOperator(SyntacticContext.Expr.OtherExpr, betweenLoc)
-            sctx.errors.add(error)
-            Validation.Success(Expr.Error(error))
+            throw InternalCompilerException("Unexpected empty Operator node", tree.loc)
           } else {
             def mkApply(name: String): Expr.Apply = Expr.Apply(
               Expr.Ambiguous(Name.mkQName(name, op.loc), op.loc), List(e1, e2),
@@ -1295,8 +1290,15 @@ object Weeder2 {
                 val opExpr = Expr.Ambiguous(name, op.loc)
                 Validation.Success(Expr.Infix(e1, opExpr, e2, tree.loc))
               case None =>
-                // Single Token Operator.
+                // Single Token Operator (or synthetic ErrorOperator).
                 op.children.head match {
+                  case t: SyntaxTree.Tree if t.kind == TreeKind.ErrorOperator =>
+                    // Explicit ErrorOperator inserted by the parser for a missing binary operator.
+                    // Highlight the space between the two expressions.
+                    val betweenLoc = SourceLocation(isReal = true, e1.loc.source, e1.loc.end, e2.loc.start)
+                    val error = ParseError.MissingBinaryOperator(SyntacticContext.Expr.OtherExpr, betweenLoc)
+                    sctx.errors.add(error)
+                    Validation.Success(Expr.LetMatch(Pattern.Wild(tree.loc.asSynthetic), None, e1, e2, tree.loc))
                   // Standard operators.
                   case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
                     Validation.Success(mkApply(tokenOperatorToName(kind).get))
