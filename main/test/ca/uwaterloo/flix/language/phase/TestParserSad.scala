@@ -515,7 +515,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val error = check(input, Options.TestWithLibNix)
-    expectError[ParseError.ExpectedSemicolon](error, allowUnknown = true)
+    expectError[ParseError.ExpectedSemicolon](error)
   }
 
   test("MissingBinaryOperator.01") {
@@ -526,7 +526,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val error = check(input, Options.TestWithLibNix)
-    expectError[ParseError.MissingBinaryOperator](error, allowUnknown = true)
+    expectError[ParseError.MissingBinaryOperator](error)
   }
 
   test("MissingBinaryOperator.02") {
