@@ -6,6 +6,7 @@ package ca.uwaterloo.flix.tools
   */
 sealed trait Doc {
   def <>(right: Doc): Doc = Doc.Concat(this, right)
+  def <+>(right: Doc): Doc = Doc.Concat(this, Doc.Concat(Doc.space, right))
 }
 
 object Doc {
