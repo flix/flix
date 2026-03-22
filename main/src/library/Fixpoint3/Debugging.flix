@@ -23,13 +23,7 @@ pub mod Fixpoint3.Debugging {
     use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.BoxingType
     use Fixpoint3.Options
-
-    import java.io.IOException
-    import java.nio.charset.StandardCharsets
-    import java.nio.file.Files
-    import java.nio.file.OpenOption
-    import java.nio.file.Paths
-    import java.nio.file.StandardOpenOption
+    use Fs.FileWrite
 
     ///
     /// Write `s` to standard file. Overwrite if `overwrite` is true, otherwise append.
@@ -37,24 +31,12 @@ pub mod Fixpoint3.Debugging {
     def flush(s: String, overwrite: Bool): Unit \ IO =
         if (Options.enableDebugToFile()) {
             let filename = Options.debugFileName();
-            let res = unsafe IO {
-                try {
-                    let bytes = s.getBytes(StandardCharsets.UTF_8);
-                    if (overwrite) {
-                        Files.write(Paths.get(filename), bytes, (...{}: Vector[OpenOption]));
-                        Ok(())
-                    } else {
-                        let opts: Vector[OpenOption] = ...{
-                            checked_cast(StandardOpenOption.APPEND),
-                            checked_cast(StandardOpenOption.CREATE)
-                        };
-                        Files.write(Paths.get(filename), bytes, opts);
-                        Ok(())
-                    }
-                } catch {
-                    case ex: IOException => Err(ex.getMessage())
-                }
-            };
+            let res = run {
+                if (overwrite)
+                    FileWrite.write(str = s, filename)
+                else
+                    FileWrite.append(str = s, filename)
+            } with Fs.FileWrite.runWithIO;
             match res {
                 case Ok(_) => ()
                 case Err(e) => println(e)
