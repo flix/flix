@@ -1,5 +1,4 @@
-package ca.uwaterloo.flix.tools
-
+package ca.uwaterloo.flix.tools.fmt
 
 /**
   * A simple pretty-printing Document type based on the Wadler-Lindig algorithm.
@@ -47,17 +46,14 @@ object Doc {
 
     while (stack.nonEmpty) {
       stack.pop() match {
-        case Empty => empty
-        case Text(s) => result.append(s)
-        case Concat(left, right) =>
-          stack.push(right)
-          stack.push(left)
-        case Nest(_, inner) => stack.push(inner)
+        case Empty       => empty
+        case Text(s)     => result.append(s)
+        case Concat(left,right) => stack.push(right); stack.push(left)
+        case Nest(_, inner)  => stack.push(inner)
         case SoftLine(s) => result.append(s)
-        case Group(inner) => stack.push(inner)
+        case Group(inner)=> stack.push(inner)
       }
     }
-
     result.toString()
   }
 }
