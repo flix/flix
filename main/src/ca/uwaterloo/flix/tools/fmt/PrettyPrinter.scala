@@ -39,6 +39,7 @@ object PrettyPrinter {
     */
   private def treeToDocWithLast(tree: SyntaxTree.Tree, prevToken: Option[Token]): (Doc, Option[Token]) =
     tree.kind match {
+
       case TreeKind.UsesOrImports.UseOrImportList =>
         (reorderImportsToDoc(tree), collectTokens(tree).lastOption)
       case _ =>
