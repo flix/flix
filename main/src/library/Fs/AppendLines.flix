@@ -16,62 +16,13 @@
 
 pub mod Fs.AppendLines {
 
-    import java.io.IOException
-    import java.lang.UnsupportedOperationException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.OpenOption
-    import java.nio.file.Paths
-    import java.nio.file.StandardOpenOption
-
     use Fs.FileWrite
-    use IoError.IoError
-    use IoError.ErrorKind
-
-    ///
-    /// Handles the `AppendLines` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `AppendLines` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - AppendLines) + IO = x ->
-        run {
-            f(x)
-        } with handler AppendLines {
-            def appendLines(data, file, k) = {
-                let res = try {
-                    let opts: Vector[OpenOption] = ...{
-                        checked_cast(StandardOpenOption.APPEND),
-                        checked_cast(StandardOpenOption.CREATE)
-                    };
-                    let bf = Files.newBufferedWriter(Paths.get(file), opts);
-                    List.forEach(line -> {
-                        bf.write(line, 0, String.length(line));
-                        bf.newLine()
-                    }, data#lines);
-                    bf.close();
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
-
-    ///
-    /// Runs the `AppendLines` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `AppendLines` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - AppendLines) + IO = handle(f)()
 
     ///
     /// Handles the `AppendLines` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - AppendLines) + FileWrite = x ->
-        run { f(x) } with handler AppendLines {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - AppendLines) + FileWrite =
+        run { f() } with handler AppendLines {
             def appendLines(data, file, k) = k(Fs.FileWrite.appendLines(data, file))
         }
 

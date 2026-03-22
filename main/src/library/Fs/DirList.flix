@@ -16,14 +16,9 @@
 
 pub mod Fs.DirList {
 
-    import java.io.File
-    import java.io.IOException
-    import java.nio.file.InvalidPathException
-    import java.nio.file.NotDirectoryException
-
+    use Fs.DirList
     use Fs.FileSystem
-    use IoError.IoError
-    use IoError.ErrorKind
+    use Fs.FsLayer.{logPre, logPost}
 
     ///
     /// Handles the `DirList` effect of the given function `f`.
@@ -31,20 +26,8 @@ pub mod Fs.DirList {
     /// In other words, re-interprets the `DirList` effect using the `IO` effect.
     ///
     pub def handle(f: a -> b \ ef): a -> b \ (ef - DirList) + IO = x ->
-        run {
-            f(x)
-        } with handler DirList {
-            def list(filename, k) = {
-                let res = try {
-                    let file = new File(filename);
-                    Ok(Array.toList(file.list()))
-                } catch {
-                    case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: NotDirectoryException => Err(IoError(ErrorKind.NotDirectory, ex.getMessage()))
-                    case ex: IOException           => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
+        run { f(x) } with handler DirList {
+            def list(filename, k) = k(Fs.FsLayer.list(filename))
         }
 
     ///
@@ -58,9 +41,102 @@ pub mod Fs.DirList {
     ///
     /// Handles the `DirList` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - DirList) + FileSystem = x ->
-        run { f(x) } with handler DirList {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - DirList) + FileSystem =
+        run { f() } with handler DirList {
             def list(filename, k) = k(Fs.FileSystem.list(filename))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, logging each operation
+    /// and its result via the `Logger` effect.
+    ///
+    /// Successful operations are logged at `Debug` level; errors at `Warn`.
+    ///
+    pub def withLogging(f: Unit -> a \ ef): a \ (ef - DirList) + {DirList, Logger} =
+        run { f() } with handler DirList {
+            def list(filename, k) = {
+                logPre("list", filename);
+                let result = DirList.list(filename);
+                logPost("list", filename, ls -> "${List.length(ls)} entries", result);
+                k(result)
+            }
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, resolving all file paths
+    /// relative to the given `baseDir` using Java's `Path.resolve` semantics.
+    ///
+    /// Absolute paths are passed through unchanged.
+    ///
+    pub def withBaseDir(baseDir: String, f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let r = p -> Fs.FsLayer.resolve(baseDir, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(DirList.list(r(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, validating that all file paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, validating that all file paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, validating that all file paths
+    /// match at least one of the given glob `patterns`. Rejects paths that do not match
+    /// with a `PermissionDenied` error.
+    ///
+    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, validating that all file paths
+    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+    /// pattern with a `PermissionDenied` error.
+    ///
+    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(Result.flatMap(p -> DirList.list(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `DirList` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - DirList) + DirList =
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler DirList {
+            def list(filename, k) = k(DirList.list(resolve(filename)))
         }
 
 }

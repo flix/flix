@@ -16,48 +16,13 @@
 
 pub mod Fs.ReadBytes {
 
-    import java.io.IOException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileRead
-    use IoError.IoError
-    use IoError.ErrorKind
-
-    ///
-    /// Handles the `ReadBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `ReadBytes` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - ReadBytes) + IO = x ->
-        run {
-            f(x)
-        } with handler ReadBytes {
-            def readBytes(filename, k) = {
-                let res = try {
-                    Ok(Array.toVector(Files.readAllBytes(Paths.get(filename))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
-
-    ///
-    /// Runs the `ReadBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `ReadBytes` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ReadBytes) + IO = handle(f)()
 
     ///
     /// Handles the `ReadBytes` effect of the given function `f` using the `FileRead` effect.
     ///
-    pub def handleWithFileRead(f: a -> b \ ef): a -> b \ (ef - ReadBytes) + FileRead = x ->
-        run { f(x) } with handler ReadBytes {
+    pub def runWithFileRead(f: Unit -> a \ ef): a \ (ef - ReadBytes) + FileRead =
+        run { f() } with handler ReadBytes {
             def readBytes(filename, k) = k(Fs.FileRead.readBytes(filename))
         }
 

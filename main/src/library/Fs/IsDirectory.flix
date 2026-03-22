@@ -16,47 +16,13 @@
 
 pub mod Fs.IsDirectory {
 
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.LinkOption
-    import java.nio.file.Paths
-
     use Fs.FileTest
-    use IoError.IoError
-    use IoError.ErrorKind
-
-    ///
-    /// Handles the `IsDirectory` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsDirectory` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - IsDirectory) + IO = x ->
-        run {
-            f(x)
-        } with handler IsDirectory {
-            def isDirectory(filename, k) = {
-                let res = try {
-                    Ok(Files.isDirectory(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
-
-    ///
-    /// Runs the `IsDirectory` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsDirectory` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - IsDirectory) + IO = handle(f)()
 
     ///
     /// Handles the `IsDirectory` effect of the given function `f` using the `FileTest` effect.
     ///
-    pub def handleWithFileTest(f: a -> b \ ef): a -> b \ (ef - IsDirectory) + FileTest = x ->
-        run { f(x) } with handler IsDirectory {
+    pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - IsDirectory) + FileTest =
+        run { f() } with handler IsDirectory {
             def isDirectory(filename, k) = k(Fs.FileTest.isDirectory(filename))
         }
 

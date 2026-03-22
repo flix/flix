@@ -14,45 +14,132 @@
  * limitations under the License.
  */
 
+/// Effect Hierarchy ([D] = has @DefaultHandler):
+///
+/// FileSystem [D]                      (29 ops — unified root)
+/// ├── FileStat [D]                    (11 ops)
+/// │   ├── FileTest [D]                (4 ops)
+/// │   │   ├── FileExists                    — exists
+/// │   │   ├── IsDirectory                   — isDirectory
+/// │   │   ├── IsRegularFile                 — isRegularFile
+/// │   │   └── IsSymbolicLink                — isSymbolicLink
+/// │   ├── FilePermission [D]          (3 ops)
+/// │   │   ├── IsReadable                    — isReadable
+/// │   │   ├── IsWritable                    — isWritable
+/// │   │   └── IsExecutable                  — isExecutable
+/// │   ├── FileTime [D]                (3 ops)
+/// │   │   ├── AccessTime                    — accessTime
+/// │   │   ├── CreationTime                  — creationTime
+/// │   │   └── ModificationTime              — modificationTime
+/// │   └── FileSize                          — size
+/// ├── FileRead [D]                    (3 ops)
+/// │   ├── ReadFile                          — read
+/// │   ├── ReadLines                         — readLines
+/// │   └── ReadBytes                         — readBytes
+/// ├── DirList [D]                           — list
+/// ├── Glob [D]                              — glob
+/// └── FileWrite [D]                   (13 ops)
+///     ├── WriteFile                         — write
+///     ├── WriteLines                        — writeLines
+///     ├── WriteBytes                        — writeBytes
+///     ├── AppendFile                        — append
+///     ├── AppendLines                       — appendLines
+///     ├── AppendBytes                       — appendBytes
+///     ├── Truncate                          — truncate
+///     ├── CopyFile                          — copyWith
+///     ├── MoveFile                          — moveWith
+///     ├── DeleteFile                        — delete
+///     ├── MkDir                             — mkDir
+///     ├── MkDirs                            — mkDirs
+///     └── MkTempDir                         — mkTempDir
+///
+/// Middleware Availability:
+///
+///                    FileTest  FilePermission  FileTime  FileStat  FileRead  DirList  Glob  FileWrite  FileSystem
+/// withLogging        x         x               x         x         x         x        x     x          x
+/// withBaseDir        x         x               x         x         x         x        x     x          x
+/// withChroot         x         x               x         x         x         x        x     x          x
+/// withAllowList      x         x               x         x         x         x        x     x          x
+/// withDenyList       x         x               x         x         x         x        x     x          x
+/// withAllowGlob      x         x               x         x         x         x        x     x          x
+/// withDenyGlob       x         x               x         x         x         x        x     x          x
+/// withFollowLinks    x         x               x         x         x         x        x     x          x
+/// withTransferLimit                                                x                        x          x
+/// withChecksum                                                     x                        x          x
+/// withDryRun                                                                                x          x
+/// withReadOnly                                                                              x          x
+/// withAtomicWrite                                                                           x          x
+/// withBackup                                                                                x          x
+/// withConflictCheck                                                                         x          x
+/// withMkParentDirs                                                                          x          x
+/// withSizeRotation                                                                          x          x
+/// withMemoryOverlay                                                                                    x
+/// withInMemoryFS                                                                                       x
+//
 pub mod Fs {
 
-    // Effect Hierarchy:
-    //
-    // FileSystem                          (25 ops — unified root)
-    // ├── FileStat                        (11 ops)
-    // │   ├── FileTest                    (4 ops)
-    // │   │   ├── FileExists                    — exists
-    // │   │   ├── IsDirectory                   — isDirectory
-    // │   │   ├── IsRegularFile                 — isRegularFile
-    // │   │   └── IsSymbolicLink                — isSymbolicLink
-    // │   ├── FilePermission              (3 ops)
-    // │   │   ├── IsReadable                    — isReadable
-    // │   │   ├── IsWritable                    — isWritable
-    // │   │   └── IsExecutable                  — isExecutable
-    // │   ├── FileTime                    (3 ops)
-    // │   │   ├── AccessTime                    — accessTime
-    // │   │   ├── CreationTime                  — creationTime
-    // │   │   └── ModificationTime              — modificationTime
-    // │   └── FileSize                          — size
-    // ├── FileRead                        (3 ops)
-    // │   ├── ReadFile                          — read
-    // │   ├── ReadLines                         — readLines
-    // │   └── ReadBytes                         — readBytes
-    // ├── DirList                               — list
-    // └── FileWrite                       (10 ops)
-    //     ├── WriteFile                         — write
-    //     ├── WriteLines                        — writeLines
-    //     ├── WriteBytes                        — writeBytes
-    //     ├── AppendFile                        — append
-    //     ├── AppendLines                       — appendLines
-    //     ├── AppendBytes                       — appendBytes
-    //     ├── Truncate                          — truncate
-    //     ├── MkDir                             — mkDir
-    //     ├── MkDirs                            — mkDirs
-    //     └── MkTempDir                         — mkTempDir
+    /// In-memory overlay state, parameterized by region.
+    ///
+    /// - `files`:     map from normalized absolute paths to in-memory content (text or bytes).
+    /// - `dirs`:      set of normalized absolute paths registered as directories.
+    /// - `whiteouts`: set of normalized absolute paths deleted in the overlay (hides lower-layer entries).
+    /// - `counter`:   monotonically increasing counter for generating unique temp directory names.
+    pub struct MemoryOverlay[r: Region] {
+        mut files: Map[String, MemoryOverlay.OverlayEntry],
+        mut dirs: Set[String],
+        mut whiteouts: Set[String],
+        mut counter: Int32
+    }
+
+    /// Fully in-memory filesystem state, parameterized by region.
+    ///
+    /// - `files`:   map from normalized absolute paths to in-memory content (text or bytes).
+    /// - `dirs`:    set of normalized absolute paths registered as directories.
+    /// - `times`:   map from normalized absolute paths to `{atime, ctime, mtime}` records (ms since epoch).
+    /// - `counter`: monotonically increasing counter for generating unique temp directory names.
+    pub struct InMemoryFs[r: Region] {
+        mut files: Map[String, InMemoryFs.Entry],
+        mut dirs: Set[String],
+        mut times: Map[String, {atime = Int64, ctime = Int64, mtime = Int64}],
+        mut counter: Int32
+    }
+
+    ///
+    /// Options for the `copyWith` operation.
+    ///
+    pub enum CopyOption with Eq, Order, ToString {
+        case CopyAttributes
+        case ReplaceExisting
+    }
+
+    ///
+    /// Options for the `moveWith` operation.
+    ///
+    pub enum MoveOption with Eq, Order, ToString {
+        case AtomicMove
+        case ReplaceExisting
+    }
+
+    ///
+    /// Represents a file size stored as bytes (Int64).
+    ///
+    pub enum Size(Int64) with Eq, Order, Hash
+
+    ///
+    /// Represents a size unit.
+    ///
+    pub enum SizeUnit with Eq, ToString {
+        case Bytes,
+        case KiloBytes,
+        case MegaBytes,
+        case GigaBytes,
+        case TeraBytes
+    }
 
     ///
     /// An effect used to check if a file exists.
+    ///
+    /// Use the `FileExists.runWithFileTest` handler.
     ///
     pub eff FileExists {
 
@@ -66,6 +153,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a path is a directory.
     ///
+    /// Use the `IsDirectory.runWithFileTest` handler.
+    ///
     pub eff IsDirectory {
 
         ///
@@ -77,6 +166,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a path is a regular file.
+    ///
+    /// Use the `IsRegularFile.runWithFileTest` handler.
     ///
     pub eff IsRegularFile {
 
@@ -90,6 +181,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a path is a symbolic link.
     ///
+    /// Use the `IsSymbolicLink.runWithFileTest` handler.
+    ///
     pub eff IsSymbolicLink {
 
         ///
@@ -101,6 +194,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a file is readable.
+    ///
+    /// Use the `IsReadable.runWithFilePermission` handler.
     ///
     pub eff IsReadable {
 
@@ -114,6 +209,8 @@ pub mod Fs {
     ///
     /// An effect used to check if a file is writable.
     ///
+    /// Use the `IsWritable.runWithFilePermission` handler.
+    ///
     pub eff IsWritable {
 
         ///
@@ -125,6 +222,8 @@ pub mod Fs {
 
     ///
     /// An effect used to check if a file is executable.
+    ///
+    /// Use the `IsExecutable.runWithFilePermission` handler.
     ///
     pub eff IsExecutable {
 
@@ -138,6 +237,8 @@ pub mod Fs {
     ///
     /// An effect used to read the last access time of a file.
     ///
+    /// Use the `AccessTime.runWithFileTime` handler.
+    ///
     pub eff AccessTime {
 
         ///
@@ -149,6 +250,8 @@ pub mod Fs {
 
     ///
     /// An effect used to read the creation time of a file.
+    ///
+    /// Use the `CreationTime.runWithFileTime` handler.
     ///
     pub eff CreationTime {
 
@@ -162,6 +265,8 @@ pub mod Fs {
     ///
     /// An effect used to read the last modification time of a file.
     ///
+    /// Use the `ModificationTime.runWithFileTime` handler.
+    ///
     pub eff ModificationTime {
 
         ///
@@ -174,17 +279,21 @@ pub mod Fs {
     ///
     /// An effect used to read the size of a file.
     ///
+    /// Use the `FileSize.runWithFileStat` handler.
+    ///
     pub eff FileSize {
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
     }
 
     ///
     /// An effect used to read the contents of a file as a string.
+    ///
+    /// Use the `ReadFile.runWithFileRead` handler.
     ///
     pub eff ReadFile {
 
@@ -198,6 +307,8 @@ pub mod Fs {
     ///
     /// An effect used to read the lines of a file.
     ///
+    /// Use the `ReadLines.runWithFileRead` handler.
+    ///
     pub eff ReadLines {
 
         ///
@@ -209,6 +320,8 @@ pub mod Fs {
 
     ///
     /// An effect used to read the bytes of a file.
+    ///
+    /// Use the `ReadBytes.runWithFileRead` handler.
     ///
     pub eff ReadBytes {
 
@@ -222,6 +335,8 @@ pub mod Fs {
     ///
     /// An effect used to list the contents of a directory.
     ///
+    /// Use the `DirList.runWithFileSystem` handler.
+    ///
     pub eff DirList {
 
         ///
@@ -232,7 +347,23 @@ pub mod Fs {
     }
 
     ///
+    /// An effect used to find files matching a glob pattern.
+    ///
+    /// Use the `Glob.runWithFileSystem` handler.
+    ///
+    pub eff Glob {
+
+        ///
+        /// Returns a list of paths under `base` that match the given glob `pattern`.
+        ///
+        def glob(base: String, pattern: String): Result[IoError, List[String]]
+
+    }
+
+    ///
     /// An effect used to write the contents of a file as a string.
+    ///
+    /// Use the `WriteFile.runWithFileWrite` handler.
     ///
     pub eff WriteFile {
 
@@ -248,6 +379,8 @@ pub mod Fs {
     ///
     /// An effect used to write lines to a file.
     ///
+    /// Use the `WriteLines.runWithFileWrite` handler.
+    ///
     pub eff WriteLines {
 
         ///
@@ -261,6 +394,8 @@ pub mod Fs {
 
     ///
     /// An effect used to write bytes to a file.
+    ///
+    /// Use the `WriteBytes.runWithFileWrite` handler.
     ///
     pub eff WriteBytes {
 
@@ -276,6 +411,8 @@ pub mod Fs {
     ///
     /// An effect used to append a string to a file.
     ///
+    /// Use the `AppendFile.runWithFileWrite` handler.
+    ///
     pub eff AppendFile {
 
         ///
@@ -289,6 +426,8 @@ pub mod Fs {
 
     ///
     /// An effect used to append lines to a file.
+    ///
+    /// Use the `AppendLines.runWithFileWrite` handler.
     ///
     pub eff AppendLines {
 
@@ -304,6 +443,8 @@ pub mod Fs {
     ///
     /// An effect used to append bytes to a file.
     ///
+    /// Use the `AppendBytes.runWithFileWrite` handler.
+    ///
     pub eff AppendBytes {
 
         ///
@@ -318,6 +459,8 @@ pub mod Fs {
     ///
     /// An effect used to truncate a file.
     ///
+    /// Use the `Truncate.runWithFileWrite` handler.
+    ///
     pub eff Truncate {
 
         ///
@@ -328,7 +471,53 @@ pub mod Fs {
     }
 
     ///
+    /// An effect used to copy a file.
+    ///
+    /// Use the `CopyFile.runWithFileWrite` handler.
+    ///
+    pub eff CopyFile {
+
+        ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to move (rename) a file or directory.
+    ///
+    /// Use the `MoveFile.runWithFileWrite` handler.
+    ///
+    pub eff MoveFile {
+
+        ///
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
+        ///
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
+
+    }
+
+    ///
+    /// An effect used to delete a file.
+    ///
+    /// Use the `DeleteFile.runWithFileWrite` handler.
+    ///
+    pub eff DeleteFile {
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
+
+    }
+
+    ///
     /// An effect used to create a directory.
+    ///
+    /// Use the `MkDir.runWithFileWrite` handler.
     ///
     pub eff MkDir {
 
@@ -342,6 +531,8 @@ pub mod Fs {
     ///
     /// An effect used to create a directory and all its parent directories.
     ///
+    /// Use the `MkDirs.runWithFileWrite` handler.
+    ///
     pub eff MkDirs {
 
         ///
@@ -353,6 +544,8 @@ pub mod Fs {
 
     ///
     /// An effect used to create a temporary directory.
+    ///
+    /// Use the `MkTempDir.runWithFileWrite` handler.
     ///
     pub eff MkTempDir {
 
@@ -492,9 +685,9 @@ pub mod Fs {
         def modificationTime(f: String): Result[IoError, Int64]
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
     }
 
@@ -573,6 +766,23 @@ pub mod Fs {
         def truncate(f: String): Result[IoError, Unit]
 
         ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+        ///
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
+        ///
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
+
+        ///
         /// Creates the directory `d`.
         ///
         def mkDir(d: String): Result[IoError, Unit]
@@ -647,9 +857,9 @@ pub mod Fs {
         def modificationTime(f: String): Result[IoError, Int64]
 
         ///
-        /// Returns the size of the given file `f` in bytes.
+        /// Returns the size of the given file `f`.
         ///
-        def size(f: String): Result[IoError, Int64]
+        def size(f: String): Result[IoError, Size]
 
         ///
         /// Returns a string of all the contents of the given file `f`.
@@ -670,6 +880,11 @@ pub mod Fs {
         /// Returns a list with the names of all files and directories in the given directory `f`.
         ///
         def list(f: String): Result[IoError, List[String]]
+
+        ///
+        /// Returns a list of paths under `base` that match the given glob `pattern`.
+        ///
+        def glob(base: String, pattern: String): Result[IoError, List[String]]
 
         ///
         /// Writes `str` to the given file `f`.
@@ -719,6 +934,23 @@ pub mod Fs {
         def truncate(f: String): Result[IoError, Unit]
 
         ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+        ///
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
+        ///
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
+
+        ///
         /// Creates the directory `d`.
         ///
         def mkDir(d: String): Result[IoError, Unit]
@@ -737,4 +969,60 @@ pub mod Fs {
 
     }
 
+}
+
+instance Add[Fs.Size] {
+    pub def add(x: Fs.Size, y: Fs.Size): Fs.Size =
+        use Fs.Size.Size;
+        let Size(x1) = x;
+        let Size(y1) = y;
+        Size(x1 + y1)
+}
+
+instance Sub[Fs.Size] {
+    pub def sub(x: Fs.Size, y: Fs.Size): Fs.Size =
+        use Fs.Size.Size;
+        let Size(x1) = x;
+        let Size(y1) = y;
+        Size(x1 - y1)
+}
+
+instance ToString[Fs.Size] {
+    pub def toString(s: Fs.Size): String =
+        use Fs.Size.Size;
+        let Size(b) = s;
+        if (b == 0i64)
+            "0 B"
+        else
+            let abs = Int64.abs(b);
+            let sign = if (b < 0i64) "-" else "";
+            let tb1 = 1_024i64 * 1_024i64 * 1_024i64 * 1_024i64;
+            let gb1 = 1_024i64 * 1_024i64 * 1_024i64;
+            let mb1 = 1_024i64 * 1_024i64;
+            let kb1 = 1_024i64;
+            if (abs >= tb1)
+                let tb = abs / tb1;
+                let rem = abs - (tb * tb1);
+                let gb = rem / gb1;
+                "${sign}${tb} TB ${gb} GB"
+            else if (abs >= gb1)
+                let gb = abs / gb1;
+                let rem = abs - (gb * gb1);
+                let mb = rem / mb1;
+                "${sign}${gb} GB ${mb} MB"
+            else if (abs >= mb1)
+                let mb = abs / mb1;
+                let rem = abs - (mb * mb1);
+                let kb = rem / kb1;
+                "${sign}${mb} MB ${kb} KB"
+            else if (abs >= kb1)
+                let kb = abs / kb1;
+                let rem = abs - (kb * kb1);
+                "${sign}${kb} KB ${rem} B"
+            else
+                "${sign}${abs} B"
+}
+
+instance Formattable[Fs.Size] {
+    pub def format(s: Fs.Size): RichString = RichString.fromString(ToString.toString(s))
 }

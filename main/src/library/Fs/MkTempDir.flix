@@ -16,53 +16,13 @@
 
 pub mod Fs.MkTempDir {
 
-    import java.io.IOException
-    import java.lang.IllegalArgumentException
-    import java.lang.UnsupportedOperationException
-    import java.nio.file.attribute.FileAttribute
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileWrite
-    use IoError.IoError
-    use IoError.ErrorKind
-
-    ///
-    /// Handles the `MkTempDir` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `MkTempDir` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - MkTempDir) + IO = x ->
-        run {
-            f(x)
-        } with handler MkTempDir {
-            def mkTempDir(prefix, k) = {
-                let res = try {
-                    let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
-                    Ok(path.toString())
-                } catch {
-                    case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
-
-    ///
-    /// Runs the `MkTempDir` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `MkTempDir` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - MkTempDir) + IO = handle(f)()
 
     ///
     /// Handles the `MkTempDir` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - MkTempDir) + FileWrite = x ->
-        run { f(x) } with handler MkTempDir {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - MkTempDir) + FileWrite =
+        run { f() } with handler MkTempDir {
             def mkTempDir(prefix, k) = k(Fs.FileWrite.mkTempDir(prefix))
         }
 

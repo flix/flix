@@ -17,7 +17,7 @@
 pub mod Net.HttpRequest {
 
     use Net.Body
-    use Net.HttpClient
+    use Net.HttpLayer
     use Net.Method
     use Net.HttpRequest
     use Net.HttpRequest.HttpRequest
@@ -217,8 +217,8 @@ pub mod Net.HttpRequest {
     ///
     pub def withQueryParam(name: String, value: String, r: HttpRequest): HttpRequest =
         let HttpRequest(x) = r;
-        let encodedName = HttpClient.urlEncode(name);
-        let encodedValue = HttpClient.urlEncode(value);
+        let encodedName = HttpLayer.urlEncode(name);
+        let encodedValue = HttpLayer.urlEncode(value);
         let separator = if (String.contains(substr = "?", x#url)) "&" else "?";
         let newUrl = "${x#url}${separator}${encodedName}=${encodedValue}";
         HttpRequest({url = newUrl | x})

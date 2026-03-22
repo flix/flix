@@ -16,48 +16,13 @@
 
 pub mod Fs.ReadLines {
 
-    import java.io.IOException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.Paths
-
     use Fs.FileRead
-    use IoError.IoError
-    use IoError.ErrorKind
-
-    ///
-    /// Handles the `ReadLines` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `ReadLines` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - ReadLines) + IO = x ->
-        run {
-            f(x)
-        } with handler ReadLines {
-            def readLines(filename, k) = {
-                let res = try {
-                    Ok(ToFlix.toFlix(Files.readAllLines(Paths.get(filename))))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
-
-    ///
-    /// Runs the `ReadLines` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `ReadLines` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ReadLines) + IO = handle(f)()
 
     ///
     /// Handles the `ReadLines` effect of the given function `f` using the `FileRead` effect.
     ///
-    pub def handleWithFileRead(f: a -> b \ ef): a -> b \ (ef - ReadLines) + FileRead = x ->
-        run { f(x) } with handler ReadLines {
+    pub def runWithFileRead(f: Unit -> a \ ef): a \ (ef - ReadLines) + FileRead =
+        run { f() } with handler ReadLines {
             def readLines(filename, k) = k(Fs.FileRead.readLines(filename))
         }
 

@@ -16,55 +16,13 @@
 
 pub mod Fs.WriteBytes {
 
-    import java.io.IOException
-    import java.lang.UnsupportedOperationException
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.OpenOption
-    import java.nio.file.Paths
-
     use Fs.FileWrite
-    use IoError.IoError
-    use IoError.ErrorKind
-
-    ///
-    /// Handles the `WriteBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `WriteBytes` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - WriteBytes) + IO = x ->
-        run {
-            f(x)
-        } with handler WriteBytes {
-            def writeBytes(data, file, k) = {
-                let res = try {
-                    region rc {
-                        let bytes = Vector.toArray(rc, data);
-                        Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
-                        Ok(())
-                    }
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
-
-    ///
-    /// Runs the `WriteBytes` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `WriteBytes` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - WriteBytes) + IO = handle(f)()
 
     ///
     /// Handles the `WriteBytes` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - WriteBytes) + FileWrite = x ->
-        run { f(x) } with handler WriteBytes {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - WriteBytes) + FileWrite =
+        run { f() } with handler WriteBytes {
             def writeBytes(data, file, k) = k(Fs.FileWrite.writeBytes(data, file))
         }
 

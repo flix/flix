@@ -16,59 +16,13 @@
 
 pub mod Fs.AppendFile {
 
-    import java.io.IOException
-    import java.lang.UnsupportedOperationException
-    import java.nio.charset.StandardCharsets
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.OpenOption
-    import java.nio.file.Paths
-    import java.nio.file.StandardOpenOption
-
     use Fs.FileWrite
-    use IoError.IoError
-    use IoError.ErrorKind
-
-    ///
-    /// Handles the `AppendFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `AppendFile` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - AppendFile) + IO = x ->
-        run {
-            f(x)
-        } with handler AppendFile {
-            def append(data, file, k) = {
-                let res = try {
-                    let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-                    let opts: Vector[OpenOption] = ...{
-                        checked_cast(StandardOpenOption.APPEND),
-                        checked_cast(StandardOpenOption.CREATE)
-                    };
-                    Files.write(Paths.get(file), bytes, opts);
-                    Ok(())
-                } catch {
-                    case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
-
-    ///
-    /// Runs the `AppendFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `AppendFile` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - AppendFile) + IO = handle(f)()
 
     ///
     /// Handles the `AppendFile` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - AppendFile) + FileWrite = x ->
-        run { f(x) } with handler AppendFile {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - AppendFile) + FileWrite =
+        run { f() } with handler AppendFile {
             def append(data, file, k) = k(Fs.FileWrite.append(data, file))
         }
 

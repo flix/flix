@@ -16,47 +16,13 @@
 
 pub mod Fs.IsRegularFile {
 
-    import java.nio.file.Files
-    import java.nio.file.InvalidPathException
-    import java.nio.file.LinkOption
-    import java.nio.file.Paths
-
     use Fs.FileTest
-    use IoError.IoError
-    use IoError.ErrorKind
-
-    ///
-    /// Handles the `IsRegularFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsRegularFile` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - IsRegularFile) + IO = x ->
-        run {
-            f(x)
-        } with handler IsRegularFile {
-            def isRegularFile(filename, k) = {
-                let res = try {
-                    Ok(Files.isRegularFile(Paths.get(filename), (...{}: Vector[LinkOption])))
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                };
-                k(res)
-            }
-        }
-
-    ///
-    /// Runs the `IsRegularFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `IsRegularFile` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - IsRegularFile) + IO = handle(f)()
 
     ///
     /// Handles the `IsRegularFile` effect of the given function `f` using the `FileTest` effect.
     ///
-    pub def handleWithFileTest(f: a -> b \ ef): a -> b \ (ef - IsRegularFile) + FileTest = x ->
-        run { f(x) } with handler IsRegularFile {
+    pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - IsRegularFile) + FileTest =
+        run { f() } with handler IsRegularFile {
             def isRegularFile(filename, k) = k(Fs.FileTest.isRegularFile(filename))
         }
 
