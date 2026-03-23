@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.tools.fmt.rules
 import ca.uwaterloo.flix.language.ast.SyntaxTree
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.tools.fmt.Doc
-import ca.uwaterloo.flix.tools.fmt.Doc.{empty, lineBreak}
+import ca.uwaterloo.flix.tools.fmt.Doc.{empty, line}
 
 object ImportRules extends FormatterModule {
 
@@ -14,10 +14,10 @@ object ImportRules extends FormatterModule {
 
   private def formatUseOrImportList(tree: SyntaxTree.Tree): Doc = {
     val importTrees = tree.children.toList.collect {
-      case t: SyntaxTree.Tree
-        if t.kind == TreeKind.UsesOrImports.Use ||
-          t.kind == TreeKind.UsesOrImports.UseMany ||
-          t.kind == TreeKind.UsesOrImports.Import => t
+      case t: SyntaxTree.Tree if t.kind == TreeKind.UsesOrImports.Use ||
+        t.kind == TreeKind.UsesOrImports.UseMany ||
+        t.kind == TreeKind.UsesOrImports.Import =>
+        t
     }
 
     val (uses, imports) = importTrees.partition(t =>
@@ -31,7 +31,7 @@ object ImportRules extends FormatterModule {
     val allSorted = sortedUses ++ sortedImports
 
     allSorted.foldLeft(empty) { (acc, t) =>
-      acc <> treeToDoc(t) <> lineBreak("\n")
+      acc <> treeToDoc(t) <> line
     }
   }
 
@@ -40,4 +40,5 @@ object ImportRules extends FormatterModule {
     tokens.map(_.text).mkString("")
   }
 }
+
 

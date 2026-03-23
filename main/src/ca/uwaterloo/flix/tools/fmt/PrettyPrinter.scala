@@ -3,9 +3,12 @@ package ca.uwaterloo.flix.tools.fmt
 import ca.uwaterloo.flix.language.ast.SyntaxTree
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast.Token
-import ca.uwaterloo.flix.tools.fmt.Doc.{empty, lineBreak, pretty, space, text}
+import ca.uwaterloo.flix.tools.fmt.Doc.{empty, line, pretty, space, text}
 import ca.uwaterloo.flix.tools.fmt.rules.FormatterModule
 
+/**
+  * TODO: Think about nesting like Binary expression?
+  */
 object PrettyPrinter {
 
   /**
@@ -28,6 +31,12 @@ object PrettyPrinter {
   def format(tree: SyntaxTree.Tree): String =
     pretty(treeToDoc(tree))
 
+  /**
+    * Transforms a syntax tree into a document by applying the most specific formatting rule
+    * available for the tree's kind. If no specific rule is found, it reconstructs the document.
+    * @param tree the syntax tree to transform into a document
+    * @return a document representing the formatted structure of the given syntax tree
+    */
   private[tools] def treeToDoc(tree: SyntaxTree.Tree): Doc =
     rules.lift(tree).getOrElse(reconstruct(tree))
 
@@ -58,7 +67,7 @@ object PrettyPrinter {
     val newlines = gap.count(_ == '\n')
     val spaces   = gap.reverseIterator.takeWhile(_ == ' ').length
 
-    Iterator.fill(newlines)(lineBreak("\n")).foldLeft(empty)(_ <> _) <>
+    Iterator.fill(newlines)(line).foldLeft(empty)(_ <> _) <>
       Iterator.fill(spaces)(space).foldLeft(empty)(_ <> _)
   }
 
