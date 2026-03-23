@@ -54,8 +54,11 @@ object SemanticTokensProvider {
           case token: Token if token.kind.isModifier =>
             SemanticToken(SemanticTokenType.Modifier, Nil, token.mkSourceLocation())
 
-          case token: Token if token.kind.isComment =>
+          case token: Token if token.kind.isCommentNonDoc =>
             SemanticToken(SemanticTokenType.Comment, Nil, token.mkSourceLocation())
+
+          case token: Token if token.kind.isCommentDoc =>
+            SemanticToken(SemanticTokenType.Comment, List(SemanticTokenModifier.Documentation), token.mkSourceLocation())
         }
       case None => Iterator.empty
     }
