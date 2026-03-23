@@ -14,46 +14,95 @@
  * limitations under the License.
  */
 
+/// Effect Hierarchy ([D] = has @DefaultHandler):
+///
+/// FileSystem [D]                      (29 ops — unified root)
+/// ├── FileStat [D]                    (11 ops)
+/// │   ├── FileTest [D]                (4 ops)
+/// │   │   ├── FileExists                    — exists
+/// │   │   ├── IsDirectory                   — isDirectory
+/// │   │   ├── IsRegularFile                 — isRegularFile
+/// │   │   └── IsSymbolicLink                — isSymbolicLink
+/// │   ├── FilePermission [D]          (3 ops)
+/// │   │   ├── IsReadable                    — isReadable
+/// │   │   ├── IsWritable                    — isWritable
+/// │   │   └── IsExecutable                  — isExecutable
+/// │   ├── FileTime [D]                (3 ops)
+/// │   │   ├── AccessTime                    — accessTime
+/// │   │   ├── CreationTime                  — creationTime
+/// │   │   └── ModificationTime              — modificationTime
+/// │   └── FileSize                          — size
+/// ├── FileRead [D]                    (3 ops)
+/// │   ├── ReadFile                          — read
+/// │   ├── ReadLines                         — readLines
+/// │   └── ReadBytes                         — readBytes
+/// ├── DirList [D]                           — list
+/// ├── Glob [D]                              — glob
+/// └── FileWrite [D]                   (13 ops)
+///     ├── WriteFile                         — write
+///     ├── WriteLines                        — writeLines
+///     ├── WriteBytes                        — writeBytes
+///     ├── AppendFile                        — append
+///     ├── AppendLines                       — appendLines
+///     ├── AppendBytes                       — appendBytes
+///     ├── Truncate                          — truncate
+///     ├── CopyFile                          — copyWith
+///     ├── MoveFile                          — moveWith
+///     ├── DeleteFile                        — delete
+///     ├── MkDir                             — mkDir
+///     ├── MkDirs                            — mkDirs
+///     └── MkTempDir                         — mkTempDir
+///
+/// Middleware Availability:
+///
+///                    FileTest  FilePermission  FileTime  FileStat  FileRead  DirList  Glob  FileWrite  FileSystem
+/// withLogging        x         x               x         x         x         x        x     x          x
+/// withBaseDir        x         x               x         x         x         x        x     x          x
+/// withChroot         x         x               x         x         x         x        x     x          x
+/// withAllowList      x         x               x         x         x         x        x     x          x
+/// withDenyList       x         x               x         x         x         x        x     x          x
+/// withAllowGlob      x         x               x         x         x         x        x     x          x
+/// withDenyGlob       x         x               x         x         x         x        x     x          x
+/// withFollowLinks    x         x               x         x         x         x        x     x          x
+/// withTransferLimit                                                x                        x          x
+/// withChecksum                                                     x                        x          x
+/// withDryRun                                                                                x          x
+/// withReadOnly                                                                              x          x
+/// withAtomicWrite                                                                           x          x
+/// withBackup                                                                                x          x
+/// withConflictCheck                                                                         x          x
+/// withMkParentDirs                                                                          x          x
+/// withSizeRotation                                                                          x          x
+/// withMemoryOverlay                                                                                    x
+/// withInMemoryFS                                                                                       x
+//
 pub mod Fs {
 
-    // Effect Hierarchy:
-    //
-    // FileSystem                          (29 ops — unified root)
-    // ├── FileStat                        (11 ops)
-    // │   ├── FileTest                    (4 ops)
-    // │   │   ├── FileExists                    — exists
-    // │   │   ├── IsDirectory                   — isDirectory
-    // │   │   ├── IsRegularFile                 — isRegularFile
-    // │   │   └── IsSymbolicLink                — isSymbolicLink
-    // │   ├── FilePermission              (3 ops)
-    // │   │   ├── IsReadable                    — isReadable
-    // │   │   ├── IsWritable                    — isWritable
-    // │   │   └── IsExecutable                  — isExecutable
-    // │   ├── FileTime                    (3 ops)
-    // │   │   ├── AccessTime                    — accessTime
-    // │   │   ├── CreationTime                  — creationTime
-    // │   │   └── ModificationTime              — modificationTime
-    // │   └── FileSize                          — size
-    // ├── FileRead                        (3 ops)
-    // │   ├── ReadFile                          — read
-    // │   ├── ReadLines                         — readLines
-    // │   └── ReadBytes                         — readBytes
-    // ├── DirList                               — list
-    // ├── Glob                                  — glob
-    // └── FileWrite                       (13 ops)
-    //     ├── WriteFile                         — write
-    //     ├── WriteLines                        — writeLines
-    //     ├── WriteBytes                        — writeBytes
-    //     ├── AppendFile                        — append
-    //     ├── AppendLines                       — appendLines
-    //     ├── AppendBytes                       — appendBytes
-    //     ├── Truncate                          — truncate
-    //     ├── CopyFile                          — copyWith
-    //     ├── MoveFile                          — moveWith
-    //     ├── DeleteFile                        — delete
-    //     ├── MkDir                             — mkDir
-    //     ├── MkDirs                            — mkDirs
-    //     └── MkTempDir                         — mkTempDir
+    /// In-memory overlay state, parameterized by region.
+    ///
+    /// - `files`:     map from normalized absolute paths to in-memory content (text or bytes).
+    /// - `dirs`:      set of normalized absolute paths registered as directories.
+    /// - `whiteouts`: set of normalized absolute paths deleted in the overlay (hides lower-layer entries).
+    /// - `counter`:   monotonically increasing counter for generating unique temp directory names.
+    pub struct MemoryOverlay[r: Region] {
+        mut files: Map[String, MemoryOverlay.OverlayEntry],
+        mut dirs: Set[String],
+        mut whiteouts: Set[String],
+        mut counter: Int32
+    }
+
+    /// Fully in-memory filesystem state, parameterized by region.
+    ///
+    /// - `files`:   map from normalized absolute paths to in-memory content (text or bytes).
+    /// - `dirs`:    set of normalized absolute paths registered as directories.
+    /// - `times`:   map from normalized absolute paths to `{atime, ctime, mtime}` records (ms since epoch).
+    /// - `counter`: monotonically increasing counter for generating unique temp directory names.
+    pub struct InMemoryFs[r: Region] {
+        mut files: Map[String, InMemoryFs.Entry],
+        mut dirs: Set[String],
+        mut times: Map[String, {atime = Int64, ctime = Int64, mtime = Int64}],
+        mut counter: Int32
+    }
 
     ///
     /// Options for the `copyWith` operation.
@@ -90,7 +139,7 @@ pub mod Fs {
     ///
     /// An effect used to check if a file exists.
     ///
-    /// Use the `FileExists.handleWithFileTest` handler.
+    /// Use the `FileExists.runWithFileTest` handler.
     ///
     pub eff FileExists {
 
@@ -104,7 +153,7 @@ pub mod Fs {
     ///
     /// An effect used to check if a path is a directory.
     ///
-    /// Use the `IsDirectory.handleWithFileTest` handler.
+    /// Use the `IsDirectory.runWithFileTest` handler.
     ///
     pub eff IsDirectory {
 
@@ -118,7 +167,7 @@ pub mod Fs {
     ///
     /// An effect used to check if a path is a regular file.
     ///
-    /// Use the `IsRegularFile.handleWithFileTest` handler.
+    /// Use the `IsRegularFile.runWithFileTest` handler.
     ///
     pub eff IsRegularFile {
 
@@ -132,7 +181,7 @@ pub mod Fs {
     ///
     /// An effect used to check if a path is a symbolic link.
     ///
-    /// Use the `IsSymbolicLink.handleWithFileTest` handler.
+    /// Use the `IsSymbolicLink.runWithFileTest` handler.
     ///
     pub eff IsSymbolicLink {
 
@@ -146,7 +195,7 @@ pub mod Fs {
     ///
     /// An effect used to check if a file is readable.
     ///
-    /// Use the `IsReadable.handleWithFilePermission` handler.
+    /// Use the `IsReadable.runWithFilePermission` handler.
     ///
     pub eff IsReadable {
 
@@ -160,7 +209,7 @@ pub mod Fs {
     ///
     /// An effect used to check if a file is writable.
     ///
-    /// Use the `IsWritable.handleWithFilePermission` handler.
+    /// Use the `IsWritable.runWithFilePermission` handler.
     ///
     pub eff IsWritable {
 
@@ -174,7 +223,7 @@ pub mod Fs {
     ///
     /// An effect used to check if a file is executable.
     ///
-    /// Use the `IsExecutable.handleWithFilePermission` handler.
+    /// Use the `IsExecutable.runWithFilePermission` handler.
     ///
     pub eff IsExecutable {
 
@@ -188,7 +237,7 @@ pub mod Fs {
     ///
     /// An effect used to read the last access time of a file.
     ///
-    /// Use the `AccessTime.handleWithFileTime` handler.
+    /// Use the `AccessTime.runWithFileTime` handler.
     ///
     pub eff AccessTime {
 
@@ -202,7 +251,7 @@ pub mod Fs {
     ///
     /// An effect used to read the creation time of a file.
     ///
-    /// Use the `CreationTime.handleWithFileTime` handler.
+    /// Use the `CreationTime.runWithFileTime` handler.
     ///
     pub eff CreationTime {
 
@@ -216,7 +265,7 @@ pub mod Fs {
     ///
     /// An effect used to read the last modification time of a file.
     ///
-    /// Use the `ModificationTime.handleWithFileTime` handler.
+    /// Use the `ModificationTime.runWithFileTime` handler.
     ///
     pub eff ModificationTime {
 
@@ -230,7 +279,7 @@ pub mod Fs {
     ///
     /// An effect used to read the size of a file.
     ///
-    /// Use the `FileSize.handleWithFileStat` handler.
+    /// Use the `FileSize.runWithFileStat` handler.
     ///
     pub eff FileSize {
 
@@ -244,7 +293,7 @@ pub mod Fs {
     ///
     /// An effect used to read the contents of a file as a string.
     ///
-    /// Use the `ReadFile.handleWithFileRead` handler.
+    /// Use the `ReadFile.runWithFileRead` handler.
     ///
     pub eff ReadFile {
 
@@ -258,7 +307,7 @@ pub mod Fs {
     ///
     /// An effect used to read the lines of a file.
     ///
-    /// Use the `ReadLines.handleWithFileRead` handler.
+    /// Use the `ReadLines.runWithFileRead` handler.
     ///
     pub eff ReadLines {
 
@@ -272,7 +321,7 @@ pub mod Fs {
     ///
     /// An effect used to read the bytes of a file.
     ///
-    /// Use the `ReadBytes.handleWithFileRead` handler.
+    /// Use the `ReadBytes.runWithFileRead` handler.
     ///
     pub eff ReadBytes {
 
@@ -286,7 +335,7 @@ pub mod Fs {
     ///
     /// An effect used to list the contents of a directory.
     ///
-    /// Use the `DirList.handleWithFileSystem` handler.
+    /// Use the `DirList.runWithFileSystem` handler.
     ///
     pub eff DirList {
 
@@ -300,7 +349,7 @@ pub mod Fs {
     ///
     /// An effect used to find files matching a glob pattern.
     ///
-    /// Use the `Glob.handleWithFileSystem` handler.
+    /// Use the `Glob.runWithFileSystem` handler.
     ///
     pub eff Glob {
 
@@ -314,7 +363,7 @@ pub mod Fs {
     ///
     /// An effect used to write the contents of a file as a string.
     ///
-    /// Use the `WriteFile.handleWithFileWrite` handler.
+    /// Use the `WriteFile.runWithFileWrite` handler.
     ///
     pub eff WriteFile {
 
@@ -330,7 +379,7 @@ pub mod Fs {
     ///
     /// An effect used to write lines to a file.
     ///
-    /// Use the `WriteLines.handleWithFileWrite` handler.
+    /// Use the `WriteLines.runWithFileWrite` handler.
     ///
     pub eff WriteLines {
 
@@ -346,7 +395,7 @@ pub mod Fs {
     ///
     /// An effect used to write bytes to a file.
     ///
-    /// Use the `WriteBytes.handleWithFileWrite` handler.
+    /// Use the `WriteBytes.runWithFileWrite` handler.
     ///
     pub eff WriteBytes {
 
@@ -362,7 +411,7 @@ pub mod Fs {
     ///
     /// An effect used to append a string to a file.
     ///
-    /// Use the `AppendFile.handleWithFileWrite` handler.
+    /// Use the `AppendFile.runWithFileWrite` handler.
     ///
     pub eff AppendFile {
 
@@ -378,7 +427,7 @@ pub mod Fs {
     ///
     /// An effect used to append lines to a file.
     ///
-    /// Use the `AppendLines.handleWithFileWrite` handler.
+    /// Use the `AppendLines.runWithFileWrite` handler.
     ///
     pub eff AppendLines {
 
@@ -394,7 +443,7 @@ pub mod Fs {
     ///
     /// An effect used to append bytes to a file.
     ///
-    /// Use the `AppendBytes.handleWithFileWrite` handler.
+    /// Use the `AppendBytes.runWithFileWrite` handler.
     ///
     pub eff AppendBytes {
 
@@ -410,7 +459,7 @@ pub mod Fs {
     ///
     /// An effect used to truncate a file.
     ///
-    /// Use the `Truncate.handleWithFileWrite` handler.
+    /// Use the `Truncate.runWithFileWrite` handler.
     ///
     pub eff Truncate {
 
@@ -424,7 +473,7 @@ pub mod Fs {
     ///
     /// An effect used to copy a file.
     ///
-    /// Use the `CopyFile.handleWithFileWrite` handler.
+    /// Use the `CopyFile.runWithFileWrite` handler.
     ///
     pub eff CopyFile {
 
@@ -438,7 +487,7 @@ pub mod Fs {
     ///
     /// An effect used to move (rename) a file or directory.
     ///
-    /// Use the `MoveFile.handleWithFileWrite` handler.
+    /// Use the `MoveFile.runWithFileWrite` handler.
     ///
     pub eff MoveFile {
 
@@ -452,7 +501,7 @@ pub mod Fs {
     ///
     /// An effect used to delete a file.
     ///
-    /// Use the `DeleteFile.handleWithFileWrite` handler.
+    /// Use the `DeleteFile.runWithFileWrite` handler.
     ///
     pub eff DeleteFile {
 
@@ -468,7 +517,7 @@ pub mod Fs {
     ///
     /// An effect used to create a directory.
     ///
-    /// Use the `MkDir.handleWithFileWrite` handler.
+    /// Use the `MkDir.runWithFileWrite` handler.
     ///
     pub eff MkDir {
 
@@ -482,7 +531,7 @@ pub mod Fs {
     ///
     /// An effect used to create a directory and all its parent directories.
     ///
-    /// Use the `MkDirs.handleWithFileWrite` handler.
+    /// Use the `MkDirs.runWithFileWrite` handler.
     ///
     pub eff MkDirs {
 
@@ -496,7 +545,7 @@ pub mod Fs {
     ///
     /// An effect used to create a temporary directory.
     ///
-    /// Use the `MkTempDir.handleWithFileWrite` handler.
+    /// Use the `MkTempDir.runWithFileWrite` handler.
     ///
     pub eff MkTempDir {
 

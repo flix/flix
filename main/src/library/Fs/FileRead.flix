@@ -30,7 +30,7 @@ pub mod Fs.FileRead {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileRead) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                handleWithFileSystem(f)
+                y -> runWithFileSystem(() -> f(y))
             )(x)
         )
 
@@ -45,8 +45,8 @@ pub mod Fs.FileRead {
     ///
     /// Handles the `FileRead` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - FileRead) + FileSystem = x ->
-        run { f(x) } with handler FileRead {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - FileRead) + FileSystem =
+        run { f() } with handler FileRead {
             def read(filename, k)      = k(Fs.FileSystem.read(filename))
             def readLines(filename, k) = k(Fs.FileSystem.readLines(filename))
             def readBytes(filename, k) = k(Fs.FileSystem.readBytes(filename))
@@ -160,6 +160,20 @@ pub mod Fs.FileRead {
         }
 
     ///
+    /// Middleware that intercepts the `FileRead` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Action ops (`read`, `readLines`, `readBytes`): resolve path with fallback to original.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(FileRead.read(resolve(filename)))
+            def readLines(filename, k) = k(FileRead.readLines(resolve(filename)))
+            def readBytes(filename, k) = k(FileRead.readBytes(resolve(filename)))
+        }
+
+    ///
     /// Middleware that intercepts the `FileRead` effect, rejecting reads of files
     /// larger than `maxBytes`. The file size is checked via `FileStat.size` before
     /// reading. For string-based reads, the limit applies to the on-disk file size
@@ -171,6 +185,29 @@ pub mod Fs.FileRead {
             def read(filename, k)      = k(Result.flatMap(_ -> FileRead.read(filename), Result.flatMap(check, FileStat.size(filename))))
             def readLines(filename, k) = k(Result.flatMap(_ -> FileRead.readLines(filename), Result.flatMap(check, FileStat.size(filename))))
             def readBytes(filename, k) = k(Result.flatMap(_ -> FileRead.readBytes(filename), Result.flatMap(check, FileStat.size(filename))))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileRead` effect, verifying file checksums
+    /// on read. If a sidecar checksum file exists (e.g., `"data.txt.sha256"` when
+    /// `sidecar` is `".sha256"`), the file's contents are hashed and compared
+    /// against the stored checksum.
+    ///
+    /// `hash` is a pure function from file bytes to digest bytes.
+    /// `sidecar` is the file suffix (e.g., `".sha256"`).
+    ///
+    /// If no sidecar file exists, the read proceeds normally.
+    /// If the checksum does not match, returns `Err(IoError(ChecksumMismatch, ...))`.
+    ///
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileRead) + FileRead =
+        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let doReadBytes = file -> FileRead.readBytes(file);
+        let doReadSidecar = file -> FileRead.read(file);
+        run { f() } with handler FileRead {
+            def read(filename, k)      = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileRead.read(filename), doReadBytes, doReadSidecar))
+            def readLines(filename, k) = k(Fs.FsLayer.checksumOnRead(filename, sidecar, computeHex, FileRead.readLines(filename), doReadBytes, doReadSidecar))
+            def readBytes(filename, k) = k(Fs.FsLayer.checksumOnReadBytes(filename, sidecar, computeHex, FileRead.readBytes(filename), doReadSidecar))
         }
 
 }

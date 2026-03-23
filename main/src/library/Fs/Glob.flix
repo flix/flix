@@ -21,10 +21,28 @@ pub mod Fs.Glob {
     use Fs.FsLayer.{logPre, logPost}
 
     ///
+    /// Handles the `Glob` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Glob` effect using the `IO` effect.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Glob) + IO = x ->
+        run { f(x) } with handler Glob {
+            def glob(base, pattern, k) = k(Fs.FsLayer.glob(base, pattern))
+        }
+
+    ///
+    /// Runs the `Glob` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Glob` effect using the `IO` effect.
+    ///
+    @DefaultHandler
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Glob) + IO = handle(f)()
+
+    ///
     /// Handles the `Glob` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - Glob) + FileSystem = x ->
-        run { f(x) } with handler Glob {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - Glob) + FileSystem =
+        run { f() } with handler Glob {
             def glob(base, pattern, k) = k(Fs.FileSystem.glob(base, pattern))
         }
 
@@ -109,6 +127,16 @@ pub mod Fs.Glob {
         let c = p -> Fs.FsLayer.denyGlob(patterns, p);
         run { f() } with handler Glob {
             def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+        }
+
+    ///
+    /// Middleware that intercepts the `Glob` effect, resolving all base paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Glob.glob(resolve(base), pattern))
         }
 
 }

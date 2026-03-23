@@ -21,8 +21,8 @@ pub mod Fs.IsReadable {
     ///
     /// Handles the `IsReadable` effect of the given function `f` using the `FilePermission` effect.
     ///
-    pub def handleWithFilePermission(f: a -> b \ ef): a -> b \ (ef - IsReadable) + FilePermission = x ->
-        run { f(x) } with handler IsReadable {
+    pub def runWithFilePermission(f: Unit -> a \ ef): a \ (ef - IsReadable) + FilePermission =
+        run { f() } with handler IsReadable {
             def isReadable(filename, k) = k(Fs.FilePermission.isReadable(filename))
         }
 

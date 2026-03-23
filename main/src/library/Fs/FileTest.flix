@@ -19,6 +19,8 @@ pub mod Fs.FileTest {
     use Fs.FileStat
     use Fs.FileTest
     use Fs.FsLayer.{logPre, logPost}
+    use IoError.IoError
+    use IoError.ErrorKind
 
     ///
     /// Handles the `FileTest` effect of the given function `f`.
@@ -29,9 +31,9 @@ pub mod Fs.FileTest {
         checked_ecast(
             Fs.FileSystem.handle(
                 y -> checked_ecast(
-                    Fs.FileStat.handleWithFileSystem(
-                        handleWithFileStat(f)
-                    )(y)
+                    Fs.FileStat.runWithFileSystem(
+                        () -> runWithFileStat(() -> f(y))
+                    )
                 )
             )(x)
         )
@@ -47,8 +49,8 @@ pub mod Fs.FileTest {
     ///
     /// Handles the `FileTest` effect of the given function `f` using the `FileStat` effect.
     ///
-    pub def handleWithFileStat(f: a -> b \ ef): a -> b \ (ef - FileTest) + FileStat = x ->
-        run { f(x) } with handler FileTest {
+    pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FileTest) + FileStat =
+        run { f() } with handler FileTest {
             def exists(filename, k)         = k(Fs.FileStat.exists(filename))
             def isDirectory(filename, k)    = k(Fs.FileStat.isDirectory(filename))
             def isRegularFile(filename, k)  = k(Fs.FileStat.isRegularFile(filename))
@@ -172,6 +174,26 @@ pub mod Fs.FileTest {
             def isDirectory(filename, k)    = k(Result.flatMap(p -> FileTest.isDirectory(p), c(filename)))
             def isRegularFile(filename, k)  = k(Result.flatMap(p -> FileTest.isRegularFile(p), c(filename)))
             def isSymbolicLink(filename, k) = k(Result.flatMap(p -> FileTest.isSymbolicLink(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileTest` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// - Bool ops (`exists`, `isDirectory`, `isRegularFile`): resolve path; return `Ok(false)` for dangling symlinks.
+    /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileTest) + FileTest =
+        let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+            case Ok(p)                               => op(p)
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
+            case Err(e)                              => Err(e)
+        };
+        run { f() } with handler FileTest {
+            def exists(filename, k)         = k(resolveBool(filename, p -> FileTest.exists(p)))
+            def isDirectory(filename, k)    = k(resolveBool(filename, p -> FileTest.isDirectory(p)))
+            def isRegularFile(filename, k)  = k(resolveBool(filename, p -> FileTest.isRegularFile(p)))
+            def isSymbolicLink(filename, k) = k(FileTest.isSymbolicLink(filename))
         }
 
 }

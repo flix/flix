@@ -17,9 +17,10 @@
 pub mod Fs.FileWrite {
 
     use Fs.FileStat
+    use Fs.FileRead
     use Fs.FileSystem
     use Fs.FileWrite
-    use Fs.FsLayer.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPre2, logPost, logPost2}
     use Fs.Size
     use Fs.Size.bytes
 
@@ -43,7 +44,7 @@ pub mod Fs.FileWrite {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWrite) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                handleWithFileSystem(f)
+                y -> runWithFileSystem(() -> f(y))
             )(x)
         )
 
@@ -58,8 +59,8 @@ pub mod Fs.FileWrite {
     ///
     /// Handles the `FileWrite` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - FileWrite) + FileSystem = x ->
-        run { f(x) } with handler FileWrite {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileSystem =
+        run { f() } with handler FileWrite {
             def write(data, file, k)        = k(Fs.FileSystem.write(data, file))
             def writeLines(data, file, k)   = k(Fs.FileSystem.writeLines(data, file))
             def writeBytes(data, file, k)   = k(Fs.FileSystem.writeBytes(data, file))
@@ -126,15 +127,15 @@ pub mod Fs.FileWrite {
                 k(result)
             }
             def copyWith(src, dst, opts, k) = {
-                logPre("copy", src#src);
+                logPre2("copy", src#src, dst);
                 let result = FileWrite.copyWith(src, dst, opts);
-                logPost("copy", src#src, _ -> dst, result);
+                logPost2("copy", src#src, dst, result);
                 k(result)
             }
             def moveWith(src, dst, opts, k) = {
-                logPre("move", src#src);
+                logPre2("move", src#src, dst);
                 let result = FileWrite.moveWith(src, dst, opts);
-                logPost("move", src#src, _ -> dst, result);
+                logPost2("move", src#src, dst, result);
                 k(result)
             }
             def delete(file, k) = {
@@ -319,6 +320,31 @@ pub mod Fs.FileWrite {
         }
 
     ///
+    /// Middleware that intercepts the `FileWrite` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Action ops (`write`, `append`, `copy`, etc.): resolve path with fallback to original.
+    /// `mkTempDir`: passed through unchanged (no path to resolve).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(FileWrite.write(data, resolve(file)))
+            def writeLines(data, file, k)   = k(FileWrite.writeLines(data, resolve(file)))
+            def writeBytes(data, file, k)   = k(FileWrite.writeBytes(data, resolve(file)))
+            def append(data, file, k)       = k(FileWrite.append(data, resolve(file)))
+            def appendLines(data, file, k)  = k(FileWrite.appendLines(data, resolve(file)))
+            def appendBytes(data, file, k)  = k(FileWrite.appendBytes(data, resolve(file)))
+            def truncate(file, k)           = k(FileWrite.truncate(resolve(file)))
+            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src = resolve(src#src), resolve(dst), opts))
+            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src = resolve(src#src), resolve(dst), opts))
+            def delete(file, k)             = k(FileWrite.delete(resolve(file)))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(resolve(d)))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(resolve(d)))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileWrite` effect, logging each write
     /// operation via the `Logger` effect at `Debug` level without performing
     /// the actual filesystem modification. All write operations return `Ok(())`;
@@ -472,6 +498,73 @@ pub mod Fs.FileWrite {
         }
 
     ///
+    /// Middleware that intercepts the `FileWrite` effect, automatically creating
+    /// parent directories before write, append, copy, and move operations.
+    ///
+    /// Before `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, `copyWith`, and `moveWith`, the parent directory of the
+    /// target file is created via `mkDirs`. If the parent directory already
+    /// exists, this is a no-op.
+    ///
+    /// If parent directory creation fails, the original operation is aborted
+    /// and the error is returned.
+    ///
+    /// `truncate`, `delete`, `mkDir`, `mkDirs`, and `mkTempDir` are passed
+    /// through unchanged.
+    ///
+    pub def withMkParentDirs(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileWrite =
+        let mk = d -> FileWrite.mkDirs(d);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.write(data, file)))
+            def writeLines(data, file, k)   = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.writeBytes(data, file)))
+            def append(data, file, k)       = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.append(data, file)))
+            def appendLines(data, file, k)  = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(Fs.FsLayer.ensureParentDirs(file, mk, () -> FileWrite.appendBytes(data, file)))
+            def copyWith(src, dst, opts, k) = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileWrite.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.ensureParentDirs(dst, mk, () -> FileWrite.moveWith(src, dst, opts)))
+            def truncate(file, k)           = k(FileWrite.truncate(file))
+            def delete(file, k)             = k(FileWrite.delete(file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, automatically rotating
+    /// files when they reach a size threshold before append operations.
+    ///
+    /// Before `append`, `appendLines`, and `appendBytes`, the target file's size
+    /// is checked via `FileStat.size`. If it meets or exceeds `maxSize`, existing
+    /// rotated files are shifted (`file.1` → `file.2`, etc.), the oldest
+    /// (`file.{maxFiles}`) is deleted, and the current file is moved to `file.1`.
+    /// The append then writes to the now-absent original path.
+    ///
+    /// All other operations are passed through unchanged.
+    ///
+    pub def withSizeRotation(maxSize: Size, maxFiles: Int32, f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
+        let doSize   = file -> FileStat.size(file);
+        let doMove   = (src, dst) -> FileWrite.moveWith(src = src, dst, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDelete = file -> FileWrite.delete(file);
+        run { f() } with handler FileWrite {
+            // Append ops — rotate if needed before appending
+            def append(data, file, k)       = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileWrite.append(data, file)))
+            def appendLines(data, file, k)  = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileWrite.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(Fs.FsLayer.rotateIfNeeded(file, maxSize, maxFiles, doSize, doMove, doDelete, () -> FileWrite.appendBytes(data, file)))
+            // Other write ops — pass through
+            def write(data, file, k)        = k(FileWrite.write(data, file))
+            def writeLines(data, file, k)   = k(FileWrite.writeLines(data, file))
+            def writeBytes(data, file, k)   = k(FileWrite.writeBytes(data, file))
+            def truncate(file, k)           = k(FileWrite.truncate(file))
+            def copyWith(src, dst, opts, k) = k(FileWrite.copyWith(src, dst, opts))
+            def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src, dst, opts))
+            def delete(file, k)             = k(FileWrite.delete(file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
     /// Middleware that intercepts the `FileWrite` effect, rejecting write and
     /// append operations where the payload exceeds `maxBytes`. For `copyWith`,
     /// the source file size is checked via `FileStat.size`.
@@ -497,6 +590,106 @@ pub mod Fs.FileWrite {
             def copyWith(src, dst, opts, k) = k(Result.flatMap(sz -> Result.flatMap(_ -> FileWrite.copyWith(src, dst, opts), check(sz)), FileStat.size(src#src)))
             def moveWith(src, dst, opts, k) = k(FileWrite.moveWith(src, dst, opts))
             def delete(file, k)             = k(FileWrite.delete(file))
+            def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+            def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+            def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, tracking file modification
+    /// times across writes and checking for external modifications before each write.
+    ///
+    /// Before `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, and `truncate`, the file's current modification time is
+    /// compared against the last recorded snapshot. If they differ, a `Conflict`
+    /// error is returned. After a successful write, the modification time is
+    /// re-snapshotted for subsequent checks.
+    ///
+    /// For `copyWith` and `moveWith`, the conflict check is applied to the
+    /// destination path.
+    ///
+    /// After `delete`, the snapshot for that file is removed.
+    ///
+    /// `mkDir`, `mkDirs`, and `mkTempDir` are passed through unchanged.
+    ///
+    /// Note: Unlike the `FileSystem` version, this middleware does not snapshot
+    /// on read operations. Conflict detection begins after the first write to
+    /// each file, catching write-write conflicts from external processes.
+    ///
+    pub def withConflictCheck(f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileStat} =
+        region rc {
+            let snapshots: MutMap[String, Int64, rc] = MutMap.empty(rc);
+            let getModTime = file -> FileStat.modificationTime(file);
+            let snap = file -> Fs.FsLayer.snapshotModTime(file, snapshots, getModTime);
+            let check = file -> Fs.FsLayer.conflictCheck(file, snapshots, getModTime);
+            let checkAndResnap = (file, doWrite) ->
+                forM (_ <- check(file); v <- doWrite())
+                    yield { snap(file); v };
+            run { f() } with handler FileWrite {
+                // ── Write ops — conflict check before, re-snapshot after ──
+                def write(data, file, k)        = k(checkAndResnap(file, () -> FileWrite.write(data, file)))
+                def writeLines(data, file, k)   = k(checkAndResnap(file, () -> FileWrite.writeLines(data, file)))
+                def writeBytes(data, file, k)   = k(checkAndResnap(file, () -> FileWrite.writeBytes(data, file)))
+                def append(data, file, k)       = k(checkAndResnap(file, () -> FileWrite.append(data, file)))
+                def appendLines(data, file, k)  = k(checkAndResnap(file, () -> FileWrite.appendLines(data, file)))
+                def appendBytes(data, file, k)  = k(checkAndResnap(file, () -> FileWrite.appendBytes(data, file)))
+                def truncate(file, k)           = k(checkAndResnap(file, () -> FileWrite.truncate(file)))
+                def delete(file, k) = {
+                    match check(file) {
+                        case Err(e) => k(Err(e))
+                        case Ok(_)  =>
+                            let result = FileWrite.delete(file);
+                            match result {
+                                case Ok(_) => MutMap.remove(file, snapshots)
+                                case _     => ()
+                            };
+                            k(result)
+                    }
+                }
+                // ── Copy/move — conflict check on destination ──
+                def copyWith(src, dst, opts, k) = k(checkAndResnap(dst, () -> FileWrite.copyWith(src, dst, opts)))
+                def moveWith(src, dst, opts, k) = k(checkAndResnap(dst, () -> FileWrite.moveWith(src, dst, opts)))
+                // ── Directory ops — pass through ──
+                def mkDir(d, k)                 = k(FileWrite.mkDir(d))
+                def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
+                def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))
+            }
+        }
+
+    ///
+    /// Middleware that intercepts the `FileWrite` effect, computing checksums
+    /// after write operations and storing them as sidecar files.
+    ///
+    /// `hash` is a pure function from file bytes to digest bytes.
+    /// `sidecar` is the file suffix (e.g., `".sha256"`).
+    ///
+    /// After `write`, `writeLines`, `writeBytes`, `append`, `appendLines`,
+    /// `appendBytes`, `truncate`, and `copyWith`, the file is re-read and
+    /// its checksum sidecar is updated.
+    ///
+    /// After `moveWith`, the source's sidecar is moved to the destination path.
+    /// After `delete`, the sidecar file is also removed.
+    ///
+    /// `mkDir`, `mkDirs`, and `mkTempDir` are passed through unchanged.
+    ///
+    pub def withChecksum(hash: Vector[Int8] -> Vector[Int8], sidecar: String,
+                         f: Unit -> a \ ef): a \ (ef - FileWrite) + {FileWrite, FileRead} =
+        let computeHex = bytes -> Fs.FsLayer.bytesToHex(hash(bytes));
+        let updateSidecar = file -> Fs.FsLayer.updateSidecar(file, sidecar, computeHex, f1 -> FileRead.readBytes(f1), (str, f1) -> FileWrite.write(str = str, f1));
+        let afterWrite = (file, doWrite) -> Fs.FsLayer.checksumAfterWrite(file, doWrite, updateSidecar);
+        let doMoveSidecar = (s, d) -> FileWrite.moveWith(src = s, d, Set#{Fs.MoveOption.ReplaceExisting});
+        let doDeleteSidecar = file -> FileWrite.delete(file);
+        run { f() } with handler FileWrite {
+            def write(data, file, k)        = k(afterWrite(file, () -> FileWrite.write(data, file)))
+            def writeLines(data, file, k)   = k(afterWrite(file, () -> FileWrite.writeLines(data, file)))
+            def writeBytes(data, file, k)   = k(afterWrite(file, () -> FileWrite.writeBytes(data, file)))
+            def append(data, file, k)       = k(afterWrite(file, () -> FileWrite.append(data, file)))
+            def appendLines(data, file, k)  = k(afterWrite(file, () -> FileWrite.appendLines(data, file)))
+            def appendBytes(data, file, k)  = k(afterWrite(file, () -> FileWrite.appendBytes(data, file)))
+            def truncate(file, k)           = k(afterWrite(file, () -> FileWrite.truncate(file)))
+            def copyWith(src, dst, opts, k) = k(afterWrite(dst, () -> FileWrite.copyWith(src, dst, opts)))
+            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.checksumAfterMove(src#src, dst, sidecar, FileWrite.moveWith(src, dst, opts), doMoveSidecar))
+            def delete(file, k)             = k(Fs.FsLayer.checksumAfterDelete(file, sidecar, FileWrite.delete(file), doDeleteSidecar))
             def mkDir(d, k)                 = k(FileWrite.mkDir(d))
             def mkDirs(d, k)                = k(FileWrite.mkDirs(d))
             def mkTempDir(prefix, k)        = k(FileWrite.mkTempDir(prefix))

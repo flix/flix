@@ -29,9 +29,9 @@ pub mod Fs.FileTime {
         checked_ecast(
             Fs.FileSystem.handle(
                 y -> checked_ecast(
-                    Fs.FileStat.handleWithFileSystem(
-                        handleWithFileStat(f)
-                    )(y)
+                    Fs.FileStat.runWithFileSystem(
+                        () -> runWithFileStat(() -> f(y))
+                    )
                 )
             )(x)
         )
@@ -47,8 +47,8 @@ pub mod Fs.FileTime {
     ///
     /// Handles the `FileTime` effect of the given function `f` using the `FileStat` effect.
     ///
-    pub def handleWithFileStat(f: a -> b \ ef): a -> b \ (ef - FileTime) + FileStat = x ->
-        run { f(x) } with handler FileTime {
+    pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FileTime) + FileStat =
+        run { f() } with handler FileTime {
             def accessTime(filename, k)       = k(Fs.FileStat.accessTime(filename))
             def creationTime(filename, k)     = k(Fs.FileStat.creationTime(filename))
             def modificationTime(filename, k) = k(Fs.FileStat.modificationTime(filename))
@@ -159,6 +159,19 @@ pub mod Fs.FileTime {
             def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), c(filename)))
             def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), c(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileTime` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Value ops (`accessTime`, `creationTime`, `modificationTime`): resolve path; propagate all errors.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileTime) + FileTime =
+        run { f() } with handler FileTime {
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileTime.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileTime.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileTime.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))
         }
 
 }
