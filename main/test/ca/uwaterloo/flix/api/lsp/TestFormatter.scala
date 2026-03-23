@@ -59,15 +59,11 @@ class TestFormatter extends AnyFunSuite {
     "examples/effects-and-handlers/advanced/backtracking.flix",
     "examples/effects-and-handlers/advanced/collatz.flix",
     "examples/effects-and-handlers/advanced/nqueens.flix",
-    "examples/effects-and-handlers/using-Random.flix",
     "examples/effects-and-handlers/process/process-exec.flix",
     "examples/effects-and-handlers/process/process-exec-with-cwd-and-env.flix",
     "examples/effects-and-handlers/process/process-exec-and-read-output.flix",
     "examples/effects-and-handlers/process/process-wait-and-exit-value.flix",
-    "examples/effects-and-handlers/using-FileWriteWithResult.flix",
     "examples/effects-and-handlers/using-Logger.flix",
-    "examples/effects-and-handlers/running-multiple-effects.flix",
-    "examples/effects-and-handlers/using-Clock.flix",
   )
 
   /**

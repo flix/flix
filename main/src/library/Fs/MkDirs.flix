@@ -21,8 +21,8 @@ pub mod Fs.MkDirs {
     ///
     /// Handles the `MkDirs` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - MkDirs) + FileWrite = x ->
-        run { f(x) } with handler MkDirs {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - MkDirs) + FileWrite =
+        run { f() } with handler MkDirs {
             def mkDirs(d, k) = k(Fs.FileWrite.mkDirs(d))
         }
 

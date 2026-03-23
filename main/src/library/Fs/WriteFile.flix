@@ -21,8 +21,8 @@ pub mod Fs.WriteFile {
     ///
     /// Handles the `WriteFile` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - WriteFile) + FileWrite = x ->
-        run { f(x) } with handler WriteFile {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - WriteFile) + FileWrite =
+        run { f() } with handler WriteFile {
             def write(data, file, k) = k(Fs.FileWrite.write(data, file))
         }
 

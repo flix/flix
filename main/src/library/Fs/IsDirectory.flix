@@ -21,8 +21,8 @@ pub mod Fs.IsDirectory {
     ///
     /// Handles the `IsDirectory` effect of the given function `f` using the `FileTest` effect.
     ///
-    pub def handleWithFileTest(f: a -> b \ ef): a -> b \ (ef - IsDirectory) + FileTest = x ->
-        run { f(x) } with handler IsDirectory {
+    pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - IsDirectory) + FileTest =
+        run { f() } with handler IsDirectory {
             def isDirectory(filename, k) = k(Fs.FileTest.isDirectory(filename))
         }
 

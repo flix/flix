@@ -20,7 +20,7 @@ pub mod Fs.FileWrite {
     use Fs.FileRead
     use Fs.FileSystem
     use Fs.FileWrite
-    use Fs.FsLayer.{logPre, logPost}
+    use Fs.FsLayer.{logPre, logPre2, logPost, logPost2}
     use Fs.Size
     use Fs.Size.bytes
 
@@ -44,7 +44,7 @@ pub mod Fs.FileWrite {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWrite) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                handleWithFileSystem(f)
+                y -> runWithFileSystem(() -> f(y))
             )(x)
         )
 
@@ -59,8 +59,8 @@ pub mod Fs.FileWrite {
     ///
     /// Handles the `FileWrite` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - FileWrite) + FileSystem = x ->
-        run { f(x) } with handler FileWrite {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - FileWrite) + FileSystem =
+        run { f() } with handler FileWrite {
             def write(data, file, k)        = k(Fs.FileSystem.write(data, file))
             def writeLines(data, file, k)   = k(Fs.FileSystem.writeLines(data, file))
             def writeBytes(data, file, k)   = k(Fs.FileSystem.writeBytes(data, file))
@@ -127,15 +127,15 @@ pub mod Fs.FileWrite {
                 k(result)
             }
             def copyWith(src, dst, opts, k) = {
-                logPre("copy", src#src);
+                logPre2("copy", src#src, dst);
                 let result = FileWrite.copyWith(src, dst, opts);
-                logPost("copy", src#src, _ -> dst, result);
+                logPost2("copy", src#src, dst, result);
                 k(result)
             }
             def moveWith(src, dst, opts, k) = {
-                logPre("move", src#src);
+                logPre2("move", src#src, dst);
                 let result = FileWrite.moveWith(src, dst, opts);
-                logPost("move", src#src, _ -> dst, result);
+                logPost2("move", src#src, dst, result);
                 k(result)
             }
             def delete(file, k) = {

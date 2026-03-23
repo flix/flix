@@ -30,7 +30,7 @@ pub mod Fs.FileRead {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileRead) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                handleWithFileSystem(f)
+                y -> runWithFileSystem(() -> f(y))
             )(x)
         )
 
@@ -45,8 +45,8 @@ pub mod Fs.FileRead {
     ///
     /// Handles the `FileRead` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - FileRead) + FileSystem = x ->
-        run { f(x) } with handler FileRead {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - FileRead) + FileSystem =
+        run { f() } with handler FileRead {
             def read(filename, k)      = k(Fs.FileSystem.read(filename))
             def readLines(filename, k) = k(Fs.FileSystem.readLines(filename))
             def readBytes(filename, k) = k(Fs.FileSystem.readBytes(filename))

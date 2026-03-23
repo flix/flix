@@ -21,8 +21,8 @@ pub mod Fs.IsSymbolicLink {
     ///
     /// Handles the `IsSymbolicLink` effect of the given function `f` using the `FileTest` effect.
     ///
-    pub def handleWithFileTest(f: a -> b \ ef): a -> b \ (ef - IsSymbolicLink) + FileTest = x ->
-        run { f(x) } with handler IsSymbolicLink {
+    pub def runWithFileTest(f: Unit -> a \ ef): a \ (ef - IsSymbolicLink) + FileTest =
+        run { f() } with handler IsSymbolicLink {
             def isSymbolicLink(filename, k) = k(Fs.FileTest.isSymbolicLink(filename))
         }
 

@@ -28,8 +28,8 @@ pub mod Fs.CopyFile {
     ///
     /// Handles the `CopyFile` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - CopyFile) + FileWrite = x ->
-        run { f(x) } with handler CopyFile {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - CopyFile) + FileWrite =
+        run { f() } with handler CopyFile {
             def copyWith(src, dst, opts, k) = k(Fs.FileWrite.copyWith(src, dst, opts))
         }
 

@@ -21,8 +21,8 @@ pub mod Fs.DeleteFile {
     ///
     /// Handles the `DeleteFile` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - DeleteFile) + FileWrite = x ->
-        run { f(x) } with handler DeleteFile {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - DeleteFile) + FileWrite =
+        run { f() } with handler DeleteFile {
             def delete(file, k) = k(Fs.FileWrite.delete(file))
         }
 

@@ -91,7 +91,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     */
   def mkTest(path: String, prelude: Option[String])(implicit options: Options): Unit = {
     val p = Paths.get(path)
-    val n = p.getFileName.toString
+    val n = p.toString
     val ps = prelude match {
       case None => List(p)
       case Some(p2) => List(p, Paths.get(p2))
