@@ -347,6 +347,16 @@ object EffectProvenance {
     Some(Graph(v.toList, flow))
   }
 
+  /**
+    * Creates directed edges from each vertex in `fromVertices` to each vertex in `toVertices`.
+    *
+    * For every (from, to) pair, one edge is created with the given source location.
+    *
+    * @param fromVertices the source vertices
+    * @param toVertices   the target vertices
+    * @param loc          the source location to attach to each created edge
+    * @return a list of edges connecting every from-vertex to every to-vertex
+    */
   private def createEdges(fromVertices: List[Vertex], toVertices: List[Vertex], loc: SourceLocation): List[Edge] = {
     fromVertices.foldLeft(List.empty[Edge]) {
       (acc, from) =>
@@ -357,14 +367,20 @@ object EffectProvenance {
   }
 
   /**
-    * Checks if two vertices represent a conflict.
+    * Checks whether a sink vertex conflicts with the set of vertices flowing into it.
     *
-    * Effect variables never conflict with anything since they can unify.
-    * All concrete vertices conflict with each other.
+    * The rules are:
+    *   - Effect variables (`VarVertex`) never conflict, as they can unify with anything.
+    *   - A `SignatureVertex` conflicts if any declared effect is unused, or if any
+    *     incoming effect is not declared in the signature.
+    *   - A pure vertex (`PureImplicitVertex` or `PureExplicitVertex`) conflicts if any
+    *     effect flows into it (i.e., the incoming set is non-empty).
+    *   - Any other concrete vertex conflicts if it does not match all incoming vertices
+    *     exactly (by type).
     *
-    * @param v1 the first vertex, which is a sink node
-    * @param v2 the set of vertices flowing into the sink node
-    * @return true if the vertices represent a conflict, false otherwise
+    * @param v1 the sink vertex
+    * @param v2 the set of (vertex, location) pairs flowing into the sink
+    * @return true if there is a conflict, false otherwise
     */
   private def isConflicting(v1: Vertex, v2: Set[(Vertex, SourceLocation)]): Boolean = {
     v1 match {
@@ -381,7 +397,23 @@ object EffectProvenance {
 
   }
 
-
+  /**
+    * Produces conflict errors for an argument vertex whose expected effect set does not
+    * match the effects that flow into it.
+    *
+    * Returns an empty list when:
+    *   - The argument effect list is empty.
+    *   - The argument expects exactly one rigid-variable or flexible-variable effect.
+    *
+    * Otherwise, for each incoming effect that is not among the expected argument effects,
+    * or for each expected argument effect that is absent from the incoming effects,
+    * an `ArgumentGivenWrongEffect` error is emitted.
+    *
+    * @param xs   the effects expected by the argument (from the `ArgVertex`)
+    * @param ys   the effects that actually flow into the argument, with their source locations
+    * @param aLoc the source location of the argument position itself
+    * @return a list of `EffConflicted` errors (may be empty)
+    */
   private def mkArgErrors(xs: List[Vertex], ys: List[(Vertex, SourceLocation)], aLoc: SourceLocation) = xs match {
     case Nil => Nil
     // If a function that expects an argument with a single rigid variable,
@@ -417,6 +449,17 @@ object EffectProvenance {
       if (a || b) ys.flatMap(errOpt) else Nil
   }
 
+  /**
+    * Produces an error when an implicitly-pure function body performs an effectful operation.
+    *
+    * Handles two cases:
+    *   - The body performs IO (`ImplicitlyPureFunctionUsesIO`).
+    *   - The body uses a user-defined or rigid-variable effect (`ImplicitlyPureFunctionUsesEffect`).
+    *
+    * @param source the vertex representing the effect that was observed
+    * @param sink   the `PureImplicitVertex` representing the implicitly-pure declaration
+    * @return `Some(error)` if the combination is a known implicit-pure conflict, `None` otherwise
+    */
   private def mkImplicitPureError(source: Vertex, sink: Vertex): Option[EffConflicted] = (source, sink) match {
     case (IOVertex(loc1), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
     case (CstVertex(sym, loc1), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(Eff(sym), loc2, loc1)))
@@ -424,6 +467,17 @@ object EffectProvenance {
     case _ => None
   }
 
+  /**
+    * Produces an error when an explicitly-pure function body performs an effectful operation.
+    *
+    * Handles two cases:
+    *   - The body performs IO (`ExplicitlyPureFunctionUsesIO`).
+    *   - The body uses a user-defined or rigid-variable effect (`ExplicitlyPureFunctionUsesEffect`).
+    *
+    * @param source the vertex representing the effect that was observed
+    * @param sink   the `PureExplicitVertex` representing the `{}` annotation
+    * @return `Some(error)` if the combination is a known explicit-pure conflict, `None` otherwise
+    */
   private def mkExplicitPureError(source: Vertex, sink: Vertex): Option[EffConflicted] = (source, sink) match {
     case (IOVertex(loc1), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
     case (CstVertex(sym, loc1), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(Eff(sym), loc2, loc1)))
@@ -431,7 +485,19 @@ object EffectProvenance {
     case _ => None
   }
 
-
+  /**
+    * Produces an `EffectfulFunctionUsesOtherEffect` error for a sink vertex that declares
+    * a specific effect, but receives a different list of effects.
+    *
+    * Used for signature mismatch reporting where multiple conflicting effects flow into
+    * a single declared effect.
+    *
+    * @param sink     the declared-effect sink vertex (IO, user-defined effect, or rigid variable)
+    * @param symList  the list of incoming effect symbols that conflict with the sink
+    * @param lhsLoc   the source location of the left-hand side (the declared effect)
+    * @param provLoc  the source location of the provenance (where the conflict originates)
+    * @return `Some(error)` if the sink is a recognized concrete effect, `None` otherwise
+    */
   private def mkEffectfulError(sink: Vertex, symList: List[EffSymOrRigidVar], lhsLoc: SourceLocation, provLoc: SourceLocation): Option[EffConflicted] = sink match {
     case IOVertex(_) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Eff(Symbol.IO), lhsLoc, provLoc)))
     case CstVertex(sym, _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Eff(sym), lhsLoc, provLoc)))
@@ -440,7 +506,18 @@ object EffectProvenance {
 
   }
 
-
+  /**
+    * Produces an `EffectfulFunctionUsesOtherEffect` error for a pair of conflicting vertices.
+    *
+    * This overload handles pairwise effect conflicts, where a single source effect flows
+    * into a sink that declares a different concrete effect. All combinations of
+    * IO, user-defined effects, and rigid variables are covered.
+    *
+    * @param source   the vertex representing the effect that flows in
+    * @param sink     the vertex representing the declared (conflicting) effect
+    * @param provLoc  the source location of the provenance (where the conflict originates)
+    * @return `Some(error)` if both vertices are recognized concrete effects, `None` otherwise
+    */
   private def mkEffectfulError(source: Vertex, sink: Vertex, provLoc: SourceLocation): Option[EffConflicted] = (source, sink) match {
     case (IOVertex(_), CstVertex(sym2, loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym2)), Eff(Symbol.IO), loc2, provLoc)))
     case (CstVertex(sym1, _), IOVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(Symbol.IO)), Eff(sym1), loc2, provLoc)))
@@ -452,6 +529,13 @@ object EffectProvenance {
 
   }
 
+  /**
+    * Produces an `UnusedEffectInSignature` error for a sink vertex whose declared effect
+    * is never actually used in the function body.
+    *
+    * @param sink the vertex representing the unused declared effect
+    * @return `Some(error)` if the sink is a recognized concrete effect, `None` otherwise
+    */
   private def mkUnusedError(sink: Vertex): Option[EffConflicted] = sink match {
     case IOVertex(loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(Eff(Symbol.IO), loc)))
     case CstVertex(sym, loc) => Some(TypeConstraint.EffConflicted(TypeError.UnusedEffectInSignature(Eff(sym), loc)))
@@ -460,17 +544,56 @@ object EffectProvenance {
 
   }
 
+  /**
+    * Identifies declared effects in `lhs` that are absent from the incoming effects in `rhs`.
+    *
+    * A "forward pass" checks the left-hand side (declared effects) against the right-hand side
+    * (observed effects) and returns those declared effects that were never observed.
+    * These represent effects declared in a signature that are never actually used.
+    *
+    * @param lhs the declared effect vertices (from the signature)
+    * @param rhs the observed effect vertices with their source locations
+    * @return the sub-list of `lhs` vertices that have no matching vertex in `rhs`
+    */
   private def forwardPass(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[Vertex] = {
     lhs.foldLeft(List.empty[Vertex]) {
       case (acc, e) => if (!rhs.exists(i => sameType(e, i._1))) e :: acc else acc
     }
   }
 
+  /**
+    * Identifies observed effects in `rhs` that are not declared in `lhs`.
+    *
+    * A "backwards pass" checks the right-hand side (observed effects) against the
+    * left-hand side (declared effects) and returns those observed effects that have no
+    * corresponding declaration. These represent effects used in a function body that
+    * are missing from the signature.
+    *
+    * @param lhs the declared effect vertices (from the signature)
+    * @param rhs the observed effect vertices with their source locations
+    * @return the sub-list of `rhs` entries whose vertex has no matching vertex in `lhs`
+    */
   private def backwardsPass(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[(Vertex, SourceLocation)] = {
     rhs.foldLeft(List.empty[(Vertex, SourceLocation)]) {
       case (acc, e) => if (!lhs.exists(i => sameType(e._1, i))) e :: acc else acc
     }
   }
+
+  /**
+    * Produces errors for a `SignatureVertex` whose declared effects do not match the effects
+    * that flow into it.
+    *
+    * Combines two checks:
+    *   1. Forward pass: declared effects that are never used → `UnusedEffectInSignature` errors.
+    *   2. Backward pass: observed effects not present in the declaration →
+    *      `EffectfulFunctionUsesOtherEffect` errors.
+    *
+    * @param lhs     the declared effect vertices from the signature
+    * @param rhs     the observed effect vertices with their source locations
+    * @param symList the symbolic names of all declared effects (used in error messages)
+    * @param lhsLoc  the source location of the signature declaration
+    * @return a list of `EffConflicted` errors (may be empty)
+    */
   private def mkSignatureErrors(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)], symList: List[EffSymOrRigidVar], lhsLoc: SourceLocation) = {
     val unused = forwardPass(lhs, rhs)
     val e1: List[EffConflicted] = if (unused.nonEmpty) unused.flatMap(mkUnusedError) else Nil
@@ -484,13 +607,18 @@ object EffectProvenance {
   }
 
   /**
-    * Converts an entrance in the map lattice to en EffConflicted if there is a conflict
+    * Dispatches error construction for a given sink vertex and its set of incoming vertices.
     *
-    * A conflict occurs when there is a mismatch on the left hand side and the set that it maps to.
+    * Routes to the appropriate error-making helper depending on the kind of sink:
+    *   - `ArgVertex`: delegates to `mkArgErrors`.
+    *   - `SignatureVertex` with a single effect: reports unused errors and recurses on the single element.
+    *   - `SignatureVertex` with multiple effects: delegates to `mkSignatureErrors`.
+    *   - Any other concrete vertex: for each incoming vertex that differs in type, attempts
+    *     `mkEffectfulError`, `mkExplicitPureError`, and `mkImplicitPureError`.
     *
-    * @param sink     from the map lattice. The vertex which maps to a set of vertices
-    * @param incoming the set of vertices that reach the sink
-    * @return a list containing the error(s) (if any)
+    * @param sink     the sink vertex from the map lattice
+    * @param incoming the set of (vertex, location) pairs that reach the sink
+    * @return a list of `EffConflicted` errors (may be empty)
     */
   private def mkErrors(sink: Vertex, incoming: Set[(Vertex, SourceLocation)]): List[EffConflicted] = {
     (sink, incoming.toList) match {
@@ -509,18 +637,29 @@ object EffectProvenance {
   }
 
   /**
-    * Converts a type to its vertex representation(s).
+    * Converts a type into its vertex representation(s) given a node type context.
     *
-    * A type may map to multiple vertices (e.g., a union type), a single vertex (e.g. IO),
-    * or no vertices (for non-effect types). Returns an empty list if the type
-    * cannot be represented as vertices.
+    * The conversion handles the following cases:
+    *   - `Type.Var`: rigid variables become `RigidVarVertex`, flexible ones become `VarVertex`.
+    *   - `Type.Cst` with `Pure`: `PureExplicitVertex` (if the location is real) or
+    *     `PureImplicitVertex` (synthetic location).
+    *   - `Type.Cst` with `Effect(IO)`: `IOVertex`, with location chosen based on node type.
+    *   - `Type.Cst` with a user-defined effect: `CstVertex`.
+    *   - `Type.Apply` (union types): recursively decomposes both branches and concatenates
+    *     their vertices. Only `TypeConstructor.Union` nodes are expanded; all other
+    *     constructors yield an empty list.
     *
-    * Examples: IO becomes IOVertex, functions defined to be {} becomes PureExplicitVertex,
-    * and PureImplicitVertex in the implicit case.
+    * The outer `vtpe` also governs how the resulting list is wrapped:
+    *   - `ArgNode`  → wrapped in a single `ArgVertex`.
+    *   - `SinkNode` → wrapped in a single `SignatureVertex`.
+    *   - `IntermediateNode` / `SourceNode` → returned as-is.
+    *
+    * Returns an empty list for types that have no effect representation (e.g., value types).
     *
     * @param tpe      the type to convert
-    * @param constLoc the constraint location from where the type was encountered
-    * @return the list of vertices representing this type
+    * @param constLoc the source location of the enclosing constraint (used as a fallback)
+    * @param vtpe     the role this type plays in the constraint graph
+    * @return the list of vertices representing this type's effects
     */
   private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: Scope, renv: RigidityEnv): List[Vertex] = {
 
