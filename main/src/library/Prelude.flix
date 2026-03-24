@@ -1,4 +1,6 @@
+import java.lang.RuntimeException
 import java.lang.System
+import java.lang.Thread
 
 ///
 /// Static denotes the region of global lifetime.
@@ -155,13 +157,14 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = unsafe IO {
-    System.err.println("*".repeat(80));
-    System.err.println("**") ;
-    System.err.println("**  BUG: ${m}") ;
-    System.err.println("**") ;
-    System.err.println("*".repeat(80));
-    System.err.println("");
-    ?panic
+    let elems = Thread.currentThread().getStackTrace();
+    let trace = Abort.formatStackTrace(Array.toList(elems), 3);
+    let nl = RichString.fromString(String.lineSeparator());
+    let header = RichString.bold(RichString.red(RichString.fromString("BUG: ${m}")));
+    let traceHeader = RichString.white("Stack Trace:");
+    let msg = RichString.toString(header + nl + traceHeader + nl + trace);
+    System.out.println(msg);
+    throw new RuntimeException("BUG: ${m}")
 }
 
 ///

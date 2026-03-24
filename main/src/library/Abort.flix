@@ -100,7 +100,7 @@ pub mod Abort {
     ///
     /// Formats a JVM stack trace as a gray RichString.
     ///
-    def formatStackTrace(trace: List[StackTraceElement], skip: Int32): RichString \ IO =
+    pub def formatStackTrace(trace: List[StackTraceElement], skip: Int32): RichString \ IO =
         use RichString.{fromString, joinWith, cyan, gray, bold, yellow};
         let nl = fromString(String.lineSeparator());
         let frames = List.drop(skip, trace) |> List.zipWithIndex;
