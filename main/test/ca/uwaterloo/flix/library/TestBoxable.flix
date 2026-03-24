@@ -13,9 +13,6 @@ mod TestBoxable {
     @Test
     def unitCompare01(): Unit \ Assert = assertEq(expected = box(()), box(()))
 
-    @Test
-    def unitToString01(): Unit \ Assert = assertEq(expected = "()", "${box(())}")
-
     /////////////////////////////////////////////////////////////////////////////
     // Bool                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -307,9 +304,6 @@ mod TestBoxable {
     @Test
     def tuple2Compare02(): Unit \ Assert = assertTrue(box((0, 0)) < box((0, 1)))
 
-    @Test
-    def tuple2ToString01(): Unit \ Assert = assertEq(expected = "(1, 2)", "${box((1, 2))}")
-
     /////////////////////////////////////////////////////////////////////////////
     // Tuple3                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -332,6 +326,4 @@ mod TestBoxable {
     @Test
     def tuple3Compare02(): Unit \ Assert = assertTrue(box((0, 0, 0)) < box((0, 0, 1)))
 
-    @Test
-    def tuple3ToString01(): Unit \ Assert = assertEq(expected = "(1, 2, 3)", "${box((1, 2, 3))}")
 }

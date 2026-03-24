@@ -145,7 +145,6 @@ object JvmName {
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
   val CallSite: JvmName = JvmName(JavaLangInvoke, "CallSite")
-  val CharSequence: JvmName = JvmName(JavaLang, "CharSequence")
   val Character: JvmName = JvmName(JavaLang, "Character")
   val Class: JvmName = JvmName(JavaLang, "Class")
   val ConcurrentLinkedQueue: JvmName = JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
