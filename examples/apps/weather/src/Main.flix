@@ -1,3 +1,5 @@
+use Fs.ReadFile
+
 ///
 /// Prints the weather condition an temperature based on the user's location.
 ///
@@ -15,4 +17,4 @@ def main(): Unit \ Net + IO =
     with Display.displayWithIO
     with HttpWithResult.runWithIO
     with Logger.runWithIO
-    with FileReadWithResult.runWithIO
+    with ReadFile.runWithIO

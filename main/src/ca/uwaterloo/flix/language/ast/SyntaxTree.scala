@@ -91,6 +91,8 @@ object SyntaxTree {
 
     case object Case extends TreeKind
 
+    case object CaseBody extends TreeKind
+
     case object CommentList extends TreeKind
 
     case object DerivationList extends Type
@@ -478,6 +480,8 @@ object SyntaxTree {
       case object RecordFieldFragment extends Pattern
 
       case object Tag extends Pattern
+
+      case object TagBody extends Pattern
 
       case object Tuple extends Pattern
 
