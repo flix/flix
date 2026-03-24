@@ -460,9 +460,9 @@ object EffectProvenance {
     * @param sink   the `PureImplicitVertex` representing the implicitly-pure declaration
     * @return `Some(error)` if the combination is a known implicit-pure conflict, `None` otherwise
     */
-  private def mkImplicitPureError(source: Vertex, sink: Vertex): Option[EffConflicted] = (source, sink) match {
-    case (IOVertex(loc1), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, loc1)))
-    case (CstVertex(sym, loc1), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(Eff(sym), loc2, loc1)))
+  private def mkImplicitPureError(source: Vertex, sink: Vertex, provLoc: SourceLocation): Option[EffConflicted] = (source, sink) match {
+    case (IOVertex(_), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesIO(loc2, provLoc)))
+    case (CstVertex(sym, _), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(Eff(sym), loc2, provLoc)))
     case (RigidVarVertex(sym1, loc1), PureImplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ImplicitlyPureFunctionUsesEffect(RigidVar(sym1), loc2, loc1)))
     case _ => None
   }
@@ -478,9 +478,9 @@ object EffectProvenance {
     * @param sink   the `PureExplicitVertex` representing the `{}` annotation
     * @return `Some(error)` if the combination is a known explicit-pure conflict, `None` otherwise
     */
-  private def mkExplicitPureError(source: Vertex, sink: Vertex): Option[EffConflicted] = (source, sink) match {
-    case (IOVertex(loc1), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, loc1)))
-    case (CstVertex(sym, loc1), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(Eff(sym), loc2, loc1)))
+  private def mkExplicitPureError(source: Vertex, sink: Vertex, provLoc: SourceLocation): Option[EffConflicted] = (source, sink) match {
+    case (IOVertex(_), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesIO(loc2, provLoc)))
+    case (CstVertex(sym, _), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(Eff(sym), loc2, provLoc)))
     case (RigidVarVertex(sym1, loc1), PureExplicitVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.ExplicitlyPureFunctionUsesEffect(RigidVar(sym1), loc2, loc1)))
     case _ => None
   }
@@ -555,7 +555,7 @@ object EffectProvenance {
     * @param rhs the observed effect vertices with their source locations
     * @return the sub-list of `lhs` vertices that have no matching vertex in `rhs`
     */
-  private def forwardPass(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[Vertex] = {
+  private def findUnused(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[Vertex] = {
     lhs.foldLeft(List.empty[Vertex]) {
       case (acc, e) => if (!rhs.exists(i => sameType(e, i._1))) e :: acc else acc
     }
@@ -573,7 +573,7 @@ object EffectProvenance {
     * @param rhs the observed effect vertices with their source locations
     * @return the sub-list of `rhs` entries whose vertex has no matching vertex in `lhs`
     */
-  private def backwardsPass(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[(Vertex, SourceLocation)] = {
+  private def findUndeclared(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)]): List[(Vertex, SourceLocation)] = {
     rhs.foldLeft(List.empty[(Vertex, SourceLocation)]) {
       case (acc, e) => if (!lhs.exists(i => sameType(e._1, i))) e :: acc else acc
     }
@@ -595,11 +595,11 @@ object EffectProvenance {
     * @return a list of `EffConflicted` errors (may be empty)
     */
   private def mkSignatureErrors(lhs: List[Vertex], rhs: List[(Vertex, SourceLocation)], symList: List[EffSymOrRigidVar], lhsLoc: SourceLocation) = {
-    val unused = forwardPass(lhs, rhs)
+    val unused = findUnused(lhs, rhs)
     val e1: List[EffConflicted] = if (unused.nonEmpty) unused.flatMap(mkUnusedError) else Nil
 
     // all of the used effects must be in the signature:
-    val undefined = backwardsPass(lhs, rhs)
+    val undefined = findUndeclared(lhs, rhs)
     val e2: List[EffConflicted] = if (undefined.nonEmpty) undefined.flatMap{case (e, provLoc) => mkEffectfulError(e, symList, lhsLoc, provLoc)}
 
     else Nil
@@ -625,11 +625,14 @@ object EffectProvenance {
       case (ArgVertex(xs, aLoc), ys) => mkArgErrors(xs, ys, aLoc)
       case (s@SignatureVertex(xs, sigLoc), ys) => xs match {
         case Nil => Nil
-        case x :: Nil => mkUnusedError(x).toList ::: mkErrors(x, ys.toSet)
+        case x :: Nil =>
+          val xUnused = findUnused(List(x), ys).nonEmpty
+          if (xUnused) mkUnusedError(x).toList ::: mkErrors(x, ys.toSet)
+          else mkErrors(x, ys.toSet)
         case _ => mkSignatureErrors(xs, ys, s.symbols(), sigLoc)
       }
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, provLoc) =>
-        val a = mkEffectfulError(y, x, provLoc) :: mkExplicitPureError(y, x) :: mkImplicitPureError(y, x) :: Nil
+        val a = mkEffectfulError(y, x, provLoc) :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
         a.flatten
       }
       case _ => Nil
