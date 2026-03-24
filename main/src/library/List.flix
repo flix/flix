@@ -493,13 +493,15 @@ pub mod List {
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
-    pub def flatMap(f: a -> List[b] \ ef, l: List[a]): List[b] \ ef =
-        @Tailrec
-        def loop(ll, acc) = match ll {
-            case Nil     => acc
-            case x :: xs => loop(xs, acc ::: f(x))
+    pub def flatMap(f: a -> List[b] \ ef, l: List[a]): List[b] \ ef = region rc {
+        let ml = MutList.empty(rc);
+        def loop(ll) = match ll {
+            case Nil     => ()
+            case x :: xs => MutList.pushAll(f(x), ml); loop(xs)
         };
-        loop(l, Nil)
+        loop(l);
+        MutList.toList(ml)
+    }
 
     ///
     /// Returns the reverse of `l`.
