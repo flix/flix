@@ -138,19 +138,19 @@ object NamedAst {
 
     case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(label: Name.Label, value: Expr, rest: Expr, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(label: Name.Label, rest: Expr, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLoad(base: Expr, index: Expr, loc: SourceLocation) extends Expr
+    case class ArrayLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayStore(base: Expr, index: Expr, elm: Expr, loc: SourceLocation) extends Expr
+    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
+    case class ArrayLength(exp: Expr, loc: SourceLocation) extends Expr
 
     case class StructNew(qname: Name.QName, exps: List[(Name.Label, Expr)], region: Option[Expr], loc: SourceLocation) extends Expr
 
