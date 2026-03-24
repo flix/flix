@@ -693,7 +693,7 @@ object Visitor {
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(bnd, tpe, _, _, loc) = fparam
+    val FormalParam(bnd, tpe, src, _, loc) = fparam
     if (!a.accept(loc)) {
       return
     }
@@ -701,7 +701,12 @@ object Visitor {
     c.consumeFormalParam(fparam)
 
     visitBinder(bnd)
-    visitType(tpe)
+    // Only visit the type if it was explicitly ascribed in source code.
+    // Inferred types have synthetic locations that can span too widely
+    // (e.g. the entire handler rule), causing incorrect hover ranges.
+    if (src == TypeSource.Ascribed) {
+      visitType(tpe)
+    }
   }
 
   private def visitHandlerRule(rule: HandlerRule)(implicit a: Acceptor, c: Consumer): Unit = {
