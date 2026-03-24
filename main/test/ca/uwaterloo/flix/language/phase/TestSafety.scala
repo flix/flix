@@ -677,6 +677,121 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalCheckedCastToVar](result)
   }
 
+  test("IllegalCheckedCast.01") {
+    val input =
+      """
+        |import java.lang.Integer
+        |
+        |def f(x: String): Integer = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCast](result)
+  }
+
+  test("IllegalCheckedCast.02") {
+    val input =
+      """
+        |import java.lang.Integer
+        |import java.lang.StringBuilder
+        |
+        |def f(x: Integer): StringBuilder = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCast](result)
+  }
+
+  test("IllegalCheckedCast.03") {
+    val input =
+      """
+        |import java.io.InputStream
+        |import java.io.OutputStream
+        |
+        |def f(x: InputStream): OutputStream = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCast](result)
+  }
+
+  test("IllegalCheckedCast.04") {
+    val input =
+      """
+        |import java.util.ArrayList
+        |import java.util.HashMap
+        |
+        |def f(x: ArrayList): HashMap = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCast](result)
+  }
+
+  test("IllegalCheckedCast.05") {
+    val input =
+      """
+        |import java.lang.Comparable
+        |import java.lang.Runnable
+        |
+        |def f(x: Comparable): Runnable = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCast](result)
+  }
+
+  test("IllegalCheckedCastToNonJava.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |
+        |def f(x: Object): Int32 = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
+  }
+
+  test("IllegalCheckedCastToNonJava.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |
+        |def f(x: Object): Bool = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
+  }
+
+  test("IllegalCheckedCastToNonJava.03") {
+    val input =
+      """
+        |import java.lang.Object
+        |
+        |def f(x: Object): Int64 = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
+  }
+
+  test("IllegalCheckedCastToNonJava.04") {
+    val input =
+      """
+        |import java.lang.StringBuilder
+        |
+        |def f(x: StringBuilder): Float64 = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
+  }
+
+  test("IllegalCheckedCastToNonJava.05") {
+    val input =
+      """
+        |import java.lang.Integer
+        |
+        |enum Color { case Red, Green, Blue }
+        |def f(x: Integer): Color = checked_cast(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
+  }
+
   test("IllegalEntryPointSignature.05") {
     val input =
       """
