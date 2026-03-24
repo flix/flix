@@ -12,12 +12,12 @@ mod Test.Exp.Null {
     @CompileTest
     def testNullArray01(): Unit \ IO = region rc {
         let _ = rc;
-        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Array[String, rc] \ IO)
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Array[String, rc])
     }
 
     @CompileTest
     def testNullChannel01(): Unit \ IO = {
-        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Receiver[String] \ IO)
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Receiver[String])
     }
 
     @CompileTest
@@ -38,7 +38,7 @@ mod Test.Exp.Null {
     @CompileTest
     def testNullRef01(): Unit \ IO = region rc {
         let _ = rc;
-        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Ref[String, rc] \ IO)
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Ref[String, rc])
     }
 
     @CompileTest
