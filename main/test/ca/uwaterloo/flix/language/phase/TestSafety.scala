@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.errors.{EntryPointError, SafetyError}
+import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.{Forbidden, IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalThrowType}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -790,118 +790,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastToNonJava](result)
-  }
-
-  test("IllegalEntryPointSignature.05") {
-    val input =
-      """
-        |eff Print {
-        |    pub def println(): Unit
-        |}
-        |
-        |@Test
-        |def foo(): Unit \ Print = Print.println()
-        |
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointEffect](result)
-  }
-
-  test("IllegalExportFunction.01") {
-    val input =
-      """
-        |mod Mod { @Export def id(x: Int32): Int32 = x }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.NonPublicExport](result)
-  }
-
-  test("IllegalExportFunction.02") {
-    val input =
-      """
-        |@Export pub def id(x: Int32): Int32 = x
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalExportNamespace](result)
-  }
-
-  test("IllegalExportFunction.03") {
-    val input =
-      """
-        |mod Mod { @Export pub def <><(x: Int32, _y: Int32): Int32 = x }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalExportName](result)
-  }
-
-  test("IllegalExportFunction.04") {
-    val input =
-      """
-        |eff Print
-        |def println(x: t): t \ Print = ???()
-        |mod Mod { @Export pub def id(x: Int32): Int32 \ Print = println(x) }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointEffect](result)
-  }
-
-  test("IllegalExportFunction.05") {
-    val input =
-      """
-        |enum Option[t] {
-        |  case Some(t)
-        |  case None
-        |}
-        |mod Mod { @Export pub def id(x: Int32): Option[Int32] = Some(x) }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalExportType](result)
-  }
-
-  test("IllegalExportFunction.06") {
-    val input =
-      """
-        |enum Option[t] {
-        |  case Some(t)
-        |  case None
-        |}
-        |mod Mod { @Export pub def id(x: Int32, _y: Option[Int32]): Int32 = x }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalExportType](result)
-  }
-
-  test("IllegalExportFunction.07") {
-    val input =
-      """
-        |mod Mod { @Export pub def id[t](x: t): t = x }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
-  }
-
-  test("IllegalExportFunction.08") {
-    val input =
-      """
-        |struct S[t, r] {
-        |    v: t
-        |}
-        |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
-  }
-
-  test("IllegalExportFunction.09") {
-    val input =
-      """
-        |struct S[t, r] {
-        |    v: t
-        |}
-        |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 
   test("IllegalMethodEffect.01") {
