@@ -105,14 +105,6 @@ pub mod Fs {
     }
 
     ///
-    /// Options for the `copyWith` operation.
-    ///
-    pub enum CopyOption with Eq, Order, ToString {
-        case CopyAttributes
-        case ReplaceExisting
-    }
-
-    ///
     /// Options for the `moveWith` operation.
     ///
     pub enum MoveOption with Eq, Order, ToString {

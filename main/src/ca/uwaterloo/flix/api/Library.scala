@@ -96,6 +96,7 @@ object Library {
     "Fs/AccessTime.flix" -> LocalResource.get("/src/library/Fs/AccessTime.flix"),
     "Fs/CreationTime.flix" -> LocalResource.get("/src/library/Fs/CreationTime.flix"),
     "Fs/CopyFile.flix" -> LocalResource.get("/src/library/Fs/CopyFile.flix"),
+    "Fs/CopyOption.flix" -> LocalResource.get("/src/library/Fs/CopyOption.flix"),
     "Fs/DeleteFile.flix" -> LocalResource.get("/src/library/Fs/DeleteFile.flix"),
     "Fs/DirList.flix" -> LocalResource.get("/src/library/Fs/DirList.flix"),
     "Fs/Glob.flix" -> LocalResource.get("/src/library/Fs/Glob.flix"),
