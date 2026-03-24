@@ -221,7 +221,8 @@ object Namer {
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
       val table2 = decls.foldLeft(table1)(tableDecl)
-      addUsesToTable(table2, sym.ns, usesAndImports)
+      val table3 = addUsesToTable(table2, sym.ns, usesAndImports)
+      liftCompanionType(table3, sym, decls)
 
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -318,6 +319,79 @@ object Namer {
     case SymbolTable(symbols0, instances, uses) =>
       val oldMap = symbols0.getOrElse(ns, ListMap.empty)
       val newMap = oldMap + (name -> decl)
+      val symbols = symbols0 + (ns -> newMap)
+      SymbolTable(symbols, instances, uses)
+  }
+
+  /**
+    * Lifts a companion type from a module to its parent namespace.
+    *
+    * If module `A.B` contains a type declaration (enum, struct, effect, trait) named `B`,
+    * that type is "lifted" to the parent namespace so it is accessible as `A.B` in type position.
+    * Child declarations (enum cases, struct fields) are also lifted to the module namespace
+    * so that e.g. `A.B.B` resolves the constructor.
+    *
+    * If a non-module type with the same name already exists in the parent namespace (e.g. during
+    * migration when the type is declared in both the old and new locations), lifting is skipped.
+    */
+  private def liftCompanionType(table: SymbolTable, modSym: Symbol.ModuleSym, decls: List[NamedAst.Declaration])(implicit sctx: SharedContext): SymbolTable = {
+    if (modSym.ns.isEmpty) return table // root module, nothing to lift
+
+    val moduleName = modSym.ns.last
+    val parentNs = modSym.ns.init
+
+    // Find a companion type: a declaration whose name matches the module name.
+    val companionOpt: Option[NamedAst.Declaration] = decls.collectFirst {
+      case d: NamedAst.Declaration.Enum if d.sym.name == moduleName => d
+      case d: NamedAst.Declaration.Struct if d.sym.name == moduleName => d
+      case d: NamedAst.Declaration.Effect if d.sym.name == moduleName => d
+      case d: NamedAst.Declaration.Trait if d.sym.name == moduleName => d
+    }
+
+    companionOpt match {
+      case None => table
+      case Some(companion) =>
+        // Don't lift if a non-Mod type with this name already exists in parent.
+        lookupName(moduleName, parentNs, table) match {
+          case LookupResult.AlreadyDefined(_) => table
+          case LookupResult.NotDefined =>
+            val table1 = appendDeclToTable(table, parentNs, moduleName, companion)
+            liftChildDeclarations(table1, modSym, companion)
+        }
+    }
+  }
+
+  /**
+    * Lifts child declarations (enum cases, struct fields) from the companion type's
+    * nested namespace to the module's namespace.
+    *
+    * Uses `appendDeclToTable` so that the companion type (Enum/Struct) remains first in the
+    * list at the module slot. This is important because `visitUseOrImport` takes the first
+    * declaration, and if a Case came before the Enum, `use A.B.B` would resolve the CaseSym
+    * instead of the EnumSym, breaking type resolution via `infallableLookupSym`.
+    */
+  private def liftChildDeclarations(table: SymbolTable, modSym: Symbol.ModuleSym, companion: NamedAst.Declaration): SymbolTable = {
+    companion match {
+      case NamedAst.Declaration.Enum(_, _, _, _, _, _, cases, _) =>
+        cases.foldLeft(table) { (tbl, caseDecl) =>
+          appendDeclToTable(tbl, modSym.ns, caseDecl.sym.name, caseDecl)
+        }
+      case NamedAst.Declaration.Struct(_, _, _, _, _, fields, _) =>
+        fields.foldLeft(table) { (tbl, fieldDecl) =>
+          appendDeclToTable(tbl, modSym.ns, "€" + fieldDecl.sym.name, fieldDecl)
+        }
+      case _ => table // Effects (ops resolved from Effect decl), Traits (sigs resolved from Trait decl)
+    }
+  }
+
+  /**
+    * Adds the given declaration to the table by appending to the end of the list.
+    */
+  private def appendDeclToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): SymbolTable = table match {
+    case SymbolTable(symbols0, instances, uses) =>
+      val oldMap = symbols0.getOrElse(ns, ListMap.empty)
+      val oldList = oldMap.m.getOrElse(name, Nil)
+      val newMap = ListMap(oldMap.m + (name -> (oldList :+ decl)))
       val symbols = symbols0 + (ns -> newMap)
       SymbolTable(symbols, instances, uses)
   }

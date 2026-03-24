@@ -78,29 +78,41 @@ object DefaultHandlers {
     // The Default Handler must reside in the companion module of the effect.
     // Hence we use the namespace of the handler to construct the expected
     // effect symbol and look it up in the AST.
+    // We check two cases:
+    // 1. The effect is declared in the parent module (old style): eff namespace = handler namespace init
+    // 2. The effect is declared inside the module itself (companion lifting): eff namespace = handler namespace
     val effFqn = handlerSym.namespace.mkString(".")
     val effSym = Symbol.mkEffSym(effFqn)
-    val companionEffect = root.effects.get(effSym)
+    val companionEffect = root.effects.get(effSym).map((effSym, _)).orElse {
+      // Check for a companion effect declared inside the module itself (companion lifting).
+      // Only possible when the handler is inside a module (non-empty namespace).
+      if (handlerSym.namespace.nonEmpty) {
+        val companionEffFqn = effFqn + "." + handlerSym.namespace.last
+        val companionEffSym = Symbol.mkEffSym(companionEffFqn)
+        root.effects.get(companionEffSym).map((companionEffSym, _))
+      } else {
+        None
+      }
+    }
     companionEffect match {
       case None =>
         sctx.errors.add(TypeError.DefaultHandlerNotInModule(handlerSym, handlerSym.loc))
         None
-      // The default handler is NOT in the companion module of an effect
-      case Some(_) =>
+      case Some((resolvedEffSym, _)) =>
         // Synthetic location of our handler
         val loc = handlerSym.loc.asSynthetic
         // There is a valid effect to wrap
-        val handledEff = Type.Cst(TypeConstructor.Effect(effSym, Kind.Eff), loc)
+        val handledEff = Type.Cst(TypeConstructor.Effect(resolvedEffSym, Kind.Eff), loc)
         val declaredScheme = handlerDef.spec.sc
         // Generate expected scheme for generating IO
         val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
         // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
         if (!Scheme.equal(expectedSchemeIO, declaredScheme, traitEnv, eqEnv, Nil)(RegionScope.Top, flix)) {
-          sctx.errors.add(TypeError.IllegalDefaultHandlerSignature(effSym, handlerSym, handlerSym.loc))
+          sctx.errors.add(TypeError.IllegalDefaultHandlerSignature(resolvedEffSym, handlerSym, handlerSym.loc))
           errors = true
         }
         if (!errors) {
-          Some(TypedAst.DefaultHandler(handlerSym, handledEff, effSym))
+          Some(TypedAst.DefaultHandler(handlerSym, handledEff, resolvedEffSym))
         } else {
           None
         }
