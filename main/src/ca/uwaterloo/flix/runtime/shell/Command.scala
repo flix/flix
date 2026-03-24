@@ -176,6 +176,12 @@ object Command {
       return Command.Praise
 
     //
+    // Eval prefix?
+    //
+    if (input.startsWith(":eval "))
+      return Command.Eval(input.substring(":eval ".length))
+
+    //
     // Eval or Unknown?
     //
     if (input.startsWith(":"))
