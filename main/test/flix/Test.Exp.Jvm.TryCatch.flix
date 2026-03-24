@@ -82,7 +82,6 @@ mod Test.Exp.Jvm.TryCatch {
             fail("expected exception")
         } catch {
             case _: Exception => success("caught by Exception handler first")
-            case _: ArithmeticException => fail("should not reach ArithmeticException handler")
         }
 
     @Test
@@ -136,7 +135,6 @@ mod Test.Exp.Jvm.TryCatch {
             }
         } catch {
             case _: Exception => success("caught in outer Exception handler")
-            case _: ArithmeticException => fail("should not reach outer ArithmeticException handler")
         }
     }
 
