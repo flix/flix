@@ -16,21 +16,25 @@
 
 package ca.uwaterloo.flix.util.collection
 
+import scala.collection.mutable
+
 object SeqOps {
 
   /**
-    * Gets duplicate pairs from a list of items.
-    * This is used to generate a list of pairs that can be mapped into Duplicate errors.
-    * What constitutes a "duplicate" is abstracted into the groupBy argument.
-    * But for enum variants, two variants are duplicates if they share names.
+    * Returns a list of pairs `(first, duplicate)` for each item that shares a key with an earlier item.
+    * What constitutes a "duplicate" is abstracted into the `groupBy` argument.
     */
   def getDuplicates[A, K](items: Seq[A], groupBy: A => K): List[(A, A)] = {
-    val groups = items.groupBy(groupBy)
-    for {
-      (_, group) <- groups.toList
-      // if a group has a nonempty tail, then everything in the tail is a duplicate of the head
-      duplicate <- group.tail
-    } yield (group.head, duplicate)
+    val seen = mutable.Map.empty[K, A]
+    val duplicates = List.newBuilder[(A, A)]
+    for (item <- items) {
+      val key = groupBy(item)
+      seen.get(key) match {
+        case Some(first) => duplicates += ((first, item))
+        case None => seen(key) = item
+      }
+    }
+    duplicates.result()
   }
 
 }
