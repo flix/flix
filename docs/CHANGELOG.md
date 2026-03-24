@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.69.3:
+- Library: Introduce `Fs` effects (thanks Magnus!)
+
 Version 0.69.2:
 - Library: Restructure core effects (thanks Magnus!)
 
