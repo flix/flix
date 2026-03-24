@@ -23,17 +23,20 @@ pub mod Fixpoint3.Debugging {
     use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.BoxingType
     use Fixpoint3.Options
+    use Fs.FileWrite
 
     ///
     /// Write `s` to standard file. Overwrite if `overwrite` is true, otherwise append.
     ///
     def flush(s: String, overwrite: Bool): Unit \ IO =
         if (Options.enableDebugToFile()) {
-            let res =
+            let filename = Options.debugFileName();
+            let res = run {
                 if (overwrite)
-                    FileWrite.runWithIO(() -> FileWrite.write(str = s, Options.debugFileName()))
+                    FileWrite.write(str = s, filename)
                 else
-                    FileWrite.runWithIO(() -> FileWrite.append(str = s, Options.debugFileName()));
+                    FileWrite.append(str = s, filename)
+            } with Fs.FileWrite.runWithIO;
             match res {
                 case Ok(_) => ()
                 case Err(e) => println(e)
