@@ -20,17 +20,24 @@ pub mod Net.Http {
     use IoError.IoError
     use Logger.Severity
     use Net.Http
+    use Net.HttpInteraction
+    use Net.HttpInteraction.HttpInteraction
     use Net.HttpLayer
     use Net.HttpRequest
     use Net.HttpRequest.HttpRequest
     use Net.HttpResponse
     use Net.HttpResponse.HttpResponse
+    use Net.RecordedOutcome
+    use Net.RecordedRequest
+    use Net.RecordedRequest.RecordedRequest
     use Net.RetryDecision
     use Net.RetryOutcome
     use RichString.{text, bold, cyan, green, yellow, red, gray}
     use Time.Clock
     use Time.Duration
     use Time.Duration.toMillis
+    use Util.Json
+    use Util.Json.ToJson
 
     ///
     /// The effect used to send HTTP requests (both http:// and https://).
@@ -371,6 +378,103 @@ pub mod Net.Http {
                         )
                 };
                 k(result)
+        }
+
+    //
+    // Record/Replay helpers
+    //
+
+    ///
+    /// Serializes a list of interactions to a pretty-printed JSON array.
+    ///
+    def serializeCassette(interactions: List[HttpInteraction]): String =
+        Json.toPrettyString(2, ToJson.toJson(interactions))
+
+    ///
+    /// Deserializes a JSON array of interactions, or `Err` with a human-readable
+    /// message if the cassette is malformed.
+    ///
+    def deserializeCassette(s: String): Result[String, List[HttpInteraction]] =
+        Result.mapErr(e -> "${e}", Json.decode(s))
+
+    //
+    // Record/Replay middleware
+    //
+
+    ///
+    /// Middleware that intercepts the `Http` effect, recording every request
+    /// and its outcome. When the wrapped computation completes, the recorded
+    /// interactions are serialized and written to the given `file`.
+    ///
+    pub def withRecording(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, Fs.WriteFile} =
+        region rc {
+            let log: MutList[HttpInteraction, rc] = MutList.empty(rc);
+            let result = run { f() } with handler Http {
+                def request(req, k) = {
+                    let outcome = Http.request(req);
+                    let interaction = HttpInteraction({
+                        request = RecordedRequest.fromHttpRequest(req),
+                        outcome = RecordedOutcome.fromResult(outcome)
+                    });
+                    MutList.push(interaction, log);
+                    k(outcome)
+                }
+            };
+            let json = serializeCassette(MutList.toList(log));
+            discard Fs.WriteFile.write({str = json}, file);
+            result
+        }
+
+    ///
+    /// Middleware that replays recorded HTTP interactions from the given `file`.
+    ///
+    /// This is a terminal handler: it eliminates the `Http` effect entirely.
+    /// Each `Http.request` call returns the next recorded outcome in sequence.
+    /// If the request does not match the recorded request (by method and URL),
+    /// a bug is raised.
+    ///
+    pub def withReplay(file: String, f: Unit -> a \ ef): a \ (ef - Http) + Fs.ReadFile =
+        let cassette = match Fs.ReadFile.read(file) {
+            case Ok(json)  => match deserializeCassette(json) {
+                case Ok(interactions) => interactions
+                case Err(msg)         => bug!("Failed to parse cassette: ${msg}")
+            }
+            case Err(err)  => bug!("Failed to read cassette: ${err}")
+        };
+        region rc {
+            // Loaded in reverse so that `pop` (which removes the last element)
+            // returns interactions in recorded order.
+            let remaining = MutList.empty(rc);
+            MutList.pushAll(List.reverse(cassette), remaining);
+            run { f() } with handler Http {
+                def request(req, k) = match MutList.pop(remaining) {
+                    case Some(entry) =>
+                        let HttpInteraction(e) = entry;
+                        let RecordedRequest(r) = e#request;
+                        let actual = RecordedRequest.fromHttpRequest(req);
+                        let RecordedRequest(a) = actual;
+                        if (a#method != r#method or a#url != r#url)
+                            bug!("Replay mismatch")
+                        else
+                            k(RecordedOutcome.toResult(e#outcome))
+                    case None =>
+                        bug!("Replay exhausted: no more recorded interactions")
+                }
+            }
+        }
+
+    ///
+    /// Middleware that automatically records or replays HTTP interactions.
+    ///
+    /// If the cassette `file` exists, replays from it (no network access).
+    /// If the cassette `file` does not exist, records to it (real network access).
+    ///
+    /// Delete the cassette file to force re-recording.
+    ///
+    pub def withCassette(file: String, f: Unit -> a \ ef): a \ (ef - Http) + {Http, Fs.ReadFile, Fs.WriteFile, Fs.FileExists} =
+        match Fs.FileExists.exists(file) {
+            case Ok(true) => withReplay(file, f)
+            case _        => withRecording(file, f)
         }
 
 }
