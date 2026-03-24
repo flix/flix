@@ -69,6 +69,7 @@ object Library {
     "BufReader.flix" -> LocalResource.get("/src/library/BufReader.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    "Codec.flix" -> LocalResource.get("/src/library/Codec.flix"),
     "Checksum.flix" -> LocalResource.get("/src/library/Checksum.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CharacterSet.flix" -> LocalResource.get("/src/library/CharacterSet.flix"),
