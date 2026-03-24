@@ -1160,6 +1160,80 @@ mod TestIterator {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // unfoldWithIter                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def unfoldWithIter01(): Unit \ Assert = region rc {
+        let iter = Iterator.unfoldWithIter(rc, () -> (None: Option[Int32]));
+        assertEq(expected = (Nil: List[Int32]), Iterator.toList(iter))
+    }
+
+    @Test
+    def unfoldWithIter02(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let iter = Iterator.unfoldWithIter(rc, () ->
+            if (Ref.get(x) >= 3) None
+            else { let v = Ref.get(x); Ref.put(v + 1, x); Some(v) }
+        );
+        assertEq(expected = 0 :: 1 :: 2 :: Nil, Iterator.toList(iter))
+    }
+
+    @Test
+    def unfoldWithIter03(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let iter = Iterator.unfoldWithIter(rc, () ->
+            if (Ref.get(x) >= 5) None
+            else { let v = Ref.get(x); Ref.put(v + 2, x); Some(v) }
+        );
+        assertEq(expected = 0 :: 2 :: 4 :: Nil, Iterator.toList(iter))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unfold                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def unfold01(): Unit \ Assert = region rc {
+        let iter = Iterator.unfold(rc, _s -> (None: Option[(Int32, Int32)]), 0);
+        assertEq(expected = (Nil: List[Int32]), Iterator.toList(iter))
+    }
+
+    @Test
+    def unfold02(): Unit \ Assert = region rc {
+        let iter = Iterator.unfold(rc, s -> if (s >= 3) None else Some((s + 10, s + 1)), 0);
+        assertEq(expected = 10 :: 11 :: 12 :: Nil, Iterator.toList(iter))
+    }
+
+    @Test
+    def unfold03(): Unit \ Assert = region rc {
+        let iter = Iterator.unfold(rc, s -> if (s >= 10) None else Some((s * s, s + 2)), 0);
+        assertEq(expected = 0 :: 4 :: 16 :: 36 :: 64 :: Nil, Iterator.toList(iter))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert = region rc {
+        let iter = Iterator.iterate(rc, s -> if (true) (None: Option[Int32]) else Some(s), 0);
+        assertEq(expected = (Nil: List[Int32]), Iterator.toList(iter))
+    }
+
+    @Test
+    def iterate02(): Unit \ Assert = region rc {
+        let iter = Iterator.iterate(rc, s -> if (s >= 3) None else Some(s + 1), 0);
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Iterator.toList(iter))
+    }
+
+    @Test
+    def iterate03(): Unit \ Assert = region rc {
+        let iter = Iterator.iterate(rc, s -> if (s >= 10) None else Some(s + 2), 0);
+        assertEq(expected = 2 :: 4 :: 6 :: 8 :: 10 :: Nil, Iterator.toList(iter))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // unfoldWithOk                                                            //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -825,7 +825,7 @@ mod Seq {
                 case Seq.Cons(x, rs)    => Ref.put(rs, ls); Some(x)
             }
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Returns the association list `l` as a `DelayMap`.

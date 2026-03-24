@@ -831,7 +831,7 @@ pub mod Chain {
                 Ref.put(viewLeft(xs), cursor);
                 Some(x)
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Returns the chain `c` as a Nel.

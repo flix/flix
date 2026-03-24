@@ -1681,6 +1681,26 @@ mod TestSet {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert =
+        assertEq(expected = (Set#{}: Set[Int32]), Set.iterate(s -> if (true) None else Some(s + 1), 0))
+
+    @Test
+    def iterate02(): Unit \ Assert =
+        assertEq(expected = Set#{1}, Set.iterate(s -> if (s >= 1) None else Some(s + 1), 0))
+
+    @Test
+    def iterate03(): Unit \ Assert =
+        assertEq(expected = Set#{1, 2, 3}, Set.iterate(s -> if (s >= 3) None else Some(s + 1), 0))
+
+    @Test
+    def iterate04(): Unit \ Assert =
+        assertEq(expected = Set#{2, 4, 6, 8, 10}, Set.iterate(s -> if (s >= 10) None else Some(s + 2), 0))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
