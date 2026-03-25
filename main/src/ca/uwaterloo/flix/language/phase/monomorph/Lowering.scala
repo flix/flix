@@ -285,12 +285,15 @@ object Lowering {
       MonoAst.Expr.IfThenElse(e1, e2, e3, t, eff, loc)
 
     case TypedAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+      // Strip auto-unboxing: `m.put("k", 42);` discards the result, so we must not
+      // unbox the null that `HashMap.put` returns on first insert (would NPE).
       val e1 = stripAutoUnbox(lowerExp(exp1))
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.Stm(e1, e2, t, eff, loc)
 
     case TypedAst.Expr.Discard(exp, eff, loc) =>
+      // Strip auto-unboxing: same reason as Stm — discarded results must not be unboxed.
       val e = stripAutoUnbox(lowerExp(exp))
       MonoAst.Expr.Discard(e, eff, loc)
 
@@ -488,8 +491,9 @@ object Lowering {
     case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
+      // Box primitive args where Java expects Object (e.g., `new SimpleEntry(42, true)`).
       val javaParamTypes = constructor.getParameterTypes
-      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType, eff, loc) }
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType) }
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), boxedArgs, t, eff, loc)
 
     case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
@@ -501,13 +505,15 @@ object Lowering {
       val e = lowerExp(exp)
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
+      // Box primitive args and unbox Object returns for Java generic methods.
+      // E.g., `m.put("k", 42)` boxes 42 via Integer.valueOf; `m.get("k")` unboxes via intValue.
       val javaParamTypes = method.getParameterTypes
-      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType, eff, loc) }
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType) }
       val javaReturnType = method.getReturnType
       val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
       val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
       val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: boxedArgs, invokeType, eff, loc)
-      maybeUnboxResult(invoke, t, javaReturnType, eff, loc)
+      maybeUnboxResult(invoke, t, javaReturnType)
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
@@ -522,13 +528,14 @@ object Lowering {
     case TypedAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
+      // Box primitive args and unbox Object returns (same as InvokeMethod).
       val javaParamTypes = method.getParameterTypes
-      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType, eff, loc) }
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType) }
       val javaReturnType = method.getReturnType
       val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
       val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
       val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), boxedArgs, invokeType, eff, loc)
-      maybeUnboxResult(invoke, t, javaReturnType, eff, loc)
+      maybeUnboxResult(invoke, t, javaReturnType)
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -1007,8 +1014,8 @@ object Lowering {
   }
 
   /**
-    * Returns the Java boxing method for the given Flix primitive type.
-    * E.g., `Type.Int32` maps to `java.lang.Integer.valueOf(int)`.
+    * Returns the `valueOf` boxing method for a Flix primitive type.
+    * This is the same mechanism javac uses to implement autoboxing.
     */
   private def javaBoxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
     case Type.Bool => classOf[java.lang.Boolean].getMethod("valueOf", java.lang.Boolean.TYPE)
@@ -1023,8 +1030,8 @@ object Lowering {
   }
 
   /**
-    * Returns the Java unboxing method for the given Flix primitive type.
-    * E.g., `Type.Int32` maps to `java.lang.Integer.intValue()`.
+    * Returns the unboxing method (e.g., `intValue`) for a Flix primitive type.
+    * This is the same mechanism javac uses to implement auto-unboxing.
     */
   private def javaUnboxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
     case Type.Bool => classOf[java.lang.Boolean].getMethod("booleanValue")
@@ -1040,7 +1047,7 @@ object Lowering {
 
   /**
     * Returns the Flix Type for the Java wrapper class of a primitive type.
-    * E.g., `Type.Int32` maps to `Type.Cst(TypeConstructor.Native(classOf[java.lang.Integer]), loc)`.
+    * E.g., `Bool` -> `Native(java.lang.Boolean)`, `Int32` -> `Native(java.lang.Integer)`.
     */
   private def boxedWrapperType(tpe: Type, loc: SourceLocation): Type = tpe match {
     case Type.Bool => Type.Cst(TypeConstructor.Native(classOf[java.lang.Boolean]), loc)
@@ -1055,56 +1062,55 @@ object Lowering {
   }
 
   /**
-    * Boxes `arg` if its Flix type is a primitive but the Java parameter type is not primitive.
-    * This inserts an `InvokeStaticMethod(Integer.valueOf)` (or equivalent) wrapper.
+    * Boxes `arg` if its Flix type is primitive but the Java parameter expects Object.
+    * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the `42` is boxed
+    * via `Integer.valueOf(42)` because `HashMap.put` takes `(Object, Object)`.
     */
-  private def maybeBoxArg(arg: MonoAst.Expr, javaParamType: Class[?], eff: Type, loc: SourceLocation): MonoAst.Expr = {
+  private def maybeBoxArg(arg: MonoAst.Expr, javaParamType: Class[?]): MonoAst.Expr = {
     if (isPrimType(arg.tpe) && !javaParamType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
         AtomicOp.InvokeStaticMethod(javaBoxMethod(arg.tpe)),
         List(arg),
-        boxedWrapperType(arg.tpe, loc),
-        eff,
-        loc.asSynthetic
+        boxedWrapperType(arg.tpe, arg.loc),
+        arg.eff,
+        arg.loc.asSynthetic
       )
     } else arg
   }
 
   /**
-    * Unboxes `expr` if the Flix type is a primitive but the Java return type is not primitive.
-    * This inserts an `InvokeMethod(Integer.intValue)` (or equivalent) wrapper.
+    * Unboxes `expr` if the Flix return type is primitive but the Java method returns Object.
+    * E.g., in `let v: Int32 = m.get("k")` on a `HashMap[String, Int32]`, the Object
+    * returned by `HashMap.get` is unboxed via `Integer.intValue()`.
     */
-  private def maybeUnboxResult(expr: MonoAst.Expr, flixType: Type, javaReturnType: Class[?], eff: Type, loc: SourceLocation): MonoAst.Expr = {
+  private def maybeUnboxResult(expr: MonoAst.Expr, flixType: Type, javaReturnType: Class[?]): MonoAst.Expr = {
     if (isPrimType(flixType) && !javaReturnType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
         AtomicOp.InvokeMethod(javaUnboxMethod(flixType)),
         List(expr),
         flixType,
-        eff,
-        loc.asSynthetic
+        expr.eff,
+        expr.loc.asSynthetic
       )
     } else expr
   }
 
   /**
-    * The set of Java unboxing method names used by `maybeUnboxResult`.
-    */
-  private val unboxMethodNames: Set[String] = Set(
-    "booleanValue", "charValue", "byteValue", "shortValue",
-    "intValue", "longValue", "floatValue", "doubleValue"
-  )
-
-  /**
-    * Strips an auto-unboxing wrapper from `expr` if present.
-    * This is used in `Stm` and `Discard` contexts where the return value
-    * is discarded and should not be unboxed (to avoid NPE on null returns
-    * from Java generic methods like `HashMap.put`).
+    * Strips an auto-unboxing wrapper (e.g., `intValue()`) from `expr` if present.
     */
   private def stripAutoUnbox(expr: MonoAst.Expr): MonoAst.Expr = expr match {
     case MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), List(inner), _, _, _)
-      if unboxMethodNames.contains(method.getName) && method.getParameterCount == 0 =>
-      inner
+      if isAutoUnboxMethod(method) => inner
     case _ => expr
+  }
+
+  /** Returns `true` if `method` is a Java auto-unboxing method (e.g., `intValue`, `booleanValue`). */
+  private def isAutoUnboxMethod(method: java.lang.reflect.Method): Boolean = {
+    method.getParameterCount == 0 && (method.getName match {
+      case "booleanValue" | "charValue" | "byteValue" | "shortValue" |
+           "intValue" | "longValue" | "floatValue" | "doubleValue" => true
+      case _ => false
+    })
   }
 
   /**
