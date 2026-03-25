@@ -52,7 +52,8 @@ object KindError {
          |
          |${highlight(loc, "missing type arguments", fmt)}
          |
-         |${underline("Tip:")} Provide explicit type arguments, e.g. '${cyan(example)}'.
+         |${underline("Explanation:")} Java generic types cannot be used without type arguments.
+         |Use '${cyan(example)}' instead of '${red(clazz.getSimpleName)}'.
          |""".stripMargin
     }
   }
