@@ -11,6 +11,30 @@ mod Test.Exp.Jvm.Generic.InvokeStaticMethod {
     import java.util.Optional
     import java.util.{Set => JSet}
 
+    // CompileTests
+
+    @CompileTest
+    def testCollectionsEmptyList01(): JList[String] \ IO =
+        JCollections.emptyList()
+
+    @CompileTest
+    def testCollectionsEmptyMap01(): JMap[String, JInteger] \ IO =
+        JCollections.emptyMap()
+
+    @CompileTest
+    def testCollectionsEmptySet01(): JSet[String] \ IO =
+        JCollections.emptySet()
+
+    @CompileTest
+    def testListOf01(): JList[String] \ IO =
+        JList.of("a", "b")
+
+    @CompileTest
+    def testMapOf01(): JMap[String, String] \ IO =
+        JMap.of("k", "v")
+
+    // Tests
+
     @Test
     def testOptionalEmpty01(): Unit \ {Assert, IO} =
         let o: Optional[String] = Optional.empty();
@@ -26,18 +50,6 @@ mod Test.Exp.Jvm.Generic.InvokeStaticMethod {
         let o: Optional[String] = Optional.of("hello");
         let r: String = o.get();
         assertEq(expected = "hello", r)
-
-    @CompileTest
-    def testCollectionsEmptyList01(): JList[String] \ IO =
-        JCollections.emptyList()
-
-    @CompileTest
-    def testCollectionsEmptyMap01(): JMap[String, JInteger] \ IO =
-        JCollections.emptyMap()
-
-    @CompileTest
-    def testCollectionsEmptySet01(): JSet[String] \ IO =
-        JCollections.emptySet()
 
     @Test
     def testCollectionsSingletonList01(): Unit \ {Assert, IO} =
@@ -109,18 +121,10 @@ mod Test.Exp.Jvm.Generic.InvokeStaticMethod {
         let r: String = JCollections.max(l);
         assertEq(expected = "c", r)
 
-    @CompileTest
-    def testListOf01(): JList[String] \ IO =
-        JList.of("a", "b")
-
     @Test
     def testListOf02(): Unit \ {Assert, IO} =
         let l: JList[String] = JList.of("a", "b");
         assertEq(expected = 2, l.size())
-
-    @CompileTest
-    def testMapOf01(): JMap[String, String] \ IO =
-        JMap.of("k", "v")
 
     @Test
     def testOptionalOrElse01(): Unit \ {Assert, IO} =

@@ -15,7 +15,58 @@ mod Test.Exp.Jvm.Generic.NewObject {
     import java.util.TreeMap
     import java.util.concurrent.Callable
 
-    // Comparator tests
+    // CompileTests
+
+    @CompileTest
+    def testComparatorCompile01(): Comparator[String] \ IO =
+        new Comparator {
+            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+                let s1 = unchecked_cast(t as String);
+                let s2 = unchecked_cast(u as String);
+                s1.compareTo(s2)
+        }
+
+    @CompileTest
+    def testComparatorCompile02(): Comparator[JInteger] \ IO =
+        new Comparator {
+            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+                let i1 = unchecked_cast(t as JInteger);
+                let i2 = unchecked_cast(u as JInteger);
+                i1.compareTo(i2)
+        }
+
+    @CompileTest
+    def testCallableString01(): Callable[String] \ IO =
+        new Callable {
+            def call(_this: Callable): Object =
+                checked_cast("hello")
+        }
+
+    @CompileTest
+    def testCallableInteger01(): Callable[JInteger] \ IO =
+        new Callable {
+            def call(_this: Callable): Object =
+                let v = JInteger.valueOf(42i32);
+                checked_cast(v)
+        }
+
+    @CompileTest
+    def testIterableCompile01(): JIterable[String] \ IO =
+        new JIterable {
+            def iterator(_this: JIterable): JIterator \ IO =
+                let l: ArrayList[String] = new ArrayList();
+                l.iterator()
+        }
+
+    @CompileTest
+    def testComparableCompile01(): JComparable[String] \ IO =
+        new JComparable {
+            def compareTo(_this: JComparable, o: Object): Int32 =
+                let s = unchecked_cast(o as String);
+                "hello".compareTo(s)
+        }
+
+    // Tests
 
     @Test
     def testComparatorString01(): Unit \ {Assert, IO} =
@@ -80,24 +131,6 @@ mod Test.Exp.Jvm.Generic.NewObject {
         r.$run();
         assertEq(expected = 1, l.size())
 
-    @CompileTest
-    def testComparatorCompile01(): Comparator[String] \ IO =
-        new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
-                let s1 = unchecked_cast(t as String);
-                let s2 = unchecked_cast(u as String);
-                s1.compareTo(s2)
-        }
-
-    @CompileTest
-    def testComparatorCompile02(): Comparator[JInteger] \ IO =
-        new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
-                let i1 = unchecked_cast(t as JInteger);
-                let i2 = unchecked_cast(u as JInteger);
-                i1.compareTo(i2)
-        }
-
     @Test
     def testComparatorCompare01(): Unit \ {Assert, IO} =
         let c = new Comparator {
@@ -133,37 +166,6 @@ mod Test.Exp.Jvm.Generic.NewObject {
         JCollections.sort(l, c);
         let r: String = l.get(0);
         assertEq(expected = "c", r)
-
-    @CompileTest
-    def testCallableString01(): Callable[String] \ IO =
-        new Callable {
-            def call(_this: Callable): Object =
-                checked_cast("hello")
-        }
-
-    @CompileTest
-    def testCallableInteger01(): Callable[JInteger] \ IO =
-        new Callable {
-            def call(_this: Callable): Object =
-                let v = JInteger.valueOf(42i32);
-                checked_cast(v)
-        }
-
-    @CompileTest
-    def testIterableCompile01(): JIterable[String] \ IO =
-        new JIterable {
-            def iterator(_this: JIterable): JIterator \ IO =
-                let l: ArrayList[String] = new ArrayList();
-                l.iterator()
-        }
-
-    @CompileTest
-    def testComparableCompile01(): JComparable[String] \ IO =
-        new JComparable {
-            def compareTo(_this: JComparable, o: Object): Int32 =
-                let s = unchecked_cast(o as String);
-                "hello".compareTo(s)
-        }
 
     @Test
     def testComparatorCapture01(): Unit \ {Assert, IO} =
