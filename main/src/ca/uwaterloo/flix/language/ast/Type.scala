@@ -1361,6 +1361,16 @@ object Type {
   }
 
   /**
+    * Returns a fully-applied Flix type for the given Java class, with `Object` type arguments
+    * for generic classes. Use this in ground-type contexts that need kind `Star`.
+    */
+  def getFlixTypeApplied(c: Class[?], loc: SourceLocation): Type = {
+    val base = getFlixType(c)
+    val n = c.getTypeParameters.length
+    Type.mkApply(base, List.fill(n)(Type.mkNative(classOf[Object], loc)), loc)
+  }
+
+  /**
     * Returns the [[Class]] object of `tpe`, if it exists.
     *
     * Almost the inverse function of [[getFlixType]], but arrays and unit returns None.
@@ -1392,7 +1402,12 @@ object Type {
       Some(classOf[java.util.regex.Pattern])
     case Type.Cst(TypeConstructor.Native(clazz), _) =>
       Some(clazz)
-    case _ => None
+    case _ =>
+      // Peel off type applications (e.g., ArrayList[String]) and check the base type.
+      tpe.baseType match {
+        case Type.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
+        case _ => None
+      }
   }
 
   /**
