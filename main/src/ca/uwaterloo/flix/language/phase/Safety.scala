@@ -840,16 +840,25 @@ object Safety {
       val flixMethods = getFlixMethodSignatures(methods)
       val implemented = flixMethods.keySet
 
-      val classMethods = getInstanceMethods(clazz)
-      val objectClassMethods = getInstanceMethods(classOf[Object]).keySet
-      val canImplement = classMethods.keySet
-      val mustImplement = canImplement.filter(m =>
-        isAbstractMethod(classMethods(m)) && !objectClassMethods.contains(m)
-      )
+      // Build a substitution from Java type variable names to Flix types
+      // using the expression's type arguments (e.g., Comparator[String] gives T -> String).
+      val substMap = buildTypeVarSubst(clazz, tpe)
 
-      // `methods` must include all required signatures (e.g. abstract methods).
-      val unimplemented = mustImplement.diff(implemented)
-      unimplemented.map(m => NewObjectMissingMethod(clazz, classMethods(m), loc)).foreach(sctx.errors.add)
+      // For each Java method, compute valid signatures: erased, and generic if type args available.
+      val javaMethods = JvmUtils.getInstanceMethods(clazz)
+      val objectMethodSigs = JvmUtils.getInstanceMethods(classOf[Object]).map(erasedSignature).toSet
+
+      // canImplement: union of all valid signatures for all methods.
+      val canImplement = javaMethods.flatMap(m => validSignatures(m, substMap)).toSet
+
+      // mustImplement: abstract methods not from Object.
+      // A method counts as implemented if ANY of its valid signatures is provided.
+      val unimplementedMethods = javaMethods.filter { m =>
+        isAbstractMethod(m) &&
+        !objectMethodSigs.contains(erasedSignature(m)) &&
+        validSignatures(m, substMap).intersect(implemented).isEmpty
+      }
+      unimplementedMethods.foreach(m => sctx.errors.add(NewObjectMissingMethod(clazz, m, loc)))
 
       // `methods` must not include non-existing methods.
       val undefined = implemented.diff(canImplement)
@@ -878,13 +887,69 @@ object Safety {
     }.toMap
   }
 
-  /** Returns the instance methods of `clazz` with their [[MethodSignature]]. */
-  private def getInstanceMethods(clazz: Class[?]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = JvmUtils.getInstanceMethods(clazz)
-    methods.map(m => {
-      val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.instantiateJavaTypeWithObjectArgs(_, SourceLocation.Unknown)), Type.instantiateJavaTypeWithObjectArgs(m.getReturnType, SourceLocation.Unknown))
-      signature -> m
-    }).toMap
+  /** Returns the erased [[MethodSignature]] for a Java method (type params filled with Object). */
+  private def erasedSignature(m: java.lang.reflect.Method): MethodSignature = {
+    MethodSignature(
+      m.getName,
+      m.getParameterTypes.toList.map(Type.getFlixTypeApplied(_, SourceLocation.Unknown)),
+      Type.getFlixTypeApplied(m.getReturnType, SourceLocation.Unknown)
+    )
+  }
+
+  /**
+    * Returns all valid [[MethodSignature]]s for a Java method: the erased signature,
+    * plus the generic-resolved signature if a non-empty substitution is available.
+    */
+  private def validSignatures(m: java.lang.reflect.Method, substMap: Map[String, Type]): Set[MethodSignature] = {
+    val erased = erasedSignature(m)
+    if (substMap.isEmpty) {
+      Set(erased)
+    } else {
+      val genericParams = m.getGenericParameterTypes.toList.map(resolveJavaType(_, substMap))
+      val genericRet = resolveJavaType(m.getGenericReturnType, substMap)
+      val generic = MethodSignature(m.getName, genericParams, genericRet)
+      Set(erased, generic)
+    }
+  }
+
+  /**
+    * Builds a mapping from Java type variable names to Flix types using the
+    * expression type's type arguments. E.g., for `Comparator[String]` with
+    * class type parameter `T`, returns `Map("T" -> String)`.
+    */
+  private def buildTypeVarSubst(clazz: Class[?], tpe: Type): Map[String, Type] = {
+    val classParamNames = clazz.getTypeParameters.map(_.getName)
+    val typeArgs = tpe.typeArguments
+    if (classParamNames.length == typeArgs.length && typeArgs.nonEmpty)
+      classParamNames.zip(typeArgs).collect {
+        case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
+      }.toMap
+    else
+      Map.empty
+  }
+
+  /**
+    * Resolves a `java.lang.reflect.Type` to a Flix [[Type]] using the given
+    * substitution map. Falls back to the erased type for unresolvable cases.
+    */
+  private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type]): Type = javaType match {
+    case tv: java.lang.reflect.TypeVariable[_] =>
+      substMap.getOrElse(tv.getName, Type.getFlixTypeApplied(classOf[Object], SourceLocation.Unknown))
+    case pt: java.lang.reflect.ParameterizedType =>
+      // e.g., Iterator<T> — resolve the raw type and each type argument.
+      pt.getRawType match {
+        case rawClazz: Class[_] =>
+          val base = Type.getFlixType(rawClazz)
+          val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap))
+          Type.mkApply(base, resolvedArgs, SourceLocation.Unknown)
+        case _ =>
+          Type.getFlixTypeApplied(classOf[Object], SourceLocation.Unknown)
+      }
+    case clazz: Class[_] =>
+      Type.getFlixTypeApplied(clazz, SourceLocation.Unknown)
+    case _ =>
+      // GenericArrayType, WildcardType: fall back to erased type.
+      Type.getFlixTypeApplied(classOf[Object], SourceLocation.Unknown)
   }
 
   /** Return `true` if `clazz` has a non-private constructor with zero arguments. */
