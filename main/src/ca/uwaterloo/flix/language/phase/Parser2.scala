@@ -1087,7 +1087,7 @@ object Parser2 {
       }
       parameters()
       expect(TokenKind.Colon)
-      Type.typeAndEffect()
+      Type.typeAndEffect(canSuggestEquals = true)
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -2180,7 +2180,7 @@ object Parser2 {
       nameUnqualified(NAME_FUNCTION)
       Decl.parameters()
       if (eat(TokenKind.Colon)) {
-        Type.typeAndEffect()
+        Type.typeAndEffect(canSuggestEquals = true)
       }
       expect(TokenKind.Equal)
       statement(rhsIsOptional = false)
@@ -3361,14 +3361,38 @@ object Parser2 {
   }
 
   private object Type {
-    def typeAndEffect()(implicit s: State): Mark.Closed = {
+    def typeAndEffect(canSuggestEquals: Boolean = false)(implicit s: State): Mark.Closed = {
       val lhs = ttype()
-      if (eat(TokenKind.Backslash)) {
-        val mark = open()
-        ttype()
-        close(mark, TreeKind.Type.Effect)
-      } else if (eat(TokenKind.Slash)) {
-        closeWithError(open(), ParseError.ExpectedBackslashGotSlash(SyntacticContext.Unknown, previousSourceLocation()))
+      // Check whether the user forgot the '\' between a return type and its effect.
+      // The four token kinds that can start an effect are:
+      //   - NameUppercase: a named effect, e.g. `IO` in `Int32 \ IO`
+      //   - NameLowercase: an effect variable, e.g. `ef` in `Int32 \ ef`
+      //   - CurlyL: an effect set, e.g. `{IO}` in `Int32 \ {IO}`
+      //   - ParenL: a parenthesized effect, e.g. `(ef - IO)` in `Int32 \ (ef - IO)`
+      //
+      // Example of the error being caught:
+      //   def foo(): Int32 IO = ...   // forgot '\'; should be `Int32 \ IO`
+      //
+      // Known limitation: these same tokens can also begin a function body when the user
+      // forgot '=' (e.g. `def foo(): Int32 { x + 1 }` instead of `def foo(): Int32 = { x + 1 }`).
+      // In that case this heuristic fires a false positive and the user will see two errors:
+      // this one and the subsequent "expected '='" error from the definition parser.
+      // canSuggestEquals is true only when called from a definition return type position.
+      val isMissingBackslash = at(TokenKind.NameUppercase) || at(TokenKind.NameLowercase) || at(TokenKind.CurlyL) || at(TokenKind.ParenL)
+
+      if (isMissingBackslash) {
+        val betweenLoc = mkSourceLocation(previousSourceLocation().end, currentSourceLocation().start)
+        val error = ParseError.ExpectedBackslashBetweenTypeAndEffect(SyntacticContext.Unknown, betweenLoc, canSuggestEquals)
+        closeWithError(open(), error)
+      }
+
+      val usedSlash = eat(TokenKind.Slash)
+      if (usedSlash){
+        val error = ParseError.ExpectedBackslashGotSlash(SyntacticContext.Unknown, previousSourceLocation())
+        closeWithError(open(), error)
+      }
+
+      if (eat(TokenKind.Backslash) || isMissingBackslash || usedSlash) {
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)
