@@ -525,6 +525,32 @@ mod TestFloat32 {
     def clampToInt6408(): Unit \ Assert = assertEq(expected = -127i64, Float32.clampToInt64(min = -100i64, max = 100i64, nanValue = -127i64, Float32.nan()))
 
     /////////////////////////////////////////////////////////////////////////////
+    // truncateToInt32                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToInt3201(): Unit \ Assert = assertEq(expected = 3, Float32.truncateToInt32(3.99f32))
+
+    @Test
+    def truncateToInt3202(): Unit \ Assert = assertEq(expected = 0, Float32.truncateToInt32(Float32.nan()))
+
+    @Test
+    def truncateToInt3203(): Unit \ Assert = assertEq(expected = Int32.maxValue(), Float32.truncateToInt32(Float32.positiveInfinity()))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // truncateToInt64                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToInt6401(): Unit \ Assert = assertEq(expected = 3i64, Float32.truncateToInt64(3.99f32))
+
+    @Test
+    def truncateToInt6402(): Unit \ Assert = assertEq(expected = 0i64, Float32.truncateToInt64(Float32.nan()))
+
+    @Test
+    def truncateToInt6403(): Unit \ Assert = assertEq(expected = -3i64, Float32.truncateToInt64(-3.99f32))
+
+    /////////////////////////////////////////////////////////////////////////////
     // abs                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 

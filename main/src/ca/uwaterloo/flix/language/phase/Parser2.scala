@@ -1156,16 +1156,14 @@ object Parser2 {
       // Singleton short-hand.
       val isShorthand = at(TokenKind.ParenL)
       if (isShorthand) {
-        val markType = open()
-        val mark = open()
+        val markBody = open()
         zeroOrMore(
           namedTokenSet = NamedTokenSet.Type,
           getItem = () => Type.ttype(),
           checkForItem = _.isFirstInType,
           breakWhen = _.isRecoverInType,
         )
-        close(mark, TreeKind.Type.Tuple)
-        close(markType, TreeKind.Type.Type)
+        close(markBody, TreeKind.CaseBody)
       }
       // Derivations.
       if (at(TokenKind.KeywordWith)) {
@@ -1201,16 +1199,14 @@ object Parser2 {
         }
         nameUnqualified(NAME_TAG)
         if (at(TokenKind.ParenL)) {
-          val mark = open()
-          val markTuple = open()
+          val markBody = open()
           zeroOrMore(
             namedTokenSet = NamedTokenSet.Type,
             getItem = () => Type.ttype(),
             checkForItem = _.isFirstInType,
             breakWhen = _.isRecoverInDecl
           )
-          close(markTuple, TreeKind.Type.Tuple)
-          close(mark, TreeKind.Type.Type)
+          close(markBody, TreeKind.CaseBody)
         }
         close(mark, TreeKind.Case)
       }
@@ -3297,9 +3293,22 @@ object Parser2 {
       val mark = open()
       nameAllowQualified(NAME_TAG)
       if (at(TokenKind.ParenL)) {
-        tuplePat()
+        tagBodyPat()
       }
       close(mark, TreeKind.Pattern.Tag)
+    }
+
+    private def tagBodyPat()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Pattern,
+        getItem = pattern,
+        checkForItem = _.isFirstInPattern,
+        breakWhen = _.isRecoverInExpr,
+      )
+      close(mark, TreeKind.Pattern.TagBody)
     }
 
     private def tuplePat()(implicit s: State): Mark.Closed = {

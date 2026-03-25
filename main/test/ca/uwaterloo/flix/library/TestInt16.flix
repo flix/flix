@@ -1110,6 +1110,19 @@ mod TestInt16 {
     def clampToInt808(): Unit \ Assert = assertEq(expected = 10i8, Int16.clampToInt8(min = 10i8, max = 0i8, 5i16))      // Bad range
 
     /////////////////////////////////////////////////////////////////////////////
+    // truncateToInt8                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToInt801(): Unit \ Assert = assertEq(expected = 42i8, Int16.truncateToInt8(42i16))
+
+    @Test
+    def truncateToInt802(): Unit \ Assert = assertEq(expected = 1i8, Int16.truncateToInt8(257i16))
+
+    @Test
+    def truncateToInt803(): Unit \ Assert = assertEq(expected = 0i8, Int16.truncateToInt8(0i16))
+
+    /////////////////////////////////////////////////////////////////////////////
     // shortValue                                                              //
     /////////////////////////////////////////////////////////////////////////////
 

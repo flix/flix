@@ -987,13 +987,13 @@ object Resolver {
       val b = resolveExp(base, scp0)
       ResolvedAst.Expr.RecordSelect(b, label, loc)
 
-    case NamedAst.Expr.RecordExtend(label, value, rest, loc) =>
-      val v = resolveExp(value, scp0)
-      val r = resolveExp(rest, scp0)
+    case NamedAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
+      val v = resolveExp(exp1, scp0)
+      val r = resolveExp(exp2, scp0)
       ResolvedAst.Expr.RecordExtend(label, v, r, loc)
 
-    case NamedAst.Expr.RecordRestrict(label, rest, loc) =>
-      val r = resolveExp(rest, scp0)
+    case NamedAst.Expr.RecordRestrict(label, exp, loc) =>
+      val r = resolveExp(exp, scp0)
       ResolvedAst.Expr.RecordRestrict(label, r, loc)
 
     case NamedAst.Expr.ArrayLit(exps, exp, loc) =>
@@ -1007,19 +1007,19 @@ object Resolver {
       val e3 = resolveExp(exp3, scp0)
       ResolvedAst.Expr.ArrayNew(e1, e2, e3, loc)
 
-    case NamedAst.Expr.ArrayLoad(base, index, loc) =>
-      val b = resolveExp(base, scp0)
-      val i = resolveExp(index, scp0)
+    case NamedAst.Expr.ArrayLoad(exp1, exp2, loc) =>
+      val b = resolveExp(exp1, scp0)
+      val i = resolveExp(exp2, scp0)
       ResolvedAst.Expr.ArrayLoad(b, i, loc)
 
-    case NamedAst.Expr.ArrayStore(base, index, elm, loc) =>
-      val b = resolveExp(base, scp0)
-      val i = resolveExp(index, scp0)
-      val e = resolveExp(elm, scp0)
+    case NamedAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
+      val b = resolveExp(exp1, scp0)
+      val i = resolveExp(exp2, scp0)
+      val e = resolveExp(exp3, scp0)
       ResolvedAst.Expr.ArrayStore(b, i, e, loc)
 
-    case NamedAst.Expr.ArrayLength(base, loc) =>
-      val b = resolveExp(base, scp0)
+    case NamedAst.Expr.ArrayLength(exp, loc) =>
+      val b = resolveExp(exp, scp0)
       ResolvedAst.Expr.ArrayLength(b, loc)
 
     case NamedAst.Expr.StructNew(name, fields0, region0, loc) =>
