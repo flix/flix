@@ -271,14 +271,14 @@ object TypeReconstruction {
       val eff = e.eff
       TypedAst.Expr.RecordSelect(e, field, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.RecordExtend(field, value, rest, tvar, loc) =>
-      val v = visitExp(value)
-      val r = visitExp(rest)
+    case KindedAst.Expr.RecordExtend(field, exp1, exp2, tvar, loc) =>
+      val v = visitExp(exp1)
+      val r = visitExp(exp2)
       val eff = Type.mkUnion(v.eff, r.eff, loc)
       TypedAst.Expr.RecordExtend(field, v, r, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.RecordRestrict(field, rest, tvar, loc) =>
-      val r = visitExp(rest)
+    case KindedAst.Expr.RecordRestrict(field, exp, tvar, loc) =>
+      val r = visitExp(exp)
       val eff = r.eff
       TypedAst.Expr.RecordRestrict(field, r, subst(tvar), eff, loc)
 
