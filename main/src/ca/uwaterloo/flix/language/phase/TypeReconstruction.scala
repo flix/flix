@@ -167,12 +167,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, e3.eff, loc)
       TypedAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case KindedAst.Expr.Stm(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val tpe = e2.tpe
-      val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.Stm(e1, e2, tpe, eff, loc)
+    case KindedAst.Expr.Stm(exps, exp, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      val tpe = e.tpe
+      val eff = Type.mkUnion(es.map(_.eff) :+ e.eff, loc)
+      TypedAst.Expr.Stm(es, e, tpe, eff, loc)
 
     case KindedAst.Expr.Discard(exp, loc) =>
       val e = visitExp(exp)

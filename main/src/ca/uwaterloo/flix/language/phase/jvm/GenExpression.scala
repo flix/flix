@@ -1336,11 +1336,13 @@ object GenExpression {
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.Stmt(exp1, exp2, _) =>
+    case Expr.Stm(exps, exp, _) =>
       import BytecodeInstructions.*
-      compileExpr(exp1)
-      xPop(BackendType.toBackendType(exp1.tpe))
-      compileExpr(exp2)
+      exps.foreach { e =>
+        compileExpr(e)
+        xPop(BackendType.toBackendType(e.tpe))
+      }
+      compileExpr(exp)
 
     case Expr.Region(_, offset, exp, _, _, loc) =>
       // Adding source line number for debugging

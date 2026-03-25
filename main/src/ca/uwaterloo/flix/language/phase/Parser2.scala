@@ -1430,28 +1430,39 @@ object Parser2 {
       */
     def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      var lhs = expression()
-      if (eat(TokenKind.Semi)) {
-        statement()
-        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      } else if (nth(0).notBinaryOperator) {
-        // This token can only appear as a follow token after an expression within a statement,
-        // so we assume the user forgot a semicolon.
-        // We create the error and continue parsing as if the semicolon was present.
-        val isReal = true
-        val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
-        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
-        statement()
-        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      } else if (!rhsIsOptional) {
+      // Collect all expression marks iteratively to avoid stack overflow on long statement chains.
+      val exprMarks = ArrayBuffer.empty[Mark.Closed]
+      exprMarks.addOne(expression())
+      var continue = true
+      while (continue) {
+        if (eat(TokenKind.Semi)) {
+          exprMarks.addOne(expression())
+        } else if (nth(0).notBinaryOperator) {
+          // This token can only appear as a follow token after an expression within a statement,
+          // so we assume the user forgot a semicolon.
+          // We create the error and continue parsing as if the semicolon was present.
+          val isReal = true
+          val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
+          closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
+          exprMarks.addOne(expression())
+        } else {
+          continue = false
+        }
+      }
+      if (exprMarks.length == 1 && !rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
         //       "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'".
         expect(TokenKind.Semi)
       }
-      lhs
+      // Build right-nested Statement tree: Statement(e1, Expr(Statement(e2, Expr(... en))))
+      if (exprMarks.length >= 2) {
+        for (i <- (exprMarks.length - 2) to 0 by -1) {
+          val stm = close(openBefore(exprMarks(i)), TreeKind.Expr.Statement)
+          exprMarks(i) = close(openBefore(stm), TreeKind.Expr.Expr)
+        }
+      }
+      exprMarks(0)
     }
 
     def expression(leftOpt: Option[Op] = None)(implicit s: State): Mark.Closed = {

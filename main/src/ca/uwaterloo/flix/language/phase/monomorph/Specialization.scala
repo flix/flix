@@ -650,10 +650,10 @@ object Specialization {
       val e3 = specializeExp(exp3, env0, subst)
       Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = specializeExp(exp1, env0, subst)
-      val e2 = specializeExp(exp2, env0, subst)
-      Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val e = specializeExp(exp, env0, subst)
+      Expr.Stm(es, e, subst(tpe), subst(eff), loc)
 
     case Expr.Discard(exp, eff, loc) =>
       val e = specializeExp(exp, env0, subst)

@@ -893,10 +893,10 @@ object Resolver {
       val e3 = resolveExp(exp3, scp0)
       ResolvedAst.Expr.IfThenElse(e1, e2, e3, loc)
 
-    case NamedAst.Expr.Stm(exp1, exp2, loc) =>
-      val e1 = resolveExp(exp1, scp0)
-      val e2 = resolveExp(exp2, scp0)
-      ResolvedAst.Expr.Stm(e1, e2, loc)
+    case NamedAst.Expr.Stm(exps, exp, loc) =>
+      val es = exps.map(resolveExp(_, scp0))
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Stm(es, e, loc)
 
     case NamedAst.Expr.Discard(exp, loc) =>
       val e = resolveExp(exp, scp0)

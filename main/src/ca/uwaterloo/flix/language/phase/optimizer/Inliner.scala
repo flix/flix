@@ -238,7 +238,7 @@ object Inliner {
         sctx.changed.putIfAbsent(sym0, ())
         val e1 = visitExp(exp1, ctx0)
         val e2 = visitExp(exp2, ctx0)
-        Expr.Stm(e1, e2, tpe, eff, loc)
+        Expr.Stm(List(e1), e2, tpe, eff, loc)
 
       case (Occur.Once, Type.Pure) =>
         // Unconditionally inline
@@ -316,17 +316,18 @@ object Inliner {
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) => exp1.eff match {
-      case Type.Pure =>
-        // Exp1 has no side effect and is unused
-        sctx.changed.putIfAbsent(sym0, ())
-        visitExp(exp2, ctx0)
-
-      case _ =>
-        val e1 = visitExp(exp1, ctx0)
-        val e2 = visitExp(exp2, ctx0)
-        Expr.Stm(e1, e2, tpe, eff, loc)
-    }
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val impureExps = exps.filterNot(_.eff == Type.Pure)
+      if (impureExps.isEmpty) {
+        // All statement expressions are pure and unused
+        if (exps.nonEmpty) sctx.changed.putIfAbsent(sym0, ())
+        visitExp(exp, ctx0)
+      } else {
+        if (impureExps.length != exps.length) sctx.changed.putIfAbsent(sym0, ())
+        val es = impureExps.map(visitExp(_, ctx0))
+        val e = visitExp(exp, ctx0)
+        Expr.Stm(es, e, tpe, eff, loc)
+      }
 
     case Expr.Discard(exp, eff, loc) =>
       val e = visitExp(exp, ctx0)
@@ -782,7 +783,7 @@ object Inliner {
         Expr.Let(v.sym, binderExp, acc, acc.tpe, eff, v.occur, loc)
       case ((None, binderExp), acc) =>
         val eff = Type.mkUnion(binderExp.eff, acc.eff, loc)
-        Expr.Stm(binderExp, acc, acc.tpe, eff, loc)
+        Expr.Stm(List(binderExp), acc, acc.tpe, eff, loc)
     }
   }
 

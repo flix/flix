@@ -485,16 +485,13 @@ object Redundancy {
       val us3 = visitExp(exp3, env0, rc)
       us1 ++ us2 ++ us3
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      val us1 = exps.foldLeft(Used.empty)((acc, e) => acc ++ visitExp(e, env0, rc))
+      val us2 = visitExp(exp, env0, rc)
 
       // Check for useless pure expressions.
-      if (isUselessExpression(exp1)) {
-        (us1 ++ us2) + UselessExpression(exp1.loc)
-      } else {
-        us1 ++ us2
-      }
+      val useless = exps.filter(isUselessExpression).foldLeft(Used.empty)((acc, e) => acc + UselessExpression(e.loc))
+      us1 ++ us2 ++ useless
 
     case Expr.Discard(exp, _, _) =>
       val us = visitExp(exp, env0, rc)
