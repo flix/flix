@@ -617,32 +617,6 @@ object SafetyError {
     }
   }
 
-  /**
-    * An error raised to indicate that a Flix primitive type is used as a type argument
-    * to a Java generic type.
-    *
-    * @param nativeType   the full Java generic type (e.g., `ArrayList[Int32]`).
-    * @param primitiveArg the Flix primitive type used as a type argument (e.g., `Int32`).
-    * @param loc          the source location.
-    */
-  case class IllegalPrimitiveJavaTypeArg(nativeType: Type, primitiveArg: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
-    def code: ErrorCode = ErrorCode.E5837
-
-    def summary: String = s"Illegal primitive type '${FormatType.formatType(primitiveArg)}' as Java type argument."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Illegal primitive type '${red(FormatType.formatType(primitiveArg))}' as Java type argument.
-         |
-         |${highlight(loc, "illegal type argument", fmt)}
-         |
-         |The type: ${red(FormatType.formatType(nativeType))}
-         |
-         |${underline("Explanation:")} Java generics use type erasure and cannot be parameterized
-         |with primitive types. Use the corresponding Java boxed type instead.
-         |""".stripMargin
-    }
-  }
 
   /** Returns the string representation of `tpe`. */
   private def formatJavaType(tpe: java.lang.Class[?]): String = {
