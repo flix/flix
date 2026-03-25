@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.Executable
 
@@ -648,16 +649,16 @@ object TypeReconstruction {
       // Case 1: Varargs omitted entirely. Insert an empty vector.
       val varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
       val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
-      es ::: varArgs :: Nil
+      es :+ varArgs
     } else if (actualArity >= declaredArity) {
       val normalArgs = es.take(declaredArity - 1)
       val varArgExprs = es.drop(declaredArity - 1)
 
       // Check if a single trailing arg is already a Vector/Array (from ...{} syntax).
       val alreadyWrapped = varArgExprs match {
-        case List(single) => single.tpe match {
-          case Type.Apply(Type.Cst(TypeConstructor.Vector, _), _, _) => true
-          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), _, _), _, _) => true
+        case single :: Nil => single.tpe.baseType match {
+          case Type.Cst(TypeConstructor.Vector, _) => true
+          case Type.Cst(TypeConstructor.Array, _) => true
           case _ => false
         }
         case _ => false
@@ -671,11 +672,11 @@ object TypeReconstruction {
         val componentType = varArgExprs.head.tpe
         val varArgsEff = Type.mkUnion(varArgExprs.map(_.eff), loc)
         val varArgs = TypedAst.Expr.VectorLit(varArgExprs, Type.mkVector(componentType, loc), varArgsEff, loc)
-        normalArgs ::: varArgs :: Nil
+        normalArgs :+ varArgs
       }
     } else {
-      // Too few args (shouldn't happen after type checking). Return as-is.
-      es
+      // Too few args; impossible.
+      throw InternalCompilerException("unexpected too-few varargs", loc)
     }
   }
 
