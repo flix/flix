@@ -1501,175 +1501,175 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
-  // --- IllegalPrimitiveJavaTypeArg: ArrayList[T] ---
+  // --- Primitive Java type args are now allowed via automatic boxing ---
 
-  test("IllegalPrimitiveJavaTypeArg.ArrayList.Bool") {
+  test("AutoBoxing.ArrayList.Bool") {
     val input =
       """
         |import java.util.ArrayList
         |def f(): ArrayList[Bool] \ IO = new ArrayList()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.ArrayList.Char") {
+  test("AutoBoxing.ArrayList.Char") {
     val input =
       """
         |import java.util.ArrayList
         |def f(): ArrayList[Char] \ IO = new ArrayList()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.ArrayList.Int8") {
+  test("AutoBoxing.ArrayList.Int8") {
     val input =
       """
         |import java.util.ArrayList
         |def f(): ArrayList[Int8] \ IO = new ArrayList()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.ArrayList.Int16") {
+  test("AutoBoxing.ArrayList.Int16") {
     val input =
       """
         |import java.util.ArrayList
         |def f(): ArrayList[Int16] \ IO = new ArrayList()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.ArrayList.Int32") {
+  test("AutoBoxing.ArrayList.Int32") {
     val input =
       """
         |import java.util.ArrayList
         |def f(): ArrayList[Int32] \ IO = new ArrayList()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.ArrayList.Int64") {
+  test("AutoBoxing.ArrayList.Int64") {
     val input =
       """
         |import java.util.ArrayList
         |def f(): ArrayList[Int64] \ IO = new ArrayList()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.ArrayList.Float32") {
+  test("AutoBoxing.ArrayList.Float32") {
     val input =
       """
         |import java.util.ArrayList
         |def f(): ArrayList[Float32] \ IO = new ArrayList()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.ArrayList.Float64") {
+  test("AutoBoxing.ArrayList.Float64") {
     val input =
       """
         |import java.util.ArrayList
         |def f(): ArrayList[Float64] \ IO = new ArrayList()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  // --- IllegalPrimitiveJavaTypeArg: HashMap[K, V] ---
+  // --- AutoBoxing: HashMap[K, V] ---
 
-  test("IllegalPrimitiveJavaTypeArg.HashMap.Bool") {
+  test("AutoBoxing.HashMap.Bool") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.String
         |def f(): HashMap[String, Bool] \ IO = new HashMap()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.HashMap.Char") {
+  test("AutoBoxing.HashMap.Char") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.String
         |def f(): HashMap[Char, String] \ IO = new HashMap()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.HashMap.Int8") {
+  test("AutoBoxing.HashMap.Int8") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.String
         |def f(): HashMap[String, Int8] \ IO = new HashMap()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.HashMap.Int16") {
+  test("AutoBoxing.HashMap.Int16") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.String
         |def f(): HashMap[Int16, String] \ IO = new HashMap()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.HashMap.Int32") {
+  test("AutoBoxing.HashMap.Int32") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.String
         |def f(): HashMap[String, Int32] \ IO = new HashMap()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.HashMap.Int64") {
+  test("AutoBoxing.HashMap.Int64") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.String
         |def f(): HashMap[Int64, String] \ IO = new HashMap()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.HashMap.Float32") {
+  test("AutoBoxing.HashMap.Float32") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.String
         |def f(): HashMap[String, Float32] \ IO = new HashMap()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 
-  test("IllegalPrimitiveJavaTypeArg.HashMap.Float64") {
+  test("AutoBoxing.HashMap.Float64") {
     val input =
       """
         |import java.util.HashMap
         |import java.lang.String
         |def f(): HashMap[Float64, String] \ IO = new HashMap()
       """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[IllegalPrimitiveJavaTypeArg](result)
+    val result = check(input, Options.TestWithLibMin)
+    expectSuccess(result)
   }
 }

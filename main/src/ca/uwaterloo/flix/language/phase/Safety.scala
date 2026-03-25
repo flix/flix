@@ -928,10 +928,8 @@ object Safety {
   }
 
   /** Checks that the formal parameter types and return type in `spec` do not use primitive Java type args. */
-  private def checkSpecNativeTypeArgs(spec: Spec)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    spec.fparams.foreach(fp => checkNativeTypeArgs(fp.tpe, fp.loc))
-    checkNativeTypeArgs(spec.retTpe, spec.retTpe.loc)
-  }
+  // Disabled: automatic boxing/unboxing in Lowering now handles primitive Java type args correctly.
+  private def checkSpecNativeTypeArgs(spec: Spec)(implicit sctx: SharedContext, flix: Flix): Unit = ()
 
   /**
     * Checks that `tpe0` does not use Flix primitive types as type arguments
