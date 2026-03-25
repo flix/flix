@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.Executable
 
@@ -636,20 +637,46 @@ object TypeReconstruction {
   }
 
   /**
-    * Returns the given arguments `es` possibly with an empty VarArgs array added as the last argument.
+    * Returns the given arguments `es` with varargs arguments wrapped in a VectorLit if needed.
     */
   private def getArgumentsWithVarArgs(exc: Executable, es: List[TypedAst.Expr], loc: SourceLocation): List[TypedAst.Expr] = {
+    if (!exc.isVarArgs) return es
+
     val declaredArity = exc.getParameterCount
     val actualArity = es.length
-    // Check if (a) an argument is missing and (b) the constructor/method is VarArgs.
-    if (actualArity == declaredArity - 1 && exc.isVarArgs) {
-      // Case 1: Argument missing. Introduce a new empty vector argument.
+
+    if (actualArity == declaredArity - 1) {
+      // Case 1: Varargs omitted entirely. Insert an empty vector.
       val varArgsType = Type.mkNative(exc.getParameterTypes.last.getComponentType, loc)
       val varArgs = TypedAst.Expr.VectorLit(Nil, Type.mkVector(varArgsType, loc), Type.Pure, loc)
-      es ::: varArgs :: Nil
+      es :+ varArgs
+    } else if (actualArity >= declaredArity) {
+      val normalArgs = es.take(declaredArity - 1)
+      val varArgExprs = es.drop(declaredArity - 1)
+
+      // Check if a single trailing arg is already a Vector/Array (from ...{} syntax).
+      val alreadyWrapped = varArgExprs match {
+        case single :: Nil => single.tpe.baseType match {
+          case Type.Cst(TypeConstructor.Vector, _) => true
+          case Type.Cst(TypeConstructor.Array, _) => true
+          case _ => false
+        }
+        case _ => false
+      }
+
+      if (alreadyWrapped) {
+        // Already a vector/array, no wrapping needed.
+        es
+      } else {
+        // Case 2: Individual varargs arguments. Wrap them into a VectorLit.
+        val componentType = varArgExprs.head.tpe
+        val varArgsEff = Type.mkUnion(varArgExprs.map(_.eff), loc)
+        val varArgs = TypedAst.Expr.VectorLit(varArgExprs, Type.mkVector(componentType, loc), varArgsEff, loc)
+        normalArgs :+ varArgs
+      }
     } else {
-      // Case 2: No argument missing. Return the arguments as-is.
-      es
+      // Too few args; impossible.
+      throw InternalCompilerException("unexpected too-few varargs", loc)
     }
   }
 
