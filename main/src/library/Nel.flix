@@ -178,6 +178,24 @@ pub mod Nel {
     }
 
     ///
+    /// Returns the element at position `i` in the non-empty list `l`.
+    ///
+    /// Throws `OutOfBounds` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, l: Nel[a]): a \ OutOfBounds =
+        match nth(i, l) {
+            case Some(x) => x
+            case None    => OutOfBounds.outOfBounds("index ${i} is out of bounds for Nel of length ${length(l)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the non-empty list `l`.
+    ///
+    pub def nth(i: Int32, l: Nel[a]): Option[a] = match l {
+        case Nel(x, xs) => if (i == 0) Some(x) else List.nth(i - 1, xs)
+    }
+
+    ///
     /// Returns all elements in `l` without the last element.
     ///
     pub def init(l: Nel[a]): List[a] = match l {
