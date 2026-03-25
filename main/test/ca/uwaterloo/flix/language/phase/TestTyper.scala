@@ -1986,7 +1986,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("TypeError.ConstructorBoxing.01") {
+  test("ConstructorAutoBoxing.01") {
     val input =
       """
         |import java.util.{AbstractMap$SimpleEntry => SimpleEntry}
@@ -1994,7 +1994,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Int32 \ IO = new SimpleEntry(12, true).hashCode()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
+    expectSuccess(result)
   }
 
   test("TypeError.ConstructorUnboxing.01") {

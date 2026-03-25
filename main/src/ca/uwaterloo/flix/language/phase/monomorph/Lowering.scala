@@ -285,13 +285,13 @@ object Lowering {
       MonoAst.Expr.IfThenElse(e1, e2, e3, t, eff, loc)
 
     case TypedAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = lowerExp(exp1)
+      val e1 = stripAutoUnbox(lowerExp(exp1))
       val e2 = lowerExp(exp2)
       val t = lowerType(tpe)
       MonoAst.Expr.Stm(e1, e2, t, eff, loc)
 
     case TypedAst.Expr.Discard(exp, eff, loc) =>
-      val e = lowerExp(exp)
+      val e = stripAutoUnbox(lowerExp(exp))
       MonoAst.Expr.Discard(e, eff, loc)
 
     case TypedAst.Expr.Match(exp, rules, tpe, eff, loc) =>
@@ -488,7 +488,9 @@ object Lowering {
     case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
+      val javaParamTypes = constructor.getParameterTypes
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType, eff, loc) }
+      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), boxedArgs, t, eff, loc)
 
     case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
@@ -499,7 +501,13 @@ object Lowering {
       val e = lowerExp(exp)
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, t, eff, loc)
+      val javaParamTypes = method.getParameterTypes
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType, eff, loc) }
+      val javaReturnType = method.getReturnType
+      val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
+      val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
+      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: boxedArgs, invokeType, eff, loc)
+      maybeUnboxResult(invoke, t, javaReturnType, eff, loc)
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
@@ -514,7 +522,13 @@ object Lowering {
     case TypedAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
       val t = lowerType(tpe)
-      MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, t, eff, loc)
+      val javaParamTypes = method.getParameterTypes
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType, eff, loc) }
+      val javaReturnType = method.getReturnType
+      val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
+      val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
+      val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), boxedArgs, invokeType, eff, loc)
+      maybeUnboxResult(invoke, t, javaReturnType, eff, loc)
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -990,6 +1004,107 @@ object Lowering {
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the Java boxing method for the given Flix primitive type.
+    * E.g., `Type.Int32` maps to `java.lang.Integer.valueOf(int)`.
+    */
+  private def javaBoxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
+    case Type.Bool => classOf[java.lang.Boolean].getMethod("valueOf", java.lang.Boolean.TYPE)
+    case Type.Char => classOf[java.lang.Character].getMethod("valueOf", java.lang.Character.TYPE)
+    case Type.Int8 => classOf[java.lang.Byte].getMethod("valueOf", java.lang.Byte.TYPE)
+    case Type.Int16 => classOf[java.lang.Short].getMethod("valueOf", java.lang.Short.TYPE)
+    case Type.Int32 => classOf[java.lang.Integer].getMethod("valueOf", java.lang.Integer.TYPE)
+    case Type.Int64 => classOf[java.lang.Long].getMethod("valueOf", java.lang.Long.TYPE)
+    case Type.Float32 => classOf[java.lang.Float].getMethod("valueOf", java.lang.Float.TYPE)
+    case Type.Float64 => classOf[java.lang.Double].getMethod("valueOf", java.lang.Double.TYPE)
+    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the Java unboxing method for the given Flix primitive type.
+    * E.g., `Type.Int32` maps to `java.lang.Integer.intValue()`.
+    */
+  private def javaUnboxMethod(tpe: Type): java.lang.reflect.Method = tpe match {
+    case Type.Bool => classOf[java.lang.Boolean].getMethod("booleanValue")
+    case Type.Char => classOf[java.lang.Character].getMethod("charValue")
+    case Type.Int8 => classOf[java.lang.Byte].getMethod("byteValue")
+    case Type.Int16 => classOf[java.lang.Short].getMethod("shortValue")
+    case Type.Int32 => classOf[java.lang.Integer].getMethod("intValue")
+    case Type.Int64 => classOf[java.lang.Long].getMethod("longValue")
+    case Type.Float32 => classOf[java.lang.Float].getMethod("floatValue")
+    case Type.Float64 => classOf[java.lang.Double].getMethod("doubleValue")
+    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the Flix Type for the Java wrapper class of a primitive type.
+    * E.g., `Type.Int32` maps to `Type.Cst(TypeConstructor.Native(classOf[java.lang.Integer]), loc)`.
+    */
+  private def boxedWrapperType(tpe: Type, loc: SourceLocation): Type = tpe match {
+    case Type.Bool => Type.Cst(TypeConstructor.Native(classOf[java.lang.Boolean]), loc)
+    case Type.Char => Type.Cst(TypeConstructor.Native(classOf[java.lang.Character]), loc)
+    case Type.Int8 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Byte]), loc)
+    case Type.Int16 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Short]), loc)
+    case Type.Int32 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Integer]), loc)
+    case Type.Int64 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Long]), loc)
+    case Type.Float32 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Float]), loc)
+    case Type.Float64 => Type.Cst(TypeConstructor.Native(classOf[java.lang.Double]), loc)
+    case _ => throw InternalCompilerException(s"Unexpected non-primitive type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Boxes `arg` if its Flix type is a primitive but the Java parameter type is not primitive.
+    * This inserts an `InvokeStaticMethod(Integer.valueOf)` (or equivalent) wrapper.
+    */
+  private def maybeBoxArg(arg: MonoAst.Expr, javaParamType: Class[?], eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    if (isPrimType(arg.tpe) && !javaParamType.isPrimitive) {
+      MonoAst.Expr.ApplyAtomic(
+        AtomicOp.InvokeStaticMethod(javaBoxMethod(arg.tpe)),
+        List(arg),
+        boxedWrapperType(arg.tpe, loc),
+        eff,
+        loc.asSynthetic
+      )
+    } else arg
+  }
+
+  /**
+    * Unboxes `expr` if the Flix type is a primitive but the Java return type is not primitive.
+    * This inserts an `InvokeMethod(Integer.intValue)` (or equivalent) wrapper.
+    */
+  private def maybeUnboxResult(expr: MonoAst.Expr, flixType: Type, javaReturnType: Class[?], eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    if (isPrimType(flixType) && !javaReturnType.isPrimitive) {
+      MonoAst.Expr.ApplyAtomic(
+        AtomicOp.InvokeMethod(javaUnboxMethod(flixType)),
+        List(expr),
+        flixType,
+        eff,
+        loc.asSynthetic
+      )
+    } else expr
+  }
+
+  /**
+    * The set of Java unboxing method names used by `maybeUnboxResult`.
+    */
+  private val unboxMethodNames: Set[String] = Set(
+    "booleanValue", "charValue", "byteValue", "shortValue",
+    "intValue", "longValue", "floatValue", "doubleValue"
+  )
+
+  /**
+    * Strips an auto-unboxing wrapper from `expr` if present.
+    * This is used in `Stm` and `Discard` contexts where the return value
+    * is discarded and should not be unboxed (to avoid NPE on null returns
+    * from Java generic methods like `HashMap.put`).
+    */
+  private def stripAutoUnbox(expr: MonoAst.Expr): MonoAst.Expr = expr match {
+    case MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), List(inner), _, _, _)
+      if unboxMethodNames.contains(method.getName) && method.getParameterCount == 0 =>
+      inner
+    case _ => expr
   }
 
   /**
