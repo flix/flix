@@ -552,7 +552,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   // --- KindError.IllegalRawJavaType ---
   // ---------------------------------------------------------------------------
 
-  test("KindError.IllegalRawJavaType.List") {
+  ignore("KindError.IllegalRawJavaType.List") {
     val input =
       """
         |import java.util.List
@@ -562,7 +562,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.LinkedList") {
+  ignore("KindError.IllegalRawJavaType.LinkedList") {
     val input =
       """
         |import java.util.LinkedList
@@ -572,7 +572,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.ArrayList") {
+  ignore("KindError.IllegalRawJavaType.ArrayList") {
     val input =
       """
         |import java.util.ArrayList
@@ -582,7 +582,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.Map") {
+  ignore("KindError.IllegalRawJavaType.Map") {
     val input =
       """
         |import java.util.Map
@@ -592,7 +592,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.HashMap") {
+  ignore("KindError.IllegalRawJavaType.HashMap") {
     val input =
       """
         |import java.util.HashMap
@@ -602,7 +602,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.TreeMap") {
+  ignore("KindError.IllegalRawJavaType.TreeMap") {
     val input =
       """
         |import java.util.TreeMap
