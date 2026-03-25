@@ -420,7 +420,7 @@ object Simplifier {
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.JvmMethod(_) =>
+          case TypeConstructor.JvmMethod(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.JvmField(_) =>
@@ -588,7 +588,7 @@ object Simplifier {
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.JvmMethod(_) =>
+          case TypeConstructor.JvmMethod(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.JvmField(_) =>

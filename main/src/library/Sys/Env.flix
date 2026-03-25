@@ -43,7 +43,7 @@ pub mod Sys.Env {
             def getEnv(k) = region rc {
                 try {
                     let _ = rc;
-                    let iter = unsafe IO as rc { System.getenv().entrySet().iterator() };
+                    let iter: JIterator[Entry[String, String]] = unsafe IO as rc { System.getenv().entrySet().iterator() };
                     k(getEnvHelper(iter, Map.empty()))
                 } catch {
                     case _: Exception => k(Map.empty())
@@ -99,11 +99,11 @@ pub mod Sys.Env {
                 case _: Exception => None
             }
 
-    def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] \ IO =
+    def getEnvHelper(iter: JIterator[Entry[String, String]], m: Map[String, String]): Map[String, String] \ IO =
         if (iter.hasNext())
-            let e = unchecked_cast(iter.next() as Entry);
-            let k = unchecked_cast(e.getKey() as String);
-            let v = unchecked_cast(e.getValue() as String);
+            let e: Entry[String, String] = iter.next();
+            let k: String = e.getKey();
+            let v: String = e.getValue();
             getEnvHelper(iter, Map.insert(k, v, m))
         else
             m

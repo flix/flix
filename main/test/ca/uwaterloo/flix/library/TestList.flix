@@ -1,6 +1,6 @@
 mod TestList {
 
-    use Assert.{assertEq, assertNeq, assertTrue, assertFalse};
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, assertNone};
     use Hash.hash;
     use Math.Shuffle
     use ToString.toString;
@@ -84,6 +84,44 @@ mod TestList {
 
     @Test
     def last04(): Unit \ Assert = assertEq(expected = Some(3), List.last(1 :: 2 :: 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def get01(): Unit \ Assert =
+        let r = run List.get(0, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
+            def outOfBounds(_, _) = "error"
+        };
+        assertEq(expected = "a", r)
+
+    @Test
+    def get02(): Unit \ Assert =
+        let r = run List.get(5, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index 5 is out of bounds for List of length 3", r)
+
+    @Test
+    def get03(): Unit \ Assert =
+        let r = run List.get(-1, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index -1 is out of bounds for List of length 3", r)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nth01(): Unit \ Assert = assertEq(expected = Some(1), List.nth(0, 1 :: 2 :: 3 :: Nil))
+
+    @Test
+    def nth02(): Unit \ Assert = assertEq(expected = Some(3), List.nth(2, 1 :: 2 :: 3 :: Nil))
+
+    @Test
+    def nth03(): Unit \ Assert = assertNone(List.nth(5, 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
