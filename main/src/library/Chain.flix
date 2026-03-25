@@ -239,6 +239,23 @@ pub mod Chain {
     }
 
     ///
+    /// Returns the element at position `i` in the chain `c`.
+    ///
+    /// Throws `OutOfBounds` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, c: Chain[a]): a \ OutOfBounds =
+        match nth(i, c) {
+            case Some(x) => x
+            case None    => OutOfBounds.outOfBounds("index ${i} is out of bounds for Chain of length ${length(c)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the chain `c`.
+    ///
+    pub def nth(i: Int32, c: Chain[a]): Option[a] =
+        List.nth(i, toList(c))
+
+    ///
     /// Returns the subchain of `c` without the last element.
     /// Returns `None` if the chain `c` is empty.
     ///

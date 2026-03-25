@@ -232,6 +232,23 @@ pub mod Nec {
     }
 
     ///
+    /// Returns the element at position `i` in the non-empty chain `c`.
+    ///
+    /// Throws `OutOfBounds` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, c: Nec[a]): a \ OutOfBounds =
+        match nth(i, c) {
+            case Some(x) => x
+            case None    => OutOfBounds.outOfBounds("index ${i} is out of bounds for Nec of length ${length(c)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the non-empty chain `c`.
+    ///
+    pub def nth(i: Int32, c: Nec[a]): Option[a] =
+        List.nth(i, toList(c))
+
+    ///
     /// Returns the list of elements in `c` without the last element.
     ///
     pub def init(c: Nec[a]): List[a] = match viewRight(c) {
