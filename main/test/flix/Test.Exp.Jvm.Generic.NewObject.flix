@@ -20,7 +20,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @CompileTest
     def testComparatorCompile01(): Comparator[String] \ IO =
         new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)
@@ -29,7 +29,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @CompileTest
     def testComparatorCompile02(): Comparator[JInteger] \ IO =
         new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let i1 = unchecked_cast(t as JInteger);
                 let i2 = unchecked_cast(u as JInteger);
                 i1.compareTo(i2)
@@ -38,30 +38,30 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @CompileTest
     def testCallableString01(): Callable[String] \ IO =
         new Callable {
-            def call(_this: Callable): Object =
+            def call(_this: Callable[Object]): Object =
                 checked_cast("hello")
         }
 
     @CompileTest
     def testCallableInteger01(): Callable[JInteger] \ IO =
         new Callable {
-            def call(_this: Callable): Object =
+            def call(_this: Callable[Object]): Object =
                 let v = JInteger.valueOf(42i32);
                 checked_cast(v)
         }
 
     @CompileTest
-    def testIterableCompile01(): JIterable[String] \ IO =
+    def testIterableCompile01(): JIterable[Object] \ IO =
         new JIterable {
-            def iterator(_this: JIterable): JIterator \ IO =
-                let l: ArrayList[String] = new ArrayList();
+            def iterator(_this: JIterable[Object]): JIterator[Object] \ IO =
+                let l: ArrayList[Object] = new ArrayList();
                 l.iterator()
         }
 
     @CompileTest
     def testComparableCompile01(): JComparable[String] \ IO =
         new JComparable {
-            def compareTo(_this: JComparable, o: Object): Int32 =
+            def compareTo(_this: JComparable[Object], o: Object): Int32 =
                 let s = unchecked_cast(o as String);
                 "hello".compareTo(s)
         }
@@ -71,7 +71,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorString01(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)
@@ -81,7 +81,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorString02(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s2.compareTo(s1)
@@ -91,7 +91,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorInteger01(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let i1 = unchecked_cast(t as JInteger);
                 let i2 = unchecked_cast(u as JInteger);
                 i1.compareTo(i2)
@@ -101,7 +101,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorWithTreeMap01(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s2.compareTo(s1)
@@ -116,7 +116,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorRaw01(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, _t: Object, _u: Object): Int32 = 0
+            def compare(_this: Comparator[Object], _t: Object, _u: Object): Int32 = 0
         };
         assertEq(expected = 0, c.compare("foo", "bar"))
 
@@ -134,7 +134,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorCompare01(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)
@@ -144,7 +144,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorCompareReverse01(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s2.compareTo(s1)
@@ -154,7 +154,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorUsedInSort01(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s2.compareTo(s1)
@@ -171,7 +171,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     def testComparatorCapture01(): Unit \ {Assert, IO} =
         let n = 1;
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let i1 = unchecked_cast(t as JInteger);
                 let i2 = unchecked_cast(u as JInteger);
                 i1.compareTo(i2) + n - n
@@ -186,7 +186,7 @@ mod Test.Exp.Jvm.Generic.NewObject {
     @Test
     def testComparatorWithTreeMapOrdering01(): Unit \ {Assert, IO} =
         let c = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)

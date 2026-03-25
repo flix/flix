@@ -44,7 +44,7 @@ pub mod Adaptor {
             Order.compare(a, b) |> Comparison.toInt32
         };
         new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 f1(t, u)
         }
 
