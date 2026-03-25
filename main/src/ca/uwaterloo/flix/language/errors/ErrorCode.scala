@@ -226,6 +226,7 @@ object ErrorCode {
   case object E7352 extends ErrorCode
   case object E7394 extends ErrorCode
   case object E7407 extends ErrorCode
+  case object E7420 extends ErrorCode
   case object E7463 extends ErrorCode
   case object E7512 extends ErrorCode
   case object E7574 extends ErrorCode
