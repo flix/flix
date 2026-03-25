@@ -256,24 +256,25 @@ mod Fs.FsLayer {
 
     pub def glob(base: String, pattern: String): Result[IoError, List[String]] \ IO =
         try {
-            region rc {
-                let basePath = Paths.get(base);
-                let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
-                let stream = Files.walk(basePath, (...{}: Vector[FileVisitOption]));
-                let iter = Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[Path]), stream);
-                let result = iter
-                    |> Iterator.filterMap(path -> {
-                        let rel = basePath.relativize(path);
-                        if (matcher.matches(rel))
-                            Some(path.toString())
-                        else
-                            None
-                    })
-                    |> Iterator.toList;
-                let bs: BaseStream = checked_cast(stream);
-                bs.close();
-                Ok(result)
-            }
+            let basePath = Paths.get(base);
+            let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+            let stream = Files.walk(basePath, (...{}: Vector[FileVisitOption]));
+            let bs: BaseStream = checked_cast(stream);
+            let jiter = bs.iterator();
+            def loop(acc) = {
+                if (jiter.hasNext())
+                    let path = unchecked_cast(jiter.next() as Path);
+                    let rel = basePath.relativize(path);
+                    if (matcher.matches(rel))
+                        loop(path.toString() :: acc)
+                    else
+                        loop(acc)
+                else
+                    acc
+            };
+            let result = List.reverse(loop(Nil));
+            bs.close();
+            Ok(result)
         } catch {
             case ex: InvalidPathException     => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
