@@ -25,17 +25,19 @@ object Safety {
     implicit val _r: Root = root
 
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+    val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEffect))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
     val uses = changeSet.updateStaleValueLists(root.uses, oldRoot.uses, (uoi1: UseOrImport, uoi2: UseOrImport) => uoi1 == uoi2)(ParOps.parMapValueList(_)(visitUseOrImport))
 
-    (root.copy(defs = defs, traits = traits, instances = instances, uses = uses), sctx.errors.asScala.toList)
+    (root.copy(defs = defs, effects = effects, traits = traits, instances = instances, uses = uses), sctx.errors.asScala.toList)
   }
 
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
     checkSpecPermissions(defn.spec)
+    checkSpecNativeTypeArgs(defn.spec)
     visitExp(defn.exp)
     defn
   }
@@ -62,7 +64,19 @@ object Safety {
   private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
     checkSpecPermissions(sig.spec)
+    checkSpecNativeTypeArgs(sig.spec)
     sig.exp.foreach(visitExp(_))
+  }
+
+  /** Checks the safety and well-formedness of `eff`. */
+  private def visitEffect(eff: TypedAst.Effect)(implicit sctx: SharedContext, root: Root, flix: Flix): TypedAst.Effect = {
+    eff.ops.foreach(visitOp)
+    eff
+  }
+
+  /** Checks the safety and well-formedness of `op`. */
+  private def visitOp(op: TypedAst.Op)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = {
+    checkSpecNativeTypeArgs(op.spec)
   }
 
   /**
@@ -269,16 +283,18 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.InvokeConstructor(_, args, _, _, loc) =>
+    case Expr.InvokeConstructor(_, args, tpe, _, loc) =>
       checkPermissions(loc.security, loc)
+      checkNativeTypeArgs(tpe, loc)
       args.foreach(visitExp)
 
     case Expr.InvokeSuperConstructor(_, args, _, _, loc) =>
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
-    case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+    case Expr.InvokeMethod(_, exp, args, tpe, _, loc) =>
       checkPermissions(loc.security, loc)
+      checkNativeTypeArgs(tpe, loc)
       visitExp(exp)
       args.foreach(visitExp)
 
@@ -286,8 +302,9 @@ object Safety {
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
-    case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+    case Expr.InvokeStaticMethod(_, args, tpe, _, loc) =>
       checkPermissions(loc.security, loc)
+      checkNativeTypeArgs(tpe, loc)
       args.foreach(visitExp)
 
     case Expr.GetField(_, exp, _, _, loc) =>
@@ -306,8 +323,9 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, constructors, methods, loc) =>
+    case newObject@Expr.NewObject(_, _, tpe, _, constructors, methods, loc) =>
       checkPermissions(loc.security, loc)
+      checkNativeTypeArgs(tpe, loc)
       checkObjectImplementation(newObject)
       constructors.foreach(c => visitExp(c.exp))
       methods.foreach(method => visitExp(method.exp))
@@ -907,6 +925,54 @@ object Safety {
   private def hasControlEffects(eff: Type): Boolean = {
     // TODO: This is unsound and incomplete because it ignores type variables, associated types, etc.
     !eff.effects.forall(Symbol.isPrimitiveEff)
+  }
+
+  /** Checks that the formal parameter types and return type in `spec` do not use primitive Java type args. */
+  private def checkSpecNativeTypeArgs(spec: Spec)(implicit sctx: SharedContext, flix: Flix): Unit = {
+    spec.fparams.foreach(fp => checkNativeTypeArgs(fp.tpe, fp.loc))
+    checkNativeTypeArgs(spec.retTpe, spec.retTpe.loc)
+  }
+
+  /**
+    * Checks that `tpe0` does not use Flix primitive types as type arguments
+    * to Java generic types ([[TypeConstructor.Native]]).
+    *
+    * For example, `ArrayList[Int32]` is illegal because Java generics
+    * require reference types. The user should use `ArrayList[java.lang.Integer]`.
+    */
+  private def checkNativeTypeArgs(tpe0: Type, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
+    val tpe = Type.eraseAliases(tpe0)
+    visitNativeTypeArgs(tpe, loc)
+  }
+
+  /** Recursive helper for [[checkNativeTypeArgs]]. Assumes type aliases have already been erased. */
+  private def visitNativeTypeArgs(tpe: Type, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
+    tpe.baseType match {
+      case Type.Cst(TypeConstructor.Native(_), _) =>
+        tpe.typeArguments.foreach { arg =>
+          arg.baseType match {
+            case Type.Cst(tc, _) if isJavaPrimitive(tc) =>
+              sctx.errors.add(IllegalPrimitiveJavaTypeArg(tpe, arg, loc))
+            case _ => ()
+          }
+          // Recursively check nested Native generics (e.g., HashMap[String, ArrayList[Int32]])
+          visitNativeTypeArgs(arg, loc)
+        }
+      case _ => ()
+    }
+  }
+
+  /** Returns `true` if `tc` is a Flix primitive type constructor that maps to a JVM primitive. */
+  private def isJavaPrimitive(tc: TypeConstructor): Boolean = tc match {
+    case TypeConstructor.Bool => true
+    case TypeConstructor.Char => true
+    case TypeConstructor.Int8 => true
+    case TypeConstructor.Int16 => true
+    case TypeConstructor.Int32 => true
+    case TypeConstructor.Int64 => true
+    case TypeConstructor.Float32 => true
+    case TypeConstructor.Float64 => true
+    case _ => false
   }
 
   /** Companion object for [[SharedContext]] */

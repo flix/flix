@@ -499,52 +499,6 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a constructor body is not a `super(...)` call.
-    *
-    * @param clazz the class or interface being extended.
-    * @param loc   the source location of the constructor.
-    */
-  case class NewObjectConstructorMissingSuperCall(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
-    def code: ErrorCode = ErrorCode.E5815
-
-    def summary: String = "Constructor body must be a single 'super(...)' call."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Constructor body must be a single '${red("super(...)")}' call.
-         |
-         |${highlight(loc, "invalid constructor body", fmt)}
-         |
-         |${underline("Explanation:")} The body of a constructor in a 'new' expression must
-         |be single a 'super(...)' invocation.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a 'new' expression has more than one constructor.
-    *
-    * @param clazz the class or interface being extended.
-    * @param loc   the source location of the new object expression.
-    */
-  case class NewObjectTooManyConstructors(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
-    def code: ErrorCode = ErrorCode.E5826
-
-    def summary: String = "A 'new' expression can have at most one constructor."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> A '${red("new")}' expression can have at most one constructor.
-         |
-         |${highlight(loc, "too many constructors", fmt)}
-         |
-         |${underline("Explanation:")} A 'new' expression that extends a class or interface
-         |can define at most one constructor.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate a missing `this` parameter for a method.
     *
     * @param clazz The expected `this` type.
@@ -613,6 +567,79 @@ object SafetyError {
          |
          |${underline("Explanation:")} The method does not exist in the superclass with
          |the given signature. Check the method name and parameter types.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a constructor body is not a `super(...)` call.
+    *
+    * @param clazz the class or interface being extended.
+    * @param loc   the source location of the constructor.
+    */
+  case class NewObjectConstructorMissingSuperCall(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5815
+
+    def summary: String = "Constructor body must be a single 'super(...)' call."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Constructor body must be a single '${red("super(...)")}' call.
+         |
+         |${highlight(loc, "invalid constructor body", fmt)}
+         |
+         |${underline("Explanation:")} The body of a constructor in a 'new' expression must
+         |be single a 'super(...)' invocation.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a 'new' expression has more than one constructor.
+    *
+    * @param clazz the class or interface being extended.
+    * @param loc   the source location of the new object expression.
+    */
+  case class NewObjectTooManyConstructors(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5826
+
+    def summary: String = "A 'new' expression can have at most one constructor."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> A '${red("new")}' expression can have at most one constructor.
+         |
+         |${highlight(loc, "too many constructors", fmt)}
+         |
+         |${underline("Explanation:")} A 'new' expression that extends a class or interface
+         |can define at most one constructor.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a Flix primitive type is used as a type argument
+    * to a Java generic type.
+    *
+    * @param nativeType   the full Java generic type (e.g., `ArrayList[Int32]`).
+    * @param primitiveArg the Flix primitive type used as a type argument (e.g., `Int32`).
+    * @param loc          the source location.
+    */
+  case class IllegalPrimitiveJavaTypeArg(nativeType: Type, primitiveArg: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E5837
+
+    def summary: String = s"Illegal primitive type '${FormatType.formatType(primitiveArg)}' as Java type argument."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Illegal primitive type '${red(FormatType.formatType(primitiveArg))}' as Java type argument.
+         |
+         |${highlight(loc, "illegal type argument", fmt)}
+         |
+         |The type: ${red(FormatType.formatType(nativeType))}
+         |
+         |${underline("Explanation:")} Java generics use type erasure and cannot be parameterized
+         |with primitive types. Use the corresponding Java boxed type instead.
          |""".stripMargin
     }
   }
