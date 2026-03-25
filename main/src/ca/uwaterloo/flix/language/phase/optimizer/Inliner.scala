@@ -316,18 +316,16 @@ object Inliner {
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
 
+    case Expr.Stm(Nil, exp, _, _, _) =>
+      sctx.changed.putIfAbsent(sym0, ())
+      visitExp(exp, ctx0)
+
     case Expr.Stm(exps, exp, tpe, eff, loc) =>
       val impureExps = exps.filterNot(_.eff == Type.Pure)
-      if (impureExps.isEmpty) {
-        // All statement expressions are pure and unused
-        if (exps.nonEmpty) sctx.changed.putIfAbsent(sym0, ())
-        visitExp(exp, ctx0)
-      } else {
-        if (impureExps.length != exps.length) sctx.changed.putIfAbsent(sym0, ())
-        val es = impureExps.map(visitExp(_, ctx0))
-        val e = visitExp(exp, ctx0)
-        Expr.Stm(es, e, tpe, eff, loc)
-      }
+      if (impureExps.length != exps.length) sctx.changed.putIfAbsent(sym0, ())
+      val es = impureExps.map(visitExp(_, ctx0))
+      val e = visitExp(exp, ctx0)
+      Expr.Stm(es, e, tpe, eff, loc)
 
     case Expr.Discard(exp, eff, loc) =>
       val e = visitExp(exp, ctx0)
