@@ -94,11 +94,11 @@ object JvmAst {
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
-    case class Stmt(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
+    case class Stm(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
-      def tpe: SimpleType = exp2.tpe
+      def tpe: SimpleType = exp.tpe
 
-      def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
+      def purity: Purity = Purity.combineAll(exps.map(_.purity) :+ exp.purity)
     }
 
     case class Region(sym: Symbol.VarSym, offset: Int, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr

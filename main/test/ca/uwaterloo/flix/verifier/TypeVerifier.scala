@@ -529,10 +529,10 @@ object TypeVerifier {
       val letBoundType = visitExpr(exp1)
       visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
 
-    case Expr.Stmt(exp1, exp2, _) =>
-      // Visit `exp1` to check types inside.
-      visitExpr(exp1)
-      visitExpr(exp2)
+    case Expr.Stm(exps, exp, _) =>
+      // Visit `exps` to check types inside.
+      exps.foreach(visitExpr)
+      visitExpr(exp)
 
     case Expr.Region(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Region), lenv), loc)

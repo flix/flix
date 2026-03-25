@@ -1381,7 +1381,7 @@ object Weeder2 {
     private def visitStatementExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Statement)
       mapN(traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)) {
-        case ex1 :: ex2 :: Nil => Expr.Stm(ex1, ex2, tree.loc)
+        case ex1 :: ex2 :: Nil => Expr.Stm(List(ex1), ex2, tree.loc)
         case exprs => throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", tree.loc)
       }
     }
@@ -1400,7 +1400,7 @@ object Weeder2 {
       }
 
       val exprs = mapN(pickExpr(tree)) {
-        case Expr.Stm(exp1, exp2, _) => (exp1, exp2)
+        case Expr.Stm(exps, exp, _) => (exps.head, exp)
         case e =>
           // Fall back on Expr.Error. Parser has reported an error here.
           val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), SyntacticContext.Expr.OtherExpr, hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
@@ -1599,7 +1599,7 @@ object Weeder2 {
         (pattern, tpe, expr) =>
           // get expr1 and expr2 from the nested statement within expr.
           val exprs = expr match {
-            case Expr.Stm(exp1, exp2, _) => Validation.Success((exp1, exp2))
+            case Expr.Stm(exps, exp, _) => Validation.Success((exps.head, exp))
             // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
               // The location of the error is the end of the expression, zero-width.
