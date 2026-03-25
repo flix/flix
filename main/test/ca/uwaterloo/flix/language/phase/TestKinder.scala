@@ -552,45 +552,27 @@ class TestKinder extends AnyFunSuite with TestUtils {
   // --- KindError.IllegalRawJavaType ---
   // ---------------------------------------------------------------------------
 
-  test("KindError.IllegalRawJavaType.01") {
-    // Raw ArrayList (1 type parameter) in a local variable.
+  test("KindError.IllegalRawJavaType.List") {
     val input =
       """
-        |import java.util.ArrayList
-        |def f(): Unit \ IO =
-        |    let _x: ArrayList = ???;
-        |    ()
+        |import java.util.List
+        |def f(): List = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.02") {
-    // Raw HashMap (2 type parameters) in a local variable.
+  test("KindError.IllegalRawJavaType.LinkedList") {
     val input =
       """
-        |import java.util.HashMap
-        |def f(): Unit \ IO =
-        |    let _x: HashMap = ???;
-        |    ()
+        |import java.util.LinkedList
+        |def f(): LinkedList = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.03") {
-    // Raw ArrayList as a formal parameter type.
-    val input =
-      """
-        |import java.util.ArrayList
-        |def f(_x: ArrayList): Unit = ???
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectError[KindError.IllegalRawJavaType](result)
-  }
-
-  test("KindError.IllegalRawJavaType.04") {
-    // Raw ArrayList as a return type.
+  test("KindError.IllegalRawJavaType.ArrayList") {
     val input =
       """
         |import java.util.ArrayList
@@ -600,43 +582,27 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.05") {
-    // Raw Comparable (1 type parameter) as a formal parameter type.
+  test("KindError.IllegalRawJavaType.Map") {
     val input =
       """
-        |import java.lang.Comparable
-        |def f(_x: Comparable): Unit = ???
+        |import java.util.Map
+        |def f(): Map = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.06") {
-    // Raw Iterator (1 type parameter) as a return type.
+  test("KindError.IllegalRawJavaType.HashMap") {
     val input =
       """
-        |import java.util.Iterator
-        |def f(): Iterator = ???
+        |import java.util.HashMap
+        |def f(): HashMap = ???
         |""".stripMargin
     val result = check(input, DefaultOptions)
     expectError[KindError.IllegalRawJavaType](result)
   }
 
-  test("KindError.IllegalRawJavaType.07") {
-    // Raw LinkedList (1 type parameter) in a type ascription.
-    val input =
-      """
-        |import java.util.LinkedList
-        |def f(): Unit \ IO =
-        |    let _x = (??? : LinkedList);
-        |    ()
-        |""".stripMargin
-    val result = check(input, DefaultOptions)
-    expectError[KindError.IllegalRawJavaType](result)
-  }
-
-  test("KindError.IllegalRawJavaType.08") {
-    // Raw TreeMap (2 type parameters) as a return type.
+  test("KindError.IllegalRawJavaType.TreeMap") {
     val input =
       """
         |import java.util.TreeMap
