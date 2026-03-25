@@ -12,7 +12,7 @@ mod Test.Exp.Jvm.Generic.InvokeConstructor {
     import java.util.LinkedList
     import java.util.TreeMap
 
-    // Compile tests: verify generic constructors type-check
+    // CompileTests
 
     @CompileTest
     def testArrayListStringConstructor01(): ArrayList[String] \ IO =
@@ -62,7 +62,23 @@ mod Test.Exp.Jvm.Generic.InvokeConstructor {
     def testHashMapRawConstructor01(): HashMap \ IO =
         new HashMap()
 
-    // Runtime tests: construct and use generic collections
+    @CompileTest
+    def testNestedGenericConstructor01(): ArrayList[ArrayList[String]] \ IO =
+        new ArrayList()
+
+    @CompileTest
+    def testArrayListNativeTypeArg01(): ArrayList[File] \ IO =
+        new ArrayList()
+
+    @CompileTest
+    def testHashMapNativeValueArg01(): HashMap[String, File] \ IO =
+        new HashMap()
+
+    @CompileTest
+    def testLinkedHashMapConstructor02(): LinkedHashMap[JInteger, String] \ IO =
+        new LinkedHashMap(16, 0.75f32)
+
+    // Tests
 
     @Test
     def testArrayListAddAfterConstruct01(): Unit \ {Assert, IO} =
@@ -100,10 +116,6 @@ mod Test.Exp.Jvm.Generic.InvokeConstructor {
         m.put("key", "value");
         assertEq(expected = 1, m.size())
 
-    @CompileTest
-    def testNestedGenericConstructor01(): ArrayList[ArrayList[String]] \ IO =
-        new ArrayList()
-
     @Test
     def testConstructorTypeInference01(): Unit \ {Assert, IO} =
         let l: ArrayList[String] = new ArrayList();
@@ -119,22 +131,10 @@ mod Test.Exp.Jvm.Generic.InvokeConstructor {
         assertEq(expected = 1, l1.size());
         assertEq(expected = 1, l2.size())
 
-    @CompileTest
-    def testArrayListNativeTypeArg01(): ArrayList[File] \ IO =
-        new ArrayList()
-
-    @CompileTest
-    def testHashMapNativeValueArg01(): HashMap[String, File] \ IO =
-        new HashMap()
-
     @Test
     def testArrayListCapacityConstructor01(): Unit \ {Assert, IO} =
         let l: ArrayList[String] = new ArrayList(10);
         l.add("hello");
         assertEq(expected = 1, l.size())
-
-    @CompileTest
-    def testLinkedHashMapConstructor02(): LinkedHashMap[JInteger, String] \ IO =
-        new LinkedHashMap(16, 0.75f32)
 
 }
