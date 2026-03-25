@@ -21,6 +21,7 @@ mod Fs.FsLayer {
     import java.io.UncheckedIOException
     import java.lang.Class
     import java.lang.IllegalArgumentException
+    import java.lang.{Object => JObject}
     import java.lang.UnsupportedOperationException
     import java.nio.charset.CharacterCodingException
     import java.nio.charset.StandardCharsets
@@ -259,7 +260,7 @@ mod Fs.FsLayer {
             let basePath = Paths.get(base);
             let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
             let stream = Files.walk(basePath, (...{}: Vector[FileVisitOption]));
-            let bs: BaseStream = checked_cast(stream);
+            let bs: BaseStream[Path, Stream[Path]] = checked_cast(stream);
             let jiter = bs.iterator();
             def loop(acc) = {
                 if (jiter.hasNext())
@@ -450,7 +451,7 @@ mod Fs.FsLayer {
 
     pub def mkDir(d: String): Result[IoError, Unit] \ IO =
         try {
-            Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
+            Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute[JObject]]));
             Ok(())
         } catch {
             case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -461,7 +462,7 @@ mod Fs.FsLayer {
 
     pub def mkDirs(d: String): Result[IoError, Unit] \ IO =
         try {
-            Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute]));
+            Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute[JObject]]));
             Ok(())
         } catch {
             case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -472,7 +473,7 @@ mod Fs.FsLayer {
 
     pub def mkTempDir(prefix: String): Result[IoError, String] \ IO =
         try {
-            let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
+            let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute[JObject]]));
             Ok(path.toString())
         } catch {
             case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))

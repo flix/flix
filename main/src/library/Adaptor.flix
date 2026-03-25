@@ -37,9 +37,7 @@ pub mod Adaptor {
     ///
     /// The comparator is backed by the ordering on `a`.
     ///
-    /// Note: Currently requires a Proxy (until Java types support generics).
-    ///
-    pub def comparator(_: Proxy[a]): Comparator \ IO with Order[a] =
+    pub def comparator(_: Proxy[a]): Comparator[a] \ IO with Order[a] =
         let f1 = (o1, o2) -> {
             let a = unchecked_cast(o1 as a);
             let b = unchecked_cast(o2 as a);
@@ -126,8 +124,8 @@ pub mod Adaptor {
         let iter = iterator(entries);
         let getNext = () -> match hasNext(iter) {
             case true  => {
-                let entry = {let obj = next(iter); unchecked_cast(obj as Entry)};
-                let (k, v) = fromMapEntry(unchecked_cast(entry as Entry[k, v]));
+                let entry = {let obj = next(iter); unchecked_cast(obj as Entry[k, v])};
+                let (k, v) = fromMapEntry(entry);
                 Some((k, v))
             }
             case false => None
@@ -137,7 +135,7 @@ pub mod Adaptor {
     ///
     /// Returns a fresh Flix `Iterator` from the Java iterator `iter`.
     ///
-    pub def fromIterator(rc: Region[r], _: Proxy[a], iter: JIterator): Iterator[a, r, r] =
+    pub def fromIterator(rc: Region[r], _: Proxy[a], iter: JIterator[a]): Iterator[a, r, r] =
         def hasNext(x) = unsafe IO as r { x.hasNext() };
         def next(x) = unsafe IO as r { x.next() };
         let step = () -> {
@@ -153,7 +151,7 @@ pub mod Adaptor {
     /// Returns a Flix Iterator of the elements in the given Java Stream.
     ///
     pub def fromStreamToIterator(rc: Region[r], strm: Stream[a]): Iterator[a, r, r] \ r =
-        let baseStream: BaseStream = checked_cast(strm);
+        let baseStream: BaseStream[a, Stream[a]] = checked_cast(strm);
         let iter = unsafe IO as r { baseStream.iterator() };
         Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a]), iter)
 
