@@ -493,7 +493,7 @@ object Lowering {
       val t = lowerType(tpe)
       // Box primitive args where Java expects Object (e.g., `new SimpleEntry(42, true)`).
       val javaParamTypes = constructor.getParameterTypes
-      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType) }
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
       MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), boxedArgs, t, eff, loc)
 
     case TypedAst.Expr.InvokeSuperConstructor(constructor, exps, tpe, eff, loc) =>
@@ -508,12 +508,12 @@ object Lowering {
       // Box primitive args and unbox Object returns for Java generic methods.
       // E.g., `m.put("k", 42)` boxes 42 via Integer.valueOf; `m.get("k")` unboxes via intValue.
       val javaParamTypes = method.getParameterTypes
-      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType) }
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
       val javaReturnType = method.getReturnType
       val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
       val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
       val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: boxedArgs, invokeType, eff, loc)
-      maybeUnboxResult(invoke, t, javaReturnType)
+      unboxIfNecessary(invoke, t, javaReturnType)
 
     case TypedAst.Expr.InvokeSuperMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(lowerExp)
@@ -530,12 +530,12 @@ object Lowering {
       val t = lowerType(tpe)
       // Box primitive args and unbox Object returns (same as InvokeMethod).
       val javaParamTypes = method.getParameterTypes
-      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => maybeBoxArg(arg, paramType) }
+      val boxedArgs = es.zip(javaParamTypes).map { case (arg, paramType) => boxIfNecessary(arg, paramType) }
       val javaReturnType = method.getReturnType
       val needsUnbox = isPrimType(t) && !javaReturnType.isPrimitive
       val invokeType = if (needsUnbox) boxedWrapperType(t, loc) else t
       val invoke = MonoAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), boxedArgs, invokeType, eff, loc)
-      maybeUnboxResult(invoke, t, javaReturnType)
+      unboxIfNecessary(invoke, t, javaReturnType)
 
     case TypedAst.Expr.GetField(field, exp, tpe, eff, loc) =>
       val e = lowerExp(exp)
@@ -1062,16 +1062,17 @@ object Lowering {
   }
 
   /**
-    * Boxes `arg` if its Flix type is primitive but the Java parameter expects Object.
-    * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the `42` is boxed
-    * via `Integer.valueOf(42)` because `HashMap.put` takes `(Object, Object)`.
+    * Boxes `arg` if the actual arg type (Flix primitive) mismatches the expected param type (Object).
+    * E.g., in `m.put("k", 42)` on a `HashMap[String, Int32]`, the actual type is `Int32`
+    * but the expected type is `Object` (erased), so `42` is boxed via `Integer.valueOf(42)`.
     */
-  private def maybeBoxArg(arg: MonoAst.Expr, javaParamType: Class[?]): MonoAst.Expr = {
-    if (isPrimType(arg.tpe) && !javaParamType.isPrimitive) {
+  private def boxIfNecessary(arg: MonoAst.Expr, expectedParamType: Class[?]): MonoAst.Expr = {
+    val actualArgType = arg.tpe
+    if (isPrimType(actualArgType) && !expectedParamType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
-        AtomicOp.InvokeStaticMethod(javaBoxMethod(arg.tpe)),
+        AtomicOp.InvokeStaticMethod(javaBoxMethod(actualArgType)),
         List(arg),
-        boxedWrapperType(arg.tpe, arg.loc),
+        boxedWrapperType(actualArgType, arg.loc),
         arg.eff,
         arg.loc.asSynthetic
       )
@@ -1079,16 +1080,16 @@ object Lowering {
   }
 
   /**
-    * Unboxes `expr` if the Flix return type is primitive but the Java method returns Object.
-    * E.g., in `let v: Int32 = m.get("k")` on a `HashMap[String, Int32]`, the Object
-    * returned by `HashMap.get` is unboxed via `Integer.intValue()`.
+    * Unboxes `expr` if the expected return type (Flix primitive) mismatches the actual return type (Object).
+    * E.g., in `let v: Int32 = m.get("k")` on a `HashMap[String, Int32]`, the expected type is
+    * `Int32` but the actual Java return type is `Object` (erased), so the result is unboxed via `intValue()`.
     */
-  private def maybeUnboxResult(expr: MonoAst.Expr, flixType: Type, javaReturnType: Class[?]): MonoAst.Expr = {
-    if (isPrimType(flixType) && !javaReturnType.isPrimitive) {
+  private def unboxIfNecessary(expr: MonoAst.Expr, expectedReturnType: Type, actualReturnType: Class[?]): MonoAst.Expr = {
+    if (isPrimType(expectedReturnType) && !actualReturnType.isPrimitive) {
       MonoAst.Expr.ApplyAtomic(
-        AtomicOp.InvokeMethod(javaUnboxMethod(flixType)),
+        AtomicOp.InvokeMethod(javaUnboxMethod(expectedReturnType)),
         List(expr),
-        flixType,
+        expectedReturnType,
         expr.eff,
         expr.loc.asSynthetic
       )
