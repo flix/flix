@@ -172,10 +172,9 @@ object OccurrenceAnalyzer {
         }
 
       case Expr.Stm(exps, exp, tpe, eff, loc) =>
-        val esAndCtxs = exps.map(visitExp)
-        val es = esAndCtxs.map(_._1)
+        val (es, ctxs) = exps.map(visitExp).unzip
         val (e, ctxExp) = visitExp(exp)
-        val ctx3 = esAndCtxs.map(_._2).foldRight(ctxExp)(combineSeq)
+        val ctx3 = ctxs.foldRight(ctxExp)(combineSeq)
         if ((es zip exps).forall { case (a, b) => a eq b } && (e eq exp)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
