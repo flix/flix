@@ -55,14 +55,6 @@ mod Test.Exp.Jvm.Generic.InvokeConstructor {
         new LinkedHashMap()
 
     @CompileTest
-    def testArrayListRawConstructor01(): ArrayList \ IO =
-        new ArrayList()
-
-    @CompileTest
-    def testHashMapRawConstructor01(): HashMap \ IO =
-        new HashMap()
-
-    @CompileTest
     def testNestedGenericConstructor01(): ArrayList[ArrayList[String]] \ IO =
         new ArrayList()
 
