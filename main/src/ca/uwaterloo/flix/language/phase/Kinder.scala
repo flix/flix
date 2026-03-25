@@ -1107,22 +1107,15 @@ object Kinder {
     case UnkindedType.Cst(cst, loc) =>
       val kind = cst.kind
       cst match {
-        // Special handling for generic Java types: auto-fill with Object when used raw.
+        // Reject raw usage of generic Java types (e.g. ArrayList without type arguments).
         case TypeConstructor.Native(clazz) if clazz.getTypeParameters.length > 0 =>
-          unify(expectedKind, Kind.Star) match {
-            case Some(_) =>
-              // Raw usage: auto-fill type arguments with Object.
-              val base = Type.Cst(cst, loc)
-              val n = clazz.getTypeParameters.length
-              val objectArgs = List.fill(n)(Type.mkNative(classOf[Object], loc))
-              Type.mkApply(base, objectArgs, loc)
+          unify(expectedKind, kind) match {
+            case Some(_) => Type.Cst(cst, loc) // Used as higher-kinded constructor with explicit type args.
             case None =>
-              unify(expectedKind, kind) match {
-                case Some(_) => Type.Cst(cst, loc) // Used as higher-kinded constructor.
-                case None =>
-                  sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
-                  Type.freshError(Kind.Error, loc)
-              }
+              // The expected kind is Star but the native type has kind Star -> ... -> Star.
+              // This means the user wrote a raw type without type arguments.
+              sctx.errors.add(KindError.RawJavaType(clazz, clazz.getTypeParameters.length, loc))
+              Type.freshError(Kind.Error, loc)
           }
         case _ =>
           unify(expectedKind, kind) match {

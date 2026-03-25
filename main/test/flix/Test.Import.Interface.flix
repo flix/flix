@@ -8,6 +8,7 @@ mod Test.Import.Interface {
     import java.lang.Cloneable
     import java.lang.Readable
     import java.lang.Runnable
+    import java.lang.Object
     import java.util.concurrent.Future
     import java.util.concurrent.locks.Lock
 
@@ -36,7 +37,7 @@ mod Test.Import.Interface {
     def importInterface08(x: Runnable): Runnable = (x: Runnable)
 
     @CompileTest
-    def importInterface09(x: Future): Future = (x: Future)
+    def importInterface09(x: Future[Object]): Future[Object] = (x: Future[Object])
 
     @CompileTest
     def importInterface10(x: Lock): Lock = (x: Lock)
@@ -50,7 +51,7 @@ mod Test.Import.Interface {
         case C06(Cloneable)
         case C07(Readable)
         case C08(Runnable)
-        case C09(Future)
+        case C09(Future[Object])
         case C10(Lock)
     }
 
@@ -62,7 +63,7 @@ mod Test.Import.Interface {
     type alias A06 = Cloneable
     type alias A07 = Readable
     type alias A08 = Runnable
-    type alias A09 = Future
+    type alias A09 = Future[Object]
     type alias A10 = Lock
 
     pub struct S[r] {
@@ -74,7 +75,7 @@ mod Test.Import.Interface {
         f06: Cloneable,
         f07: Readable,
         f08: Runnable,
-        f09: Future,
+        f09: Future[Object],
         f10: Lock
     }
 
@@ -87,7 +88,7 @@ mod Test.Import.Interface {
         pub def f06(x: a): Cloneable
         pub def f07(x: a): Readable
         pub def f08(x: a): Runnable
-        pub def f09(x: a): Future
+        pub def f09(x: a): Future[Object]
         pub def f10(x: a): Lock
     }
 
@@ -100,7 +101,7 @@ mod Test.Import.Interface {
         pub def f06(_x: Unit): Cloneable = ???
         pub def f07(_x: Unit): Readable = ???
         pub def f08(_x: Unit): Runnable = ???
-        pub def f09(_x: Unit): Future = ???
+        pub def f09(_x: Unit): Future[Object] = ???
         pub def f10(_x: Unit): Lock = ???
     }
 
@@ -113,7 +114,7 @@ mod Test.Import.Interface {
         def f06(x: Cloneable): Cloneable
         def f07(x: Readable): Readable
         def f08(x: Runnable): Runnable
-        def f09(x: Future): Future
+        def f09(x: Future[Object]): Future[Object]
         def f10(x: Lock): Lock
     }
 
