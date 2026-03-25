@@ -190,7 +190,7 @@ pub mod Adaptor {
     /// Creates a fresh `ArrayList` and copies all elements in `ma` into it.
     ///
     pub def toArrayList(ma: m[a]): ArrayList[a] \ (IO + Foldable.Aef[m]) with Foldable[m] =
-        let alist = new ArrayList();
+        let alist: ArrayList[a] = new ArrayList();
         Foldable.forEach(x -> discard alist.add(unchecked_cast(x as Object)), ma);
         alist
 
@@ -200,7 +200,7 @@ pub mod Adaptor {
     /// Creates a fresh `LinkedList` and copies all elements in `ma` into it.
     ///
     pub def toLinkedList(ma: m[a]): LinkedList[a] \ (IO + Foldable.Aef[m]) with Foldable[m] =
-        let llist = new LinkedList();
+        let llist: LinkedList[a] = new LinkedList();
         Foldable.forEach(x -> discard llist.add(unchecked_cast(x as Object)), ma);
         llist
 
@@ -213,7 +213,7 @@ pub mod Adaptor {
     /// Returns the elements of the given foldable `ma` as a new `TreeSet`.
     ///
     pub def toTreeSet(ma: m[a]): TreeSet[a] \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
-        let tset = new TreeSet();
+        let tset: TreeSet[a] = new TreeSet();
         Foldable.forEach(x -> discard tset.add(unchecked_cast(x as Object)), ma);
         tset
 
@@ -228,7 +228,7 @@ pub mod Adaptor {
     /// The `TreeMap` uses a `Comparator` constructed from the `Order` on `k`.
     ///
     pub def toTreeMap(m: Map[k, v]): TreeMap[k, v] \ IO with Order[k] =
-        let tmap = new TreeMap();
+        let tmap: TreeMap[k, v] = new TreeMap();
         Map.forEach((k, v) -> discard tmap.put(unchecked_cast(k as Object), unchecked_cast(v as Object)), m);
         tmap
 
