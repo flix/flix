@@ -1001,19 +1001,21 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, _, constructors, methods, _, loc) =>
+      case Expr.NewObject(_, clazz, targs, constructors, methods, tvar, loc) =>
         constructors.foreach(visitJvmConstructor)
         methods.foreach(visitJvmMethod)
         val numTypeParams = clazz.getTypeParameters.length
         val resTpe = if (numTypeParams > 0) {
           val baseTpe = Type.mkNative(clazz, loc)
-          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+          val typeArgs = if (targs.nonEmpty) targs
+                         else List.fill(numTypeParams)(freshVar(Kind.Star, loc))
           Type.mkApply(baseTpe, typeArgs, loc)
         } else {
           Type.getFlixType(clazz)
         }
+        c.unifyType(tvar, resTpe, loc)
         val resEff = Type.IO
-        (resTpe, resEff)
+        (tvar, resEff)
 
       case Expr.NewChannel(exp, tvar, loc) =>
         val elmTpe = freshVar(Kind.Star, loc)

@@ -827,7 +827,7 @@ object Safety {
         case JvmMethod(_, ident, fparams, _, _, _, methodLoc) =>
           val firstParam = fparams.head
           firstParam.tpe match {
-            case t if Type.eraseAliases(t) == tpe =>
+            case t if Type.classFromFlixType(Type.eraseAliases(t)).contains(clazz) =>
               ()
             case Type.Unit =>
               // Unit arguments are likely inserted by the compiler.

@@ -521,8 +521,8 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e.eff, Type.IO, loc)
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
-    case KindedAst.Expr.NewObject(name, clazz, _, constructors, methods, _, loc) =>
-      val tpe = instantiateJavaTypeWithObjectArgs(clazz, loc)
+    case KindedAst.Expr.NewObject(name, clazz, _, constructors, methods, tvar, loc) =>
+      val tpe = subst(tvar)
       val eff = Type.IO
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)
