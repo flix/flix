@@ -431,26 +431,19 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
         (resTpe, resEff)
 
-      case Expr.Stm(exp1, exp2, loc) =>
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
+      case Expr.Stm(exps, exp, loc) =>
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val (tpe2, eff2) = visitExp(exp)
 
-        // If the first expression is a JVM invocation,
-        // then we don't require it to be return Unit
-        val isJvm = exp1 match {
-          case _: Expr.InvokeConstructor => true
-          case _: Expr.InvokeSuperConstructor => true
-          case _: Expr.InvokeMethod => true
-          case _: Expr.InvokeSuperMethod => true
-          case _: Expr.InvokeStaticMethod => true
-          case _ => false
-        }
-        if (!isJvm) {
-          c.expectStmt(actual = tpe1, exp1.loc)
+        // JVM invocations may return non-Unit; don't require Unit for those.
+        exps.zip(tpes).foreach { case (e, tpe1) =>
+          if (!isJvmInvoke(e)) {
+            c.expectStmt(actual = tpe1, e.loc)
+          }
         }
 
         val resTpe = tpe2
-        val resEff = Type.mkUnion(eff1, eff2, loc)
+        val resEff = Type.mkUnion(effs :+ eff2, loc)
         (resTpe, resEff)
 
       case Expr.Discard(exp, _) =>
@@ -1458,6 +1451,16 @@ object ConstraintGen {
     } else {
       Type.getFlixType(clazz)
     }
+  }
+
+  /** Returns `true` if `exp` is a JVM interop invocation (constructor, method, or static method). */
+  private def isJvmInvoke(exp: KindedAst.Expr): Boolean = exp match {
+    case _: Expr.InvokeConstructor => true
+    case _: Expr.InvokeSuperConstructor => true
+    case _: Expr.InvokeMethod => true
+    case _: Expr.InvokeSuperMethod => true
+    case _: Expr.InvokeStaticMethod => true
+    case _ => false
   }
 
   /** Returns a fresh variable with a synthetic location. */

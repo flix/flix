@@ -284,13 +284,13 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.IfThenElse(e1, e2, e3, t, eff, loc)
 
-    case TypedAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
       // Strip auto-unboxing: `m.put("k", 42);` discards the result, so we must not
       // unbox the null that `HashMap.put` returns on first insert (would NPE).
-      val e1 = stripAutoUnbox(lowerExp(exp1))
-      val e2 = lowerExp(exp2)
+      val es = exps.map(e => stripAutoUnbox(lowerExp(e)))
+      val e = lowerExp(exp)
       val t = lowerType(tpe)
-      MonoAst.Expr.Stm(e1, e2, t, eff, loc)
+      MonoAst.Expr.Stm(es, e, t, eff, loc)
 
     case TypedAst.Expr.Discard(exp, eff, loc) =>
       // Strip auto-unboxing: same reason as Stm — discarded results must not be unboxed.
@@ -427,7 +427,7 @@ object Lowering {
       val e = lowerExp(exp)
       if (isPrimType(e.tpe)) {
         // If it's a primitive type, evaluate the expression but return false
-        MonoAst.Expr.Stm(e, MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
+        MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
       } else {
         // If it's a reference type, then do the instanceof check
         MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
@@ -961,7 +961,7 @@ object Lowering {
       case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (x, y) =>
         val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
-        MonoAst.Expr.Stm(exp, crash, tpe, eff, loc)
+        MonoAst.Expr.Stm(List(exp), crash, tpe, eff, loc)
     }
   }
 
@@ -1334,7 +1334,7 @@ object Lowering {
         val e2 = mkPutChannel(e1, e, Type.IO, loc) // The put exp: `ch <- exp0`.
         val e3 = MonoAst.Expr.Cst(Constant.Static, Type.mkRegionToStar(Type.IO, loc), loc)
         val e4 = MonoAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.IO, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        MonoAst.Expr.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+        MonoAst.Expr.Stm(List(e4), acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
     // Make let bindings `let ch = chan 1;`.
@@ -2176,10 +2176,10 @@ object Lowering {
       val e3 = substExp(exp3, subst)
       MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case MonoAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
+    case MonoAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      val e = substExp(exp, subst)
+      MonoAst.Expr.Stm(es, e, tpe, eff, loc)
 
     case MonoAst.Expr.Discard(exp, eff, loc) =>
       val e = substExp(exp, subst)

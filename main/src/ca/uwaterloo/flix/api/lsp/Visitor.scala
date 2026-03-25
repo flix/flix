@@ -390,9 +390,9 @@ object Visitor {
         visitExpr(exp2)
         visitExpr(exp3)
 
-      case Expr.Stm(exp1, exp2, _, _, _) =>
-        visitExpr(exp1)
-        visitExpr(exp2)
+      case Expr.Stm(exps, exp, _, _, _) =>
+        exps.foreach(visitExpr)
+        visitExpr(exp)
 
       case Expr.Discard(exp, _, _) =>
         visitExpr(exp)
