@@ -221,6 +221,33 @@ pub mod List {
     }
 
     ///
+    /// Returns the element at position `i` in the list `l`.
+    ///
+    /// Throws `OutOfBounds` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, l: List[a]): a \ OutOfBounds =
+        match nth(i, l) {
+            case Some(x) => x
+            case None    => OutOfBounds.outOfBounds("index ${i} is out of bounds for List of length ${length(l)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the list `l`.
+    ///
+    @Terminates
+    pub def nth(i: Int32, l: List[a]): Option[a] =
+        if (i < 0)
+            None
+        else {
+            @Tailrec
+            def loop(ll, j) = match ll {
+                case Nil     => None
+                case x :: xs => if (j == 0) Some(x) else loop(xs, j - 1)
+            };
+            loop(l, i)
+        }
+
+    ///
     /// Returns the number of elements in `l`.
     ///
     @Terminates
