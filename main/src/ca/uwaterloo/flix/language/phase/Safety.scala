@@ -25,12 +25,11 @@ object Safety {
     implicit val _r: Root = root
 
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
-    val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEffect))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
     val uses = changeSet.updateStaleValueLists(root.uses, oldRoot.uses, (uoi1: UseOrImport, uoi2: UseOrImport) => uoi1 == uoi2)(ParOps.parMapValueList(_)(visitUseOrImport))
 
-    (root.copy(defs = defs, effects = effects, traits = traits, instances = instances, uses = uses), sctx.errors.asScala.toList)
+    (root.copy(defs = defs, traits = traits, instances = instances, uses = uses), sctx.errors.asScala.toList)
   }
 
   /** Checks the safety and well-formedness of `defn`. */
@@ -66,14 +65,7 @@ object Safety {
     sig.exp.foreach(visitExp(_))
   }
 
-  /** Checks the safety and well-formedness of `eff`. */
-  private def visitEffect(eff: TypedAst.Effect)(implicit sctx: SharedContext, root: Root, flix: Flix): TypedAst.Effect = {
-    eff.ops.foreach(visitOp)
-    eff
-  }
 
-  /** Checks the safety and well-formedness of `op`. */
-  private def visitOp(op: TypedAst.Op)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = ()
 
   /**
     * Checks the safety and well-formedness of `exp0`.
