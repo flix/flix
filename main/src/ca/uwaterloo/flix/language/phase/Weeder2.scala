@@ -1399,7 +1399,7 @@ object Weeder2 {
           Annotations(as.filter(a => a.isInstanceOf[Annotation.TailRecursive] || a.isInstanceOf[Annotation.Terminates]))
       }
 
-      // Extract (defBody, continuation) from the Stm wrapping the local def.
+      // Extract (defBody, restExp) from the Stm wrapping the local def.
       val exprs = mapN(pickExpr(tree)) {
         case Expr.Stm(defBody :: Nil, exp, _) => (defBody, exp)
         case e =>
@@ -1598,7 +1598,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.LetMatch)
       flatMapN(Patterns.pickPattern(tree), Types.tryPickType(tree), pickExpr(tree)) {
         (pattern, tpe, expr) =>
-          // Extract (boundValue, continuation) from the Stm wrapping the let-match.
+          // Extract (boundValue, restExp) from the Stm wrapping the let-match.
           val exprs = expr match {
             case Expr.Stm(boundValue :: Nil, exp, _) => Validation.Success((boundValue, exp))
             // Fall back on Expr.Error. Parser has reported an error here.
