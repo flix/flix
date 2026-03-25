@@ -1485,7 +1485,7 @@ pub mod Array {
     ///
     def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ r =
         let pivot = get(hi, a);
-        let i = forWithAccum(lo, hi, lo, (j,ix) ->
+        let i = forWithAccum(lo, hi - 1, lo, (j,ix) ->
             if (cmp(get(j, a), pivot) == Comparison.LessThan) {
                 swap(ix, j, a);
                 ix+1
@@ -1501,7 +1501,9 @@ pub mod Array {
     /// precondition: lo <= hi
     ///
     def forWithAccum(lo: Int32, hi: Int32, ac: a, f: (Int32, a) -> a \ ef): a \ ef =
-        if (lo == hi)
+        if (lo > hi)
+            ac
+        else if (lo == hi)
             f(lo, ac)
         else {
             let ac1 = f(lo, ac);

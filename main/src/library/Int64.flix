@@ -474,6 +474,14 @@ pub mod Int64 {
         Long.valueOf(clamp(min = mini64, max = maxi64, x)).intValue()
 
     ///
+    /// Convert `x` to an Int32 by truncation.
+    ///
+    /// Discards all but the lowest 32 bits.
+    ///
+    pub def truncateToInt32(x: Int64): Int32 =
+        Long.valueOf(x).intValue()
+
+    ///
     /// Get the primitive Int64 value from its object representation (i.e. Long).
     ///
     /// This function is expected to be used when marshaling Int64s from Java. Generally in Flix

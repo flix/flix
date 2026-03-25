@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.errors.{EntryPointError, SafetyError}
+import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.{Forbidden, IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalThrowType}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -677,116 +677,119 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalCheckedCastToVar](result)
   }
 
-  test("IllegalEntryPointSignature.05") {
+  test("IllegalCheckedCast.01") {
     val input =
       """
-        |eff Print {
-        |    pub def println(): Unit
-        |}
+        |import java.lang.Integer
         |
-        |@Test
-        |def foo(): Unit \ Print = Print.println()
-        |
+        |def f(x: String): Integer = checked_cast(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointEffect](result)
+    expectError[SafetyError.IllegalCheckedCast](result)
   }
 
-  test("IllegalExportFunction.01") {
+  test("IllegalCheckedCast.02") {
     val input =
       """
-        |mod Mod { @Export def id(x: Int32): Int32 = x }
-        |""".stripMargin
+        |import java.lang.Integer
+        |import java.lang.StringBuilder
+        |
+        |def f(x: Integer): StringBuilder = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.NonPublicExport](result)
+    expectError[SafetyError.IllegalCheckedCast](result)
   }
 
-  test("IllegalExportFunction.02") {
+  test("IllegalCheckedCast.03") {
     val input =
       """
-        |@Export pub def id(x: Int32): Int32 = x
-        |""".stripMargin
+        |import java.io.InputStream
+        |import java.io.OutputStream
+        |
+        |def f(x: InputStream): OutputStream = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalExportNamespace](result)
+    expectError[SafetyError.IllegalCheckedCast](result)
   }
 
-  test("IllegalExportFunction.03") {
+  test("IllegalCheckedCast.04") {
     val input =
       """
-        |mod Mod { @Export pub def <><(x: Int32, _y: Int32): Int32 = x }
-        |""".stripMargin
+        |import java.util.ArrayList
+        |import java.util.HashMap
+        |
+        |def f(x: ArrayList): HashMap = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalExportName](result)
+    expectError[SafetyError.IllegalCheckedCast](result)
   }
 
-  test("IllegalExportFunction.04") {
+  test("IllegalCheckedCast.05") {
     val input =
       """
-        |eff Print
-        |def println(x: t): t \ Print = ???()
-        |mod Mod { @Export pub def id(x: Int32): Int32 \ Print = println(x) }
-        |""".stripMargin
+        |import java.lang.Comparable
+        |import java.lang.Runnable
+        |
+        |def f(x: Comparable): Runnable = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointEffect](result)
+    expectError[SafetyError.IllegalCheckedCast](result)
   }
 
-  test("IllegalExportFunction.05") {
+  test("IllegalCheckedCastToNonJava.01") {
     val input =
       """
-        |enum Option[t] {
-        |  case Some(t)
-        |  case None
-        |}
-        |mod Mod { @Export pub def id(x: Int32): Option[Int32] = Some(x) }
-        |""".stripMargin
+        |import java.lang.Object
+        |
+        |def f(x: Object): Int32 = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalExportType](result)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
   }
 
-  test("IllegalExportFunction.06") {
+  test("IllegalCheckedCastToNonJava.02") {
     val input =
       """
-        |enum Option[t] {
-        |  case Some(t)
-        |  case None
-        |}
-        |mod Mod { @Export pub def id(x: Int32, _y: Option[Int32]): Int32 = x }
-        |""".stripMargin
+        |import java.lang.Object
+        |
+        |def f(x: Object): Bool = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalExportType](result)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
   }
 
-  test("IllegalExportFunction.07") {
+  test("IllegalCheckedCastToNonJava.03") {
     val input =
       """
-        |mod Mod { @Export pub def id[t](x: t): t = x }
-        |""".stripMargin
+        |import java.lang.Object
+        |
+        |def f(x: Object): Int64 = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
   }
 
-  test("IllegalExportFunction.08") {
+  test("IllegalCheckedCastToNonJava.04") {
     val input =
       """
-        |struct S[t, r] {
-        |    v: t
-        |}
-        |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
-        |""".stripMargin
+        |import java.lang.StringBuilder
+        |
+        |def f(x: StringBuilder): Float64 = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
   }
 
-  test("IllegalExportFunction.09") {
+  test("IllegalCheckedCastToNonJava.05") {
     val input =
       """
-        |struct S[t, r] {
-        |    v: t
-        |}
-        |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
-        |""".stripMargin
+        |import java.lang.Integer
+        |
+        |enum Color { case Red, Green, Blue }
+        |def f(x: Integer): Color = checked_cast(x)
+      """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
   }
 
   test("IllegalMethodEffect.01") {
