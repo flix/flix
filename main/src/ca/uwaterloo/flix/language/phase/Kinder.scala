@@ -1114,7 +1114,7 @@ object Kinder {
             case None =>
               // The expected kind is Star but the native type has kind Star -> ... -> Star.
               // This means the user wrote a raw type without type arguments.
-              sctx.errors.add(KindError.RawJavaType(clazz, clazz.getTypeParameters.length, loc))
+              sctx.errors.add(KindError.IllegalRawJavaType(clazz, clazz.getTypeParameters.length, loc))
               Type.freshError(Kind.Error, loc)
           }
         case _ =>

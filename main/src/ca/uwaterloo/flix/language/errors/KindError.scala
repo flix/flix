@@ -31,6 +31,32 @@ sealed trait KindError extends CompilationMessage {
 object KindError {
 
   /**
+    * An error raised to indicate that a generic Java type is used without type arguments.
+    *
+    * @param clazz        the Java class.
+    * @param expectedArity the number of type arguments expected.
+    * @param loc          the location where the error occurred.
+    */
+  case class IllegalRawJavaType(clazz: java.lang.Class[?], expectedArity: Int, loc: SourceLocation) extends KindError {
+    def code: ErrorCode = ErrorCode.E3692
+
+    private val expected = Grammar.n_things(expectedArity, "type argument")
+
+    def summary: String =
+      s"Raw Java type: '${clazz.getName}' requires $expected."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Raw Java type: '${red(clazz.getName)}' requires $expected.
+         |
+         |${highlight(loc, "missing type arguments", fmt)}
+         |
+         |${underline("Tip:")} Provide explicit type arguments, e.g. '${clazz.getSimpleName}[${List.fill(expectedArity)("t").mkString(", ")}]'.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate wrong number of type arguments for an enum.
     *
     * @param sym           the enum symbol.
@@ -207,29 +233,4 @@ object KindError {
     }
   }
 
-  /**
-    * An error raised to indicate that a generic Java type is used without type arguments.
-    *
-    * @param clazz        the Java class.
-    * @param expectedArity the number of type arguments expected.
-    * @param loc          the location where the error occurred.
-    */
-  case class RawJavaType(clazz: java.lang.Class[?], expectedArity: Int, loc: SourceLocation) extends KindError {
-    def code: ErrorCode = ErrorCode.E3692
-
-    private val expected = Grammar.n_things(expectedArity, "type argument")
-
-    def summary: String =
-      s"Raw Java type: '${clazz.getName}' requires $expected."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Raw Java type: '${red(clazz.getName)}' requires $expected.
-         |
-         |${highlight(loc, "missing type arguments", fmt)}
-         |
-         |${underline("Tip:")} Provide explicit type arguments, e.g. '${clazz.getSimpleName}[${List.fill(expectedArity)("t").mkString(", ")}]'.
-         |""".stripMargin
-    }
-  }
 }
