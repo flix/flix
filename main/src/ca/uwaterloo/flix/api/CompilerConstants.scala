@@ -54,14 +54,6 @@ object CompilerConstants {
   val VirtualShellFile: Path = Path.of("__SHELL__.flix")
 
   /**
-    * Whether to allow raw (unparameterized) Java generic types.
-    *
-    * When `true`, raw types like `ArrayList` are auto-filled with `Object`.
-    * When `false`, a `KindError.IllegalRawJavaType` error is raised.
-    */
-  val RawJavaTypes: Boolean = true
-
-  /**
     * The virtual file name used by tests.
     */
   val VirtualTestFile: Path = Path.of("__TEST__.flix")
