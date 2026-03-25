@@ -1433,64 +1433,74 @@ object Parser2 {
       */
     def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      var lhs = expression()
-      if (eat(TokenKind.Semi)) {
-        statement()
-        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      } else if (nth(0).notBinaryOperator) {
-        // This token can only appear as a follow token after an expression within a statement,
-        // so we assume the user forgot a semicolon.
-        // We create the error and continue parsing as if the semicolon was present.
-        val isReal = true
-        val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
-        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
-        statement()
-        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      // Error recovery: if the next token can follow a binary operator and we are inside
-      // a block expression, we assume an operator or semicolon was accidentally omitted.
-      // Examples:
-      //   x y      // same line: infer a missing binary operator (e.g. `x + y`)
-      //   x
-      //   y        // different lines: infer a missing semicolon
-      } else if (nth(0).canFollowBinaryOperator && s.inBlock) {
-        val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
-        if (isNewLine) {
-          // Different line: infer a missing semicolon
+      // Collect all expression marks iteratively to avoid stack overflow on long statement chains.
+      val exprMarks = ArrayBuffer.empty[Mark.Closed]
+      exprMarks.addOne(expression())
+      var continue = true
+      while (continue) {
+        if (eat(TokenKind.Semi)) {
+          exprMarks.addOne(expression())
+        } else if (nth(0).notBinaryOperator) {
+          // This token can only appear as a follow token after an expression within a statement,
+          // so we assume the user forgot a semicolon.
+          // We create the error and continue parsing as if the semicolon was present.
           val isReal = true
           val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
           closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
-          statement()
-          lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
-          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-        } else {
-          // Same line: We assume that a binary operator is missing between the two expressions,
-          // so we create a Binary node with a synthetic OperatorError child.
-          // The Weeder will detect OperatorError, emit ParseError.MissingBinaryOperator,
-          // and produce LetMatch(Wild) so both sub-expressions can still be type-checked.
-          val mark = openBefore(lhs)
-          val markOp = open()
-          close(open(), TreeKind.OperatorError)
-          close(markOp, TreeKind.Operator)
-          expression()
-          lhs = close(mark, TreeKind.Expr.Binary)
-          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-          // A following statement is optional here (unlike the branches above where
-          // we know another statement must follow). Only parse one if a ';' is present.
-          if (eat(TokenKind.Semi)) {
-            statement()
-            lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
-            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          exprMarks.addOne(expression())
+        // Error recovery: if the next token can follow a binary operator and we are inside
+        // a block expression, we assume an operator or semicolon was accidentally omitted.
+        // Examples:
+        //   x y      // same line: infer a missing binary operator (e.g. `x + y`)
+        //   x
+        //   y        // different lines: infer a missing semicolon
+        } else if (nth(0).canFollowBinaryOperator && s.inBlock) {
+          val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
+          if (isNewLine) {
+            // Different line: infer a missing semicolon
+            val isReal = true
+            val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
+            closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
+            exprMarks.addOne(expression())
+          } else {
+            // Same line: We assume that a binary operator is missing between the two expressions,
+            // so we create a Binary node with a synthetic OperatorError child.
+            // The Weeder will detect OperatorError, emit ParseError.MissingBinaryOperator,
+            // and produce LetMatch(Wild) so both sub-expressions can still be type-checked.
+            val lastIdx = exprMarks.length - 1
+            val mark = openBefore(exprMarks(lastIdx))
+            val markOp = open()
+            close(open(), TreeKind.OperatorError)
+            close(markOp, TreeKind.Operator)
+            expression()
+            val binary = close(mark, TreeKind.Expr.Binary)
+            exprMarks(lastIdx) = close(openBefore(binary), TreeKind.Expr.Expr)
+            // A following statement is optional here (unlike the branches above where
+            // we know another statement must follow). Only parse one if a ';' is present.
+            if (eat(TokenKind.Semi)) {
+              exprMarks.addOne(expression())
+            } else {
+              continue = false
+            }
           }
+        } else {
+          continue = false
         }
-      } else if (!rhsIsOptional) {
+      }
+      if (exprMarks.length == 1 && !rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
         //       "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'".
         expect(TokenKind.Semi)
       }
-      lhs
+      // Build right-nested Statement tree: Statement(e1, Expr(Statement(e2, Expr(... en))))
+      if (exprMarks.length >= 2) {
+        for (i <- (exprMarks.length - 2) to 0 by -1) {
+          val stm = close(openBefore(exprMarks(i)), TreeKind.Expr.Statement)
+          exprMarks(i) = close(openBefore(stm), TreeKind.Expr.Expr)
+        }
+      }
+      exprMarks(0)
     }
 
     def expression(leftOpt: Option[Op] = None)(implicit s: State): Mark.Closed = {
