@@ -1364,7 +1364,7 @@ object Type {
     * Returns a fully-applied Flix type for the given Java class, with `Object` type arguments
     * for generic classes. Use this in ground-type contexts that need kind `Star`.
     */
-  def getFlixTypeApplied(c: Class[?], loc: SourceLocation): Type = {
+  def instantiateJavaTypeWithObjectArgs(c: Class[?], loc: SourceLocation): Type = {
     val base = getFlixType(c)
     val n = c.getTypeParameters.length
     Type.mkApply(base, List.fill(n)(Type.mkNative(classOf[Object], loc)), loc)

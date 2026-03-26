@@ -941,7 +941,7 @@ object ConstraintGen {
 
       case Expr.InvokeSuperMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = Type.getFlixTypeApplied(clazz, loc)
+        val clazzTpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
@@ -976,8 +976,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = Type.getFlixTypeApplied(field.getType, loc)
-        val classType = Type.getFlixTypeApplied(clazz, loc)
+        val fieldType = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc)
+        val classType = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = classType, actual = tpe1, exp1.loc)
@@ -988,7 +988,7 @@ object ConstraintGen {
 
       case Expr.GetStaticField(field, loc) =>
         val isFinal = Modifier.isFinal(field.getModifiers)
-        val fieldType = Type.getFlixTypeApplied(field.getType, loc)
+        val fieldType = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
         val resTpe = fieldType
         val resEff = fieldReadEff
@@ -996,7 +996,7 @@ object ConstraintGen {
 
       case Expr.PutStaticField(field, exp, loc) =>
         val (valueTyp, eff) = visitExp(exp)
-        c.expectType(expected = Type.getFlixTypeApplied(field.getType, loc), actual = valueTyp, exp.loc)
+        c.expectType(expected = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)

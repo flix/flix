@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Type.getFlixTypeApplied
+import ca.uwaterloo.flix.language.ast.Type.instantiateJavaTypeWithObjectArgs
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Decreasing}
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -428,7 +428,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.getFlixTypeApplied(clazz, loc)
+      val tpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -441,7 +441,7 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val constructorTpe = subst(jvar)
-      val tpe = Type.getFlixTypeApplied(clazz, loc)
+      val tpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
@@ -511,7 +511,7 @@ object TypeReconstruction {
       TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.GetStaticField(field, loc) =>
-      val tpe = getFlixTypeApplied(field.getType, loc)
+      val tpe = instantiateJavaTypeWithObjectArgs(field.getType, loc)
       val eff = Type.IO
       TypedAst.Expr.GetStaticField(field, tpe, eff, loc)
 
@@ -522,7 +522,7 @@ object TypeReconstruction {
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.NewObject(name, clazz, constructors, methods, loc) =>
-      val tpe = getFlixTypeApplied(clazz, loc)
+      val tpe = instantiateJavaTypeWithObjectArgs(clazz, loc)
       val eff = Type.IO
       val cs = constructors.map(visitJvmConstructor)
       val ms = methods.map(visitJvmMethod)

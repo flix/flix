@@ -94,7 +94,7 @@ object TypeReduction2 {
       reduce(tpe, scope, renv) match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          getFlixTypeWithFreshVars(constructor.getDeclaringClass, scope, loc)
+          instantiateJavaTypeWithFreshVars(constructor.getDeclaringClass, scope, loc)
 
         case Type.Cst(TypeConstructor.JvmMethod(method, receiverType), _) =>
           progress.markProgress()
@@ -102,7 +102,7 @@ object TypeReduction2 {
 
         case Type.Cst(TypeConstructor.JvmField(field), _) =>
           progress.markProgress()
-          getFlixTypeWithFreshVars(field.getType, scope, loc)
+          instantiateJavaTypeWithFreshVars(field.getType, scope, loc)
 
         case t => Type.JvmToType(t, loc)
       }
@@ -396,8 +396,8 @@ object TypeReduction2 {
     case _ => false
   }
 
-  /** Like `getFlixTypeApplied` but uses fresh type variables instead of `Object`. */
-  private def getFlixTypeWithFreshVars(clazz: Class[?], scope: Scope, loc: SourceLocation)(implicit flix: Flix): Type = {
+  /** Like `instantiateJavaTypeWithObjectArgs` but uses fresh type variables instead of `Object`. */
+  private def instantiateJavaTypeWithFreshVars(clazz: Class[?], scope: Scope, loc: SourceLocation)(implicit flix: Flix): Type = {
     val base = Type.getFlixType(clazz)
     val n = clazz.getTypeParameters.length
     if (n > 0) Type.mkApply(base, List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix)), loc)
@@ -419,7 +419,7 @@ object TypeReduction2 {
     *   The receiver `HashMap[String, Int32]` maps `K -> String, V -> Int32`, so the result is `Int32`.
     *
     * Example 3: `String.length()` -- the return type is `int` (not a type variable).
-    *   Falls back to `getFlixTypeWithFreshVars(int)` which yields `Int32`.
+    *   Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
     */
   private def resolveMethodReturnType(method: Method, receiverType: Option[Type],
       scope: Scope, loc: SourceLocation)(implicit flix: Flix): Type = {
@@ -428,11 +428,11 @@ object TypeReduction2 {
         // Return type is a type variable (e.g., E from ArrayList<E>.get()).
         // Build a substitution from the receiver's type arguments and look up the variable.
         val substMap = buildTypeVarSubstitution(method, receiverType, scope, loc)
-        substMap.getOrElse(tv.getName, getFlixTypeWithFreshVars(method.getReturnType, scope, loc))
+        substMap.getOrElse(tv.getName, instantiateJavaTypeWithFreshVars(method.getReturnType, scope, loc))
       case _ =>
         // Non-type-variable return (Class, ParameterizedType, etc.).
         // Use erased return type with fresh vars for backward compatibility.
-        getFlixTypeWithFreshVars(method.getReturnType, scope, loc)
+        instantiateJavaTypeWithFreshVars(method.getReturnType, scope, loc)
     }
   }
 
