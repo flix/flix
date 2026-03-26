@@ -197,12 +197,14 @@ sealed trait TokenKind {
     case _ => false
   }
 
-  /** Returns `true` if this token is a doc, line or block comment. */
-  def isComment: Boolean = this match {
+  /** Returns `true` if this token is a doc comment. */
+  def isCommentDoc: Boolean = this match {
     case TokenKind.CommentDoc => true
-    case _ if this.isCommentNonDoc => true
     case _ => false
   }
+
+  /** Returns `true` if this token is a doc, line or block comment. */
+  def isComment: Boolean = this.isCommentDoc || this.isCommentNonDoc
 
   /** Returns `true` if this token is a keyword. */
   def isKeyword: Boolean = this match {

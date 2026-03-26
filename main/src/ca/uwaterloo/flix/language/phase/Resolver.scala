@@ -893,10 +893,10 @@ object Resolver {
       val e3 = resolveExp(exp3, scp0)
       ResolvedAst.Expr.IfThenElse(e1, e2, e3, loc)
 
-    case NamedAst.Expr.Stm(exp1, exp2, loc) =>
-      val e1 = resolveExp(exp1, scp0)
-      val e2 = resolveExp(exp2, scp0)
-      ResolvedAst.Expr.Stm(e1, e2, loc)
+    case NamedAst.Expr.Stm(exps, exp, loc) =>
+      val es = exps.map(resolveExp(_, scp0))
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.Stm(es, e, loc)
 
     case NamedAst.Expr.Discard(exp, loc) =>
       val e = resolveExp(exp, scp0)
@@ -987,13 +987,13 @@ object Resolver {
       val b = resolveExp(base, scp0)
       ResolvedAst.Expr.RecordSelect(b, label, loc)
 
-    case NamedAst.Expr.RecordExtend(label, value, rest, loc) =>
-      val v = resolveExp(value, scp0)
-      val r = resolveExp(rest, scp0)
+    case NamedAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
+      val v = resolveExp(exp1, scp0)
+      val r = resolveExp(exp2, scp0)
       ResolvedAst.Expr.RecordExtend(label, v, r, loc)
 
-    case NamedAst.Expr.RecordRestrict(label, rest, loc) =>
-      val r = resolveExp(rest, scp0)
+    case NamedAst.Expr.RecordRestrict(label, exp, loc) =>
+      val r = resolveExp(exp, scp0)
       ResolvedAst.Expr.RecordRestrict(label, r, loc)
 
     case NamedAst.Expr.ArrayLit(exps, exp, loc) =>
@@ -1007,19 +1007,19 @@ object Resolver {
       val e3 = resolveExp(exp3, scp0)
       ResolvedAst.Expr.ArrayNew(e1, e2, e3, loc)
 
-    case NamedAst.Expr.ArrayLoad(base, index, loc) =>
-      val b = resolveExp(base, scp0)
-      val i = resolveExp(index, scp0)
+    case NamedAst.Expr.ArrayLoad(exp1, exp2, loc) =>
+      val b = resolveExp(exp1, scp0)
+      val i = resolveExp(exp2, scp0)
       ResolvedAst.Expr.ArrayLoad(b, i, loc)
 
-    case NamedAst.Expr.ArrayStore(base, index, elm, loc) =>
-      val b = resolveExp(base, scp0)
-      val i = resolveExp(index, scp0)
-      val e = resolveExp(elm, scp0)
+    case NamedAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
+      val b = resolveExp(exp1, scp0)
+      val i = resolveExp(exp2, scp0)
+      val e = resolveExp(exp3, scp0)
       ResolvedAst.Expr.ArrayStore(b, i, e, loc)
 
-    case NamedAst.Expr.ArrayLength(base, loc) =>
-      val b = resolveExp(base, scp0)
+    case NamedAst.Expr.ArrayLength(exp, loc) =>
+      val b = resolveExp(exp, scp0)
       ResolvedAst.Expr.ArrayLength(b, loc)
 
     case NamedAst.Expr.StructNew(name, fields0, region0, loc) =>
@@ -1211,16 +1211,17 @@ object Resolver {
     case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
       //
-      // Check that the type is a JVM type (after type alias erasure).
-      // Set the super class on the scope for constructor/method bodies.
+      // Extract the native class from the erased type. We erase type aliases first
+      // because the type may be wrapped in an alias (e.g., `type JList = ##java.util.ArrayList`),
+      // and we need to look through that to find the underlying `Native` type constructor.
       //
-      UnkindedType.eraseAliases(t) match {
-        case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
+      getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
+        case Some(clazz) =>
           val superScp = scp0.withSuperClass(Some(clazz))
           val cs = constructors.map(visitJvmConstructor(_, superScp))
           val ms = methods.map(visitJvmMethod(_, superScp))
           ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
-        case _ =>
+        case None =>
           val cs = constructors.map(visitJvmConstructor(_, scp0))
           val ms = methods.map(visitJvmMethod(_, scp0))
           val error = ResolutionError.IllegalNonJavaType(t, t.loc)
@@ -3345,6 +3346,19 @@ object Resolver {
     * Creates an LocalScope from the given type variable symbol.
     */
   private def mkTypeVarScp(sym: Symbol.RegionSym): LocalScope = LocalScope.singleton(sym.text, Resolution.Region(sym))
+
+  /**
+    * Looks up the Java class from a (possibly applied) native unkinded type by
+    * traversing type applications to find the base `Native` type constructor.
+    *
+    * Example: `UnkindedType.Cst(Native(classOf[String]))` returns `Some(classOf[String])`.
+    * Example: `UnkindedType.Apply(Cst(Native(classOf[ArrayList])), Cst(Native(classOf[String])))` returns `Some(classOf[ArrayList])`.
+    */
+  private def getNativeClassFromType(tpe: UnkindedType): Option[Class[?]] = tpe match {
+    case UnkindedType.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
+    case UnkindedType.Apply(t1, _, _) => getNativeClassFromType(t1)
+    case _ => None
+  }
 
   /**
     * Converts the class into a Flix type.

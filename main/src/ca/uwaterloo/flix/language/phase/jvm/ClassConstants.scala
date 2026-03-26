@@ -49,37 +49,6 @@ object ClassConstants {
 
   // Java Constants.
 
-  object Arrays {
-
-    val BoolArrToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendType.String))
-
-    val CharArrToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendType.String))
-
-    val Int8ArrToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendType.String))
-
-    val Int16ArrToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendType.String))
-
-    val Int32ArrToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendType.String))
-
-    val Int64ArrToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendType.String))
-
-    val Float32ArrToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendType.String))
-
-    val Float64ArrToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendType.String))
-
-    val DeepToString: StaticMethod =
-      StaticMethod(JvmName.Arrays, "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendType.String))
-
-  }
-
   object BigDecimal {
     val Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JvmName.BigDecimal, List(BackendType.String))
   }
@@ -153,11 +122,6 @@ object ClassConstants {
 
   object Runnable {
     val RunMethod: InterfaceMethod = InterfaceMethod(JvmName.Runnable, "run", MethodDescriptor.NothingToVoid)
-  }
-
-  object String {
-    val Concat: InstanceMethod =
-      InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
   }
 
   object StringBuilder {

@@ -172,10 +172,10 @@ object Stratifier {
       val e3 = visitExp(exp3)
       Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Stm(e1, e2, tpe, eff, loc)
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      Expr.Stm(es, e, tpe, eff, loc)
 
     case Expr.Discard(exp, eff, loc) =>
       val e = visitExp(exp)

@@ -88,6 +88,12 @@ mod Test.Exp.Stm {
         h();
         x
 
+    /// Test with many statement expressions.
+    @CompileTest
+    def testStmDeep01(): Int32 \ IO =
+        f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f(); f();
+        123
+
     def f(): Unit \ IO = checked_ecast(())
 
     def g(): Unit \ IO = checked_ecast(())

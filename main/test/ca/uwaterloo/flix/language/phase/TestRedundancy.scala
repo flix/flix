@@ -1487,7 +1487,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("RedundantPurityCast.01") {
+  test("RedundantUncheckedEffectCast.01") {
     val input =
       """
         |pub def f(): Int32 = unchecked_cast(123 as _ \ {})
@@ -1497,7 +1497,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantPurityCast.02") {
+  test("RedundantUncheckedEffectCast.02") {
     val input =
       raw"""
            |pub def f(): Array[Int32, Static] \ IO =
@@ -1509,7 +1509,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantUncheckedEffectCast.01") {
+  test("RedundantUncheckedEffectCast.03") {
     val input =
       raw"""
            |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(g(123) as _ \ ef)
@@ -1517,6 +1517,36 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
+  }
+
+  test("RedundantUncheckedTypeCast.01") {
+    val input =
+      """
+        |pub def f(): Int32 = unchecked_cast(123 as Int32)
+        |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
+  }
+
+  test("RedundantUncheckedTypeCast.02") {
+    val input =
+      """
+        |pub def f(): String = unchecked_cast("hello" as String)
+        |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
+  }
+
+  test("RedundantUncheckedTypeCast.03") {
+    val input =
+      """
+        |pub def f(x: Int32): Int32 = unchecked_cast(x as Int32)
+        |
+       """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
   }
 
   test("UselessUnsafe.01") {

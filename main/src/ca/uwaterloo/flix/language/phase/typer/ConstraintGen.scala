@@ -431,26 +431,19 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
         (resTpe, resEff)
 
-      case Expr.Stm(exp1, exp2, loc) =>
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
+      case Expr.Stm(exps, exp, loc) =>
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val (tpe2, eff2) = visitExp(exp)
 
-        // If the first expression is a JVM invocation,
-        // then we don't require it to be return Unit
-        val isJvm = exp1 match {
-          case _: Expr.InvokeConstructor => true
-          case _: Expr.InvokeSuperConstructor => true
-          case _: Expr.InvokeMethod => true
-          case _: Expr.InvokeSuperMethod => true
-          case _: Expr.InvokeStaticMethod => true
-          case _ => false
-        }
-        if (!isJvm) {
-          c.expectStmt(actual = tpe1, exp1.loc)
+        // JVM invocations may return non-Unit; don't require Unit for those.
+        exps.zip(tpes).foreach { case (e, tpe1) =>
+          if (!isJvmInvoke(e)) {
+            c.expectStmt(actual = tpe1, e.loc)
+          }
         }
 
         val resTpe = tpe2
-        val resEff = Type.mkUnion(eff1, eff2, loc)
+        val resEff = Type.mkUnion(effs :+ eff2, loc)
         (resTpe, resEff)
 
       case Expr.Discard(exp, _) =>
@@ -911,7 +904,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = Type.getFlixType(clazz)
+        val clazzTpe = mkConstructorType(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -924,7 +917,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ super(e₁ ...) : k \ JvmToEff[ι]
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = Type.getFlixType(clazz)
+        val clazzTpe = mkConstructorType(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
         c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
@@ -948,7 +941,7 @@ object ConstraintGen {
 
       case Expr.InvokeSuperMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         val baseEff = Type.JvmToEff(jvar, loc)
-        val clazzTpe = Type.getFlixType(clazz)
+        val clazzTpe = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(clazzTpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
@@ -983,8 +976,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = Type.getFlixType(field.getType)
-        val classType = Type.getFlixType(clazz)
+        val fieldType = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc)
+        val classType = Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = classType, actual = tpe1, exp1.loc)
@@ -993,9 +986,9 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.GetStaticField(field, _) =>
+      case Expr.GetStaticField(field, loc) =>
         val isFinal = Modifier.isFinal(field.getModifiers)
-        val fieldType = Type.getFlixType(field.getType)
+        val fieldType = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc)
         val fieldReadEff = if (isFinal) Type.Pure else Type.IO
         val resTpe = fieldType
         val resEff = fieldReadEff
@@ -1003,15 +996,22 @@ object ConstraintGen {
 
       case Expr.PutStaticField(field, exp, loc) =>
         val (valueTyp, eff) = visitExp(exp)
-        c.expectType(expected = Type.getFlixType(field.getType), actual = valueTyp, exp.loc)
+        c.expectType(expected = Type.instantiateJavaTypeWithObjectArgs(field.getType, loc), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, constructors, methods, _) =>
+      case Expr.NewObject(_, clazz, constructors, methods, loc) =>
         constructors.foreach(visitJvmConstructor)
         methods.foreach(visitJvmMethod)
-        val resTpe = Type.getFlixType(clazz)
+        val numTypeParams = clazz.getTypeParameters.length
+        val resTpe = if (numTypeParams > 0) {
+          val baseTpe = Type.mkNative(clazz, loc)
+          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+          Type.mkApply(baseTpe, typeArgs, loc)
+        } else {
+          Type.getFlixType(clazz)
+        }
         val resEff = Type.IO
         (resTpe, resEff)
 
@@ -1439,6 +1439,28 @@ object ConstraintGen {
     }
     val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
     (instantiatedFields.toMap, tpe, regionOpt)
+  }
+
+  /** Builds the result type for a constructor call, using fresh type variables for generic classes. */
+  private def mkConstructorType(clazz: Class[?], loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type = {
+    val numTypeParams = clazz.getTypeParameters.length
+    if (numTypeParams > 0) {
+      val baseTpe = Type.mkNative(clazz, loc)
+      val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+      Type.mkApply(baseTpe, typeArgs, loc)
+    } else {
+      Type.getFlixType(clazz)
+    }
+  }
+
+  /** Returns `true` if `exp` is a JVM interop invocation (constructor, method, or static method). */
+  private def isJvmInvoke(exp: KindedAst.Expr): Boolean = exp match {
+    case _: Expr.InvokeConstructor => true
+    case _: Expr.InvokeSuperConstructor => true
+    case _: Expr.InvokeMethod => true
+    case _: Expr.InvokeSuperMethod => true
+    case _: Expr.InvokeStaticMethod => true
+    case _ => false
   }
 
   /** Returns a fresh variable with a synthetic location. */

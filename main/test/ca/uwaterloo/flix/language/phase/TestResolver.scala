@@ -861,11 +861,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |import java.lang.Object
            |import java.util.Iterator
            |
            |def foo(): Unit =
            |    let o = new String();
-           |    let _ : Iterator = o.subSequence(4, -1);
+           |    let _ : Iterator[Object] = o.subSequence(4, -1);
            |    ()
        """.stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -876,9 +877,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |import java.lang.Object
            |import java.util.Iterator
            |
-           |type alias AliasedReturnType = Iterator
+           |type alias AliasedReturnType = Iterator[Object]
            |
            |def foo(): Unit =
            |    let o = new String();

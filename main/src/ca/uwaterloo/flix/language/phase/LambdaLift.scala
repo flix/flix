@@ -168,10 +168,10 @@ object LambdaLift {
       val e3 = visitExp(exp3)
       LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
+    case SimplifiedAst.Expr.Stm(exps, exp, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      LiftedAst.Expr.Stm(es, e, tpe, purity, loc)
 
     case SimplifiedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)

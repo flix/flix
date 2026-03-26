@@ -39,12 +39,12 @@ mod TestAdaptor {
     @Test
     def fromOptional01(): Unit \ Assert + IO =
         let o = Optional.empty();
-        assertEq(expected = (None : Option[String]), Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o))
+        assertEq(expected = (None : Option[String]), Adaptor.fromOptional(o))
 
     @Test
     def fromOptional02(): Unit \ Assert + IO =
         let o = Optional.of("Hello");
-        assertEq(expected = Some("Hello"), Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o))
+        assertEq(expected = Some("Hello"), Adaptor.fromOptional(o))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromMapEntry                                                            //
@@ -53,7 +53,7 @@ mod TestAdaptor {
     @Test
     def fromMapEntry01(): Unit \ Assert + IO =
         let e = JMap.entry("hello", "world");
-        assertEq(expected = ("hello", "world"), Adaptor.fromMapEntry((Proxy.Proxy: Proxy[String]), (Proxy.Proxy: Proxy[String]), e))
+        assertEq(expected = ("hello", "world"), Adaptor.fromMapEntry(e))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromList                                                                //
@@ -81,19 +81,19 @@ mod TestAdaptor {
     @Test
     def fromListToIterator01(): Unit \ Assert + IO = region rc {
         let l = JList.of();
-        assertEq(expected = (List#{} : List[String]), Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
+        assertEq(expected = (List#{} : List[String]), Iterator.toList(Adaptor.fromListToIterator(rc, l)))
     }
 
     @Test
     def fromListToIterator02(): Unit \ Assert + IO = region rc {
         let l = JList.of("hello");
-        assertEq(expected = List#{"hello"}, Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
+        assertEq(expected = List#{"hello"}, Iterator.toList(Adaptor.fromListToIterator(rc, l)))
     }
 
     @Test
     def fromListToIterator03(): Unit \ Assert + IO = region rc {
         let l = JList.of("hello", "world");
-        assertEq(expected = List#{"hello", "world"}, Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
+        assertEq(expected = List#{"hello", "world"}, Iterator.toList(Adaptor.fromListToIterator(rc, l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -122,19 +122,19 @@ mod TestAdaptor {
     @Test
     def fromSetToIterator01(): Unit \ Assert + IO = region rc {
         let s = JSet.of();
-        assertEq(expected = (Set#{} : Set[String]), Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
+        assertEq(expected = (Set#{} : Set[String]), Iterator.toSet(Adaptor.fromSetToIterator(rc, s)))
     }
 
     @Test
     def fromSetToIterator02(): Unit \ Assert + IO = region rc {
         let s = JSet.of("hello");
-        assertEq(expected = Set#{"hello"}, Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
+        assertEq(expected = Set#{"hello"}, Iterator.toSet(Adaptor.fromSetToIterator(rc, s)))
     }
 
     @Test
     def fromSetToIterator03(): Unit \ Assert + IO = region rc {
         let s = JSet.of("hello", "world");
-        assertEq(expected = Set#{"hello", "world"}, Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
+        assertEq(expected = Set#{"hello", "world"}, Iterator.toSet(Adaptor.fromSetToIterator(rc, s)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -211,19 +211,19 @@ mod TestAdaptor {
     @Test
     def fromStreamToIterator01(): Unit \ Assert + IO = region rc {
         let s = Stream.empty();
-        assertEq(expected = (Nil : List[String]), Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
+        assertEq(expected = (Nil : List[String]), Iterator.toList(Adaptor.fromStreamToIterator(rc, s)))
     }
 
     @Test
     def fromStreamToIterator02(): Unit \ Assert + IO = region rc {
         let s = Stream.of("hello");
-        assertEq(expected = "hello" :: Nil, Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
+        assertEq(expected = "hello" :: Nil, Iterator.toList(Adaptor.fromStreamToIterator(rc, s)))
     }
 
     @Test
     def fromStreamToIterator03(): Unit \ Assert + IO = region rc {
         let s = Arrays.stream(Vector#{"hello", "world"});
-        assertEq(expected = "hello" :: "world" :: Nil, Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
+        assertEq(expected = "hello" :: "world" :: Nil, Iterator.toList(Adaptor.fromStreamToIterator(rc, s)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -233,19 +233,19 @@ mod TestAdaptor {
     @Test
     def fromCollectionToIterator01(): Unit \ Assert + IO = region rc {
         let col = checked_cast (JList.of());
-        assertEq(expected = (Nil : List[String]), Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
+        assertEq(expected = (Nil : List[String]), Iterator.toList(Adaptor.fromCollectionToIterator(rc, col)))
     }
 
     @Test
     def fromCollectionToIterator02(): Unit \ Assert + IO = region rc {
         let col = checked_cast (JList.of("hello"));
-        assertEq(expected = "hello" :: Nil, Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
+        assertEq(expected = "hello" :: Nil, Iterator.toList(Adaptor.fromCollectionToIterator(rc, col)))
     }
 
     @Test
     def fromCollectionToIterator03(): Unit \ Assert + IO = region rc {
         let col = checked_cast (JList.of("hello", "world"));
-        assertEq(expected = "hello" :: "world" :: Nil, Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
+        assertEq(expected = "hello" :: "world" :: Nil, Iterator.toList(Adaptor.fromCollectionToIterator(rc, col)))
     }
 
     /////////////////////////////////////////////////////////////////////////////

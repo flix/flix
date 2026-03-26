@@ -762,10 +762,10 @@ object Namer {
       val e3 = visitExp(exp3)
       NamedAst.Expr.IfThenElse(e1, e2, e3, loc)
 
-    case DesugaredAst.Expr.Stm(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      NamedAst.Expr.Stm(e1, e2, loc)
+    case DesugaredAst.Expr.Stm(exps, exp, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      NamedAst.Expr.Stm(es, e, loc)
 
     case DesugaredAst.Expr.Discard(exp, loc) =>
       val e = visitExp(exp)
