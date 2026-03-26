@@ -384,7 +384,7 @@ object Weeder2 {
 
     private def visitEnumDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.Enum, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Enum)
-      val shorthandTuple = tryPick(TreeKind.Type.Type, tree)
+      val shorthandBody = tryPick(TreeKind.CaseBody, tree)
       val cases = pickAll(TreeKind.Case, tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
@@ -393,7 +393,7 @@ object Weeder2 {
         pickDocumentation(tree),
         pickNameIdent(tree),
         Types.pickParameters(tree),
-        traverseOpt(shorthandTuple)(Types.visitCaseType),
+        traverseOpt(shorthandBody)(Types.visitCaseType),
         traverse(cases)(visitEnumCase)
       ) {
         (doc, ident, tparams, tpe, cases) =>
@@ -424,7 +424,7 @@ object Weeder2 {
 
     private def visitEnumCase(tree: Tree)(implicit sctx: SharedContext): Validation[Case, CompilationMessage] = {
       expect(tree, TreeKind.Case)
-      val maybeType = tryPick(TreeKind.Type.Type, tree)
+      val maybeType = tryPick(TreeKind.CaseBody, tree)
       mapN(
         pickNameIdent(tree),
         traverseOpt(maybeType)(Types.visitCaseType),
@@ -440,7 +440,7 @@ object Weeder2 {
 
     private def visitRestrictableEnumDecl(tree: Tree)(implicit sctx: SharedContext): Validation[Declaration.RestrictableEnum, CompilationMessage] = {
       expect(tree, TreeKind.Decl.RestrictableEnum)
-      val shorthandTuple = tryPick(TreeKind.Type.Type, tree)
+      val shorthandBody = tryPick(TreeKind.CaseBody, tree)
       val restrictionParam = flatMapN(pick(TreeKind.Parameter, tree))(Types.visitParameter)
       val cases = pickAll(TreeKind.Case, tree)
       val ann = pickAnnotations(tree)
@@ -451,7 +451,7 @@ object Weeder2 {
         pickNameIdent(tree),
         restrictionParam,
         Types.pickParameters(tree),
-        traverseOpt(shorthandTuple)(Types.visitCaseType),
+        traverseOpt(shorthandBody)(Types.visitCaseType),
         traverse(cases)(visitRestrictableEnumCase)
       ) {
         (doc, ident, rParam, tparams, tpe, cases) =>
@@ -482,7 +482,7 @@ object Weeder2 {
 
     private def visitRestrictableEnumCase(tree: Tree)(implicit sctx: SharedContext): Validation[RestrictableCase, CompilationMessage] = {
       expect(tree, TreeKind.Case)
-      val maybeType = tryPick(TreeKind.Type.Type, tree)
+      val maybeType = tryPick(TreeKind.CaseBody, tree)
       mapN(
         pickNameIdent(tree),
         traverseOpt(maybeType)(Types.visitCaseType),
@@ -2477,7 +2477,7 @@ object Weeder2 {
 
     private def visitExtTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
-      val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
+      val maybePat = tryPick(TreeKind.Pattern.TagBody, tree)
       mapN(pickQName(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
         (qname, maybePat) =>
           if (!qname.isUnqualified) {
@@ -2552,7 +2552,7 @@ object Weeder2 {
 
     private def visitTagPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
-      val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
+      val maybePat = tryPick(TreeKind.Pattern.TagBody, tree)
       mapN(pickQName(tree), traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
         (qname, maybePat) =>
           maybePat match {
@@ -2562,9 +2562,9 @@ object Weeder2 {
       }
     }
 
-    /** Extracts a tuple pattern as a list, expanding `()` to be `List(Unit)`. */
+    /** Extracts a tag body pattern as a list, expanding `()` to be `List(Unit)`. */
     private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Nel[Pattern], CompilationMessage] = {
-      expect(tree, TreeKind.Pattern.Tuple)
+      expect(tree, TreeKind.Pattern.TagBody)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
         case Nil => Nel(Pattern.Cst(Constant.Unit, tree.loc), Nil)
@@ -2573,7 +2573,7 @@ object Weeder2 {
     }
 
     private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[ExtTagPattern], CompilationMessage] = {
-      expect(tree, TreeKind.Pattern.Tuple)
+      expect(tree, TreeKind.Pattern.TagBody)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
         case Nil => List(ExtTagPattern.Unit(tree.loc))
@@ -3057,14 +3057,12 @@ object Weeder2 {
       *   - `t --> List(visitType(t))`
       */
     def visitCaseType(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
-      expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
-      // Visit all types of the tuple
-      val inner = unfold(tree)
-      val innerTypes = pickAll(TreeKind.Type.Type, inner)
+      expect(tree, TreeKind.CaseBody)
+      val innerTypes = pickAll(TreeKind.Type.Type, tree)
       mapN(traverse(innerTypes)(visitType)) {
         case Nil =>
-          sctx.errors.add(NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = inner.loc))
-          List(Type.Error(inner.loc))
+          sctx.errors.add(NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = tree.loc))
+          List(Type.Error(tree.loc))
         case types => types
       }
     }
