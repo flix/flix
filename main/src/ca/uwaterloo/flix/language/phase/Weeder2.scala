@@ -1296,8 +1296,15 @@ object Weeder2 {
               val opExpr = Expr.Ambiguous(name, op.loc)
               Validation.Success(Expr.Infix(e1, opExpr, e2, tree.loc))
             case None =>
-              // Single Token Operator.
+              // Single Token Operator (or synthetic ErrorOperator).
               op.children.head match {
+                case t: SyntaxTree.Tree if t.kind == TreeKind.OperatorError =>
+                  // Synthetic OperatorError inserted by the parser to recover from a missing binary operator.
+                  // Use the source location between the two expressions to indicate where the operator is missing.
+                  val betweenLoc = SourceLocation(isReal = true, e1.loc.source, e1.loc.end, e2.loc.start)
+                  val error = ParseError.MissingBinaryOperator(SyntacticContext.Expr.OtherExpr, betweenLoc)
+                  sctx.errors.add(error)
+                  Validation.Success(Expr.LetMatch(Pattern.Wild(tree.loc.asSynthetic), None, e1, e2, tree.loc))
                 // Standard operators.
                 case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
                   Validation.Success(mkApply(tokenOperatorToName(kind).get))
