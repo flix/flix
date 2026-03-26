@@ -50,9 +50,10 @@ object TypeError {
   case class ArgumentGivenWrongEffect(expected: List[EffSymOrRigidVar], actual: List[EffSymOrRigidVar], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6218
 
-    private def effectsToString(effs: List[EffSymOrRigidVar]): String =
-      if (effs.length == 1) s"'${effs.head.name()}'"
-      else effs.map(_.name()).mkString("'{", ", ", "}'")
+    private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
+      case x :: Nil => s"'${x.name}'"
+      case xs => xs.map(_.name).mkString("'{", ", ", "}'")
+    }
 
     def summary: String =
       s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
@@ -172,26 +173,26 @@ object TypeError {
   case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
 
-    def summary: String = s"Unexpected effect '${usedEffSym.name()}' in function declared as '${defEffSyms}'"
+    def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${defEffSyms}'"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      def printDefEffSyms(syms: List[EffSymOrRigidVar]): String = syms match {
+      def formatEffs(syms: List[EffSymOrRigidVar]): String = syms match {
         case Nil => ""
-        case end :: Nil => s"${magenta(end.name())}"
-        case head :: tail => s"${magenta(head.name())}, " + printDefEffSyms(tail)
+        case end :: Nil => s"${magenta(end.name)}"
+        case head :: tail => s"${magenta(head.name)}, " + formatEffs(tail)
       }
-      val defString = s"{${magenta(printDefEffSyms(defEffSyms))}}"
-      s""">> Unexpected effect '${magenta(usedEffSym.name())}' in function declared as '$defString'.
+      val defString = s"{${magenta(formatEffs(defEffSyms))}}"
+      s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
          |
          |${highlight(loc, s"function declared as '$defString'", fmt)}
          |
-         |${highlight(loc2, s"'${magenta(usedEffSym.name())}' used here", fmt)}
+         |${highlight(loc2, s"'${magenta(usedEffSym.name)}' used here", fmt)}
          |
          |${underline("Explanation:")} The function is explicitly declared as '$defString',
-         |meaning it may not perform other effects. Since '${magenta(usedEffSym.name())}' is another effect,
-         |it cannot be used in this function. To fix this, either add ${(magenta(usedEffSym.name()))} to $defString
-         |or remove the use of '${magenta(usedEffSym.name())}' inside the function.
+         |meaning it may not perform other effects. Since '${magenta(usedEffSym.name)}' is another effect,
+         |it cannot be used in this function. To fix this, either add ${(magenta(usedEffSym.name))} to $defString
+         |or remove the use of '${magenta(usedEffSym.name)}' inside the function.
          |""".stripMargin
     }
   }
@@ -206,20 +207,20 @@ object TypeError {
   case class ExplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6215
 
-    def summary: String = s"Unexpected effect '${effSym.name()}' in {} function"
+    def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected effect '${magenta(effSym.name())}' in {} function.
+      s""">> Unexpected effect '${magenta(effSym.name)}' in {} function.
          |
          |${highlight(loc, "function declared {}", fmt)}
          |
-         |${highlight(loc2, s"'${magenta(effSym.name())}' used here", fmt)}
+         |${highlight(loc2, s"'${magenta(effSym.name)}' used here", fmt)}
          |
          |${underline("Explanation:")} The function is explicitly declared as {},
-         |meaning it may not perform any effects. Since '${magenta(effSym.name())}' is an effect,
-         |it cannot be used in this function. To fix this, either change the signature to {${magenta(effSym.name())}}
-         |or remove the use of '${magenta(effSym.name())}' inside the function.
+         |meaning it may not perform any effects. Since '${magenta(effSym.name)}' is an effect,
+         |it cannot be used in this function. To fix this, either change the signature to {${magenta(effSym.name)}}
+         |or remove the use of '${magenta(effSym.name)}' inside the function.
          |""".stripMargin
     }
   }
@@ -349,21 +350,21 @@ object TypeError {
   case class ImplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, emptyLoc: SourceLocation, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E5252
 
-    def summary: String = s"Unexpected effect '${effSym.name()}' in {} function"
+    def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
 
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> Unexpected effect '${magenta(effSym.name())}' in {} function.
+      s""">> Unexpected effect '${magenta(effSym.name)}' in {} function.
          |
          |${highlight(emptyLoc, "function is inferred to be {}", formatter)}
          |
-         |${highlight(loc, s"'${magenta(effSym.name())}' used here", formatter)}
+         |${highlight(loc, s"'${magenta(effSym.name)}' used here", formatter)}
          |
          |${underline("Explanation:")} Functions without an explicit effect annotation are
-         |inferred to be {}, meaning they may not perform effects. Since '${magenta(effSym.name())}'
+         |inferred to be {}, meaning they may not perform effects. Since '${magenta(effSym.name)}'
          |is an effect, it cannot be used in this function. To fix this,
-         |either add the explicit effect annotation in the signature {${magenta(effSym.name())}}
-         |or remove the use of '${magenta(effSym.name())}' inside the function.
+         |either add the explicit effect annotation in the signature {${magenta(effSym.name)}}
+         |or remove the use of '${magenta(effSym.name)}' inside the function.
          |""".stripMargin
     }
   }
@@ -940,13 +941,13 @@ object TypeError {
   case class UnusedEffectInSignature(unusedEff: EffSymOrRigidVar, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6217
 
-    def summary: String = s"Unused effect '${unusedEff.name()}'"
+    def summary: String = s"Unused effect '${unusedEff.name}'"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s"""${highlight(loc, s"Unused effect: '${magenta(unusedEff.name())}'", fmt)}
+      s"""${highlight(loc, s"Unused effect: '${magenta(unusedEff.name)}'", fmt)}
          |
-         |${underline("Explanation:")} To fix this, either remove '${(magenta(unusedEff.name()))}' from the signature
+         |${underline("Explanation:")} To fix this, either remove '${(magenta(unusedEff.name))}' from the signature
          |or use the effect in the function body
          |""".stripMargin
     }

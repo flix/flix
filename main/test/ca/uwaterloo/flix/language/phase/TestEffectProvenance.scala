@@ -338,7 +338,7 @@ class TestEffectProvenance extends AnyFunSuite with TestUtils {
   test("Test.EffectfulFunctionUsesOtherEffect.01") {
     val input =
       """
-        |def foo(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2): Unit \ ef1 = g()
+        |def foo(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2): Unit \ ef1 = f(); g()
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)

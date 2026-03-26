@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.EffSymOrRigidVar.{Eff, RigidVar}
-import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{ArgVertex, CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, RigidVarVertex, SignatureVertex, VarVertex, sameType}
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{ArgVertex, CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, RigidVarVertex, SignatureVertex, VarVertex, sameType, symbol}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.NodeType.{ArgNode, IntermediateNode, SinkNode, SourceNode}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.EffConflicted
 
@@ -35,15 +35,15 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.EffConflicted
 object EffectProvenance {
 
   sealed trait EffSymOrRigidVar {
-    def name(): String
+    def name: String
   }
   object EffSymOrRigidVar {
 
     case class Eff(symbol: Symbol.EffSym) extends EffSymOrRigidVar {
-      def name(): String =  {symbol.name}
+      def name: String = symbol.name
     }
     case class RigidVar(symbol: Symbol.KindedTypeVarSym) extends EffSymOrRigidVar {
-      def name(): String = symbol.text match {
+      def name: String = symbol.text match {
         case VarText.Absent => "???"
         case VarText.SourceText(s) => s
       }
@@ -65,13 +65,13 @@ object EffectProvenance {
     * Represents the lattices used for analysis of effects
     */
   trait Lattice[A] {
-    def bottom(): A
+    def bottom: A
     def lub(x: A, y: A): A
     def leq(x: A, y: A): Boolean
   }
 
   private class PowerSetLattice[K] extends Lattice[Set[K]] {
-    def bottom(): Set[K] = Set.empty
+    def bottom: Set[K] = Set.empty
 
     def lub(x: Set[K], y: Set[K]): Set[K] = x union y
 
@@ -79,7 +79,7 @@ object EffectProvenance {
   }
 
   private class MapLattice[K <: Vertex, V](val subLattice: Lattice[V]) extends Lattice[Map[K, V]] {
-    def bottom(): Map[K, V] = Map.empty
+    def bottom: Map[K, V] = Map.empty
 
     def lub(x: Map[K, V], y: Map[K, V]): Map[K, V] = {
       x.foldLeft(y) {
@@ -100,7 +100,7 @@ object EffectProvenance {
       * This is to connect a vertex to a corresponding vertex in the list of vertices of an argument.
       */
     def lookup(vertex: K, lattice: Map[K, V]): V = {
-      lattice.foldLeft(subLattice.bottom()) {
+      lattice.foldLeft(subLattice.bottom) {
         case (acc, (arg@ArgVertex(_, _), s)) => if (arg.lookup(vertex).isDefined) s else acc
         case (acc, (v, xs)) => if (v == vertex) xs else acc
       }
@@ -180,7 +180,7 @@ object EffectProvenance {
       * Represents the effects in the signature of a function
       */
     case class SignatureVertex(effs: List[Vertex], loc: SourceLocation) extends Vertex {
-      def symbols(): List[EffSymOrRigidVar] = {
+      def symbols: List[EffSymOrRigidVar] = {
         effs.flatMap(symbol)
       }
     }
@@ -196,10 +196,7 @@ object EffectProvenance {
       case PureExplicitVertex(_) | PureImplicitVertex(_) => Some(Eff(Symbol.mkEffSym("Pure")))
       case CstVertex(sym, _) => Some(Eff(sym))
       case IOVertex(_) => Some(Eff(Symbol.IO))
-      case RigidVarVertex(sym, _) => sym.text match {
-        case VarText.Absent => None
-        case VarText.SourceText(_) => Some(RigidVar(sym))
-      }
+      case RigidVarVertex(sym, _) => Some(RigidVar(sym))
       case _ => None
     }
 
@@ -281,7 +278,7 @@ object EffectProvenance {
       }
     }
 
-    var elmCurr = lattice.bottom()
+    var elmCurr = lattice.bottom
     var cont = true
     while (cont) {
       val elmNext = transfer(elmCurr)
@@ -482,13 +479,13 @@ object EffectProvenance {
     * Used for signature mismatch reporting where multiple conflicting effects flow into
     * a single declared effect.
     *
-    * @param sink     the declared-effect sink vertex (IO, user-defined effect, or rigid variable)
+    * @param source     the declared-effect source vertex (IO, user-defined effect, or rigid variable)
     * @param symList  the list of incoming effect symbols that conflict with the sink
     * @param lhsLoc   the source location of the left-hand side (the declared effect)
     * @param provLoc  the source location of the provenance (where the conflict originates)
     * @return `Some(error)` if the sink is a recognized concrete effect, `None` otherwise
     */
-  private def mkEffectfulError(sink: Vertex, symList: List[EffSymOrRigidVar], lhsLoc: SourceLocation, provLoc: SourceLocation): Option[EffConflicted] = sink match {
+  private def mkEffectfulError(source: Vertex, symList: List[EffSymOrRigidVar], lhsLoc: SourceLocation, provLoc: SourceLocation): Option[EffConflicted] = source match {
     case IOVertex(_) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Eff(Symbol.IO), lhsLoc, provLoc)))
     case CstVertex(sym, _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Eff(sym), lhsLoc, provLoc)))
     case RigidVarVertex(sym, _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, RigidVar(sym), lhsLoc, provLoc)))
@@ -497,24 +494,21 @@ object EffectProvenance {
   }
 
   /**
-    * Produces an `EffectfulFunctionUsesOtherEffect` error for a pair of conflicting vertices.
+    * Produces an `EffectfulFunctionUsesOtherEffect` error for Source vertex.
     *
     * This overload handles pairwise effect conflicts, where a single source effect flows
     * into a sink that declares a different concrete effect. All combinations of
     * IO, user-defined effects, and rigid variables are covered.
     *
-    * @param source   the vertex representing the effect that flows in
+    * @param sourceSym   the vertex representing the effect that flows in
     * @param sink     the vertex representing the declared (conflicting) effect
     * @param provLoc  the source location of the provenance (where the conflict originates)
     * @return `Some(error)` if both vertices are recognized concrete effects, `None` otherwise
     */
-  private def mkEffectfulError(source: Vertex, sink: Vertex, provLoc: SourceLocation): Option[EffConflicted] = (source, sink) match {
-    case (IOVertex(_), CstVertex(sym2, loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym2)), Eff(Symbol.IO), loc2, provLoc)))
-    case (CstVertex(sym1, _), IOVertex(loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(Symbol.IO)), Eff(sym1), loc2, provLoc)))
-    case (CstVertex(sym1, _), CstVertex(sym2, loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym2)), Eff(sym1), loc2, provLoc)))
-    case (IOVertex(_), RigidVarVertex(sym, loc2)) =>  Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), Eff(Symbol.IO), loc2, provLoc)))
-    case (CstVertex(sym1, _), RigidVarVertex(sym2, loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym2)), Eff(sym1), loc2, provLoc)))
-    case (RigidVarVertex(sym1, _), RigidVarVertex(sym2, loc2)) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym2)), RigidVar(sym1), loc2, provLoc)))
+  private def mkEffectfulError(sink: Vertex, sourceSym: EffSymOrRigidVar, provLoc: SourceLocation): Option[EffConflicted] = sink match {
+    case CstVertex(sym2, loc2) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym2)), sourceSym, loc2, provLoc)))
+    case IOVertex(loc2) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(Symbol.IO)), sourceSym, loc2, provLoc)))
+    case RigidVarVertex(sym, loc2) =>  Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), sourceSym, loc2, provLoc)))
     case _ => None
 
   }
@@ -620,10 +614,14 @@ object EffectProvenance {
           val xUnused = findUnused(List(x), ys).nonEmpty
           if (xUnused) mkUnusedError(x).toList ::: mkErrors(x, ys.toSet)
           else mkErrors(x, ys.toSet)
-        case _ => mkSignatureErrors(xs, ys, s.symbols(), sigLoc)
+        case _ => mkSignatureErrors(xs, ys, s.symbols, sigLoc)
       }
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, provLoc) =>
-        val a = mkEffectfulError(y, x, provLoc) :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
+        val effErr = symbol(y) match {
+          case Some(sym) => mkEffectfulError(x, sym, provLoc)
+          case None => Nil
+        }
+        val a =  effErr :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
         a.flatten
       }
     }
