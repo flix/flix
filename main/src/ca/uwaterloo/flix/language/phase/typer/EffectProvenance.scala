@@ -285,8 +285,8 @@ object EffectProvenance {
     var cont = true
     while (cont) {
       val elmNext = transfer(elmCurr)
-      if (lattice.leq(elmNext, elmCurr)) cont = false
-      else elmCurr = elmNext
+      if (elmNext != elmCurr) elmCurr = elmNext
+      else cont = false
     }
 
     val res = elmCurr.foldLeft(List.empty[EffConflicted]) {
