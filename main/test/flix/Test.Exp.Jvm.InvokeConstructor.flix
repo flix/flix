@@ -54,7 +54,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Float(123.456f32)
 
     @CompileTest
-    def testInvokeHashMapConstructor01(): HashMap \ IO =
+    def testInvokeHashMapConstructor01(): HashMap[Object, Object] \ IO =
         new HashMap(16, 0.75f32)
 
     @CompileTest

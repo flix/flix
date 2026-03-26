@@ -1,5 +1,14 @@
 # Changelog
 
+Version 0.70.0:
+- Library: Introduced new `Fs` file system effects (thanks Magnus!)
+- Library: Introduced new `Http` and `Https` effects (thanks Magnus!)
+- Library: Various extensions to the standard library (thanks Magnus!)
+- Library: Added lots of new examples (thanks Magnus!)
+- Compiler: Reworked some redundancy checks (thanks Magnus!)
+- Compiler: Improved detection of file changes (thanks Magnus!)
+- VSCode: Improved detection of file changes (thanks Magnus!)
+
 Version 0.69.3:
 - Library: Introduce `Fs` effects (thanks Magnus!)
 

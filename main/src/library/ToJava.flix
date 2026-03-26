@@ -22,6 +22,9 @@ import java.lang.Integer
 import java.lang.Long
 import java.lang.Short
 import java.math.BigInteger
+import java.util.{List => JList}
+import java.util.{Map => JMap}
+import java.util.{Set => JSet}
 
 ///
 /// A trait for marshaling values to Java objects.
@@ -30,19 +33,6 @@ pub trait ToJava[t: Type] {
     type Out[t]: Type
     type Aef[t]: Eff = {}
     pub def toJava(t: t): ToJava.Out[t] \ ToJava.Aef[t]
-}
-
-pub mod ToJava {
-
-    import java.lang.Object
-
-    ///
-    /// Marshal a type that supports `ToJava` to its respective to `ToJava.Out` type
-    /// and upcast it to a `java.lang.Object`
-    ///
-    pub def toJavaObject(t: t): Object \ ToJava.Aef[t] with ToJava[t] =
-        unchecked_cast(ToJava.toJava(t) as Object)
-
 }
 
 instance ToJava[Int8] {
@@ -93,4 +83,46 @@ instance ToJava[Char] {
 instance ToJava[String] {
     type Out = String
     pub def toJava(s: String): String = s
+}
+
+instance ToJava[List[a]] {
+    type Out = JList[a]
+    type Aef = IO
+    pub def toJava(l: List[a]): JList[a] \ IO = Adaptor.toList(l)
+}
+
+instance ToJava[Chain[a]] {
+    type Out = JList[a]
+    type Aef = IO
+    pub def toJava(c: Chain[a]): JList[a] \ IO = Adaptor.toList(c)
+}
+
+instance ToJava[Vector[a]] {
+    type Out = JList[a]
+    type Aef = IO
+    pub def toJava(v: Vector[a]): JList[a] \ IO = Adaptor.toList(v)
+}
+
+instance ToJava[Nel[a]] {
+    type Out = JList[a]
+    type Aef = IO
+    pub def toJava(l: Nel[a]): JList[a] \ IO = Adaptor.toList(l)
+}
+
+instance ToJava[Nec[a]] {
+    type Out = JList[a]
+    type Aef = IO
+    pub def toJava(l: Nec[a]): JList[a] \ IO = Adaptor.toList(l)
+}
+
+instance ToJava[Set[a]] with Order[a] {
+    type Out = JSet[a]
+    type Aef = IO
+    pub def toJava(s: Set[a]): JSet[a] \ IO = Adaptor.toSet(s)
+}
+
+instance ToJava[Map[k, v]] with Order[k] {
+    type Out = JMap[k, v]
+    type Aef = IO
+    pub def toJava(m: Map[k, v]): JMap[k, v] \ IO = Adaptor.toMap(m)
 }

@@ -175,9 +175,9 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Stm(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Stm(exps.map(visitExp), visitExp(exp), t, simplifyEffect(eff), loc)
 
     case d@MonoAst.Expr.Discard(exp, eff, loc) =>
       val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
@@ -420,7 +420,7 @@ object Simplifier {
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.JvmMethod(_) =>
+          case TypeConstructor.JvmMethod(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.JvmField(_) =>
@@ -588,7 +588,7 @@ object Simplifier {
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.JvmMethod(_) =>
+          case TypeConstructor.JvmMethod(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.JvmField(_) =>

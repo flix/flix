@@ -715,10 +715,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCheckedCast.04") {
     val input =
       """
+        |import java.lang.Object
         |import java.util.ArrayList
         |import java.util.HashMap
         |
-        |def f(x: ArrayList): HashMap = checked_cast(x)
+        |def f(x: ArrayList[Object]): HashMap[Object, Object] = checked_cast(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCast](result)
@@ -727,10 +728,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCheckedCast.05") {
     val input =
       """
+        |import java.lang.Object
         |import java.lang.Comparable
         |import java.lang.Runnable
         |
-        |def f(x: Comparable): Runnable = checked_cast(x)
+        |def f(x: Comparable[Object]): Runnable = checked_cast(x)
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCast](result)
@@ -1500,4 +1502,5 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val result = check(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
+
 }
