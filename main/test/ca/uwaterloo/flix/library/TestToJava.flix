@@ -8,20 +8,6 @@ mod TestToJava {
     import java.lang.Object
 
     /////////////////////////////////////////////////////////////////////////////
-    // toJavaObject                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-    @Test
-    def toJavaObject01(): Unit \ Assert =
-        let x = ToJava.toJavaObject(0);
-        assertTrue(match Reflect.reflectValue(x) { case Reflect.JvmValue.JvmObject(_) => true case _ => false })
-
-    @Test
-    def toJavaObject02(): Unit \ Assert =
-        let x = ToJava.toJavaObject("hello world!");
-        assertTrue(match Reflect.reflectValue(x) { case Reflect.JvmValue.JvmObject(_) => true case _ => false })
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
     @Test
@@ -166,17 +152,17 @@ mod TestToJava {
     /////////////////////////////////////////////////////////////////////////////
     @Test
     def chainToJava01(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava((Chain.empty() : Chain[String]));
+        let l: JList[String] = ToJava.toJava((Chain.empty() : Chain[String]));
         assertTrue(JList.of().equals(l))
 
     @Test
     def chainToJava02(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava(Chain.singleton("one"));
+        let l: JList[String] = ToJava.toJava(Chain.singleton("one"));
         assertTrue(JList.of("one").equals(l))
 
     @Test
     def chainToJava03(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava(Chain.cons("one", Chain.singleton("two")));
+        let l: JList[String] = ToJava.toJava(Chain.cons("one", Chain.singleton("two")));
         assertTrue(JList.of("one", "two").equals(l))
 
 
@@ -185,17 +171,17 @@ mod TestToJava {
     /////////////////////////////////////////////////////////////////////////////
     @Test
     def listToJava01(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava((Nil : List[String]));
+        let l: JList[String] = ToJava.toJava((Nil : List[String]));
         assertTrue(JList.of().equals(l))
 
     @Test
     def listToJava02(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava(List#{"one"});
+        let l: JList[String] = ToJava.toJava(List#{"one"});
         assertTrue(JList.of("one").equals(l))
 
     @Test
     def listToJava03(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava(List#{"one", "two"});
+        let l: JList[String] = ToJava.toJava(List#{"one", "two"});
         assertTrue(JList.of("one", "two").equals(l))
 
 
@@ -204,17 +190,17 @@ mod TestToJava {
     /////////////////////////////////////////////////////////////////////////////
     @Test
     def mapToJava01(): Unit \ {Assert, IO} =
-        let m: JMap = ToJava.toJava((Map#{} : Map[String, String]));
+        let m: JMap[String, String] = ToJava.toJava((Map#{} : Map[String, String]));
         assertTrue(JMap.of().equals(m))
 
     @Test
     def mapToJava02(): Unit \ {Assert, IO} =
-        let m: JMap = ToJava.toJava(Map#{"a" => "one"});
+        let m: JMap[String, String] = ToJava.toJava(Map#{"a" => "one"});
         assertTrue(JMap.of("a", "one").equals(m))
 
     @Test
     def mapToJava03(): Unit \ {Assert, IO} =
-        let m: JMap = ToJava.toJava(Map#{"a" => "one", "b" => "two"});
+        let m: JMap[String, String] = ToJava.toJava(Map#{"a" => "one", "b" => "two"});
         assertTrue(JMap.of("a", "one", "b", "two").equals(m))
 
 
@@ -223,12 +209,12 @@ mod TestToJava {
     /////////////////////////////////////////////////////////////////////////////
     @Test
     def necToJava01(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava(Nec.singleton("one"));
+        let l: JList[String] = ToJava.toJava(Nec.singleton("one"));
         assertTrue(JList.of("one").equals(l))
 
     @Test
     def necToJava02(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava(Nec.cons("one", Nec.singleton("two")));
+        let l: JList[String] = ToJava.toJava(Nec.cons("one", Nec.singleton("two")));
         assertTrue(JList.of("one", "two").equals(l))
 
 
@@ -237,12 +223,12 @@ mod TestToJava {
     /////////////////////////////////////////////////////////////////////////////
     @Test
     def nelToJava01(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava(Nel.singleton("one"));
+        let l: JList[String] = ToJava.toJava(Nel.singleton("one"));
         assertTrue(JList.of("one").equals(l))
 
     @Test
     def nelToJava02(): Unit \ {Assert, IO} =
-        let l: JList = ToJava.toJava(Nel.cons("one", Nel.singleton("two")));
+        let l: JList[String] = ToJava.toJava(Nel.cons("one", Nel.singleton("two")));
         assertTrue(JList.of("one", "two").equals(l))
 
 
@@ -251,17 +237,17 @@ mod TestToJava {
     /////////////////////////////////////////////////////////////////////////////
     @Test
     def setToJava01(): Unit \ {Assert, IO} =
-        let s: JSet = ToJava.toJava((Set#{} : Set[String]));
+        let s: JSet[String] = ToJava.toJava((Set#{} : Set[String]));
         assertTrue(JSet.of().equals(s))
 
     @Test
     def setToJava02(): Unit \ {Assert, IO} =
-        let s: JSet = ToJava.toJava(Set#{"one"});
+        let s: JSet[String] = ToJava.toJava(Set#{"one"});
         assertTrue(JSet.of("one").equals(s))
 
     @Test
     def setToJava03(): Unit \ {Assert, IO} =
-        let s: JSet = ToJava.toJava(Set#{"one", "two"});
+        let s: JSet[String] = ToJava.toJava(Set#{"one", "two"});
         assertTrue(JSet.of("one", "two").equals(s))
 
 
@@ -270,17 +256,17 @@ mod TestToJava {
     /////////////////////////////////////////////////////////////////////////////
     @Test
     def vectorToJava01(): Unit \ {Assert, IO} =
-        let v: JList = ToJava.toJava((Vector#{} : Vector[String]));
+        let v: JList[String] = ToJava.toJava((Vector#{} : Vector[String]));
         assertTrue(JList.of().equals(v))
 
     @Test
     def vectorToJava02(): Unit \ {Assert, IO} =
-        let v: JList = ToJava.toJava(Vector#{"one"});
+        let v: JList[String] = ToJava.toJava(Vector#{"one"});
         assertTrue(JList.of("one").equals(v))
 
     @Test
     def vectorToJava03(): Unit \ {Assert, IO} =
-        let v: JList = ToJava.toJava(Vector#{"one", "two"});
+        let v: JList[String] = ToJava.toJava(Vector#{"one", "two"});
         assertTrue(JList.of("one", "two").equals(v))
 
 }

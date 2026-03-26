@@ -191,11 +191,11 @@ object EffectBinder {
       val e = ReducedAst.Expr.Let(sym, e1, e2, loc)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.Stm(exp1, exp2, _, _, loc) =>
+    case LiftedAst.Expr.Stm(exps, exp, _, _, loc) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      val e2 = visitExpr(exp2)
-      val e = ReducedAst.Expr.Stmt(e1, e2, loc)
+      val es = exps.map(visitExprInnerWithBinders(binders))
+      val e2 = visitExpr(exp)
+      val e = ReducedAst.Expr.Stm(es, e2, loc)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
@@ -285,10 +285,12 @@ object EffectBinder {
       binders.addOne(LetBinder(sym, e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
-    case LiftedAst.Expr.Stm(exp1, exp2, _, _, loc) =>
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      binders.addOne(NonBinder(e1, loc))
-      visitExprInnerWithBinders(binders)(exp2)
+    case LiftedAst.Expr.Stm(exps, exp, _, _, loc) =>
+      exps.foreach { e =>
+        val e1 = visitExprInnerWithBinders(binders)(e)
+        binders.addOne(NonBinder(e1, loc))
+      }
+      visitExprInnerWithBinders(binders)(exp)
 
     case LiftedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
@@ -350,9 +352,9 @@ object EffectBinder {
       case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
         binders.addOne(LetBinder(sym, exp1, loc))
         bind(exp2)
-      case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
-        binders.addOne(NonBinder(exp1, loc))
-        bind(exp2)
+      case ReducedAst.Expr.Stm(exps, exp, loc) =>
+        exps.foreach(e1 => binders.addOne(NonBinder(e1, loc)))
+        bind(exp)
       case ReducedAst.Expr.Region(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.RunWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
@@ -382,7 +384,7 @@ object EffectBinder {
       case (LetBinder(sym, exp1, loc), acc) =>
         ReducedAst.Expr.Let(sym, exp1, acc, loc)
       case (NonBinder(exp1, loc), acc) =>
-        ReducedAst.Expr.Stmt(exp1, acc, loc)
+        ReducedAst.Expr.Stm(List(exp1), acc, loc)
     }
   }
 

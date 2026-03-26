@@ -171,14 +171,14 @@ object OccurrenceAnalyzer {
           (Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
         }
 
-      case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-        val (e1, ctx1) = visitExp(exp1)
-        val (e2, ctx2) = visitExp(exp2)
-        val ctx3 = combineSeq(ctx1, ctx2)
-        if ((e1 eq exp1) && (e2 eq exp2)) {
+      case Expr.Stm(exps, exp, tpe, eff, loc) =>
+        val (es, ctxs) = exps.map(visitExp).unzip
+        val (e, ctxExp) = visitExp(exp)
+        val ctx3 = ctxs.foldRight(ctxExp)(combineSeq)
+        if ((es zip exps).forall { case (a, b) => a eq b } && (e eq exp)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
+          (Expr.Stm(es, e, tpe, eff, loc), ctx3)
         }
 
       case Expr.Discard(exp, eff, loc) =>

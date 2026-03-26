@@ -21,6 +21,7 @@ mod Fs.FsLayer {
     import java.io.UncheckedIOException
     import java.lang.Class
     import java.lang.IllegalArgumentException
+    import java.lang.{Object => JObject}
     import java.lang.UnsupportedOperationException
     import java.nio.charset.CharacterCodingException
     import java.nio.charset.StandardCharsets
@@ -256,24 +257,25 @@ mod Fs.FsLayer {
 
     pub def glob(base: String, pattern: String): Result[IoError, List[String]] \ IO =
         try {
-            region rc {
-                let basePath = Paths.get(base);
-                let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
-                let stream = Files.walk(basePath, (...{}: Vector[FileVisitOption]));
-                let iter = Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[Path]), stream);
-                let result = iter
-                    |> Iterator.filterMap(path -> {
-                        let rel = basePath.relativize(path);
-                        if (matcher.matches(rel))
-                            Some(path.toString())
-                        else
-                            None
-                    })
-                    |> Iterator.toList;
-                let bs: BaseStream = checked_cast(stream);
-                bs.close();
-                Ok(result)
-            }
+            let basePath = Paths.get(base);
+            let matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern}");
+            let stream = Files.walk(basePath, (...{}: Vector[FileVisitOption]));
+            let bs: BaseStream[Path, Stream[Path]] = checked_cast(stream);
+            let jiter = bs.iterator();
+            def loop(acc) = {
+                if (jiter.hasNext())
+                    let path = unchecked_cast(jiter.next() as Path);
+                    let rel = basePath.relativize(path);
+                    if (matcher.matches(rel))
+                        loop(path.toString() :: acc)
+                    else
+                        loop(acc)
+                else
+                    acc
+            };
+            let result = List.reverse(loop(Nil));
+            bs.close();
+            Ok(result)
         } catch {
             case ex: InvalidPathException     => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
             case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
@@ -449,7 +451,7 @@ mod Fs.FsLayer {
 
     pub def mkDir(d: String): Result[IoError, Unit] \ IO =
         try {
-            Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
+            Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute[JObject]]));
             Ok(())
         } catch {
             case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -460,7 +462,7 @@ mod Fs.FsLayer {
 
     pub def mkDirs(d: String): Result[IoError, Unit] \ IO =
         try {
-            Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute]));
+            Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute[JObject]]));
             Ok(())
         } catch {
             case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -471,7 +473,7 @@ mod Fs.FsLayer {
 
     pub def mkTempDir(prefix: String): Result[IoError, String] \ IO =
         try {
-            let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute]));
+            let path = Files.createTempDirectory(prefix, (...{}: Vector[FileAttribute[JObject]]));
             Ok(path.toString())
         } catch {
             case ex: IllegalArgumentException      => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
