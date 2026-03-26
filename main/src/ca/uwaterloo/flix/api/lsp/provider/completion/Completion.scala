@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Field, Method, TypeVariable}
 
 /**
   * A common super-type for auto-completions.
@@ -493,10 +493,19 @@ sealed trait Completion {
         kind = CompletionItemKind.Property,
       )
 
-    case Completion.MethodCompletion(ident, priority, method) =>
+    case Completion.MethodCompletion(ident, priority, method, receiverType) =>
+      val typeVarSubst = Completion.buildTypeVarSubstitution(method, receiverType)
       val argsWithName = method.getParameters.map(_.getName)
-      val argsWithNameAndType = method.getParameters.map(p => p.getName + ": " + p.getType.getSimpleName)
-      val returnType = method.getReturnType.getSimpleName
+      val argsWithNameAndType = method.getParameters.zip(method.getGenericParameterTypes).map {
+        case (p, gt: TypeVariable[_]) =>
+          p.getName + ": " + typeVarSubst.getOrElse(gt.getName, p.getType.getSimpleName)
+        case (p, _) =>
+          p.getName + ": " + p.getType.getSimpleName
+      }
+      val returnType = method.getGenericReturnType match {
+        case tv: TypeVariable[_] => typeVarSubst.getOrElse(tv.getName, method.getReturnType.getSimpleName)
+        case _ => method.getReturnType.getSimpleName
+      }
       val returnEffect = "IO"
 
       val label = method.getName
@@ -898,11 +907,12 @@ object Completion {
   /**
     * Represents a Java method completion.
     *
-    * @param ident    the partial method name.
-    * @param priority the priority of the completion.
-    * @param method   the candidate method.
+    * @param ident        the partial method name.
+    * @param priority     the priority of the completion.
+    * @param method       the candidate method.
+    * @param receiverType the Flix type of the receiver (used to resolve generic type parameters).
     */
-  case class MethodCompletion(ident: Name.Ident, priority: Priority, method: Method) extends Completion
+  case class MethodCompletion(ident: Name.Ident, priority: Priority, method: Method, receiverType: Option[Type]) extends Completion
 
   /**
     * Represents a hole completion.
@@ -926,6 +936,34 @@ object Completion {
     * The result will be:
     * TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
     */
+  /**
+    * Builds a mapping from Java type variable names (e.g., `"E"`, `"K"`, `"V"`) to display strings,
+    * using the receiver's type arguments for class-level type parameters.
+    *
+    * For method-level type parameters (e.g., `<T>` in `<T> T foo(T arg)`), the type variable name
+    * itself is used since no concrete type is available.
+    */
+  private def buildTypeVarSubstitution(method: Method, receiverType: Option[Type])(implicit flix: Flix): Map[String, String] = {
+    val classParamNames: Array[String] = method.getDeclaringClass.getTypeParameters.map(_.getName)
+    val classSubst: Map[String, String] = receiverType match {
+      case Some(tpe) =>
+        val typeArgs = tpe.typeArguments
+        if (classParamNames.length == typeArgs.length)
+          classParamNames.zip(typeArgs).map {
+            case (name, t) => name -> FormatType.formatType(t)
+          }.toMap
+        else
+          Map.empty
+      case None =>
+        Map.empty
+    }
+    val methodParamNames: Array[String] = method.getTypeParameters.map(_.getName)
+    val methodSubst: Map[String, String] = methodParamNames.map { name =>
+      name -> name
+    }.toMap
+    classSubst ++ methodSubst
+  }
+
   private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
     val insertPosition = Position.fromAnchorPosition(ap)
     val leadingSpaces = " " * ap.spaces
