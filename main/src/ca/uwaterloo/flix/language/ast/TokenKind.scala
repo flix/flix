@@ -493,8 +493,15 @@ sealed trait TokenKind {
 
   /**
     * Returns `true` if this token can follow a binary operator.
-    * This is used to determine whether a binary operator could be missing.
-    * Used by the parser's same-line missing-operator.
+    *
+    * Note: This is only used for error-recovery, not for parsing itself.
+    * It determines whether a binary operator could be missing between two expressions.
+    *
+    * Returns `true` e.g. for `NameLowercase`:
+    *   x y   // 'y' can follow a binary operator, so a missing operator is inferred
+    *
+    * Returns `false` e.g. for `CurlyL`:
+    *   x { }  // '{' cannot follow a binary operator, so no inference is attempted
     */
   def canFollowBinaryOperator: Boolean = this match {
     case TokenKind.NameLowercase                => true

@@ -1289,9 +1289,9 @@ object Weeder2 {
             case None =>
               // Single Token Operator (or synthetic ErrorOperator).
               op.children.head match {
-                case t: SyntaxTree.Tree if t.kind == TreeKind.ErrorOperator =>
-                  // Explicit ErrorOperator inserted by the parser for a missing binary operator.
-                  // Highlight the space between the two expressions.
+                case t: SyntaxTree.Tree if t.kind == TreeKind.OperatorError =>
+                  // Synthetic OperatorError inserted by the parser to recover from a missing binary operator.
+                  // Use the source location between the two expressions to indicate where the operator is missing.
                   val betweenLoc = SourceLocation(isReal = true, e1.loc.source, e1.loc.end, e2.loc.start)
                   val error = ParseError.MissingBinaryOperator(SyntacticContext.Expr.OtherExpr, betweenLoc)
                   sctx.errors.add(error)

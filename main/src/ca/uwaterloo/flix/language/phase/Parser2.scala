@@ -94,7 +94,7 @@ object Parser2 {
       */
     val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
 
-    /** True when the parser is currently inside a block expression. */
+    /** True when the parser is currently inside a block expression (`{ ... }`). */
     var inBlock: Boolean = false
   }
 
@@ -1452,6 +1452,12 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      // Error recovery: if the next token can follow a binary operator and we are inside
+      // a block expression, we assume an operator or semicolon was accidentally omitted.
+      // Examples:
+      //   x y      // same line: infer a missing binary operator (e.g. `x + y`)
+      //   x
+      //   y        // different lines: infer a missing semicolon
       } else if (nth(0).canFollowBinaryOperator && s.inBlock) {
         val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
         if (isNewLine) {
@@ -1463,17 +1469,19 @@ object Parser2 {
           lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
         } else {
-          // Same line: create a Binary with an explicit ErrorOperator child.
-          // The Weeder will detect ErrorOperator and emit ParseError.MissingBinaryOperator,
-          // then produce LetMatch(Wild) so both expressions can be evaluated.
+          // Same line: We assume that a binary operator is missing between the two expressions,
+          // so we create a Binary node with a synthetic OperatorError child.
+          // The Weeder will detect OperatorError, emit ParseError.MissingBinaryOperator,
+          // and produce LetMatch(Wild) so both sub-expressions can still be type-checked.
           val mark = openBefore(lhs)
           val markOp = open()
-          close(open(), TreeKind.ErrorOperator)
+          close(open(), TreeKind.OperatorError)
           close(markOp, TreeKind.Operator)
           expression()
           lhs = close(mark, TreeKind.Expr.Binary)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-          // Continue parsing statements if ';' appears after Binary Expression
+          // A following statement is optional here (unlike the branches above where
+          // we know another statement must follow). Only parse one if a ';' is present.
           if (eat(TokenKind.Semi)) {
             statement()
             lhs = close(openBefore(lhs), TreeKind.Expr.Statement)

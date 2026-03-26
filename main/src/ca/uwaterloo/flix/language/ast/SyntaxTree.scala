@@ -105,7 +105,7 @@ object SyntaxTree {
 
     case object Operator extends TreeKind
 
-    case object ErrorOperator extends TreeKind
+    case object OperatorError extends TreeKind
 
     case object Parameter extends TreeKind
 

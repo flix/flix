@@ -379,7 +379,7 @@ object ParseError {
     def summary: String = s"Missing operator between expressions."
     def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import formatter.*
-      s""">> Missing operator.
+      s""">> Missing operator between expressions.
          |
          |${src(loc, s"Expected an operator here")}
          |""".stripMargin
