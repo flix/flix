@@ -15,10 +15,10 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.EffSymOrRigidVar.{Eff, RigidVar}
+import ca.uwaterloo.flix.language.ast.shared.{EffSymOrRigidVar, Scope}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.EffSymOrRigidVar.{Eff, RigidVar}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{ArgVertex, CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, RigidVarVertex, SignatureVertex, VarVertex, sameType, symbol}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.NodeType.{ArgNode, IntermediateNode, SinkNode, SourceNode}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.EffConflicted
@@ -33,24 +33,6 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.EffConflicted
   * It generates lists of all paths from some effect flowing into another (conflicting) effect.
   */
 object EffectProvenance {
-
-  sealed trait EffSymOrRigidVar {
-    def name: String
-  }
-  object EffSymOrRigidVar {
-
-    case class Eff(symbol: Symbol.EffSym) extends EffSymOrRigidVar {
-      def name: String = symbol.name
-    }
-    case class RigidVar(symbol: Symbol.KindedTypeVarSym) extends EffSymOrRigidVar {
-      def name: String = symbol.text match {
-        case VarText.Absent => "???"
-        case VarText.SourceText(s) => s
-      }
-
-    }
-  }
-
   /**
     * Represents a directed edge in the effect constraint graph.
     */
@@ -477,19 +459,18 @@ object EffectProvenance {
   }
 
   /**
-    * Produces an `EffectfulFunctionUsesOtherEffect` error for a sink vertex that declares
-    * a specific effect, but receives a different list of effects.
+    * Produces an `EffectfulFunctionUsesOtherEffect` error for a signature with multiple effects
     *
     * Used for signature mismatch reporting where multiple conflicting effects flow into
     * a single declared effect.
     *
-    * @param source     the declared-effect source vertex (IO, user-defined effect, or rigid variable)
+    * @param source   the declared-effect source vertex (IO, user-defined effect, or rigid variable)
     * @param symList  the list of incoming effect symbols that conflict with the sink
     * @param lhsLoc   the source location of the left-hand side (the declared effect)
     * @param provLoc  the source location of the provenance (where the conflict originates)
     * @return `Some(error)` if the sink is a recognized concrete effect, `None` otherwise
     */
-  private def mkEffectfulError(source: Vertex, symList: List[EffSymOrRigidVar], lhsLoc: SourceLocation, provLoc: SourceLocation): Option[EffConflicted] = source match {
+  private def mkEffectfulErrorBySource(source: Vertex, symList: List[EffSymOrRigidVar], lhsLoc: SourceLocation, provLoc: SourceLocation): Option[EffConflicted] = source match {
     case IOVertex(_) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Eff(Symbol.IO), lhsLoc, provLoc)))
     case CstVertex(sym, _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, Eff(sym), lhsLoc, provLoc)))
     case RigidVarVertex(sym, _) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(symList, RigidVar(sym), lhsLoc, provLoc)))
@@ -498,7 +479,7 @@ object EffectProvenance {
   }
 
   /**
-    * Produces an `EffectfulFunctionUsesOtherEffect` error for Source vertex.
+    * Produces an `EffectfulFunctionUsesOtherEffect` error for a signature with a single effect.
     *
     * This overload handles pairwise effect conflicts, where a single source effect flows
     * into a sink that declares a different concrete effect. All combinations of
@@ -509,7 +490,7 @@ object EffectProvenance {
     * @param provLoc  the source location of the provenance (where the conflict originates)
     * @return `Some(error)` if both vertices are recognized concrete effects, `None` otherwise
     */
-  private def mkEffectfulError(sink: Vertex, source: Vertex, provLoc: SourceLocation): Option[EffConflicted] = {
+  private def mkEffectfulErrorBySink(sink: Vertex, source: Vertex, provLoc: SourceLocation): Option[EffConflicted] = {
     ((source, symbol(source)) match {
       case (PureExplicitVertex(_) | PureImplicitVertex(_), _) => None
       case (_, Some(sym)) => Some(sym)
@@ -596,7 +577,7 @@ object EffectProvenance {
     val undefined = findUndeclared(lhs, rhs)
     val e2: List[EffConflicted] =
       if (undefined.nonEmpty)
-        undefined.flatMap{case (e, provLoc) => mkEffectfulError(e, symList, lhsLoc, provLoc)}
+        undefined.flatMap{case (e, provLoc) => mkEffectfulErrorBySource(e, symList, lhsLoc, provLoc)}
       else Nil
     e1 ++ e2
   }
@@ -627,7 +608,7 @@ object EffectProvenance {
         case _ => mkSignatureErrors(xs, ys, s.symbols, sigLoc)
       }
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, provLoc) =>
-        val a =  mkEffectfulError(x, y, provLoc) :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
+        val a =  mkEffectfulErrorBySink(x, y, provLoc) :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
         a.flatten
       }
     }
