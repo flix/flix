@@ -23,9 +23,10 @@ import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
 import ca.uwaterloo.flix.util.collection.ListMap
+import org.apache.commons.lang3.{ClassUtils => ApacheClassUtils}
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
-import java.lang.reflect.{Constructor, Field, Method, TypeVariable}
+import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
 
 object TypeReduction2 {
 
@@ -141,16 +142,24 @@ object TypeReduction2 {
         case JvmMember.JvmMethod(tpe, name, tpes) =>
           lookupMethod(tpe, name.name, tpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              progress.markProgress()
-              Type.Cst(TypeConstructor.JvmMethod(method, Some(tpe)), loc)
+              if (genericArgTypesMatch(method, Some(tpe), tpes, scope, loc)) {
+                progress.markProgress()
+                Type.Cst(TypeConstructor.JvmMethod(method, Some(tpe)), loc)
+              } else {
+                unresolved
+              }
             case _ => unresolved
           }
 
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
           lookupStaticMethod(clazz, name.name, tpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              progress.markProgress()
-              Type.Cst(TypeConstructor.JvmMethod(method, None), loc)
+              if (genericArgTypesMatch(method, None, tpes, scope, loc)) {
+                progress.markProgress()
+                Type.Cst(TypeConstructor.JvmMethod(method, None), loc)
+              } else {
+                unresolved
+              }
             case _ => unresolved
           }
       }
@@ -407,10 +416,8 @@ object TypeReduction2 {
   /**
     * Resolves the return type of `method`, using generic type information when available.
     *
-    * When the method's generic return type is a type variable, builds a substitution from
-    * the receiver's type arguments and applies it to determine the concrete return type.
-    * For all other return types (concrete classes, parameterized types, etc.), falls back
-    * to the erased `getReturnType` with fresh type variables.
+    * Delegates to `resolveGenericType` which handles all `java.lang.reflect.Type` subtypes
+    * including TypeVariable, ParameterizedType, WildcardType, GenericArrayType, and Class.
     *
     * Example 1: `ArrayList[String].get(int)` -- the generic return type is `E`.
     *   The receiver `ArrayList[String]` maps `E -> String`, so the result is `String`.
@@ -418,21 +425,89 @@ object TypeReduction2 {
     * Example 2: `HashMap[String, Int32].get(Object)` -- the generic return type is `V`.
     *   The receiver `HashMap[String, Int32]` maps `K -> String, V -> Int32`, so the result is `Int32`.
     *
-    * Example 3: `String.length()` -- the return type is `int` (not a type variable).
+    * Example 3: `HashMap[String, Int32].keySet()` -- the generic return type is `Set<K>`.
+    *   The receiver maps `K -> String`, so the result is `Set[String]`.
+    *
+    * Example 4: `String.length()` -- the return type is `int` (not a type variable).
     *   Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
     */
   private def resolveMethodReturnType(method: Method, receiverType: Option[Type],
       scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
+    val substMap = buildTypeVarSubstitution(method, receiverType, scope, loc)
     method.getGenericReturnType match {
       case tv: TypeVariable[_] =>
-        // Return type is a type variable (e.g., E from ArrayList<E>.get()).
-        // Build a substitution from the receiver's type arguments and look up the variable.
-        val substMap = buildTypeVarSubstitution(method, receiverType, scope, loc)
+        // Bare type variable return (e.g., E from ArrayList<E>.get()).
+        // Use erased fallback when not in substMap to prevent AnyType propagation.
         substMap.getOrElse(tv.getName, instantiateJavaTypeWithFreshVars(method.getReturnType, scope, loc))
+      case _: ParameterizedType =>
+        // Parameterized return type (e.g., Set<K> from HashMap.keySet()).
+        // Resolve type arguments using the substitution map.
+        resolveGenericType(method.getGenericReturnType, substMap, method.getReturnType, scope, loc)
       case _ =>
-        // Non-type-variable return (Class, ParameterizedType, etc.).
+        // Other return types (Class, GenericArrayType, etc.).
         // Use erased return type with fresh vars for backward compatibility.
         instantiateJavaTypeWithFreshVars(method.getReturnType, scope, loc)
+    }
+  }
+
+  /**
+    * Resolves a `java.lang.reflect.Type` to a Flix `Type` using the given type variable
+    * substitution map.
+    *
+    * Handles all subtypes of `java.lang.reflect.Type`:
+    *   - `TypeVariable`: look up in substMap; fall back to erased class with fresh vars
+    *   - `ParameterizedType`: resolve raw class + recursively resolve type arguments
+    *   - `WildcardType`: resolve upper bound (defaults to Object)
+    *   - `GenericArrayType`: recursively resolve component type, wrap in Array
+    *   - `Class[_]`: use `instantiateJavaTypeWithFreshVars`
+    *
+    * @param genericType    the generic type from Java reflection
+    * @param substMap       mapping from type variable names to Flix types
+    * @param erasedFallback the erased class to use when a type variable is not in the map
+    */
+  private def resolveGenericType(genericType: java.lang.reflect.Type,
+      substMap: Map[String, Type], erasedFallback: Class[?],
+      scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
+    genericType match {
+      case tv: TypeVariable[_] =>
+        // Look up the type variable in the substitution map.
+        // If not found (e.g., receiver has type variable args that were filtered out),
+        // use a fresh variable so the result can unify with the expected type.
+        substMap.getOrElse(tv.getName, Type.freshVar(Kind.Star, loc)(scope, flix))
+
+      case pt: ParameterizedType =>
+        // Resolve parameterized types like Set<K>, Map.Entry<K,V>, Iterator<E>, etc.
+        val rawClass = pt.getRawType.asInstanceOf[Class[?]]
+        val base = Type.getFlixType(rawClass)
+        val typeArgs = pt.getActualTypeArguments.toList.map { arg =>
+          resolveGenericType(arg, substMap, classOf[Object], scope, loc)
+        }
+        if (typeArgs.nonEmpty)
+          Type.mkApply(base, typeArgs, loc)
+        else
+          base
+
+      case wt: WildcardType =>
+        // Resolve wildcard types like "? extends K" or "? super V".
+        // Use the upper bound (defaults to Object if no explicit bound).
+        val upperBounds = wt.getUpperBounds
+        if (upperBounds.nonEmpty)
+          resolveGenericType(upperBounds(0), substMap, classOf[Object], scope, loc)
+        else
+          instantiateJavaTypeWithFreshVars(classOf[Object], scope, loc)
+
+      case gat: GenericArrayType =>
+        // Resolve generic array types like "T[]".
+        val componentType = resolveGenericType(gat.getGenericComponentType, substMap, classOf[Object], scope, loc)
+        Type.mkArray(componentType, Type.IO, loc)
+
+      case c: Class[?] =>
+        // Plain class (non-generic or raw). Convert directly.
+        instantiateJavaTypeWithFreshVars(c, scope, loc)
+
+      case _ =>
+        // Unknown type variant. Fall back to erased type.
+        instantiateJavaTypeWithFreshVars(erasedFallback, scope, loc)
     }
   }
 
@@ -474,5 +549,38 @@ object TypeReduction2 {
       name -> Type.freshVar(Kind.Star, loc)(scope, flix)
     }.toMap
     classSubst ++ methodSubst
+  }
+
+  /**
+    * Returns `true` if the argument types are compatible with the method's generic
+    * parameter types after substituting type variables from the receiver.
+    *
+    * For each parameter whose generic type is a bare `TypeVariable`, looks up the
+    * concrete type in the substitution map and verifies the argument type is
+    * assignable to it (with autoboxing). Parameters that are not bare `TypeVariable`s
+    * (e.g., `int`, `Object`, `ParameterizedType`) are already validated by the
+    * erased method lookup and are not re-checked here.
+    *
+    * Example: For `ArrayList[String].add(123)`, the generic param `E` resolves
+    * to `String`, and `Int32` is not assignable to `String`, so this returns `false`.
+    */
+  private def genericArgTypesMatch(method: Method, receiverType: Option[Type],
+      argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Boolean = {
+    val substMap = buildTypeVarSubstitution(method, receiverType, scope, loc)
+    val genericParamTypes = method.getGenericParameterTypes
+    argTypes.zip(genericParamTypes).forall { case (argType, genericParamType) =>
+      genericParamType match {
+        case tv: TypeVariable[_] =>
+          substMap.get(tv.getName) match {
+            case Some(expectedType) if !expectedType.isInstanceOf[Type.Var] =>
+              // Both types are concrete. Check assignability with autoboxing.
+              val argClass = getJavaType(argType)
+              val expectedClass = getJavaType(expectedType)
+              ApacheClassUtils.isAssignable(argClass, expectedClass, true)
+            case _ => true // Unresolved or fresh type variable: can't check.
+          }
+        case _ => true // Not a bare TypeVariable: erased lookup already validated.
+      }
+    }
   }
 }
