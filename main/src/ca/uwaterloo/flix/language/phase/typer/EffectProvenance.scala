@@ -78,32 +78,36 @@ object EffectProvenance {
     def leq(x: Set[K], y: Set[K]): Boolean = x.subsetOf(y)
   }
 
-  private class MapLattice[K <: Vertex, V](val subLattice: Lattice[V]) extends Lattice[Map[K, V]] {
+  private class MapLattice[K, V](val subLattice: Lattice[V]) extends Lattice[Map[K, V]] {
     def bottom(): Map[K, V] = Map.empty
 
     def lub(x: Map[K, V], y: Map[K, V]): Map[K, V] = {
       x.foldLeft(y) {
         case (acc, (v, set)) =>
-          val ys = lookup(v, y)
+          val ys = acc.getOrElse(v, subLattice.bottom())
           acc + (v -> subLattice.lub(ys, set))
       }
     }
 
     def leq(x: Map[K, V], y: Map[K, V]): Boolean = {
       x.forall {
-        case (v, set) => subLattice.leq(set, lookup(v, y))
+        case (v, set) => subLattice.leq(set, y.getOrElse(v, subLattice.bottom()))
       }
     }
+  }
 
-    /**
-      * Performs lookup in the map lattice, with a special case for argument vertices.
-      * This is to connect a vertex to a corresponding vertex in the list of vertices of an argument.
-      */
-    def lookup(vertex: K, lattice: Map[K, V]): V = {
-      lattice.foldLeft(subLattice.bottom()) {
-        case (acc, (arg@ArgVertex(_, _), s)) => if (arg.lookup(vertex).isDefined) s else acc
-        case (acc, (v, xs)) => if (v == vertex) xs else acc
-      }
+  /**
+    * Looks up the effect set associated with a vertex in the map lattice.
+    *
+    * @param vertex  the vertex to look up
+    * @param lattice the current map-lattice state
+    * @return the set of (vertex, location) pairs associated with the given vertex,
+    *         or the empty set if no entry matches
+    */
+  private def lookupVertex(vertex: Vertex, lattice: Map[Vertex, Set[(Vertex, SourceLocation)]]): Set[(Vertex, SourceLocation)] = {
+    lattice.foldLeft(Set.empty[(Vertex, SourceLocation)]) {
+      case (acc, (arg@ArgVertex(_, _), s)) => if (arg.lookup(vertex).isDefined) s else acc
+      case (acc, (v, xs))                  => if (v == vertex) xs else acc
     }
   }
 
@@ -125,10 +129,10 @@ object EffectProvenance {
       */
     case class ArgVertex(argEff: List[Vertex], loc: SourceLocation) extends Vertex {
       /**
-       * Lookup method which deconstructs an argvertex with a special case for argvertex
-       * if @vertex is an ArgVertex then, lookup attempts to find a vertex in argEff which is contained in @vertex
-       * this edge case appears when a function call is given as an argument to another function
-       */
+        * Lookup method which deconstructs an argvertex with a special case for argvertex
+        * if @vertex is an ArgVertex then, lookup attempts to find a vertex in argEff which is contained in @vertex
+        * this edge case appears when a function call is given as an argument to another function
+        */
       def lookup(vertex: Vertex): Option[Vertex] = vertex match {
         case ArgVertex(otherEffs, _) => argEff.find(otherEffs.contains)
         case v => argEff.find(_ == v)
@@ -273,8 +277,8 @@ object EffectProvenance {
     def transfer(ml: Map[Vertex, Set[(Vertex, SourceLocation)]]): Map[Vertex, Set[(Vertex, SourceLocation)]] = {
       graph.edges.foldLeft(ml) {
         case (acc, Edge(from, to, loc)) =>
-          val v1 = lattice.lookup(from, acc)
-          val v2 = lattice.lookup(to, acc)
+          val v1 = lookupVertex(from, acc)
+          val v2 = lookupVertex(to, acc)
           val pointsTo = subLattice.lub(subLattice.lub(v1, v2), Set((from, loc)))
           val e: Map[Vertex, Set[(Vertex, SourceLocation)]] = Map(to -> pointsTo)
           lattice.lub(acc, e)
