@@ -84,14 +84,14 @@ object EffectProvenance {
     def lub(x: Map[K, V], y: Map[K, V]): Map[K, V] = {
       x.foldLeft(y) {
         case (acc, (v, set)) =>
-          val ys = acc.getOrElse(v, subLattice.bottom())
+          val ys = acc.getOrElse(v, subLattice.bottom)
           acc + (v -> subLattice.lub(ys, set))
       }
     }
 
     def leq(x: Map[K, V], y: Map[K, V]): Boolean = {
       x.forall {
-        case (v, set) => subLattice.leq(set, y.getOrElse(v, subLattice.bottom()))
+        case (v, set) => subLattice.leq(set, y.getOrElse(v, subLattice.bottom))
       }
     }
   }
@@ -504,17 +504,23 @@ object EffectProvenance {
     * into a sink that declares a different concrete effect. All combinations of
     * IO, user-defined effects, and rigid variables are covered.
     *
-    * @param sourceSym   the vertex representing the effect that flows in
+    * @param source   the vertex representing the effect that flows in
     * @param sink     the vertex representing the declared (conflicting) effect
     * @param provLoc  the source location of the provenance (where the conflict originates)
     * @return `Some(error)` if both vertices are recognized concrete effects, `None` otherwise
     */
-  private def mkEffectfulError(sink: Vertex, sourceSym: EffSymOrRigidVar, provLoc: SourceLocation): Option[EffConflicted] = sink match {
-    case CstVertex(sym2, loc2) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym2)), sourceSym, loc2, provLoc)))
-    case IOVertex(loc2) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(Symbol.IO)), sourceSym, loc2, provLoc)))
-    case RigidVarVertex(sym, loc2) =>  Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), sourceSym, loc2, provLoc)))
-    case _ => None
+  private def mkEffectfulError(sink: Vertex, source: Vertex, provLoc: SourceLocation): Option[EffConflicted] = {
+    ((source, symbol(source)) match {
+      case (PureExplicitVertex(_) | PureImplicitVertex(_), _) => None
+      case (_, Some(sym)) => Some(sym)
+      case (_, None) => None
+    }).flatMap(sourceSym => sink match {
+      case CstVertex(sym2, loc2) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(sym2)), sourceSym, loc2, provLoc)))
+      case IOVertex(loc2) => Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(Eff(Symbol.IO)), sourceSym, loc2, provLoc)))
+      case RigidVarVertex(sym, loc2) =>  Some(TypeConstraint.EffConflicted(TypeError.EffectfulFunctionUsesOtherEffect(List(RigidVar(sym)), sourceSym, loc2, provLoc)))
+      case _ => None
 
+    })
   }
 
   /**
@@ -621,7 +627,6 @@ object EffectProvenance {
         case _ => mkSignatureErrors(xs, ys, s.symbols, sigLoc)
       }
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, provLoc) =>
-
         val a =  mkEffectfulError(x, y, provLoc) :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
         a.flatten
       }
@@ -655,7 +660,7 @@ object EffectProvenance {
     */
   private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: Scope, renv: RigidityEnv): List[Vertex] = {
 
-    def helper(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: Scope, renv: RigidityEnv): List[Vertex] = tpe match {
+    def toVerticesFromType(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: Scope, renv: RigidityEnv): List[Vertex] = tpe match {
       case Type.Var(sym, loc) => renv.get(sym) match {
         case Rigidity.Flexible => List(VarVertex(sym))
         case Rigidity.Rigid => List(RigidVarVertex(sym, loc))
@@ -702,16 +707,16 @@ object EffectProvenance {
           *   Op
           */
         case (Type.Apply(Type.Cst(tc, _), v1@Type.Var(_, _), _), v2@Type.Var(_, _)) => tc match {
-          case TypeConstructor.Union => helper(v1, constLoc, vtpe) ::: helper(v2, constLoc, vtpe)
+          case TypeConstructor.Union => toVerticesFromType(v1, constLoc, vtpe) ::: toVerticesFromType(v2, constLoc, vtpe)
           case _ => List()
         }
         case (Type.Apply(Type.Cst(tc, _), cst@Type.Cst(_, _), _), v@Type.Var(_, _)) => tc match {
-          case TypeConstructor.Union => helper(cst, constLoc, vtpe) ::: helper(v, constLoc, vtpe)
+          case TypeConstructor.Union => toVerticesFromType(cst, constLoc, vtpe) ::: toVerticesFromType(v, constLoc, vtpe)
           case _ => List()
         }
 
         case (Type.Apply(Type.Cst(tc, _), x@Type.Cst(_, _), _), y@Type.Cst(_, _)) => tc match {
-          case TypeConstructor.Union => helper(x, constLoc, vtpe) ::: helper(y, constLoc, vtpe)
+          case TypeConstructor.Union => toVerticesFromType(x, constLoc, vtpe) ::: toVerticesFromType(y, constLoc, vtpe)
           case _ => List()
         }
 
@@ -729,13 +734,13 @@ object EffectProvenance {
           */
         case (Type.Apply(Type.Cst(tc, _), v@Type.Var(_, _), _), Type.Apply(_, _, _)) =>
           tc match {
-            case TypeConstructor.Union => helper(v, constLoc, vtpe) ::: helper(tpe2, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(v, constLoc, vtpe) ::: toVerticesFromType(tpe2, constLoc, vtpe)
             case _ => List()
           }
 
         case (Type.Apply(Type.Cst(tc, _), v@Type.Var(_, _), _), cst@Type.Cst(_, _)) =>
           tc match {
-            case TypeConstructor.Union =>  helper(v, constLoc, vtpe) ::: helper(cst, constLoc, vtpe)
+            case TypeConstructor.Union =>  toVerticesFromType(v, constLoc, vtpe) ::: toVerticesFromType(cst, constLoc, vtpe)
             case _ => List()
           }
 
@@ -753,25 +758,25 @@ object EffectProvenance {
           */
         case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), v@Type.Var(_, _)) =>
           tc match {
-            case TypeConstructor.Union => helper(v, constLoc, vtpe) ::: helper(nested, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(v, constLoc, vtpe) ::: toVerticesFromType(nested, constLoc, vtpe)
             case _ => List()
           }
 
         case (Type.Apply(Type.Cst(tc, _), nested@Type.Apply(_, _, _), _), cst@Type.Cst(_, _)) =>
           tc match {
-            case TypeConstructor.Union => helper(cst, constLoc, vtpe) ::: helper(nested, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(cst, constLoc, vtpe) ::: toVerticesFromType(nested, constLoc, vtpe)
             case _ => List()
           }
 
         case (Type.Apply(Type.Cst(tc, _), cst@Type.Cst(_, _), _), nested@Type.Apply(_, _, _)) =>
           tc match {
-            case TypeConstructor.Union => helper(cst, constLoc, vtpe) ::: helper(nested, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(cst, constLoc, vtpe) ::: toVerticesFromType(nested, constLoc, vtpe)
             case _ => List()
           }
 
         case (Type.Apply(Type.Cst(tc, _), nested1@Type.Apply(_, _, _), _), nested2@Type.Apply(_, _, _)) =>
           tc match {
-            case TypeConstructor.Union => helper(nested1, constLoc, vtpe) ::: helper(nested2, constLoc, vtpe)
+            case TypeConstructor.Union => toVerticesFromType(nested1, constLoc, vtpe) ::: toVerticesFromType(nested2, constLoc, vtpe)
             case _ => List()
           }
 
@@ -781,10 +786,10 @@ object EffectProvenance {
     }
 
     vtpe match {
-      case ArgNode => List(ArgVertex(helper(tpe, constLoc, vtpe), constLoc))
-      case SinkNode => List(SignatureVertex(helper(tpe, constLoc, vtpe), constLoc))
-      case IntermediateNode => helper(tpe, constLoc, vtpe)
-      case SourceNode => helper(tpe, constLoc, vtpe)
+      case ArgNode => List(ArgVertex(toVerticesFromType(tpe, constLoc, vtpe), constLoc))
+      case SinkNode => List(SignatureVertex(toVerticesFromType(tpe, constLoc, vtpe), constLoc))
+      case IntermediateNode => toVerticesFromType(tpe, constLoc, vtpe)
+      case SourceNode => toVerticesFromType(tpe, constLoc, vtpe)
     }
   }
 }
