@@ -176,10 +176,10 @@ object Reducer {
         val e2 = visitExpr(exp2)
         JvmAst.Expr.Let(sym, offset, e1, e2, loc)
 
-      case ErasedAst.Expr.Stmt(exp1, exp2, loc) =>
-        val e1 = visitExpr(exp1)
-        val e2 = visitExpr(exp2)
-        JvmAst.Expr.Stmt(e1, e2, loc)
+      case ErasedAst.Expr.Stm(exps, exp, loc) =>
+        val es = exps.map(visitExpr)
+        val e = visitExpr(exp)
+        JvmAst.Expr.Stm(es, e, loc)
 
       case ErasedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
         val offset = lctx.assignOffset(sym, SimpleType.Region)

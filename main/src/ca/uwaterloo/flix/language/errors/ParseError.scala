@@ -279,6 +279,7 @@ object ParseError {
          |""".stripMargin
     }
   }
+
   /**
     * An error raised to indicate that a Thick Right Arrow was expected, but got an Equal.
     *
@@ -364,6 +365,25 @@ object ParseError {
          |""".stripMargin
     }
 
+  }
+
+  /**
+    * An error raised to indicate a binary operator is missing between two expressions.
+    *
+    * @param sctx The syntactic context.
+    * @param loc  The source location.
+    */
+  case class MissingBinaryOperator(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
+    def code: ErrorCode = ErrorCode.E9061
+    def summary: String = s"Missing operator between expressions."
+    def message(formatter: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import formatter.*
+      s""">> Missing operator between expressions.
+         |
+         |${src(loc, s"Expected an operator here")}
+         |""".stripMargin
+    }
   }
 
   /**

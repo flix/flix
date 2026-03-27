@@ -61,10 +61,10 @@ object TailPos {
       val e2 = visitExp(exp2)
       Expr.Let(sym, exp1, e2, loc)
 
-    case Expr.Stmt(exp1, exp2, loc) =>
-      // `exp2` is in tail position.
-      val e2 = visitExp(exp2)
-      Expr.Stmt(exp1, e2, loc)
+    case Expr.Stm(exps, exp, loc) =>
+      // `exp` is in tail position.
+      val e = visitExp(exp)
+      Expr.Stm(exps, e, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       // The branches are in tail position.

@@ -54,8 +54,11 @@ object SemanticTokensProvider {
           case token: Token if token.kind.isModifier =>
             SemanticToken(SemanticTokenType.Modifier, Nil, token.mkSourceLocation())
 
-          case token: Token if token.kind.isComment =>
+          case token: Token if token.kind.isCommentNonDoc =>
             SemanticToken(SemanticTokenType.Comment, Nil, token.mkSourceLocation())
+
+          case token: Token if token.kind.isCommentDoc =>
+            SemanticToken(SemanticTokenType.Comment, List(SemanticTokenModifier.Documentation), token.mkSourceLocation())
         }
       case None => Iterator.empty
     }
@@ -464,8 +467,8 @@ object SemanticTokensProvider {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foldRight(visitExp(exp))((e, acc) => visitExp(e) ++ acc)
 
     case Expr.Discard(exp, _, _) => visitExp(exp)
 
@@ -904,7 +907,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseSet(_, _) => false
     case TypeConstructor.JvmField(_) => false
     case TypeConstructor.JvmConstructor(_) => false
-    case TypeConstructor.JvmMethod(_) => false
+    case TypeConstructor.JvmMethod(_, _) => false
     case TypeConstructor.Error(_, _) => false
 
     // backend constructors

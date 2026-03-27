@@ -103,7 +103,7 @@ object KindedAst {
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class Stm(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Stm(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -129,19 +129,19 @@ object KindedAst {
 
     case class RecordSelect(exp: Expr, label: Name.Label, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(label: Name.Label, value: Expr, rest: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(label: Name.Label, rest: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayLoad(base: Expr, index: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayLoad(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayStore(base: Expr, index: Expr, elm: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayLength(base: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ArrayLength(exp: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Option[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 

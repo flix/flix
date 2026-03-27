@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap, ListOps, MapOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
-import java.util.concurrent.ConcurrentLinkedQueue
+
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
@@ -198,11 +198,9 @@ object Specialization {
       * it means that the function definition `f` should be specialized w.r.t. the map
       * `[a -> Int32]` under the fresh name `f$1`.
       *
-      * Note: [[ConcurrentLinkedQueue]] is non-blocking so threads can enqueue items without
-      * contention.
       */
-    private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)] =
-      new ConcurrentLinkedQueue
+    private val defQueue: mutable.ArrayBuffer[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)] =
+      mutable.ArrayBuffer.empty
 
     /** Returns `true` if the queue is non-empty. */
     def nonEmptySpecializationQueue: Boolean =
@@ -218,13 +216,13 @@ object Specialization {
       */
     def enqueueSpecialization(sym: Symbol.DefnSym, defn: TypedAst.Def, subst: StrictSubstitution): Unit =
       synchronized {
-        defQueue.add((sym, defn, subst))
+        defQueue.addOne((sym, defn, subst))
       }
 
     /** Dequeues all elements from the queue and clears it. */
     def dequeueAllSpecializations: Array[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)] =
       synchronized {
-        val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)])
+        val r = defQueue.toArray
         defQueue.clear()
         r
       }
@@ -652,10 +650,10 @@ object Specialization {
       val e3 = specializeExp(exp3, env0, subst)
       Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = specializeExp(exp1, env0, subst)
-      val e2 = specializeExp(exp2, env0, subst)
-      Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val e = specializeExp(exp, env0, subst)
+      Expr.Stm(es, e, subst(tpe), subst(eff), loc)
 
     case Expr.Discard(exp, eff, loc) =>
       val e = specializeExp(exp, env0, subst)

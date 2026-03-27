@@ -1,6 +1,6 @@
 mod TestNec {
 
-    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, fail};
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, assertNone, fail};
     use Hash.hash
     use Math.Shuffle
 
@@ -173,6 +173,44 @@ mod TestNec {
 
     @Test
     def last03(): Unit \ Assert = assertEq(expected = 2, Nec.last(necOf3(123, 1, 2)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def get01(): Unit \ Assert =
+        let r = run Nec.get(1, necOf3("a", "b", "c")) with handler OutOfBounds {
+            def outOfBounds(_, _) = "error"
+        };
+        assertEq(expected = "b", r)
+
+    @Test
+    def get02(): Unit \ Assert =
+        let r = run Nec.get(5, necOf3("a", "b", "c")) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index 5 is out of bounds for Nec of length 3", r)
+
+    @Test
+    def get03(): Unit \ Assert =
+        let r = run Nec.get(-1, necOf3("a", "b", "c")) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index -1 is out of bounds for Nec of length 3", r)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nth01(): Unit \ Assert = assertEq(expected = Some(1), Nec.nth(0, necOf3(1, 2, 3)))
+
+    @Test
+    def nth02(): Unit \ Assert = assertEq(expected = Some(3), Nec.nth(2, necOf3(1, 2, 3)))
+
+    @Test
+    def nth03(): Unit \ Assert = assertNone(Nec.nth(5, necOf3(1, 2, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                    //

@@ -580,6 +580,25 @@ object PatMatch2 {
     }
   }
 
+  /**
+    * Checks `try-catch` rules for redundancy.
+    *
+    * A catch rule is redundant if a preceding rule catches the same exception
+    * class or a superclass of it, making the later rule impossible to reach.
+    */
+  private def checkCatchRules(rules: List[TypedAst.CatchRule])(implicit sctx: SharedContext): Unit = {
+    var precedingRules: List[TypedAst.CatchRule] = Nil
+    for (rule <- rules) {
+      // Check if any preceding rule's class is a superclass of (or equal to) this rule's class.
+      precedingRules.find(prev => prev.clazz.isAssignableFrom(rule.clazz)) match {
+        case Some(coveringRule) =>
+          sctx.errors.add(PatMatchError.RedundantCatchRule(coveringRule.loc, rule.loc))
+        case None => ()
+      }
+      precedingRules = precedingRules :+ rule
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────
   //  Section 3: Run / Visitors
   // ─────────────────────────────────────────────────────────────
@@ -677,9 +696,9 @@ object PatMatch2 {
         visitExp(exp2)
         visitExp(exp3)
 
-      case Expr.Stm(exp1, exp2, _, _, _) =>
-        visitExp(exp1)
-        visitExp(exp2)
+      case Expr.Stm(exps, exp, _, _, _) =>
+        exps.foreach(visitExp)
+        visitExp(exp)
 
       case Expr.Discard(exp, _, _) => visitExp(exp)
 
@@ -766,6 +785,7 @@ object PatMatch2 {
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
+        checkCatchRules(rules)
 
       case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 

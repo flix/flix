@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{List => JList}
 
 ///
 /// The NonEmpty Chain type.
@@ -150,12 +149,6 @@ instance ForEach[Nec[a]] {
     pub def forEach(f: a -> Unit \ ef, l: Nec[a]): Unit \ ef = Nec.forEach(f, l)
 }
 
-instance ToJava[Nec[a]] {
-    type Out = JList
-    type Aef = IO
-    pub def toJava(l: Nec[a]): JList \ IO = Adaptor.toList(l)
-}
-
 pub mod Nec {
     use Math.Shuffle
     use ViewLeft.{OneLeft, SomeLeft}
@@ -230,6 +223,23 @@ pub mod Nec {
         case ViewRight.OneRight(x)     => x
         case ViewRight.SomeRight(_, x) => x
     }
+
+    ///
+    /// Returns the element at position `i` in the non-empty chain `c`.
+    ///
+    /// Throws `OutOfBounds` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, c: Nec[a]): a \ OutOfBounds =
+        match nth(i, c) {
+            case Some(x) => x
+            case None    => OutOfBounds.outOfBounds("index ${i} is out of bounds for Nec of length ${length(c)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the non-empty chain `c`.
+    ///
+    pub def nth(i: Int32, c: Nec[a]): Option[a] =
+        List.nth(i, toList(c))
 
     ///
     /// Returns the list of elements in `c` without the last element.

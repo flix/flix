@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, WeederError}
+import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -504,5 +504,54 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val error = check(input, Options.TestWithLibNix)
     expectError[ParseError.ExpectedSemicolon](error)
+  }
+
+  test("ExpectedSemicolon.04") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    2
+        |    bar
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
+
+  test("MissingBinaryOperator.01") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    2 bar
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBinaryOperator](error)
+  }
+
+  test("MissingBinaryOperator.02") {
+    val input =
+      """
+        |def foo(): Int32 = 1
+        |def bar(): Int32 = 2
+        |def foobar(): Int32 = {
+        |    let x = foo()   bar();
+        |    x
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[ResolutionError.UndefinedName](result)
+    expectError[ParseError.MissingBinaryOperator](result)
+  }
+
+  test("MissingBinaryOperator.03") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    bar 2
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBinaryOperator](error)
   }
 }

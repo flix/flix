@@ -57,7 +57,7 @@ object ReducedAstPrinter {
     case Expr.Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case Expr.JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
     case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.Stmt(exp1, exp2, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
+    case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ReducedAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
