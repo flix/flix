@@ -78,22 +78,11 @@ object DefaultHandlers {
     // The Default Handler must reside in the companion module of the effect.
     // Hence we use the namespace of the handler to construct the expected
     // effect symbol and look it up in the AST.
-    // We check two cases:
-    // 1. The effect is declared in the parent module (old style): eff namespace = handler namespace init
-    // 2. The effect is declared inside the module itself (companion lifting): eff namespace = handler namespace
+    // Companion effects have their symbol in the parent namespace (e.g. Fs.Glob),
+    // which matches the handler's namespace (also Fs.Glob).
     val effFqn = handlerSym.namespace.mkString(".")
     val effSym = Symbol.mkEffSym(effFqn)
-    val companionEffect = root.effects.get(effSym).map((effSym, _)).orElse {
-      // Check for a companion effect declared inside the module itself (companion lifting).
-      // Only possible when the handler is inside a module (non-empty namespace).
-      if (handlerSym.namespace.nonEmpty) {
-        val companionEffFqn = effFqn + "." + handlerSym.namespace.last
-        val companionEffSym = Symbol.mkEffSym(companionEffFqn)
-        root.effects.get(companionEffSym).map((companionEffSym, _))
-      } else {
-        None
-      }
-    }
+    val companionEffect = root.effects.get(effSym).map((effSym, _))
     companionEffect match {
       case None =>
         sctx.errors.add(TypeError.DefaultHandlerNotInModule(handlerSym, handlerSym.loc))

@@ -324,15 +324,21 @@ object Namer {
   }
 
   /**
-    * Lifts a companion type from a module to its parent namespace.
+    * Aliases a companion type for backwards-compatible resolution.
     *
     * If module `A.B` contains a type declaration (enum, struct, effect, trait) named `B`,
-    * that type is "lifted" to the parent namespace so it is accessible as `A.B` in type position.
-    * Child declarations (enum cases, struct fields) are also lifted to the module namespace
-    * so that e.g. `A.B.B` resolves the constructor.
+    * the type's symbol is created with parent namespace `A` (so its canonical identity is `A.B`).
+    * The type is tabled at the parent namespace by the normal `tableDecl` flow, and child
+    * declarations (cases, fields) naturally land at the module namespace `A.B`.
     *
-    * If a non-module type with the same name already exists in the parent namespace (e.g. during
-    * migration when the type is declared in both the old and new locations), lifting is skipped.
+    * This method creates aliases so that old paths still resolve:
+    *
+    * 1. Downward alias: the companion is added to `[A, B]["B"]` so `A.B.B` resolves.
+    * 2. Old child path aliases: cases/fields are aliased at `[A, B, B]["name"]` so
+    *    `use A.B.B.{CaseName}` still resolves (backwards compat).
+    * 3. Same-name case alias: if a case shares its name with the enum, it is also added
+    *    at `[A]["B"]` so that `infallableLookupSym` on the EnumSym finds both the type
+    *    and the constructor.
     */
   private def liftCompanionType(table: SymbolTable, modSym: Symbol.ModuleSym, decls: List[NamedAst.Declaration])(implicit sctx: SharedContext): SymbolTable = {
     if (modSym.ns.isEmpty) return table // root module, nothing to lift
@@ -351,36 +357,42 @@ object Namer {
     companionOpt match {
       case None => table
       case Some(companion) =>
-        // Don't lift if a non-Mod type with this name already exists in parent.
-        lookupName(moduleName, parentNs, table) match {
-          case LookupResult.AlreadyDefined(_) => table
-          case LookupResult.NotDefined =>
-            val table1 = appendDeclToTable(table, parentNs, moduleName, companion)
-            liftChildDeclarations(table1, modSym, companion)
-        }
+        // 1. Downward alias: add companion into the module namespace [A, B]["B"].
+        //    Uses addDeclToTable (prepend) so the type comes before any same-named case,
+        //    which is required because visitUseOrImport takes the first declaration.
+        val table1 = addDeclToTable(table, modSym.ns, moduleName, companion)
+        // 2 & 3. Alias child declarations for backwards compat and infallableLookupSym.
+        aliasChildDeclarations(table1, modSym, parentNs, moduleName, companion)
     }
   }
 
   /**
-    * Lifts child declarations (enum cases, struct fields) from the companion type's
-    * nested namespace to the module's namespace.
+    * Aliases child declarations (enum cases, struct fields) for backwards compatibility.
     *
-    * Uses `appendDeclToTable` so that the companion type (Enum/Struct) remains first in the
-    * list at the module slot. This is important because `visitUseOrImport` takes the first
-    * declaration, and if a Case came before the Enum, `use A.B.B` would resolve the CaseSym
-    * instead of the EnumSym, breaking type resolution via `infallableLookupSym`.
+    * With the companion type at parent namespace `A`, child symbols naturally land at `A.B`.
+    * Previously they lived at `A.B.B`, so we alias them there too. Additionally, if a case
+    * shares its name with the enum, we alias it at `A` alongside the enum so that
+    * `infallableLookupSym` on the EnumSym finds both type and constructor.
     */
-  private def liftChildDeclarations(table: SymbolTable, modSym: Symbol.ModuleSym, companion: NamedAst.Declaration): SymbolTable = {
+  private def aliasChildDeclarations(table: SymbolTable, modSym: Symbol.ModuleSym, parentNs: List[String], moduleName: String, companion: NamedAst.Declaration): SymbolTable = {
+    val oldChildNs = modSym.ns :+ moduleName // [A, B, B] — the old path where cases used to live
     companion match {
       case NamedAst.Declaration.Enum(_, _, _, _, _, _, cases, _) =>
-        cases.foldLeft(table) { (tbl, caseDecl) =>
-          appendDeclToTable(tbl, modSym.ns, caseDecl.sym.name, caseDecl)
+        // First add all cases to the old path, then prepend the enum so it comes first in the list.
+        val t1 = cases.foldLeft(table) { (tbl, caseDecl) =>
+          addDeclToTable(tbl, oldChildNs, caseDecl.sym.name, caseDecl)
+        }
+        val t2 = addDeclToTable(t1, oldChildNs, moduleName, companion)
+        // Also add same-named cases to the parent namespace for infallableLookupSym.
+        cases.filter(_.sym.name == moduleName).foldLeft(t2) { (tbl, caseDecl) =>
+          appendDeclToTable(tbl, parentNs, moduleName, caseDecl)
         }
       case NamedAst.Declaration.Struct(_, _, _, _, _, fields, _) =>
-        fields.foldLeft(table) { (tbl, fieldDecl) =>
-          appendDeclToTable(tbl, modSym.ns, "€" + fieldDecl.sym.name, fieldDecl)
+        val t1 = fields.foldLeft(table) { (tbl, fieldDecl) =>
+          addDeclToTable(tbl, oldChildNs, "€" + fieldDecl.sym.name, fieldDecl)
         }
-      case _ => table // Effects (ops resolved from Effect decl), Traits (sigs resolved from Trait decl)
+        addDeclToTable(t1, oldChildNs, moduleName, companion)
+      case _ => table
     }
   }
 
@@ -502,7 +514,11 @@ object Namer {
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
-      val sym = Symbol.mkEnumSym(ns0, ident)
+      // If this enum is a companion type (name matches enclosing module), create the symbol
+      // in the parent namespace so its canonical location is e.g. Fs.Size, not Fs.Size.Size.
+      val isCompanion = ns0.parts.nonEmpty && ns0.parts.last == ident.name
+      val symNs = if (isCompanion) Name.NName(ns0.idents.init, ns0.loc) else ns0
+      val sym = Symbol.mkEnumSym(symNs, ident)
 
       // Compute the type parameters.
       val tparams = tparams0.map(visitTypeParam)
@@ -525,7 +541,10 @@ object Namer {
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
-      val sym = Symbol.mkStructSym(ns0, ident)
+      // If this struct is a companion type, create the symbol in the parent namespace.
+      val isCompanion = ns0.parts.nonEmpty && ns0.parts.last == ident.name
+      val symNs = if (isCompanion) Name.NName(ns0.idents.init, ns0.loc) else ns0
+      val sym = Symbol.mkStructSym(symNs, ident)
 
       // Compute the type parameters.
       val tparams = tparams0.map(visitTypeParam)
@@ -753,7 +772,10 @@ object Namer {
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
-      val sym = Symbol.mkEffSym(ns0, ident)
+      // If this effect is a companion type, create the symbol in the parent namespace.
+      val isCompanion = ns0.parts.nonEmpty && ns0.parts.last == ident.name
+      val symNs = if (isCompanion) Name.NName(ns0.idents.init, ns0.loc) else ns0
+      val sym = Symbol.mkEffSym(symNs, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparams = visitExplicitTypeParams(tparams0)
       val ops = ops0.map(visitOp(_, ns0, sym))
