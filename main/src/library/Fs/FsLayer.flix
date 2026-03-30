@@ -364,7 +364,7 @@ mod Fs.FsLayer {
         try {
             region rc {
                 let bytes = Vector.toArray(rc, data);
-                let opts: Vector[OpenOption] = #Vector{
+                let opts: Vector[OpenOption] = Vector#{
                     checked_cast(StandardOpenOption.APPEND),
                     checked_cast(StandardOpenOption.CREATE)
                 };
