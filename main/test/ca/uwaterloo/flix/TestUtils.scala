@@ -50,11 +50,24 @@ trait TestUtils {
   }
 
   /**
+    * Asserts that the amount of errors in result is exactly one.
+    *
+    * This is helpful for enforcing test (error) isolation
+    */
+  def expectOneError[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = {
+    val (_, errors) = result
+    if (errors.length != 1) {
+        fail(s"Expected exactly one error, but found ${errors.length} error(s): ${errors.map(_.getClass.getSimpleName).mkString(", ")}.")
+    }
+    expectError[T](result)
+  }
+
+  /**
     * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
     */
-  def expectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]), allowUnknown: Boolean = false, isStrict: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result match {
-    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root), Some(root), allowUnknown, isStrict)
-    case (optRoot, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)), optRoot, allowUnknown, isStrict)
+  def expectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]), allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result match {
+    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root), Some(root), allowUnknown)
+    case (optRoot, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)), optRoot, allowUnknown)
   }
 
   /**
@@ -75,7 +88,7 @@ trait TestUtils {
     *
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
-  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage], rootOpt: Option[TypedAst.Root], allowUnknown: Boolean = false, isStrict: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result.toResult match {
+  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage], rootOpt: Option[TypedAst.Root], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result.toResult match {
     case Result.Ok(_) => fail(s"Expected Failure, but got Success.")
 
     case Result.Err(errors) =>
@@ -97,7 +110,6 @@ trait TestUtils {
       // It doesn't matter which error we use because we just need the source code
       val expectedLine = getExpectedErrorLine(errors.head.get)
       val actuals = errors.map(e => (e, e.getClass)).toList
-      if (isStrict && errors.length > 1) fail(s"Expected one error, but got multiple: \n\n${actuals.map(p => p._2.getSimpleName)}\n")
       actuals.find {
         case (message, actualClazz) => expected.isAssignableFrom(actualClazz) && expectedLine.forall(isOnLine(message, _))
       } match {
@@ -115,6 +127,7 @@ trait TestUtils {
           fail(s"Expected an error of type ${expected.getSimpleName}${onLineString}, but found:\n\n${actuals.map(p => p._2.getName)}.")
       }
   }
+
   /**
     * Returns the one-indexed line where the error is expected, if specified.
     */
