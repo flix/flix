@@ -50,6 +50,19 @@ trait TestUtils {
   }
 
   /**
+    * Asserts that the amount of errors in result is exactly one.
+    *
+    * This is helpful for enforcing test (error) isolation
+    */
+  def expectOneError[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = {
+    val (_, errors) = result
+    if (errors.length != 1) {
+        fail(s"Expected exactly one error, but found ${errors.length} error(s): ${errors.map(_.getClass.getSimpleName).mkString(", ")}.")
+    }
+    expectError[T](result)
+  }
+
+  /**
     * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
     */
   def expectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]), allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result match {
