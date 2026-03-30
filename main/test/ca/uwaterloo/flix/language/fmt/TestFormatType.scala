@@ -18,13 +18,13 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{RegionScope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestFormatType extends AnyFunSuite with TestUtils {
 
-  private val scope = Scope.Top
+  private val scope = RegionScope.Top
   private val loc = SourceLocation.Unknown
   private val standardFormat = FormatOptions(
     FormatOptions.VarName.NameBased

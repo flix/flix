@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Type}
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, ConstraintSolverInterface, SubstitutionTree, TypeConstraint}
 import ca.uwaterloo.flix.util.Result
@@ -31,7 +31,7 @@ object EqualityEnvironment {
     *
     * If `econstr0` is not entailed, returns `Err(errs)` where `errs` are the unsolved constraints.
     */
-  def entail(econstrs0: List[EqualityConstraint], econstr0: EqualityConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Result[Unit, List[TypeConstraint]] = {
+  def entail(econstrs0: List[EqualityConstraint], econstr0: EqualityConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: RegionScope, flix: Flix): Result[Unit, List[TypeConstraint]] = {
     val econstr = econstr0 match {
       case EqualityConstraint(symUse, tpe1, tpe2, loc) =>
         val assoc = Type.AssocType(symUse, tpe1, tpe2.kind, loc)
