@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.phase.unification.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.FiniteSet.{FiniteSet, LatticeOps}
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolLattice, SveAlgorithm}
@@ -29,7 +29,7 @@ object CaseSetZhegalkinUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: Scope): Option[Substitution] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: RegionScope): Option[Substitution] = {
     if (tpe1 eq tpe2) {
       return Some(Substitution.empty)
     }

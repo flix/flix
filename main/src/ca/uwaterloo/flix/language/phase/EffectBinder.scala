@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.VarSym
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, ExpPosition, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, ExpPosition, RegionScope}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, ReducedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
@@ -46,7 +46,7 @@ import scala.collection.mutable
 object EffectBinder {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   /**
     * Transforms the AST such that effect operations will be run without an

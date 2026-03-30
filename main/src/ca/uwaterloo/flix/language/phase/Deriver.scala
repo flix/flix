@@ -38,7 +38,7 @@ import scala.jdk.CollectionConverters.*
 object Deriver {
 
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   private val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
   private val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)

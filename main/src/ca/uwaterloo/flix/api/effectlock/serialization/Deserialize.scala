@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock.serialization
 
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
 import scala.collection.immutable.SortedSet
@@ -164,7 +164,7 @@ object Deserialize {
     case VarSym(id, text, kind) =>
       val t = deserializeVarText(text)
       val k = deserializeKind(kind)
-      new Symbol.KindedTypeVarSym(id, t, k, isSlack = false, Scope.Top, SourceLocation.Unknown)
+      new Symbol.KindedTypeVarSym(id, t, k, isSlack = false, RegionScope.Top, SourceLocation.Unknown)
   }
 
   private def deserializeLabel(label0: String): Name.Label = {

@@ -694,7 +694,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: RegionScope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isSlack = false, loc)
     Type.Var(sym, loc)
   }
@@ -702,7 +702,7 @@ object Type {
   /**
     * Returns a fresh effect slack variable.
     */
-  def freshEffSlackVar(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshEffSlackVar(loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(Absent, Kind.Eff, isSlack = true, loc)
     Type.Var(sym, loc)
   }

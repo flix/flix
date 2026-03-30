@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, PredicateAndArity, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, PredicateAndArity, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object SchemaConstraintGen {
 
   def visitFixpointConstraintSet(e: KindedAst.Expr.FixpointConstraintSet)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
         val constraintTypes = cs.map(visitConstraint)
@@ -41,7 +41,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
 
@@ -64,7 +64,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointMerge(e: KindedAst.Expr.FixpointMerge)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
         //
@@ -82,7 +82,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointQueryWithProvenance(e: KindedAst.Expr.FixpointQueryWithProvenance)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -97,7 +97,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointQueryWithSelect(e: KindedAst.Expr.FixpointQueryWithSelect)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tvar, loc) =>
         //
@@ -126,7 +126,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointSolveWithProject(e: KindedAst.Expr.FixpointSolveWithProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, _, tvar, loc) =>
         //
@@ -155,7 +155,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointInjectInto(e: KindedAst.Expr.FixpointInjectInto)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     e match {
       case KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc) =>
         predsAndArities.zip(exps).foreach {
@@ -193,7 +193,7 @@ object SchemaConstraintGen {
   }
 
   private def visitConstraint(con0: KindedAst.Constraint)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     val KindedAst.Constraint(_, head0, body0, loc) = con0
     //
     //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -214,7 +214,7 @@ object SchemaConstraintGen {
     * Infers the type of the given head predicate.
     */
   private def visitHeadPredicate(head: KindedAst.Predicate.Head)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     head match {
       case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
         // Adds additional type constraints if the denotation is a lattice.
@@ -233,7 +233,7 @@ object SchemaConstraintGen {
     * Infers the type of the given body predicate.
     */
   private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     body0 match {
       case KindedAst.Predicate.Body.Atom(pred, den, _, _, terms, tvar, loc) =>
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
@@ -310,7 +310,7 @@ object SchemaConstraintGen {
     * Returns a pair of open schema rows each consisting of predicate names in `predicates`.
     */
   private def mkSchemaRowPair(predicates: List[Name.Pred], loc: SourceLocation)(implicit c: TypeContext, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     predicates.foldRight((mkAnySchemaRowType(loc), mkAnySchemaRowType(loc))) {
       case (pred, (acc1, acc2)) =>
         val fresh = Type.freshVar(Kind.Predicate, loc)
@@ -318,5 +318,5 @@ object SchemaConstraintGen {
     }
   }
 
-  private def mkAnySchemaRowType(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 }

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SourcePosition.moveRight
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -61,7 +61,7 @@ object ConstraintSolverInterface {
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, paramTpe, _, _)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(paramTpe)(Scope.Top, flix))
+        case (acc, KindedAst.FormalParam(sym, paramTpe, _, _)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(paramTpe)(RegionScope.Top, flix))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
@@ -104,7 +104,7 @@ object ConstraintSolverInterface {
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
 
-      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
+      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
       leftovers match {
         case Nil =>
           // All constraints solved. Yay!
@@ -122,7 +122,7 @@ object ConstraintSolverInterface {
               val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
               val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
               val constrsWithDebug = constrs0.map(initialTree.apply)
-              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(Scope.Top, renv, tenv, eenv, flix)
+              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
 
               leftovers2 match {
                 case Nil =>
@@ -321,7 +321,7 @@ object ConstraintSolverInterface {
     * `r`. This only happens for if the row type is the topmost type, i.e. this
     * doesn't happen inside tuples or other such nesting.
     */
-  private def openOuterSchema(tpe: Type)(implicit scope: Scope, flix: Flix): Type = {
+  private def openOuterSchema(tpe: Type)(implicit scope: RegionScope, flix: Flix): Type = {
     @tailrec
     def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
       case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>

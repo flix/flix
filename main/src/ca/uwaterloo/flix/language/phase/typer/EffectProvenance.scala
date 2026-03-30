@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.shared.EffSymOrRigidVar.{Eff, RigidVar}
 import ca.uwaterloo.flix.language.ast.shared.{EffSymOrRigidVar, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{RegionScope, VarText}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{ArgVertex, CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, RigidVarVertex, SignatureVertex, VarVertex, sameType, symbol}
@@ -236,7 +237,7 @@ object EffectProvenance {
     * @param constrs0 the list of type constraints to analyze
     * @return a list of conflicts if conflicts could be found, None otherwise
     */
-  def getErrors(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv): Option[List[EffConflicted]] = {
+  def getErrors(constrs0: List[TypeConstraint])(implicit scope: RegionScope, renv: RigidityEnv): Option[List[EffConflicted]] = {
     val graph = buildGraph(constrs0)
     graph.flatMap(analysis)
   }
@@ -292,7 +293,7 @@ object EffectProvenance {
     * @param constraints the type constraints to analyze
     * @return Some(graph) if one or more edges could be created, otherwise None
     */
-  private def buildGraph(constraints: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv): Option[Graph] = {
+  private def buildGraph(constraints: List[TypeConstraint])(implicit scope: RegionScope, renv: RigidityEnv): Option[Graph] = {
     var flow: List[Edge] = List()
     var v: Set[Vertex] = Set.empty
     constraints.foreach {
@@ -610,6 +611,24 @@ object EffectProvenance {
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, provLoc) =>
         val a =  mkEffectfulErrorBySink(x, y, provLoc) :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
         a.flatten
+        
+  private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: RegionScope, renv: RigidityEnv): List[Vertex] = tpe match {
+    case Type.Var(sym, _) => renv.get(sym) match {
+      case Rigidity.Flexible => List(VarVertex(sym))
+      case Rigidity.Rigid => List(RigidVarVertex(sym, constLoc))
+    }
+    case Type.Cst(tc, loc) => tc match {
+      case TypeConstructor.Pure => if (loc.isReal) List(PureExplicitVertex(loc)) else List(PureImplicitVertex(constLoc))
+      case TypeConstructor.Effect(sym, _) => sym match {
+        case Symbol.IO => vtpe match {
+          case SinkNode => List(IOVertex(loc))
+          case SourceNode | IntermediateNode => List(IOVertex(constLoc))
+        }
+        case Symbol.Debug => Nil
+        case eff => vtpe match {
+          case SinkNode  => List(CstVertex(eff, loc))
+          case SourceNode | IntermediateNode => List(CstVertex(eff, constLoc))
+        }
       }
     }
   }
