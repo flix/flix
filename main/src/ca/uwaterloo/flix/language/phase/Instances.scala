@@ -89,8 +89,8 @@ object Instances {
       case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == instNs || (enumSym.namespace :+ enumSym.name) == instNs => ()
       // Case 2: Struct type in the same namespace or companion module as the instance: not an orphan
       case Some(TypeConstructor.Struct(structSym, _)) if structSym.namespace == instNs || (structSym.namespace :+ structSym.name) == instNs => ()
-      // Case 3: Any type in the trait namespace: not an orphan
-      case _ if trt.sym.namespace == instNs => ()
+      // Case 3: Any type in the trait namespace or companion module: not an orphan
+      case _ if trt.sym.namespace == instNs || (trt.sym.namespace :+ trt.sym.name) == instNs => ()
       // Case 4: Any type outside the trait companion namespace and enum declaration namespace: orphan
       case _ => sctx.errors.add(InstanceError.OrphanInstance(trt.sym, tpe, trt.loc))
     }

@@ -661,7 +661,10 @@ object Namer {
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
-      val sym = Symbol.mkTraitSym(ns0, ident)
+      // If this trait is a companion type, create the symbol in the parent namespace.
+      val isCompanion = ns0.parts.nonEmpty && ns0.parts.last == ident.name
+      val symNs = if (isCompanion) Name.NName(ns0.idents.init, ns0.loc) else ns0
+      val sym = Symbol.mkTraitSym(symNs, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
 
