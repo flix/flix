@@ -60,7 +60,6 @@ sealed trait TokenKind {
       case TokenKind.DebugInterpolator => "<debug-interpolator>"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
-      case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
@@ -405,7 +404,6 @@ sealed trait TokenKind {
     case TokenKind.BuiltIn => true
     case TokenKind.CurlyL => true
     case TokenKind.DebugInterpolator => true
-    case TokenKind.DotDotDot => true
     case TokenKind.HashBar => true
     case TokenKind.HashCurlyL => true
     case TokenKind.HashParenL => true
@@ -755,8 +753,6 @@ object TokenKind {
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
-
-  case object DotDotDot extends TokenKind
 
   case object DotWhiteSpace extends TokenKind
 
