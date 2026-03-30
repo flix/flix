@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Instance, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
@@ -34,7 +34,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 object Instances {
 
   // We use top scope everywhere here since we are only looking at declarations.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   /**
     * Validates instances and traits in the given AST root.
@@ -189,7 +189,7 @@ object Instances {
           case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
-            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
+            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(RegionScope.Top, flix)
             if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, eqEnv, inst.econstrs)) {
               // Case 5.1: the schemes match. Success!
               ()
@@ -219,7 +219,7 @@ object Instances {
       superInst =>
         // Rigidify sub-instance constraint vars in the substitution to ensure that they appear as-written in compiler errors
         val rigidityEnv = RigidityEnv.ofRigidVars(tpe.typeVars.map(_.sym))
-        ConstraintSolver2.fullyUnify(tpe, superInst.tpe, Scope.Top, rigidityEnv)(root.eqEnv, flix).map {
+        ConstraintSolver2.fullyUnify(tpe, superInst.tpe, RegionScope.Top, rigidityEnv)(root.eqEnv, flix).map {
           case subst => (superInst, subst)
         }
     }

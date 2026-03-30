@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint}
 import ca.uwaterloo.flix.language.phase.unification.{EffUnification3, EqualityEnv}
@@ -54,7 +54,7 @@ object EffectUpgrade {
   private def isGeneralizable(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
     implicit val eqEnv: EqualityEnv = EqualityEnv.empty
     val renv = RigidityEnv.apply(SortedSet.from(original.quantifiers))
-    val unification = ConstraintSolver2.fullyUnify(original.base, upgrade.base, Scope.Top, renv)
+    val unification = ConstraintSolver2.fullyUnify(original.base, upgrade.base, RegionScope.Top, renv)
     unification match {
       case Some(subst) => original.base == subst(upgrade.base)
       case None => false
@@ -124,7 +124,7 @@ object EffectUpgrade {
       val renv = RigidityEnv.ofRigidVars(original.quantifiers)
       val provenance = TypeConstraint.Provenance.ExpectEffect(originalEff, union, originalEff.loc)
       val constraint = TypeConstraint.Equality(union, originalEff, provenance)
-      EffUnification3.unifyAll(List(constraint), Scope.Top, renv) match {
+      EffUnification3.unifyAll(List(constraint), RegionScope.Top, renv) match {
         case Result.Ok(_) => true
         case Result.Err(_) => false
       }

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Occur}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, RegionScope}
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -414,7 +414,7 @@ object LambdaDrop {
   /** Returns a fresh [[Symbol.VarSym]] for a local def. */
   private def mkFreshLocalDefSym(defn: MonoAst.Def)(implicit flix: Flix): Symbol.VarSym = {
     val text = defn.sym.text + Flix.Delimiter + "loop"
-    Symbol.freshVarSym(text, BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
+    Symbol.freshVarSym(text, BoundBy.LocalDef, defn.sym.loc)(RegionScope.Top, flix)
   }
 
   /**
