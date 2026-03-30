@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 
 import scala.collection.immutable.SortedSet
 
@@ -43,7 +43,7 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
   /**
     * Returns the rigidity of the given `sym` according to this environment.
     */
-  def get(sym: Symbol.KindedTypeVarSym)(implicit scope: Scope): Rigidity = {
+  def get(sym: Symbol.KindedTypeVarSym)(implicit scope: RegionScope): Rigidity = {
     if (s.contains(sym) || sym.scope.isOutside(scope)) {
       Rigidity.Rigid
     } else {
@@ -54,17 +54,17 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
   /**
     * Returns true iff the given `sym` is rigid according to this environment.
     */
-  def isRigid(sym: Symbol.KindedTypeVarSym)(implicit scope: Scope): Boolean = get(sym) == Rigidity.Rigid
+  def isRigid(sym: Symbol.KindedTypeVarSym)(implicit scope: RegionScope): Boolean = get(sym) == Rigidity.Rigid
 
   /**
     * Returns true iff the given `sym` is flexible according to this environment.
     */
-  def isFlexible(sym: Symbol.KindedTypeVarSym)(implicit scope: Scope): Boolean = get(sym) == Rigidity.Flexible
+  def isFlexible(sym: Symbol.KindedTypeVarSym)(implicit scope: RegionScope): Boolean = get(sym) == Rigidity.Flexible
 
   /**
     * Returns the flexible vars from the given list.
     */
-  def getFlexibleVarsOf(tvars: List[Type.Var])(implicit scope: Scope): List[Type.Var] = tvars.filter(tvar => isFlexible(tvar.sym))
+  def getFlexibleVarsOf(tvars: List[Type.Var])(implicit scope: RegionScope): List[Type.Var] = tvars.filter(tvar => isFlexible(tvar.sym))
 
   /**
     * Marks the given `sym` as rigid in this environment.

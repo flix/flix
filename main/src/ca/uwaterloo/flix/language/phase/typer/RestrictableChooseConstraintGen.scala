@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.RestrictableEnumSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.visitExp
@@ -72,7 +72,7 @@ object RestrictableChooseConstraintGen {
     * Performs type inference on the given restrictable choose expression.
     */
   def visitRestrictableChoose(exp: KindedAst.Expr.RestrictableChoose)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
 
     exp match {
       case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
@@ -191,7 +191,7 @@ object RestrictableChooseConstraintGen {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: RegionScope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp match {
       case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc) =>
 
@@ -269,7 +269,7 @@ object RestrictableChooseConstraintGen {
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
   def visitOpenAs(exp0: KindedAst.Expr.OpenAs)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
     exp0 match {
       case KindedAst.Expr.OpenAs(RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
         val `enum` = root.restrictableEnums(sym)
@@ -309,7 +309,7 @@ object RestrictableChooseConstraintGen {
     *
     * The first and the second instantiation share all variables except the index.
     */
-  private def instantiatedEnumType(decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit scope: Scope, flix: Flix): (Type, Type.Var, List[Type]) = {
+  private def instantiatedEnumType(decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): (Type, Type.Var, List[Type]) = {
     // Make fresh vars for all the type parameters
     // This will unify with the enum type to extract the index
 
@@ -334,7 +334,7 @@ object RestrictableChooseConstraintGen {
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
   private def visitRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-    implicit val scope: Scope = c.getScope
+    implicit val scope: RegionScope = c.getScope
 
     /**
       * Local pattern visitor.

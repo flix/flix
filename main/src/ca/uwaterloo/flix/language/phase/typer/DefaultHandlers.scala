@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Typer.SharedContext
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
@@ -95,7 +95,7 @@ object DefaultHandlers {
         // Generate expected scheme for generating IO
         val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
         // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
-        if (!Scheme.equal(expectedSchemeIO, declaredScheme, traitEnv, eqEnv, Nil)(Scope.Top, flix)) {
+        if (!Scheme.equal(expectedSchemeIO, declaredScheme, traitEnv, eqEnv, Nil)(RegionScope.Top, flix)) {
           sctx.errors.add(TypeError.IllegalDefaultHandlerSignature(effSym, handlerSym, handlerSym.loc))
           errors = true
         }
@@ -119,8 +119,8 @@ object DefaultHandlers {
     * @return The expected scheme of the default handler
     */
   private def getDefaultHandlerTypeScheme(handledEff: Type, generatedPrimitiveEffects: Type, loc: SourceLocation)(implicit flix: Flix): Scheme = {
-    val a = Type.freshVar(Kind.Star, loc)(Scope.Top, flix)
-    val ef = Type.freshVar(Kind.Eff, loc)(Scope.Top, flix)
+    val a = Type.freshVar(Kind.Star, loc)(RegionScope.Top, flix)
+    val ef = Type.freshVar(Kind.Eff, loc)(RegionScope.Top, flix)
     Scheme(
       quantifiers = List(a.sym, ef.sym),
       tconstrs = Nil,

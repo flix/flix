@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.RigidityEnv
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, ConstraintSolverInterface, SubstitutionTree, TypeConstraint}
 import ca.uwaterloo.flix.util.Result
 
@@ -29,7 +29,7 @@ object TraitEnvironment {
     * Returns success iff type constraints `tconstrs0` entail type constraint `tconstr`, under trait environment `instances`.
     * That is, `tconstr` is true if all of `tconstrs0` are true.
     */
-  def entail(tconstrs0: List[TraitConstraint], tconstr0: TraitConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Result[Unit, List[TypeConstraint]] = {
+  def entail(tconstrs0: List[TraitConstraint], tconstr0: TraitConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: RegionScope, flix: Flix): Result[Unit, List[TypeConstraint]] = {
     val tconstr = tconstr0 match {
       case TraitConstraint(symUse, arg, loc) => TypeConstraint.Trait(symUse.sym, arg, loc)
     }

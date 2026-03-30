@@ -29,7 +29,7 @@ import scala.jdk.CollectionConverters.*
 object LambdaLift {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   /**
     * Performs lambda lifting on the given AST `root`.
