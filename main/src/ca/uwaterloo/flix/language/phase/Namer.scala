@@ -378,20 +378,18 @@ object Namer {
     val oldChildNs = modSym.ns :+ moduleName // [A, B, B] — the old path where cases used to live
     companion match {
       case NamedAst.Declaration.Enum(_, _, _, _, _, _, cases, _) =>
-        // First add all cases to the old path, then prepend the enum so it comes first in the list.
+        // Add cases to the old path for backwards compat (use A.B.B.{CaseName}).
         val t1 = cases.foldLeft(table) { (tbl, caseDecl) =>
           addDeclToTable(tbl, oldChildNs, caseDecl.sym.name, caseDecl)
         }
-        val t2 = addDeclToTable(t1, oldChildNs, moduleName, companion)
         // Also add same-named cases to the parent namespace for infallableLookupSym.
-        cases.filter(_.sym.name == moduleName).foldLeft(t2) { (tbl, caseDecl) =>
+        cases.filter(_.sym.name == moduleName).foldLeft(t1) { (tbl, caseDecl) =>
           appendDeclToTable(tbl, parentNs, moduleName, caseDecl)
         }
       case NamedAst.Declaration.Struct(_, _, _, _, _, fields, _) =>
-        val t1 = fields.foldLeft(table) { (tbl, fieldDecl) =>
+        fields.foldLeft(table) { (tbl, fieldDecl) =>
           addDeclToTable(tbl, oldChildNs, "€" + fieldDecl.sym.name, fieldDecl)
         }
-        addDeclToTable(t1, oldChildNs, moduleName, companion)
       case _ => table
     }
   }
