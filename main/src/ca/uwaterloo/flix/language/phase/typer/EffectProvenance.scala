@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.shared.EffSymOrRigidVar.{Eff, RigidVar}
-import ca.uwaterloo.flix.language.ast.shared.{EffSymOrRigidVar, Scope}
-import ca.uwaterloo.flix.language.ast.shared.{RegionScope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{EffSymOrRigidVar, RegionScope}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.Vertex.{ArgVertex, CstVertex, IOVertex, PureExplicitVertex, PureImplicitVertex, RigidVarVertex, SignatureVertex, VarVertex, sameType, symbol}
@@ -609,26 +608,8 @@ object EffectProvenance {
         case _ => mkSignatureErrors(xs, ys, s.symbols, sigLoc)
       }
       case (x, ys) => ys.filter(e => !sameType(x, e._1)).flatMap { case (y, provLoc) =>
-        val a =  mkEffectfulErrorBySink(x, y, provLoc) :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
+        val a = mkEffectfulErrorBySink(x, y, provLoc) :: mkExplicitPureError(y, x, provLoc) :: mkImplicitPureError(y, x, provLoc) :: Nil
         a.flatten
-        
-  private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: RegionScope, renv: RigidityEnv): List[Vertex] = tpe match {
-    case Type.Var(sym, _) => renv.get(sym) match {
-      case Rigidity.Flexible => List(VarVertex(sym))
-      case Rigidity.Rigid => List(RigidVarVertex(sym, constLoc))
-    }
-    case Type.Cst(tc, loc) => tc match {
-      case TypeConstructor.Pure => if (loc.isReal) List(PureExplicitVertex(loc)) else List(PureImplicitVertex(constLoc))
-      case TypeConstructor.Effect(sym, _) => sym match {
-        case Symbol.IO => vtpe match {
-          case SinkNode => List(IOVertex(loc))
-          case SourceNode | IntermediateNode => List(IOVertex(constLoc))
-        }
-        case Symbol.Debug => Nil
-        case eff => vtpe match {
-          case SinkNode  => List(CstVertex(eff, loc))
-          case SourceNode | IntermediateNode => List(CstVertex(eff, constLoc))
-        }
       }
     }
   }
@@ -658,9 +639,9 @@ object EffectProvenance {
     * @param vtpe     the role this type plays in the constraint graph
     * @return the list of vertices representing this type's effects
     */
-  private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: Scope, renv: RigidityEnv): List[Vertex] = {
+  private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: RegionScope, renv: RigidityEnv): List[Vertex] = {
 
-    def toVerticesFromType(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: Scope, renv: RigidityEnv): List[Vertex] = tpe match {
+    def toVerticesFromType(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: RegionScope, renv: RigidityEnv): List[Vertex] = tpe match {
       case Type.Var(sym, loc) => renv.get(sym) match {
         case Rigidity.Flexible => List(VarVertex(sym))
         case Rigidity.Rigid => List(RigidVarVertex(sym, loc))
