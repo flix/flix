@@ -104,7 +104,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
 
     @CompileTest
     def testInvokeURLClassLoaderConstructor01(): URLClassLoader \ IO =
-        new URLClassLoader()
+        new URLClassLoader(Vector#{})
 
     @CompileTest
     def testInvokeURLConstructor01(): URL \ IO =
