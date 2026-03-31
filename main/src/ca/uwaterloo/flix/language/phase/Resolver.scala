@@ -253,6 +253,7 @@ object Resolver {
     case UnkindedType.Ascribe(tpe, _, _) => getAliasUses(tpe)
     case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
     case _: UnkindedType.UnappliedAssocType => Nil
+    case _: UnkindedType.UnappliedNative => Nil
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
@@ -1209,24 +1210,39 @@ object Resolver {
       ResolvedAst.Expr.GetField(e, name, loc)
 
     case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
-      val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
       //
-      // Extract the native class from the erased type. We erase type aliases first
-      // because the type may be wrapped in an alias (e.g., `type JList = ##java.util.ArrayList`),
-      // and we need to look through that to find the underlying `Native` type constructor.
+      // Extract the native class from the type.
       //
-      getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
+      // We use `semiResolveType` (not `resolveType`) because generic Java types
+      // (e.g., Comparator) are represented as UnappliedNative, and `finishResolveType`
+      // would reject them as under-applied. In `new` expressions, type arguments are
+      // not required -- only the class identity matters.
+      //
+      // If the semi-resolved type is not a native class (e.g., it is a type alias),
+      // we fall through to `finishResolveType` to resolve the alias and try again.
+      //
+      val semi = semiResolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, ns0, root)
+      getNativeClassFromType(semi) match {
         case Some(clazz) =>
           val superScp = scp0.withSuperClass(Some(clazz))
           val cs = constructors.map(visitJvmConstructor(_, superScp))
           val ms = methods.map(visitJvmMethod(_, superScp))
           ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
         case None =>
-          val cs = constructors.map(visitJvmConstructor(_, scp0))
-          val ms = methods.map(visitJvmMethod(_, scp0))
-          val error = ResolutionError.IllegalNonJavaType(t, t.loc)
-          sctx.errors.add(error)
-          ResolvedAst.Expr.Error(error)
+          val t = finishResolveType(semi, taenv)
+          getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
+            case Some(clazz) =>
+              val superScp = scp0.withSuperClass(Some(clazz))
+              val cs = constructors.map(visitJvmConstructor(_, superScp))
+              val ms = methods.map(visitJvmMethod(_, superScp))
+              ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
+            case None =>
+              val cs = constructors.map(visitJvmConstructor(_, scp0))
+              val ms = methods.map(visitJvmMethod(_, scp0))
+              val error = ResolutionError.IllegalNonJavaType(t, t.loc)
+              sctx.errors.add(error)
+              ResolvedAst.Expr.Error(error)
+          }
       }
 
     case NamedAst.Expr.NewChannel(exp, loc) =>
@@ -2513,6 +2529,17 @@ object Resolver {
             }
         }
 
+      case UnkindedType.UnappliedNative(clazz, loc) =>
+        val expectedArity = clazz.getTypeParameters.length
+        if (targs.length < expectedArity) {
+          sctx.errors.add(ResolutionError.IllegalRawJavaType(clazz, expectedArity, loc))
+          UnkindedType.Error(loc)
+        } else {
+          val cst = UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
+          val resolvedArgs = targs.map(finishResolveType(_, taenv))
+          UnkindedType.mkApply(cst, resolvedArgs, tpe0.loc)
+        }
+
       case _: UnkindedType.Var =>
         UnkindedType.mkApply(baseType, targs.map(finishResolveType(_, taenv)), tpe0.loc)
 
@@ -3356,6 +3383,7 @@ object Resolver {
     */
   private def getNativeClassFromType(tpe: UnkindedType): Option[Class[?]] = tpe match {
     case UnkindedType.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
+    case UnkindedType.UnappliedNative(clazz, _) => Some(clazz)
     case UnkindedType.Apply(t1, _, _) => getNativeClassFromType(t1)
     case _ => None
   }
@@ -3383,7 +3411,7 @@ object Resolver {
     case "java.util.function.DoubleConsumer" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkUnit(loc), loc)
     case "java.util.function.DoublePredicate" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc)
     case "java.util.function.DoubleUnaryOperator" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc)
-    case _ => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
+    case _ => UnkindedType.UnappliedNative(clazz, loc)
   }
 
   /**
