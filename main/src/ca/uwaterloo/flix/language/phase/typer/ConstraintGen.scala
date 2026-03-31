@@ -1001,7 +1001,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, constructors, methods, loc) =>
+      case Expr.NewObject(_, clazz, _, constructors, methods, _, loc) =>
         constructors.foreach(visitJvmConstructor)
         methods.foreach(visitJvmMethod)
         val numTypeParams = clazz.getTypeParameters.length

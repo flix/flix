@@ -1211,38 +1211,22 @@ object Resolver {
 
     case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
       //
-      // Extract the native class from the type.
+      // Fully resolve the type and extract the native class and type arguments.
       //
-      // We use `semiResolveType` (not `resolveType`) because generic Java types
-      // (e.g., Comparator) are represented as UnappliedNative, and `finishResolveType`
-      // would reject them as under-applied. In `new` expressions, type arguments are
-      // not required -- only the class identity matters.
-      //
-      // If the semi-resolved type is not a native class (e.g., it is a type alias),
-      // we fall through to `finishResolveType` to resolve the alias and try again.
-      //
-      val semi = semiResolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, ns0, root)
-      getNativeClassFromType(semi) match {
+      val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+      getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
         case Some(clazz) =>
+          val targs = t.typeArguments
           val superScp = scp0.withSuperClass(Some(clazz))
           val cs = constructors.map(visitJvmConstructor(_, superScp))
           val ms = methods.map(visitJvmMethod(_, superScp))
-          ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
+          ResolvedAst.Expr.NewObject(name, clazz, targs, cs, ms, loc)
         case None =>
-          val t = finishResolveType(semi, taenv)
-          getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
-            case Some(clazz) =>
-              val superScp = scp0.withSuperClass(Some(clazz))
-              val cs = constructors.map(visitJvmConstructor(_, superScp))
-              val ms = methods.map(visitJvmMethod(_, superScp))
-              ResolvedAst.Expr.NewObject(name, clazz, cs, ms, loc)
-            case None =>
-              val cs = constructors.map(visitJvmConstructor(_, scp0))
-              val ms = methods.map(visitJvmMethod(_, scp0))
-              val error = ResolutionError.IllegalNonJavaType(t, t.loc)
-              sctx.errors.add(error)
-              ResolvedAst.Expr.Error(error)
-          }
+          val cs = constructors.map(visitJvmConstructor(_, scp0))
+          val ms = methods.map(visitJvmMethod(_, scp0))
+          val error = ResolutionError.IllegalNonJavaType(t, t.loc)
+          sctx.errors.add(error)
+          ResolvedAst.Expr.Error(error)
       }
 
     case NamedAst.Expr.NewChannel(exp, loc) =>

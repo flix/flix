@@ -43,7 +43,7 @@ pub mod Adaptor {
             let b = unchecked_cast(o2 as a);
             Order.compare(a, b) |> Comparison.toInt32
         };
-        new Comparator {
+        new Comparator[Object] {
             def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 f1(t, u)
         }
