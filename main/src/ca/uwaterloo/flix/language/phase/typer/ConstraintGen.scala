@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, RegionScope, VarT
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Subeffecting}
 
-import java.lang.reflect.Modifier
+import java.lang.reflect.{Modifier, ParameterizedType, TypeVariable}
 
 /**
   * This phase generates a list of type constraints, which include
@@ -1001,19 +1001,29 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, _, constructors, methods, _, loc) =>
+      case Expr.NewObject(_, clazz, targs, constructors, methods, tvar, loc) =>
         constructors.foreach(visitJvmConstructor)
-        methods.foreach(visitJvmMethod)
         val numTypeParams = clazz.getTypeParameters.length
         val resTpe = if (numTypeParams > 0) {
           val baseTpe = Type.mkNative(clazz, loc)
-          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+          val typeArgs = if (targs.nonEmpty && targs.length == numTypeParams) targs
+                         else List.fill(numTypeParams)(freshVar(Kind.Star, loc))
           Type.mkApply(baseTpe, typeArgs, loc)
         } else {
           Type.getFlixType(clazz)
         }
+        c.unifyType(tvar, resTpe, loc)
+
+        // Build substitution from Java type variable names to Flix types.
+        val substMap: Map[String, Type] = if (numTypeParams > 0) {
+          clazz.getTypeParameters.map(_.getName).zip(resTpe.typeArguments).toMap
+        } else Map.empty
+
+        // Constrain each method's params against the resolved Java method signature.
+        methods.foreach(m => visitNewObjectMethod(m, clazz, substMap))
+
         val resEff = Type.IO
-        (resTpe, resEff)
+        (tvar, resEff)
 
       case Expr.NewChannel(exp, tvar, loc) =>
         val elmTpe = freshVar(Kind.Star, loc)
@@ -1327,6 +1337,66 @@ object ConstraintGen {
       val (bodyTpe, bodyEff) = visitExp(exp)
       c.expectType(expected = returnTpe, actual = bodyTpe, exp.loc)
       c.expectType(expected = eff, actual = bodyEff, exp.loc)
+  }
+
+  /**
+    * Generates constraints for a JVM method in a NewObject expression,
+    * including constraints that the Flix method's parameter and return types
+    * match the resolved Java method signature.
+    */
+  private def visitNewObjectMethod(method: KindedAst.JvmMethod, clazz: Class[?], substMap: Map[String, Type])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
+    case KindedAst.JvmMethod(_, ident, fparams, exp, returnTpe, eff, _) =>
+      // Constrain each formal param to its declared type.
+      fparams.foreach {
+        case KindedAst.FormalParam(sym, tpe, _, loc) =>
+          c.unifyType(sym.tvar, tpe, loc)
+      }
+
+      val (bodyTpe, bodyEff) = visitExp(exp)
+      c.expectType(expected = returnTpe, actual = bodyTpe, exp.loc)
+      c.expectType(expected = eff, actual = bodyEff, exp.loc)
+
+      // Find the matching Java method by name and arity (excluding 'this' param).
+      val flixParamCount = fparams.tail.length
+      val javaMethod = JvmUtils.getInstanceMethods(clazz)
+        .find(m => m.getName == ident.name && m.getParameterCount == flixParamCount)
+
+      javaMethod.foreach { jm =>
+        // Constrain each Flix param type against the resolved Java param type.
+        val resolvedParams = jm.getGenericParameterTypes.toList.map(resolveJavaType(_, substMap, ident.loc))
+        fparams.tail.zip(resolvedParams).foreach {
+          case (KindedAst.FormalParam(_, tpe, _, paramLoc), expectedType) =>
+            c.expectType(expected = expectedType, actual = tpe, paramLoc)
+        }
+
+        // Constrain the return type.
+        val resolvedRet = resolveJavaType(jm.getGenericReturnType, substMap, ident.loc)
+        if (jm.getReturnType != java.lang.Void.TYPE) {
+          c.expectType(expected = resolvedRet, actual = returnTpe, ident.loc)
+        }
+      }
+  }
+
+  /**
+    * Resolves a `java.lang.reflect.Type` to a Flix [[Type]] using the given
+    * substitution map. Falls back to the erased (Object-filled) type.
+    */
+  private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type], loc: SourceLocation): Type = javaType match {
+    case tv: TypeVariable[_] =>
+      substMap.getOrElse(tv.getName, Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc))
+    case pt: ParameterizedType =>
+      pt.getRawType match {
+        case rawClazz: Class[_] =>
+          val base = Type.getFlixType(rawClazz)
+          val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap, loc))
+          Type.mkApply(base, resolvedArgs, loc)
+        case _ =>
+          Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
+      }
+    case clazz: Class[_] =>
+      Type.instantiateJavaTypeWithObjectArgs(clazz, loc)
+    case _ =>
+      Type.instantiateJavaTypeWithObjectArgs(classOf[Object], loc)
   }
 
   /**

@@ -1216,7 +1216,7 @@ object Resolver {
       val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
       getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
         case Some(clazz) =>
-          val targs = t.typeArguments
+          val targs = UnkindedType.eraseAliases(t).typeArguments
           val superScp = scp0.withSuperClass(Some(clazz))
           val cs = constructors.map(visitJvmConstructor(_, superScp))
           val ms = methods.map(visitJvmMethod(_, superScp))
