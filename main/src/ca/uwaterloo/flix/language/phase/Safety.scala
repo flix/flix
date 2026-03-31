@@ -838,26 +838,26 @@ object Safety {
       }
 
       // Check for missing abstract method implementations (by name + arity).
-      val flixMethodNameArity = methods.map {
+      val flixMethodNameAndArity = methods.map {
         case JvmMethod(_, ident, fparams, _, _, _, _) => (ident.name, fparams.tail.length)
       }.toSet
 
       val javaMethods = JvmUtils.getInstanceMethods(clazz)
-      val objectMethodNameArity = JvmUtils.getInstanceMethods(classOf[Object])
+      val objectMethodNameAndArity = JvmUtils.getInstanceMethods(classOf[Object])
         .map(m => (m.getName, m.getParameterCount)).toSet
 
       val unimplementedMethods = javaMethods.filter { m =>
         isAbstractMethod(m) &&
-        !objectMethodNameArity.contains((m.getName, m.getParameterCount)) &&
-        !flixMethodNameArity.contains((m.getName, m.getParameterCount))
+        !objectMethodNameAndArity.contains((m.getName, m.getParameterCount)) &&
+        !flixMethodNameAndArity.contains((m.getName, m.getParameterCount))
       }
       unimplementedMethods.foreach(m => sctx.errors.add(NewObjectMissingMethod(clazz, m, loc)))
 
       // Check for undefined methods (Flix methods not matching any Java method).
-      val javaMethodNameArity = javaMethods.map(m => (m.getName, m.getParameterCount)).toSet
+      val javaMethodNameAndArity = javaMethods.map(m => (m.getName, m.getParameterCount)).toSet
       val undefinedMethods = methods.filter {
         case JvmMethod(_, ident, fparams, _, _, _, _) =>
-          !javaMethodNameArity.contains((ident.name, fparams.tail.length))
+          !javaMethodNameAndArity.contains((ident.name, fparams.tail.length))
       }
       undefinedMethods.foreach(m => sctx.errors.add(NewObjectUndefinedMethod(clazz, m.ident.name, m.loc)))
 
