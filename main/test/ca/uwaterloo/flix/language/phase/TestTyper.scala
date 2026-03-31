@@ -2934,7 +2934,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    l.add(123)
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.02") {
@@ -2946,7 +2946,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    l.add("hello")
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.03") {
@@ -2958,7 +2958,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    l.add(true)
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.04") {
@@ -2970,7 +2970,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    l.add(1.0f64)
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.05") {
@@ -2983,7 +2983,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    ()
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.06") {
@@ -2996,7 +2996,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    ()
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.07") {
@@ -3008,7 +3008,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    s.add("hello")
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.08") {
@@ -3022,7 +3022,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    ()
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.09") {
@@ -3034,7 +3034,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    l.add("x")
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("Test.JavaGenericCheck.Neg.10") {
@@ -3047,7 +3047,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
            |    ()
          """.stripMargin
     val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   // --- Java Generic Type Checking: Negative Tests (Bug 2 - wrong return type) ---
