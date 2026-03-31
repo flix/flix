@@ -1901,7 +1901,6 @@ object Parser2 {
         case TokenKind.ListHash => listLiteralExpr()
         case TokenKind.SetHash => setLiteralExpr()
         case TokenKind.MapHash => mapLiteralExpr()
-        case TokenKind.DotDotDot => dotdotdotLiteral()
         case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
@@ -2620,22 +2619,6 @@ object Parser2 {
       }
       expression()
       close(mark, TreeKind.Expr.LiteralMapKeyValueFragment)
-    }
-
-    private def dotdotdotLiteral()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.DotDotDot))
-      val mark = open()
-      expect(TokenKind.DotDotDot)
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.Expression,
-        getItem = () => expression(),
-        checkForItem = _.isFirstInExp,
-        breakWhen = _.isRecoverInExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR
-      )
-      close(mark, TreeKind.Expr.LiteralVector)
     }
 
     private def checkedTypeCastExpr()(implicit s: State): Mark.Closed = {
