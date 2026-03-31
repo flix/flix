@@ -264,7 +264,7 @@ mod Fs.FsLayer {
             let jiter = bs.iterator();
             def loop(acc) = {
                 if (jiter.hasNext())
-                    let path = unchecked_cast(jiter.next() as Path);
+                    let path = jiter.next();
                     let rel = basePath.relativize(path);
                     if (matcher.matches(rel))
                         loop(path.toString() :: acc)
