@@ -753,10 +753,12 @@ object Kinder {
         val exp = visitExp(exp0, kenv0, root)
         KindedAst.Expr.PutStaticField(field, exp, loc)
 
-      case ResolvedAst.Expr.NewObject(name, clazz, constructors0, methods0, loc) =>
+      case ResolvedAst.Expr.NewObject(name, clazz, targs0, constructors0, methods0, loc) =>
+        val targs = targs0.map(visitType(_, Kind.Star, kenv0, root))
         val constructors = constructors0.map(visitJvmConstructor(_, kenv0, root))
         val methods = methods0.map(visitJvmMethod(_, kenv0, root))
-        KindedAst.Expr.NewObject(name, clazz, constructors, methods, loc)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        KindedAst.Expr.NewObject(name, clazz, targs, constructors, methods, tvar, loc)
 
       case ResolvedAst.Expr.NewChannel(exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
