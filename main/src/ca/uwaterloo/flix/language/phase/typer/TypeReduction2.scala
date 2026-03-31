@@ -565,7 +565,7 @@ object TypeReduction2 {
     *
     * Example 2: `Collections.singletonList("hello")` with classTypeArgs = [] (static)
     *   - methodTypeArgs = [?t] (fresh var for `T`)
-    *   - emits no constraint (?t is a Type.Var, skipped)
+    *   - emits Equality(?t, String) for the `T` parameter
     */
   private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): (Type, List[TypeConstraint]) = {
     val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
@@ -584,10 +584,11 @@ object TypeReduction2 {
     * `add(E element)`), resolves the expected type via the substitution map and emits
     * an equality constraint between the expected type and the actual argument type.
     *
-    * Constraints are only emitted when the expected type is concrete (not a type variable).
-    * When the expected type is a type variable, the Java interop pattern typically uses
-    * `unchecked_cast(x as Object)` for method resolution, which would over-constrain
-    * the type parameter if we emitted a constraint.
+    *
+    * Constraints are skipped when the argument type is `java.lang.Object` — this is the
+    * erased type produced by `unchecked_cast(x as Object)` in polymorphic code where method
+    * lookup requires a concrete type. Emitting a constraint in that case would force the
+    * type variable to `Object`, conflicting with the expected return type.
     */
   private def mkArgConstraints(method: Method, typeArgs: List[Type],
     argTypes: List[Type], scope: RegionScope, loc: SourceLocation)
@@ -596,15 +597,20 @@ object TypeReduction2 {
     val genericParamTypes = method.getGenericParameterTypes
     argTypes.zip(genericParamTypes).flatMap { case (argType, genericParamType) =>
       genericParamType match {
-        case tv: TypeVariable[_] =>
-          substMap.get(tv.getName).flatMap { expectedType =>
-            if (expectedType.isInstanceOf[Type.Var]) None
-            else Some(TypeConstraint.Equality(expectedType, argType,
-              TypeConstraint.Provenance.Match(expectedType, argType, loc)))
+        case tv: TypeVariable[_] if !isJavaObject(argType) =>
+          substMap.get(tv.getName).map { expectedType =>
+            TypeConstraint.Equality(expectedType, argType,
+              TypeConstraint.Provenance.Match(expectedType, argType, loc))
           }
         case _ => None
       }
     }
+  }
+
+  /** Returns `true` if the type is `java.lang.Object`. */
+  private def isJavaObject(tpe: Type): Boolean = tpe match {
+    case Type.Cst(TypeConstructor.Native(clazz), _) => clazz == classOf[Object]
+    case _ => false
   }
 
   /**
