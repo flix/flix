@@ -155,9 +155,9 @@ object TypeReduction2 {
           lookupMethod(reducedTpe, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
               val classTypeArgs = extractClassTypeArgs(method, reducedTpe, scope, loc)
-              val (tpe, genericCs) = instantiateMethod(method, classTypeArgs, reducedTpes, scope, loc)
+              val (tpe, cs0) = instantiateMethod(method, classTypeArgs, reducedTpes, scope, loc)
               progress.markProgress()
-              (tpe, cs ::: genericCs)
+              (tpe, cs ::: cs0)
             case _ => (unresolved, cs)
           }
 
@@ -166,9 +166,9 @@ object TypeReduction2 {
           val cs = css.flatten
           lookupStaticMethod(clazz, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              val (tpe, genericCs) = instantiateMethod(method, Nil, reducedTpes, scope, loc)
+              val (tpe, cs0) = instantiateMethod(method, Nil, reducedTpes, scope, loc)
               progress.markProgress()
-              (tpe, cs ::: genericCs)
+              (tpe, cs ::: cs0)
             case _ => (unresolved, cs)
           }
       }
