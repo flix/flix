@@ -230,7 +230,7 @@ object UseGraph {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+    case Expr.NewObject(_, _, _, _, _, constructors, methods, _) =>
       visitExps(constructors.map(_.exp)) ++ visitExps(methods.map(_.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>

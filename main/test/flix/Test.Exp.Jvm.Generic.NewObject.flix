@@ -306,26 +306,26 @@ mod Test.Exp.Jvm.Generic.NewObject {
 
     @Test
     def testNewObjectTargsCallableRuntime01(): Unit \ {Assert, IO} =
-        let c = new Callable[String] {
+        let c: Callable[String] = new Callable[String] {
             def call(_this: Callable[String]): String =
                 "hello"
         };
         let r: String = c.call();
         assertEq(expected = "hello", r)
 
-    // --- Backward compatibility: raw types (no type args) still work ---
+    // --- Backward compatibility: explicit Object type arg works like pre-targs behavior ---
 
     @Test
     def testNewObjectTargsBackwardCompat01(): Unit \ {Assert, IO} =
-        let c = new Comparator {
-            def compare(_this: Comparator, _t: Object, _u: Object): Int32 = 0
+        let c = new Comparator[Object] {
+            def compare(_this: Comparator[Object], _t: Object, _u: Object): Int32 = 0
         };
         assertEq(expected = 0, c.compare("foo", "bar"))
 
     @Test
     def testNewObjectTargsBackwardCompat02(): Unit \ {Assert, IO} =
-        let c: Comparator[String] = new Comparator {
-            def compare(_this: Comparator, t: Object, u: Object): Int32 =
+        let c: Comparator[String] = new Comparator[Object] {
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)

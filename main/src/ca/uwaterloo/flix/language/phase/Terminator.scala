@@ -751,10 +751,10 @@ object Terminator {
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)
           Expr.PutStaticField(field, e, tpe, eff, loc)
 
-        case Expr.NewObject(name, clazz, tpe, eff, constructors, methods0, loc) =>
+        case Expr.NewObject(name, clazz, targs, tpe, eff, constructors, methods0, loc) =>
           checkForbidden(contexts, loc)
           val ms = methods0.map(visitJvmMethod(contexts, _))
-          Expr.NewObject(name, clazz, tpe, eff, constructors, ms, loc)
+          Expr.NewObject(name, clazz, targs, tpe, eff, constructors, ms, loc)
 
         case Expr.NewChannel(exp1, tpe, eff, loc) =>
           checkForbidden(contexts, loc)

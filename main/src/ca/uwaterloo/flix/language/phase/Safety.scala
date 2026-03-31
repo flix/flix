@@ -308,7 +308,7 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, constructors, methods, loc) =>
+    case newObject@Expr.NewObject(_, _, _, _, _, constructors, methods, loc) =>
       checkPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
       constructors.foreach(c => visitExp(c.exp))
@@ -795,7 +795,7 @@ object Safety {
     *   - `methods` must not let control effects escape.
     */
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, tpe0, _, cs, methods, loc) =>
+    case Expr.NewObject(_, clazz, targs, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
       // `clazz` must be an interface or have a non-private constructor without arguments
       // (unless user-defined constructors are provided).
@@ -841,8 +841,9 @@ object Safety {
       val implemented = flixMethods.keySet
 
       // Build a substitution from Java type variable names to Flix types
-      // using the expression's type arguments (e.g., Comparator[String] gives T -> String).
-      val substMap = buildTypeVarSubst(clazz, tpe)
+      // using the explicit type arguments from the source (e.g., new Comparator[String] gives T -> String).
+      // Falls back to inferred type arguments if no explicit targs are provided.
+      val substMap = if (targs.nonEmpty) buildTypeVarSubstFromTargs(clazz, targs) else buildTypeVarSubst(clazz, tpe)
 
       // For each Java method, compute valid signatures: erased, and generic if type args available.
       val javaMethods = JvmUtils.getInstanceMethods(clazz)
@@ -891,8 +892,8 @@ object Safety {
   private def erasedSignature(m: java.lang.reflect.Method): MethodSignature = {
     MethodSignature(
       m.getName,
-      m.getParameterTypes.toList.map(Type.getFlixTypeApplied(_, SourceLocation.Unknown)),
-      Type.getFlixTypeApplied(m.getReturnType, SourceLocation.Unknown)
+      m.getParameterTypes.toList.map(Type.instantiateJavaTypeWithObjectArgs(_, SourceLocation.Unknown)),
+      Type.instantiateJavaTypeWithObjectArgs(m.getReturnType, SourceLocation.Unknown)
     )
   }
 
@@ -928,13 +929,24 @@ object Safety {
       Map.empty
   }
 
+  /** Builds a type var substitution from the explicit type arguments in the source code. */
+  private def buildTypeVarSubstFromTargs(clazz: Class[?], targs: List[Type]): Map[String, Type] = {
+    val classParamNames = clazz.getTypeParameters.map(_.getName)
+    if (classParamNames.length == targs.length)
+      classParamNames.zip(targs).collect {
+        case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
+      }.toMap
+    else
+      Map.empty
+  }
+
   /**
     * Resolves a `java.lang.reflect.Type` to a Flix [[Type]] using the given
     * substitution map. Falls back to the erased type for unresolvable cases.
     */
   private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type]): Type = javaType match {
     case tv: java.lang.reflect.TypeVariable[_] =>
-      substMap.getOrElse(tv.getName, Type.getFlixTypeApplied(classOf[Object], SourceLocation.Unknown))
+      substMap.getOrElse(tv.getName, Type.instantiateJavaTypeWithObjectArgs(classOf[Object], SourceLocation.Unknown))
     case pt: java.lang.reflect.ParameterizedType =>
       // e.g., Iterator<T> — resolve the raw type and each type argument.
       pt.getRawType match {
@@ -943,13 +955,13 @@ object Safety {
           val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap))
           Type.mkApply(base, resolvedArgs, SourceLocation.Unknown)
         case _ =>
-          Type.getFlixTypeApplied(classOf[Object], SourceLocation.Unknown)
+          Type.instantiateJavaTypeWithObjectArgs(classOf[Object], SourceLocation.Unknown)
       }
     case clazz: Class[_] =>
-      Type.getFlixTypeApplied(clazz, SourceLocation.Unknown)
+      Type.instantiateJavaTypeWithObjectArgs(clazz, SourceLocation.Unknown)
     case _ =>
       // GenericArrayType, WildcardType: fall back to erased type.
-      Type.getFlixTypeApplied(classOf[Object], SourceLocation.Unknown)
+      Type.instantiateJavaTypeWithObjectArgs(classOf[Object], SourceLocation.Unknown)
   }
 
   /** Return `true` if `clazz` has a non-private constructor with zero arguments. */

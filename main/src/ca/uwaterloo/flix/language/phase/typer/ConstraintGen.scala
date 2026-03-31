@@ -1007,8 +1007,10 @@ object ConstraintGen {
         val numTypeParams = clazz.getTypeParameters.length
         val resTpe = if (numTypeParams > 0) {
           val baseTpe = Type.mkNative(clazz, loc)
-          val typeArgs = if (targs.nonEmpty) targs
-                         else List.fill(numTypeParams)(freshVar(Kind.Star, loc))
+          // Always use fresh type variables for the Flix type so it can unify with
+          // the expected type from context. The explicit targs (if any) are used
+          // for Java-level method signature checking in Safety, not here.
+          val typeArgs = List.fill(numTypeParams)(freshVar(Kind.Star, loc))
           Type.mkApply(baseTpe, typeArgs, loc)
         } else {
           Type.getFlixType(clazz)

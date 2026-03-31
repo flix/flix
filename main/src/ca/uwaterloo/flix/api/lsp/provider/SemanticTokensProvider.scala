@@ -643,7 +643,7 @@ object SemanticTokensProvider {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+    case Expr.NewObject(_, _, _, _, _, constructors, methods, _) =>
       constructors.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, c) => acc ++ visitExp(c.exp)
       } ++ methods.foldLeft(Iterator.empty[SemanticToken]) {
