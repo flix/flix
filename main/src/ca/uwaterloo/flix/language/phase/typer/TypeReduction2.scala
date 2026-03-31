@@ -155,12 +155,9 @@ object TypeReduction2 {
           lookupMethod(reducedTpe, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
               val classTypeArgs = extractClassTypeArgs(method, reducedTpe, scope, loc)
-              val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
-              val allTypeArgs = classTypeArgs ++ methodTypeArgs
+              val (tpe, genericCs) = instantiateMethod(method, classTypeArgs, reducedTpes, scope, loc)
               progress.markProgress()
-              val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
-              val genericCs = buildGenericArgConstraints(method, allTypeArgs, reducedTpes, scope, loc)
-              (Type.mkApply(base, allTypeArgs, loc), cs ::: genericCs)
+              (tpe, cs ::: genericCs)
             case _ => (unresolved, cs)
           }
 
@@ -169,11 +166,9 @@ object TypeReduction2 {
           val cs = css.flatten
           lookupStaticMethod(clazz, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
+              val (tpe, genericCs) = instantiateMethod(method, Nil, reducedTpes, scope, loc)
               progress.markProgress()
-              val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
-              val genericCs = buildGenericArgConstraints(method, methodTypeArgs, reducedTpes, scope, loc)
-              (Type.mkApply(base, methodTypeArgs, loc), cs ::: genericCs)
+              (tpe, cs ::: genericCs)
             case _ => (unresolved, cs)
           }
       }
@@ -558,6 +553,27 @@ object TypeReduction2 {
       classSubst ++ methodSubst
     } else
       Map.empty
+  }
+
+  /**
+    * Instantiates a resolved Java method: creates fresh type variables for method-level
+    * type parameters, builds the applied method type, and emits generic argument constraints.
+    *
+    * Example 1: `ArrayList[String].add("hello")` with classTypeArgs = [String]
+    *   - methodTypeArgs = [] (add has no method-level type params)
+    *   - emits Equality(String, String) for the `E` parameter
+    *
+    * Example 2: `Collections.singletonList("hello")` with classTypeArgs = [] (static)
+    *   - methodTypeArgs = [?t] (fresh var for `T`)
+    *   - emits no constraint (?t is a Type.Var, skipped)
+    */
+  private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): (Type, List[TypeConstraint]) = {
+    val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
+    val allTypeArgs = classTypeArgs ++ methodTypeArgs
+    val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
+    val tpe = Type.mkApply(base, allTypeArgs, loc)
+    val cs = buildGenericArgConstraints(method, allTypeArgs, argTypes, scope, loc)
+    (tpe, cs)
   }
 
   /**
