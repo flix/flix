@@ -33,24 +33,25 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type, scope: RegionScope, renv: RigidityEnv)(implicit progress: Progress, eqenv: EqualityEnv, flix: Flix): Type = tpe0 match {
-    case t: Type.Var => t
+  def reduce(tpe0: Type, scope: RegionScope, renv: RigidityEnv)(implicit progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = tpe0 match {
+    case t: Type.Var => (t, Nil)
 
-    case t: Type.Cst => t
+    case t: Type.Cst => (t, Nil)
 
     case Type.Apply(tpe1, tpe2, loc) =>
-      val t1 = reduce(tpe1, scope, renv)
-      val t2 = reduce(tpe2, scope, renv)
+      val (t1, cs1) = reduce(tpe1, scope, renv)
+      val (t2, cs2) = reduce(tpe2, scope, renv)
       // Performance: Reuse this, if possible.
-      if ((t1 eq tpe1) && (t2 eq tpe2))
+      val tpe = if ((t1 eq tpe1) && (t2 eq tpe2))
         tpe0
       else
         Type.Apply(t1, t2, loc)
+      (tpe, cs1 ::: cs2)
 
-    case Type.Alias(_, _, tpe, _) => tpe
+    case Type.Alias(_, _, tpe, _) => (tpe, Nil)
 
     case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
-      val t = reduce(tpe, scope, renv)
+      val (t, cs) = reduce(tpe, scope, renv)
 
       // Get all the associated types from the context
       val assocOpt = eqenv.getAssocDef(sym, t)
@@ -83,94 +84,104 @@ object TypeReduction2 {
 
       matches match {
         // Case 1: No match. Can't reduce the type.
-        case None => tpe0
+        case None => (tpe0, cs)
 
         // Case 2: One match. Use it.
         case Some(newTpe) =>
           progress.markProgress()
-          newTpe
+          (newTpe, cs)
       }
 
     case Type.JvmToType(tpe, loc) =>
-      reduce(tpe, scope, renv) match {
+      val (inner, innerCs) = reduce(tpe, scope, renv)
+      inner match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          instantiateJavaTypeWithFreshVars(constructor.getDeclaringClass, scope, loc)
+          (instantiateJavaTypeWithFreshVars(constructor.getDeclaringClass, scope, loc), innerCs)
 
         case Type.Cst(TypeConstructor.JvmField(field), _) =>
           progress.markProgress()
-          instantiateJavaTypeWithFreshVars(field.getType, scope, loc)
+          (instantiateJavaTypeWithFreshVars(field.getType, scope, loc), innerCs)
 
         case t => t.typeConstructor match {
           case Some(TypeConstructor.JvmMethod(method)) =>
             progress.markProgress()
-            resolveMethodReturnType(method, t.typeArguments, scope, loc)
+            (resolveMethodReturnType(method, t.typeArguments, scope, loc), innerCs)
 
-          case _ => Type.JvmToType(t, loc)
+          case _ => (Type.JvmToType(t, loc), innerCs)
         }
       }
 
     case Type.JvmToEff(tpe, loc) =>
-      reduce(tpe, scope, renv) match {
+      val (inner, innerCs) = reduce(tpe, scope, renv)
+      inner match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
-          PrimitiveEffects.getConstructorEffs(constructor, loc)
+          (PrimitiveEffects.getConstructorEffs(constructor, loc), innerCs)
 
         case t => t.typeConstructor match {
           case Some(TypeConstructor.JvmMethod(method)) =>
             progress.markProgress()
-            PrimitiveEffects.getMethodEffs(method, loc)
+            (PrimitiveEffects.getMethodEffs(method, loc), innerCs)
 
-          case _ => Type.JvmToEff(t, loc)
+          case _ => (Type.JvmToEff(t, loc), innerCs)
         }
       }
 
     case unresolved@Type.UnresolvedJvmType(member, loc) =>
-      member.map(reduce(_, scope, renv)) match {
+      member match {
         case JvmMember.JvmConstructor(clazz, tpes) =>
-          lookupConstructor(clazz, tpes) match {
+          val (reducedTpes, css) = tpes.map(reduce(_, scope, renv)).unzip
+          val memberCs = css.flatten
+          lookupConstructor(clazz, reducedTpes) match {
             case JavaConstructorResolution.Resolved(constructor) =>
               progress.markProgress()
-              Type.Cst(TypeConstructor.JvmConstructor(constructor), loc)
-            case _ => unresolved
+              (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), memberCs)
+            case _ => (unresolved, memberCs)
           }
 
         case JvmMember.JvmField(_, tpe, name) =>
-          lookupField(tpe, name.name) match {
+          val (reducedTpe, memberCs) = reduce(tpe, scope, renv)
+          lookupField(reducedTpe, name.name) match {
             case JavaFieldResolution.Resolved(field) =>
               progress.markProgress()
-              Type.Cst(TypeConstructor.JvmField(field), loc)
-            case _ => unresolved
+              (Type.Cst(TypeConstructor.JvmField(field), loc), memberCs)
+            case _ => (unresolved, memberCs)
           }
 
         case JvmMember.JvmMethod(tpe, name, tpes) =>
-          lookupMethod(tpe, name.name, tpes) match {
+          val (reducedTpe, cs0) = reduce(tpe, scope, renv)
+          val (reducedTpes, css) = tpes.map(reduce(_, scope, renv)).unzip
+          val memberCs = cs0 ::: css.flatten
+          lookupMethod(reducedTpe, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              val classTypeArgs = extractClassTypeArgs(method, tpe, scope, loc)
+              val classTypeArgs = extractClassTypeArgs(method, reducedTpe, scope, loc)
               val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
               val allTypeArgs = classTypeArgs ++ methodTypeArgs
-              if (genericArgTypesMatch(method, allTypeArgs, tpes)) {
+              if (genericArgTypesMatch(method, allTypeArgs, reducedTpes)) {
                 progress.markProgress()
                 val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
-                Type.mkApply(base, allTypeArgs, loc)
+                (Type.mkApply(base, allTypeArgs, loc), memberCs)
               } else {
-                unresolved
+                (unresolved, memberCs)
               }
-            case _ => unresolved
+            case _ => (unresolved, memberCs)
           }
 
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
-          lookupStaticMethod(clazz, name.name, tpes) match {
+          val (reducedTpes, css) = tpes.map(reduce(_, scope, renv)).unzip
+          val memberCs = css.flatten
+          lookupStaticMethod(clazz, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
               val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
-              if (genericArgTypesMatch(method, methodTypeArgs, tpes)) {
+              if (genericArgTypesMatch(method, methodTypeArgs, reducedTpes)) {
                 progress.markProgress()
                 val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
-                Type.mkApply(base, methodTypeArgs, loc)
+                (Type.mkApply(base, methodTypeArgs, loc), memberCs)
               } else {
-                unresolved
+                (unresolved, memberCs)
               }
-            case _ => unresolved
+            case _ => (unresolved, memberCs)
           }
       }
   }

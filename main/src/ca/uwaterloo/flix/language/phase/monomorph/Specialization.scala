@@ -1321,7 +1321,8 @@ object Specialization {
     val renv = RigidityEnv.empty
     val progress = Progress()
 
-    val res = TypeReduction2.reduce(assoc, scope, renv)(progress, root.eqEnv, flix)
+    val (res, cs) = TypeReduction2.reduce(assoc, scope, renv)(progress, root.eqEnv, flix)
+    if (cs.nonEmpty) throw InternalCompilerException(s"unexpected constraints: $cs", assoc.loc)
 
     if (progress.query()) res
     else throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)
