@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
@@ -32,7 +32,7 @@ import scala.annotation.tailrec
 object Simplifier {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffSym] = root.effects.keys.toSet
@@ -175,9 +175,9 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Stm(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Stm(exps.map(visitExp), visitExp(exp), t, simplifyEffect(eff), loc)
 
     case d@MonoAst.Expr.Discard(exp, eff, loc) =>
       val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
@@ -979,7 +979,7 @@ object Simplifier {
 
     // Build the nested if-then-else
     val tagType = exp.tpe
-    val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(Scope.Top, flix)
+    val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(RegionScope.Top, flix)
     val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {

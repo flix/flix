@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, LabelledPrecedenceGraph, Polarity, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, LabelledPrecedenceGraph, Polarity, RegionScope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
@@ -172,10 +172,10 @@ object Stratifier {
       val e3 = visitExp(exp3)
       Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Stm(e1, e2, tpe, eff, loc)
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      Expr.Stm(es, e, tpe, eff, loc)
 
     case Expr.Discard(exp, eff, loc) =>
       val e = visitExp(exp)
@@ -578,7 +578,7 @@ object Stratifier {
     */
   private def unifiableTermTypes(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
     l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => ConstraintSolver2.fullyUnify(t1, t2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
+      case (t1, t2) => ConstraintSolver2.fullyUnify(t1, t2, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
     }
   }
 

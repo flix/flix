@@ -694,7 +694,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: RegionScope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isSlack = false, loc)
     Type.Var(sym, loc)
   }
@@ -702,7 +702,7 @@ object Type {
   /**
     * Returns a fresh effect slack variable.
     */
-  def freshEffSlackVar(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshEffSlackVar(loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(Absent, Kind.Eff, isSlack = true, loc)
     Type.Var(sym, loc)
   }
@@ -1364,7 +1364,7 @@ object Type {
     * Returns a fully-applied Flix type for the given Java class, with `Object` type arguments
     * for generic classes. Use this in ground-type contexts that need kind `Star`.
     */
-  def getFlixTypeApplied(c: Class[?], loc: SourceLocation): Type = {
+  def instantiateJavaTypeWithObjectArgs(c: Class[?], loc: SourceLocation): Type = {
     val base = getFlixType(c)
     val n = c.getTypeParameters.length
     Type.mkApply(base, List.fill(n)(Type.mkNative(classOf[Object], loc)), loc)

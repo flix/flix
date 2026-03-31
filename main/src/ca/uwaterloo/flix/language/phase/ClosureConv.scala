@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, RegionScope}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -29,7 +29,7 @@ import scala.collection.mutable
 object ClosureConv {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   /**
     * Performs closure conversion on the given AST `root`.
@@ -88,10 +88,10 @@ object ClosureConv {
       val e3 = visitExp(exp3)
       Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Stm(e1, e2, tpe, purity, loc)
+    case Expr.Stm(exps, exp, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      Expr.Stm(es, e, tpe, purity, loc)
 
     case Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -225,8 +225,8 @@ object ClosureConv {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foldRight(freeVars(exp))((e, acc) => freeVars(e) ++ acc)
 
     case Expr.Branch(exp, branches, _, _, _) =>
       freeVars(exp) ++ (branches flatMap {
@@ -350,10 +350,10 @@ object ClosureConv {
         val e3 = visitExp(exp3)
         Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-      case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expr.Stm(e1, e2, tpe, purity, loc)
+      case Expr.Stm(exps, exp, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        val e = visitExp(exp)
+        Expr.Stm(es, e, tpe, purity, loc)
 
       case Expr.Branch(exp, branches, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -585,10 +585,10 @@ object ClosureConv {
         val e3 = visit(exp3)
         Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-      case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        Expr.Stm(e1, e2, tpe, purity, loc)
+      case Expr.Stm(exps, exp, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        val e = visit(exp)
+        Expr.Stm(es, e, tpe, purity, loc)
 
       case Expr.Branch(exp, branches, tpe, purity, loc) =>
         val e = visit(exp)

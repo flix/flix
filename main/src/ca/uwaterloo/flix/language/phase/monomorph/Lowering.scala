@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{DefaultHandler, Predicate}
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.TypedAst.ApplyPosition
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, Scope, SolveMode, SymUse, TypeSource}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Decreasing, Denotation, Fixity, Mutability, Polarity, PredicateAndArity, RegionScope, SolveMode, SymUse, TypeSource}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
 import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
@@ -284,13 +284,13 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.IfThenElse(e1, e2, e3, t, eff, loc)
 
-    case TypedAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
       // Strip auto-unboxing: `m.put("k", 42);` discards the result, so we must not
       // unbox the null that `HashMap.put` returns on first insert (would NPE).
-      val e1 = stripAutoUnbox(lowerExp(exp1))
-      val e2 = lowerExp(exp2)
+      val es = exps.map(e => stripAutoUnbox(lowerExp(e)))
+      val e = lowerExp(exp)
       val t = lowerType(tpe)
-      MonoAst.Expr.Stm(e1, e2, t, eff, loc)
+      MonoAst.Expr.Stm(es, e, t, eff, loc)
 
     case TypedAst.Expr.Discard(exp, eff, loc) =>
       // Strip auto-unboxing: same reason as Stm — discarded results must not be unboxed.
@@ -427,7 +427,7 @@ object Lowering {
       val e = lowerExp(exp)
       if (isPrimType(e.tpe)) {
         // If it's a primitive type, evaluate the expression but return false
-        MonoAst.Expr.Stm(e, MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
+        MonoAst.Expr.Stm(List(e), MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
       } else {
         // If it's a reference type, then do the instanceof check
         MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
@@ -466,7 +466,7 @@ object Lowering {
       // handler sym { rules }
       // is lowered to
       // handlerBody -> try handlerBody() with sym { rules }
-      val bodySym = Symbol.freshVarSym("handlerBody", BoundBy.FormalParam, loc.asSynthetic)(Scope.Top, flix)
+      val bodySym = Symbol.freshVarSym("handlerBody", BoundBy.FormalParam, loc.asSynthetic)(RegionScope.Top, flix)
       val rs = rules.map(lowerHandlerRule)
       val bt = lowerType(bodyTpe)
       val t = lowerType(tpe)
@@ -482,7 +482,7 @@ object Lowering {
       // is lowered to
       // exp2(_runWith -> exp1)
       val e1 = lowerExp(exp1)
-      val unitParam = MonoAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic)(Scope.Top, flix), Type.Unit, Occur.Unknown, loc.asSynthetic)
+      val unitParam = MonoAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic)(RegionScope.Top, flix), Type.Unit, Occur.Unknown, loc.asSynthetic)
       val thunkType = Type.mkArrowWithEffect(Type.Unit, e1.eff, e1.tpe, loc.asSynthetic)
       val thunk = MonoAst.Expr.Lambda(unitParam, e1, thunkType, loc.asSynthetic)
       val t = lowerType(tpe)
@@ -907,7 +907,7 @@ object Lowering {
     val innerLambda =
       TypedAst.Expr.Lambda(
         TypedAst.FormalParam(
-          TypedAst.Binder(Symbol.freshVarSym("_", BoundBy.FormalParam, expLoc)(Scope.Top, flix), Type.Unit),
+          TypedAst.Binder(Symbol.freshVarSym("_", BoundBy.FormalParam, expLoc)(RegionScope.Top, flix), Type.Unit),
           Type.Unit,
           TypeSource.Inferred,
           Decreasing.NonDecreasing,
@@ -961,7 +961,7 @@ object Lowering {
       case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
       case (x, y) =>
         val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
-        MonoAst.Expr.Stm(exp, crash, tpe, eff, loc)
+        MonoAst.Expr.Stm(List(exp), crash, tpe, eff, loc)
     }
   }
 
@@ -1334,7 +1334,7 @@ object Lowering {
         val e2 = mkPutChannel(e1, e, Type.IO, loc) // The put exp: `ch <- exp0`.
         val e3 = MonoAst.Expr.Cst(Constant.Static, Type.mkRegionToStar(Type.IO, loc), loc)
         val e4 = MonoAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.IO, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        MonoAst.Expr.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+        MonoAst.Expr.Stm(List(e4), acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
     // Make let bindings `let ch = chan 1;`.
@@ -1469,7 +1469,7 @@ object Lowering {
     */
   private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
     val name = prefix + Flix.Delimiter + flix.genSym.freshId()
-    Symbol.freshVarSym(name, BoundBy.Let, loc)(Scope.Top, flix)
+    Symbol.freshVarSym(name, BoundBy.Let, loc)(RegionScope.Top, flix)
   }
 
   /**
@@ -1568,7 +1568,7 @@ object Lowering {
     val mergedExp = mergeExps(exps, loc)
     val argExps = mergedExp :: Nil
     val solvedExp = MonoAst.Expr.ApplyDef(defn, argExps, Types.SolveType, Types.Datalog, eff, loc)
-    val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)(Scope.Top, flix)
+    val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)(RegionScope.Top, flix)
     val letBodyExp = optPreds match {
       case Some(preds) =>
         mergeExps(preds.map(pred => {
@@ -1948,7 +1948,7 @@ object Lowering {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
-      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(Scope.Top, flix)
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(RegionScope.Top, flix)
       // Construct a lambda that takes the unit argument.
       val fparam = MonoAst.FormalParam(sym, Type.Unit, Occur.Unknown, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
@@ -2176,10 +2176,10 @@ object Lowering {
       val e3 = substExp(exp3, subst)
       MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case MonoAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      MonoAst.Expr.Stm(e1, e2, tpe, eff, loc)
+    case MonoAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      val e = substExp(exp, subst)
+      MonoAst.Expr.Stm(es, e, tpe, eff, loc)
 
     case MonoAst.Expr.Discard(exp, eff, loc) =>
       val e = substExp(exp, subst)
@@ -2389,8 +2389,8 @@ object Lowering {
     * where `P1, P2, ...` are in `preds` with their respective term types.
     */
   private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
-    val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)(Scope.Top, flix)
-    val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)(Scope.Top, flix)
+    val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)(RegionScope.Top, flix)
+    val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)(RegionScope.Top, flix)
     mkLambdaExp(predSymVar, Types.PredSym,
       mkLambdaExp(termsVar, Types.VectorOfBoxed,
         mkExtVarBody(preds, predSymVar, termsVar, tpe, loc),
@@ -2430,7 +2430,7 @@ object Lowering {
     * and `"terms" == termsVar.text`.
     */
   private def mkExtVarBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit ctx: Context, lctx: LocalContext, root: TypedAst.Root, flix: Flix): MonoAst.Expr = {
-    val nameVar = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)(Scope.Top, flix)
+    val nameVar = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)(RegionScope.Top, flix)
     MonoAst.Expr.Match(
       exp = MonoAst.Expr.Var(predSymVar, Types.PredSym, loc),
       rules = List(

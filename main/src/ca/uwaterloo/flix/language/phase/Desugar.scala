@@ -539,10 +539,10 @@ object Desugar {
       val e3 = exp3.map(visitExp).getOrElse(Expr.Cst(Constant.Unit, loc.asSynthetic))
       Expr.IfThenElse(e1, e2, e3, loc)
 
-    case WeededAst.Expr.Stm(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Stm(e1, e2, loc)
+    case WeededAst.Expr.Stm(exps, exp, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      Expr.Stm(es, e, loc)
 
     case WeededAst.Expr.Discard(exp, loc) =>
       val e = visitExp(exp)

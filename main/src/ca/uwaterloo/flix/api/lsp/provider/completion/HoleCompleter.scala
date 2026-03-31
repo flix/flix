@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Position, Visitor}
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 
@@ -60,7 +60,7 @@ object HoleCompleter {
     // Top scope is used since we're comparing with declarations, which are at the top scope.
     val matchType = Type.mkArrowWithEffect(
       sourceType,
-      Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Scope.Top, flix),
+      Type.freshVar(Kind.Eff, SourceLocation.Unknown)(RegionScope.Top, flix),
       targetType,
       SourceLocation.Unknown
     )
@@ -74,7 +74,7 @@ object HoleCompleter {
           SourceLocation.Unknown
         )
         // TODO modify to take renv as a parameter
-        ConstraintSolver2.fullyUnify(matchType, lastArrow, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
+        ConstraintSolver2.fullyUnify(matchType, lastArrow, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
           case Some(subst) =>
             // Track the size of all the types in the substitution.
             // A smaller substitution means a more precise unification match.

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.verifier
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
 import ca.uwaterloo.flix.util.*
@@ -33,7 +33,7 @@ import ca.uwaterloo.flix.util.*
 object EffectVerifier {
 
   // We use top scope for simplicity. This is the most relaxed option.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   /**
     * Verifies the effects in the given root.
@@ -145,10 +145,10 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp1.eff, exp2.eff, exp3.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      visitExp(exp)
+      val expected = Type.mkUnion(exps.map(_.eff) :+ exp.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Discard(exp, eff, loc) =>

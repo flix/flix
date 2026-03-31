@@ -80,15 +80,15 @@ mod Test.Exp.Jvm.InvokeConstructor {
 
     @CompileTest
     def testInvokeProcessBuilderConstructor01(): ProcessBuilder \ IO =
-        new ProcessBuilder(...{"echo"})
+        new ProcessBuilder("echo")
 
     @CompileTest
     def testInvokeProcessBuilderConstructor02(): ProcessBuilder \ IO =
-        new ProcessBuilder(...{"echo", "hello"})
+        new ProcessBuilder("echo", "hello")
 
     @CompileTest
     def testInvokeProcessBuilderConstructor03(): ProcessBuilder \ IO =
-        new ProcessBuilder(...{"echo", "hello", "world"})
+        new ProcessBuilder("echo", "hello", "world")
 
     @CompileTest
     def testInvokeShortConstructor01(): Short =
@@ -104,7 +104,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
 
     @CompileTest
     def testInvokeURLClassLoaderConstructor01(): URLClassLoader \ IO =
-        new URLClassLoader((...{}: Vector[URL]))
+        new URLClassLoader((Vector#{}: Vector[URL]))
 
     @CompileTest
     def testInvokeURLConstructor01(): URL \ IO =

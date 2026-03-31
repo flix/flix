@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.monomorph
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Instance, StructField}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse}
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, MonoAst, Name, RigidityEnv, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
@@ -650,10 +650,10 @@ object Specialization {
       val e3 = specializeExp(exp3, env0, subst)
       Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = specializeExp(exp1, env0, subst)
-      val e2 = specializeExp(exp2, env0, subst)
-      Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      val e = specializeExp(exp, env0, subst)
+      Expr.Stm(es, e, subst(tpe), subst(eff), loc)
 
     case Expr.Discard(exp, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -1219,7 +1219,7 @@ object Specialization {
     val trt = root.traits(sym.trt)
 
     // Find out what instance to use by unifying with the sig type.
-    val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
+    val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, tpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
     val traitType = subst.m(trt.tparam.sym)
     val tyCon = traitType.typeConstructor.get
 
@@ -1305,7 +1305,7 @@ object Specialization {
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: TypedAst.Root, flix: Flix): StrictSubstitution = {
-    ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
+    ConstraintSolver2.fullyUnify(tpe1, tpe2, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
       case Some(subst) =>
         StrictSubstitution.mk(subst)
       case None =>
@@ -1316,7 +1316,7 @@ object Specialization {
   /** Reduces the given associated into its definition, will crash if not able to. */
   private def reduceAssocType(assoc: Type.AssocType)(implicit root: TypedAst.Root, flix: Flix): Type = {
     // Since assoc is ground, `scope` will be unused.
-    val scope = Scope.Top
+    val scope = RegionScope.Top
     // Since assoc is ground, `renv` will be unused.
     val renv = RigidityEnv.empty
     val progress = Progress()

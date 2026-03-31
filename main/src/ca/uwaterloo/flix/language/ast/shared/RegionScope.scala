@@ -17,17 +17,17 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.Symbol
 
-case class Scope(syms: List[Symbol.RegionSym]) {
+case class RegionScope(syms: List[Symbol.RegionSym]) {
 
   /**
     * Returns the scope corresponding to the given region sym, nested inside the current region.
     */
-  def enter(sym: Symbol.RegionSym): Scope = Scope(sym :: syms)
+  def enter(sym: Symbol.RegionSym): RegionScope = RegionScope(sym :: syms)
 
   /**
     * Returns true iff `this` scope is outside of `that` scope.
     */
-  def isOutside(that: Scope): Boolean = {
+  def isOutside(that: RegionScope): Boolean = {
     // In principle, we should check that `this.syms` is a suffix of `that.syms`,
     // but checking length is sufficient.
 
@@ -35,12 +35,12 @@ case class Scope(syms: List[Symbol.RegionSym]) {
   }
 }
 
-object Scope {
+object RegionScope {
 
   /**
     * The scope that is not inside any region.
     */
   // TODO LEVELS is declaration level higher?
-  val Top: Scope = Scope(Nil)
+  val Top: RegionScope = RegionScope(Nil)
 
 }

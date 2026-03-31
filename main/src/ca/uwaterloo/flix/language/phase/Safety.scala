@@ -138,9 +138,9 @@ object Safety {
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(exp)
 
     case Expr.Discard(exp, _, _) =>
       visitExp(exp)
@@ -882,7 +882,7 @@ object Safety {
   private def getInstanceMethods(clazz: Class[?]): Map[MethodSignature, java.lang.reflect.Method] = {
     val methods = JvmUtils.getInstanceMethods(clazz)
     methods.map(m => {
-      val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixTypeApplied(_, SourceLocation.Unknown)), Type.getFlixTypeApplied(m.getReturnType, SourceLocation.Unknown))
+      val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.instantiateJavaTypeWithObjectArgs(_, SourceLocation.Unknown)), Type.instantiateJavaTypeWithObjectArgs(m.getReturnType, SourceLocation.Unknown))
       signature -> m
     }).toMap
   }
