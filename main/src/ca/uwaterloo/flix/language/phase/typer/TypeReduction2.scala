@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
-import org.apache.commons.lang3.ClassUtils
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
@@ -156,15 +155,9 @@ object TypeReduction2 {
           lookupMethod(reducedTpe, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
               val classTypeArgs = extractClassTypeArgs(method, reducedTpe, scope, loc)
-              val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
-              val allTypeArgs = classTypeArgs ++ methodTypeArgs
-              if (genericArgTypesMatch(method, allTypeArgs, reducedTpes)) {
-                progress.markProgress()
-                val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
-                (Type.mkApply(base, allTypeArgs, loc), cs)
-              } else {
-                (unresolved, cs)
-              }
+              val (tpe, cs0) = instantiateMethod(method, classTypeArgs, reducedTpes, scope, loc)
+              progress.markProgress()
+              (tpe, cs ::: cs0)
             case _ => (unresolved, cs)
           }
 
@@ -173,14 +166,9 @@ object TypeReduction2 {
           val cs = css.flatten
           lookupStaticMethod(clazz, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
-              if (genericArgTypesMatch(method, methodTypeArgs, reducedTpes)) {
-                progress.markProgress()
-                val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
-                (Type.mkApply(base, methodTypeArgs, loc), cs)
-              } else {
-                (unresolved, cs)
-              }
+              val (tpe, cs0) = instantiateMethod(method, Nil, reducedTpes, scope, loc)
+              progress.markProgress()
+              (tpe, cs ::: cs0)
             case _ => (unresolved, cs)
           }
       }
@@ -459,7 +447,6 @@ object TypeReduction2 {
     method.getGenericReturnType match {
       case tv: TypeVariable[_] =>
         // Bare type variable return (e.g., E from ArrayList<E>.get()).
-        // Use erased fallback when not in substMap to prevent AnyType propagation.
         substMap.getOrElse(tv.getName, instantiateJavaTypeWithFreshVars(method.getReturnType, scope, loc))
       case _: ParameterizedType =>
         // Parameterized return type (e.g., Set<K> from HashMap.keySet()).
@@ -542,10 +529,9 @@ object TypeReduction2 {
     * `{"K" -> String, "V" -> Int32}`.
     *
     * Class-level type arguments that are type variables (e.g., from `HttpResponse[?v]`) are
-    * excluded from the substitution. This prevents returning unconstrained type variables
-    * that become `AnyType` when the result is used in a context (like `unchecked_cast`)
-    * that doesn't constrain the type. Excluded variables fall back to the erased return
-    * type via `getOrElse`.
+    * excluded from the substitution. This is necessary because Java interop requires
+    * `unchecked_cast(x as Object)` for method resolution when receiver type args are
+    * type variables, which would over-constrain the generic type parameter.
     *
     * Method-level type arguments (fresh vars) are always included so they can flow through
     * to the constraint solver for proper unification.
@@ -559,11 +545,10 @@ object TypeReduction2 {
     if (allParamNames.length == typeArgs.length) {
       val numClassParams = classParamNames.length
       val (classArgs, methodArgs) = typeArgs.splitAt(numClassParams)
-      // Exclude class-level type vars to prevent AnyType propagation.
+      // Exclude class-level type vars — see doc comment above.
       val classSubst = classParamNames.zip(classArgs).collect {
         case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
       }.toMap
-      // Method-level fresh vars are always included for constraint unification.
       val methodSubst = methodParamNames.zip(methodArgs).toMap
       classSubst ++ methodSubst
     } else
@@ -571,34 +556,53 @@ object TypeReduction2 {
   }
 
   /**
-    * Returns `true` if the argument types are compatible with the method's generic
-    * parameter types after substituting type variables.
+    * Instantiates a resolved Java method: creates fresh type variables for method-level
+    * type parameters, builds the applied method type, and emits generic argument constraints.
     *
-    * For each parameter whose generic type is a bare `TypeVariable`, looks up the
-    * concrete type in the substitution map and verifies the argument type is
-    * assignable to it (with autoboxing). Parameters that are not bare `TypeVariable`s
-    * (e.g., `int`, `Object`, `ParameterizedType`) are already validated by the
-    * erased method lookup and are not re-checked here.
+    * Example 1: `ArrayList[String].add("hello")` with classTypeArgs = [String]
+    *   - methodTypeArgs = [] (add has no method-level type params)
+    *   - emits Equality(String, String) for the `E` parameter
     *
-    * Example: For `ArrayList[String].add(123)`, the generic param `E` resolves
-    * to `String`, and `Int32` is not assignable to `String`, so this returns `false`.
+    * Example 2: `Collections.singletonList("hello")` with classTypeArgs = [] (static)
+    *   - methodTypeArgs = [?t] (fresh var for `T`)
+    *   - emits no constraint (?t is a Type.Var, skipped)
     */
-  private def genericArgTypesMatch(method: Method, typeArgs: List[Type],
-    argTypes: List[Type]): Boolean = {
+  private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): (Type, List[TypeConstraint]) = {
+    val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
+    val allTypeArgs = classTypeArgs ++ methodTypeArgs
+    val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
+    val tpe = Type.mkApply(base, allTypeArgs, loc)
+    val cs = mkArgConstraints(method, allTypeArgs, argTypes, scope, loc)
+    (tpe, cs)
+  }
+
+  /**
+    * Builds equality constraints linking actual argument types to the expected generic
+    * parameter types of the resolved Java method.
+    *
+    * For each parameter whose generic type is a bare `TypeVariable` (e.g., `E` in
+    * `add(E element)`), resolves the expected type via the substitution map and emits
+    * an equality constraint between the expected type and the actual argument type.
+    *
+    * Constraints are only emitted when the expected type is concrete (not a type variable).
+    * When the expected type is a type variable, the Java interop pattern typically uses
+    * `unchecked_cast(x as Object)` for method resolution, which would over-constrain
+    * the type parameter if we emitted a constraint.
+    */
+  private def mkArgConstraints(method: Method, typeArgs: List[Type],
+    argTypes: List[Type], scope: RegionScope, loc: SourceLocation)
+    (implicit flix: Flix): List[TypeConstraint] = {
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     val genericParamTypes = method.getGenericParameterTypes
-    argTypes.zip(genericParamTypes).forall { case (argType, genericParamType) =>
+    argTypes.zip(genericParamTypes).flatMap { case (argType, genericParamType) =>
       genericParamType match {
         case tv: TypeVariable[_] =>
-          substMap.get(tv.getName) match {
-            case Some(expectedType) if !expectedType.isInstanceOf[Type.Var] =>
-              // Both types are concrete. Check assignability with autoboxing.
-              val argClass = getJavaType(argType)
-              val expectedClass = getJavaType(expectedType)
-              ClassUtils.isAssignable(argClass, expectedClass, true)
-            case _ => true // Unresolved or fresh type variable: can't check.
+          substMap.get(tv.getName).flatMap { expectedType =>
+            if (expectedType.isInstanceOf[Type.Var]) None
+            else Some(TypeConstraint.Equality(expectedType, argType,
+              TypeConstraint.Provenance.Match(expectedType, argType, loc)))
           }
-        case _ => true // Not a bare TypeVariable: erased lookup already validated.
+        case _ => None
       }
     }
   }
