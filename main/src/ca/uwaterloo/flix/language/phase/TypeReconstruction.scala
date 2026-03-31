@@ -457,23 +457,23 @@ object TypeReconstruction {
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)
       val eff = subst(evar)
-      methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
-          val es = getArgumentsWithVarArgs(method, es0, methLoc)
-          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, methLoc)
+      methodTpe.typeConstructor match {
+        case Some(TypeConstructor.JvmMethod(method)) =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
+          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeSuperMethod(clazz, _, exps, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeSuperMethod(_, _, exps, jvar, tvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)
       val eff = subst(evar)
-      methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
-          val es = getArgumentsWithVarArgs(method, es0, methLoc)
-          TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, methLoc)
+      methodTpe.typeConstructor match {
+        case Some(TypeConstructor.JvmMethod(method)) =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
+          TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), returnTpe, eff)
       }
@@ -483,10 +483,10 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
       val eff = subst(evar)
-      methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method, _), methLoc) =>
-          val es = getArgumentsWithVarArgs(method, es0, methLoc)
-          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, methLoc)
+      methodTpe.typeConstructor match {
+        case Some(TypeConstructor.JvmMethod(method)) =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
+          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }

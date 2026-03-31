@@ -907,7 +907,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseSet(_, _) => false
     case TypeConstructor.JvmField(_) => false
     case TypeConstructor.JvmConstructor(_) => false
-    case TypeConstructor.JvmMethod(_, _) => false
+    case TypeConstructor.JvmMethod(_) => false
     case TypeConstructor.Error(_, _) => false
 
     // backend constructors

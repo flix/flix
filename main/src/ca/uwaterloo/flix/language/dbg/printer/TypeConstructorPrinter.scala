@@ -61,7 +61,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.RestrictableEnum(sym, _) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.Native(clazz) => DocAst.Type.Native(clazz)
     case TypeConstructor.JvmConstructor(constructor) => DocAst.Type.JvmConstructor(constructor)
-    case TypeConstructor.JvmMethod(method, _) => DocAst.Type.JvmMethod(method)
+    case TypeConstructor.JvmMethod(method) => DocAst.Type.JvmMethod(method)
     case TypeConstructor.JvmField(field) => DocAst.Type.JvmField(field)
     case TypeConstructor.Array => DocAst.Type.AsIs("Array")
     case TypeConstructor.ArrayWithoutRegion => DocAst.Type.AsIs("ArrayWithoutRegion")
