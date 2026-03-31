@@ -1356,13 +1356,14 @@ object Kinder {
     * Performs kinding on the given equality constraint under the given kind environment.
     */
   private def visitEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Option[EqualityConstraint] = econstr match {
-    case ResolvedAst.EqualityConstraint(symOrNot, tpe1, tpe2, loc) =>
-      symOrNot match {
-        case SymOrNot.Found(symUse) =>
-          val t1 = visitType(tpe1, Kind.Wild, kenv, root)
+    case ResolvedAst.EqualityConstraint(tpe1, tpe2, loc) =>
+      tpe1 match {
+        case UnkindedType.AssocType(symUse, arg, _) =>
+          val t1 = visitType(arg, Kind.Wild, kenv, root)
           val t2 = visitType(tpe2, Kind.Wild, kenv, root)
           Some(EqualityConstraint(symUse, t1, t2, loc))
-        case SymOrNot.NotFound =>
+        case _ =>
+          // Ill-shaped or error constraint; the error was already reported during resolution.
           None
       }
   }
@@ -1484,17 +1485,18 @@ object Kinder {
     * Infers a kind environment from the given equality constraint.
     */
   private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext): KindEnv = econstr match {
-    case ResolvedAst.EqualityConstraint(symOrNot, tpe1, tpe2, _) =>
-      symOrNot match {
-        case SymOrNot.Found(AssocTypeSymUse(sym, _)) =>
+    case ResolvedAst.EqualityConstraint(tpe1, tpe2, _) =>
+      tpe1 match {
+        case UnkindedType.AssocType(AssocTypeSymUse(sym, _), arg, _) =>
           val trt = root.traits(sym.trt)
           val kind1 = getTraitKind(trt)
           val kind2 = trt.assocs.find(_.sym == sym).get.kind
-          val kenv1 = inferType(tpe1, kind1, kenv, root)
+          val kenv1 = inferType(arg, kind1, kenv, root)
           val kenv2 = inferType(tpe2, kind2, kenv, root)
           kenv1 ++ kenv2
-        case SymOrNot.NotFound =>
-          kenv
+        case _ =>
+          // Ill-shaped or error constraint; still infer kinds from the parts we can resolve.
+          inferType(tpe2, Kind.Wild, kenv, root)
       }
   }
 

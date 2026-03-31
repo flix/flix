@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, RegionScope, SymOrNot, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SourcePosition.moveRight
 import ca.uwaterloo.flix.language.errors.TypeError

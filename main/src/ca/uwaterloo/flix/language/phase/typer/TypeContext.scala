@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, SymOrNot, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException

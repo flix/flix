@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock.serialization
 
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, SymOrNot, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
 import scala.collection.immutable.SortedSet

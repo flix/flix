@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Type}
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, SymOrNot}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, ConstraintSolverInterface, SubstitutionTree, TypeConstraint}
 import ca.uwaterloo.flix.util.Result

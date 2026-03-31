@@ -457,14 +457,11 @@ object Resolver {
   private def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Sig = s0 match {
     case NamedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
-      val specVal = resolveSpec(spec0, Some(tconstr), scp0, taenv, ns0, root)
-      flatMapN(specVal) {
-        case spec =>
-          val scp = scp0 ++ mkSpecScp(spec)
-          checkSigSpec(sym, spec, traitTvar)
-          val exp = exp0.map(resolveExp(_, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix))
-          Validation.Success(ResolvedAst.Declaration.Sig(sym, spec, exp, loc))
-      }
+      val spec = resolveSpec(spec0, Some(tconstr), scp0, taenv, ns0, root)
+      val scp = scp0 ++ mkSpecScp(spec)
+      checkSigSpec(sym, spec, traitTvar)
+      val exp = exp0.map(resolveExp(_, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix))
+      ResolvedAst.Declaration.Sig(sym, spec, exp, loc)
   }
 
   /**
@@ -472,13 +469,10 @@ object Resolver {
     */
   private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): ResolvedAst.Declaration.Def = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      val specVal = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
-      flatMapN(specVal) {
-        case spec =>
-          val scp = scp0 ++ mkSpecScp(spec)
-          val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
-          Validation.Success(ResolvedAst.Declaration.Def(sym, spec, exp, loc))
-      }
+      val spec = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
+      val scp = scp0 ++ mkSpecScp(spec)
+      val exp = resolveExp(exp0, scp)(RegionScope.Top, ns0, taenv, sctx, root, flix)
+      ResolvedAst.Declaration.Def(sym, spec, exp, loc)
   }
 
   /**
@@ -1988,11 +1982,12 @@ object Resolver {
 
       lookupAssocType(qname, scp0, ns0, root) match {
         case Result.Ok(assoc) =>
-          val head = SymOrNot.Found(AssocTypeSymUse(assoc.sym, qname.loc))
-          ResolvedAst.EqualityConstraint(head, t1, t2, loc)
+          val symUse = AssocTypeSymUse(assoc.sym, qname.loc)
+          val head = UnkindedType.AssocType(symUse, t1, qname.loc)
+          ResolvedAst.EqualityConstraint(head, t2, loc)
         case Result.Err(error) =>
           sctx.errors.add(error)
-          ResolvedAst.EqualityConstraint(SymOrNot.NotFound, t1, t2, loc)
+          ResolvedAst.EqualityConstraint(UnkindedType.Error(qname.loc), t2, loc)
       }
   }
 
