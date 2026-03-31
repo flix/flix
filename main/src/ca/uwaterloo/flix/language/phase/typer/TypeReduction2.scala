@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
-import org.apache.commons.lang3.{ClassUtils => ApacheClassUtils}
+import org.apache.commons.lang3.ClassUtils
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
@@ -101,12 +101,13 @@ object TypeReduction2 {
           progress.markProgress()
           instantiateJavaTypeWithFreshVars(field.getType, scope, loc)
 
-        case t if t.typeConstructor.exists(_.isInstanceOf[TypeConstructor.JvmMethod]) =>
-          val TypeConstructor.JvmMethod(method) = t.typeConstructor.get: @unchecked
-          progress.markProgress()
-          resolveMethodReturnType(method, t.typeArguments, scope, loc)
+        case t => t.typeConstructor match {
+          case Some(TypeConstructor.JvmMethod(method)) =>
+            progress.markProgress()
+            resolveMethodReturnType(method, t.typeArguments, scope, loc)
 
-        case t => Type.JvmToType(t, loc)
+          case _ => Type.JvmToType(t, loc)
+        }
       }
 
     case Type.JvmToEff(tpe, loc) =>
@@ -115,12 +116,13 @@ object TypeReduction2 {
           progress.markProgress()
           PrimitiveEffects.getConstructorEffs(constructor, loc)
 
-        case t if t.typeConstructor.exists(_.isInstanceOf[TypeConstructor.JvmMethod]) =>
-          val TypeConstructor.JvmMethod(method) = t.typeConstructor.get: @unchecked
-          progress.markProgress()
-          PrimitiveEffects.getMethodEffs(method, loc)
+        case t => t.typeConstructor match {
+          case Some(TypeConstructor.JvmMethod(method)) =>
+            progress.markProgress()
+            PrimitiveEffects.getMethodEffs(method, loc)
 
-        case t => Type.JvmToEff(t, loc)
+          case _ => Type.JvmToEff(t, loc)
+        }
       }
 
     case unresolved@Type.UnresolvedJvmType(member, loc) =>
@@ -241,7 +243,7 @@ object TypeReduction2 {
     */
   private def usesBoxing(args: List[Class[?]], params: Array[Class[?]]): Boolean = {
     // This method is checking an existing match, so zip is fine.
-    args.zip(params).exists{
+    args.zip(params).exists {
       // Wrapper arg to primitive param (unboxing): not supported.
       case (clazz, java.lang.Boolean.TYPE) if clazz != java.lang.Boolean.TYPE => true
       case (clazz, java.lang.Byte.TYPE) if clazz != java.lang.Byte.TYPE => true
@@ -429,19 +431,19 @@ object TypeReduction2 {
     * including TypeVariable, ParameterizedType, WildcardType, GenericArrayType, and Class.
     *
     * Example 1: `ArrayList[String].get(int)` -- the generic return type is `E`.
-    *   The receiver `ArrayList[String]` maps `E -> String`, so the result is `String`.
+    * The receiver `ArrayList[String]` maps `E -> String`, so the result is `String`.
     *
     * Example 2: `HashMap[String, Int32].get(Object)` -- the generic return type is `V`.
-    *   The receiver `HashMap[String, Int32]` maps `K -> String, V -> Int32`, so the result is `Int32`.
+    * The receiver `HashMap[String, Int32]` maps `K -> String, V -> Int32`, so the result is `Int32`.
     *
     * Example 3: `HashMap[String, Int32].keySet()` -- the generic return type is `Set<K>`.
-    *   The receiver maps `K -> String`, so the result is `Set[String]`.
+    * The receiver maps `K -> String`, so the result is `Set[String]`.
     *
     * Example 4: `String.length()` -- the return type is `int` (not a type variable).
-    *   Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
+    * Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
     */
   private def resolveMethodReturnType(method: Method, typeArgs: List[Type],
-      scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
+    scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     method.getGenericReturnType match {
       case tv: TypeVariable[_] =>
@@ -475,8 +477,8 @@ object TypeReduction2 {
     * @param erasedFallback the erased class to use when a type variable is not in the map
     */
   private def resolveGenericType(genericType: java.lang.reflect.Type,
-      substMap: Map[String, Type], erasedFallback: Class[?],
-      scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
+    substMap: Map[String, Type], erasedFallback: Class[?],
+    scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
     genericType match {
       case tv: TypeVariable[_] =>
         // Look up the type variable in the substitution map.
@@ -571,7 +573,7 @@ object TypeReduction2 {
     * to `String`, and `Int32` is not assignable to `String`, so this returns `false`.
     */
   private def genericArgTypesMatch(method: Method, typeArgs: List[Type],
-      argTypes: List[Type]): Boolean = {
+    argTypes: List[Type]): Boolean = {
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     val genericParamTypes = method.getGenericParameterTypes
     argTypes.zip(genericParamTypes).forall { case (argType, genericParamType) =>
@@ -582,7 +584,7 @@ object TypeReduction2 {
               // Both types are concrete. Check assignability with autoboxing.
               val argClass = getJavaType(argType)
               val expectedClass = getJavaType(expectedType)
-              ApacheClassUtils.isAssignable(argClass, expectedClass, true)
+              ClassUtils.isAssignable(argClass, expectedClass, true)
             case _ => true // Unresolved or fresh type variable: can't check.
           }
         case _ => true // Not a bare TypeVariable: erased lookup already validated.
@@ -595,7 +597,7 @@ object TypeReduction2 {
     * Falls back to fresh type variables when the receiver doesn't have the expected number of args.
     */
   private def extractClassTypeArgs(method: Method, receiverType: Type,
-      scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): List[Type] = {
+    scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): List[Type] = {
     val n = method.getDeclaringClass.getTypeParameters.length
     val typeArgs = receiverType.typeArguments
     if (typeArgs.length == n) typeArgs
