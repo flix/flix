@@ -572,7 +572,7 @@ object TypeReduction2 {
     val allTypeArgs = classTypeArgs ++ methodTypeArgs
     val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
     val tpe = Type.mkApply(base, allTypeArgs, loc)
-    val cs = buildGenericArgConstraints(method, allTypeArgs, argTypes, scope, loc)
+    val cs = mkArgConstraints(method, allTypeArgs, argTypes, scope, loc)
     (tpe, cs)
   }
 
@@ -589,7 +589,7 @@ object TypeReduction2 {
     * `unchecked_cast(x as Object)` for method resolution, which would over-constrain
     * the type parameter if we emitted a constraint.
     */
-  private def buildGenericArgConstraints(method: Method, typeArgs: List[Type],
+  private def mkArgConstraints(method: Method, typeArgs: List[Type],
     argTypes: List[Type], scope: RegionScope, loc: SourceLocation)
     (implicit flix: Flix): List[TypeConstraint] = {
     val substMap = buildTypeVarSubstitution(method, typeArgs)
