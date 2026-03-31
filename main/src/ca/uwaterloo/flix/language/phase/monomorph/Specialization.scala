@@ -893,10 +893,10 @@ object Specialization {
       val t = subst(tpe)
       Expr.PutStaticField(field, e, t, subst(eff), loc)
 
-    case Expr.NewObject(name, clazz, targs, tpe, eff, constructors0, methods0, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
       val constructors = constructors0.map(specializeJvmConstructor(_, env0, subst))
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      Expr.NewObject(name, clazz, targs.map(subst(_)), subst(tpe), subst(eff), constructors, methods, loc)
+      Expr.NewObject(name, clazz, subst(tpe), subst(eff), constructors, methods, loc)
 
     case Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val e = specializeExp(innerExp, env0, subst)

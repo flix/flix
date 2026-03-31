@@ -19,35 +19,30 @@ mod Test.Exp.Jvm.Generic.NewObject {
 
     @CompileTest
     def testComparatorCompile01(): Comparator[String] \ IO =
-        new Comparator[Object] {
-            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
-                let s1 = unchecked_cast(t as String);
-                let s2 = unchecked_cast(u as String);
-                s1.compareTo(s2)
+        new Comparator[String] {
+            def compare(_this: Comparator[String], t: String, u: String): Int32 =
+                t.compareTo(u)
         }
 
     @CompileTest
     def testComparatorCompile02(): Comparator[JInteger] \ IO =
-        new Comparator[Object] {
-            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
-                let i1 = unchecked_cast(t as JInteger);
-                let i2 = unchecked_cast(u as JInteger);
-                i1.compareTo(i2)
+        new Comparator[JInteger] {
+            def compare(_this: Comparator[JInteger], t: JInteger, u: JInteger): Int32 =
+                t.compareTo(u)
         }
 
     @CompileTest
     def testCallableString01(): Callable[String] \ IO =
-        new Callable[Object] {
-            def call(_this: Callable[Object]): Object =
-                checked_cast("hello")
+        new Callable[String] {
+            def call(_this: Callable[String]): String =
+                "hello"
         }
 
     @CompileTest
     def testCallableInteger01(): Callable[JInteger] \ IO =
-        new Callable[Object] {
-            def call(_this: Callable[Object]): Object =
-                let v = JInteger.valueOf(42i32);
-                checked_cast(v)
+        new Callable[JInteger] {
+            def call(_this: Callable[JInteger]): JInteger =
+                JInteger.valueOf(42i32)
         }
 
     @CompileTest
@@ -60,10 +55,9 @@ mod Test.Exp.Jvm.Generic.NewObject {
 
     @CompileTest
     def testComparableCompile01(): JComparable[String] \ IO =
-        new JComparable[Object] {
-            def compareTo(_this: JComparable[Object], o: Object): Int32 =
-                let s = unchecked_cast(o as String);
-                "hello".compareTo(s)
+        new JComparable[String] {
+            def compareTo(_this: JComparable[String], o: String): Int32 =
+                "hello".compareTo(o)
         }
 
     // Tests
@@ -324,20 +318,18 @@ mod Test.Exp.Jvm.Generic.NewObject {
 
     @Test
     def testNewObjectTargsBackwardCompat02(): Unit \ {Assert, IO} =
-        let c: Comparator[String] = new Comparator[Object] {
-            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
-                let s1 = unchecked_cast(t as String);
-                let s2 = unchecked_cast(u as String);
-                s1.compareTo(s2)
+        let c: Comparator[String] = new Comparator[String] {
+            def compare(_this: Comparator[String], t: String, u: String): Int32 =
+                t.compareTo(u)
         };
         assertTrue(c.compare("a", "b") < 0)
 
-    // --- Mixed: type args on expression, erased params in methods (still valid) ---
+    // --- Generic type args match resolved method signatures ---
 
     @Test
-    def testNewObjectTargsErasedParams01(): Unit \ {Assert, IO} =
-        let c = new Comparator[String] {
-            def compare(_this: Comparator[String], t: Object, u: Object): Int32 =
+    def testNewObjectTargsObjectParams01(): Unit \ {Assert, IO} =
+        let c = new Comparator[Object] {
+            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
                 let s1 = unchecked_cast(t as String);
                 let s2 = unchecked_cast(u as String);
                 s1.compareTo(s2)

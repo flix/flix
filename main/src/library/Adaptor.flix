@@ -38,14 +38,9 @@ pub mod Adaptor {
     /// The comparator is backed by the ordering on `a`.
     ///
     pub def comparator(_: Proxy[a]): Comparator[a] \ IO with Order[a] =
-        let f1 = (o1, o2) -> {
-            let a = unchecked_cast(o1 as a);
-            let b = unchecked_cast(o2 as a);
-            Order.compare(a, b) |> Comparison.toInt32
-        };
-        new Comparator[Object] {
-            def compare(_this: Comparator[Object], t: Object, u: Object): Int32 =
-                f1(t, u)
+        new Comparator[a] {
+            def compare(_this: Comparator[a], t: a, u: a): Int32 =
+                Order.compare(t, u) |> Comparison.toInt32
         }
 
     ///

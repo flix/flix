@@ -792,7 +792,7 @@ object Redundancy {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.NewObject(_, _, _, _, _, constructors, methods, _) =>
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
       val usedConstructors = constructors.foldLeft(Used.empty) {
         case (acc, JvmConstructor(exp, _, _, _)) =>
           acc ++ visitExp(exp, env0, rc)

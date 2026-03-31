@@ -557,7 +557,7 @@ object Lowering {
       val t = lowerType(tpe)
       MonoAst.Expr.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
-    case TypedAst.Expr.NewObject(name, clazz, _, tpe, eff, constructors, methods, loc) =>
+    case TypedAst.Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc) =>
       val cs = constructors.map(lowerJvmConstructor)
       val ms = methods.map { m =>
         val thisParam = m.fparams.head

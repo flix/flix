@@ -250,7 +250,7 @@ object TreeShaker1 {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, _, constructors, methods, _) =>
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
       visitExps(constructors.map(_.exp) ++ methods.map(_.exp))
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>

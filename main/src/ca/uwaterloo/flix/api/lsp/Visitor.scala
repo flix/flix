@@ -540,7 +540,7 @@ object Visitor {
       case Expr.PutStaticField(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.NewObject(_, _, _, _, _, constructors, methods, _) =>
+      case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
         constructors.foreach(cn => visitExpr(cn.exp)(a, c))
         methods.foreach(visitJvmMethod)
 

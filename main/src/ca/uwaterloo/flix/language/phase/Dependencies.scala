@@ -440,7 +440,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.NewObject(_, _, _, tpe, eff, constructors, methods, _) =>
+    case Expr.NewObject(_, _, tpe, eff, constructors, methods, _) =>
       visitType(tpe)
       visitType(eff)
       constructors.foreach(visitJvmConstructor)

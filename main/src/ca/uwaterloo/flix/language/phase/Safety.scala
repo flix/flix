@@ -308,7 +308,7 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, _, constructors, methods, loc) =>
+    case newObject@Expr.NewObject(_, _, _, _, constructors, methods, loc) =>
       checkPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
       constructors.foreach(c => visitExp(c.exp))
@@ -795,7 +795,7 @@ object Safety {
     *   - `methods` must not let control effects escape.
     */
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, targs, tpe0, _, cs, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
       // `clazz` must be an interface or have a non-private constructor without arguments
       // (unless user-defined constructors are provided).
@@ -837,131 +837,33 @@ object Safety {
           }
       }
 
-      val flixMethods = getFlixMethodSignatures(methods)
-      val implemented = flixMethods.keySet
+      // Check for missing abstract method implementations (by name + arity).
+      val flixMethodNameArity = methods.map {
+        case JvmMethod(_, ident, fparams, _, _, _, _) => (ident.name, fparams.tail.length)
+      }.toSet
 
-      // Build a substitution from Java type variable names to Flix types
-      // using the explicit type arguments from the source (e.g., new Comparator[String] gives T -> String).
-      // Falls back to inferred type arguments if no explicit targs are provided.
-      val substMap = if (targs.nonEmpty) buildTypeVarSubstFromTargs(clazz, targs) else buildTypeVarSubst(clazz, tpe)
-
-      // For each Java method, compute valid signatures: erased, and generic if type args available.
       val javaMethods = JvmUtils.getInstanceMethods(clazz)
-      val objectMethodSigs = JvmUtils.getInstanceMethods(classOf[Object]).map(erasedSignature).toSet
+      val objectMethodNameArity = JvmUtils.getInstanceMethods(classOf[Object])
+        .map(m => (m.getName, m.getParameterCount)).toSet
 
-      // canImplement: union of all valid signatures for all methods.
-      val canImplement = javaMethods.flatMap(m => validSignatures(m, substMap)).toSet
-
-      // mustImplement: abstract methods not from Object.
-      // A method counts as implemented if ANY of its valid signatures is provided.
       val unimplementedMethods = javaMethods.filter { m =>
         isAbstractMethod(m) &&
-        !objectMethodSigs.contains(erasedSignature(m)) &&
-        validSignatures(m, substMap).intersect(implemented).isEmpty
+        !objectMethodNameArity.contains((m.getName, m.getParameterCount)) &&
+        !flixMethodNameArity.contains((m.getName, m.getParameterCount))
       }
       unimplementedMethods.foreach(m => sctx.errors.add(NewObjectMissingMethod(clazz, m, loc)))
 
-      // `methods` must not include non-existing methods.
-      val undefined = implemented.diff(canImplement)
-      undefined.map(m => NewObjectUndefinedMethod(clazz, m.name, flixMethods(m).loc)).foreach(sctx.errors.add)
+      // Check for undefined methods (Flix methods not matching any Java method).
+      val javaMethodNameArity = javaMethods.map(m => (m.getName, m.getParameterCount)).toSet
+      val undefinedMethods = methods.filter {
+        case JvmMethod(_, ident, fparams, _, _, _, _) =>
+          !javaMethodNameArity.contains((ident.name, fparams.tail.length))
+      }
+      undefinedMethods.foreach(m => sctx.errors.add(NewObjectUndefinedMethod(clazz, m.ident.name, m.loc)))
 
       // `methods` must not let control effects escape.
       val controlEffecting = methods.filter(m => hasControlEffects(m.eff))
       controlEffecting.map(m => SafetyError.IllegalMethodEffect(m.eff, m.loc)).foreach(sctx.errors.add)
-  }
-
-  /**
-    * Represents the Flix signature of a Java method.
-    *
-    * The signature contains no [[Type.Alias]].
-    */
-  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
-
-  /** Returns a map of `methods` based on their [[MethodSignature]]. */
-  private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
-    methods.map {
-      case m@JvmMethod(_, ident, fparams, _, retTpe, _, _) =>
-        // Drop the first formal parameter (which always represents `this`)
-        val paramTypes = fparams.tail.map(_.tpe)
-        val signature = MethodSignature(ident.name, paramTypes.map(Type.eraseAliases), Type.eraseAliases(retTpe))
-        signature -> m
-    }.toMap
-  }
-
-  /** Returns the erased [[MethodSignature]] for a Java method (type params filled with Object). */
-  private def erasedSignature(m: java.lang.reflect.Method): MethodSignature = {
-    MethodSignature(
-      m.getName,
-      m.getParameterTypes.toList.map(Type.instantiateJavaTypeWithObjectArgs(_, SourceLocation.Unknown)),
-      Type.instantiateJavaTypeWithObjectArgs(m.getReturnType, SourceLocation.Unknown)
-    )
-  }
-
-  /**
-    * Returns all valid [[MethodSignature]]s for a Java method: the erased signature,
-    * plus the generic-resolved signature if a non-empty substitution is available.
-    */
-  private def validSignatures(m: java.lang.reflect.Method, substMap: Map[String, Type]): Set[MethodSignature] = {
-    val erased = erasedSignature(m)
-    if (substMap.isEmpty) {
-      Set(erased)
-    } else {
-      val genericParams = m.getGenericParameterTypes.toList.map(resolveJavaType(_, substMap))
-      val genericRet = resolveJavaType(m.getGenericReturnType, substMap)
-      val generic = MethodSignature(m.getName, genericParams, genericRet)
-      Set(erased, generic)
-    }
-  }
-
-  /**
-    * Builds a mapping from Java type variable names to Flix types using the
-    * expression type's type arguments. E.g., for `Comparator[String]` with
-    * class type parameter `T`, returns `Map("T" -> String)`.
-    */
-  private def buildTypeVarSubst(clazz: Class[?], tpe: Type): Map[String, Type] = {
-    val classParamNames = clazz.getTypeParameters.map(_.getName)
-    val typeArgs = tpe.typeArguments
-    if (classParamNames.length == typeArgs.length && typeArgs.nonEmpty)
-      classParamNames.zip(typeArgs).collect {
-        case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
-      }.toMap
-    else
-      Map.empty
-  }
-
-  /** Builds a type var substitution from the explicit type arguments in the source code. */
-  private def buildTypeVarSubstFromTargs(clazz: Class[?], targs: List[Type]): Map[String, Type] = {
-    val classParamNames = clazz.getTypeParameters.map(_.getName)
-    if (classParamNames.length == targs.length)
-      classParamNames.zip(targs).collect {
-        case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
-      }.toMap
-    else
-      Map.empty
-  }
-
-  /**
-    * Resolves a `java.lang.reflect.Type` to a Flix [[Type]] using the given
-    * substitution map. Falls back to the erased type for unresolvable cases.
-    */
-  private def resolveJavaType(javaType: java.lang.reflect.Type, substMap: Map[String, Type]): Type = javaType match {
-    case tv: java.lang.reflect.TypeVariable[_] =>
-      substMap.getOrElse(tv.getName, Type.instantiateJavaTypeWithObjectArgs(classOf[Object], SourceLocation.Unknown))
-    case pt: java.lang.reflect.ParameterizedType =>
-      // e.g., Iterator<T> — resolve the raw type and each type argument.
-      pt.getRawType match {
-        case rawClazz: Class[_] =>
-          val base = Type.getFlixType(rawClazz)
-          val resolvedArgs = pt.getActualTypeArguments.toList.map(resolveJavaType(_, substMap))
-          Type.mkApply(base, resolvedArgs, SourceLocation.Unknown)
-        case _ =>
-          Type.instantiateJavaTypeWithObjectArgs(classOf[Object], SourceLocation.Unknown)
-      }
-    case clazz: Class[_] =>
-      Type.instantiateJavaTypeWithObjectArgs(clazz, SourceLocation.Unknown)
-    case _ =>
-      // GenericArrayType, WildcardType: fall back to erased type.
-      Type.instantiateJavaTypeWithObjectArgs(classOf[Object], SourceLocation.Unknown)
   }
 
   /** Return `true` if `clazz` has a non-private constructor with zero arguments. */
