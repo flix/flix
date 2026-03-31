@@ -1211,24 +1211,12 @@ object Resolver {
 
     case NamedAst.Expr.NewObject(name, tpe, constructors, methods, loc) =>
       //
-      // Extract the native class and type arguments from the type.
+      // Fully resolve the type and extract the native class and type arguments.
       //
-      // We use `semiResolveType` to handle both direct native types and type aliases.
-      // If no type arguments are provided for a generic class (e.g., `new Comparator { }`),
-      // we default them to Object (i.e., treat it as `new Comparator[Object] { }`).
-      //
-      val semi = semiResolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, ns0, root)
-      val resolved = getNativeClassFromType(semi).map(clazz => (clazz, semi.typeArguments)).orElse {
-        val erased = UnkindedType.eraseAliases(finishResolveType(semi, taenv))
-        getNativeClassFromType(erased).map(clazz => (clazz, erased.typeArguments))
-      }
-      resolved match {
-        case Some((clazz, targs0)) =>
-          val numTypeParams = clazz.getTypeParameters.length
-          val targs = if (targs0.isEmpty && numTypeParams > 0)
-            List.fill(numTypeParams)(UnkindedType.mkObject(loc))
-          else
-            targs0
+      val t = resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
+      getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
+        case Some(clazz) =>
+          val targs = t.typeArguments
           val superScp = scp0.withSuperClass(Some(clazz))
           val cs = constructors.map(visitJvmConstructor(_, superScp))
           val ms = methods.map(visitJvmMethod(_, superScp))
@@ -1236,7 +1224,6 @@ object Resolver {
         case None =>
           val cs = constructors.map(visitJvmConstructor(_, scp0))
           val ms = methods.map(visitJvmMethod(_, scp0))
-          val t = finishResolveType(semi, taenv)
           val error = ResolutionError.IllegalNonJavaType(t, t.loc)
           sctx.errors.add(error)
           ResolvedAst.Expr.Error(error)
