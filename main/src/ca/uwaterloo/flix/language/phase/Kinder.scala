@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast.shared.*
@@ -1106,42 +1106,11 @@ object Kinder {
 
     case UnkindedType.Cst(cst, loc) =>
       val kind = cst.kind
-      cst match {
-        // Special handling for generic Java types: auto-fill with Object when used raw.
-        case TypeConstructor.Native(clazz) if clazz.getTypeParameters.length > 0 =>
-          if (CompilerConstants.RawJavaTypes) {
-            unify(expectedKind, Kind.Star) match {
-              case Some(_) =>
-                // Raw usage: auto-fill type arguments with Object.
-                val base = Type.Cst(cst, loc)
-                val n = clazz.getTypeParameters.length
-                val objectArgs = List.fill(n)(Type.mkNative(classOf[Object], loc))
-                Type.mkApply(base, objectArgs, loc)
-              case None =>
-                unify(expectedKind, kind) match {
-                  case Some(_) => Type.Cst(cst, loc) // Used as higher-kinded constructor.
-                  case None =>
-                    sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
-                    Type.freshError(Kind.Error, loc)
-                }
-            }
-          } else {
-            unify(expectedKind, kind) match {
-              case Some(_) => Type.Cst(cst, loc) // Used as higher-kinded constructor with explicit type args.
-              case None =>
-                // The expected kind is Star but the native type has kind Star -> ... -> Star.
-                // This means the user wrote a raw type without type arguments.
-                sctx.errors.add(KindError.IllegalRawJavaType(clazz, clazz.getTypeParameters.length, loc))
-                Type.freshError(Kind.Error, loc)
-            }
-          }
-        case _ =>
-          unify(expectedKind, kind) match {
-            case Some(_) => Type.Cst(cst, loc)
-            case None =>
-              sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
-              Type.freshError(Kind.Error, loc)
-          }
+      unify(expectedKind, kind) match {
+        case Some(_) => Type.Cst(cst, loc)
+        case None =>
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
+          Type.freshError(Kind.Error, loc)
       }
 
     case UnkindedType.Apply(t10, t20, loc) =>
@@ -1347,6 +1316,7 @@ object Kinder {
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe0.loc)
+    case _: UnkindedType.UnappliedNative => throw InternalCompilerException("unexpected unapplied native type", tpe0.loc)
 
 
   }
@@ -1641,6 +1611,7 @@ object Kinder {
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe.loc)
+    case _: UnkindedType.UnappliedNative => throw InternalCompilerException("unexpected unapplied native type", tpe.loc)
   }
 
   /**

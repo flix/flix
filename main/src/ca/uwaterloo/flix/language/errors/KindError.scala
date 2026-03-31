@@ -31,34 +31,6 @@ sealed trait KindError extends CompilationMessage {
 object KindError {
 
   /**
-    * An error raised to indicate that a generic Java type is used without type arguments.
-    *
-    * @param clazz         the Java class.
-    * @param expectedArity the number of type arguments expected.
-    * @param loc           the location where the error occurred.
-    */
-  case class IllegalRawJavaType(clazz: java.lang.Class[?], expectedArity: Int, loc: SourceLocation) extends KindError {
-    def code: ErrorCode = ErrorCode.E3692
-
-    private val expected = Grammar.n_things(expectedArity, "type argument")
-    private val example = s"${clazz.getSimpleName}[${List.fill(expectedArity)("t").mkString(", ")}]"
-
-    def summary: String =
-      s"Missing type arguments: '${clazz.getSimpleName}' expects $expected."
-
-    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      import fmt.*
-      s""">> Missing type arguments: '${red(clazz.getSimpleName)}' expects $expected.
-         |
-         |${highlight(loc, "missing type arguments", fmt)}
-         |
-         |${underline("Explanation:")} Java generic types cannot be used without type arguments.
-         |Use '${cyan(example)}' instead of '${red(clazz.getSimpleName)}'.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate wrong number of type arguments for an enum.
     *
     * @param sym           the enum symbol.
