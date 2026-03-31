@@ -1,129 +1,175 @@
 mod Test.Def.Generalization {
 
-    // NB: Some of these test cases are never executed.
-    // That is acceptable; we just want to ensure that they type check.
+    ////////////////////////////////////////////////////////////////////////////////
+    // Enumerations
+    ////////////////////////////////////////////////////////////////////////////////
 
-    def _testGen01(): a -> a = x -> x
+    @CompileTest
+    def testEnum01(): List[a] = Nil
 
-    @test
-    def testGen02(): Bool -> Bool = x -> x
+    @CompileTest
+    def testEnum02(): List[Bool] = Nil
 
-    @test
-    def testGen03(): Int32 -> Int32 = x -> x
+    @CompileTest
+    def testEnum03(): List[String] = Nil
 
-    @test
-    def testGen04(): String -> String = x -> x
+    @CompileTest
+    def testEnum04(): List[Option[a]] = Nil
 
-    def _testGen05(): Array[a, Static] -> Array[a, Static] = x -> x
+    @CompileTest
+    def testEnum05(): List[Result[e, t]] = Nil
 
-    def _testGen06(): Option[a] -> Option[a] = x -> x
+    @CompileTest
+    def testEnum06(): Result[e, Int32] = Ok(21)
 
-    def _testGen07(): Result[e, t] -> Result[e, t] = x -> x
+    @CompileTest
+    def testEnum07(): Result[Bool, Int32] = Ok(21)
 
-    def _testGen09(): {f = a} -> {f = a} = x -> x
+    @CompileTest
+    def testEnum08(): Result[String, Int32] = Ok(21)
 
-    def _testGen10(): {f = a | r} -> {f = a | r} = x -> x
+    @CompileTest
+    def testEnum09(): Result[Result[e, t], Int32] = Ok(21)
 
-    @test
-    def testGen11(): #{Edge(Int32, Int32)} -> #{Edge(Int32, Int32)} = x -> x
+    @CompileTest
+    def testEnum10(): Result[Int32, a] = Err(21)
 
-    def _testGen12(): #{Edge(Int32, Int32) | r} -> #{Edge(Int32, Int32) | r} = x -> x
+    @CompileTest
+    def testEnum11(): Result[Int32, Bool] = Err(21)
 
-    def _testGen13(): (a -> a) -> (a -> a) = x -> x
+    @CompileTest
+    def testEnum12(): Result[Int32, String] = Err(21)
 
-    def _testGen14(): (a -> a \ IO) -> (a -> a \ IO) = x -> x
+    @CompileTest
+    def testEnum13(): Result[Int32, Result[e, t]] = Err(21)
 
-    def _testGen15(): (a -> a \ ef) -> (a -> a \ ef) = x -> x
+    @CompileTest
+    def testEnum14(): List[Result[Option[a], Int32]] = Ok(21) :: Nil
 
-    def _testGen16(): a -> (b -> a) = x -> (_ -> x)
+    @CompileTest
+    def testEnum15(): List[Result[Result[e, t], Int32]] = Ok(21) :: Nil
 
-    def _testGen17(): { | r} -> {x = Int32 | r} = r -> {+x = 21 | r}
+    @CompileTest
+    def testEnum16(): List[Result[Map[k, v], Int32]] = Ok(21) :: Nil
 
-    def _testGen18(): {x = Int32 | r} -> { | r} = r -> { -x | r}
+    ////////////////////////////////////////////////////////////////////////////////
+    // Functions
+    ////////////////////////////////////////////////////////////////////////////////
 
-    def _testGen19(): {x = Int32 | r} -> {x = Int32 | r}  = r -> { x = 21 | r}
+    @CompileTest
+    def testFun01(): a -> a = x -> x
 
-    @test
-    def testGen20(): #{A(Int32)} = #{}
+    @CompileTest
+    def testFun02(): Bool -> Bool = x -> x
 
-    @test
-    def testGen21(): #{ A(Int32), B(Int32)} = #{A(21). }
+    @CompileTest
+    def testFun03(): Int32 -> Int32 = x -> x
 
-    @test
-    def testGen22(): #{ A(Int32), B(Int32), C(Int32)} = #{A(21). B(42). }
+    @CompileTest
+    def testFun04(): String -> String = x -> x
 
-    def _testGen23(): #{A(Int32) | r} = #{}
+    @CompileTest
+    def testFun05(): Array[a, Static] -> Array[a, Static] = x -> x
 
-    def _testGen24(): #{ A(Int32), B(Int32) | r} = #{A(21). }
+    @CompileTest
+    def testFun06(): Option[a] -> Option[a] = x -> x
 
-    def _testGen25(): #{ A(Int32), B(Int32), C(Int32) | r} = #{A(21). B(42). }
+    @CompileTest
+    def testFun07(): Result[e, t] -> Result[e, t] = x -> x
 
-    def _testGen26(): #{A(Int32), B(Int32) | r} -> #{A(Int32), B(Int32) | r} -> #{A(Int32), B(Int32) | r} = x -> y -> x <+> y
+    @CompileTest
+    def testFun08(): (a -> a) -> (a -> a) = x -> x
 
-    def _testLeq01(): List[a] = Nil
+    @CompileTest
+    def testFun09(): (a -> a \ IO) -> (a -> a \ IO) = x -> x
 
-    @test
-    def testLeq02(): List[Bool] = Nil
+    @CompileTest
+    def testFun10(): (a -> a \ ef) -> (a -> a \ ef) = x -> x
 
-    @test
-    def testLeq03(): List[String] = Nil
+    @CompileTest
+    def testFun11(): a -> (b -> a) = x -> (_ -> x)
 
-    def _testLeq04(): List[Option[a]] = Nil
+    @CompileTest
+    def testFun12(): a -> (a -> a) = x -> (_ -> x)
 
-    def _testLeq05(): List[Result[e, t]] = Nil
+    @CompileTest
+    def testFun13(): Int32 -> (b -> Int32) = x -> (_ -> x)
 
-    def _testLeq06(): Result[e, Int32] = Ok(21)
+    @CompileTest
+    def testFun14(): a -> (Int32 -> a) = x -> (_ -> x)
 
-    @test
-    def testLeq07(): Result[Bool, Int32] = Ok(21)
+    @CompileTest
+    def testFun15(): Int32 -> (Int32 -> Int32) = x -> (_ -> x)
 
-    @test
-    def testLeq08(): Result[String, Int32] = Ok(21)
+    @CompileTest
+    def testFun16(): (Unit -> b \ ef) -> b \ ef = f -> f()
 
-    def _testLeq09(): Result[Result[e, t], Int32] = Ok(21)
+    @CompileTest
+    def testFun17(): (Unit -> b) -> b = f -> f()
 
-    def _testLeq10(): Result[Int32, a] = Err(21)
+    @CompileTest
+    def testFun18(): (Unit -> b \ IO) -> b \ IO = f -> f()
 
-    @test
-    def testLeq11(): Result[Int32, Bool] = Err(21)
+    @CompileTest
+    def testFun19(): (Unit -> b \ {e1, e2, e3}) -> b \ {e3, e2, e1} = f -> f()
 
-    @test
-    def testLeq12(): Result[Int32, String] = Err(21)
+    ////////////////////////////////////////////////////////////////////////////////
+    // Records
+    ////////////////////////////////////////////////////////////////////////////////
 
-    def _testLeq13(): Result[Int32, Result[e, t]] = Err(21)
+    @CompileTest
+    def testRecord01(): { f = a } -> { f = a } = x -> x
 
-    def _testLeq14(): List[Result[Option[a], Int32]] = Ok(21) :: Nil
+    @CompileTest
+    def testRecord02(): { f = a | r } -> { f = a | r } = x -> x
 
-    def _testLeq15(): List[Result[Result[e, t], Int32]] = Ok(21) :: Nil
+    @CompileTest
+    def testRecord03(): { | r } -> { x = Int32 | r } = r -> { +x = 21 | r }
 
-    def _testLeq16(): List[Result[Map[k, v], Int32]] = Ok(21) :: Nil
+    @CompileTest
+    def testRecord04(): { x = Int32 | r } -> { | r } = r -> { -x | r }
 
-    def _testLeq17(): a -> (b -> a) = x -> (_ -> x)
+    @CompileTest
+    def testRecord05(): { x = Int32 | r } -> { x = Int32 | r } = r -> { x = 21 | r }
 
-    def _testLeq18(): a -> (a -> a) = x -> (_ -> x)
+    @CompileTest
+    def testRecord06(): { | } -> { x = Int32 } = r -> { +x = 21 | r }
 
-    def _testLeq19(): Int32 -> (b -> Int32) = x -> (_ -> x)
+    @CompileTest
+    def testRecord07(): { x = Int32 } -> { | } = r -> { -x | r }
 
-    def _testLeq20(): a -> (Int32 -> a) = x -> (_ -> x)
+    @CompileTest
+    def testRecord08(): { x = Int32 } -> { x = Int32 } = r -> { x = 21 | r }
 
-    @test
-    def testLeq21(): Int32 -> (Int32 -> Int32) = x -> (_ -> x)
+    ////////////////////////////////////////////////////////////////////////////////
+    // Schemas
+    ////////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def testLeq22(): {|} -> {x = Int32} = r -> {+x = 21 | r}
+    @CompileTest
+    def testSchema01(): #{ Edge(Int32, Int32) } -> #{ Edge(Int32, Int32) } = x -> x
 
-    @test
-    def testLeq23(): {x = Int32} -> {|} = r -> {-x | r}
+    @CompileTest
+    def testSchema02(): #{ Edge(Int32, Int32) | r } -> #{ Edge(Int32, Int32) | r } = x -> x
 
-    @test
-    def testLeq24(): {x = Int32} -> {x = Int32} = r -> {x = 21 | r}
+    @CompileTest
+    def testSchema03(): #{ A(Int32) } = #{}
 
-    def _testLeq25(): (Unit -> b \ ef) -> b \ ef = f -> f()
+    @CompileTest
+    def testSchema04(): #{ A(Int32), B(Int32) } = #{ A(21). }
 
-    def _testLeq26(): (Unit -> b) -> b = f -> f()
+    @CompileTest
+    def testSchema05(): #{ A(Int32), B(Int32), C(Int32) } = #{ A(21). B(42). }
 
-    def _testLeq27(): (Unit -> b \ IO) -> b \ IO = f -> f()
+    @CompileTest
+    def testSchema06(): #{ A(Int32) | r } = #{}
 
-    def _testLeq28(): (Unit -> b \ {e1, e2, e3}) -> b \ {e3, e2, e1} = f -> f()
+    @CompileTest
+    def testSchema07(): #{ A(Int32), B(Int32) | r } = #{ A(21). }
+
+    @CompileTest
+    def testSchema08(): #{ A(Int32), B(Int32), C(Int32) | r } = #{ A(21). B(42). }
+
+    @CompileTest
+    def testSchema09(): #{ A(Int32), B(Int32) | r } -> #{ A(Int32), B(Int32) | r } -> #{ A(Int32), B(Int32) | r } = x -> y -> x <+> y
 
 }

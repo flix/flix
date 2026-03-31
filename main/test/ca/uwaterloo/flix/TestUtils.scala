@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
@@ -37,51 +37,45 @@ trait TestUtils {
     * Checks the given input string `s` with the given compilation options `o`.
     */
   def check(s: String, o: Options)(implicit sctx: SecurityContext): (Option[TypedAst.Root], List[CompilationMessage]) = {
-    new Flix().setOptions(o).addSourceCode("<test>", s).check()
+    new Flix().setOptions(o).addVirtualPath(CompilerConstants.VirtualTestFile, s).check()
   }
 
   /**
-    * Compiles the given input string `s` with the given compilation options `o`.
+    * Asserts that the check result is successful.
     */
-  def compile(s: String, o: Options)(implicit sctx: SecurityContext): Validation[CompilationResult, CompilationMessage] = {
-    new Flix().setOptions(o).addSourceCode("<test>", s).compile()
+  def expectSuccess(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
+    case (_, Nil) => ()
+    case (_, errors) =>
+      fail(CompilationMessage.formatAll(errors)(Formatter.NoFormatter, None))
   }
 
-  private def errorString(errors: Seq[CompilationMessage]): String = {
-    errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString("\n\n")
+  /**
+    * Asserts that the amount of errors in result is exactly one.
+    *
+    * This is helpful for enforcing test (error) isolation
+    */
+  def expectOneError[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = {
+    val (_, errors) = result
+    if (errors.length != 1) {
+        fail(s"Expected exactly one error, but found ${errors.length} error(s): ${errors.map(_.getClass.getSimpleName).mkString(", ")}.")
+    }
+    expectError[T](result)
   }
 
   /**
     * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
     */
-  def expectErrorOnCheck[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
-    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root))
-    case (_, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)))
+  def expectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]), allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result match {
+    case (Some(root), Nil) => expectErrorGen[TypedAst.Root, T](Validation.Success(root), Some(root), allowUnknown)
+    case (optRoot, errors) => expectErrorGen[TypedAst.Root, T](Validation.Failure(Chain.from(errors)), optRoot, allowUnknown)
   }
 
   /**
-    * Asserts that the compilation result is a failure with a value of the parametric type `T`.
+    * Asserts that the check result does not contain a value of the parametric type `T`.
     */
-  def expectError[T](result: Validation[CompilationResult, CompilationMessage], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = expectErrorGen[CompilationResult, T](result, allowUnknown)
-
-  /**
-    * Asserts that validation contains a defined entry point.
-    */
-  def expectMain(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
-    case (Some(root), _) =>
-      if (root.mainEntryPoint.isEmpty) {
-        fail("Expected 'main' to be defined.")
-      }
-    case _ => fail("Expected 'main' to be defined.")
-  }
-
-  /**
-    * Asserts that the validation does not contain a value of the parametric type `T`.
-    */
-  def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toResult match {
-    case Result.Ok(_) => ()
-
-    case Result.Err(errors) =>
+  def rejectError[T](result: (Option[TypedAst.Root], List[CompilationMessage]))(implicit classTag: ClassTag[T]): Unit = result match {
+    case (_, Nil) => ()
+    case (_, errors) =>
       val rejected = classTag.runtimeClass
       val actuals = errors.map(_.getClass)
 
@@ -90,22 +84,26 @@ trait TestUtils {
   }
 
   /**
-    * Asserts that the validation is successful.
-    */
-  def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toResult match {
-    case Result.Ok(_) => ()
-    case Result.Err(errors) =>
-      fail(s"Expected success, but found errors:\n\n${errorString(errors.toSeq)}.")
-  }
-
-  /**
     * Private generic version of expectError.
+    *
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
-  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result.toResult match {
+  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage], rootOpt: Option[TypedAst.Root], allowUnknown: Boolean = false)(implicit classTag: ClassTag[T]): Unit = result.toResult match {
     case Result.Ok(_) => fail(s"Expected Failure, but got Success.")
 
     case Result.Err(errors) =>
+      // Check that all error messages can be formatted.
+      for (error <- errors) {
+        // Format without TypedAst.Root
+        val msgNoRoot = error.messageWithLoc(Formatter.AnsiTerminalFormatter)(None)
+        assert(msgNoRoot.nonEmpty)
+
+        // Format with TypedAst.Root -- if available.
+        val msgWithRoot = error.messageWithLoc(Formatter.AnsiTerminalFormatter)(rootOpt)
+        assert(msgWithRoot.nonEmpty)
+      }
+
+      // Retrieve the expected error.
       val expected = classTag.runtimeClass
 
       // Get the expected error line from the first error
@@ -149,6 +147,6 @@ trait TestUtils {
     * Returns true if the compilation message is ONLY on the given line (one-indexed).
     */
   private def isOnLine(error: CompilationMessage, line: Int) = {
-    error.loc.sp1.lineOneIndexed == line && error.loc.sp2.lineOneIndexed == line
+    error.loc.start.lineOneIndexed == line && error.loc.end.lineOneIndexed == line
   }
 }

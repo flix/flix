@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Phase.Simplifier {
+pub mod Fixpoint3.Phase.Simplifier {
     use Fixpoint3.Ast.Ram.{BoolExp, Facts, Predicates, RamProgram, RamStmt, RelOp, RelSym, RowVar}
     use Fixpoint3.Ast.Ram.RamTerm.RowLoad
     use Fixpoint3.Predicate.{getRelSymAsType, PredType}
@@ -39,16 +39,17 @@ mod Fixpoint3.Phase.Simplifier {
     ///
     /// The returned RAM program is always the same size or smaller.
     ///
-    @Internal
-    pub def simplifyProgram(program: RamProgram): RamProgram = unsafely IO run match program {
-        case RamProgram.Program(stmt, facts, predicates, index, typeInfo) =>
-            // Compute the a set of all relations which are initialized with facts, i.e. have some EDB facts.
-            let filterOutEmpty = fact -> fact
-                |> Map.filter(x -> (not BPlusTree.isEmpty(x)))
-                |> Map.foldRightWithKey(k -> _ -> Set.insert(k), Set#{})
-                |> Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
-            let nonEmpty = filterOutEmpty(fst(facts)) `Set.union` filterOutEmpty(snd(facts));
-            RamProgram.Program(simplifyStmt(stmt, nonEmpty, predicates), facts, predicates, index, typeInfo)
+    pub def simplifyProgram(program: RamProgram): RamProgram = unsafe IO {
+        match program {
+            case RamProgram.Program(stmt, facts, predicates, index, typeInfo) =>
+                // Compute the a set of all relations which are initialized with facts, i.e. have some EDB facts.
+                let filterOutEmpty = fact -> fact
+                    |> Map.filter(x -> (not BPlusTree.isEmpty(x)))
+                    |> Map.foldRightWithKey(k -> _ -> Set.insert(k), Set#{})
+                    |> Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
+                let nonEmpty = filterOutEmpty(fst(facts)) `Set.union` filterOutEmpty(snd(facts));
+                RamProgram.Program(simplifyStmt(stmt, nonEmpty, predicates), facts, predicates, index, typeInfo)
+        }
     }
 
     ///
@@ -58,7 +59,6 @@ mod Fixpoint3.Phase.Simplifier {
     ///
     /// `Predicates` is a structure for interacting with predicate symbols.
     ///
-    @Internal
     pub def simplifyStmt(stmt: RamStmt, nonEmpty: Set[RelSym], predicates: Predicates): RamStmt =
         Option.getWithDefault(RamStmt.Seq(Vector#{}), simplifyHelper(nonEmpty, predicates, false, stmt))
 
@@ -165,8 +165,8 @@ mod Fixpoint3.Phase.Simplifier {
                     })
                     // Partition into membership tests and rest.
                     |> Vector.partition(e -> match e {
-                        case BoolExp.NotMemberOf(_, _) => true
-                        case _                         => false
+                        case BoolExp.NotMemberOf(_, _, _) => true
+                        case _                            => false
                     });
                 let newTest = rest ++ memberOf;
                 // Simplify `if () then body` to `body`.

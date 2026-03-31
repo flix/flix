@@ -1,5 +1,7 @@
 mod Test.Dec.Assoc.Type.Collection {
 
+    use Assert.assertEq
+
     ///////////////////////////////////////////////////////////////////
     // Type definitions                                              //
     ///////////////////////////////////////////////////////////////////
@@ -162,57 +164,57 @@ mod Test.Dec.Assoc.Type.Collection {
     ///////////////////////////////////////////////////////////////////
 
     @Test
-    def testOption01(): Bool = {
+    def testOption01(): Unit \ Assert = {
         let c: Option[Int32] = Collection.empty();
-        None == c
+        assertEq(expected = None, c)
     }
 
     @Test
-    def testOption02(): Bool = {
+    def testOption02(): Unit \ Assert = {
         let c = Collection.add(1, Collection.empty());
-        Some(1) == c
+        assertEq(expected = Some(1), c)
     }
 
     @Test
-    def testOption03(): Bool = {
+    def testOption03(): Unit \ Assert = {
         let c = Collection.add(2, Collection.add(1, Collection.empty()));
-        Some(1) == c
+        assertEq(expected = Some(1), c)
     }
 
     @Test
-    def testOption04(): Bool = {
+    def testOption04(): Unit \ Assert = {
         let l = addTwiceThenToList(1, 2, None);
-        List#{1} == l
+        assertEq(expected = List#{1}, l)
     }
 
     @Test
-    def testOption05(): Bool = {
+    def testOption05(): Unit \ Assert = {
         let l = toListThenAddTwice(2, 1, None);
-        List#{1, 2} == l
+        assertEq(expected = List#{1, 2}, l)
     }
 
     @Test
-    def testOption06(): Bool = {
+    def testOption06(): Unit \ Assert = {
         let l = addTwiceThenToListOption01(1, 2, None);
-        List#{1} == l
+        assertEq(expected = List#{1}, l)
     }
 
     @Test
-    def testOption07(): Bool = {
+    def testOption07(): Unit \ Assert = {
         let l = addTwiceThenToListOption02(1, 2, None);
-        List#{1} == l
+        assertEq(expected = List#{1}, l)
     }
 
     @Test
-    def testOption08(): Bool = {
+    def testOption08(): Unit \ Assert = {
         let l = toListThenAddTwiceOption01(1, 2, None);
-        List#{2, 1} == l
+        assertEq(expected = List#{2, 1}, l)
     }
 
     @Test
-    def testOption09(): Bool = {
+    def testOption09(): Unit \ Assert = {
         let l = toListThenAddTwiceOption02(1, 2, None);
-        List#{2, 1} == l
+        assertEq(expected = List#{2, 1}, l)
     }
 
 
@@ -221,57 +223,57 @@ mod Test.Dec.Assoc.Type.Collection {
     ///////////////////////////////////////////////////////////////////
 
     @Test
-    def testList01(): Bool = {
+    def testList01(): Unit \ Assert = {
         let c: List[Int32] = Collection.empty();
-        Nil == c
+        assertEq(expected = Nil, c)
     }
 
     @Test
-    def testList02(): Bool = {
+    def testList02(): Unit \ Assert = {
         let c = Collection.add(1, Collection.empty());
-        List#{1} == c
+        assertEq(expected = List#{1}, c)
     }
 
     @Test
-    def testList03(): Bool = {
+    def testList03(): Unit \ Assert = {
         let c = Collection.add(2, Collection.add(1, Collection.empty()));
-        List#{2, 1} == c
+        assertEq(expected = List#{2, 1}, c)
     }
 
     @Test
-    def testList04(): Bool = {
+    def testList04(): Unit \ Assert = {
         let l = addTwiceThenToList(1, 2, Nil);
-        List#{2, 1} == l
+        assertEq(expected = List#{2, 1}, l)
     }
 
     @Test
-    def testList05(): Bool = {
+    def testList05(): Unit \ Assert = {
         let l = toListThenAddTwice(2, 1, Nil);
-        List#{1, 2} == l
+        assertEq(expected = List#{1, 2}, l)
     }
 
     @Test
-    def testList06(): Bool = {
+    def testList06(): Unit \ Assert = {
         let l = addTwiceThenToListList01(1, 2, Nil);
-        List#{2, 1} == l
+        assertEq(expected = List#{2, 1}, l)
     }
 
     @Test
-    def testList07(): Bool = {
+    def testList07(): Unit \ Assert = {
         let l = addTwiceThenToListList02(1, 2, Nil);
-        List#{2, 1} == l
+        assertEq(expected = List#{2, 1}, l)
     }
 
     @Test
-    def testList08(): Bool = {
+    def testList08(): Unit \ Assert = {
         let l = toListThenAddTwiceList01(0, 1, Nil);
-        List#{1, 0} == l
+        assertEq(expected = List#{1, 0}, l)
     }
 
     @Test
-    def testList09(): Bool = {
+    def testList09(): Unit \ Assert = {
         let l = toListThenAddTwiceList02(3, 4, Nil);
-        List#{4, 3} == l
+        assertEq(expected = List#{4, 3}, l)
     }
 
 
@@ -280,69 +282,69 @@ mod Test.Dec.Assoc.Type.Collection {
     ///////////////////////////////////////////////////////////////////
 
     @Test
-    def testSet01(): Bool = {
+    def testSet01(): Unit \ Assert = {
         let c: Set[Int32] = Collection.empty();
-        Set#{} == c
+        assertEq(expected = Set#{}, c)
     }
 
     @Test
-    def testSet02(): Bool = {
+    def testSet02(): Unit \ Assert = {
         let c = Collection.add(1, Collection.empty());
-        Set#{1} == c
+        assertEq(expected = Set#{1}, c)
     }
 
     @Test
-    def testSet03(): Bool = {
+    def testSet03(): Unit \ Assert = {
         let c = Collection.add(2, Collection.add(1, Collection.empty()));
-        Set#{2, 1} == c
+        assertEq(expected = Set#{2, 1}, c)
     }
 
     @Test
-    def testSet04(): Bool = {
+    def testSet04(): Unit \ Assert = {
         let l = addTwiceThenToList(1, 2, Set#{});
-        List#{1, 2} == l
+        assertEq(expected = List#{1, 2}, l)
     }
 
     @Test
-    def testSet05(): Bool = {
+    def testSet05(): Unit \ Assert = {
         let l = toListThenAddTwice(2, 1, Set#{});
-        List#{1, 2} == l
+        assertEq(expected = List#{1, 2}, l)
     }
 
     @Test
-    def testSet06(): Bool = {
+    def testSet06(): Unit \ Assert = {
         let l = addTwiceThenToListSet01(1, 2, Set#{});
-        List#{1, 2} == l
+        assertEq(expected = List#{1, 2}, l)
     }
 
     @Test
-    def testSet07(): Bool = {
+    def testSet07(): Unit \ Assert = {
         let l = toListThenAddTwiceSet02(100, 200, Set#{});
-        List#{200, 100} == l
+        assertEq(expected = List#{200, 100}, l)
     }
 
     @Test
-    def testSet08(): Bool = {
+    def testSet08(): Unit \ Assert = {
         let l = toListThenAddTwiceSet01(0, 1, Set#{});
-        List#{1, 0} == l
+        assertEq(expected = List#{1, 0}, l)
     }
 
     @Test
-    def testSet09(): Bool = {
+    def testSet09(): Unit \ Assert = {
         let l = toListThenAddTwiceSet02(3, 4, Set#{});
-        List#{4, 3} == l
+        assertEq(expected = List#{4, 3}, l)
     }
 
     @Test
-    def testSet10(): Bool = {
+    def testSet10(): Unit \ Assert = {
         let l = toListThenAddTwiceSet01(5, 5, Set#{});
-        List#{5, 5} == l
+        assertEq(expected = List#{5, 5}, l)
     }
 
     @Test
-    def testSet11(): Bool = {
+    def testSet11(): Unit \ Assert = {
         let l = addTwiceThenToListSet01(5, 5, Set#{});
-        List#{5} == l
+        assertEq(expected = List#{5}, l)
     }
 
 
@@ -351,68 +353,68 @@ mod Test.Dec.Assoc.Type.Collection {
     ///////////////////////////////////////////////////////////////////
 
     @Test
-    def testVector01(): Bool = {
+    def testVector01(): Unit \ Assert = {
         let c: Vector[Int32] = Collection.empty();
-        Vector#{} == c
+        assertEq(expected = Vector#{}, c)
     }
 
     @Test
-    def testVector02(): Bool = {
+    def testVector02(): Unit \ Assert = {
         let c = Collection.add(1, Collection.empty());
-        Vector#{1} == c
+        assertEq(expected = Vector#{1}, c)
     }
 
     @Test
-    def testVector03(): Bool = {
+    def testVector03(): Unit \ Assert = {
         let c = Collection.add(2, Collection.add(1, Collection.empty()));
-        Vector#{2, 1} == c
+        assertEq(expected = Vector#{2, 1}, c)
     }
 
     @Test
-    def testVector04(): Bool = {
+    def testVector04(): Unit \ Assert = {
         let l = addTwiceThenToList(1, 2, Vector#{});
-        List#{2, 1} == l
+        assertEq(expected = List#{2, 1}, l)
     }
 
     @Test
-    def testVector05(): Bool = {
+    def testVector05(): Unit \ Assert = {
         let l = toListThenAddTwice(2, 1, Vector#{});
-        List#{1, 2} == l
+        assertEq(expected = List#{1, 2}, l)
     }
 
     @Test
-    def testVector06(): Bool = {
+    def testVector06(): Unit \ Assert = {
         let l = addTwiceThenToListVector01(1, 2, Vector#{});
-        List#{2, 1} == l
+        assertEq(expected = List#{2, 1}, l)
     }
 
     @Test
-    def testVector07(): Bool = {
+    def testVector07(): Unit \ Assert = {
         let l = toListThenAddTwiceVector02(100, 200, Vector#{});
-        List#{200, 100} == l
+        assertEq(expected = List#{200, 100}, l)
     }
 
     @Test
-    def testVector08(): Bool = {
+    def testVector08(): Unit \ Assert = {
         let l = toListThenAddTwiceVector01(0, 1, Vector#{});
-        List#{1, 0} == l
+        assertEq(expected = List#{1, 0}, l)
     }
 
     @Test
-    def testVector09(): Bool = {
+    def testVector09(): Unit \ Assert = {
         let l = toListThenAddTwiceVector02(3, 4, Vector#{});
-        List#{4, 3} == l
+        assertEq(expected = List#{4, 3}, l)
     }
 
     @Test
-    def testVector10(): Bool = {
+    def testVector10(): Unit \ Assert = {
         let l = toListThenAddTwiceVector01(5, 5, Vector#{});
-        List#{5, 5} == l
+        assertEq(expected = List#{5, 5}, l)
     }
 
     @Test
-    def testVector11(): Bool = {
+    def testVector11(): Unit \ Assert = {
         let l = addTwiceThenToListVector01(5, 5, Vector#{});
-        List#{5, 5} == l
+        assertEq(expected = List#{5, 5}, l)
     }
 }

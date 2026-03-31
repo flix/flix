@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.language.phase.unification.EffUnification3
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.CofiniteSet
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.util.Objects
 import scala.annotation.tailrec
@@ -651,9 +651,50 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
+    * Evaluates `eff` if it is well-formed and has no type variables,
+    * associated types, or error types.
+    *
+    * Evaluates `eff` to a Cofinite set of effect symbols.
+    *
+    * - Returns `Ok[s]` if `eff` is well-formed and has no type variables, associated types,
+    *   or error types and hence reduces to a single Cofinite set.
+    * - Returns `Err[()]` otherwise.
+    */
+  def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], Unit] = eff match {
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
+      case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
+      case TypeConstructor.Effect(sym, _) => Result.Ok(CofiniteSet.mkSet(sym))
+      case _ => Result.Err(())
+    }
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
+      Result.mapN(eval(x0)) {
+        case x => CofiniteSet.complement(x)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.union(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.intersection(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.difference(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.xor(x, y)
+      }
+    case Type.Alias(_, _, tpe, _) => eval(tpe)
+    case _ => Result.Err(())
+  }
+
+  /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: RegionScope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isSlack = false, loc)
     Type.Var(sym, loc)
   }
@@ -661,7 +702,7 @@ object Type {
   /**
     * Returns a fresh effect slack variable.
     */
-  def freshEffSlackVar(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type.Var = {
+  def freshEffSlackVar(loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(Absent, Kind.Eff, isSlack = true, loc)
     Type.Var(sym, loc)
   }
@@ -1320,6 +1361,16 @@ object Type {
   }
 
   /**
+    * Returns a fully-applied Flix type for the given Java class, with `Object` type arguments
+    * for generic classes. Use this in ground-type contexts that need kind `Star`.
+    */
+  def instantiateJavaTypeWithObjectArgs(c: Class[?], loc: SourceLocation): Type = {
+    val base = getFlixType(c)
+    val n = c.getTypeParameters.length
+    Type.mkApply(base, List.fill(n)(Type.mkNative(classOf[Object], loc)), loc)
+  }
+
+  /**
     * Returns the [[Class]] object of `tpe`, if it exists.
     *
     * Almost the inverse function of [[getFlixType]], but arrays and unit returns None.
@@ -1351,7 +1402,12 @@ object Type {
       Some(classOf[java.util.regex.Pattern])
     case Type.Cst(TypeConstructor.Native(clazz), _) =>
       Some(clazz)
-    case _ => None
+    case _ =>
+      // Peel off type applications (e.g., ArrayList[String]) and check the base type.
+      tpe.baseType match {
+        case Type.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
+        case _ => None
+      }
   }
 
   /**

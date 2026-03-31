@@ -3,7 +3,7 @@ mod Mod1 {
     struct S2[r] {}
 
     mod Mod2 {
-        @test
+        @Test
         def testOuterMod01(): Unit =
             region rc {
                 discard new Mod1.S2 @ rc {}
@@ -112,115 +112,115 @@ mod Test.Exp.Struct.New {
         value: t
     }
 
-    @test
+    @Test
     def testEmptyStruct01(): Unit =
         region rc {
             discard new Empty @ rc {}
         }
 
-    @test
+    @Test
     def testEmptyStruct02(): Unit =
         region rc {
             discard new OneEmpty @ rc {a = new Empty @ rc { }}
         }
 
-    @test
+    @Test
     def testEmptyStruct03(): Unit =
         region rc {
             discard new TwoEmpty @ rc {two_a = new Empty @ rc {}, two_b = new Empty @ rc {}}
         }
 
-    @test
+    @Test
     def testEmptyStruct04(): Unit =
         region rc {
             discard new TwoEmpty @ rc {two_b = new Empty @ rc {}, two_a = new Empty @ rc {}}
         }
 
-    @test
+    @Test
     def testEmptyStruct05(): Unit =
         region rc {
             discard new EmptyA @ rc { emptyb = new EmptyB @ rc { b = new EmptyC @ rc { c = new Empty @ rc {} } } }
         }
 
-    @test
+    @Test
     def testStructLiteral01(): Unit =
         region rc {
             discard new Name @ rc { name = "Lucky Luke" }
         }
 
-    @test
+    @Test
     def testStructLiteral02(): Unit =
         region rc {
             discard new FullName @ rc { fstName = "Lucky", lstName = "Luke" }
         }
 
-    @test
+    @Test
     def testStructLiteral03(): Unit =
         region rc {
             discard new Person @ rc { person_fstName = "Lucky", person_lstName = "Luke", person_age = 42 }
         }
 
-    @test
+    @Test
     def testStructLiteral04(): Unit =
         region rc {
             discard new Cowboy @ rc { cowboy_fstName = "Lucky", cowboy_lstName = "Luke", cowboy_age = 42, cowboy = true }
         }
 
-    @test
+    @Test
     def testStructLiteral05(): Unit =
         region rc {
             discard new Cowboy @ rc { cowboy = true, cowboy_lstName = "Luke", cowboy_age = 42, cowboy_fstName = "Lucky" }
         }
 
-    @test
+    @Test
     def testStructLiteral06(): Unit =
         region rc {
             discard new TwoInts @ rc { x = 0, y = 0 }
         }
 
-    @test
+    @Test
     def testStructLiteral07(): Unit =
         region rc {
             discard new ThreeInts @ rc { three_x = 0, three_y = 0, three_z = 0 }
         }
 
-    @test
+    @Test
     def testStructLiteral08(): Unit =
         region rc {
             discard new ThreeInts @ rc { three_y = 0, three_x = 0, three_z = 0 }
         }
 
-    @test
+    @Test
     def testNestedStructLiteral01(): Unit =
         region rc {
             discard new TwoIntsHolder @ rc { twoints = new TwoInts @ rc { x = 1, y = 2 }}
         }
 
-    @test
+    @Test
     def testNestedStructLiteral02(): Unit =
         region rc {
             discard new Outer @ rc { inner1 = new TwoInts @ rc { x = 1, y = 2 }, inner2 = new TwoInts @ rc { x = 3, y = 4 } }
         }
 
-    @test
+    @Test
     def testNestedStructLiteral03(): Unit =
         region rc {
             discard new A @ rc {bstruct = new B @ rc {cstruct = new C @ rc {dstruct = new D @ rc {i = 42}}}}
         }
 
-    @test
+    @Test
     def testNestedLabels01(): Unit =
         region rc {
             discard new A3 @ rc {a2 = new A2 @ rc {a1 = new A1 @ rc {empty = new Empty @ rc {}}}}
         }
 
-    @test
+    @Test
     def testOtherMod01(): Unit =
         region rc {
             discard new Mod1.S @ rc {}
         }
 
-    @test
+    @Test
     def binaryTree01(): Unit =
         region rc {
             discard new BinaryTree @ rc {
@@ -230,7 +230,7 @@ mod Test.Exp.Struct.New {
             }
         }
 
-    @test
+    @Test
     def binaryTree02(): Unit =
         region rc {
             let leaf = new BinaryTree @ rc {
@@ -245,7 +245,7 @@ mod Test.Exp.Struct.New {
             }
         }
 
-    @test
+    @Test
     def binaryTree03(): Unit =
         region rc {
             let leaf = new BinaryTree @ rc {
@@ -265,7 +265,7 @@ mod Test.Exp.Struct.New {
             }
         }
 
-    @test
+    @Test
     def binaryTree04(): Unit =
         region rc {
             let leaf = new BinaryTree @ rc {
@@ -285,7 +285,7 @@ mod Test.Exp.Struct.New {
             }
         }
 
-    @test
+    @Test
     def testVariableNameSameAsFieldName01(): Unit =
         let left = ();
         left

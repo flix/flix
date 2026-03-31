@@ -73,6 +73,9 @@ sealed trait SecurityContext {
 
 object SecurityContext {
 
+  /** The default [[SecurityContext]]. */
+  val Default: SecurityContext = Plain
+
   /**
     * Returns the greatest lower bound of `sctxs`.
     */

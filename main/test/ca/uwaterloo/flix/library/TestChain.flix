@@ -1,6 +1,7 @@
 mod TestChain {
 
-    use Assert.{assertEq, assertTrue, assertFalse, fail};
+    use Assert.{assertEq, assertTrue, assertFalse, assertNone, fail};
+    use Math.Shuffle
 
     /////////////////////////////////////////////////////////////////////////////
     // Collectable.collect                                                     //
@@ -143,6 +144,44 @@ mod TestChain {
 
     @Test
     def last04(): Unit \ Assert = assertEq(expected = Some(3), Chain.last(List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def get01(): Unit \ Assert =
+        let r = run Chain.get(1, List.toChain("a" :: "b" :: "c" :: Nil)) with handler OutOfBounds {
+            def outOfBounds(_, _) = "error"
+        };
+        assertEq(expected = "b", r)
+
+    @Test
+    def get02(): Unit \ Assert =
+        let r = run Chain.get(5, List.toChain("a" :: "b" :: "c" :: Nil)) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index 5 is out of bounds for Chain of length 3", r)
+
+    @Test
+    def get03(): Unit \ Assert =
+        let r = run Chain.get(-1, List.toChain("a" :: "b" :: "c" :: Nil)) with handler OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        assertEq(expected = "index -1 is out of bounds for Chain of length 3", r)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nth01(): Unit \ Assert = assertEq(expected = Some(1), Chain.nth(0, List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    @Test
+    def nth02(): Unit \ Assert = assertEq(expected = Some(2), Chain.nth(1, List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    @Test
+    def nth03(): Unit \ Assert = assertNone(Chain.nth(5, List.toChain(1 :: 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                  //

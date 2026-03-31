@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod BigInt {
+pub mod BigInt {
 
     import java.math.BigDecimal
     import java.math.BigInteger

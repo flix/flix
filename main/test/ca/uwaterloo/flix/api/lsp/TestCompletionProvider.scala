@@ -16,23 +16,27 @@
 
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
+
+import java.nio.file.Path
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
+import ca.uwaterloo.flix.util.{Formatter, Options}
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Options
+import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 import scala.collection.mutable
 import scala.util.Random
 
+@DoNotDiscover
 class TestCompletionProvider extends AnyFunSuite {
 
   /**
@@ -51,14 +55,11 @@ class TestCompletionProvider extends AnyFunSuite {
     "examples/effects-and-handlers/advanced/collatz.flix",
     "examples/effects-and-handlers/advanced/nqueens.flix",
     "examples/effects-and-handlers/advanced/backtracking.flix",
-    "examples/effects-and-handlers/using-Random.flix",
-    "examples/effects-and-handlers/using-HttpWithResult.flix",
-    "examples/effects-and-handlers/using-ProcessWithResult.flix",
-    "examples/effects-and-handlers/using-FileWriteWithResult.flix",
-    "examples/effects-and-handlers/using-Console.flix",
+    "examples/effects-and-handlers/process/process-exec.flix",
+    "examples/effects-and-handlers/process/process-exec-with-cwd-and-env.flix",
+    "examples/effects-and-handlers/process/process-exec-and-read-output.flix",
+    "examples/effects-and-handlers/process/process-wait-and-exit-value.flix",
     "examples/effects-and-handlers/using-Logger.flix",
-    "examples/effects-and-handlers/running-multiple-effects.flix",
-    "examples/effects-and-handlers/using-Clock.flix",
     "examples/datalog/compiler-puzzle.flix",
     "examples/datalog/railroad-network.flix",
     "examples/datalog/train-schedule.flix",
@@ -121,7 +122,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * Every test will use the same uri so that adding a new source with this uri will replace the old one.
     */
-  private val Uri = "<test>"
+  private val Uri = CompilerConstants.VirtualTestFile.toString
 
   /**
     * A limit on the maximum number of inputs tested by each property.
@@ -404,17 +405,17 @@ class TestCompletionProvider extends AnyFunSuite {
   private def cutHoles(prg: String, loc: SourceLocation): List[ProgramWithHole] = {
     assert(loc.isSingleLine)
 
-    val result = mutable.ListBuffer.empty[ProgramWithHole]
+    val result = mutable.ArrayBuffer.empty[ProgramWithHole]
     val bOffset = indexOf(Position.fromBegin(loc), prg)
     val eOffset = indexOf(Position.fromEnd(loc), prg)
-    val length = loc.sp2.colOneIndexed - loc.sp1.colOneIndexed
+    val length = loc.end.colOneIndexed - loc.start.colOneIndexed
     for (i <- 0 until length) {
       val o = bOffset + i
       val prefix = prg.substring(0, o)
       val cut = prg.substring(bOffset, bOffset + i)
       val suffix = prg.substring(eOffset, prg.length)
       val withHole = prefix + suffix
-      val pos = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + i)
+      val pos = Position(loc.start.lineOneIndexed, loc.start.colOneIndexed + i)
       result += ProgramWithHole(withHole, cut, pos)
     }
 
@@ -629,7 +630,7 @@ class TestCompletionProvider extends AnyFunSuite {
 
     object DefSymUseConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _, _) if symUse.loc.isReal =>
+        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _, _, _) if symUse.loc.isReal =>
           occurs += symUse
         case _ =>
       }
@@ -663,7 +664,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def compile(program: String): (Root, List[CompilationMessage]) = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    Flix.addSourceCode(Uri, program)
+    Flix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
     Flix.check() match {
       case (Some(root), errors) => (root, errors)
       case (None, _) => fail("Compilation failed: a root is expected.")
@@ -679,15 +680,11 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def compileWithSuccess(program: String): Root = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    Flix.addSourceCode(Uri, program)
+    Flix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
     Flix.check() match {
       case (Some(root), Nil) => root
-      case (_, errors) =>
-        for (error <- errors) {
-          val msg = error.message(NoFormatter)
-          println(msg)
-        }
-        fail("Compilation failed.")
+      case (optRoot, errors) =>
+        fail(CompilationMessage.formatAll(errors)(NoFormatter, optRoot))
     }
   }
 
@@ -716,8 +713,8 @@ class TestCompletionProvider extends AnyFunSuite {
     * If the token spans multiple lines, we will return all the positions on all the lines.
     */
   private def rangeOfInclusive(tok: Token): List[Position] = {
-    val initLine = tok.sp1.lineOneIndexed
-    val initCol = tok.sp1.colOneIndexed.toInt
+    val initLine = tok.start.lineOneIndexed
+    val initCol = tok.start.colOneIndexed.toInt
 
     tok.text
       .scanLeft((initLine, initCol)) {
@@ -734,8 +731,8 @@ class TestCompletionProvider extends AnyFunSuite {
   // TODO: DOC
   private def rangeOfInclusive(loc: SourceLocation): List[Position] = {
     assert(loc.isSingleLine) // TODO: Support multiline
-    (loc.beginCol to loc.endCol).map {
-      case col => Position(loc.beginLine, col)
+    (loc.startCol to loc.endCol).map {
+      case col => Position(loc.startLine, col)
     }.toList
   }
 
@@ -754,8 +751,8 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def mkSource(content: String): Source = {
     val sctx = SecurityContext.Unrestricted
-    val input = Input.Text(Uri, content, sctx)
-    Source(input, content.toCharArray)
+    val input = Input.VirtualFile(CompilerConstants.VirtualTestFile, content, sctx)
+    Source.fromString(input, content)
   }
 
   /**

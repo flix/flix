@@ -52,6 +52,42 @@ mod TestOption {
     def getWithDefault04(): Unit \ Assert = assertEq(expected = 30ii, Option.getWithDefault(32ii, Some(30ii)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // getOrAbort                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getOrAbort01(): Unit \ Assert =
+        let r = run {
+            Option.getOrAbort(Some(42))
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(42), r)
+
+    @Test
+    def getOrAbort02(): Unit \ Assert =
+        let r = run {
+            Option.getOrAbort((None: Option[Int32]))
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // orAbort                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def orAbort01(): Unit \ Assert =
+        let r = run {
+            Option.orAbort(Some(42))
+        } with Abort.runWithResult;
+        assertEq(expected = Ok(()), r)
+
+    @Test
+    def orAbort02(): Unit \ Assert =
+        let r = run {
+            Option.orAbort((None: Option[Int32]))
+        } with Abort.runWithResult;
+        assertTrue(Result.isErr(r))
+
+    /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

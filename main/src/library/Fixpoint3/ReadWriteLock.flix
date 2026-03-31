@@ -15,37 +15,25 @@
  * limitations under the License.
  */
 
-///
-/// A wrapper around a Java read-write-lock.
-///
-mod Fixpoint3 {
-    import java.util.concurrent.locks.{ReadWriteLock => JReadWriteLock}
+pub mod Fixpoint3.ReadWriteLock {
+    import java.util.concurrent.locks.{StampedLock => JStampedLock}
 
-    @Internal
-    enum ReadWriteLock[_: Region](JReadWriteLock)
+    pub def mkLock(_: Region[r]): ReadWriteLock[r] \ r =
+        ReadWriteLock(unsafe IO as r { new JStampedLock().asReadWriteLock() })
 
-    mod ReadWriteLock {
-        import java.util.concurrent.locks.{StampedLock => JStampedLock}
-        use Fixpoint3.ReadWriteLock
+    pub def readLock(lock: ReadWriteLock[r]): Unit \ r =
+        let ReadWriteLock(l) = lock;
+        unsafe IO as r { l.readLock().lock() }
 
-        pub def mkLock(_: Region[r]): ReadWriteLock[r] \ r =
-            ReadWriteLock(unchecked_cast((new JStampedLock().asReadWriteLock(): _ \ IO) as _ \ r))
+    pub def writeLock(lock: ReadWriteLock[r]): Unit \ r =
+        let ReadWriteLock(l) = lock;
+        unsafe IO as r { l.writeLock().lock() }
 
-        pub def readLock(lock: ReadWriteLock[r]): Unit \ r =
-            let ReadWriteLock(l) = lock;
-            unchecked_cast((l.readLock().lock(): _ \ IO) as _ \ r)
+    pub def unlockRead(lock: ReadWriteLock[r]): Unit \ r =
+        let ReadWriteLock(l) = lock;
+        unsafe IO as r { l.readLock().unlock() }
 
-        pub def writeLock(lock: ReadWriteLock[r]): Unit \ r =
-            let ReadWriteLock(l) = lock;
-            unchecked_cast((l.writeLock().lock(): _ \ IO) as _ \ r)
-
-        pub def unlockRead(lock: ReadWriteLock[r]): Unit \ r =
-            let ReadWriteLock(l) = lock;
-            unchecked_cast((l.readLock().unlock(): _ \ IO) as _ \ r)
-
-        pub def unlockWrite(lock: ReadWriteLock[r]): Unit \ r =
-            let ReadWriteLock(l) = lock;
-            unchecked_cast((l.writeLock().unlock(): _ \ IO) as _ \ r)
-    }
-
+    pub def unlockWrite(lock: ReadWriteLock[r]): Unit \ r =
+        let ReadWriteLock(l) = lock;
+        unsafe IO as r { l.writeLock().unlock() }
 }

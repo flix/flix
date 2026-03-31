@@ -1,4 +1,7 @@
 mod Test.Dec.Enum {
+
+    use Assert.{assertEq, assertTrue, success};
+
     pub enum Empty
 
     pub enum EmptyWithBraces {}
@@ -8,20 +11,20 @@ mod Test.Dec.Enum {
     pub enum Singleton2(Int32, String)
 
     @Test
-    def example01(): Bool =
+    def example01(): Unit \ Assert =
         match Singleton2.Singleton2(42, "42") {
             case Singleton2.Singleton2(i, s) =>
-                Int32.toString(i) == s
+                assertEq(expected = Int32.toString(i), s)
         }
 
     pub enum SingletonTuple((Int32, String))
 
     @Test
-    def example02(): Bool =
+    def example02(): Unit \ Assert =
         let t1 = (42, "42");
         match SingletonTuple.SingletonTuple(t1) {
             case SingletonTuple.SingletonTuple(t2) =>
-                fst(t1) == fst(t2) and snd(t1) == snd(t2)
+                assertEq(expected = t1, t2)
         }
 
     pub enum SingletonPoly[a](a)
@@ -40,11 +43,11 @@ mod Test.Dec.Enum {
     }
 
     @Test
-    def example03(): Bool =
+    def example03(): Unit \ Assert =
         match PolyMulti.Zero {
-            case PolyMulti.Two(a, b) => a and b
-            case PolyMulti.Tuple(t) => fst(t) and snd(t)
-            case _ => true
+            case PolyMulti.Two(a, b) => assertTrue(a and b)
+            case PolyMulti.Tuple(t) => assertTrue(fst(t) and snd(t))
+            case _ => success("ok")
         }
 
     pub enum Recursive {

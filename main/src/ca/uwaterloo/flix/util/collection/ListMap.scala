@@ -121,6 +121,22 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   }
 
   /**
+    * Returns a new ListMap with the key-value pairs `k -> v` if `p(k, v)` holds.
+    * If filtering results in `k -> Nil`, then `k` is removed from the `ListMap`.
+    */
+  def filter(p: ((K, V)) => Boolean): ListMap[K, V] = {
+    m.foldLeft(ListMap.empty[K, V]) {
+      case (acc, (k, l)) =>
+        val filteredValues = l.filter(v => p((k, v)))
+        if (filteredValues.isEmpty) {
+          acc
+        } else {
+          acc ++ (k -> filteredValues)
+        }
+    }
+  }
+
+  /**
     * Folds the values in the list map using the given function `f`.
     * The function `f` takes an accumulator `z` and a tuple `(k, v)` where `v` is a value of type V instead of a list of V.
     */
@@ -168,4 +184,15 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     * Returns ´this´ list map without the mappings for ´ks´.
     */
   def --(ks: Iterable[K]): ListMap[K, V] = ListMap(m -- ks)
+
+  /**
+    * Returns a new `ListMap` with `v -> k` for all `k -> v` in `this`.
+    */
+  def invert: ListMap[V, K] = {
+    m.foldRight(ListMap.empty[V, K]) {
+      case ((k, vs), acc) => vs.foldLeft(acc) {
+        case (acc1, v) => acc1 + (v -> k)
+      }
+    }
+  }
 }

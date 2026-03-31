@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Simplifier}
+import ca.uwaterloo.flix.language.phase.{Kinder, monomorph, Simplifier}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
@@ -216,7 +216,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of channel senders.
     */
-  @EliminatedBy(Lowering.getClass)
+  @EliminatedBy(monomorph.Lowering.getClass)
   case object Sender extends TypeConstructor {
     /**
       * The shape of a sender is Sender[t].
@@ -227,7 +227,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of channel receivers.
     */
-  @EliminatedBy(Lowering.getClass)
+  @EliminatedBy(monomorph.Lowering.getClass)
   case object Receiver extends TypeConstructor {
     /**
       * The shape of a sender is Receiver[t].
@@ -264,10 +264,15 @@ object TypeConstructor {
   case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, kind: Kind) extends TypeConstructor
 
   /**
-    * A type constructor that represent the type of JVM classes.
+    * A type constructor that represents the type of JVM classes.
+    *
+    * The kind depends on the number of type parameters of the class:
+    * - `Native(classOf[String])` has kind `Star` (no type parameters).
+    * - `Native(classOf[ArrayList])` has kind `Star -> Star` (one type parameter).
+    * - `Native(classOf[HashMap])` has kind `Star -> Star -> Star` (two type parameters).
     */
   case class Native(clazz: Class[?]) extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.mkArrow(clazz.getTypeParameters.length)
   }
 
   /**
@@ -278,10 +283,24 @@ object TypeConstructor {
   }
 
   /**
-   * A type constructor that represents the type of a Java method.
-   */
+    * A type constructor that represents the type of a Java method.
+    *
+    * The kind depends on the number of type parameters:
+    * - For instance methods: class type parameters + method type parameters.
+    * - For static methods: only method type parameters (class params are not in scope).
+    *
+    * Examples:
+    * - `JvmMethod(String.length)` has kind `Jvm` (no type parameters).
+    * - `JvmMethod(ArrayList.get)` has kind `Star -> Jvm` (one class type parameter `E`).
+    * - `JvmMethod(HashMap.get)` has kind `Star -> Star -> Jvm` (two class type parameters `K`, `V`).
+    *
+    * Type arguments are applied via `Type.Apply`, e.g., `JvmMethod(ArrayList.get)[String]`.
+    */
   case class JvmMethod(method: Method) extends TypeConstructor {
-    def kind: Kind = Kind.Jvm
+    val numClassParams: Int = if (java.lang.reflect.Modifier.isStatic(method.getModifiers)) 0
+                              else method.getDeclaringClass.getTypeParameters.length
+    val numMethodParams: Int = method.getTypeParameters.length
+    def kind: Kind = Kind.mkArrowTo(numClassParams + numMethodParams, Kind.Jvm)
   }
 
   /**

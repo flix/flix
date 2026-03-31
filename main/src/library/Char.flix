@@ -22,7 +22,7 @@ instance UpperBound[Char] {
     pub def maxValue(): Char = Char.maxValue()
 }
 
-mod Char {
+pub mod Char {
 
     import java.lang.Character
 

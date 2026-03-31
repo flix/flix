@@ -1,57 +1,59 @@
 mod Test.Exp.Match.Bool {
 
-    @test
-    def testMatchBool01(): Bool = match true {
-        case true  => true
-        case false => false
+    use Assert.{assertEq, success, fail}
+
+    @Test
+    def matchBool01(): Unit \ Assert = match true {
+        case true  => success("matched true")
+        case false => fail("unexpected match on false")
     }
 
-    @test
-    def testMatchBool02(): Bool = match true {
-        case false => false
-        case true  => true
+    @Test
+    def matchBool02(): Unit \ Assert = match true {
+        case false => fail("unexpected match on false")
+        case true  => success("matched true")
     }
 
-    @test
-    def testMatchBool03(): Bool = match false {
-        case false => true
-        case true  => false
+    @Test
+    def matchBool03(): Unit \ Assert = match false {
+        case false => success("matched false")
+        case true  => fail("unexpected match on true")
     }
 
-    @test
-    def testMatchBool04(): Bool = match false {
-        case true  => false
-        case false => true
+    @Test
+    def matchBool04(): Unit \ Assert = match false {
+        case true  => fail("unexpected match on true")
+        case false => success("matched false")
     }
 
-    @test
-    def testMatchBoolVar01(): Bool = match true {
-        case x  => x == true
+    @Test
+    def matchBoolVar01(): Unit \ Assert = match true {
+        case x => assertEq(expected = true, x)
     }
 
-    @test
-    def testMatchBoolVar02(): Bool = match false {
-        case x  => x == false
+    @Test
+    def matchBoolVar02(): Unit \ Assert = match false {
+        case x => assertEq(expected = false, x)
     }
 
-    @test
-    def testMatchBoolVar03(): Bool = match false {
-        case true => false
-        case x    => x == false
+    @Test
+    def matchBoolVar03(): Unit \ Assert = match false {
+        case true => fail("unexpected match on true")
+        case x    => assertEq(expected = false, x)
     }
 
-    @test
-    def testMatchBoolVar04(): Bool = match true {
-        case false => false
-        case x     => x == true
+    @Test
+    def matchBoolVar04(): Unit \ Assert = match true {
+        case false => fail("unexpected match on false")
+        case x     => assertEq(expected = true, x)
     }
 
-    @test
-    def testMatchBoolTuple01(): Bool = match (true, false) {
-        case (false, false) => false
-        case (false, true) => false
-        case (true, false) => true
-        case (true, true) => false
+    @Test
+    def matchBoolTuple01(): Unit \ Assert = match (true, false) {
+        case (false, false) => fail("unexpected match on (false, false)")
+        case (false, true)  => fail("unexpected match on (false, true)")
+        case (true, false)  => success("matched (true, false)")
+        case (true, true)   => fail("unexpected match on (true, true)")
     }
 
 }

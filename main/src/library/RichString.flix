@@ -41,7 +41,13 @@ instance Formattable[RichString] {
     pub def format(x: RichString): RichString = x
 }
 
-mod RichString {
+instance Eq[RichString] {
+    pub def eq(x: RichString, y: RichString): Bool = RichString.equals(x, y)
+}
+
+pub mod RichString {
+
+    use Sys.Env
 
     ///
     /// Represents a color with RGB components or the terminal's default color.
@@ -72,7 +78,7 @@ mod RichString {
     pub enum Span {
         case Span({text = String, fgColor = Color, bgColor = Color, styles = Set[Style]})
     }
-    
+
     ///
     /// A record type representing a palette of colors.
     ///
@@ -106,6 +112,25 @@ mod RichString {
     pub def map(f: Span -> Span, rs: RichString): RichString = match rs {
         case RichString(spans) => RichString(Chain.map(f, spans))
     }
+    
+    ///
+    /// Returns a `Bool` according to the equality of `rs1` and `rs2`.
+    ///
+    /// Checks whether text and styling is equivalent for each individual character.
+    ///
+    pub def equals(rs1: RichString, rs2: RichString): Bool = 
+        let (RichString(chain1), RichString(chain2)) = (rs1, rs2);
+        let splitSpans = (match Span.Span({text = t, fgColor = fg, bgColor = bg, styles}) -> { 
+            String.toList(t) |> List.toChain |> Chain.map(c -> (Span.Span({text = Char.toString(c), fgColor = fg, bgColor = bg, styles = styles})))
+        });
+        let l1 = Chain.flatMap(splitSpans, chain1);
+        let l2 = Chain.flatMap(splitSpans, chain2);
+        Chain.zip(l1, l2) |> Chain.forAll((match (e1, e2) -> spanEquals(e1, e2)))
+
+    def spanEquals(s1: Span, s2: Span): Bool =
+        let Span.Span({text = t1, fgColor = fg1, bgColor = bg1, styles = style1}) = s1;
+        let Span.Span({text = t2, fgColor = fg2, bgColor = bg2, styles = style2}) = s2;
+        t1 == t2 and fg1 == fg2 and bg1 == bg2 and style1 == style2
 
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given foreground color `c`.
@@ -301,7 +326,7 @@ mod RichString {
     ///
     /// All styling and color information is discarded.
     ///
-    def toPlainString(rs: RichString): String = match rs {
+    pub def toPlainString(rs: RichString): String = match rs {
         case RichString(spans) =>
             Chain.joinWith(match Span.Span(r) -> r#text, "", spans)
     }
@@ -372,27 +397,18 @@ mod RichString {
     }
 
     ///
-    /// Returns `true` if the terminal supports ANSI colors.
+    /// Returns `true` unless color output is explicitly disabled.
     ///
-    /// Checks for color support by examining environment variables:
-    /// - COLORTERM=truecolor indicates 24-bit color support
-    /// - WT_SESSION indicates Windows Terminal
-    /// - TERM containing "256", "ansi", "xterm", or "screen" indicates ANSI support
-    /// - XPC_SERVICE_NAME containing "intellij" indicates IntelliJ IDEA
+    /// Returns `false` when:
+    /// - NO_COLOR environment variable is set (following the no-color.org standard)
+    /// - TERM=dumb (indicates a terminal with no capabilities)
     ///
-    def isColorTerm(): Bool = unsafely IO run {
+    def isColorTerm(): Bool = unsafe IO {
         run {
-            let isTrueColor = Env.getVar("COLORTERM") |> Option.exists(p -> p == "truecolor");
-            let isWindowsTerminal = not (Env.getVar("WT_SESSION") |> Option.isEmpty);
-            let isAnsiTerminal = Env.getVar("TERM") |>
-                Option.exists(p ->
-                    let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
-                    List.exists(s -> String.contains({substr = s}, p), keywords)
-                );
-            let isIntelliJ = Env.getVar("XPC_SERVICE_NAME") |>
-                Option.exists(p -> String.contains({substr = "intellij"}, String.toLowerCase(p)));
-            isTrueColor or isWindowsTerminal or isAnsiTerminal or isIntelliJ
-            } with Env.runWithIO
-        }
+            let noColor = Env.getVar("NO_COLOR") |> Option.nonEmpty;
+            let isDumbTerm = Env.getVar("TERM") |> Option.exists(t -> t == "dumb");
+            not (noColor or isDumbTerm)
+        } with Env.runWithIO
+    }
 
 }

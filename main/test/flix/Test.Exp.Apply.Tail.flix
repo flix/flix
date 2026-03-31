@@ -1,63 +1,77 @@
 mod Test.Exp.Apply.Tail {
 
-    @test
-    def testApplyTail01(): Bool = odd(1)
+    use Assert.assertEq
 
-    @test
-    def testApplyTail02(): Bool = even(12)
+    @Test
+    def testApplyTail01(): Unit \ Assert =
+        assertEq(expected = true, odd(1))
 
-    @test
-    def testApplyTail03(): Bool = odd(123)
+    @Test
+    def testApplyTail02(): Unit \ Assert =
+        assertEq(expected = true, even(12))
 
-    @test
-    def testApplyTail04(): Bool = even(1234)
+    @Test
+    def testApplyTail03(): Unit \ Assert =
+        assertEq(expected = true, odd(123))
 
-    @test
-    def testApplyTail05(): Bool = odd(12345)
+    @Test
+    def testApplyTail04(): Unit \ Assert =
+        assertEq(expected = true, even(1234))
 
-    @test
-    def testApplyTail06(): Bool = even(123456)
+    @Test
+    def testApplyTail05(): Unit \ Assert =
+        assertEq(expected = true, odd(12345))
 
-    @test
-    def testApplyTail07(): Bool = odd(1234567)
+    @Test
+    def testApplyTail06(): Unit \ Assert =
+        assertEq(expected = true, even(123456))
 
-    @test
-    def testApplyTail08(): Bool = a(42)
+    @Test
+    def testApplyTail07(): Unit \ Assert =
+        assertEq(expected = true, odd(1234567))
 
-    @test
-    def testApplyTail09(): Bool = a1(42, z -> z + 1)
+    @Test
+    def testApplyTail08(): Unit \ Assert =
+        assertEq(expected = true, a(42))
 
-    @test
-    def testApplyTail10(): Int32 = ping(123, x -> x)
+    @Test
+    def testApplyTail09(): Unit \ Assert =
+        assertEq(expected = true, a1(42, z -> z + 1))
 
-    @test
-    def testApplyTail11(): Int32 = ping(12345, x -> x)
+    @Test
+    def testApplyTail10(): Unit \ Assert =
+        assertEq(expected = 123, ping(123, x -> x))
 
-    @test
-    def testApplyTail12(): Int32 = ping(1234567, x -> x)
+    @Test
+    def testApplyTail11(): Unit \ Assert =
+        assertEq(expected = 12345, ping(12345, x -> x))
 
-    @test
-    def testApplyTail13(): Bool = region rc {
+    @Test
+    def testApplyTail12(): Unit \ Assert =
+        assertEq(expected = 1234567, ping(1234567, x -> x))
+
+    @Test
+    def testApplyTail13(): Unit \ Assert = region rc {
         let n = Ref.fresh(rc, 1);
-        stmtRecursion(n)
+        assertEq(expected = true, stmtRecursion(n))
     }
 
-    @test
-    def testApplyTail14(): Bool = region rc {
+    @Test
+    def testApplyTail14(): Unit \ Assert = region rc {
         let n = Ref.fresh(rc, 12);
-        stmtRecursion(n)
+        assertEq(expected = true, stmtRecursion(n))
     }
 
-    @test
-    def testApplyTail15(): Bool = region rc {
+    @Test
+    def testApplyTail15(): Unit \ Assert = region rc {
         let n = Ref.fresh(rc, 1234);
-        stmtRecursion(n)
+        assertEq(expected = true, stmtRecursion(n))
     }
 
-    @test
-    def testApplyTail16(): Bool = region rc {
+    @Test
+    def testApplyTail16(): Unit \ Assert = region rc {
         let n = Ref.fresh(rc, 1234567);
-        stmtRecursion(n)
+        assertEq(expected = true, stmtRecursion(n))
     }
 
     def odd(n: Int32): Bool = match n {

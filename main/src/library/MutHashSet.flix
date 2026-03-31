@@ -43,7 +43,7 @@ instance Formattable[MutHashSet[t, r]] with Formattable[t] {
         fromString("MutHashSet#{") + joinWith(Formattable.format, fromString(", "), MutHashSet.toList(x)) + fromString("}")
 }
 
-mod MutHashSet {
+pub mod MutHashSet {
 
     ///
     /// Returns a new empty set.

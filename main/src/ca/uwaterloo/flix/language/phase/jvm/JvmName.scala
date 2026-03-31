@@ -69,7 +69,7 @@ object JvmName {
     * The name of the static method for invoking the function
     * if it is control pure.
     */
-  val DirectApply: String = "directApply"
+  val StaticApply: String = "staticApply"
 
   /** Returns the [[JvmName]] of `clazz`. Crashes if `clazz` is primitive, an array, or unnamed. */
   def ofClass(clazz: Class[?]): JvmName = {
@@ -145,7 +145,6 @@ object JvmName {
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
   val CallSite: JvmName = JvmName(JavaLangInvoke, "CallSite")
-  val CharSequence: JvmName = JvmName(JavaLang, "CharSequence")
   val Character: JvmName = JvmName(JavaLang, "Character")
   val Class: JvmName = JvmName(JavaLang, "Class")
   val ConcurrentLinkedQueue: JvmName = JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")

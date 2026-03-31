@@ -238,7 +238,7 @@ object Inliner {
         sctx.changed.putIfAbsent(sym0, ())
         val e1 = visitExp(exp1, ctx0)
         val e2 = visitExp(exp2, ctx0)
-        Expr.Stm(e1, e2, tpe, eff, loc)
+        Expr.Stm(List(e1), e2, tpe, eff, loc)
 
       case (Occur.Once, Type.Pure) =>
         // Unconditionally inline
@@ -316,17 +316,16 @@ object Inliner {
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) => exp1.eff match {
-      case Type.Pure =>
-        // Exp1 has no side effect and is unused
-        sctx.changed.putIfAbsent(sym0, ())
-        visitExp(exp2, ctx0)
+    case Expr.Stm(Nil, exp, _, _, _) =>
+      sctx.changed.putIfAbsent(sym0, ())
+      visitExp(exp, ctx0)
 
-      case _ =>
-        val e1 = visitExp(exp1, ctx0)
-        val e2 = visitExp(exp2, ctx0)
-        Expr.Stm(e1, e2, tpe, eff, loc)
-    }
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val impureExps = exps.filterNot(_.eff == Type.Pure)
+      if (impureExps.length != exps.length) sctx.changed.putIfAbsent(sym0, ())
+      val es = impureExps.map(visitExp(_, ctx0))
+      val e = visitExp(exp, ctx0)
+      Expr.Stm(es, e, tpe, eff, loc)
 
     case Expr.Discard(exp, eff, loc) =>
       val e = visitExp(exp, ctx0)
@@ -369,9 +368,10 @@ object Inliner {
       val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
+      val constructors = constructors0.map(visitJvmConstructor(_, ctx0))
       val methods = methods0.map(visitJvmMethod(_, ctx0))
-      Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+      Expr.NewObject(name, clazz, tpe, eff, constructors, methods, loc)
   }
 
   /**
@@ -736,12 +736,18 @@ object Inliner {
       MonoAst.HandlerRule(op, fps, e1)
   }
 
+  private def visitJvmConstructor(constructor: MonoAst.JvmConstructor, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmConstructor = constructor match {
+    case MonoAst.JvmConstructor(exp, retTpe, eff1, loc1) =>
+      val e = visitExp(exp, ctx0)
+      MonoAst.JvmConstructor(e, retTpe, eff1, loc1)
+  }
+
   private def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
+    case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
-      MonoAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
+      MonoAst.JvmMethod(ann, ident, fps, e, retTpe, eff1, loc1)
   }
 
   /**
@@ -775,7 +781,7 @@ object Inliner {
         Expr.Let(v.sym, binderExp, acc, acc.tpe, eff, v.occur, loc)
       case ((None, binderExp), acc) =>
         val eff = Type.mkUnion(binderExp.eff, acc.eff, loc)
-        Expr.Stm(binderExp, acc, acc.tpe, eff, loc)
+        Expr.Stm(List(binderExp), acc, acc.tpe, eff, loc)
     }
   }
 

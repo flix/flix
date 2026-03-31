@@ -56,7 +56,7 @@ object LiftedAstPrinter {
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
+    case Stm(exps, exp, _, _, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
@@ -65,10 +65,16 @@ object LiftedAstPrinter {
       case LiftedAst.HandlerRule(symUse, fparams, body) =>
         (symUse.sym, fparams.map(printFormalParam), print(body))
     })
-    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map {
-      case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
-    })
+    case NewObject(name, clazz, tpe, _, constructors, methods, _) =>
+      val cs = constructors.map {
+        case LiftedAst.JvmConstructor(clo, retTpe, _, _) =>
+          DocAst.JvmConstructor(print(clo), SimpleTypePrinter.print(retTpe))
+      }
+      val ms = methods.map {
+        case LiftedAst.JvmMethod(ann, ident, fparams, clo, retTpe, _, _) =>
+          DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
+      }
+      DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), cs, ms)
   }
 
   /**

@@ -47,7 +47,7 @@ trait Writable[t] {
 
 }
 
-mod Writable {
+pub mod Writable {
     import java.lang.System
 
     ///

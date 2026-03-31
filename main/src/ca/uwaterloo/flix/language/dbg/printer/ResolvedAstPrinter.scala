@@ -58,16 +58,13 @@ object ResolvedAstPrinter {
     case Expr.Unary(sop, exp, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.IfThenElse(exp1, exp2, exp3, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Expr.Stm(exp1, exp2, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
+    case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
-    case Expr.LocalDef(sym, fparams, exp1, exp2, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), None, None, print(exp1), print(exp2))
+    case Expr.LocalDef(_, sym, fparams, exp1, exp2, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), None, None, print(exp1), print(exp2))
     case Expr.Region(sym, _, exp, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
       case ResolvedAst.MatchRule(pat, guard, body, _) => (printPattern(pat), guard.map(print), print(body))
-    })
-    case Expr.TypeMatch(exp, rules, _) => DocAst.Expr.TypeMatch(print(exp), rules.map {
-      case ResolvedAst.TypeMatchRule(sym, tpe, body, _) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(body))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.ExtMatch(exp, rules, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
@@ -96,8 +93,8 @@ object ResolvedAstPrinter {
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(cast, exp, _) => DocAst.Expr.CheckedCast(cast, print(exp))
     case Expr.UncheckedCast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), tpe.map(UnkindedTypePrinter.print), eff.map(UnkindedTypePrinter.print))
-    case Expr.Unsafe(exp, runEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff))
-    case Expr.Without(exp, symUse, _) => DocAst.Expr.Without(print(exp), symUse.sym)
+    case Expr.Unsafe(exp, runEff, asEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff), asEff.map(UnkindedTypePrinter.print))
+
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, body, _) => (sym, clazz, print(body))
     })
@@ -107,13 +104,15 @@ object ResolvedAstPrinter {
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeSuperConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.InvokeSuperMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetField(_, _, _) => DocAst.Expr.Unknown
     case Expr.PutField(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetStaticField(_, _) => DocAst.Expr.Unknown
     case Expr.PutStaticField(_, _, _) => DocAst.Expr.Unknown
-    case Expr.NewObject(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.NewObject(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.NewChannel(_, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _) => DocAst.Expr.Unknown

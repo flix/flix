@@ -19,7 +19,7 @@
 ///
 eff Debug
 
-mod Debug {
+pub mod Debug {
 
     import java.lang.Byte
     import java.lang.Double
@@ -29,6 +29,10 @@ mod Debug {
     import java.lang.Object
     import java.lang.Short
     import java.lang.System
+    import java.lang.{Class => JClass}             // needed for getClass() method resolution
+    import java.lang.{String => JString}           // needed for instanceof on Object
+    import java.math.{BigDecimal => JBigDecimal}   // needed for instanceof on Object
+    import java.math.{BigInteger => JBigInteger}   // needed for instanceof on Object
     import java.util.Arrays
     import java.util.Objects
 
@@ -38,7 +42,7 @@ mod Debug {
     pub def dprint(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
         let s = RichString.toString(rs);
-        unchecked_cast({System.out.print(s)} as _ \ Debug)
+        unsafe IO as Debug { System.out.print(s) }
 
     ///
     /// Prints `x` to the standard out followed by a new line.
@@ -46,12 +50,11 @@ mod Debug {
     pub def dprintln(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
         let s = RichString.toString(rs);
-        unchecked_cast({System.out.println(s)} as _ \ Debug)
+        unsafe IO as Debug { System.out.println(s) }
 
     ///
     /// Escapes the given string per Flix's escaping rules.
     ///
-    @Internal
     def escape(s: String): String = {
         def replace(src: String, dst: String, subject: String): String = subject.replace(src, dst);
         s
@@ -67,61 +70,66 @@ mod Debug {
     ///
     /// Returns an automatic string representation of `x`.
     ///
-    @Internal
-    pub def stringify(x: a): String = {
-        typematch x {
-            case b: Bool => if (b) "true" else "false"
-            case c: Char => "\'" + escape("${(c: Char)}") + "\'"
-            case y: Float32 =>
-                Float.toString(y) + "f32"
-            case y: Float64 =>
-                Double.toString(y)
-            case y: BigDecimal =>
-                if (Objects.isNull(y)) {
+    pub def stringify(x: a): String = unsafe IO {
+        use Reflect.JvmValue;
+        match Reflect.reflectValue(x) {
+            case JvmValue.JvmBool(b)      => if (b) "true" else "false"
+            case JvmValue.JvmChar(c)      => "'" + escape("${(c: Char)}") + "'"
+            case JvmValue.JvmFloat32(y)   => Float.toString(y) + "f32"
+            case JvmValue.JvmFloat64(y)   => Double.toString(y)
+            case JvmValue.JvmInt8(y)      => Byte.toString(y) + "i8"
+            case JvmValue.JvmInt16(y)     => Short.toString(y) + "i16"
+            case JvmValue.JvmInt32(y)     => Integer.toString(y)
+            case JvmValue.JvmInt64(y)     => Long.toString(y) + "i64"
+            case JvmValue.JvmObject(obj)  =>
+                if (Objects.isNull(obj)) {
                     "null"
+                } else if (obj instanceof JString) {
+                    "\"" + escape(unchecked_cast(obj as String)) + "\""
+                } else if (obj instanceof JBigInteger) {
+                    unchecked_cast(obj as JBigInteger).toString() + "ii"
+                } else if (obj instanceof JBigDecimal) {
+                    unchecked_cast(obj as JBigDecimal).toString() + "ff"
                 } else {
-                    y.toString() + "ff"
+                    objectToString(obj)
                 }
-            case y: Int8 =>
-                Byte.toString(y) + "i8"
-            case y: Int16 =>
-                Short.toString(y) + "i16"
-            case y: Int32 =>
-                Integer.toString(y)
-            case y: Int64 =>
-                Long.toString(y) + "i64"
-            case y: BigInt =>
-                if (Objects.isNull(y)) {
-                    "null"
+        }
+    }
+
+    ///
+    /// Returns a string representation of the given object,
+    /// with special handling for arrays.
+    ///
+    def objectToString(obj: Object): String \ IO = {
+        let clazz = obj.getClass();
+        if (clazz.isArray()) {
+            let componentType = clazz.getComponentType();
+            if (componentType.isPrimitive()) {
+                let name = componentType.getName();
+                if (name == "boolean") {
+                    Arrays.toString(unchecked_cast(obj as Array[Bool, Static]))
+                } else if (name == "char") {
+                    Arrays.toString(unchecked_cast(obj as Array[Char, Static]))
+                } else if (name == "float") {
+                    Arrays.toString(unchecked_cast(obj as Array[Float32, Static]))
+                } else if (name == "double") {
+                    Arrays.toString(unchecked_cast(obj as Array[Float64, Static]))
+                } else if (name == "byte") {
+                    Arrays.toString(unchecked_cast(obj as Array[Int8, Static]))
+                } else if (name == "short") {
+                    Arrays.toString(unchecked_cast(obj as Array[Int16, Static]))
+                } else if (name == "int") {
+                    Arrays.toString(unchecked_cast(obj as Array[Int32, Static]))
+                } else if (name == "long") {
+                    Arrays.toString(unchecked_cast(obj as Array[Int64, Static]))
                 } else {
-                    y.toString() + "ii"
+                    Objects.toString(obj)
                 }
-            case s: String =>
-                if (Objects.isNull(s)) {
-                    "null"
-                } else {
-                    "\"" + escape(s) + "\""
-                }
-            case y: Array[Bool, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Bool, Static])) as _ \ {})
-            case y: Array[Char, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Char, Static])) as _ \ {})
-            case y: Array[Float32, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Float32, Static])) as _ \ {})
-            case y: Array[Float64, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Float64, Static])) as _ \ {})
-            case y: Array[Int8, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int8, Static])) as _ \ {})
-            case y: Array[Int16, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int16, Static])) as _ \ {})
-            case y: Array[Int32, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int32, Static])) as _ \ {})
-            case y: Array[Int64, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int64, Static])) as _ \ {})
-            case y: Array[_, _] =>
-                unchecked_cast(Arrays.deepToString(unchecked_cast(y as Array[Object, Static])) as _ \ {})
-            case y: _ =>
-                unchecked_cast(Objects.toString(unchecked_cast(y as Object)) as _ \ {})
+            } else {
+                Arrays.deepToString(unchecked_cast(obj as Array[Object, Static]))
+            }
+        } else {
+            Objects.toString(obj)
         }
     }
 

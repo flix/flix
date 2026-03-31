@@ -98,7 +98,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err.clazz, err.field) ++ InvokeStaticMethodCompleter.getCompletions(err.clazz, err.field)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
-        case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.qn, Range.from(err.loc))
+        case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.op, Range.from(err.loc))
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.scp)
         case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
@@ -145,5 +145,5 @@ object CompletionProvider {
     * Filters the list of errors to only those that occur at the given position.
     */
   private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
-    errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.beginLine)
+    errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.startLine)
 }

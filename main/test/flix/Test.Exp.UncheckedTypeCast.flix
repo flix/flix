@@ -6,26 +6,26 @@ mod Test.Exp.UncheckedTypeCast {
     import java.lang.StringBuilder
     import java.lang.Error
 
-    @test
+    @CompileTest
     def testUncheckedTypeCast01(): Object = unchecked_cast(null as Object)
 
-    @test
+    @CompileTest
     def testUncheckedTypeCast02(): String = unchecked_cast(null as String)
 
-    @test
+    @CompileTest
     def testUncheckedTypeCast03(): Integer = unchecked_cast(null as Integer)
 
-    @test
+    @CompileTest
     def testUncheckedTypeCast04(): Serializable = unchecked_cast(null as Serializable)
 
-    @test
+    @CompileTest
     def testUncheckedTypeCast05(): Serializable = region rc {
         let _ = rc;
         let sb = unchecked_cast ((new StringBuilder(): _ \ IO) as _ \ rc);
         unchecked_cast(sb as Serializable)
     }
 
-    @test
+    @CompileTest
     def testUncheckedTypeCast06(): Object = region rc {
         let _ = rc;
         let sb = unchecked_cast ((new StringBuilder(): _ \ IO) as _ \ rc);
@@ -35,7 +35,7 @@ mod Test.Exp.UncheckedTypeCast {
     def castToString(x: a): String =
         unchecked_cast(x as String)
 
-    @test
+    @CompileTest
     def testUncheckedTypeCast07(): Bool =
         // Test that cast from primitive types to object types doesn't cause compile time crash.
         if (-3 < 10) true else castToString(42) == ""

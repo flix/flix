@@ -82,7 +82,7 @@
 ///
 /// When arriving at `if (...)` and `project(...)` `termMap` will remain unchanged.
 ///
-mod Fixpoint3.Phase.Hoisting {
+pub mod Fixpoint3.Phase.Hoisting {
     use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, BoolExp, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
     use Fixpoint3.Boxed
     use Fixpoint3.Phase.Compiler.functionalRelSym
@@ -92,7 +92,6 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Hoists `program` as described above.
     ///
-    @Internal
     pub def hoistProgram(program: RamProgram): RamProgram = match program {
         case RamProgram.Program(stmt, facts, meta, index, typeInfo) => region rc {
             let equalitySets = MutDisjointSets.empty(rc);
@@ -441,7 +440,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => boolVariablesOf(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => Set#{}
-            case BoolExp.NotMemberOf(terms, _) => Vector.foldMap(termVarsOf, terms)
+            case BoolExp.NotMemberOf(terms, _, _) => Vector.foldMap(termVarsOf, terms)
             case BoolExp.NotBot(t1, _, _) => termVarsOf(t1)
             case BoolExp.Leq(_, rv, relSym) => getRepRowVar(termMap, equalitySets, rv, arityOfNonLat(relSym))
             case BoolExp.Eq(_, _) => Set#{}
@@ -528,7 +527,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => BoolExp.Not(replaceRec(boolExp))
             case BoolExp.IsEmpty(_) => bexp
-            case BoolExp.NotMemberOf(terms, rel) => BoolExp.NotMemberOf(Vector.map(replaceTerm, terms), rel)
+            case BoolExp.NotMemberOf(terms, rel, repNegative) => BoolExp.NotMemberOf(Vector.map(replaceTerm, terms), rel, repNegative)
             case BoolExp.NotBot(t1, f, bot) => BoolExp.NotBot(replaceTerm(t1), f, bot)
             case BoolExp.Leq(_, _, _) => bexp
             case BoolExp.Eq(t1, t2) => BoolExp.Eq(replaceTerm(t1), replaceTerm(t2))
@@ -584,7 +583,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => isBoolGround(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => unreachable!()
-            case BoolExp.NotMemberOf(terms, _) => Vector.forAll(termGround, terms)
+            case BoolExp.NotMemberOf(terms, _, _) => Vector.forAll(termGround, terms)
             case BoolExp.NotBot(t1, _, _) => termGround(t1)
             case BoolExp.Leq(_, rv, relSym) =>
                 Map.memberOf(getOrCrash(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets)), termMap)
@@ -635,7 +634,6 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// In `constEqualities`, we save a list of which literals a `(rv, i)` were equal to.
     ///
-    @Internal
     pub def unifyEqualitiesStmt(
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         constEqualities: MutMap[(RowVar, Int32), List[(Boxed, Type)], r],
@@ -658,7 +656,6 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// See `unifyEqualitiesStmt`.
     ///
-    @Internal
     pub def unifyEqualitiesOp(
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         constEqualities: MutMap[(RowVar, Int32), List[(Boxed, Type)], r],

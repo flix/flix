@@ -1,59 +1,57 @@
 mod Test.Exp.Foreach {
 
-    //
-    // Note that some of these tests are poorly formatted on purpose to test parsing.
-    //
+    use Assert.assertEq
 
-    @test
-    def testForeach01(): Bool = region rc {
+    @Test
+    def testForeach01(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: Nil) Ref.put(x + 1, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), 1 :: Nil)
-        Ref.get(y) == 2
+        assertEq(expected = 2, Ref.get(y))
     }
 
-    @test
-    def testForeach02(): Bool = region rc {
+    @Test
+    def testForeach02(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: Nil)
             Ref.put(x + 1, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), 1 :: Nil)
-        Ref.get(y) == 2
+        assertEq(expected = 2, Ref.get(y))
     }
 
-    @test
-    def testForeach03(): Bool = region rc {
+    @Test
+    def testForeach03(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil) Ref.put(Ref.get(z) + x + y, z); // ForEach.forEach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), (1, 2) :: (3, 4) :: Nil)
-        Ref.get(z) == 10
+        assertEq(expected = 10, Ref.get(z))
     }
 
-    @test
-    def testForeach04(): Bool = region rc {
+    @Test
+    def testForeach04(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil)
             Ref.put(Ref.get(z) + x + y, z); // ForEach.forEach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), (1, 2) :: (3, 4) :: Nil)
-        Ref.get(z) == 10
+        assertEq(expected = 10, Ref.get(z))
     }
 
-    @test
-    def testForeach05(): Bool = region rc {
+    @Test
+    def testForeach05(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, y) <- l)
             Ref.put(Ref.get(z) + x + y, z); // ForEach.forEach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), l)
-        Ref.get(z) == 10
+        assertEq(expected = 10, Ref.get(z))
     }
 
-    @test
-    def testForeach06(): Bool = region rc {
+    @Test
+    def testForeach06(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, _) <- l)
             Ref.put(Ref.get(z) + x, z); // ForEach.forEach(match (x, _) -> Ref.put(Ref.get(z) + x, z), l)
-        Ref.get(z) == 4
+        assertEq(expected = 4, Ref.get(z))
     }
 
-    @test
-    def testForeach07(): Bool = region rc {
+    @Test
+    def testForeach07(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         let q = Ref.fresh(rc, 1);
         let l = (1, 2) :: (3, 4) :: Nil;
@@ -61,41 +59,41 @@ mod Test.Exp.Foreach {
             Ref.put(Ref.get(q) + x, q);
             Ref.put(Ref.get(z) + x + y, z)
         };
-        Ref.get(z) + Ref.get(q) == 15
+        assertEq(expected = 15, Ref.get(z) + Ref.get(q))
     }
 
-    @test
-    def testForeach08(): Bool = region rc {
+    @Test
+    def testForeach08(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil)
             foreach(y <- 3 :: 4 :: Nil)
                 Ref.put(Ref.get(z) + x + y, z);
-        Ref.get(z) == (3 + 1) + (4 + 1) + (3 + 2) + (4 + 2)
+        assertEq(expected = (3 + 1) + (4 + 1) + (3 + 2) + (4 + 2), Ref.get(z))
     }
 
-    @test
-    def testForeach09(): Bool = region rc {
+    @Test
+    def testForeach09(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil)
             foreach(y <- 3 :: 4 :: Nil)
                 foreach(_ <- List.range(0, 10))
                     Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+        assertEq(expected = (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10, Ref.get(z))
     }
 
-    @test
-    def testForeach10(): Bool = region rc {
+    @Test
+    def testForeach10(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil) {
             foreach(y <- 3 :: 4 :: Nil)
                 foreach(_ <- List.range(0, 10))
                     Ref.put(Ref.get(z) + (x * y), z)
         };
-        Ref.get(z) == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+        assertEq(expected = (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10, Ref.get(z))
     }
 
-    @test
-    def testForeach11(): Bool = region rc {
+    @Test
+    def testForeach11(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil) {
             foreach(y <- 3 :: 4 :: Nil) {
@@ -103,11 +101,11 @@ mod Test.Exp.Foreach {
                     Ref.put(Ref.get(z) + (x * y), z)
             }
         };
-        Ref.get(z) == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+        assertEq(expected = (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10, Ref.get(z))
     }
 
-    @test
-    def testForeach12(): Bool = region rc {
+    @Test
+    def testForeach12(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil) {
             foreach(y <- 3 :: 4 :: Nil) {
@@ -116,231 +114,231 @@ mod Test.Exp.Foreach {
                 }
             }
         };
-        Ref.get(z) == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+        assertEq(expected = (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10, Ref.get(z))
     }
 
-    @test
-    def testForeach13(): Bool = region rc {
+    @Test
+    def testForeach13(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil) {
             foreach(y <- 3 :: 4 :: Nil) {
                 foreach(_ <- List.range(0, 10)) Ref.put(Ref.get(z) + (x * y), z)
             }
         };
-        Ref.get(z) == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+        assertEq(expected = (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10, Ref.get(z))
     }
 
-    @test
-    def testForeach14(): Bool = region rc {
+    @Test
+    def testForeach14(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil) {
             foreach(y <- 3 :: 4 :: Nil)
                 foreach(_ <- List.range(0, 10)) Ref.put(Ref.get(z) + (x * y), z)
         };
-        Ref.get(z) == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+        assertEq(expected = (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10, Ref.get(z))
     }
 
-    @test
-    def testForeach15(): Bool = region rc {
+    @Test
+    def testForeach15(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil) foreach(y <- 3 :: 4 :: Nil) foreach(_ <- List.range(0, 10)) Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+        assertEq(expected = (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10, Ref.get(z))
     }
 
-    @test
-    def testForeach16(): Bool = region rc {
+    @Test
+    def testForeach16(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, "");
         foreach (x <- "1" :: "2" :: Nil) foreach(y <- "3" :: "4" :: Nil) Ref.put(Ref.get(z) + "(${x} * ${y}) + ", z);
-        Ref.get(z) == "(1 * 3) + (1 * 4) + (2 * 3) + (2 * 4) + "
+        assertEq(expected = "(1 * 3) + (1 * 4) + (2 * 3) + (2 * 4) + ", Ref.get(z))
     }
 
-    @test
-    def testForeach17(): Bool = region rc {
+    @Test
+    def testForeach17(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach(   x     <-      1 :: Nil  )Ref.put(x + 1, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), 1 :: Nil)
-        Ref.get(y) == 2
+        assertEq(expected = 2, Ref.get(y))
     }
 
-    @test
-    def testForeach18(): Bool = region rc {
+    @Test
+    def testForeach18(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil;y <- 3 :: 4 :: Nil)
                     Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        assertEq(expected = (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2), Ref.get(z))
     }
 
-    @test
-    def testForeach19(): Bool = region rc {
+    @Test
+    def testForeach19(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach(  x <- 1 :: 2 :: Nil  ;   y  <- 3 :: 4 :: Nil )Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        assertEq(expected = (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2), Ref.get(z))
     }
 
-    @test
-    def testForeach20(): Bool = region rc {
+    @Test
+    def testForeach20(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil;
                  y <-  3 :: 4 :: Nil)
                     Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        assertEq(expected = (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2), Ref.get(z))
     }
 
-    @test
-    def testForeach21(): Bool = region rc {
+    @Test
+    def testForeach21(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil;
                  y <- 3 :: 4 :: Nil;
                  _ <- List.range(0, 10)) {
                     Ref.put(Ref.get(z) + (x * y), z)
         };
-        Ref.get(z) == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+        assertEq(expected = (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10, Ref.get(z))
     }
 
-    @test
-    def testForeach22(): Bool = region rc {
+    @Test
+    def testForeach22(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, "");
         foreach (x <- "1" :: "2" :: Nil; y <- "3" :: "4" :: Nil) Ref.put(Ref.get(z) + "(${x} * ${y}) + ", z);
-        Ref.get(z) == "(1 * 3) + (1 * 4) + (2 * 3) + (2 * 4) + "
+        assertEq(expected = "(1 * 3) + (1 * 4) + (2 * 3) + (2 * 4) + ", Ref.get(z))
     }
 
-    @test
-    def testForeach23(): Bool = region rc {
+    @Test
+    def testForeach23(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil; if x > 1) Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
-        Ref.get(y) == 5
+        assertEq(expected = 5, Ref.get(y))
     }
 
-    @test
-    def testForeach24(): Bool = region rc {
+    @Test
+    def testForeach24(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1)
                     Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
-        Ref.get(y) == 5
+        assertEq(expected = 5, Ref.get(y))
     }
 
-    @test
-    def testForeach25(): Bool = region rc {
+    @Test
+    def testForeach25(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1) {
                     Ref.put(Ref.get(y) + x, y) // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil))
         };
-        Ref.get(y) == 5
+        assertEq(expected = 5, Ref.get(y))
     }
 
-    @test
-    def testForeach26(): Bool = region rc {
+    @Test
+    def testForeach26(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil; if x > 1) {
             Ref.put(Ref.get(y) + x, y) // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
         };
-        Ref.get(y) == 5
+        assertEq(expected = 5, Ref.get(y))
     }
 
-    @test
-    def testForeach27(): Bool = region rc {
+    @Test
+    def testForeach27(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil;y <- 3 :: 4 :: Nil; if x > 1)
                     Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == (3 * 2) + (4 * 2)
+        assertEq(expected = (3 * 2) + (4 * 2), Ref.get(z))
     }
 
-    @test
-    def testForeach28(): Bool = region rc {
+    @Test
+    def testForeach28(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach(  x <- 1 :: 2 :: Nil  ;   y  <- 3 :: 4 :: Nil;  if x > 1 and y > 3)Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == 4 * 2
+        assertEq(expected = 4 * 2, Ref.get(z))
     }
 
-    @test
-    def testForeach29(): Bool = region rc {
+    @Test
+    def testForeach29(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil;
                  y <- 3 :: 4 :: Nil; if x > 1 and y > 3)
                     Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == 4 * 2
+        assertEq(expected = 4 * 2, Ref.get(z))
     }
 
-    @test
-    def testForeach30(): Bool = region rc {
+    @Test
+    def testForeach30(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil;
                  y <- 3 :: 4 :: Nil;
                  _ <- List.range(0, 10); if x > 1 and y > 4) {
                     Ref.put(Ref.get(z) + (x * y), z)
         };
-        Ref.get(z) == 0
+        assertEq(expected = 0, Ref.get(z))
     }
 
-    @test
-    def testForeach31(): Bool = region rc {
+    @Test
+    def testForeach31(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, "");
         foreach (x <- "1" :: "2" :: Nil; y <- "3" :: "4" :: Nil; if x != "1") Ref.put(Ref.get(z) + "(${x} * ${y}) + ", z);
-        Ref.get(z) == "(2 * 3) + (2 * 4) + "
+        assertEq(expected = "(2 * 3) + (2 * 4) + ", Ref.get(z))
     }
 
-    @test
-    def testForeach32(): Bool = region rc {
+    @Test
+    def testForeach32(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil; if x > 1) Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
-        Ref.get(y) == 5
+        assertEq(expected = 5, Ref.get(y))
     }
 
-    @test
-    def testForeach33(): Bool = region rc {
+    @Test
+    def testForeach33(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1)
                     Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
-        Ref.get(y) == 5
+        assertEq(expected = 5, Ref.get(y))
     }
 
-    @test
-    def testForeach35(): Bool = region rc {
+    @Test
+    def testForeach34(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach(  x <-  1 :: 2 :: Nil  ;   if x > 1 ;   y  <-   3 :: 4 :: Nil;if y > 3)Ref.put(Ref.get(z) + (x * y), z);
         // ForEach.forEach(match x -> if (x > 1) Iterator.foreach(match y -> if (y > 3) Ref.put(Ref.get(z) + (x * y), z) else (), Iterable.iterator(List.iterator(rc, 3 :: 4 :: Nil))) else (), 1 :: 2 :: Nil)
-        Ref.get(z) == 4 * 2
+        assertEq(expected = 4 * 2, Ref.get(z))
     }
 
-    @test
-    def testForeach36(): Bool = region rc {
+    @Test
+    def testForeach35(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil; if x > 1; y <- 3 :: 4 :: Nil; if y > 3) Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == 4 * 2
+        assertEq(expected = 4 * 2, Ref.get(z))
     }
 
-    @test
-    def testForeach37(): Bool = region rc {
+    @Test
+    def testForeach36(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil; if x > 1; y <- 3 :: 4 :: Nil; if y > 3) Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == 4 * 2
+        assertEq(expected = 4 * 2, Ref.get(z))
     }
 
-    @test
-    def testForeach38(): Bool = region rc {
+    @Test
+    def testForeach37(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil; if x > 1; y <- 3 :: 4 :: Nil) Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == (3 * 2) + (4 * 2)
+        assertEq(expected = (3 * 2) + (4 * 2), Ref.get(z))
     }
 
-    @test
-    def testForeach39(): Bool = region rc {
+    @Test
+    def testForeach38(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: Nil; y <- 3 :: 4 :: Nil; if y > 3; if x > 1) Ref.put(Ref.get(z) + (x * y), z);
-        Ref.get(z) == 4 * 2
+        assertEq(expected = 4 * 2, Ref.get(z))
     }
 
-    @test
-    def testForeach40(): Bool = region rc {
+    @Test
+    def testForeach39(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- List.range(1, 2)) Ref.put(x + 1, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), 1, 2)
-        Ref.get(y) == 2
+        assertEq(expected = 2, Ref.get(y))
     }
 
-    @test
-    def testForeach41(): Bool = region rc {
+    @Test
+    def testForeach40(): Unit \ Assert = region rc {
         let l = (MutList.empty(rc): MutList[Int32, rc]);
         foreach (i <- List.range(0, 10)) {
             MutList.push(i, l)
@@ -348,11 +346,11 @@ mod Test.Exp.Foreach {
         let y = Ref.fresh(rc, 0);
         foreach (x <- MutList.toList(l))
             Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), l)
-        Ref.get(y) == (9 + 1) * 9 / 2
+        assertEq(expected = (9 + 1) * 9 / 2, Ref.get(y))
     }
 
-    @test
-    def testForeach42(): Bool = region rc {
+    @Test
+    def testForeach41(): Unit \ Assert = region rc {
         let l = (MutList.empty(rc): MutList[Int32, rc]);
         foreach (i <- List.range(0, 10)) {
             MutList.push(i, l)
@@ -361,14 +359,14 @@ mod Test.Exp.Foreach {
         foreach (x <- MutList.toList(l);
                  if x < 5)
             Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x < 5) Ref.put(x + 1, y) else (), l)
-        Ref.get(y) == (4 + 1) * 4 / 2
+        assertEq(expected = (4 + 1) * 4 / 2, Ref.get(y))
     }
 
-    @test
-    def testForeach43(): Bool = region rc {
+    @Test
+    def testForeach42(): Unit \ Assert = region rc {
         let z = Ref.fresh(rc, 0);
         foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil) Ref.put(Ref.get(z) + x + y, z);
-        Ref.get(z) == 10
+        assertEq(expected = 10, Ref.get(z))
     }
 
 }

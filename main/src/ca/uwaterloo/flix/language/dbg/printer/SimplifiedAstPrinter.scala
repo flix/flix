@@ -56,7 +56,7 @@ object SimplifiedAstPrinter {
     case ApplyOp(sym, exps, _, _, _) => DocAst.Expr.ApplyOp(sym, exps.map(print))
     case ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyClo(printVarSym(sym), exps.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
+    case Stm(exps, exp, _, _, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
@@ -70,10 +70,16 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map {
-      case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), SimpleTypePrinter.print(retTpe))
-    })
+    case NewObject(name, clazz, tpe, _, constructors, methods, _) =>
+      val cs = constructors.map {
+        case SimplifiedAst.JvmConstructor(exp, retTpe, _, _) =>
+          DocAst.JvmConstructor(print(exp), SimpleTypePrinter.print(retTpe))
+      }
+      val ms = methods.map {
+        case SimplifiedAst.JvmMethod(ann, ident, fparams, exp, retTpe, _, _) =>
+          DocAst.JvmMethod(ann.map(_.clazz.getSimpleName), ident, fparams.map(printFormalParam), print(exp), SimpleTypePrinter.print(retTpe))
+      }
+      DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), cs, ms)
   }
 
   /**

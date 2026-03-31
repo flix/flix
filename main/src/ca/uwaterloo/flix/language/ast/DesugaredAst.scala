@@ -32,9 +32,8 @@ object DesugaredAst {
 
   object Declaration {
 
-    case class Namespace(ident: Name.Ident, usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
+    case class Mod(ann: Annotations, mod: Modifiers, qname: Name.QName, usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
-    // TODO change laws to Law
     case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: List[Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
     case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: Name.QName, tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], loc: SourceLocation) extends Declaration
@@ -103,19 +102,17 @@ object DesugaredAst {
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class Stm(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Stm(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
     case class Let(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LocalDef(ann: Annotations, ident: Name.Ident, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Region(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
-
-    case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
@@ -161,9 +158,8 @@ object DesugaredAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
+    case class Unsafe(exp: Expr, eff: Type, asEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
@@ -175,11 +171,15 @@ object DesugaredAst {
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class InvokeSuperConstructor(exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeSuperMethod(methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(tpe: Type, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -409,7 +409,11 @@ object DesugaredAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
+  case class JvmConstructor(exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
+
+  case class JvmAnnotation(name: Name.Ident, loc: SourceLocation)
+
+  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
@@ -426,8 +430,6 @@ object DesugaredAst {
   case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
   case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
-
-  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 

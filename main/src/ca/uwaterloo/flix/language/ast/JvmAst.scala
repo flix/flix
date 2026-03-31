@@ -94,11 +94,11 @@ object JvmAst {
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
-    case class Stmt(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
+    case class Stm(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
-      def tpe: SimpleType = exp2.tpe
+      def tpe: SimpleType = exp.tpe
 
-      def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
+      def purity: Purity = Purity.combineAll(exps.map(_.purity) :+ exp.purity)
     }
 
     case class Region(sym: Symbol.VarSym, offset: Int, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
@@ -107,7 +107,7 @@ object JvmAst {
 
     case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -115,9 +115,11 @@ object JvmAst {
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: SimpleType, loc: SourceLocation)
 
-  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, methods: List[JvmMethod], loc: SourceLocation)
+  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, constructors: List[JvmConstructor], methods: List[JvmMethod], superMethods: List[java.lang.reflect.Method], loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
+  case class JvmConstructor(exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
+
+  case class JvmMethod(ann: List[JvmAnnotation], ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, offset: Int, clazz: java.lang.Class[_], exp: Expr)
 

@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import org.jline.terminal.Terminal
-
 /**
   * A common super-type for commands.
   */
@@ -29,11 +27,6 @@ object Command {
     * Does literally nothing.
     */
   case object Nop extends Command
-
-  /**
-    * Reloads all source paths.
-    */
-  case object Reload extends Command
 
   /**
     * Displays documentation about the fqn s
@@ -82,6 +75,11 @@ object Command {
   case object Doc extends Command
 
   /**
+    * Formats the current project source code.
+   */
+  case object Format extends Command
+
+  /**
     * Runs the tests for the current project.
     */
   case object Test extends Command
@@ -112,11 +110,6 @@ object Command {
   case class Eval(s: String) extends Command
 
   /**
-    * Reload and eval source code.
-    */
-  case class ReloadAndEval(s: String) extends Command
-
-  /**
     * Unknown command.
     */
   case class Unknown(s: String) extends Command
@@ -133,9 +126,6 @@ object Command {
 
     if (input.trim == "")
       return Command.Nop
-
-    if (input == ":r" || input == ":reload")
-      return Command.Reload
 
     val infoPattern = raw":i(nfo)?\s+(\S+)\s*".r
     input match {
@@ -155,6 +145,9 @@ object Command {
     if (input == ":doc" || input == ":d")
       return Command.Doc
 
+    if (input == ":format" || input == ":fmt")
+      return Command.Format
+
     if (input == ":build-jar" || input == ":jar")
       return Command.BuildJar
 
@@ -166,9 +159,6 @@ object Command {
 
     if (input == ":release")
       return Command.Release
-
-    if (input.startsWith(":eval"))
-      return Command.ReloadAndEval(input.drop(":eval".length + 1))
 
     if (input == ":test" || input == ":t")
       return Command.Test
@@ -184,6 +174,12 @@ object Command {
 
     if (input == ":praise")
       return Command.Praise
+
+    //
+    // Eval prefix?
+    //
+    if (input.startsWith(":eval "))
+      return Command.Eval(input.substring(":eval ".length))
 
     //
     // Eval or Unknown?

@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
-import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Diagnostic, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.errors.{CodeHint, ParseError, ResolutionError, TypeError}
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -58,6 +58,50 @@ object CodeActionProvider {
 
     case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
+
+    case te@TypeError.ExplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "Change {} to IO",
+        kind = CodeActionKind.QuickFix,
+        diagnostic = Some(Diagnostic.from(te, Some(root))),
+        isPreferred = true,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "IO"))))),
+        command = None
+      ))
+
+    case te@TypeError.ImplicitlyPureFunctionUsesIO(loc, _) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "add \\ IO to signature",
+        kind = CodeActionKind.QuickFix,
+        diagnostic = Some(Diagnostic.from(te, Some(root))),
+        isPreferred = true,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), " \\ IO "))))),
+        command = None
+      ))
+
+    case ParseError.ExpectedArrowThickRGotEqual(_, loc) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "Replace '=' with '=>'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "=>"))))),
+        command = None
+      ))
+
+    case ParseError.ExpectedArrowThickRGotArrowThinR(_, loc) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "Replace '->' with '=>'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "=>"))))),
+        command = None
+      ))
+
+    case ParseError.ExpectedBackslashGotSlash(_, loc) if overlaps(range, loc) =>
+      List(CodeAction(
+        title = "Replace '/' with '\\'",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), "\\"))))),
+        command = None
+      ))
 
     case _ => Nil
   }
@@ -154,7 +198,7 @@ object CodeActionProvider {
       CodeAction(
         title = s"Prefix with '$enumName.'",
         kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(sourceLocation2Range(loc), s"$enumName.$tagName"))))),
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), s"$enumName.$tagName"))))),
         command = None
       )
     }.toList
@@ -205,7 +249,7 @@ object CodeActionProvider {
     * TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
     */
   private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
-    val insertPosition = Position(ap.line, ap.col)
+    val insertPosition = Position.fromAnchorPosition(ap)
     val leadingSpaces = " " * ap.spaces
     TextEdit(
       Range(insertPosition, insertPosition),
@@ -284,16 +328,6 @@ object CodeActionProvider {
   /**
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
     */
-  private def overlaps(range: Range, loc: SourceLocation): Boolean = {
-    val range2 = sourceLocation2Range(loc)
-    range.overlapsWith(range2)
-  }
-
-  private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
-    Position(sourcePosition.lineOneIndexed, sourcePosition.colOneIndexed)
-  }
-
-  private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {
-    Range(sourcePosition2Position(sourceLocation.sp1), sourcePosition2Position(sourceLocation.sp2))
-  }
+  private def overlaps(range: Range, loc: SourceLocation): Boolean =
+    range.overlapsWith(Range.from(loc))
 }

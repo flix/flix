@@ -32,7 +32,7 @@ mod Test.Instance.Eq.Constraint.Super {
             popOpt
     }
 
-    @test
+    @CompileTest
     pub def testPop(): Bool \ IO =
         region rc {
             let mList = MutList.empty(rc) !> MutList.push(Some(1));
@@ -40,7 +40,7 @@ mod Test.Instance.Eq.Constraint.Super {
             popped == Some(Some(1))
         }
 
-    @test
+    @CompileTest
     pub def testReplace(): Bool \ IO =
         region rc {
             let mList = MutList.empty(rc) !> MutList.push(Some(1));

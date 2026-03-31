@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
@@ -65,7 +65,7 @@ object Parser2 {
 
   private object State {
     /** The reset value of [[State.fuel]]. */
-    val FuelReset = 2048
+    val FuelReset: Int = CompilerConstants.MaxParserFuel
   }
 
   private class State(val tokens: Array[Token], val src: Source) {
@@ -93,6 +93,9 @@ object Parser2 {
       * a list there.
       */
     val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
+
+    /** True when the parser is currently inside a block expression (`{ ... }`). */
+    var inBlock: Boolean = false
   }
 
   /**
@@ -186,11 +189,11 @@ object Parser2 {
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
-            mkSourceLocation(lastAdvance.sp2, lastAdvance.sp2)
+            mkSourceLocation(lastAdvance.end, lastAdvance.end)
           else
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
-            mkSourceLocation(openToken.sp1, lastAdvance.sp2)
+            mkSourceLocation(openToken.start, lastAdvance.end)
           locationStack = locationStack.tail
           stack = stack.tail
           stack.head.children = stack.head.children :+ child
@@ -207,7 +210,7 @@ object Parser2 {
       isReal = true,
       s.src,
       SourcePosition.FirstPosition,
-      tokens.head.sp2
+      tokens.head.end
     )
 
     // The stack should now contain a single Source tree, and there should only be an <eof> token
@@ -219,9 +222,14 @@ object Parser2 {
 
   /** Get first non-comment previous position of the parser as a [[SourceLocation]]. */
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
-    // TODO: It might make sense to seek the first non-comment position.
-    val token = s.tokens((s.position - 1).max(0))
-    token.mkSourceLocation()
+    val prevPos = (s.position - previousNonComment(1)).max(0)
+    if (0 <= prevPos && prevPos < s.tokens.length) {
+      val token = s.tokens(prevPos)
+      token.mkSourceLocation()
+    } else {
+      // This cannot happen.
+      throw InternalCompilerException(s"Parser arrived in impossible case", currentSourceLocation())
+    }
   }
 
   /** Get current position of the parser as a [[SourceLocation]]. */
@@ -502,6 +510,19 @@ object Parser2 {
     }
   }
 
+  /**
+    * Returns the distance to the first non-comment token after lookahead.
+    */
+  @tailrec
+  private def previousNonComment(lookbehind: Int)(implicit s: State): Int = {
+    if (s.position - lookbehind < 1) {
+      lookbehind
+    } else s.tokens(s.position - lookbehind).kind match {
+      case t if t.isComment => previousNonComment(lookbehind + 1)
+      case _ => lookbehind
+    }
+  }
+
   /** Separation permissions between a list of items. */
   sealed trait Separation
 
@@ -567,6 +588,7 @@ object Parser2 {
                         )(implicit sctx: SyntacticContext, s: State): Int = {
     def atEnd(): Boolean = at(delimiterR) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
+    comments()
     if (!at(delimiterL)) {
       expect(delimiterL)
       return 0
@@ -574,11 +596,12 @@ object Parser2 {
     expect(delimiterL)
     var continue = true
     var numItems = 0
+    comments()
     while (continue && !atEnd() && !eof()) {
-      comments()
       val kind = nth(0)
       if (checkForItem(kind)) {
         getItem()
+        comments()
         numItems += 1
         if (!atEnd()) {
           // Check for separator if needed.
@@ -587,6 +610,7 @@ object Parser2 {
             case Separation.Optional(separator, _) => eat(separator)
             case Separation.None =>
           }
+          comments()
           // Check for trailing separator if needed.
           if (atEnd()) {
             separation match {
@@ -614,6 +638,7 @@ object Parser2 {
     optionallyWith match {
       case Some((indicator, rule)) => if (eat(indicator)) {
         rule()
+        comments()
       }
       case None =>
     }
@@ -889,14 +914,14 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       val mark = open(consumeDocComments = false)
       docComment()
-      // Handle modules.
-      if (at(TokenKind.KeywordMod)) {
-        return moduleDecl(mark, nestingLevel)
-      }
       // Handle declarations
       val wasAtEofBeforeAnnotations = at(TokenKind.Eof)
       annotations()
       modifiers()
+      // Handle modules.
+      if (at(TokenKind.KeywordMod)) {
+        return moduleDecl(mark, nestingLevel)
+      }
       // If a new declaration is added to this then add it to FIRST_DECL too.
       nth(0) match {
         case TokenKind.KeywordTrait => traitDecl(mark)
@@ -1134,16 +1159,14 @@ object Parser2 {
       // Singleton short-hand.
       val isShorthand = at(TokenKind.ParenL)
       if (isShorthand) {
-        val markType = open()
-        val mark = open()
+        val markBody = open()
         zeroOrMore(
           namedTokenSet = NamedTokenSet.Type,
           getItem = () => Type.ttype(),
           checkForItem = _.isFirstInType,
           breakWhen = _.isRecoverInType,
         )
-        close(mark, TreeKind.Type.Tuple)
-        close(markType, TreeKind.Type.Type)
+        close(markBody, TreeKind.CaseBody)
       }
       // Derivations.
       if (at(TokenKind.KeywordWith)) {
@@ -1179,16 +1202,14 @@ object Parser2 {
         }
         nameUnqualified(NAME_TAG)
         if (at(TokenKind.ParenL)) {
-          val mark = open()
-          val markTuple = open()
+          val markBody = open()
           zeroOrMore(
             namedTokenSet = NamedTokenSet.Type,
             getItem = () => Type.ttype(),
             checkForItem = _.isFirstInType,
             breakWhen = _.isRecoverInDecl
           )
-          close(markTuple, TreeKind.Type.Tuple)
-          close(mark, TreeKind.Type.Type)
+          close(markBody, TreeKind.CaseBody)
         }
         close(mark, TreeKind.Case)
       }
@@ -1417,6 +1438,52 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (nth(0).notBinaryOperator) {
+        // This token can only appear as a follow token after an expression within a statement,
+        // so we assume the user forgot a semicolon.
+        // We create the error and continue parsing as if the semicolon was present.
+        val isReal = true
+        val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
+        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
+        statement()
+        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      // Error recovery: if the next token can follow a binary operator and we are inside
+      // a block expression, we assume an operator or semicolon was accidentally omitted.
+      // Examples:
+      //   x y      // same line: infer a missing binary operator (e.g. `x + y`)
+      //   x
+      //   y        // different lines: infer a missing semicolon
+      } else if (nth(0).canFollowBinaryOperator && s.inBlock) {
+        val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
+        if (isNewLine) {
+          // Different line: infer a missing semicolon
+          val isReal = true
+          val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
+          closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
+          statement()
+          lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+        } else {
+          // Same line: We assume that a binary operator is missing between the two expressions,
+          // so we create a Binary node with a synthetic OperatorError child.
+          // The Weeder will detect OperatorError, emit ParseError.MissingBinaryOperator,
+          // and produce LetMatch(Wild) so both sub-expressions can still be type-checked.
+          val mark = openBefore(lhs)
+          val markOp = open()
+          close(open(), TreeKind.OperatorError)
+          close(markOp, TreeKind.Operator)
+          expression()
+          lhs = close(mark, TreeKind.Expr.Binary)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          // A following statement is optional here (unlike the branches above where
+          // we know another statement must follow). Only parse one if a ';' is present.
+          if (eat(TokenKind.Semi)) {
+            statement()
+            lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          }
+        }
       } else if (!rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
@@ -1499,8 +1566,7 @@ object Parser2 {
                 // Hence we special case on whether the left token is ::. If it is,
                 // we avoid consuming any fuel.
                 // The next nth lookup will always fail, so we add fuel to account for it.
-                // The lookup for KeywordWithout will always happen so we add fuel to account for it.
-                if (left == BinaryOp.ColonColon) s.fuel += 2
+                if (left == BinaryOp.ColonColon) s.fuel += 1
                 continue = false
               case _ =>
                 val mark = openBefore(lhs)
@@ -1512,36 +1578,11 @@ object Parser2 {
           case None =>
             // Non-operator or EOF.
             // Add fuel for the same reason as above.
-            if (leftOpt.contains(BinaryOp.ColonColon)) s.fuel += 2
+            if (leftOpt.contains(BinaryOp.ColonColon)) s.fuel += 1
             continue = false
         }
       }
-      // Handle without expressions.
-      if (eat(TokenKind.KeywordWithout)) {
-        val mark = open()
-        if (at(TokenKind.CurlyL)) {
-          zeroOrMore(
-            namedTokenSet = NamedTokenSet.Effect,
-            getItem = () => nameAllowQualified(NAME_EFFECT),
-            checkForItem = NAME_EFFECT.contains,
-            breakWhen = _.isRecoverInExpr,
-            delimiterL = TokenKind.CurlyL,
-            delimiterR = TokenKind.CurlyR
-          )
-        } else if (NAME_EFFECT.contains(nth(0))) {
-          nameAllowQualified(NAME_EFFECT)
-        } else {
-          closeWithError(open(), UnexpectedToken(
-            expected = NamedTokenSet.Effect,
-            actual = Some(nth(0)),
-            sctx = sctx,
-            hint = Some(s"supply at least one effect to ${TokenKind.KeywordWithout.display}."),
-            loc = previousSourceLocation()))
-        }
-        close(mark, TreeKind.Type.EffectSet)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Without)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
+
       lhs
     }
 
@@ -1849,7 +1890,6 @@ object Parser2 {
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
         case TokenKind.KeywordRegion => regionExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
-        case TokenKind.KeywordTypeMatch => typematchExpr()
         case TokenKind.KeywordChoose
              | TokenKind.KeywordChooseStar => restrictableChooseExpr()
         case TokenKind.KeywordForA => forApplicativeExpr()
@@ -1861,17 +1901,16 @@ object Parser2 {
         case TokenKind.ListHash => listLiteralExpr()
         case TokenKind.SetHash => setLiteralExpr()
         case TokenKind.MapHash => mapLiteralExpr()
-        case TokenKind.DotDotDot => dotdotdotLiteral()
         case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
-        case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordHandler => handlerExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
+        case TokenKind.KeywordSuper => invokeSuperExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
         case TokenKind.KeywordSelect => selectExpr()
         case TokenKind.KeywordSpawn => spawnExpr()
@@ -2206,7 +2245,10 @@ object Parser2 {
       if (eat(TokenKind.CurlyR)) { // Handle an empty block.
         return close(mark, TreeKind.Expr.RecordOperation)
       }
+      val wasInBlock = s.inBlock
+      s.inBlock = true
       statement()
+      s.inBlock = wasInBlock
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Block)
     }
@@ -2303,13 +2345,9 @@ object Parser2 {
         expression()
       }
       if (eat(TokenKind.Equal)) {
-        val error = UnexpectedToken(
-          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
-          actual = Some(TokenKind.Equal),
-          sctx = sctx,
-          hint = Some("use '=>' instead of '='."),
-          loc = previousSourceLocation())
-        closeWithError(open(), error)
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
@@ -2324,52 +2362,14 @@ object Parser2 {
       expect(TokenKind.KeywordCase)
       Pattern.pattern()
       if (eat(TokenKind.Equal)) {
-        val error = UnexpectedToken(
-          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
-          actual = Some(TokenKind.Equal),
-          sctx = sctx,
-          hint = Some("use '=>' instead of '='."),
-          loc = previousSourceLocation())
-        closeWithError(open(), error)
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
       } else {
         expect(TokenKind.ArrowThickR)
       }
       statement()
       close(mark, TreeKind.Expr.ExtMatchRuleFragment)
-    }
-
-    private def typematchExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordTypeMatch))
-      val mark = open()
-      expect(TokenKind.KeywordTypeMatch)
-      expression()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.MatchRule,
-        checkForItem = _ == TokenKind.KeywordCase,
-        getItem = typematchRule,
-        breakWhen = _.isRecoverInExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        separation = Separation.Optional(TokenKind.Comma)
-      )
-      close(mark, TreeKind.Expr.TypeMatch)
-    }
-
-    private def typematchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordCase))
-      val mark = open()
-      expect(TokenKind.KeywordCase)
-      nameUnqualified(NAME_VARIABLE)
-      if (eat(TokenKind.Colon)) {
-        Type.ttype()
-      }
-      // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
-      if (eat(TokenKind.ArrowThickR)) {
-        statement()
-      }
-      close(mark, TreeKind.Expr.TypeMatchRuleFragment)
     }
 
     private def restrictableChooseExpr()(implicit s: State): Mark.Closed = {
@@ -2610,25 +2610,15 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expression()
-      expect(TokenKind.ArrowThickR)
+      if (eat(TokenKind.Equal)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
+      } else {
+        expect(TokenKind.ArrowThickR)
+      }
       expression()
       close(mark, TreeKind.Expr.LiteralMapKeyValueFragment)
-    }
-
-    private def dotdotdotLiteral()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.DotDotDot))
-      val mark = open()
-      expect(TokenKind.DotDotDot)
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.Expression,
-        getItem = () => expression(),
-        checkForItem = _.isFirstInExp,
-        breakWhen = _.isRecoverInExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR
-      )
-      close(mark, TreeKind.Expr.LiteralVector)
     }
 
     private def checkedTypeCastExpr()(implicit s: State): Mark.Closed = {
@@ -2670,32 +2660,32 @@ object Parser2 {
       close(mark, TreeKind.Expr.UncheckedCast)
     }
 
+    /**
+      * `'unsafe' TTYPE [as TTYPE] { STATEMENT }`
+      *
+      * produces
+      *
+      *   - TreeKind.Expr.Unsafe
+      *     - TreeKind.Type.Type
+      *     - TreeKind.UnsafeAsEffFragment
+      *       - TreeKind.Type.Type
+      *     - TreeKind.Expr.Expr
+      */
     private def unsafeExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordUnsafe))
       val mark = open()
       expect(TokenKind.KeywordUnsafe)
-      expression()
-      close(mark, TreeKind.Expr.UnsafeOld)
-    }
-
-    /**
-      * `'unsafely' TTYPE 'run' EXPRESSION`
-      *
-      * produces
-      *
-      *   - TreeKind.Expr.UnsafelyRun
-      *     - TreeKind.Type.Type
-      *     - TreeKind.Expr.Expr
-      */
-    private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordUnsafely))
-      val mark = open()
-      expect(TokenKind.KeywordUnsafely)
       Type.ttype()
-      expect(TokenKind.KeywordRun)
-      expression()
+      if (at(TokenKind.KeywordAs)) {
+        eat(TokenKind.KeywordAs)
+        val mark = open()
+        Type.ttype()
+        close(mark, TreeKind.Expr.UnsafeAsEffFragment)
+      }
+      expect(TokenKind.CurlyL)
+      statement()
+      expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Unsafe)
     }
 
@@ -2778,7 +2768,14 @@ object Parser2 {
       nameUnqualified(NAME_VARIABLE)
       expect(TokenKind.Colon)
       nameAllowQualified(NAME_JAVA, tail = Set())
-      expect(TokenKind.ArrowThickR)
+      if (eat(TokenKind.Equal)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
+      }
+      else {
+        expect(TokenKind.ArrowThickR)
+      }
       statement()
       close(mark, TreeKind.Expr.TryCatchRuleFragment)
     }
@@ -2813,6 +2810,24 @@ object Parser2 {
       close(mark, TreeKind.Expr.Throw)
     }
 
+    private def invokeSuperExpr()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordSuper))
+      val mark = open()
+      expect(TokenKind.KeywordSuper)
+      if (at(TokenKind.Dot)) {
+        // super.method(args)
+        eat(TokenKind.Dot)
+        nameUnqualified(NAME_JAVA)
+        arguments()
+        close(mark, TreeKind.Expr.InvokeSuperMethod)
+      } else {
+        // super(args)
+        arguments()
+        close(mark, TreeKind.Expr.InvokeSuperConstructor)
+      }
+    }
+
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordNew))
@@ -2843,9 +2858,22 @@ object Parser2 {
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
         zeroOrMore(
-          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-          checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
-          getItem = jvmMethod,
+          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef, TokenKind.Annotation)),
+          checkForItem = _ => {
+            val first = nth(nextNonComment(0))
+            first == TokenKind.KeywordDef || first == TokenKind.Annotation
+          },
+          getItem = () => {
+            // Skip past any annotations to find the `def` keyword.
+            var defOffset = nextNonComment(0)
+            while (nth(defOffset) == TokenKind.Annotation) {
+              defOffset = nextNonComment(defOffset + 1)
+            }
+            // If `def` is followed by `new`, parse as JvmConstructor; otherwise JvmMethod.
+            val afterDefOffset = nextNonComment(defOffset + 1)
+            if (nth(afterDefOffset) == TokenKind.KeywordNew) jvmConstructor()
+            else jvmMethod()
+          },
           breakWhen = _.isRecoverInExpr,
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR,
@@ -2870,8 +2898,10 @@ object Parser2 {
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordDef))
+      // Have to eat potential comments before the `assert`.
       val mark = open()
+      Decl.annotations()
+      assert(at(TokenKind.KeywordDef))
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_JAVA)
       Decl.parameters()
@@ -2880,6 +2910,21 @@ object Parser2 {
       expect(TokenKind.Equal)
       Expr.statement()
       close(mark, TreeKind.Expr.JvmMethod)
+    }
+
+    private def jvmConstructor()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val mark = open()
+      assert(at(TokenKind.KeywordDef))
+      expect(TokenKind.KeywordDef)
+      expect(TokenKind.KeywordNew)
+      expect(TokenKind.ParenL)
+      expect(TokenKind.ParenR)
+      expect(TokenKind.Colon)
+      Type.typeAndEffect()
+      expect(TokenKind.Equal)
+      Expr.statement()
+      close(mark, TreeKind.Expr.JvmConstructor)
     }
 
     private def staticExpr()(implicit s: State): Mark.Closed = {
@@ -3273,9 +3318,22 @@ object Parser2 {
       val mark = open()
       nameAllowQualified(NAME_TAG)
       if (at(TokenKind.ParenL)) {
-        tuplePat()
+        tagBodyPat()
       }
       close(mark, TreeKind.Pattern.Tag)
+    }
+
+    private def tagBodyPat()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Pattern,
+        getItem = pattern,
+        checkForItem = _.isFirstInPattern,
+        breakWhen = _.isRecoverInExpr,
+      )
+      close(mark, TreeKind.Pattern.TagBody)
     }
 
     private def tuplePat()(implicit s: State): Mark.Closed = {
@@ -3331,6 +3389,11 @@ object Parser2 {
     def typeAndEffect()(implicit s: State): Mark.Closed = {
       val lhs = ttype()
       if (eat(TokenKind.Backslash)) {
+        val mark = open()
+        ttype()
+        close(mark, TreeKind.Type.Effect)
+      } else if (eat(TokenKind.Slash)) {
+        closeWithError(open(), ParseError.ExpectedBackslashGotSlash(SyntacticContext.Unknown, previousSourceLocation()))
         val mark = open()
         ttype()
         close(mark, TreeKind.Type.Effect)

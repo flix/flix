@@ -2,45 +2,50 @@ mod Test.Exp.Unsafe {
 
     import java.lang.System
 
-    @Test
-    def test01(): Unit = unsafely IO run println(42)
+    use Assert.{assertEq, assertTrue};
 
     @Test
-    def test02(): Unit = unsafely IO run println(42)
+    def test01(): Unit = unsafe IO { println(42) }
 
     @Test
-    def test03(): Int64 = unsafely IO run System.currentTimeMillis()
+    def test02(): Unit = unsafe IO { println(42) }
 
     @Test
-    def test04(): Bool = unsafely OutOfBounds run Vector#{1, 2, 3}[1] == 2
+    def test03(): Unit \ Assert =
+        let t = unsafe IO { System.currentTimeMillis() };
+        assertTrue(t > 0i64)
+
+    @Test
+    def test04(): Unit \ Assert =
+        assertEq(expected = 2, unsafe OutOfBounds { Vector#{1, 2, 3}[1] })
 
     def unsafeCompose(f: a -> b \ ef1, g: b -> c \ ef2): a -> c \ ef2 =
-        x -> g(unsafely ef1 run f(x)) // note that `unsafe .. (g(f(x))` would give ef2 - ef1
+        x -> g(unsafe ef1 { f(x) }) // note that `unsafe .. (g(f(x))` would give ef2 - ef1
 
     @Test
-    def test05(): Bool = {
+    def test05(): Unit \ Assert = {
         def f() = {println("hello"); 42};
         def g(i) = i + 1;
-        unsafeCompose(f, g)() == 43
+        assertEq(expected = 43, unsafeCompose(f, g)())
     }
 
     def unsafeAbortKeyNotFoundHandler(f: a -> b \ ef): a -> b \ ef - KeyNotFound =
-        x -> unsafely KeyNotFound run f(x)
+        x -> unsafe KeyNotFound { f(x) }
 
     @Test
-    def test06(): Bool = {
-        unsafeAbortKeyNotFoundHandler(() -> Map#{'a' => 42}['a'])() == 42
+    def test06(): Unit \ Assert = {
+        assertEq(expected = 42, unsafeAbortKeyNotFoundHandler(() -> Map#{'a' => 42}['a'])())
     }
 
     @Test
-    def test07(): Bool \ IO = region local {
+    def test07(): Unit \ Assert + IO = region local {
         let r = Ref.fresh(local, 42);
         def unsafeDebug(): Unit \ IO = {
-            let v = unsafely local run Ref.get(r);
+            let v = unsafe local { Ref.get(r) };
             println(v)
         };
         spawn unsafeDebug() @ local;
-        Ref.get(r) == 42
+        assertEq(expected = 42, Ref.get(r))
     }
 
 }

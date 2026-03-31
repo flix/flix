@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Interpreter {
+pub mod Fixpoint3.Interpreter {
     use Fixpoint3.Ast.ExecutableRam.{BoolExp, RamProgram, RamStmt, RamTerm, RelOp, WriteTuple}
     use Fixpoint3.Ast.Ram.{arityOfNonLat, Predicates, RelSym, Search, toDenotation, toId}
     use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation}
@@ -67,7 +67,6 @@ mod Fixpoint3.Interpreter {
     /// The `IDB` or result as it is exposed to the Solver. It maps `RelSym` to an `Index`,
     /// which uses `MutMap` instead of a `BPlusTree`.
     ///
-    @Internal
     pub type alias Database[r: Region] = MutMap[RelSym, BPlusTree[Vector[Boxed], Boxed, Static], r]
 
     ///
@@ -141,7 +140,6 @@ mod Fixpoint3.Interpreter {
     ///
     /// Executes the `RamProgram` in `fst(input)` using the `Boxing` in `snd(input)`.
     ///
-    @Internal
     pub def interpret(rc: Region[r], input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
@@ -152,7 +150,12 @@ mod Fixpoint3.Interpreter {
         };
         let indexes = Array.empty(rc, indexNum);
         foreach ((relSym, searches) <- indexMap) {
-            let tuples = Map.getWithDefault(relSym, BPlusTree.empty(rc), facts);
+            // We need to ensure that we do not pass a tree with `null` as search.
+            let default = match Vector.head(searches) {
+                case None => BPlusTree.empty(rc) // The foreach will be empty.
+                case Some(search0) => BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search0)
+            };
+            let tuples = Map.getWithDefault(relSym, default, facts);
             foreach ((num, search) <- ForEach.withIndex(searches)) {
                 let pos = match Map.get((relSym, num), posMap) {
                     case Some(v) => v
@@ -186,7 +189,7 @@ mod Fixpoint3.Interpreter {
             let ctx = (db, env, boxing);
             evalStmt(rc, ctx, parLevel(), stmt);
             // Remove the `IO` effect from dealing with static.
-            let boxedFacts = unsafely IO run marshallDb(rc, db, boxing, indexPos, predState, typeInfo);
+            let boxedFacts = unsafe IO { marshallDb(rc, db, boxing, indexPos, predState, typeInfo) };
             (boxedFacts, predState)
     }
 
@@ -362,13 +365,6 @@ mod Fixpoint3.Interpreter {
                         unchecked_cast((Vector.get(tuplePos, minEnv): Array[Int64, r]) as Tuple),
                         unchecked_cast((Vector.get(tuplePos, maxEnv): Array[Int64, r]) as Tuple)
                     )
-            case RelOp.Project(terms, rel, Latticenal(bot, leq, lub, _)) =>
-                let relIndex = lookupIndex(rel, db);
-                let len = Vector.length(terms);
-                let tuple = evalTermsWithLat(ctx, terms);
-                let latVal = evalBoxedTerm(env, boxing, Vector.get(len - 1, terms));
-                if (latVal `leq` bot) ()
-                else BPlusTree.putWith(lub, tuple, latVal, relIndex)
             case RelOp.ProvProject(terms, rel, fullRel) =>
                 let relIndex = lookupIndex(rel, db);
                 let fullIndex = lookupIndex(fullRel, db);

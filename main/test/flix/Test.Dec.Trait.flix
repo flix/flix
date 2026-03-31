@@ -157,13 +157,13 @@ mod Test.Dec.Trait {
             redef h(): Int32 = 1
         }
 
-        @test
+        @CompileTest
         def testSigRedef01(): Bool = Test.Dec.Trait.Test13.C.f() == 0
 
-        @test
+        @CompileTest
         def testSigRedef02(): Bool = Test.Dec.Trait.Test13.C.g() == 0
 
-        @test
+        @CompileTest
         def testSigRedef03(): Bool = Test.Dec.Trait.Test13.C.h() == 1
     }
 
@@ -207,6 +207,4 @@ mod Test.Dec.Trait {
         }
     }
 
-    @test
-    def empty(): Bool = true
 }

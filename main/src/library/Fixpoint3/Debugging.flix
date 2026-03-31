@@ -16,24 +16,27 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Debugging {
+pub mod Fixpoint3.Debugging {
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.BoxingType
     use Fixpoint3.Options
+    use Fs.FileWrite
 
     ///
     /// Write `s` to standard file. Overwrite if `overwrite` is true, otherwise append.
     ///
     def flush(s: String, overwrite: Bool): Unit \ IO =
         if (Options.enableDebugToFile()) {
-            let res =
+            let filename = Options.debugFileName();
+            let res = run {
                 if (overwrite)
-                    FileWrite.runWithIO(() -> FileWrite.write(str = s, Options.debugFileName()))
+                    FileWrite.write(str = s, filename)
                 else
-                    FileWrite.runWithIO(() -> FileWrite.append(str = s, Options.debugFileName()));
+                    FileWrite.append(str = s, filename)
+            } with Fs.FileWrite.runWithIO;
             match res {
                 case Ok(_) => ()
                 case Err(e) => println(e)
@@ -46,8 +49,7 @@ mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `d` to ensure it is not erased.
     ///
-    @Internal
-    pub def notifyPreSolve(d: Datalog): Datalog = unsafely IO run {
+    pub def notifyPreSolve(d: Datalog): Datalog = unsafe IO {
         if (Options.enableDebugging()) region rc {
             let strings = MutList.empty(rc);
             let psh = s -> MutList.push(s, strings);
@@ -69,8 +71,7 @@ mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `d` to ensure it is not erased.
     ///
-    @Internal
-    pub def notifyPostSolve(d: Datalog): Datalog = unsafely IO run {
+    pub def notifyPostSolve(d: Datalog): Datalog = unsafe IO {
         if (Options.enableDebugging() and Options.enableDebugPrintFacts()) region rc {
             let strings = MutList.empty(rc);
             let psh = s -> MutList.push(s, strings);
@@ -92,9 +93,8 @@ mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `d` to ensure it is not erased.
     ///
-    @Internal
     pub def notifyPreLowering(phase: String, program: Ram.RamProgram): Ram.RamProgram = match program {
-        case Ram.RamProgram.Program(stmt, _, _, _, _) => unsafely IO run {
+        case Ram.RamProgram.Program(stmt, _, _, _, _) => unsafe IO {
             if (Options.enableDebugging()) region rc {
                 let strings = MutList.empty(rc);
                 let psh = s -> MutList.push(s, strings);
@@ -117,11 +117,10 @@ mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `s` to ensure it is not erased.
     ///
-    @Internal
     pub def notifyPreInterpret(
         input: (ExecutableRam.RamProgram[r], BoxingType.Boxing[r])
     ): (ExecutableRam.RamProgram[r], BoxingType.Boxing[r]) = match fst(input) {
-        case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _) => unsafely IO run {
+        case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _) => unsafe IO {
             if (Options.enableDebugging()) region rc {
                 let strings = MutList.empty(rc);
                 let psh = s -> MutList.push(s, strings);

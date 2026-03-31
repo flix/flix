@@ -6,99 +6,122 @@ struct Person[r] {
 }
 mod Person {
 
-    @test
-    def testStructPut01(): Bool =
+    use Assert.{assertEq, assertFalse, assertTrue}
+
+    @Test
+    def testStructPut01(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
-            s->fstName == "Unlucky"
+            assertEq(expected = "Unlucky", s->fstName)
         }
 
-    @test
-    def testStructPut02(): Bool =
+    @Test
+    def testStructPut02(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->lstName = "Uriel";
-            s->lstName == "Uriel"
+            assertEq(expected = "Uriel", s->lstName)
         }
 
-    @test
-    def testStructPut03(): Bool =
+    @Test
+    def testStructPut03(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->age = 23;
-            s->age == 23
+            assertEq(expected = 23, s->age)
         }
 
-    @test
-    def testStructPut04(): Bool =
+    @Test
+    def testStructPut04(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->cowboy = false;
-            not s->cowboy and s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42
+            assertFalse(s->cowboy);
+            assertEq(expected = "Lucky", s->fstName);
+            assertEq(expected = "Luke", s->lstName);
+            assertEq(expected = 42, s->age)
         }
 
-    @test
-    def testStructPut05(): Bool =
+    @Test
+    def testStructPut05(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { age = 42, cowboy = true, fstName = "Lucky", lstName = "Luke" };
             s->cowboy = false;
-            not s->cowboy and s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42
+            assertFalse(s->cowboy);
+            assertEq(expected = "Lucky", s->fstName);
+            assertEq(expected = "Luke", s->lstName);
+            assertEq(expected = 42, s->age)
         }
 
-    @test
-    def testStructMultiPut01(): Bool =
+    @Test
+    def testStructMultiPut01(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
             s->lstName = "Uriel";
             s->age = 23;
             s->cowboy = false;
-            s->fstName == "Unlucky" and s->lstName == "Uriel" and s->age == 23 and s->cowboy == false
+            assertEq(expected = "Unlucky", s->fstName);
+            assertEq(expected = "Uriel", s->lstName);
+            assertEq(expected = 23, s->age);
+            assertFalse(s->cowboy)
         }
 
-    @test
-    def testStructMultiPut02(): Bool =
+    @Test
+    def testStructMultiPut02(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->cowboy = false;
             s->age = 23;
             s->lstName = "Uriel";
             s->fstName = "Unlucky";
-            s->fstName == "Unlucky" and s->lstName == "Uriel" and s->age == 23 and s->cowboy == false
+            assertEq(expected = "Unlucky", s->fstName);
+            assertEq(expected = "Uriel", s->lstName);
+            assertEq(expected = 23, s->age);
+            assertFalse(s->cowboy)
         }
 
-    @test
-    def testStructMultiPut03(): Bool =
+    @Test
+    def testStructMultiPut03(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
             s->fstName = "Lucky";
             s->lstName = "Uriel";
             s->lstName = "Luke";
-            s->lstName == "Luke" and s->fstName == "Lucky" and s->age == 42 and s->cowboy == true
+            assertEq(expected = "Luke", s->lstName);
+            assertEq(expected = "Lucky", s->fstName);
+            assertEq(expected = 42, s->age);
+            assertTrue(s->cowboy)
         }
 
-    @test
-    def testStructMultiPut04(): Bool =
+    @Test
+    def testStructMultiPut04(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->lstName = "Uriel";
             s->fstName = "Unlucky";
             s->lstName = "Luke";
             s->fstName = "Lucky";
-            s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42 and s->cowboy == true
+            assertEq(expected = "Lucky", s->fstName);
+            assertEq(expected = "Luke", s->lstName);
+            assertEq(expected = 42, s->age);
+            assertTrue(s->cowboy)
         }
 
-    @test
-    def testStructMultiPut05(): Bool =
+    @Test
+    def testStructMultiPut05(): Unit \ Assert =
         region rc {
             let s = new Person @ rc { cowboy = true, fstName = "Lucky", age = 42, lstName = "Luke" };
             s->lstName = "Uriel";
             s->fstName = "Unlucky";
             s->lstName = "Luke";
             s->fstName = "Lucky";
-            s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42 and s->cowboy == true
+            assertEq(expected = "Lucky", s->fstName);
+            assertEq(expected = "Luke", s->lstName);
+            assertEq(expected = 42, s->age);
+            assertTrue(s->cowboy)
         }
 
 }
@@ -110,6 +133,8 @@ struct BinaryTree[t, r] {
 }
 
 mod BinaryTree {
+
+    use Assert.assertEq
 
     def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
         match tree {
@@ -126,8 +151,8 @@ mod BinaryTree {
                 doubleTree(t->right)
         }
 
-    @test
-    def binaryTree01(): Bool \ IO =
+    @Test
+    def binaryTree01(): Unit \ (Assert + IO) =
         region rc {
             let leaf1 = new BinaryTree @ rc {
                 left = None,
@@ -165,11 +190,11 @@ mod BinaryTree {
                 node_value = 5
             };
             doubleTree(Some(tree));
-            binaryTreeSum(Some(tree)) == 94
+            assertEq(expected = 94, binaryTreeSum(Some(tree)))
         }
 
-    @test
-    def binaryTree02(): Bool \ IO =
+    @Test
+    def binaryTree02(): Unit \ (Assert + IO) =
         region rc {
             let leaf1 = new BinaryTree @ rc {
                 right = None,
@@ -207,7 +232,7 @@ mod BinaryTree {
                 right = Some(innernode2)
             };
             doubleTree(Some(tree));
-            binaryTreeSum(Some(tree)) == 94
+            assertEq(expected = 94, binaryTreeSum(Some(tree)))
         }
 
 }
@@ -216,14 +241,17 @@ struct Nested[t, r] {
 }
 
 mod Nested {
-    @test
-    def nestedPut01(): Bool =
+    use Assert.assertEq
+
+    @Test
+    def nestedPut01(): Unit \ Assert =
         region rc {
             let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15} }} };
             let before = nested->v->v->v->v;
             nested->v->v->v->v = 37;
             let after = nested->v->v->v->v;
-            before == 15 and after == 37
+            assertEq(expected = 15, before);
+            assertEq(expected = 37, after)
         }
 }
 
@@ -232,6 +260,8 @@ struct Lst[t, r] {
     mut next: Option[Lst[t, r]]
 }
 mod Lst {
+    use Assert.assertEq
+
     def listAppend(list: Lst[t, r], rc: Region[r], value: t): Unit \ r = match list->next {
         case Some(l) => listAppend(l, rc, value)
         case None => list->next = Some(new Lst @ rc {value = value, next = None})
@@ -258,8 +288,8 @@ mod Lst {
                 reversed
         }
 
-    @test
-    def testLst01(): Bool =
+    @Test
+    def testLst01(): Unit \ Assert =
         region rc {
             let list = new Lst @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
@@ -271,11 +301,11 @@ mod Lst {
             listAppend(list, rc, 8);
             listAppend(list, rc, 9);
             listAppend(list, rc, 10);
-            listSum(list) == 55
+            assertEq(expected = 55, listSum(list))
         }
 
-    @test
-    def testLst02(): Bool =
+    @Test
+    def testLst02(): Unit \ Assert =
         region rc {
             let list = new Lst @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
@@ -287,11 +317,11 @@ mod Lst {
             listAppend(list, rc, 8);
             listAppend(list, rc, 9);
             listAppend(list, rc, 10);
-            listSum(list) == 55
+            assertEq(expected = 55, listSum(list))
         }
 
-    @test
-    def testLst03(): Bool =
+    @Test
+    def testLst03(): Unit \ Assert =
         region rc {
             let list = new Lst @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
@@ -303,11 +333,12 @@ mod Lst {
             listAppend(list, rc, 8);
             listAppend(list, rc, 9);
             listAppend(list, rc, 10);
-            listSum(list) == 55 and listSum(listReverse(list, rc)) == 55
+            assertEq(expected = 55, listSum(list));
+            assertEq(expected = 55, listSum(listReverse(list, rc)))
         }
 
-    @test
-    def testLst04(): Bool =
+    @Test
+    def testLst04(): Unit \ Assert =
         region rc {
             let list = new Lst @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
@@ -319,6 +350,7 @@ mod Lst {
             listAppend(list, rc, 8);
             listAppend(list, rc, 9);
             listAppend(list, rc, 10);
-            listDifference(list) == -53 and listDifference(listReverse(list, rc)) == -35
+            assertEq(expected = -53, listDifference(list));
+            assertEq(expected = -35, listDifference(listReverse(list, rc)))
         }
 }

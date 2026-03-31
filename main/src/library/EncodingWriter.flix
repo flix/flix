@@ -34,7 +34,7 @@ instance Writable[EncodingWriter[t]] with Writable[t] where Writable.Elm[t] ~ In
 
 }
 
-mod EncodingWriter {
+pub mod EncodingWriter {
     import java.nio.charset.CharsetEncoder
     import java.nio.charset.CodingErrorAction
     import java.nio.ByteBuffer
@@ -85,7 +85,7 @@ mod EncodingWriter {
             let byteBuffer = ByteBuffer.wrap(dest);
             checked_ecast(encoder |> encodeBuffered(rc, charBuffer, byteBuffer))
         };
-        unchecked_cast(do() as _ \ rc + r)
+        checked_ecast(unsafe IO { do() })
 
     ///
     /// Encodes the chars from `charBuffer` into `byteBuffer` using `encoder`.
@@ -107,7 +107,7 @@ mod EncodingWriter {
                 dest
             }
         };
-        unchecked_cast(do() as _ \ rc)
+        checked_ecast(unsafe IO { do() })
 
     ///
     /// Writes all bytes from `dest` into `byteWriter`.

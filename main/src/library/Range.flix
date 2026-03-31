@@ -26,7 +26,7 @@ instance ForEach[Range[t]] with Discrete[t] {
     pub def forEach(f: t -> Unit \ ef, t: Range[t]): Unit \ ef = Range.forEach(f, t)
 }
 
-mod Range {
+pub mod Range {
 
     ///
     /// Applies `f` to every element of `r`.

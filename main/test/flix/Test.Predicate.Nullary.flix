@@ -1,71 +1,73 @@
 mod Test.Predicate.Nullary {
 
-    @test
-    def testNullaryPredicate01(): Bool =
+    use Assert.{assertEq, assertMemberOf}
+
+    @Test
+    def testNullaryPredicate01(): Unit \ Assert =
         let p = #{
             A. B. C.
         };
         let m = query p select 42 from A;
-        Vector.memberOf(42, m)
+        assertMemberOf(42, m)
 
-    @test
-    def testNullaryPredicate02(): Bool =
+    @Test
+    def testNullaryPredicate02(): Unit \ Assert =
         let p = #{
             A. B. C.
         };
         let m = query p select 42 from B;
-        Vector.memberOf(42, m)
+        assertMemberOf(42, m)
 
-    @test
-    def testNullaryPredicate03(): Bool =
+    @Test
+    def testNullaryPredicate03(): Unit \ Assert =
         let p = #{
             A. B. C.
         };
         let m = query p select 42 from C;
-        Vector.memberOf(42, m)
+        assertMemberOf(42, m)
 
-    @test
-    def testNullaryPredicate04(): Bool =
+    @Test
+    def testNullaryPredicate04(): Unit \ Assert =
         let p = #{
             A. B. C.
             R :- A.
         };
         let m = query p select 42 from R;
-        Vector.memberOf(42, m)
+        assertMemberOf(42, m)
 
-    @test
-    def testNullaryPredicate05(): Bool =
+    @Test
+    def testNullaryPredicate05(): Unit \ Assert =
         let p = #{
             A. B. C.
             R :- B.
         };
         let m = query p select 42 from R;
-        Vector.memberOf(42, m)
+        assertMemberOf(42, m)
 
-    @test
-    def testNullaryPredicate06(): Bool =
+    @Test
+    def testNullaryPredicate06(): Unit \ Assert =
         let p = #{
             A. B. C.
             R :- C.
         };
         let m = query p select 42 from R;
-        Vector.memberOf(42, m)
+        assertMemberOf(42, m)
 
-    @test
-    def testNullaryPredicate07(): Bool =
+    @Test
+    def testNullaryPredicate07(): Unit \ Assert =
         let p = #{
             A. B. C.
             R :- A, B, C.
         };
         let m = query p select 42 from R;
-        Vector.memberOf(42, m)
+        assertMemberOf(42, m)
 
-    @test
-    def testNullaryPredicate08(): Bool =
+    @Test
+    def testNullaryPredicate08(): Unit \ Assert =
         let p = #{
             R :- A.
         };
         let m = query p select 42 from R;
-        Vector#{} == m
+        assertEq(expected = Vector#{}, m)
 
 }

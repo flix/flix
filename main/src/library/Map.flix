@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{Map => JMap}
 
 ///
 /// The Map type.
@@ -131,18 +130,7 @@ instance ForEach[Map[k, v]] {
     pub def forEach(f: ((k, v)) -> Unit \ ef, t: Map[k, v]): Unit \ ef = Map.forEach(k -> v -> f((k, v)), t)
 }
 
-instance ToJava[Map[k, v]] with Order[k] {
-    type Out = JMap
-    type Aef = IO
-    pub def toJava(m: Map[k, v]): JMap \ IO = Adaptor.toMap(m)
-}
-
-instance ToFlix[Map[k, v]] with Order[k] {
-    type In = JMap
-    pub def toFlix(m: JMap): Map[k, v] = Adaptor.fromMap(m)
-}
-
-mod Map {
+pub mod Map {
 
     ///
     /// Returns a string representation of the given map `m`.
@@ -209,6 +197,17 @@ mod Map {
     /// Otherwise, returns `d`.
     ///
     pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(d, get(k, m))
+
+    ///
+    /// Returns the value associated with key `k` in map `m`.
+    ///
+    /// Aborts if the key is not present.
+    ///
+    pub def getOrAbort(k: k, m: Map[k, v]): v \ Abort with Order[k] =
+        match Map.get(k, m) {
+            case None    => Abort.abortWithTrace("Map.getOrAbort(): key not found")
+            case Some(v) => v
+        }
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.

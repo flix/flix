@@ -67,11 +67,6 @@ case class Annotations(annotations: List[Annotation]) {
   def isInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.Inline])
 
   /**
-    * Returns `true` if `this` sequence contains the `@Internal` annotation.
-    */
-  def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
-
-  /**
     * Returns `true` if `this` sequence contains the `@Lazy` annotation.
     */
   def isLazy: Boolean = annotations exists (_.isInstanceOf[Annotation.Lazy])
@@ -105,5 +100,15 @@ case class Annotations(annotations: List[Annotation]) {
     * Returns `true` if `this` sequence contains the `@Test` annotation.
     */
   def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
+
+  /**
+    * Returns `true` if `this` sequence contains the `@Terminates` annotation.
+    */
+  def isTerminates: Boolean = annotations exists (_.isInstanceOf[Annotation.Terminates])
+
+  /**
+    * Returns `true` if `this` sequence contains the `@Tailrec` annotation.
+    */
+  def isTailRecursive: Boolean = annotations exists (_.isInstanceOf[Annotation.TailRecursive])
 
 }

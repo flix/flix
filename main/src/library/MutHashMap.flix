@@ -70,7 +70,7 @@ instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
         fromString("MutHashMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
 }
 
-mod MutHashMap {
+pub mod MutHashMap {
 
     ///
     /// Represents an internal entry node for the hash map.
@@ -84,19 +84,6 @@ mod MutHashMap {
         mut bucketNext: Option[Entry[k, v, r]],    // Next entry in the same bucket
         mut orderPrev: Option[Entry[k, v, r]],     // Previous entry in insertion order
         mut orderNext: Option[Entry[k, v, r]]      // Next entry in insertion order
-    }
-
-    mod Entry {
-        pub def getKey(e: Entry[k, v, r]): k = e->key
-        pub def getValue(e: Entry[k, v, r]): v \ r = e->value
-        pub def setValue(v: v, e: Entry[k, v, r]): Unit \ r = e->value = v
-        pub def getHash(e: Entry[k, v, r]): Int32 = e->hash
-        pub def getBucketNext(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->bucketNext
-        pub def setBucketNext(next: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->bucketNext = next
-        pub def getOrderPrev(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->orderPrev
-        pub def setOrderPrev(prev: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->orderPrev = prev
-        pub def getOrderNext(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->orderNext
-        pub def setOrderNext(next: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->orderNext = next
     }
 
     ///
@@ -197,6 +184,17 @@ mod MutHashMap {
     ///
     pub def getWithDefault(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] =
         Option.getWithDefault(default, get(k, m))
+
+    ///
+    /// Returns the value associated with key `k` in the mutable hash map `m`.
+    ///
+    /// Aborts if the key is not present.
+    ///
+    pub def getOrAbort(k: k, m: MutHashMap[k, v, r]): v \ (Abort + r) with Eq[k], Hash[k] =
+        match MutHashMap.get(k, m) {
+            case None    => Abort.abortWithTrace("MutHashMap.getOrAbort(): key not found")
+            case Some(v) => v
+        }
 
     ///
     /// Converts hash code to a valid bucket index.

@@ -46,7 +46,7 @@ object HtmlDocumentor {
   /**
     * The directory where to write the ouput.
     */
-  def OutputDirectory(implicit flix: Flix): Path = flix.options.outputPath.resolve("doc/")
+  private def OutputDirectory(implicit flix: Flix): Path = flix.options.outputPath.resolve("doc/")
 
   /**
     * The path to the stylesheet, relative to the resources folder.
@@ -341,11 +341,11 @@ object HtmlDocumentor {
           parent,
           uses,
           submodules.map(m => filterContents(m, PackageModules.All)),
-          traits.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(c => filterTrait(c)),
-          effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEffect(e)),
-          enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEnum(e)),
-          typeAliases.filter(t => t.mod.isPublic && !t.ann.isInternal),
-          defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
+          traits.filter(c => c.decl.mod.isPublic).map(c => filterTrait(c)),
+          effects.filter(e => e.decl.mod.isPublic).map(e => filterEffect(e)),
+          enums.filter(e => e.decl.mod.isPublic).map(e => filterEnum(e)),
+          typeAliases.filter(t => t.mod.isPublic),
+          defs.filter(d => d.spec.mod.isPublic),
         )
       } else {
         // Keep the 'spine' of the tree if a module further down is included
@@ -387,12 +387,12 @@ object HtmlDocumentor {
           superTraits,
           assocs,
           Nil,
-          laws.filter(l => l.spec.mod.isPublic && !l.spec.ann.isInternal),
+          laws.filter(l => l.spec.mod.isPublic),
           loc
         ),
-        signatures.filter(s => s.spec.mod.isPublic && !s.spec.ann.isInternal),
-        defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
-        instances.filter(i => !i.ann.isInternal),
+        signatures.filter(s => s.spec.mod.isPublic),
+        defs.filter(d => d.spec.mod.isPublic),
+        instances,
         parent,
         None
       )
@@ -1292,7 +1292,7 @@ object HtmlDocumentor {
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     fparams match {
-      case List(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _)) =>
+      case List(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _, _)) =>
       // For a function declared with zero formal parameters,
       // the compiler will introduce a single parameter of the unit type
       case _ =>
@@ -1505,7 +1505,7 @@ object HtmlDocumentor {
     */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
-    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.endLine}"
+    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.startLine}-L${loc.endLine}"
   }
 
   /**

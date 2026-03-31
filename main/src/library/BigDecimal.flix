@@ -19,7 +19,7 @@
 /// equality (`==` and the `Eq` trait) consider both value and scale,
 /// numerical equality (are the values the same after the scales have been
 /// normalized) is provided by the function `numericEquals`.
-mod BigDecimal {
+pub mod BigDecimal {
 
     import java.math.BigDecimal
     import java.math.RoundingMode

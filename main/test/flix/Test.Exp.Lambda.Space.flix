@@ -1,43 +1,55 @@
 mod Test.Exp.Lambda.Space {
-    @test
+
+    @CompileTest
     def testLambdaNullary01(): Unit -> Int32 =
         () -> 15
 
-    @test
+    @CompileTest
     def testLambdaNullary02(): Unit -> Int32 =
         () ->15
 
-    @test
+    @CompileTest
     def testLambdaNullary03(): Unit -> Int32 =
         ()-> 15
 
-    def _testLambdaUnary01(): a -> a =
+    @CompileTest
+    def testLambdaUnary01(): a -> a =
         p -> p
 
-    def _testLambdaUnary02(): a -> a =
+    @CompileTest
+    def testLambdaUnary02(): a -> a =
         p ->p
 
-    def _testLambdaUnary03(): a -> a =
+    @CompileTest
+    def testLambdaUnary03(): a -> a =
         p-> p
 
-    def _testLambdaMany01(): a -> b -> _c -> a =
+    @CompileTest
+    def testLambdaMany01(): a -> b -> _c -> a =
         a -> _b -> _c -> a
 
-    def _testLambdaMany02(): a -> _b -> _c -> a =
+    @CompileTest
+    def testLambdaMany02(): a -> _b -> _c -> a =
         a -> _b -> _c ->a
 
-    def _testLambdaMany03(): a -> _b -> _c -> a =
+    @CompileTest
+    def testLambdaMany03(): a -> _b -> _c -> a =
         a -> _b -> _c-> a
 
-    def _testLambdaMany04(): a -> _b -> _c -> a =
+    @CompileTest
+    def testLambdaMany04(): a -> _b -> _c -> a =
         a -> _b ->_c -> a
 
-    def _testLambdaMany05(): a -> _b -> _c -> a =
+    @CompileTest
+    def testLambdaMany05(): a -> _b -> _c -> a =
         a -> _b-> _c -> a
 
-    def _testLambdaMany06(): a -> _b -> _c -> a =
+    @CompileTest
+    def testLambdaMany06(): a -> _b -> _c -> a =
         a ->_b -> _c -> a
 
-    def _testLambdaMany07(): a -> _b -> _c -> a =
+    @CompileTest
+    def testLambdaMany07(): a -> _b -> _c -> a =
         a-> _b -> _c -> a
+
 }

@@ -4,8 +4,8 @@
 
 - [Matthew Lutze](https://github.com/mlutze)
 - [Magnus Madsen](https://github.com/magnus-madsen)
-- [Jonathan Lindegaard Starup](https://github.com/JonathanStarup)
-- [Jakob Schneider Villumsen](https://github.com/jaschdoc)
+- [Jonathan Lindegaard Starup](https://github.com/JonathanStarup) (Google LLC)
+- [Jakob Schneider Villumsen](https://github.com/jaschdoc) (Google LLC)
 
 ## Contributors
 
@@ -82,6 +82,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Din Jakupi](https://github.com/gwydd12)
 - [Adam Yasser Tallouzi](https://github.com/JumpTwiice)
 - [Casper Dalgaard Nielsen](https://github.com/CasperDN)
+- [Patrick Nicodemus](https://github.com/patrick-nicodemus)
 - [Gagan Chandan](https://github.com/gaganchandan)
 - [Cade Lueker](https://github.com/cademichael)
 - [Asher Frost](https://github.com/wizard7377)
@@ -90,3 +91,10 @@ By adding your name to this document, you agree to release all your contribution
 - [Alex Asafov](https://github.com/Alex1005a)
 - [Daniel Neo López Martínez](https://github.com/NeonOxide)
 - [Jeff Beu](https://github.com/hexagonhill)
+- [Daniel John](https://github.com/danieljohnprojects)
+- [Alexander Friis Sommer](https://github.com/sommerblommer)
+- [Samuel Skovbakke](https://github.com/samuelskovbakke)
+- [Mikkel Sejdelin](https://github.com/Sejder)
+- [Anders Bjerrum Jensen](https://github.com/AndersJensenStudie)
+- [Bertram Nellemann Thorsen](https://github.com/Palemand)
+- [Andreas Gotthelf Kühlwein Pedersen](https://github.com/ACoolWine)

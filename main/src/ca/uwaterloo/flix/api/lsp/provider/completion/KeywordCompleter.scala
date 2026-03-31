@@ -137,13 +137,12 @@ object KeywordCompleter {
       Completion.KeywordCompletion("throw"       , range, Priority.Lowest(1)),
       Completion.KeywordCompletion("true"        , range, Priority.Lowest(-1), withSpace = false),
       Completion.KeywordCompletion("try"         , range, Priority.Lowest(1)),
-      Completion.KeywordCompletion("typematch"   , range, Priority.Lowest(0)),
       // U
       Completion.KeywordCompletion("unsafe"      , range, Priority.Lowest(1)),
       Completion.KeywordCompletion("use"         , range, Priority.Lowest(0)),
       // W
       Completion.KeywordCompletion("with"        , range, Priority.Lowest(0)),
-      Completion.KeywordCompletion("without"     , range, Priority.Lowest(1)),
+
       // Y
       Completion.KeywordCompletion("yield"       , range, Priority.Lowest(0))
     ).filter {

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{List => JList}
 
 ///
 /// The NonEmptyList type.
@@ -134,13 +133,8 @@ instance ForEach[Nel[a]] {
     pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = Nel.forEach(f, l)
 }
 
-instance ToJava[Nel[a]] {
-    type Out = JList
-    type Aef = IO
-    pub def toJava(l: Nel[a]): JList \ IO = Adaptor.toList(l)
-}
-
-mod Nel {
+pub mod Nel {
+    use Math.Shuffle
 
     ///
     /// Returns a string representation of the given non-empty list `l`.
@@ -174,6 +168,24 @@ mod Nel {
     ///
     pub def last(l: Nel[a]): a = match l {
         case Nel(x, xs) => Option.getWithDefault(x, List.last(xs))
+    }
+
+    ///
+    /// Returns the element at position `i` in the non-empty list `l`.
+    ///
+    /// Throws `OutOfBounds` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, l: Nel[a]): a \ OutOfBounds =
+        match nth(i, l) {
+            case Some(x) => x
+            case None    => OutOfBounds.outOfBounds("index ${i} is out of bounds for Nel of length ${length(l)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the non-empty list `l`.
+    ///
+    pub def nth(i: Int32, l: Nel[a]): Option[a] = match l {
+        case Nel(x, xs) => if (i == 0) Some(x) else List.nth(i - 1, xs)
     }
 
     ///
@@ -283,7 +295,7 @@ mod Nel {
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
     ///
-    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    /// That is, the result is of the form: `f(0, x0) :: f(1, x1) :: ...`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: Nel[a]): Nel[b] \ ef =
         let Nel(x, xs) = l;
@@ -440,7 +452,7 @@ mod Nel {
     ///
     /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.
     ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    /// That is, the result is of the form: `f(x1, ...f(xn-2, f(xn-1, xn))...)`
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, l: Nel[a]): a \ ef = match l {
         case Nel(x, xs) => match List.reduceRight(f, x :: xs) {

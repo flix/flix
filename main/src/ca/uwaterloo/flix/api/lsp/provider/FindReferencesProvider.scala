@@ -153,12 +153,11 @@ object FindReferencesProvider {
     case TypedAst.RestrictableCase(_, _, _, loc) => loc.isReal
     case TypedAst.Constraint(_, _, _, loc) => loc.isReal
     case TypedAst.ConstraintParam(_, _, loc) => loc.isReal
-    case TypedAst.FormalParam(_, _, _, loc) => loc.isReal
+    case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
-    case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.JvmMethod(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.CatchRule(_, _, _, _) => true
     case TypedAst.HandlerRule(_, _, _, _) => true
-    case TypedAst.TypeMatchRule(_, _, _, _) => true
     case TypedAst.SelectChannelRule(_, _, _, _) => true
     case TypedAst.TypeParam(_, _, loc) => loc.isReal
     case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
@@ -503,8 +502,9 @@ object FindReferencesProvider {
   }
 
   private def isInProject(loc: SourceLocation): Boolean = loc.source.input match {
-    case Input.Text(_, _, _) => true // over-approximation
-    case Input.TxtFile(_, _) => false
+    case Input.RealFile(_, _) => false
+    case Input.VirtualFile(_, _, _) => true // over-approximation
+    case Input.VirtualUri(_, _, _) => true // over-approximation
     case Input.PkgFile(_, _) => false
     case Input.FileInPackage(_, _, _, _) => false
     case Input.Unknown => false

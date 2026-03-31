@@ -91,6 +91,8 @@ object SyntaxTree {
 
     case object Case extends TreeKind
 
+    case object CaseBody extends TreeKind
+
     case object CommentList extends TreeKind
 
     case object DerivationList extends Type
@@ -104,6 +106,8 @@ object SyntaxTree {
     case object ModifierList extends TreeKind
 
     case object Operator extends TreeKind
+
+    case object OperatorError extends TreeKind
 
     case object Parameter extends TreeKind
 
@@ -210,7 +214,11 @@ object SyntaxTree {
 
       case object InvokeConstructor extends Expr
 
+      case object InvokeSuperConstructor extends Expr
+
       case object InvokeMethod extends Expr
+
+      case object InvokeSuperMethod extends Expr
 
       case object FixpointConstraint extends Expr
 
@@ -261,6 +269,8 @@ object SyntaxTree {
       case object InstanceOf extends Expr
 
       case object Intrinsic extends Expr
+
+      case object JvmConstructor extends Expr
 
       case object JvmMethod extends Expr
 
@@ -364,21 +374,16 @@ object SyntaxTree {
 
       case object Tuple extends Expr
 
-      case object TypeMatch extends Expr
-
-      case object TypeMatchRuleFragment extends Expr
-
       case object Unary extends Expr
 
       case object UncheckedCast extends Expr
 
       case object Unsafe extends Expr
 
-      case object UnsafeOld extends Expr
+      case object UnsafeAsEffFragment extends Expr
 
       case object Use extends Expr
 
-      case object Without extends Expr
 
     }
 
@@ -477,6 +482,8 @@ object SyntaxTree {
       case object RecordFieldFragment extends Pattern
 
       case object Tag extends Pattern
+
+      case object TagBody extends Pattern
 
       case object Tuple extends Pattern
 

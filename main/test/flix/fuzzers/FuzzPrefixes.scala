@@ -16,24 +16,20 @@
 package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 
+@DoNotDiscover
 class FuzzPrefixes extends AnyFunSuite with TestUtils {
 
   /**
     * The number of prefixes to compile for each program.
     */
   private val N: Int = 100
-
-  test("simple-card-game") {
-    val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
-    val input = Files.readString(filepath)
-    compilePrefixes(input)
-  }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
@@ -42,7 +38,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
   }
 
   test("ford-fulkerson") {
-    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val filepath = Paths.get("examples/datalog/ford-fulkerson.flix")
     val input = Files.readString(filepath)
     compilePrefixes(input)
   }
@@ -62,7 +58,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
       // We use the same name for all inputs to simulate editing a file
-      flix.addSourceCode("<input>", prefix)(SecurityContext.Unrestricted)
+      flix.addVirtualPath(CompilerConstants.VirtualTestFile, prefix)(SecurityContext.Unrestricted)
       flix.compile() // We simply care that this does not crash.
     }
   }

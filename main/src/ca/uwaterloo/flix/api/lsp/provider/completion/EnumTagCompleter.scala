@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.api.lsp.{Position, Range}
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Enum, Namespace}
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Enum, Mod}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 
@@ -67,7 +67,7 @@ object EnumTagCompleter {
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
       case Some(Resolution.Declaration(Enum(_, _, _, sym, _, _, _, _))) => sym.toString
-      case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
+      case Some(Resolution.Declaration(Mod(_, _, name, _, _, _))) => name.toString
       case _ => return Nil
     }
     val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")

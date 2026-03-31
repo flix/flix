@@ -16,16 +16,36 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Options, Result, Validation}
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestFlixErrors extends AnyFunSuite with TestUtils {
+class TestFlixErrors extends AnyFunSuite {
+
+  private implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+
+  test("HoleError.01") {
+    val input = "def main(): Unit = ???"
+    val result = new Flix()
+      .setOptions(Options.TestWithLibMin)
+      .addVirtualPath(CompilerConstants.VirtualTestFile, input)
+      .compile()
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
+  }
+
+  test("HoleError.02") {
+    val input = "def main(): Unit = ?namedHole"
+    val result = new Flix()
+      .setOptions(Options.TestWithLibMin)
+      .addVirtualPath(CompilerConstants.VirtualTestFile, input)
+      .compile()
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
+  }
 
   def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
-    expectSuccess(v)
     v.toResult match {
       case Result.Ok(t) => t.getMain match {
         case Some(main) => try {
@@ -40,18 +60,6 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
       }
       case Result.Err(_) => fail("Impossible")
     }
-  }
-
-  test("HoleError.01") {
-    val input = "def main(): Unit = ???"
-    val result = compile(input, Options.TestWithLibMin)
-    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
-  }
-
-  test("HoleError.02") {
-    val input = "def main(): Unit = ?namedHole"
-    val result = compile(input, Options.TestWithLibMin)
-    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
 }

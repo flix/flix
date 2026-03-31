@@ -20,114 +20,101 @@ mod Test.Exp.Tag {
         case OfRecordOfTuple({a = ({b = Int32}, {c = Char})})
     }
 
-    @test
+    @CompileTest
     def testUnitTag01(): A = A.OfUnit(())
 
-    @test
+    @CompileTest
     def testUnitTag02(): A = Test.Exp.Tag.A.OfUnit(())
 
-
-    @test
+    @CompileTest
     def testBoolTag01(): A = A.OfBool(true)
 
-    @test
+    @CompileTest
     def testBoolTag02(): A = Test.Exp.Tag.A.OfBool(true)
 
-
-    @test
+    @CompileTest
     def testCharTag01(): A = A.OfChar('a')
 
-    @test
+    @CompileTest
     def testCharTag02(): A = Test.Exp.Tag.A.OfChar('a')
 
-
-    @test
+    @CompileTest
     def testFloat32Tag01(): A = A.OfFloat32(21.42f32)
 
-    @test
+    @CompileTest
     def testFloat32Tag02(): A = Test.Exp.Tag.A.OfFloat32(21.42f32)
 
-
-    @test
+    @CompileTest
     def testFloat64Tag01(): A = A.OfFloat64(21.42f64)
 
-    @test
+    @CompileTest
     def testFloat64Tag02(): A = Test.Exp.Tag.A.OfFloat64(21.42f64)
 
-
-    @test
+    @CompileTest
     def testBigDecimalTag01(): A = A.OfBigDecimal(21.42ff)
 
-    @test
+    @CompileTest
     def testBigDecimalTag02(): A = Test.Exp.Tag.A.OfBigDecimal(21.42ff)
 
-
-    @test
+    @CompileTest
     def testInt8Tag01(): A = A.OfInt8(42i8)
 
-    @test
+    @CompileTest
     def testInt8Tag02(): A = Test.Exp.Tag.A.OfInt8(42i8)
 
-
-    @test
+    @CompileTest
     def testInt16Tag01(): A = A.OfInt16(42i16)
 
-    @test
+    @CompileTest
     def testInt16Tag02(): A = Test.Exp.Tag.A.OfInt16(42i16)
 
-
-    @test
+    @CompileTest
     def testInt32Tag01(): A = A.OfInt32(42i32)
 
-    @test
+    @CompileTest
     def testInt32Tag02(): A = Test.Exp.Tag.A.OfInt32(42i32)
 
-
-    @test
+    @CompileTest
     def testInt64Tag01(): A = A.OfInt64(42i64)
 
-    @test
+    @CompileTest
     def testInt64Tag02(): A = Test.Exp.Tag.A.OfInt64(42i64)
 
-
-    @test
+    @CompileTest
     def testBigIntTag01(): A = A.OfBigInt(42ii)
 
-    @test
+    @CompileTest
     def testBigIntTag02(): A = Test.Exp.Tag.A.OfBigInt(42ii)
 
-
-    @test
+    @CompileTest
     def testStringTag01(): A = A.OfString("Hello World!")
 
-    @test
+    @CompileTest
     def testStringTag02(): A = Test.Exp.Tag.A.OfString("Hello World!")
 
-
-    @test
+    @CompileTest
     def testArrayOfIntTag01(): A \ IO = A.OfArrayOfInt(Array#{1, 2, 3} @ Static)
 
-    @test
+    @CompileTest
     def testArrayOfIntTag02(): A \ IO = Test.Exp.Tag.A.OfArrayOfInt(Array#{1, 2, 3} @ Static)
 
 
-    @test
+    @CompileTest
     def testArrayOfStringTag01(): A \ IO = A.OfArrayOfString(Array#{"a", "b", "c"} @ Static)
 
-    @test
+    @CompileTest
     def testArrayOfStringTag02(): A \ IO = Test.Exp.Tag.A.OfArrayOfString(Array#{"a", "b", "c"} @ Static)
 
-
-    @test
+    @CompileTest
     def testTupleTag01(): A = A.OfTuple(true, 'a', "Hello World!")
 
-    @test
+    @CompileTest
     def testTupleTag02(): A = Test.Exp.Tag.A.OfTuple(true, 'a', "Hello World!")
 
-    @test
+    @CompileTest
     def testRecordTag01(): A = A.OfRecord(a = 123, b = 'x')
 
-    @test
+    @CompileTest
     def testRecordOfTupleTag01(): A = A.OfRecordOfTuple(a = (b = 123, c = 'x'))
 
     pub enum Suit {
@@ -142,10 +129,10 @@ mod Test.Exp.Tag {
         case Card(Suit, Rank)
     }
 
-    @test
+    @CompileTest
     def testNestedTag01(): Card = Card.Card(Suit.Hearts, Rank.N(5))
 
-    @test
+    @CompileTest
     def testNestedTag02(): Card = Test.Exp.Tag.Card.Card(Test.Exp.Tag.Suit.Hearts, Test.Exp.Tag.Rank.N(5))
 
     pub enum Poly[a, b] {
@@ -155,34 +142,34 @@ mod Test.Exp.Tag {
         case Both(a, b)
     }
 
-    @test
+    @CompileTest
     def testPolyTag01(): Poly[Int32, String] = Poly.None
 
-    @test
+    @CompileTest
     def testPolyTag02(): Poly[Int32, String] = Test.Exp.Tag.Poly.None
 
-    @test
+    @CompileTest
     def testPolyTag03(): Poly[Int32, String] = Poly.This(123)
 
-    @test
+    @CompileTest
     def testPolyTag04(): Poly[Int32, String] = Test.Exp.Tag.Poly.This(123)
 
-    @test
+    @CompileTest
     def testPolyTag05(): Poly[Int32, String] = Poly.That("Hello World!")
 
-    @test
+    @CompileTest
     def testPolyTag06(): Poly[Int32, String] = Test.Exp.Tag.Poly.That("Hello World!")
 
-    @test
+    @CompileTest
     def testPolyTag07(): Poly[Int32, String] = Poly.Both(123, "Hello World!")
 
-    @test
+    @CompileTest
     def testPolyTag08(): Poly[Int32, String] = Test.Exp.Tag.Poly.Both(123, "Hello World!")
 
-    @test
+    @CompileTest
     def testTopLevelTag01(): Option[Int32] = Some(1)
 
-    @test
+    @CompileTest
     def testTopLevelTag02(): Option[Int32] = Option.Some(1)
 
     // Local version of List to make sure that this is used instead of top level
@@ -190,6 +177,7 @@ mod Test.Exp.Tag {
         case Cons(String)
     }
 
-    @test
+    @CompileTest
     def testTopLevelTag03(): List = List.Cons("Foo")
+
 }

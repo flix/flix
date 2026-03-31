@@ -22,7 +22,7 @@ instance UpperBound[Int32] {
     pub def maxValue(): Int32 = Int32.maxValue()
 }
 
-mod Int32 {
+pub mod Int32 {
 
     import java.lang.Integer
     import java.lang.NumberFormatException
@@ -141,14 +141,14 @@ mod Int32 {
     }
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` right by `dist` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int32): Int32 =
         bitwiseOr(logicalRightShift(dist = dist#dist, x), leftShift(x, -dist#dist))
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` left by `dist` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int32): Int32 =
@@ -248,7 +248,7 @@ mod Int32 {
 
     ///
     /// Returns the bit of `x` at position `pos` (either 0 or 1).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int32): Int32 =
@@ -256,21 +256,21 @@ mod Int32 {
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def setBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseOr(x, leftShift(1, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def clearBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseAnd(x, bitwiseNot(leftShift(1, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
-    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
+    /// Considers the 5 rightmost bits of `pos` (`pos` modulo 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def flipBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseXor(x, leftShift(1, pos#pos))
@@ -458,6 +458,30 @@ mod Int32 {
         let mini32 = Int16.toInt32(min#min);
         let maxi32 = Int16.toInt32(max#max);
         Integer.valueOf(clamp(min = mini32, max = maxi32, x)).shortValue()
+
+    ///
+    /// Convert `x` to an Int8 by truncation.
+    ///
+    /// Discards all but the lowest 8 bits.
+    ///
+    pub def truncateToInt8(x: Int32): Int8 =
+        Integer.valueOf(x).byteValue()
+
+    ///
+    /// Convert `x` to an Int16 by truncation.
+    ///
+    /// Discards all but the lowest 16 bits.
+    ///
+    pub def truncateToInt16(x: Int32): Int16 =
+        Integer.valueOf(x).shortValue()
+
+    ///
+    /// Convert `x` to a Char by truncation.
+    ///
+    /// Discards all but the lowest 16 bits.
+    ///
+    pub def truncateToChar(x: Int32): Char =
+        unchecked_cast(Integer.valueOf(x).shortValue() as Char)
 
     ///
     /// Get the primitive Int32 value from its object representation (i.e. Integer).

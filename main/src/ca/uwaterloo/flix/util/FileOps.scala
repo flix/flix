@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.io.IOException
 import java.nio.file.{Files, LinkOption, Path, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
@@ -27,6 +26,35 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
 object FileOps {
+
+  /**
+    * Checks if `path` exists on the file system.
+    *
+    * @param path the path to check for existence.
+    * @return `Ok(true)` if the path exists on the file system, `Ok(true)` otherwise.
+    *         Returns `Err(e)` if an exception `e` occurred.
+    */
+  def exists(path: Path): Result[Boolean, Exception] = {
+    try {
+      Result.Ok(Files.exists(path))
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
+
+  /**
+    * Returns the contents of the file at `path` as a string.
+    *
+    * @param path the path to read. The caller must check if it exists first.
+    * @return the contents of the file.
+    */
+  def readString(path: Path): Result[String, Exception] = {
+    try {
+      Result.Ok(Files.readString(path))
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
 
   /**
     * Deletes `path` if it exists. Wraps any error `e` in `Result.Err(e)`.

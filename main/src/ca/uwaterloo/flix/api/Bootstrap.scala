@@ -15,21 +15,27 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
+import ca.uwaterloo.flix.api.lsp.Formatter as LspFormatter
+import ca.uwaterloo.flix.language.CompilationMessage
 
 import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
+import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.util.{Failure, Success, Using}
@@ -117,7 +123,7 @@ object Bootstrap {
 
     FileOps.newFileIfAbsent(mainTestFile) {
       """@Test
-        |def test01(): Bool = 1 + 1 == 2
+        |def test01(): Unit \ Assert = Assert.assertEq(expected = 2, 1 + 1)
         |""".stripMargin
     }
     Result.Ok(())
@@ -196,9 +202,19 @@ object Bootstrap {
   private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/").normalize()
 
   /**
+    * Returns the directory of the generated documentation files relative to the given path `p`.
+    */
+  private def getDocumentationDirectory(p: Path): Path = getBuildDirectory(p).resolve("./doc/").normalize()
+
+  /**
     * Returns the path to the artifact directory relative to the given path `p`.
     */
   private def getResourcesDirectory(p: Path): Path = p.resolve("./resources/").normalize()
+
+  /**
+    * Returns the path to the `effects.lock` relative to the given path `p`.
+    */
+  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
@@ -295,6 +311,42 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   private var securityLevels: Map[Path, SecurityContext] = Map.empty
 
+  // The file watcher, if active (used by the REPL shell).
+  private var fileWatcher: Option[FileWatcher] = None
+
+  /**
+    * Starts a file system watcher that monitors the project directories for changes.
+    * When active, `updateStaleSources` will drain watcher events instead of polling timestamps.
+    */
+  def startWatching(): Unit = {
+    val fw = new FileWatcher()
+    fw.watchShallow(projectPath)
+    // Register these as recursive roots even if they don't exist yet.
+    // The watcher will automatically pick them up when they are created.
+    fw.watchRecursively(Bootstrap.getSourceDirectory(projectPath))
+    fw.watchRecursively(Bootstrap.getTestDirectory(projectPath))
+    fw.watchRecursively(Bootstrap.getLibraryDirectory(projectPath))
+    fw.start()
+    fileWatcher = Some(fw)
+  }
+
+  /**
+    * Stops the file system watcher, if active.
+    */
+  def stopWatching(): Unit = {
+    fileWatcher.foreach(_.stop())
+    fileWatcher = None
+  }
+
+  /**
+    * Applies any pending file changes to the Flix instance.
+    * When the file watcher is active, drains watcher events.
+    * Otherwise, falls back to timestamp-based change detection.
+    */
+  def applyFileChanges(flix: Flix): Unit = {
+    Steps.updateStaleSources(flix)
+  }
+
   /**
     * Parses `flix.toml` to a Manifest and downloads all required files.
     * Then makes a list of all flix source files, flix packages
@@ -341,7 +393,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(flix: Flix)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def buildJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     Steps.updateStaleSources(flix)
     for {
@@ -361,7 +413,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a fatjar package for the project.
     */
-  def buildFatJar(flix: Flix)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def buildFatJar(flix: Flix): Result[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     val libDir = Bootstrap.getLibraryDirectory(projectPath)
     Steps.updateStaleSources(flix)
@@ -426,6 +478,105 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
+    * Returns `Ok(())` if the dependencies are consistent with the `effects.lock` file.
+    * Returns `Err(e)` if an error `e` occurred or if the dependencies are inconsistent with the `effect.lock` file.
+    */
+  def checkEffects(flix: Flix): Result[Unit, BootstrapError] = {
+    if (!isProjectMode) {
+      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-check'"))
+    }
+
+    FileOps.exists(Bootstrap.getEffectLockFile(projectPath)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      case Ok(false) => return Err(BootstrapError.FileError("No 'effects.lock' file found. Unable to run 'eff-check'."))
+      case Ok(true) => ()
+    }
+
+    Steps.updateStaleSources(flix)
+    for {
+      json <- FileOps.readString(Bootstrap.getEffectLockFile(projectPath)).mapErr(e => BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      (lockedDefs, lockedSigs) <- EffectLock.deserialize(json).mapErr(BootstrapError.FileError.apply)
+      root <- Steps.check(flix)
+      errors <- reportEffectUpgradeErrors(lockedDefs, lockedSigs, root)(flix)
+    } yield {
+      errors
+    }
+  }
+
+  /**
+    * Helper function for [[checkEffects]] to be used in for comprehension.
+    *
+    * Returns `Ok(())` if no effect upgrade errors are found.
+    * Returns `Err(BootstrapError.EffectUpgradeError(errors))` otherwise.
+    */
+  private def reportEffectUpgradeErrors(lockedDefs: Map[Symbol.DefnSym, Scheme], lockedSigs: Map[Symbol.SigSym, Scheme], root: TypedAst.Root)(implicit flix: Flix): Result[Unit, BootstrapError] = {
+    // Compute the inverted use graph to get `f -> g` if `f` is used in `g`.
+    val useGraph = ListMap.from(UseGraph.computeGraph(root).invert.map {
+      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.DefnSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.DefnSym(g)) => f.toString -> g.loc
+      case (UseGraph.UsedSym.SigSym(f), UseGraph.UsedSym.SigSym(g)) => f.toString -> g.loc
+    })
+
+    // N.B.: We erase the keys of the maps to strings, since maps are invariant in the key
+    val erasedLockedDefs = lockedDefs.map { case (sym, scheme) => sym.toString -> scheme }
+    val erasedUpgradedDefs = root.defs.map { case (sym, defn) => sym.toString -> defn.spec.declaredScheme }
+    val erasedLockedSigs = lockedSigs.map { case (sym, scheme) => sym.toString -> scheme }
+    val erasedUpgradedSigs = root.sigs.map { case (sym, sig) => sym.toString -> sig.spec.declaredScheme }
+    val defnErrors = collectUpgradeErrors(erasedLockedDefs, erasedUpgradedDefs, useGraph)
+    val sigErrors = collectUpgradeErrors(erasedLockedSigs, erasedUpgradedSigs, useGraph)
+    val allErrors = defnErrors ::: sigErrors
+
+    if (allErrors.isEmpty) {
+      Ok(())
+    } else {
+      Err(BootstrapError.EffectUpgradeError(allErrors))
+    }
+  }
+
+  /**
+    * Collects a list of tuples `(sym, scheme, uses)` if function represented by `sym` is not an effect safe upgrade.
+    */
+  private def collectUpgradeErrors(lockedFunctions: Map[String, Scheme], upgradeFunctions: Map[String, Scheme], useGraph: ListMap[String, SourceLocation])(implicit flix: Flix): List[(String, Scheme, List[SourceLocation])] = {
+    val errors = mutable.ArrayBuffer.empty[(String, Scheme, List[SourceLocation])]
+    for ((sym, lockedScheme) <- lockedFunctions) {
+      if (upgradeFunctions.contains(sym)) {
+        val upgradedScheme = upgradeFunctions(sym)
+        val uses = useGraph.get(sym)
+        if (!(uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(lockedScheme, upgradedScheme)(flix))) {
+          errors.addOne((sym, upgradedScheme, uses))
+        }
+      }
+    }
+    errors.toList
+  }
+
+  /**
+    * Type checks the program and performs effect locking, overwriting the current 'effects.lock' file if it exists.
+    * If the program does not type check, then effect locking is aborted without touching the file system.
+    */
+  def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
+    if (!isProjectMode) {
+      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-lock'"))
+    }
+    Steps.updateStaleSources(flix)
+    for {
+      root <- Steps.check(flix)
+    } yield {
+      EffectLock.lock(root) match {
+        case Err(e) => return Err(BootstrapError.GeneralError(s"Unexpected serialization error: $e"))
+        case Ok(json) =>
+          val path = Bootstrap.getEffectLockFile(projectPath)
+          // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
+          FileOps.writeString(path, json)
+      }
+    }
+  }
+
+  /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
+  private def isProjectMode: Boolean = optManifest.isDefined
+
+  /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
     * directories (including the `build` directory itself). Performs safety checks to ensure:
     *  - the current directory is a Flix project (manifest present),
@@ -455,6 +606,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     val buildDir = Bootstrap.getBuildDirectory(projectPath)
+    val classDir = Bootstrap.getClassDirectory(projectPath)
+    val docDir = Bootstrap.getDocumentationDirectory(projectPath)
 
     // Ensure `buildDir` is not dangerous
     checkForDangerousPath(buildDir) match {
@@ -463,14 +616,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Ensure all files in `buildDir` are valid class files.
-    val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    val files = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
     for (file <- files) {
-      if (!FileOps.checkExt(file, "class")) {
-        return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${projectPath.relativize(file)}'"))
-      }
+      if (file.startsWith(classDir)) {
+        if (!FileOps.checkExt(file, "class")) {
+          return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${projectPath.relativize(file)}'"))
+        }
 
-      if (!FileOps.isClassFile(file)) {
-        return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${projectPath.relativize(file)}'"))
+        if (!FileOps.isClassFile(file)) {
+          return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${projectPath.relativize(file)}'"))
+        }
+      } else if (file.startsWith(docDir)) {
+        isValidDocumentFile(file) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else {
+        return Err(BootstrapError.FileError(s"Unexpected directory in build directory: '${projectPath.relativize(file)}'"))
       }
 
       checkForDangerousPath(file) match {
@@ -489,7 +651,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Delete empty directories
     // Visit in reverse order to delete the innermost directories first
-    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue)
+    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue).map(_.normalize())
     for (dir <- directories.reverse) {
       checkForDangerousPath(dir) match {
         case Err(e) => return Err(e)
@@ -545,7 +707,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /** Returns `Err` if `path` is the user's home directory. */
   private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
     val home = Path.of(System.getProperty("user.home"))
-    if (home == path) {
+    if (home.normalize() == path.normalize()) {
       return Err(BootstrapError.FileError("Refusing to run 'clean' in home directory."))
     }
     Ok(())
@@ -553,8 +715,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /** Returns `Err` if `path` is a root directory. */
   private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
-    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList
-    if (roots.contains(path)) {
+    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList.map(_.normalize())
+    if (roots.contains(path.normalize())) {
       return Err(BootstrapError.FileError("Refusing to run 'clean' in root directory."))
     }
     Ok(())
@@ -562,10 +724,27 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /** Returns `Err` if `path` is an ancestor of `projectPath`. */
   private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
-    if (projectPath.startsWith(path)) {
+    if (projectPath.normalize().startsWith(path.normalize())) {
       return Err(BootstrapError.FileError(s"Refusing to run clean in ancestor of project directory: '${path.normalize()}"))
     }
     Ok(())
+  }
+
+  /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]]. */
+  private def isValidDocumentFile(path: Path): Result[Unit, BootstrapError] = {
+    val knownFiles = List("favicon.png", "index.js", "styles.css")
+    if (knownFiles.contains(path.getFileName.toString)) {
+      return Ok(())
+    }
+    if (FileOps.checkExt(path, "html")) {
+      return Ok(())
+    }
+    val iconsDir = Bootstrap.getDocumentationDirectory(projectPath).resolve("./icons/").normalize()
+    if (path.startsWith(iconsDir) && FileOps.checkExt(path, "svg")) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${projectPath.relativize(path)}'. Refusing to run 'clean'."))
   }
 
   /**
@@ -577,22 +756,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Checks to see if any source files or packages have been changed.
-    * If they have, they are added to flix. Then updates the timestamps
-    * map to reflect the current source files and packages.
-    */
-  def reconfigureFlix(flix: Flix): Unit = {
-    // TODO: Figure out if this function can be removed somehow (maybe by removing shell depending on bootstrap)
-    // TODO: Can be removed by moving `updateStaleSources` into all step functions that require updating stale sources (almost all). This also remove responsibility from the caller.
-    Steps.updateStaleSources(flix)
-  }
-
-  /**
     * Generates API documentation.
     */
   def doc(flix: Flix): Result[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
     Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules)(flix))
+  }
+
+  /**
+    * Formats all source files in the project.
+    */
+  def format(flix: Flix): Result[Unit, BootstrapError] = {
+    Steps.updateStaleSources(flix)
+    Steps.check(flix).map {
+      case _ =>
+        val syntaxTree = flix.getParsedAst
+        LspFormatter.formatFiles(syntaxTree, sourcePaths)(flix)
+    }
   }
 
   /**
@@ -615,7 +795,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def test(flix: Flix): Result[Unit, BootstrapError] = {
     for {
       compilationResult <- build(flix)
-      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError(List("Tester Error")))
+      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError("Tester Error"))
     } yield {
       res
     }
@@ -870,7 +1050,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (errors.isEmpty) {
         Ok(optRoot.get)
       } else {
-        Err(BootstrapError.GeneralError(flix.mkMessages(errors)))
+        Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot)))
       }
     }
 
@@ -880,9 +1060,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * It is often the case that `outputJvm` and `loadClassFiles` must be toggled on or off.
       */
     def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
-      flix.compile() match {
-        case Validation.Success(result: CompilationResult) => Ok(result)
-        case Validation.Failure(errors) => Err(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
+      val (optRoot, errors) = flix.check()
+      if (errors.isEmpty) {
+        Ok(flix.codeGen(optRoot.get))
+      } else {
+        Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot)))
       }
     }
 
@@ -1021,7 +1203,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.toString)))
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter)).mkString(System.lineSeparator())))
           }
       }
     }
@@ -1030,12 +1212,121 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Checks to see if any source files or packages have been changed.
       * If they have, they are added to flix. Then updates the timestamps
       * map to reflect the current source files and packages.
+      *
+      * When a file watcher is active (REPL mode), drains watcher events instead of polling timestamps.
       */
-    def updateStaleSources(flix: Flix): Unit = {
+    def updateStaleSources(flix: Flix): Unit = fileWatcher match {
+      case Some(fw) => applyWatcherEvents(fw.drain(), flix)
+      case None => updateStaleSourcesByTimestamp(flix)
+    }
+
+    /**
+      * Applies file watcher events to the Flix instance and updates the cached path lists.
+      * On overflow, falls back to a full re-scan.
+      */
+    private def applyWatcherEvents(events: List[FileWatcher.WatchEvent], flix: Flix): Unit = {
+      import FileWatcher.WatchEvent._
+
+      if (events.exists(_ == Overflow)) {
+        // Overflow occurred: fall back to a full re-scan.
+        rescanAndUpdate(flix)
+        return
+      }
+
+      for (event <- events) event match {
+        case Created(path) =>
+          if (FileOps.checkExt(path, EXT_FLIX)) {
+            sourcePaths = path :: sourcePaths
+            flix.addFile(path)(SecurityContext.Unrestricted)
+          } else if (FileOps.checkExt(path, EXT_FPKG)) {
+            flixPackagePaths = path :: flixPackagePaths
+            flix.addPkg(path)(securityLevels.getOrElse(path, SecurityContext.Plain))
+          } else if (FileOps.checkExt(path, EXT_JAR)) {
+            val libDir = Bootstrap.getLibraryDirectory(projectPath)
+            val mavenDir = libDir.resolve(MavenPackageManager.DirName)
+            val jarDir = libDir.resolve(JarPackageManager.DirName)
+            if (path.startsWith(mavenDir)) {
+              mavenPackagePaths = path :: mavenPackagePaths
+            } else if (path.startsWith(jarDir)) {
+              jarPackagePaths = path :: jarPackagePaths
+            }
+            flix.addJar(path)
+          }
+
+        case Modified(path) =>
+          if (FileOps.checkExt(path, EXT_FLIX)) {
+            flix.addFile(path)(SecurityContext.Unrestricted)
+          } else if (FileOps.checkExt(path, EXT_FPKG)) {
+            flix.addPkg(path)(securityLevels.getOrElse(path, SecurityContext.Plain))
+          } else if (FileOps.checkExt(path, EXT_JAR)) {
+            flix.addJar(path)
+          }
+
+        case Deleted(path) =>
+          if (path.toString.endsWith(s".$EXT_FLIX")) {
+            sourcePaths = sourcePaths.filterNot(_ == path)
+            flix.remFile(path)(SecurityContext.Unrestricted)
+          } else if (path.toString.endsWith(s".$EXT_FPKG")) {
+            flixPackagePaths = flixPackagePaths.filterNot(_ == path)
+            flix.remFile(path)(SecurityContext.Unrestricted)
+          } else if (path.toString.endsWith(s".$EXT_JAR")) {
+            mavenPackagePaths = mavenPackagePaths.filterNot(_ == path)
+            jarPackagePaths = jarPackagePaths.filterNot(_ == path)
+          } else {
+            // No recognized file extension — likely a directory deletion.
+            // Remove all tracked files that were children of this path.
+            val deletedFlix = sourcePaths.filter(_.startsWith(path))
+            val deletedFpkg = flixPackagePaths.filter(_.startsWith(path))
+            sourcePaths = sourcePaths.filterNot(_.startsWith(path))
+            flixPackagePaths = flixPackagePaths.filterNot(_.startsWith(path))
+            mavenPackagePaths = mavenPackagePaths.filterNot(_.startsWith(path))
+            jarPackagePaths = jarPackagePaths.filterNot(_.startsWith(path))
+            for (p <- deletedFlix) flix.remFile(p)(SecurityContext.Unrestricted)
+            for (p <- deletedFpkg) flix.remFile(p)(SecurityContext.Unrestricted)
+          }
+
+        case Overflow => // already handled above
+      }
+    }
+
+    /**
+      * Falls back to a full directory re-scan and updates the Flix instance with any changes.
+      * Used when the watcher reports an overflow event.
+      */
+    private def rescanAndUpdate(flix: Flix): Unit = {
+      val previousSources = (sourcePaths ::: flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).toSet
+
+      // Re-scan directories to discover current files.
+      addLocalFlixFiles()
+      addLocalLibs()
+
+      val currentSources = (sourcePaths ::: flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).toSet
+
+      // Add new or re-add all current sources.
+      for (path <- currentSources) {
+        if (FileOps.checkExt(path, EXT_FLIX)) {
+          flix.addFile(path)(SecurityContext.Unrestricted)
+        } else if (FileOps.checkExt(path, EXT_FPKG)) {
+          flix.addPkg(path)(securityLevels.getOrElse(path, SecurityContext.Plain))
+        } else if (FileOps.checkExt(path, EXT_JAR)) {
+          flix.addJar(path)
+        }
+      }
+
+      // Remove deleted sources.
+      for (path <- previousSources -- currentSources) {
+        flix.remFile(path)(SecurityContext.Unrestricted)
+      }
+    }
+
+    /**
+      * Timestamp-based stale source detection (used when no file watcher is active).
+      */
+    private def updateStaleSourcesByTimestamp(flix: Flix): Unit = {
       val previousSources = timestamps.keySet
 
       for (path <- sourcePaths if hasChanged(path)) {
-        flix.addFlix(path)(SecurityContext.Unrestricted)
+        flix.addFile(path)(SecurityContext.Unrestricted)
       }
 
       for (path <- flixPackagePaths if hasChanged(path)) {
@@ -1054,7 +1345,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       val deletedSources = previousSources -- currentSources
       for (path <- deletedSources) {
-        flix.remSourceCode(path.toString)
+        flix.remFile(path)(SecurityContext.Unrestricted)
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap

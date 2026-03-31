@@ -64,14 +64,15 @@ object GenExpression {
     * Such functions / methods need to record their internal state which `newFrame`,
     * `setPc`, `pcLabels`, and `pcCounter` are for.
     */
-  case class EffectContext(entryPoint: Label,
-                           lenv: Map[Symbol.LabelSym, Label],
-                           newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
-                           setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
-                           localOffset: Int,
-                           pcLabels: Vector[Label],
-                           pcCounter: Ref[Int]
-                          ) extends MethodContext
+  case class EffectContext(
+    entryPoint: Label,
+    lenv: Map[Symbol.LabelSym, Label],
+    newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
+    setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
+    localOffset: Int,
+    pcLabels: Vector[Label],
+    pcCounter: Ref[Int]
+  ) extends MethodContext
 
   /**
     * A context for control pure functions that may capture variables and therefore use
@@ -79,10 +80,11 @@ object GenExpression {
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
-  case class DirectInstanceContext(entryPoint: Label,
-                                   lenv: Map[Symbol.LabelSym, Label],
-                                   localOffset: Int,
-                                  ) extends MethodContext
+  case class DirectInstanceContext(
+    entryPoint: Label,
+    lenv: Map[Symbol.LabelSym, Label],
+    localOffset: Int,
+  ) extends MethodContext
 
   /**
     * A context for control pure functions that do not closure capture any variables and therefore
@@ -90,10 +92,11 @@ object GenExpression {
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
-  case class DirectStaticContext(entryPoint: Label,
-                                 lenv: Map[Symbol.LabelSym, Label],
-                                 localOffset: Int,
-                                ) extends MethodContext
+  case class DirectStaticContext(
+    entryPoint: Label,
+    lenv: Map[Symbol.LabelSym, Label],
+    localOffset: Int,
+  ) extends MethodContext
 
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
@@ -240,6 +243,9 @@ object GenExpression {
             mv.visitInsn(ICONST_M1)
             mv.visitInsn(I2L)
             mv.visitInsn(LXOR)
+
+          case _: ReflectOp =>
+            throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
         }
 
       case AtomicOp.Binary(sop) =>
@@ -827,6 +833,10 @@ object GenExpression {
         // Call the constructor
         mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
 
+      case AtomicOp.InvokeSuperConstructor(constructor) =>
+        // A InvokeSuperConstructor is handled directly in NewObject.
+        throw InternalCompilerException(s"Unexpected call to super constructor: '$constructor'.", loc)
+
       case AtomicOp.InvokeMethod(method) =>
         val exp :: args = exps
 
@@ -853,6 +863,34 @@ object GenExpression {
         } else {
           mv.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
         }
+
+        // If the method is void, put a unit on top of the stack
+        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        }
+
+      case AtomicOp.InvokeSuperMethod(method, className) =>
+        // Add source line number for debugging
+        BytecodeInstructions.addLoc(loc)
+
+        // The first expression is the receiver (the anonymous class instance, i.e. `_this`).
+        val receiver :: args = exps
+
+        // Evaluate the receiver object.
+        compileExpr(receiver)
+        val anonClassInternalName = className.replace('.', '/')
+        mv.visitTypeInsn(CHECKCAST, anonClassInternalName)
+
+        // Evaluate and cast each argument.
+        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
+          compileExpr(arg)
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
+
+        // Call the bridge method super$methodName on the anonymous class.
+        val bridgeName = s"super$$${method.getName}"
+        val descriptor = asm.Type.getMethodDescriptor(method)
+        mv.visitMethodInsn(INVOKEVIRTUAL, anonClassInternalName, bridgeName, descriptor, false)
 
         // If the method is void, put a unit on top of the stack
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
@@ -1106,7 +1144,7 @@ object GenExpression {
           val resultTpe = BackendObjType.Result.toTpe
           val desc = MethodDescriptor(paramTpes, resultTpe)
           val className = BackendObjType.Defn(sym).jvmName
-          mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.DirectApply, desc.toDescriptor, false)
+          mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.StaticApply, desc.toDescriptor, false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
         } else {
           // JvmType of Def
@@ -1298,11 +1336,13 @@ object GenExpression {
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.Stmt(exp1, exp2, _) =>
+    case Expr.Stm(exps, exp, _) =>
       import BytecodeInstructions.*
-      compileExpr(exp1)
-      xPop(BackendType.toBackendType(exp1.tpe))
-      compileExpr(exp2)
+      exps.foreach { e =>
+        compileExpr(e)
+        xPop(BackendType.toBackendType(e.tpe))
+      }
+      compileExpr(exp)
 
     case Expr.Region(_, offset, exp, _, _, loc) =>
       // Adding source line number for debugging
@@ -1453,15 +1493,31 @@ object GenExpression {
         ARETURN()
       }
 
-    case Expr.NewObject(name, _, _, _, methods, _) =>
-      val exps = methods.map(_.exp)
+    case Expr.NewObject(name, _, _, _, constructors, methods, _) =>
+      val methodExps = methods.map(_.exp)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+      // Handle constructors
+      if (constructors.nonEmpty) {
+        constructors.head.exp match {
+          case Expr.ApplyAtomic(AtomicOp.InvokeSuperConstructor(constructor), superArgs, _, _, _) =>
+            // Super-only: compile args and call parameterized <init>
+            val descriptor = asm.Type.getConstructorDescriptor(constructor)
+            for ((arg, argType) <- superArgs.zip(constructor.getParameterTypes)) {
+              compileExpr(arg)
+              if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+            }
+            mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, descriptor, false)
+          case _ => throw InternalCompilerException(s"Unexpected non-super constructor body.", constructors.head.loc)
+        }
+      } else {
+        mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+      }
 
       // For each method, compile the closure which implements the body of that method and store it in a field
-      exps.zipWithIndex.foreach { case (e, i) =>
+      methodExps.zipWithIndex.foreach { case (e, i) =>
         mv.visitInsn(DUP)
         compileExpr(e)
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)

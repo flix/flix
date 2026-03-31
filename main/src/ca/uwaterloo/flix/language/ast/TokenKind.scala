@@ -60,7 +60,6 @@ sealed trait TokenKind {
       case TokenKind.DebugInterpolator => "<debug-interpolator>"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
-      case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
@@ -137,20 +136,19 @@ sealed trait TokenKind {
       case TokenKind.KeywordStaticLowercase => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
       case TokenKind.KeywordStruct => "'struct'"
+      case TokenKind.KeywordSuper => "'super'"
       case TokenKind.KeywordThrow => "'throw'"
       case TokenKind.KeywordTrait => "'trait'"
       case TokenKind.KeywordTrue => "'true'"
       case TokenKind.KeywordTry => "'try'"
       case TokenKind.KeywordType => "'type'"
-      case TokenKind.KeywordTypeMatch => "'typematch'"
       case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
       case TokenKind.KeywordUniv => "'univ'"
       case TokenKind.KeywordUnsafe => "'unsafe'"
-      case TokenKind.KeywordUnsafely => "'unsafely'"
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
-      case TokenKind.KeywordWithout => "'without'"
+
       case TokenKind.KeywordXor => "'xor'"
       case TokenKind.KeywordXvar => "'xvar'"
       case TokenKind.KeywordYield => "'yield'"
@@ -198,12 +196,14 @@ sealed trait TokenKind {
     case _ => false
   }
 
-  /** Returns `true` if this token is a doc, line or block comment. */
-  def isComment: Boolean = this match {
+  /** Returns `true` if this token is a doc comment. */
+  def isCommentDoc: Boolean = this match {
     case TokenKind.CommentDoc => true
-    case _ if this.isCommentNonDoc => true
     case _ => false
   }
+
+  /** Returns `true` if this token is a doc, line or block comment. */
+  def isComment: Boolean = this.isCommentDoc || this.isCommentNonDoc
 
   /** Returns `true` if this token is a keyword. */
   def isKeyword: Boolean = this match {
@@ -269,20 +269,19 @@ sealed trait TokenKind {
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStaticLowercase => true
     case TokenKind.KeywordStruct => true
+    case TokenKind.KeywordSuper => true
     case TokenKind.KeywordThrow => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
     case TokenKind.KeywordType => true
-    case TokenKind.KeywordTypeMatch => true
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUniv => true
     case TokenKind.KeywordUnsafe => true
-    case TokenKind.KeywordUnsafely => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
     case TokenKind.KeywordWith => true
-    case TokenKind.KeywordWithout => true
+
     case TokenKind.KeywordXor => true
     case TokenKind.KeywordXvar => true
     case TokenKind.KeywordYield => true
@@ -405,7 +404,6 @@ sealed trait TokenKind {
     case TokenKind.BuiltIn => true
     case TokenKind.CurlyL => true
     case TokenKind.DebugInterpolator => true
-    case TokenKind.DotDotDot => true
     case TokenKind.HashBar => true
     case TokenKind.HashCurlyL => true
     case TokenKind.HashParenL => true
@@ -446,12 +444,11 @@ sealed trait TokenKind {
     case TokenKind.KeywordSolve => true
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStaticUppercase => true
+    case TokenKind.KeywordSuper => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
-    case TokenKind.KeywordTypeMatch => true
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUnsafe => true
-    case TokenKind.KeywordUnsafely => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordXvar => true
     case TokenKind.ListHash => true
@@ -480,6 +477,50 @@ sealed trait TokenKind {
     case TokenKind.Underscore => true
     case TokenKind.VectorHash => true
     case _ => false
+  }
+
+  /**
+    * Returns `true` if this token is not a binary operator. If such a token is encountered
+    * without a preceding semicolon, we assume the semicolon was forgotten.
+    *
+    * Note that this list should be extended in the future with more TokenKinds.
+    */
+  def notBinaryOperator: Boolean = this match {
+    case TokenKind.KeywordLet     => true
+    case TokenKind.KeywordForeach => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if this token can follow a binary operator.
+    *
+    * Note: This is only used for error-recovery, not for parsing itself.
+    * It determines whether a binary operator could be missing between two expressions.
+    *
+    * Returns `true` e.g. for `NameLowercase`:
+    *   x y   // 'y' can follow a binary operator, so a missing operator is inferred
+    *
+    * Returns `false` e.g. for `CurlyL`:
+    *   x { }  // '{' cannot follow a binary operator, so no inference is attempted
+    */
+  def canFollowBinaryOperator: Boolean = this match {
+    case TokenKind.NameLowercase                => true
+    case TokenKind.NameUppercase                => true
+    case TokenKind.NameMath                     => true
+    case TokenKind.LiteralInt                   => true
+    case TokenKind.LiteralInt8                  => true
+    case TokenKind.LiteralInt16                 => true
+    case TokenKind.LiteralInt32                 => true
+    case TokenKind.LiteralInt64                 => true
+    case TokenKind.LiteralBigInt                => true
+    case TokenKind.LiteralFloat                 => true
+    case TokenKind.LiteralFloat32               => true
+    case TokenKind.LiteralFloat64               => true
+    case TokenKind.LiteralBigDecimal            => true
+    case TokenKind.LiteralChar                  => true
+    case TokenKind.LiteralString                => true
+    case TokenKind.LiteralStringInterpolationL  => true
+    case _                                      => false
   }
 
   /** Returns `true` if this token can validly appear as the first token of a type. */
@@ -713,8 +754,6 @@ object TokenKind {
 
   case object Dot extends TokenKind
 
-  case object DotDotDot extends TokenKind
-
   case object DotWhiteSpace extends TokenKind
 
   case object Equal extends TokenKind
@@ -867,6 +906,8 @@ object TokenKind {
 
   case object KeywordStruct extends TokenKind
 
+  case object KeywordSuper extends TokenKind
+
   case object KeywordThrow extends TokenKind
 
   case object KeywordTrait extends TokenKind
@@ -877,15 +918,11 @@ object TokenKind {
 
   case object KeywordType extends TokenKind
 
-  case object KeywordTypeMatch extends TokenKind
-
   case object KeywordUncheckedCast extends TokenKind
 
   case object KeywordUniv extends TokenKind
 
   case object KeywordUnsafe extends TokenKind
-
-  case object KeywordUnsafely extends TokenKind
 
   case object KeywordUse extends TokenKind
 
@@ -893,7 +930,6 @@ object TokenKind {
 
   case object KeywordWith extends TokenKind
 
-  case object KeywordWithout extends TokenKind
 
   case object KeywordXor extends TokenKind
 

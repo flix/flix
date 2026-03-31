@@ -48,13 +48,13 @@ pub trait Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
 }
 
 
-mod Traversable {
+pub mod Traversable {
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// data structure `t`.
     ///
-    /// `for` is `traverse` with it's arguments flipped.
+    /// `for` is `traverse` with its arguments flipped.
     ///
     pub def for(t: t[a], f: a -> m[b] \ ef): m[t[b]] \ (ef + Foldable.Aef[t]) with Applicative[m], Traversable[t] =
         Traversable.traverse(f, t)

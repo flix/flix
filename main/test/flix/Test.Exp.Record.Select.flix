@@ -1,103 +1,96 @@
 mod Test.Exp.Record.Select {
 
-    @test
-    def testRecordSelect01(): String =
-        let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-        r#fstName
+    use Assert.assertEq
 
-    @test
-    def testRecordSelect02(): String =
+    @Test
+    def testRecordSelect01(): Unit \ Assert =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-        r#lstName
+        assertEq(expected = "Lucky", r#fstName)
 
-    @test
-    def testRecordSelect03(): Int32 =
+    @Test
+    def testRecordSelect02(): Unit \ Assert =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-        r#age
+        assertEq(expected = "Luke", r#lstName)
 
-    @test
-    def testRecordSelect04(): Bool =
+    @Test
+    def testRecordSelect03(): Unit \ Assert =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-        r#cowboy
+        assertEq(expected = 42, r#age)
 
-    @test
-    def testRecordMultiSelect01(): Unit =
+    @Test
+    def testRecordSelect04(): Unit \ Assert =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-        let _fstName = r#fstName;
-        let _lstName = r#lstName;
-        let _age = r#age;
-        let _cowboy = r#cowboy;
-        ()
+        assertEq(expected = true, r#cowboy)
 
-    @test
-    def testRecordMultiSelect02(): Unit =
+    @Test
+    def testRecordMultiSelect01(): Unit \ Assert =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-        let _cowboy = r#cowboy;
-        let _age = r#age;
-        let _lstName = r#lstName;
-        let _fstName = r#fstName;
-        ()
+        assertEq(expected = "Lucky", r#fstName);
+        assertEq(expected = "Luke", r#lstName);
+        assertEq(expected = 42, r#age);
+        assertEq(expected = true, r#cowboy)
 
-    @test
-    def testRecordMultiSelect03(): Unit =
+    @Test
+    def testRecordMultiSelect02(): Unit \ Assert =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-        let _fstName1 = r#fstName;
-        let _fstName2 = r#fstName;
-        let _lstName1 = r#lstName;
-        let _lstName2 = r#lstName;
-        ()
+        assertEq(expected = true, r#cowboy);
+        assertEq(expected = 42, r#age);
+        assertEq(expected = "Luke", r#lstName);
+        assertEq(expected = "Lucky", r#fstName)
 
-    @test
-    def testRecordMultiSelect04(): Unit =
+    @Test
+    def testRecordMultiSelect03(): Unit \ Assert =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-        let _lstName1 = r#lstName;
-        let _fstName1 = r#fstName;
-        let _lstName2 = r#lstName;
-        let _fstName2 = r#fstName;
-        ()
+        assertEq(expected = "Lucky", r#fstName);
+        assertEq(expected = "Lucky", r#fstName);
+        assertEq(expected = "Luke", r#lstName);
+        assertEq(expected = "Luke", r#lstName)
 
-    @test
-    def testNestedSelect01(): Unit =
+    @Test
+    def testRecordMultiSelect04(): Unit \ Assert =
+        let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
+        assertEq(expected = "Luke", r#lstName);
+        assertEq(expected = "Lucky", r#fstName);
+        assertEq(expected = "Luke", r#lstName);
+        assertEq(expected = "Lucky", r#fstName)
+
+    @Test
+    def testNestedSelect01(): Unit \ Assert =
         let r = { a = { x = 1, y = 2}, b = { x = 1, y = 4 } };
-        let _ax = r#a#x;
-        let _ay = r#a#y;
-        let _bx = r#b#x;
-        let _by = r#b#y;
-        ()
+        assertEq(expected = 1, r#a#x);
+        assertEq(expected = 2, r#a#y);
+        assertEq(expected = 1, r#b#x);
+        assertEq(expected = 4, r#b#y)
 
-    @test
-    def testNestedSelect02(): Unit =
+    @Test
+    def testNestedSelect02(): Unit \ Assert =
         let r = { a = { b = { c = { d = 42 } } } };
-        let _a = r#a;
-        let _b = r#a#b;
-        let _c = r#a#b#c;
-        let _d = r#a#b#c#d;
-        ()
+        assertEq(expected = 42, r#a#b#c#d)
 
-    @test
-    def testSelectDuplicateLabels01(): Int32 =
+    @Test
+    def testSelectDuplicateLabels01(): Unit \ Assert =
         let r = { a = 21, a = 42, a = 84};
         let a1 = r#a;
         let a2 = { -a | r }#a;
         let a3 = { -a, -a | r }#a;
-        a1 + a2 + a3
+        assertEq(expected = 147, a1 + a2 + a3)
 
-    @test
-    def testSelectDuplicateLabels02(): Int32 =
+    @Test
+    def testSelectDuplicateLabels02(): Unit \ Assert =
         let r = { a = 21, b = true, a = 42, b = false, a = 84};
         let a1 = r#a;
         let a2 = { -a | r }#a;
         let a3 = { -a, -a | r }#a;
-        a1 + a2 + a3
+        assertEq(expected = 147, a1 + a2 + a3)
 
-    @test
-    def testSelectDuplicateLabels03(): String =
+    @Test
+    def testSelectDuplicateLabels03(): Unit \ Assert =
         let r = { a = true, a = "hello world", a = 84};
-        { -a | r }#a
+        assertEq(expected = "hello world", { -a | r }#a)
 
-    @test
-    def testSelectDuplicateLabels04(): Int32 =
+    @Test
+    def testSelectDuplicateLabels04(): Unit \ Assert =
         let r = { a = true, a = "hello world", a = 84};
-        { -a, -a | r }#a
+        assertEq(expected = 84, { -a, -a | r }#a)
 
 }

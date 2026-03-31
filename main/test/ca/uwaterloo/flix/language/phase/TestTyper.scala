@@ -24,12 +24,375 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
 
+  test("Test.ExplicitlyPureUsingIO.01") {
+    val input =
+      """
+        |def f () : Unit \ {} = {
+        |    println("42")
+        |}
+        |eff IO
+        |pub def println(x: String): Unit \ IO =
+        |    System.out.println(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ {} = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.03") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ {} = println(x)
+        |}
+        |def foo(): Unit \ IO =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.04") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit \ IO
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ IO = println(x)
+        |}
+        |def foo(): Unit \ {} =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingIO.05") {
+    val input =
+      """
+        |def a(): Unit \ IO = println(42)
+        |def b(): Unit \ {} = a()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.01") {
+    val input =
+      """
+        |def f () : Unit = {
+        |    println("42")
+        |}
+        |eff IO
+        |pub def println(x: String): Unit \ IO =
+        |    System.out.println(x)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.03") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit = println(x)
+        |}
+        |def foo(): Unit \ IO =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.04") {
+    val input =
+      """
+        |trait Bar[a] {
+        |    pub def bar(x: a): Unit \ IO
+        |}
+        |instance Bar[Int32] {
+        |    pub def bar(x: Int32): Unit \ IO = println(x)
+        |}
+        |def foo(): Unit =
+        |    Bar.bar(42)
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ImplicitlyPureUsingIO.05") {
+    val input =
+      """
+        |def a(): Unit \ IO = println(42)
+        |def b(): Unit = a()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.01") {
+    val input =
+      """
+        |def foo(): Unit \ {} =
+        |    Bar.buzz()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ {} = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ExplicitlyPureUsingEffect.03") {
+    val input =
+      """
+        |def a(): Unit \ Bar = Bar.buzz()
+        |def b(): Unit \ {} = a()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.01") {
+    val input =
+      """
+        |def foo(): Unit =
+        |    Bar.buzz()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.ImplicitlyPureUsingEffect.03") {
+    val input =
+      """
+        |def a(): Unit \ Bar = Bar.buzz()
+        |def b(): Unit = a()
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
+  }
+
+  test("Test.RigidEffUsingOtherRigidEff.01") {
+    val input =
+      """
+        |def foo(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2): Unit \ ef1 = g()
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.RigidEffUsingCstEff.01") {
+    val input =
+      """
+        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = Bar.buzz()
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.RigidEffUsingIO.01") {
+    val input =
+      """
+        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = println("42")
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.CstEffUsingOtherCstEff.01") {
+    val input =
+      """
+        |def foo(): Unit \ Foo = Bar.buzz()
+        |eff Foo
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.IOUsingCstEff.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = Bar.buzz()
+        |eff Bar {
+        |  def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.IOUsingCstEff.02") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ IO = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       Bar.buzz();
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ IO =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        |    def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
+  test("Test.CstEffUsingIO.01") {
+    val input =
+      """
+        |enum Shape {
+        |   case Circle(Int32),
+        |   case Square(Int32),
+        |   case Rectangle(Int32, Int32)
+        |}
+        |def area(s: Shape): Int32 \ Console = match s {
+        |   case Shape.Circle(r)       => 3 * (r * r)
+        |   case Shape.Square(w)       =>
+        |       println(w);
+        |       w * w
+        |   case Shape.Rectangle(h, w) => h * w
+        |}
+        |def main(): Unit \ Bar =
+        |   println(area(Shape.Rectangle(2, 4)))
+        |eff Bar {
+        | def buzz(): Unit
+        |}
+      """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
+  }
+
   test("TestLeq01") {
     val input =
       """
         |def foo(): a = 21
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -43,7 +406,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Cons(t, List[t])
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -57,7 +420,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Err(e)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -71,7 +434,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Err(e)
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -80,7 +443,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def foo(): a -> a = x -> 21
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -89,7 +452,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def foo(): a -> a = (x: Int32) -> x
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -98,7 +461,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def foo(): {x = Int32 | r} = {x = 21}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -107,49 +470,49 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def foo(): {x = Int32, y = Int32 | r} = {y = 42, x = 21}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestOccurs01") {
     val input = "def foo(a: #{A(Int32) | r}, b: #{B(Int32) | r}): #{A(Int32), B(Int32)} = solve (a <+> b)"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestMismatchedNullaryTypes.01") {
     val input = "def foo(): #{A(Unit)| x} = #{A.}"
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
   test("TestMismatchedNullaryTypes.02") {
     val input = "def foo(): #{A| x} = #{A()}"
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
   test("TestMismatchedTypes.01") {
     val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestMismatchedTypes.02") {
     val input = "def foo(): #{| x} = {a = 2} <+> {a = 2}"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestMismatchedTypes.03") {
     val input = "def foo(): {a = Int32} = {a = 2} <+> {a = 2}"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestMismatchedTypes.04") {
     val input = "def foo(): String = solve \"hello\""
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -170,7 +533,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        f(A.foo(x))
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[MismatchedTypes](result)
   }
 
@@ -191,7 +554,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        f(A.foo(x))
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[MismatchedTypes](result)
   }
 
@@ -201,7 +564,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(s: String): String = s
         |def over(): String = f("hello", 123)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -211,7 +574,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(s: String): String = s
         |def over(): String = f("hello", 123, true)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -222,7 +585,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -233,31 +596,31 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestLeq.Wildcard.01") {
     val input = "def foo(a: _): _ = a"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestLeq.Wildcard.02") {
     val input = "def foo(a: Int32): _ = a"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestLeq.Wildcard.03") {
     val input = raw"def foo(a: Int32): Int32 \ _ = a"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
   test("TestLeq.Wildcard.04") {
     val input = raw"def foo(g: Int32 -> Int32 \ _): Int32 \ _ = g(1)"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -269,7 +632,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |def foo(x: a): String = C.foo(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -281,7 +644,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |def foo(x: Int32): String = C.foo(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -308,7 +671,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def doF(x: Box[Float64]): String = C.foo(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -335,7 +698,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def doF(x: Box[Int32]): String = C.foo(C.foo(x))
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -352,7 +715,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def bar(x: a, y: Int32): (Int32, Int32) = (C.foo(x), C.foo(y))
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -366,7 +729,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def bar(x: a, y: b): (Int32, Int32) with C[a] = (C.foo(x), C.foo(y))
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -387,7 +750,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  C.f(MyBox.MyBox(123)) // ERROR
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstance](result)
   }
 
@@ -405,7 +768,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |   true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -418,7 +781,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x == y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstanceEq](result)
   }
 
@@ -431,7 +794,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x <= y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstanceOrder](result)
   }
 
@@ -444,7 +807,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
          |
          |def foo(x: E): String = ToString.toString(x)
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstanceToString](result)
   }
 
@@ -454,7 +817,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def main(): Unit \ IO =
         |    println(x -> x + 41i32)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstanceArrow](result)
   }
 
@@ -464,7 +827,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -474,7 +837,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Int32 \ {} = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -486,7 +849,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def zero(): Int32 \ {} = %%ARRAY_LENGTH%%(mkArray())
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -496,7 +859,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(g: Int32 -> Int32 \ ef): Int32 = g(123)
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -506,7 +869,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(g: Int32 -> Int32 \ ef): Int32 \ {} = g(123)
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -525,7 +888,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    Print.print();
         |    Exc.raise()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -543,7 +906,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -564,7 +927,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -574,7 +937,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(g: Int32 -> Int32 \ ef): Int32 \ ef = 123
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -584,7 +947,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(g: Int32 -> Int32 \ ef1, h: Int32 -> Int32 \ ef2): Int32 \ {ef1, ef2} = 123
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -601,7 +964,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -618,7 +981,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -635,7 +998,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -655,7 +1018,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -675,7 +1038,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        ()
         |    }
     """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -695,7 +1058,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        ()
         |    }
     """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -709,22 +1072,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(): Unit \ E = E.op(123)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
-  test("Test.MismatchedEff.Without.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(): Unit
-        |}
-        |
-        |def foo(): Unit = E.op() without E
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
 
   test("Test.MismatchedEff.Apply.02") {
     val input =
@@ -737,7 +1088,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(): Unit = disjoint(_ -> E.op(), _ -> E.op())
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -758,7 +1109,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Cons(a, List[a])
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -775,7 +1126,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def doBoth(f: Unit -> Unit \ {ef - E}, g: Unit -> Unit \ {ef - F}): Unit \ {ef - E - F} = g(); f()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -786,7 +1137,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -797,7 +1148,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -808,7 +1159,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ IO) }) yield (a, b);
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -818,7 +1169,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         | def f(): Int32 =
         |     par (a <- true) yield a + 1
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -831,7 +1182,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def g(): Box[Int32] = f(Box.Box(123))
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -846,7 +1197,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(): Unit = noE(_ -> E.op())
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -861,7 +1212,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(): Unit = mustE(x -> x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -873,7 +1224,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    law l: forall (x: Int32, y: Bool) A.f(x, y)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -888,21 +1239,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def g(): Bool = f(mkE)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("Test.UnexpectedArgument.06") {
-    val input =
-      """
-        |def takesString(_: String): Unit = ()
-        |
-        |def f(): Unit = typematch 123 {
-        |    case x: _ => takesString(x)
-        |    case _: _ => ???
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -917,7 +1254,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Expr.Var(_) => true
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestChoose.02") {
@@ -940,7 +1277,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     h(Expr.Var)
         | }
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestChoose.03") {
@@ -968,7 +1305,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     h(cstOrNotOrVar)
         | }
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestChooseStar.01") {
@@ -988,7 +1325,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestChooseStar.02") {
@@ -1010,7 +1347,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestChooseStar.03") {
@@ -1032,7 +1369,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestChooseStar.04") {
@@ -1055,7 +1392,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestChooseStar.05") {
@@ -1076,7 +1413,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestChooseStar.06") {
@@ -1094,7 +1431,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case E.C    => E.C
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestCaseSetAnnotation.01") {
@@ -1110,7 +1447,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Color.Green => false
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestCaseSetAnnotation.02") {
@@ -1127,7 +1464,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Color.Blue => Color.Blue
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestCaseSetAnnotation.03") {
@@ -1143,7 +1480,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Color.Blue => false
         |}
         |""".stripMargin
-    expectError[TypeError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError](check(input, Options.TestWithLibNix))
   }
 
   test("TestLetRec.01") {
@@ -1154,7 +1491,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    g()
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1168,7 +1505,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def g(x: a): String with C[a] = C.f(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1182,7 +1519,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def g(x: a): String with C[a] where C.T[a] ~ Int32 = C.f(x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1206,7 +1543,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def f(x: Int32): Maybe[Int64] = x
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1221,7 +1558,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def g(x: a): A.A[a][A.B[a][A.C[a]]][A.C[a]] = A.f(x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1232,7 +1569,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case { x = false } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1243,7 +1580,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case { x = _ } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1255,7 +1592,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case { x = _ | r } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1267,7 +1604,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case { x = _ } => true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1282,7 +1619,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    Gen.gen();
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1302,7 +1639,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    Gen.gen();
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1326,7 +1663,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1351,7 +1688,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    Gen.gen();
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1376,7 +1713,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1402,7 +1739,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
   test("TestIOAndCustomEffect.07") {
@@ -1425,7 +1762,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    AskTell.askTell(42);
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1448,7 +1785,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1466,7 +1803,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1479,7 +1816,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(): C.T[a] = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MissingTraitConstraint](result)
   }
 
@@ -1499,7 +1836,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def foo(adapter: Adapter[t, a, b]): b = ???
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MissingTraitConstraint](result)
   }
 
@@ -1519,7 +1856,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1539,7 +1876,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1559,7 +1896,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1581,7 +1918,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1602,7 +1939,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1624,7 +1961,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1645,18 +1982,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
-  }
-
-  test("TypeError.ConstructorBoxing.01") {
-    val input =
-      """
-        |import java.util.{AbstractMap$SimpleEntry => SimpleEntry}
-        |
-        |def f(): Int32 \ IO = new SimpleEntry(12, true).hashCode()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1669,7 +1995,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let boxed = new Boolean(true);
         |    new Boolean(boxed).booleanValue()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1682,7 +2008,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let boxed = new Boolean(true);
         |    boxed.compareTo(false)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1693,7 +2019,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def f(): Bool \ IO = Objects.isNull(true)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1706,7 +2032,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let boxed = new Integer(0);
         |    "s".charAt(boxed)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1719,7 +2045,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let boxed = new Boolean(true);
         |    Boolean.compare(true, boxed)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1736,7 +2062,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1745,7 +2071,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def f(): Unit \ IO = ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs)))
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs)))
     expectSuccess(result)
   }
 
@@ -1754,7 +2080,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def f(): Unit \ IO = ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas, Subeffecting.InsDefs)))
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas, Subeffecting.InsDefs)))
     expectError[TypeError](result)
   }
 
@@ -1765,7 +2091,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO =
         |  mustBeIO(() -> ())
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.Lambdas)))
     expectSuccess(result)
   }
 
@@ -1776,7 +2102,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): Unit \ IO =
         |  mustBeIO(() -> ())
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
     expectError[TypeError](result)
   }
 
@@ -1788,7 +2114,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  pub def f(_x: Char): Unit \ IO = ()
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.InsDefs)))
     expectSuccess(result)
   }
 
@@ -1800,7 +2126,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  pub def f(_x: Char): Unit \ IO = ()
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.Lambdas)))
+    val result = check(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.Lambdas)))
     expectError[TypeError](result)
   }
 
@@ -1810,7 +2136,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def foo(): Abc = "hello"
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
   }
 
@@ -1821,7 +2147,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def foo(): Abc = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
   }
 
@@ -1833,7 +2159,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
   }
 
@@ -1845,7 +2171,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
   }
 
@@ -1857,7 +2183,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
   }
 
@@ -1872,7 +2198,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({x = 42})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
   }
 
@@ -1887,7 +2213,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({y = 42})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
   }
 
@@ -1902,7 +2228,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({x = 42})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
   }
 
@@ -1914,7 +2240,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ExtraLabel](result)
   }
 
@@ -1926,7 +2252,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ExtraLabel](result)
   }
 
@@ -1938,7 +2264,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ExtraLabel](result)
   }
 
@@ -1953,7 +2279,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({x = 1, y = 2, z = 3})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ExtraLabel](result)
   }
 
@@ -1968,7 +2294,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({w = 0, x = 1, y = 2, z = 3})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ExtraLabel](result)
   }
 
@@ -1983,7 +2309,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({x = 1, y = 2, z = 3, z = "foo"})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.ExtraLabel](result)
   }
 
@@ -1995,7 +2321,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
     expectError[TypeError.ExtraLabel](result)
   }
@@ -2008,7 +2334,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
     expectError[TypeError.ExtraLabel](result)
   }
@@ -2021,7 +2347,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  println(r#x)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
     expectError[TypeError.ExtraLabel](result)
   }
@@ -2037,7 +2363,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({x = 1, z = 3})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
     expectError[TypeError.ExtraLabel](result)
   }
@@ -2053,7 +2379,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({w = 0, z = 3})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
     expectError[TypeError.ExtraLabel](result)
   }
@@ -2069,7 +2395,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |  foo({x = 1, z = 3, z = "foo"})
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
     expectError[TypeError.ExtraLabel](result)
   }
@@ -2083,7 +2409,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2095,7 +2421,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case A() => ()
         |    }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2109,7 +2435,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case C()           => ()
         |    }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2123,7 +2449,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case B()           => ()
         |    }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2138,7 +2464,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case X(p, q, r, s, t, u, v) => ()
         |    }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2153,7 +2479,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case X(p, q)          => ()
         |    }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2167,7 +2493,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2180,7 +2506,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2194,7 +2520,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
@@ -2210,7 +2536,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedArg](result)
   }
 
@@ -2222,7 +2548,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    (ematch A(x) -> x)(scrutinee)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedType](result)
   }
 
@@ -2237,7 +2563,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedPredicateArity](result)
   }
 
@@ -2253,7 +2579,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedPredicateArity](result)
   }
 
@@ -2269,7 +2595,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibAll)
     expectError[TypeError.MismatchedPredicateArity](result)
   }
 
@@ -2284,7 +2610,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibAll)
     expectError[TypeError.MismatchedPredicateDenotation](result)
   }
 
@@ -2299,8 +2625,274 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = check(input, Options.TestWithLibAll)
     expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("Test.DefaultHandlerNotInModule.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |@DefaultHandler
+        |pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.DefaultHandlerNotInModule](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.02") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef, u: a): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.03") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: a): a \ (ef - E) + IO =
+        |            checked_ecast(f)
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.04") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): Bool \ (ef - E) + IO =
+        |            run {
+        |                true
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.05") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ {}): a \ IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.06") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Bool -> a \ ef, u: a): a \ (ef - E) + IO =
+        |            run {
+        |                f(true)
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.IllegalDefaultHandlerSignature.07") {
+    val input =
+      """
+        |pub eff E1 {
+        |   def op(): Unit
+        |}
+        |
+        |pub eff E2 {
+        |   def op(): Unit
+        |}
+        |
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO + E2 =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.IllegalDefaultHandlerSignature](result)
+  }
+
+  test("Test.NonPublicDefaultHandler.01") {
+    val input =
+      """
+        |pub eff E1 {
+        |   def op(): Unit
+        |}
+        |
+        |mod E1 {
+        |    @DefaultHandler
+        |    def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.NonPublicDefaultHandler](result)
+  }
+
+  test("Test.DuplicateDefaultHandler.01") {
+    val input =
+      """
+        |pub eff E {
+        |   def op(): Unit
+        |}
+        |
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |
+        |    @DefaultHandler
+        |    pub def runWithIO2(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.DuplicateDefaultHandler](result)
   }
 
   test("TypeError.NonUnitStatement.01") {
@@ -2308,7 +2900,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def f(): String = 123; "hi"
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     expectError[TypeError.NonUnitStatement](result)
   }
 
@@ -2317,7 +2909,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def f(): String \ IO = "".toString(); ""
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
   }
 
@@ -2327,8 +2919,208 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |import java.lang.Object
         |def f(): String \ IO = Objects.toString(""); ""
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
+  }
+
+  // --- Java Generic Type Checking: Negative Tests (Bug 1 - wrong argument types) ---
+
+  test("Test.JavaGenericCheck.Neg.01") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Bool \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add(123)
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.02") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Bool \ IO =
+           |    let l: ArrayList[Int32] = new ArrayList();
+           |    l.add("hello")
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.03") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Bool \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add(true)
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.04") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Bool \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add(1.0f64)
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.05") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    m.put(123, 42);
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.06") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    m.put("k", "v");
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.07") {
+    val input =
+      raw"""
+           |import java.util.HashSet
+           |def f(): Bool \ IO =
+           |    let s: HashSet[Int32] = new HashSet();
+           |    s.add("hello")
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.08") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Unit \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add("a");
+           |    l.set(0, 42);
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.09") {
+    val input =
+      raw"""
+           |import java.util.LinkedList
+           |def f(): Bool \ IO =
+           |    let l: LinkedList[Float64] = new LinkedList();
+           |    l.add("x")
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.10") {
+    val input =
+      raw"""
+           |import java.util.TreeMap
+           |def f(): Unit \ IO =
+           |    let m: TreeMap[String, Bool] = new TreeMap();
+           |    m.put(42, true);
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MethodNotFound](result)
+  }
+
+  // --- Java Generic Type Checking: Negative Tests (Bug 2 - wrong return type) ---
+
+  test("Test.JavaGenericCheck.Neg.11") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |import java.util.{Set => JSet}
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    let _s: JSet[Float32] = m.keySet();
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.12") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |import java.util.{Set => JSet}
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    let _s: JSet[Int32] = m.keySet();
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.13") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |import java.util.Collection
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    let _v: Collection[String] = m.values();
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.14") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |import java.util.Iterator
+           |def f(): Unit \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    let _it: Iterator[Int32] = l.iterator();
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.15") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |import java.util.{List => JList}
+           |def f(): Unit \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add("a");
+           |    let _sub: JList[Int32] = l.subList(0, 1);
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
 }

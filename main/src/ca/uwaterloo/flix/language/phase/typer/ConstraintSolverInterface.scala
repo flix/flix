@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.SourcePosition.moveRight
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
@@ -37,13 +38,8 @@ object ConstraintSolverInterface {
     * Resolves constraints in the given definition using the given inference result.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = defn match {
-    case KindedAst.Def(sym, spec, _, _) =>
-      if (flix.options.xprinttyper.contains(sym.toString)) {
-        Debug.startRecording()
-      }
-      val result = visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, econstrs0, tenv0, eqEnv0, root)
-      Debug.stopRecording()
-      result
+    case KindedAst.Def(_, spec, _, _) =>
+      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, econstrs0, tenv0, eqEnv0, root)
   }
 
   /**
@@ -51,10 +47,7 @@ object ConstraintSolverInterface {
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], tenv0: TraitEnv, eqEnv0: EqualityEnv, root: KindedAst.Root)(implicit flix: Flix): (SubstitutionTree, List[TypeError]) = sig match {
     case KindedAst.Sig(_, _, None, _) => (SubstitutionTree.empty, Nil)
-    case KindedAst.Sig(sym, spec, Some(_), _) =>
-      if (flix.options.xprinttyper.contains(sym.toString)) {
-        Debug.startRecording()
-      }
+    case KindedAst.Sig(_, spec, Some(_), _) =>
       visitSpec(spec, sig.loc, infResult, renv0, tconstrs0, Nil, tenv0, eqEnv0, root)
   }
 
@@ -68,11 +61,11 @@ object ConstraintSolverInterface {
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, paramTpe, _, _)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(paramTpe)(Scope.Top, flix))
+        case (acc, KindedAst.FormalParam(sym, paramTpe, _, _)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(paramTpe)(RegionScope.Top, flix))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
-      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(_.tpe2.typeVars)
+      val allTparams = tpe.typeVars ++ eff.getOrElse(Type.Pure).typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(_.tpe2.typeVars)
 
       // The rigidity environment is made up of:
       // 1. rigid variables from the context (e.g. from instance type parameters)
@@ -90,7 +83,16 @@ object ConstraintSolverInterface {
 
       // We add extra constraints for the declared type and effect
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
-      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
+      val declaredEffConstr = eff match {
+        case Some(e) => TypeConstraint.Equality(e, infEff, Provenance.ExpectEffect(expected = e, actual = infEff, loc))
+        case None => {
+          // No effect annotation. The function is implicitly true.
+          // We use the source location immediately to the right of the return type
+          val tpos = moveRight(tpe.loc.end)
+          val loc1 = SourceLocation(true, tpe.loc.source, tpe.loc.end, tpos)
+          TypeConstraint.Equality(Type.Pure, infEff, Provenance.ExpectEffect(expected = Type.Pure, actual = infEff, loc1))
+        }
+      }
       val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
       // Apply the initial substitution to all the constraints
@@ -102,7 +104,7 @@ object ConstraintSolverInterface {
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
 
-      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
+      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
       leftovers match {
         case Nil =>
           // All constraints solved. Yay!
@@ -116,11 +118,11 @@ object ConstraintSolverInterface {
 
             case Build.Development =>
               // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
-              val declaredEffWithDebug = Type.mkUnion(eff, Type.Debug, loc)
+              val declaredEffWithDebug = Type.mkUnion(eff.getOrElse(Type.Pure), Type.Debug, loc)
               val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
               val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
               val constrsWithDebug = constrs0.map(initialTree.apply)
-              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(Scope.Top, renv, tenv, eenv, flix)
+              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(RegionScope.Top, renv, tenv, eenv, flix)
 
               leftovers2 match {
                 case Nil =>
@@ -218,6 +220,8 @@ object ConstraintSolverInterface {
 
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+
+    case TypeConstraint.EffConflicted(err) => List(err)
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
       tpe.typeConstructor match {
@@ -317,7 +321,7 @@ object ConstraintSolverInterface {
     * `r`. This only happens for if the row type is the topmost type, i.e. this
     * doesn't happen inside tuples or other such nesting.
     */
-  private def openOuterSchema(tpe: Type)(implicit scope: Scope, flix: Flix): Type = {
+  private def openOuterSchema(tpe: Type)(implicit scope: RegionScope, flix: Flix): Type = {
     @tailrec
     def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
       case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>

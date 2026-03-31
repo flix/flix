@@ -22,7 +22,7 @@ instance UpperBound[Bool] {
     pub def maxValue(): Bool = true
 }
 
-mod Bool {
+pub mod Bool {
 
     ///
     /// Returns `true` if `x` implies `y` logically holds.

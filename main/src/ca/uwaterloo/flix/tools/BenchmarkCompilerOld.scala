@@ -1,12 +1,16 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
+
+import java.nio.file.Path
 
 /**
   * A collection of internal utilities to measure the performance of the Flix compiler itself.
@@ -154,7 +158,8 @@ object BenchmarkCompilerOld {
       if (frontend) {
         val (optRoot, errors) = flix.check()
         if (errors.nonEmpty) {
-          throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
+          println(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot))
+          System.exit(1)
         }
         val root = optRoot.get
         val totalLines = root.sources.foldLeft(0) {
@@ -249,8 +254,8 @@ object BenchmarkCompilerOld {
     */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    flix.addSourceCode("Test.Exp.Fixpoint.PQuery.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
-    flix.addSourceCode("Test.Exp.Fixpoint.PSolve.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
+    flix.addVirtualPath(Path.of("Test.Exp.Fixpoint.PQuery.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
+    flix.addVirtualPath(Path.of("Test.Exp.Fixpoint.PSolve.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
   }
 
   case object SummaryStatistics {

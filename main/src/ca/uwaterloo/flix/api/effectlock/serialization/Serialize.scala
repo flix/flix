@@ -15,23 +15,42 @@
  */
 package ca.uwaterloo.flix.api.effectlock.serialization
 
+import ca.uwaterloo.flix.api.effectlock.Util
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Serialize {
 
+  /**
+    * Serializes a [[TypedAst.Def]].
+    *
+    * Erases type aliases and associated type source locations.
+    */
   def serializeDef(defn0: TypedAst.Def): SDef = defn0 match {
-    case TypedAst.Def(sym, spec, _, loc) =>
+    case TypedAst.Def(sym, spec, _, _) =>
       val ns = sym.namespace
       val text = sym.name
       val sscheme = serializeSpec(spec)
-      val source = loc.source.name
-      SDef(ns, text, sscheme, source)
+      SDef(ns, text, sscheme)
+  }
+
+  /**
+    * Serializes a [[TypedAst.Sig]].
+    *
+    * Erases type aliases and associated type source locations.
+    */
+  def serializeSig(defn0: TypedAst.Sig): SSig = defn0 match {
+    case TypedAst.Sig(sym, spec, _, _) =>
+      val ns = sym.namespace
+      val text = sym.name
+      val sscheme = serializeSpec(spec)
+      SSig(ns, text, sscheme)
   }
 
   private def serializeSpec(spec0: TypedAst.Spec): SScheme = spec0 match {
-    case TypedAst.Spec(_, _, _, _, _, Scheme(quantifiers, tconstrs, econstrs, base), _, _, _, _) =>
+    case TypedAst.Spec(_, _, _, _, _, sc0, _, _, _, _) =>
+      val Scheme(quantifiers, tconstrs, econstrs, base) = Util.alpha(sc0)
       val qs = quantifiers.map(serializeKindedTypeVarSym)
       val tcs = tconstrs.map(serializeTraitConstraint)
       val ecs = econstrs.map(serializeEqualityConstraint)
@@ -43,7 +62,7 @@ object Serialize {
     case Type.Var(sym, _) => Var(serializeKindedTypeVarSym(sym))
     case Type.Cst(tc, _) => Cst(serializeTypeConstructor(tc))
     case Type.Apply(tpe1, tpe2, _) => Apply(serializeType(tpe1), serializeType(tpe2))
-    case Type.Alias(symUse, args, tpe, _) => Alias(serializeTypeAliasSym(symUse.sym), args.map(serializeType), serializeType(tpe))
+    case Type.Alias(_, _, tpe, _) => serializeType(tpe) // Inline type alias erasure
     case Type.AssocType(symUse, arg, kind, _) => AssocType(serializeAssocTypeSym(symUse.sym), serializeType(arg), serializeKind(kind))
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JvmToType", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JvmToEff", loc)
@@ -82,10 +101,10 @@ object Serialize {
     case TypeConstructor.Enum(sym, kind) => Enum(serializeEnumSym(sym), serializeKind(kind))
     case TypeConstructor.Struct(sym, kind) => Struct(serializeStructSym(sym), serializeKind(kind))
     case TypeConstructor.RestrictableEnum(sym, kind) => RestrictableEnum(serializeRestrictableEnumSym(sym), serializeKind(kind))
-    case TypeConstructor.Native(clazz) => Native(clazz.descriptorString())
-    case TypeConstructor.JvmConstructor(constructor) => JvmConstructor(constructor.toGenericString)
-    case TypeConstructor.JvmMethod(method) => JvmMethod(method.toGenericString)
-    case TypeConstructor.JvmField(field) => JvmField(field.toGenericString)
+    case TypeConstructor.Native(clazz) => serializeJvmClass(clazz)
+    case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
+    case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
+    case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
     case TypeConstructor.Array => Array
     case TypeConstructor.ArrayWithoutRegion => ArrayWithoutRegion
     case TypeConstructor.Vector => Vector
@@ -125,7 +144,7 @@ object Serialize {
     case Kind.RecordRow => RecordRowKind
     case Kind.SchemaRow => SchemaRowKind
     case Kind.Predicate => PredicateKind
-    case Kind.Jvm => JvmKind
+    case Kind.Jvm => throw InternalCompilerException(s"Unexpected kind '$kind0'", SourceLocation.Unknown)
     case Kind.CaseSet(sym) => CaseSetKind(serializeRestrictableEnumSym(sym))
     case Kind.Arrow(k1, k2) => ArrowKind(serializeKind(k1), serializeKind(k2))
     case Kind.Error => throw InternalCompilerException("unexpected error kind in serialization", SourceLocation.Unknown)
@@ -143,12 +162,16 @@ object Serialize {
     EnumSym(sym0.namespace, sym0.text)
   }
 
+  private def serializeJvmClass(clazz: Class[?]): Native = {
+    Native(clazz.descriptorString())
+  }
+
   private def serializeKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): VarSym = {
-    VarSym(serializeVarText(sym0.text), serializeKind(sym0.kind))
+    VarSym(sym0.id, serializeVarText(sym0.text), serializeKind(sym0.kind))
   }
 
   private def serializeRegionSym(sym0: Symbol.RegionSym): RegionSym = {
-    RegionSym(sym0.text)
+    RegionSym(sym0.id, sym0.text)
   }
 
   private def serializeRestrictableCaseSym(sym0: Symbol.RestrictableCaseSym): RestrictableCaseSym = {
@@ -167,10 +190,6 @@ object Serialize {
     TraitSym(sym0.namespace, sym0.name)
   }
 
-  private def serializeTypeAliasSym(sym0: Symbol.TypeAliasSym): TypeAliasSym = {
-    TypeAliasSym(sym0.namespace, sym0.name)
-  }
-
   private def serializeVarText(text0: VarText): SVarText = text0 match {
     case VarText.Absent => Absent
     case VarText.SourceText(s) => Text(s)
@@ -183,4 +202,5 @@ object Serialize {
   private def serializeEqualityConstraint(econstr0: EqualityConstraint): EqConstr = {
     EqConstr(serializeAssocTypeSym(econstr0.symUse.sym), serializeType(econstr0.tpe1), serializeType(econstr0.tpe2))
   }
+
 }

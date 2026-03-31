@@ -19,11 +19,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Instance, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.errors.InstanceError.MissingEqConstraint
+import ca.uwaterloo.flix.language.errors.InstanceError.MissingEqualityConstraint
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, ConstraintSolverInterface, TypeConstraint}
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
@@ -34,7 +34,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 object Instances {
 
   // We use top scope everywhere here since we are only looking at declarations.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   /**
     * Validates instances and traits in the given AST root.
@@ -120,7 +120,7 @@ object Instances {
           case (seen, tvar: Type.Var) =>
             // Case 1.1 We've seen it already. Error.
             if (seen.contains(tvar)) {
-              sctx.errors.add(InstanceError.DuplicateTypeVar(tvar, trt.sym, trt.loc))
+              sctx.errors.add(InstanceError.DuplicateTypeVar(tvar, trt.sym, tvar.loc))
               notFound = false
               seen
             }
@@ -163,8 +163,8 @@ object Instances {
           ()
         // Case 2: An instance matching this type exists. Error.
         case Some(inst2) =>
-          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, inst1.trt.loc, inst2.trt.loc))
-          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, inst2.trt.loc, inst1.trt.loc))
+          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, tc, inst1.trt.loc, inst2.trt.loc))
+          sctx.errors.add(InstanceError.OverlappingInstances(inst1.trt.sym, tc, inst2.trt.loc, inst1.trt.loc))
       }
     }
   }
@@ -184,12 +184,12 @@ object Instances {
           // Case 2: there is no definition with the same name, but there is a default implementation
           case (None, Some(_)) => ()
           // Case 3: there is an implementation marked override, but no default implementation
-          case (Some(defn), None) if defn.spec.mod.isOverride => sctx.errors.add(InstanceError.IllegalOverride(defn.sym, defn.sym.loc))
+          case (Some(defn), None) if defn.spec.mod.isOverride => sctx.errors.add(InstanceError.IllegalRedef(defn.sym, defn.sym.loc))
           // Case 4: there is an overriding implementation, but no override modifier
-          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc))
+          case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => sctx.errors.add(InstanceError.UnmarkedRedef(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
-            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
+            val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(RegionScope.Top, flix)
             if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, eqEnv, inst.econstrs)) {
               // Case 5.1: the schemes match. Success!
               ()
@@ -219,7 +219,7 @@ object Instances {
       superInst =>
         // Rigidify sub-instance constraint vars in the substitution to ensure that they appear as-written in compiler errors
         val rigidityEnv = RigidityEnv.ofRigidVars(tpe.typeVars.map(_.sym))
-        ConstraintSolver2.fullyUnify(tpe, superInst.tpe, Scope.Top, rigidityEnv)(root.eqEnv, flix).map {
+        ConstraintSolver2.fullyUnify(tpe, superInst.tpe, RegionScope.Top, rigidityEnv)(root.eqEnv, flix).map {
           case subst => (superInst, subst)
         }
     }
@@ -259,7 +259,7 @@ object Instances {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.foreach {
                       case TypeConstraint.Equality(_, _, _) =>
-                        sctx.errors.add(MissingEqConstraint(substEconstr, superTrait, trt.loc))
+                        sctx.errors.add(MissingEqualityConstraint(substEconstr, superTrait, trt.loc))
                       case _ =>
                         throw InternalCompilerException("Unexpected type constraint", inst.loc)
                     }

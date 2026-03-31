@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Occur}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, RegionScope}
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -165,9 +165,9 @@ object LambdaDrop {
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(exp)
 
     case Expr.Discard(exp, _, _) =>
       visitExp(exp)
@@ -208,7 +208,8 @@ object LambdaDrop {
       visitExp(exp1)
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      constructors.foreach(c => visitExp(c.exp))
       methods.foreach(m => visitExp(m.exp))
   }
 
@@ -291,10 +292,10 @@ object LambdaDrop {
       val e3 = rewriteExp(exp3)
       Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = rewriteExp(exp1)
-      val e2 = rewriteExp(exp2)
-      Expr.Stm(e1, e2, tpe, eff, loc)
+    case Expr.Stm(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(rewriteExp)
+      val e = rewriteExp(exp)
+      Expr.Stm(es, e, tpe, eff, loc)
 
     case Expr.Discard(exp, eff, loc) =>
       val e = rewriteExp(exp)
@@ -354,13 +355,18 @@ object LambdaDrop {
       }
       Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff1, methods, loc1) =>
-      val ms = methods.map {
-        case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff2, loc2) =>
+    case Expr.NewObject(name, clazz, tpe, eff1, constructors, methods, loc1) =>
+      val cs = constructors.map {
+        case MonoAst.JvmConstructor(exp, retTpe, eff2, loc2) =>
           val e = rewriteExp(exp)
-          MonoAst.JvmMethod(ident, fparams, e, retTpe, eff2, loc2)
+          MonoAst.JvmConstructor(e, retTpe, eff2, loc2)
       }
-      Expr.NewObject(name, clazz, tpe, eff1, ms, loc1)
+      val ms = methods.map {
+        case MonoAst.JvmMethod(ann, ident, fparams, exp, retTpe, eff2, loc2) =>
+          val e = rewriteExp(exp)
+          MonoAst.JvmMethod(ann, ident, fparams, e, retTpe, eff2, loc2)
+      }
+      Expr.NewObject(name, clazz, tpe, eff1, cs, ms, loc1)
 
   }
 
@@ -408,7 +414,7 @@ object LambdaDrop {
   /** Returns a fresh [[Symbol.VarSym]] for a local def. */
   private def mkFreshLocalDefSym(defn: MonoAst.Def)(implicit flix: Flix): Symbol.VarSym = {
     val text = defn.sym.text + Flix.Delimiter + "loop"
-    Symbol.freshVarSym(text, BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
+    Symbol.freshVarSym(text, BoundBy.LocalDef, defn.sym.loc)(RegionScope.Top, flix)
   }
 
   /**

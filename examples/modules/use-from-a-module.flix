@@ -29,5 +29,5 @@ mod B {
 
 }
 
-def main(): Unit \ IO = 
+def main(): Unit \ IO =
     println(B.isCold(A.Color.Blue))

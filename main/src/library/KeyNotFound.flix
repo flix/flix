@@ -25,7 +25,7 @@ eff KeyNotFound {
 
 }
 
-mod KeyNotFound {
+pub mod KeyNotFound {
 
     /// Turns the `KeyNotFound` effect into `Err(msg)`.
     @Experimental

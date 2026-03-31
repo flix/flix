@@ -24,32 +24,32 @@ import org.scalatest.funsuite.AnyFunSuite
 class TestDeriver extends AnyFunSuite with TestUtils {
 
   test("DerivationError.EmptyEnum.Eq") {
-    val compiled = compile("enum E with Eq", Options.TestWithLibMin)
+    val compiled = check("enum E with Eq", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
 
   test("DerivationError.EmptyEnum.Order") {
-    val compiled = compile("enum E with Eq, Order", Options.TestWithLibMin)
+    val compiled = check("enum E with Eq, Order", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
 
   test("DerivationError.EmptyEnum.ToString") {
-    val compiled = compile("enum E with ToString", Options.TestWithLibMin)
+    val compiled = check("enum E with ToString", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
 
   test("DerivationError.EmptyEnum.Hash") {
-    val compiled = compile("enum E with Hash", Options.TestWithLibMin)
+    val compiled = check("enum E with Hash", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
 
   test("DerivationError.EmptyEnum.Coerce") {
-    val compiled = compile("enum E with Coerce", Options.TestWithLibMin)
+    val compiled = check("enum E with Coerce", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
 
   test("DerivationError.MultiEnum.Coerce") {
-    val compiled = compile("enum E with Coerce", Options.TestWithLibMin)
+    val compiled = check("enum E with Coerce", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
 
@@ -62,7 +62,7 @@ class TestDeriver extends AnyFunSuite with TestUtils {
         |    case E
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = check(input, Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivation](result)
   }
 

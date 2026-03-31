@@ -17,13 +17,13 @@ mod Test.Integ.Trait.Schema {
         }
     }
 
-    @test
+    @CompileTest
     def testSchemaInSig01(): Bool = {
         let _ = Test.Integ.Trait.Schema.C.f(5);
         true
     }
 
-    @test
+    @CompileTest
     def testSchemaInSig02(): Bool = {
         let _ = Test.Integ.Trait.Schema.D.f(5);
         true

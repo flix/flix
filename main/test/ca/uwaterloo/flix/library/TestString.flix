@@ -3,6 +3,31 @@ mod TestString {
     use Assert.{assertEq, assertTrue, assertFalse, assertSome, assertNone};
 
     /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def get01(): Unit \ Assert =
+        let r = run String.get(0, "Hello") with handler OutOfBounds {
+            def outOfBounds(_, _) = '?'
+        };
+        assertEq(expected = 'H', r)
+
+    @Test
+    def get02(): Unit \ Assert =
+        let r = run String.get(15, "Hello World!") with handler OutOfBounds {
+            def outOfBounds(_, _) = '?'
+        };
+        assertEq(expected = '?', r)
+
+    @Test
+    def get03(): Unit \ Assert =
+        let r = run String.get(-1, "Hello World!") with handler OutOfBounds {
+            def outOfBounds(_, _) = '?'
+        };
+        assertEq(expected = '?', r)
+
+    /////////////////////////////////////////////////////////////////////////////
     // charAt                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -337,6 +362,46 @@ mod TestString {
     @Test
     def toVector03(): Unit \ Assert =
         assertEq(expected = Vector#{'1', ' ', '2', ' ', '3'}, String.toVector("1 2 3"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toBytes                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toBytes01(): Unit \ Assert =
+        assertEq(expected = Vector#{}, String.toBytes(""))
+
+    @Test
+    def toBytes02(): Unit \ Assert =
+        assertEq(expected = Vector#{72i8, 105i8}, String.toBytes("Hi"))
+
+    @Test
+    def toBytes03(): Unit \ Assert =
+        assertEq(expected = Vector#{65i8, 66i8, 67i8}, String.toBytes("ABC"))
+
+    @Test
+    def toBytes04(): Unit \ Assert =
+        assertEq(expected = 3, Vector.length(String.toBytes("abc")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fromBytes                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromBytes01(): Unit \ Assert =
+        assertEq(expected = "", String.fromBytes(Vector#{}))
+
+    @Test
+    def fromBytes02(): Unit \ Assert =
+        assertEq(expected = "Hi", String.fromBytes(Vector#{72i8, 105i8}))
+
+    @Test
+    def fromBytes03(): Unit \ Assert =
+        assertEq(expected = "ABC", String.fromBytes(Vector#{65i8, 66i8, 67i8}))
+
+    @Test
+    def fromBytes04(): Unit \ Assert =
+        assertEq(expected = "abc", String.fromBytes(String.toBytes("abc")))
 
     /////////////////////////////////////////////////////////////////////////////
     // toRegex                                                                 //
@@ -3805,7 +3870,7 @@ mod TestString {
     def escapeInterpolation03(): Unit \ Assert = assertEq(expected = ("$" + "{}"), "\${}")
 
     @Test
-    def escapeInterpolation04(): String = "$"
+    def escapeInterpolation04(): Unit \ Assert = assertEq(expected = "$", "$")
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //

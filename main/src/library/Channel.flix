@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-mod Channel {
+pub mod Channel {
+
+    use Time.TimeUnit
 
     import java.lang.{Thread => JThread}
 

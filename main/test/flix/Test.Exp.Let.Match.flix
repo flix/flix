@@ -1,69 +1,71 @@
 mod Test.Exp.Let.Match {
 
-    @test
-    def testLetMatch01(): Bool =
+    use Assert.assertEq
+
+    @Test
+    def testLetMatch01(): Unit \ Assert =
         let (x, y) = (1, 2);
-            x + y == 1 + 2
+        assertEq(expected = true, x + y == 1 + 2)
 
-    @test
-    def testLetMatch02(): Bool =
+    @Test
+    def testLetMatch02(): Unit \ Assert =
         let (x, y, z) = (1, 2, 3);
-            x + y + z == 1 + 2 + 3
+        assertEq(expected = true, x + y + z == 1 + 2 + 3)
 
-    @test
-    def testLetMatch03(): Bool =
+    @Test
+    def testLetMatch03(): Unit \ Assert =
         let ((x, y), (z, w)) = ((1, 2), (3, 4));
-            x + w + y + z == 1 + 2 + 3 + 4
+        assertEq(expected = true, x + w + y + z == 1 + 2 + 3 + 4)
 
-    @test
-    def testLetMatch04(): Bool =
+    @Test
+    def testLetMatch04(): Unit \ Assert =
         let Celsius.Celsius(x) = Celsius.Celsius(42);
-            x == 42
+        assertEq(expected = true, x == 42)
 
-    @test
-    def testLetMatch05(): Bool =
+    @Test
+    def testLetMatch05(): Unit \ Assert =
         let Fahrenheit.Fahrenheit(x) = Fahrenheit.Fahrenheit(42);
-            x == 42
+        assertEq(expected = true, x == 42)
 
-    @test
-    def testLetMatch06(): Bool =
+    @Test
+    def testLetMatch06(): Unit \ Assert =
         let Fahrenheit.Fahrenheit(x) = Fahrenheit.Fahrenheit(42);
-            x == 42
+        assertEq(expected = true, x == 42)
 
-    @test
-    def testLetMatch07(): Bool =
+    @Test
+    def testLetMatch07(): Unit \ Assert =
         let Box.Box((x, y)) = Box.Box((1, 2));
-            x + y == 1 + 2
+        assertEq(expected = true, x + y == 1 + 2)
 
-    @test
-    def testLetMatch08(): Bool =
+    @Test
+    def testLetMatch08(): Unit \ Assert =
         let Box.Box((x, y, z)) = Box.Box((1, 2, 3));
-            x + y + z == 1 + 2 + 3
+        assertEq(expected = true, x + y + z == 1 + 2 + 3)
 
-    @test
-    def testLetMatch09(): Bool =
+    @Test
+    def testLetMatch09(): Unit \ Assert =
         let Box.Box(((x, y), (z, w))) = Box.Box(((1, 2), (3, 4)));
-            x + y + z + w == 1 + 2 + 3 + 4
+        assertEq(expected = true, x + y + z + w == 1 + 2 + 3 + 4)
 
-    @test
-    def testLetMatch10(): Bool =
+    @Test
+    def testLetMatch10(): Unit \ Assert =
         let Box.Box(Box.Box(x)) = Box.Box(Box.Box(42));
-            x == 42
+        assertEq(expected = true, x == 42)
 
-    @test
-    def testLetMatch11(): Bool =
+    @Test
+    def testLetMatch11(): Unit \ Assert =
         let Box.Box((Box.Box(x), Box.Box(y))) = Box.Box((Box.Box(1), Box.Box(2)));
-            x + y == 1 + 2
+        assertEq(expected = true, x + y == 1 + 2)
 
-    @test
-    def testLetMatch12(): Bool =
+    @Test
+    def testLetMatch12(): Unit \ Assert =
         let Box.Box((Box.Box((x, y)), Box.Box((z, w)))) = Box.Box((Box.Box((1, 2)), Box.Box((3, 4))));
-            x + y + z + w == 1 + 2 + 3 + 4
+        assertEq(expected = true, x + y + z + w == 1 + 2 + 3 + 4)
 
-    @test
-    def testLetMatch13(): Bool =
+    @Test
+    def testLetMatch13(): Unit \ Assert =
         let Box.Box(Celsius.Celsius(x)) = Box.Box(Celsius.Celsius(42));
-            x == 42
+        assertEq(expected = true, x == 42)
 
     enum Celsius {
         case Celsius(Int32)
@@ -77,64 +79,64 @@ mod Test.Exp.Let.Match {
         case Box(a)
     }
 
-    @test
-    def testLetMatch14(): Bool =
+    @Test
+    def testLetMatch14(): Unit \ Assert =
         let { x } = { x = 1 };
-        x == 1
+        assertEq(expected = true, x == 1)
 
-    @test
-    def testLetMatch15(): Bool =
+    @Test
+    def testLetMatch15(): Unit \ Assert =
         let { x = x } = { x = 1 };
-        x == 1
+        assertEq(expected = true, x == 1)
 
-    @test
-    def testLetMatch16(): Bool =
+    @Test
+    def testLetMatch16(): Unit \ Assert =
         let { x | _ } = { x = 1, y = "" };
-        x == 1
+        assertEq(expected = true, x == 1)
 
-    @test
-    def testLetMatch17(): Bool =
+    @Test
+    def testLetMatch17(): Unit \ Assert =
         let { x, y } = { x = 1, y = "" };
-        x == 1 and y == ""
+        assertEq(expected = true, x == 1 and y == "")
 
-    @test
-    def testLetMatch18(): Bool =
+    @Test
+    def testLetMatch18(): Unit \ Assert =
         let { y, x } = { x = 1, y = "" };
-        x == 1 and y == ""
+        assertEq(expected = true, x == 1 and y == "")
 
-    @test
-    def testLetMatch19(): Bool =
+    @Test
+    def testLetMatch19(): Unit \ Assert =
         let { y, x = a, x} = { x = 1, y = "", x = false};
-        (a == 1 and y == "") and x == false
+        assertEq(expected = true, (a == 1 and y == "") and x == false)
 
-    @test
-    def testLetMatch20(): Bool =
+    @Test
+    def testLetMatch20(): Unit \ Assert =
         let { y, x = a, x = { x }} = { x = 1, y = "", x = { x = true }};
-        (a == 1 and y == "") and x
+        assertEq(expected = true, (a == 1 and y == "") and x)
 
-    @test
-    def testLetMatch21(): Bool =
+    @Test
+    def testLetMatch21(): Unit \ Assert =
         let { x = a, x = { x }, y } = { x = 1, y = "", x = { x = true }};
-        (a == 1 and y == "") and x
+        assertEq(expected = true, (a == 1 and y == "") and x)
 
-    @test
-    def testLetMatch22(): Bool =
+    @Test
+    def testLetMatch22(): Unit \ Assert =
         let { x, x = { x = a }, y } = { x = 1, y = "", x = { x = true }};
-        (x == 1 and y == "") and a
+        assertEq(expected = true, (x == 1 and y == "") and a)
 
-    @test
-    def testLetMatch23(): Bool =
+    @Test
+    def testLetMatch23(): Unit \ Assert =
         let { x = { x = { x } } | _ } = { x = { x = { x = 42 } } };
-        x == 42
+        assertEq(expected = true, x == 42)
 
-    @test
-    def testLetMatch24(): Bool =
+    @Test
+    def testLetMatch24(): Unit \ Assert =
         let { x = { x = { x } } | _ } = { x = { x = { x = 42 } }, y = "" };
-        x == 42
+        assertEq(expected = true, x == 42)
 
-    @test
-    def testLetMatch25(): Bool =
+    @Test
+    def testLetMatch25(): Unit \ Assert =
         let { x = { x = { x | _ } } | _ } = { x = { x = { x = 42, y = false } }, y = "" };
-        x == 42
+        assertEq(expected = true, x == 42)
 
 }

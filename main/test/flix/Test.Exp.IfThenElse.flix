@@ -1,13 +1,15 @@
 mod Test.Exp.IfThenElse {
 
-    @test
-    def testIfThenElse01(): Bool = if (true) true else false
+    use Assert.{assertEq, assertTrue}
 
-    @test
-    def testIfThenElse02(): Bool = if (false) false else true
+    @Test
+    def testIfThenElse01(): Unit \ Assert = assertTrue(if (true) true else false)
 
-    @test
-    def testIfThenElseThreeWay01(): Bool =
+    @Test
+    def testIfThenElse02(): Unit \ Assert = assertTrue(if (false) false else true)
+
+    @Test
+    def testIfThenElseThreeWay01(): Unit \ Assert =
         let x = 0;
         let r =
             if (x == 0)
@@ -16,10 +18,10 @@ mod Test.Exp.IfThenElse {
                 1
             else
                 2;
-        r == 0
+        assertEq(expected = 0, r)
 
-    @test
-    def testIfThenElseThreeWay02(): Bool =
+    @Test
+    def testIfThenElseThreeWay02(): Unit \ Assert =
         let x = 1;
         let r =
             if (x == 0)
@@ -28,10 +30,10 @@ mod Test.Exp.IfThenElse {
                 1
             else
                 2;
-        r == 1
+        assertEq(expected = 1, r)
 
-    @test
-    def testIfThenElseThreeWay03(): Bool =
+    @Test
+    def testIfThenElseThreeWay03(): Unit \ Assert =
         let x = 2;
         let r =
             if (x == 0)
@@ -40,10 +42,10 @@ mod Test.Exp.IfThenElse {
                 1
             else
                 2;
-        r == 2
+        assertEq(expected = 2, r)
 
-    @test
-    def testIfThenElseFourWay01(): Bool =
+    @Test
+    def testIfThenElseFourWay01(): Unit \ Assert =
         let x = 0;
         let r =
             if (x == 0)
@@ -54,10 +56,10 @@ mod Test.Exp.IfThenElse {
                 2
             else
                 3;
-        r == 0
+        assertEq(expected = 0, r)
 
-    @test
-    def testIfThenElseFourWay02(): Bool =
+    @Test
+    def testIfThenElseFourWay02(): Unit \ Assert =
         let x = 1;
         let r =
             if (x == 0)
@@ -68,10 +70,10 @@ mod Test.Exp.IfThenElse {
                 2
             else
                 3;
-        r == 1
+        assertEq(expected = 1, r)
 
-    @test
-    def testIfThenElseFourWay03(): Bool =
+    @Test
+    def testIfThenElseFourWay03(): Unit \ Assert =
         let x = 2;
         let r =
             if (x == 0)
@@ -82,10 +84,10 @@ mod Test.Exp.IfThenElse {
                 2
             else
                 3;
-        r == 2
+        assertEq(expected = 2, r)
 
-    @test
-    def testIfThenElseFourWay04(): Bool =
+    @Test
+    def testIfThenElseFourWay04(): Unit \ Assert =
         let x = 3;
         let r =
             if (x == 0)
@@ -96,42 +98,46 @@ mod Test.Exp.IfThenElse {
                 2
             else
                 3;
-        r == 3
+        assertEq(expected = 3, r)
 
-    @test
-    def testIfThenElseNested01(): Bool =
-        if (true)
-            if (true) true else false
-        else
-            false
+    @Test
+    def testIfThenElseNested01(): Unit \ Assert =
+        assertTrue(
+            if (true)
+                if (true) true else false
+            else
+                false
+        )
 
-    @test
-    def testIfThenElseNested02(): Bool =
-        if (false)
-            false
-        else
-            (if (true) true else false)
+    @Test
+    def testIfThenElseNested02(): Unit \ Assert =
+        assertTrue(
+            if (false)
+                false
+            else
+                (if (true) true else false)
+        )
 
-    @test
-    def testIfThenElseBooleanFolding01(): Bool = region rc {
+    @Test
+    def testIfThenElseBooleanFolding01(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 1);
         let r =
             if ({ Ref.put(2, y); true } or true)
                 Ref.get(y)
             else
                 3;
-        r == 2
+        assertEq(expected = 2, r)
     }
 
-    @test
-    def testIfThenElseBooleanFolding02(): Bool = region rc {
+    @Test
+    def testIfThenElseBooleanFolding02(): Unit \ Assert = region rc {
         let y = Ref.fresh(rc, 1);
         let r =
             if ({ Ref.put(2, y); true } and false)
                 3
             else
                 Ref.get(y);
-        r == 2
+        assertEq(expected = 2, r)
     }
 
 }

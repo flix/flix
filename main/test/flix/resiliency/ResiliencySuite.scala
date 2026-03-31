@@ -29,7 +29,7 @@ class ResiliencySuite extends AnyFunSuite {
     val name = "Test.Resiliency." + p.getFileName
     test(name) {
       val flix = new Flix()
-      flix.addFlix(p)(Unrestricted)
+      flix.addFile(p)(Unrestricted)
       flix.compile()
     }
   }

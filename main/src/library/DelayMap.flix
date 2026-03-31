@@ -64,7 +64,7 @@ instance ForEach[DelayMap[k, v]] {
     pub def forEach(f: ((k, v)) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = DelayMap.forEach(k -> v -> f((k, v)), m)
 }
 
-mod DelayMap {
+pub mod DelayMap {
 
     import java.lang.Runtime
 

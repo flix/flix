@@ -14,14 +14,27 @@
  * limitations under the License.
  */
 
-mod String {
+pub mod String {
 
     import java.lang.System
+    import java.lang.{String => JString}
+    import java.nio.charset.StandardCharsets
     import java.util.regex.Pattern
     import java.util.regex.PatternSyntaxException
     import java.lang.IndexOutOfBoundsException
 
     use Regex.Flag
+
+    ///
+    /// Returns the character at position `i` in the string `s`.
+    ///
+    /// Throws `OutOfBounds` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, s: String): Char \ OutOfBounds =
+        if (0 <= i and i < length(s))
+            charAt(i, s)
+        else
+            OutOfBounds.outOfBounds("index ${i} is out of bounds for String of length ${length(s)}")
 
     ///
     /// Returns the character at position `i` in the string `s`.
@@ -69,13 +82,13 @@ mod String {
     pub def nonEmpty(s: String): Bool = not isEmpty(s)
 
     ///
-    /// Returns the number of characters the string `s`.
+    /// Returns the number of characters in the string `s`.
     ///
     pub def length(s: String): Int32 =
         s.length()
 
     ///
-    /// Returns the number of characters the string `s`.
+    /// Returns the number of characters in the string `s`.
     ///
     pub def size(s: String): Int32 = length(s)
 
@@ -95,7 +108,7 @@ mod String {
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex = String}, s: String): List[String] =
-        unchecked_cast(Array.toList(s.split(regex#regex)) as _ \ {})
+        unsafe IO { Array.toList(s.split(regex#regex)) }
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -139,6 +152,20 @@ mod String {
     pub def toVector(s: String): Vector[Char] = region rc {
         let arr = toArray(rc, s);
         Array.toVector(arr)
+    }
+
+    ///
+    /// Returns the given string `s` as a vector of UTF-8 bytes.
+    ///
+    pub def toBytes(s: String): Vector[Int8] =
+        unsafe IO { Array.toVector(s.getBytes(StandardCharsets.UTF_8)) }
+
+    ///
+    /// Returns a string from the given vector of UTF-8 bytes `v`.
+    ///
+    pub def fromBytes(v: Vector[Int8]): String = region rc {
+        let arr = Vector.toArray(rc, v);
+        unsafe IO { new JString(arr, StandardCharsets.UTF_8) }
     }
 
     ///
@@ -320,7 +347,7 @@ mod String {
         try {
             let p1 = Pattern.compile(pattern);
             let m1 = p1.matcher(s);
-            unchecked_cast(m1.find(0) as _ \ {})
+            unsafe IO { m1.find(0) }
         } catch {
             case _: PatternSyntaxException => false
         }
@@ -479,7 +506,7 @@ mod String {
             s
 
     ///
-    /// Alias for `takeWileLeft`.
+    /// Alias for `takeWhileLeft`.
     ///
     pub def takeWhile(f: Char -> Bool, s: String): String = takeWhileLeft(f, s)
 
@@ -709,7 +736,7 @@ mod String {
     ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `a` is empty.
+    /// Returns `false` if `s` is empty.
     ///
     pub def exists(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(f, s) {
         case None    => false

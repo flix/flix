@@ -5,58 +5,58 @@ mod Test.Exp.List {
         case Cons
     }
 
-    @test
+    @CompileTest
     def testList01(): List[Int32] = Nil
 
-    @test
+    @CompileTest
     def testList02(): List[Int32] = 1 :: Nil
 
-    @test
+    @CompileTest
     def testList03(): List[Int32] = 1 :: 2 :: Nil
 
-    @test
+    @CompileTest
     def testListOption01(): List[Option[Int32]] = Nil
 
-    @test
+    @CompileTest
     def testListOption02(): List[Option[Int32]] = None :: Nil
 
-    @test
+    @CompileTest
     def testListOption03(): List[Option[Int32]] = None :: None :: Nil
 
-    @test
+    @CompileTest
     def testListOption04(): List[Option[Int32]] = None :: Some(42) :: Nil
 
-    @test
+    @CompileTest
     def testListOption05(): List[Option[Int32]] = Some(21) :: Some(42) :: Nil
 
-    @test
+    @CompileTest
     def testListList01(): List[List[Int32]] = Nil
 
-    @test
+    @CompileTest
     def testListList02(): List[List[Int32]] = Nil :: Nil
 
-    @test
+    @CompileTest
     def testListList03(): List[List[Int32]] = (1 :: Nil) :: Nil
 
-    @test
+    @CompileTest
     def testListList04(): List[List[Int32]] = (1 :: Nil) :: (2 :: Nil) :: Nil
 
-    @test
+    @CompileTest
     def testListList05(): List[List[Int32]] = (1 :: Nil) :: (2 :: Nil) :: (Nil) :: Nil
 
-    @test
+    @CompileTest
     def testListAppend01(): List[Int32] = Nil ::: Nil
 
-    @test
+    @CompileTest
     def testListAppend02(): List[Int32] = 1 :: Nil ::: 2 :: Nil
 
-    @test
+    @CompileTest
     def testListAppend03(): List[Int32] = 1 :: 2 :: Nil ::: 3 :: 4 :: Nil
 
-    @test
+    @CompileTest
     def testListAppend05(): List[Int32] = Nil ::: Nil ::: Nil
 
-    @test
+    @CompileTest
     def testListAppend06(): List[Int32] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil
 
 }

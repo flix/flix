@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Ast.Ram {
+pub mod Fixpoint3.Ast.Ram {
     use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation, PredSym}
     use Fixpoint3.Ast.Shared.Denotation.{Relational}
     use Fixpoint3.Boxed
@@ -31,7 +31,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// A `RamProgram` represents a compiled Datalog program.
     ///
-    @Internal
     pub enum RamProgram {
         case Program(RamStmt, FactTuple, Predicates, IndexInformation, TypeInformation)
     }
@@ -40,20 +39,17 @@ mod Fixpoint3.Ast.Ram {
     /// Contains a list of `RelSym` representing the names of the relations in the program,
     /// a list of Full `RelSym` and 1 + the maximal identifier of the Full `RelSym`s.
     ///
-    @Internal
     pub type alias Predicates = (List[RelSym], List[RelSym], Int64)
 
     ///
     /// The extensible database (EDB) of a program.
     ///
-    @Internal
     pub type alias Facts = Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]
 
     ///
     /// `FactsTuple` consists of `(oldFacts, newFacts)`, where `oldFacts` are given through
     /// joining a model, while `newFacts` are EDB facts written in the Datalog program.
     ///
-    @Internal
     pub type alias FactTuple = (Facts, Facts)
 
     ///
@@ -72,26 +68,22 @@ mod Fixpoint3.Ast.Ram {
     /// `Vector#{2}` but gets expanded to `Vector#{2, 0, 1}`. Thus, the final search used
     /// by an index has length exactly equal to the relation's arity.
     ///
-    @Internal
     pub type alias Search = Vector[Int32]
 
     ///
     /// Maps to the set of `Search` for a `RelSym` in the Datalog program. It represents
     /// the indexes that will be created for `RelSym` during program evaluation.
     ///
-    @Internal
     pub type alias Indexes = Map[RelSym, Vector[Search]]
 
     ///
     /// Maps a `RelSym` and its place in `Indexes[RelSym]` to its final position in memory.
     ///
-    @Internal
     pub type alias IndexPositions = Map[(RelSym, Int32), Int32]
 
     ///
     /// The indexes to be created during program evaluation and their positions in memory.
     ///
-    @Internal
     pub type alias IndexInformation = (Indexes, IndexPositions)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -118,7 +110,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `Comment(string)` is a comment for debugging.
     ///
-    @Internal
     pub enum RamStmt {
         case Insert(RelOp)
         case MergeInto(RelSym, RelSym)
@@ -168,7 +159,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `If(bools, body)` evaluates `body` if `bools` is true.
     ///
-    @Internal
     pub enum RelOp {
         case Search(RowVar, RelSym, RelType, RelOp)
         case Query(RowVar, RelSym, Vector[BoolExp], Int32, RelType, RelOp)
@@ -207,8 +197,8 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `IsEmpty(relSym)`: True if there are no facts in relation `relSym`.
     ///
-    /// `NotMemberOf(terms, relSym)`: True if the tuple constructed from `terms` is not
-    /// in relation `relSym`.
+    /// `NotMemberOf(terms, relSym, repNegative)`: True if the tuple constructed from `terms` is not
+    /// in relation `relSym`. `repNegative` is true if `NotMemberOf` is introduced by a `not A(...)`.
     ///
     /// `NotBot(term, leq, bot)`: True if `term` is not a `bot`.
     /// `term` must be a Meet or RowLoad of a lattice var.
@@ -223,11 +213,10 @@ mod Fixpoint3.Ast.Ram {
     /// `Guard4(f, term1, term2, term3, term4)`: True if `f(term1, term2, term3, term4) == true`.
     /// `Guard5(f, term1, term2, term3, term4, term5)`: True if `f(term1, term2, term3, term4, term5) == true`.
     ///
-    @Internal
     pub enum BoolExp {
         case Not(BoolExp)
         case IsEmpty(RelSym)
-        case NotMemberOf(Vector[RamTerm], RelSym)
+        case NotMemberOf(Vector[RamTerm], RelSym, Bool)
         case NotBot(RamTerm, Boxed -> Boxed -> Bool, Boxed)
         case Leq(Boxed, RowVar, RelSym)
         case Eq(RamTerm, RamTerm)
@@ -243,7 +232,7 @@ mod Fixpoint3.Ast.Ram {
             match exp {
                 case BoolExp.Not(boolExp)                  => "not (${boolExp})"
                 case BoolExp.IsEmpty(relSym)               => "${relSym} = ∅"
-                case BoolExp.NotMemberOf(terms, relSym)    => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
+                case BoolExp.NotMemberOf(terms, relSym, _) => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
                 case BoolExp.NotBot(term, _, _)            => "(${term}) ≠ ⊥"
                 case BoolExp.Leq(elem, _, term)            => "${elem} ≤ (${term})"
                 case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
@@ -284,7 +273,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `App5(f, term1, term2, term3, term4, term5)` represents `f(term1, term2, term3, term4, term4)`.
     ///
-    @Internal
     pub enum RamTerm {
         case Lit(Boxed, Type)
         case ProvMax(Vector[(RowVar, Int32)])
@@ -321,7 +309,6 @@ mod Fixpoint3.Ast.Ram {
     /// `RelSym(predSym, arity, den)` represents the relation of `predSym`
     /// which has arity `arity` and denotation `den`.
     ///
-    @Internal
     pub enum RelSym {
         case Symbol(PredSym, Int32, Denotation)
     }
@@ -366,13 +353,11 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// Used for accessing values in maps.
     ///
-    @Internal
     pub def makeFakeRelSym(predSym: PredSym): RelSym = RelSym.Symbol(predSym, -1, Relational)
 
     ///
     /// Returns the arity of `relSym`.
     ///
-    @Internal
     pub def arityOf(relSym: RelSym): Int32 = match relSym {
         case RelSym.Symbol(_, arity, _) => arity
     }
@@ -380,7 +365,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// Returns the arity of the non-lattice part of `relSym`.
     ///
-    @Internal
     pub def arityOfNonLat(relSym: RelSym): Int32 = match relSym {
         case RelSym.Symbol(_, arity, den) => match den {
             case Relational => arity
@@ -391,7 +375,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// Returns the denotation of `relSym`.
     ///
-    @Internal
     pub def toDenotation(relSym: RelSym): Denotation = match relSym {
         case RelSym.Symbol(_, _, den) => den
     }
@@ -399,7 +382,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// Returns the identifier of `relSym`.
     ///
-    @Internal
     pub def toId(relSym: RelSym): Int64 = match relSym {
         case RelSym.Symbol(PredSym.PredSym(_, id), _, _) => id
     }
@@ -419,7 +401,6 @@ mod Fixpoint3.Ast.Ram {
     /// `e1` and `e2` would be the identifiers. Identifiers will only be defined
     /// once in a program, but can be reffered to from elsewhere.
 
-    @Internal
     pub enum RowVar with Eq {
         case Named(Int32)
     }

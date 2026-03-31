@@ -128,7 +128,6 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), singletonStaticConstructor(Constructor, SingletonField)(_))
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -136,12 +135,6 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     def SingletonField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
-
-    /** `[] --> return String` */
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      pushString("()")
-      ARETURN()
-    }
 
   }
 
@@ -154,7 +147,7 @@ object BackendObjType {
       cm.mkField(ExpField, IsPublic, NotFinal, IsVolatile)
       cm.mkField(ValueField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(LockField, IsPrivate, NotFinal, NotVolatile)
-      cm.mkMethod(ForceMethod, IsPublic, IsFinal, forceIns(_))
+      cm.mkMethod(Nil, ForceMethod, IsPublic, IsFinal, forceIns(_))
 
       cm.closeClassMaker()
     }
@@ -237,7 +230,6 @@ object BackendObjType {
 
       elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -262,20 +254,6 @@ object BackendObjType {
         RETURN()
       }
 
-    /** `[] --> return String` */
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      Util.mkString(Some(_ => pushString("(")), Some(_ => pushString(")")), elms.length, getIndexField)
-      xReturn(BackendType.String)
-    }
-
-    /** `[] --> [this.index(i).xString()]` */
-    private def getIndexField(i: Int)(implicit mv: MethodVisitor): Unit = {
-      val field = IndexField(i)
-      thisLoad()
-      GETFIELD(field)
-      xToString(field.tpe)
-    }
-
   }
 
   case class Struct(elms: List[BackendType]) extends BackendObjType {
@@ -285,7 +263,6 @@ object BackendObjType {
 
       elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -310,20 +287,6 @@ object BackendObjType {
         }
         RETURN()
       }
-    }
-
-    /** `[] --> return String` */
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      Util.mkString(Some(_ => pushString("Struct(")), Some(_ => pushString(")")), elms.length, getIndexString)
-      xReturn(BackendType.String)
-    }
-
-    /** `[] --> [this.index(i).xString()]` */
-    private def getIndexString(i: Int)(implicit mv: MethodVisitor): Unit = {
-      val field = IndexField(i)
-      thisLoad()
-      GETFIELD(field)
-      xToString(field.tpe)
     }
 
   }
@@ -364,7 +327,6 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), singletonStaticConstructor(Constructor, SingletonField)(_))
       cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -382,12 +344,6 @@ object BackendObjType {
       PUTFIELD(Tagged.NameField)
       RETURN()
     }
-
-    /** `[] --> return String` */
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      Tagged.mkTagName(name)
-      xReturn(BackendType.String)
-    }
   }
 
   case class Tag(elms: List[BackendType]) extends TagType {
@@ -398,7 +354,6 @@ object BackendObjType {
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(Tagged.Constructor)(_))
       elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -408,25 +363,6 @@ object BackendObjType {
     def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, s"v$i", elms(i))
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
-
-    /** `[] --> return String` */
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      Util.mkString(Some({ _ =>
-        thisLoad()
-        GETFIELD(NameField)
-        pushString("(")
-        INVOKEVIRTUAL(ClassConstants.String.Concat)
-      }), Some(_ => pushString(")")), elms.length, getIndexString)
-      xReturn(BackendType.String)
-    }
-
-    /** `[] --> [this.index(i).xString()]` */
-    private def getIndexString(i: Int)(implicit mv: MethodVisitor): Unit = {
-      val field = IndexField(i)
-      thisLoad()
-      GETFIELD(field)
-      xToString(field.tpe)
-    }
   }
 
   /**
@@ -703,7 +639,6 @@ object BackendObjType {
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex), IsPublic, NotFinal, NotVolatile))
       specializedInterface.foreach(i => cm.mkMethod(i.functionMethod, IsPublic, NotFinal, i.functionIns(_)))
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -711,16 +646,6 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
-
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      val argString = args match {
-        case Nil => "()"
-        case arg :: Nil => arg.toErasedString
-        case _ => args.map(_.toErasedString).mkString("(", ", ", ")")
-      }
-      pushString(s"$argString -> ${result.toErasedString}")
-      ARETURN()
-    }
   }
 
   case class Defn(sym: Symbol.DefnSym) extends BackendObjType
@@ -732,10 +657,8 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), singletonStaticConstructor(Constructor, SingletonField)(_))
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
-      cm.mkMethod(LookupFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
-      cm.mkMethod(RestrictFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
-      cm.mkMethod(ToTailStringMethod, IsPublic, IsFinal, toTailStringIns(_))
+      cm.mkMethod(Nil, LookupFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
+      cm.mkMethod(Nil, RestrictFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
 
       cm.closeClassMaker()
     }
@@ -749,23 +672,6 @@ object BackendObjType {
     private def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
 
     private def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
-
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      pushString("{}")
-      ARETURN()
-    }
-
-    private def ToTailStringMethod: InstanceMethod = interface.ToTailStringMethod.implementation(this.jvmName)
-
-    private def toTailStringIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, JvmName.StringBuilder.toTpe) { sb =>
-        sb.load()
-        pushString("}")
-        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
-        ARETURN()
-      }
-    }
 
     private def throwUnsupportedExc(implicit mv: MethodVisitor): Unit = {
       throwUnsupportedOperationException(
@@ -781,10 +687,8 @@ object BackendObjType {
       cm.mkField(LabelField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(ValueField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(RestField, IsPublic, NotFinal, NotVolatile)
-      cm.mkMethod(Record.LookupFieldMethod.implementation(this.jvmName), IsPublic, IsFinal, lookupFieldIns(_))
-      cm.mkMethod(RestrictFieldMethod, IsPublic, IsFinal, restrictFieldIns(_))
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
-      cm.mkMethod(Record.ToTailStringMethod.implementation(this.jvmName), IsPublic, IsFinal, toTailStringIns(_))
+      cm.mkMethod(Nil, Record.LookupFieldMethod.implementation(this.jvmName), IsPublic, IsFinal, lookupFieldIns(_))
+      cm.mkMethod(Nil, RestrictFieldMethod, IsPublic, IsFinal, restrictFieldIns(_))
 
       cm.closeClassMaker()
     }
@@ -841,54 +745,6 @@ object BackendObjType {
       }
     }
 
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      // save the `rest` for the last recursive call
-      thisLoad()
-      GETFIELD(this.RestField)
-      // build this segment of the string
-      NEW(JvmName.StringBuilder)
-      DUP()
-      INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
-      pushString("{")
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      thisLoad()
-      GETFIELD(this.LabelField)
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      pushString(" = ")
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      thisLoad()
-      GETFIELD(this.ValueField)
-      xToString(this.ValueField.tpe)
-      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-      INVOKEINTERFACE(Record.ToTailStringMethod)
-      ARETURN()
-    }
-
-    private def toTailStringIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, JvmName.StringBuilder.toTpe) { sb =>
-        // save the `rest` for the last recursive call
-        thisLoad()
-        GETFIELD(this.RestField)
-        // build this segment of the string
-        sb.load()
-        pushString(", ")
-        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-        thisLoad()
-        GETFIELD(this.LabelField)
-        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-        pushString(" = ")
-        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-        thisLoad()
-        GETFIELD(this.ValueField)
-        xToString(this.ValueField.tpe)
-        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
-        // call the tailString of `rest`
-        INVOKEINTERFACE(Record.ToTailStringMethod)
-        ARETURN()
-
-      }
-    }
-
     /**
       * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
       */
@@ -907,7 +763,6 @@ object BackendObjType {
 
       cm.mkInterfaceMethod(LookupFieldMethod)
       cm.mkInterfaceMethod(RestrictFieldMethod)
-      cm.mkInterfaceMethod(ToTailStringMethod)
 
       cm.closeClassMaker()
     }
@@ -917,9 +772,6 @@ object BackendObjType {
 
     def RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "restrictField",
       mkDescriptor(BackendType.String)(this.toTpe))
-
-    def ToTailStringMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "toTailString",
-      mkDescriptor(JvmName.StringBuilder.toTpe)(BackendType.String))
   }
 
   /**
@@ -941,7 +793,7 @@ object BackendObjType {
       cm.mkField(EndLineField, IsPublic, IsFinal, NotVolatile)
       cm.mkField(EndColField, IsPublic, IsFinal, NotVolatile)
 
-      cm.mkMethod(ToStringMethod, IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(Nil, ToStringMethod, IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -1289,11 +1141,11 @@ object BackendObjType {
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
 
-      cm.mkMethod(SpawnMethod, IsPublic, IsFinal, spawnIns(_))
-      cm.mkMethod(ExitMethod, IsPublic, IsFinal, exitIns(_))
-      cm.mkMethod(ReportChildExceptionMethod, IsPublic, IsFinal, reportChildExceptionIns(_))
-      cm.mkMethod(ReThrowChildExceptionMethod, IsPublic, IsFinal, reThrowChildExceptionIns(_))
-      cm.mkMethod(RunOnExitMethod, IsPublic, IsFinal, runOnExitIns(_))
+      cm.mkMethod(Nil, SpawnMethod, IsPublic, IsFinal, spawnIns(_))
+      cm.mkMethod(Nil, ExitMethod, IsPublic, IsFinal, exitIns(_))
+      cm.mkMethod(Nil, ReportChildExceptionMethod, IsPublic, IsFinal, reportChildExceptionIns(_))
+      cm.mkMethod(Nil, ReThrowChildExceptionMethod, IsPublic, IsFinal, reThrowChildExceptionIns(_))
+      cm.mkMethod(Nil, RunOnExitMethod, IsPublic, IsFinal, runOnExitIns(_))
 
       cm.closeClassMaker()
     }
@@ -1459,7 +1311,7 @@ object BackendObjType {
 
       cm.mkField(RegionField, IsPrivate, IsFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(UncaughtExceptionMethod, IsPublic, IsFinal, uncaughtExceptionsIns(_))
+      cm.mkMethod(Nil, UncaughtExceptionMethod, IsPublic, IsFinal, uncaughtExceptionsIns(_))
 
       cm.closeClassMaker()
     }
@@ -1872,8 +1724,8 @@ object BackendObjType {
       cm.mkField(HeadField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(TailField, IsPublic, NotFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkMethod(PushMethod, IsPublic, IsFinal, Frames.pushImplementation(_))
-      cm.mkMethod(Frames.ReverseOntoMethod.implementation(this.jvmName), IsPublic, IsFinal, reverseOntoIns(_))
+      cm.mkMethod(Nil, PushMethod, IsPublic, IsFinal, Frames.pushImplementation(_))
+      cm.mkMethod(Nil, Frames.ReverseOntoMethod.implementation(this.jvmName), IsPublic, IsFinal, reverseOntoIns(_))
 
       cm.closeClassMaker()
     }
@@ -1912,8 +1764,8 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkMethod(PushMethod, IsPublic, IsFinal, Frames.pushImplementation(_))
-      cm.mkMethod(Frames.ReverseOntoMethod.implementation(this.jvmName), IsPublic, IsFinal, reverseOntoIns(_))
+      cm.mkMethod(Nil, PushMethod, IsPublic, IsFinal, Frames.pushImplementation(_))
+      cm.mkMethod(Nil, Frames.ReverseOntoMethod.implementation(this.jvmName), IsPublic, IsFinal, reverseOntoIns(_))
 
       cm.closeClassMaker()
     }
@@ -1966,7 +1818,7 @@ object BackendObjType {
       cm.mkField(FramesField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(TailField, IsPublic, NotFinal, NotVolatile)
 
-      cm.mkMethod(Resumption.RewindMethod.implementation(this.jvmName), IsPublic, IsFinal, rewindIns(_))
+      cm.mkMethod(Nil, Resumption.RewindMethod.implementation(this.jvmName), IsPublic, IsFinal, rewindIns(_))
 
       cm.closeClassMaker()
     }
@@ -2006,7 +1858,7 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Resumption.jvmName))
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
-      cm.mkMethod(Resumption.RewindMethod.implementation(this.jvmName), IsPublic, IsFinal, rewindIns(_))
+      cm.mkMethod(Nil, Resumption.RewindMethod.implementation(this.jvmName), IsPublic, IsFinal, rewindIns(_))
 
       cm.closeClassMaker()
     }
@@ -2165,8 +2017,8 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal, superClass.jvmName)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       cm.mkField(ResumptionField, IsPrivate, IsFinal, NotVolatile)
-      cm.mkMethod(InvokeMethod, IsPublic, NotFinal, invokeIns(_))
-      cm.mkMethod(UniqueMethod, IsPublic, NotFinal, uniqueIns(_))
+      cm.mkMethod(Nil, InvokeMethod, IsPublic, NotFinal, invokeIns(_))
+      cm.mkMethod(Nil, UniqueMethod, IsPublic, NotFinal, uniqueIns(_))
       cm.closeClassMaker()
     }
 

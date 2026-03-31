@@ -1,5 +1,7 @@
 mod Test.Dec.Assoc.Type.Kind {
 
+    use Assert.assertEq
+
     ////////////////////////////////////////////////////////
     // Type Definitions                                   //
     ////////////////////////////////////////////////////////
@@ -79,71 +81,71 @@ mod Test.Dec.Assoc.Type.Kind {
     ////////////////////////////////////////////////////////
 
     @Test
-    pub def testInt3201(): Bool =
-        List#{"1", "1"} == duplicateInt3201(1)
+    pub def testInt3201(): Unit \ Assert =
+        assertEq(expected = List#{"1", "1"}, duplicateInt3201(1))
 
     @Test
-    pub def testInt3202(): Bool =
-        List#{"1", "1"} == duplicateInt3202(1)
+    pub def testInt3202(): Unit \ Assert =
+        assertEq(expected = List#{"1", "1"}, duplicateInt3202(1))
 
     @Test
-    pub def testInt3203(): Bool =
-        List#{"124", "124"} == duplicateInt3201(124)
+    pub def testInt3203(): Unit \ Assert =
+        assertEq(expected = List#{"124", "124"}, duplicateInt3201(124))
 
     @Test
-    pub def testInt3204(): Bool =
-        List#{"124", "124"} == duplicateInt3202(124)
+    pub def testInt3204(): Unit \ Assert =
+        assertEq(expected = List#{"124", "124"}, duplicateInt3202(124))
 
     @Test
-    pub def testInt3205(): Bool =
-        List#{"1"} == twiceInt3201(5)
+    pub def testInt3205(): Unit \ Assert =
+        assertEq(expected = List#{"1"}, twiceInt3201(5))
 
     @Test
-    pub def testInt3206(): Bool =
-        List#{"1"} == twiceInt3202(5)
+    pub def testInt3206(): Unit \ Assert =
+        assertEq(expected = List#{"1"}, twiceInt3202(5))
 
     @Test
-    pub def testInt3207(): Bool =
-        List#{"1"} == twiceInt3201(200)
+    pub def testInt3207(): Unit \ Assert =
+        assertEq(expected = List#{"1"}, twiceInt3201(200))
 
     @Test
-    pub def testInt3208(): Bool =
-        List#{"1"} == twiceInt3202(200)
+    pub def testInt3208(): Unit \ Assert =
+        assertEq(expected = List#{"1"}, twiceInt3202(200))
 
 
     // Vector
 
     @Test
-    pub def testInt6401(): Bool =
-        Vector#{"1", "1"} == duplicateInt6401(1i64)
+    pub def testInt6401(): Unit \ Assert =
+        assertEq(expected = Vector#{"1", "1"}, duplicateInt6401(1i64))
 
     @Test
-    pub def testInt6402(): Bool =
-        Vector#{"1", "1"} == duplicateInt6402(1i64)
+    pub def testInt6402(): Unit \ Assert =
+        assertEq(expected = Vector#{"1", "1"}, duplicateInt6402(1i64))
 
     @Test
-    pub def testInt6403(): Bool =
-        Vector#{"124", "124"} == duplicateInt6401(124i64)
+    pub def testInt6403(): Unit \ Assert =
+        assertEq(expected = Vector#{"124", "124"}, duplicateInt6401(124i64))
 
     @Test
-    pub def testInt6404(): Bool =
-        Vector#{"124", "124"} == duplicateInt6402(124i64)
+    pub def testInt6404(): Unit \ Assert =
+        assertEq(expected = Vector#{"124", "124"}, duplicateInt6402(124i64))
 
     @Test
-    pub def testInt6405(): Bool =
-        Vector#{"1"} == twiceInt6401(5i64)
+    pub def testInt6405(): Unit \ Assert =
+        assertEq(expected = Vector#{"1"}, twiceInt6401(5i64))
 
     @Test
-    pub def testInt6406(): Bool =
-        Vector#{"1"} == twiceInt6402(5i64)
+    pub def testInt6406(): Unit \ Assert =
+        assertEq(expected = Vector#{"1"}, twiceInt6402(5i64))
 
     @Test
-    pub def testInt6407(): Bool =
-        Vector#{"1"} == twiceInt6401(200i64)
+    pub def testInt6407(): Unit \ Assert =
+        assertEq(expected = Vector#{"1"}, twiceInt6401(200i64))
 
     @Test
-    pub def testInt6408(): Bool =
-        Vector#{"1"} == twiceInt6402(200i64)
+    pub def testInt6408(): Unit \ Assert =
+        assertEq(expected = Vector#{"1"}, twiceInt6402(200i64))
 
 
 }

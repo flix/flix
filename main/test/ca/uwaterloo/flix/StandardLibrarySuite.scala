@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.{FileOps, Options, Result}
@@ -41,7 +43,7 @@ class StandardLibrarySuite extends AnyFunSuite {
     val paths = FileOps.getFlixFilesIn(Paths.get(Path), 1)
     for (p <- paths) {
       implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-      flix.addFlix(p)
+      flix.addFile(p)
     }
 
     // Compile the program with all test suites.
@@ -49,13 +51,13 @@ class StandardLibrarySuite extends AnyFunSuite {
       case Result.Ok(compilationResult) =>
         runTests(compilationResult)
       case Result.Err(errors) =>
-        val es = errors.map(_.messageWithLoc(flix.getFormatter)).mkString("\n")
-        fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
+        fail(CompilationMessage.formatAll(errors.toList)(flix.getFormatter, None))
     }
   } catch {
     case ex: Throwable =>
       // We create a fictitious test to ensure that something shows up.
       test("StandardLibrary -- COMPILATION FAILED.") {
+        ex.printStackTrace()
         fail(ex)
       }
   }

@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst, shared}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
@@ -22,6 +22,7 @@ object Safety {
   /** Checks the safety and well-formedness of `root`. */
   def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
     implicit val sctx: SharedContext = SharedContext.mk()
+    implicit val _r: Root = root
 
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
@@ -32,7 +33,7 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `defn`. */
-  private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
+  private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
     checkSpecPermissions(defn.spec)
     visitExp(defn.exp)
@@ -40,14 +41,14 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `trt`. */
-  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
+  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, root: Root, flix: Flix): Trait = {
     trt.assocs.foreach(as => as.tpe.foreach(t => checkIOPermissions(t.effects, as.loc)))
     trt.sigs.foreach(visitSig)
     trt
   }
 
   /** Checks the safety and well-formedness of `inst`. */
-  private def visitInstance(inst: TypedAst.Instance)(implicit flix: Flix, sctx: SharedContext): TypedAst.Instance = {
+  private def visitInstance(inst: TypedAst.Instance)(implicit sctx: SharedContext, root: Root, flix: Flix): TypedAst.Instance = {
     inst.assocs.foreach(as => checkIOPermissions(as.tpe.effects, as.loc))
     inst.econstrs.foreach { constr =>
       checkIOPermissions(constr.tpe1.effects, constr.loc)
@@ -58,16 +59,17 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `sig`. */
-  private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
+  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
     checkSpecPermissions(sig.spec)
     sig.exp.foreach(visitExp(_))
   }
 
+
+
   /**
     * Checks the safety and well-formedness of `exp0`.
     *
-    *   - [[Expr.TypeMatch]] must end with a default case.
     *   - [[Expr.Handler]] are not defined for primitive effects.
     *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
     *   - [[Expr.UncheckedCast]] are not impossible.
@@ -75,7 +77,7 @@ object Safety {
     *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
     *   - [[Expr.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
     */
-  private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
+  private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
       ()
 
@@ -97,20 +99,20 @@ object Safety {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(_, exps, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Unary(_, exp, _, _, _) =>
@@ -124,7 +126,7 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
@@ -136,9 +138,9 @@ object Safety {
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(exp)
 
     case Expr.Discard(exp, _, _) =>
       visitExp(exp)
@@ -149,18 +151,6 @@ object Safety {
         rule.guard.foreach(visitExp)
         visitExp(rule.exp)
       }
-
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      // Check whether the last case in the type match looks like `..: _`.
-      rules.lastOption match {
-        // Use top scope since the rigidity check only cares if it's a syntactically known variable.
-        case Some(TypeMatchRule(_, Type.Var(sym, _), _, _)) if renv.isFlexible(sym)(Scope.Top) =>
-          ()
-        case Some(_) | None =>
-          sctx.errors.add(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
-      }
-      visitExp(exp)
-      rules.foreach(rule => visitExp(rule.exp))
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
@@ -252,12 +242,10 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case Expr.Unsafe(exp, _, _, _, loc) =>
+    case Expr.Unsafe(exp, _, _, _, _, loc) =>
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
-      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
@@ -287,9 +275,17 @@ object Safety {
       checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
+    case Expr.InvokeSuperConstructor(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
+      args.foreach(visitExp)
+
     case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
       checkPermissions(loc.security, loc)
       visitExp(exp)
+      args.foreach(visitExp)
+
+    case Expr.InvokeSuperMethod(_, args, _, _, loc) =>
+      checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
@@ -312,9 +308,10 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
+    case newObject@Expr.NewObject(_, _, _, _, constructors, methods, loc) =>
       checkPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
+      constructors.foreach(c => visitExp(c.exp))
       methods.foreach(method => visitExp(method.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>
@@ -433,10 +430,11 @@ object Safety {
   }
 
   /** Checks if `cast` is legal. */
-  private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
+  private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = cast match {
     case Expr.CheckedCast(_, exp, tpe, _, loc) =>
-      val from = exp.tpe
-      val to = tpe
+      // Attempt to unpack any associated type in the types
+      val from = eraseKnownAssociatedTypes(exp.tpe)
+      val to = eraseKnownAssociatedTypes(tpe)
       (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
 
         // Allow casting Null to a Java type.
@@ -447,7 +445,7 @@ object Safety {
         case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Regex, _)) => ()
         case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Array, _)) => ()
 
-        // Allow casting one Java type to another if there is a sub-type relationship.
+        // Allow casting one Java type to another if there is a subtype relationship.
         case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
           if (right.isAssignableFrom(left)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
@@ -490,6 +488,56 @@ object Safety {
         // Disallow all other casts.
         case _ => sctx.errors.add(IllegalCheckedCast(from, to, loc))
       }
+  }
+
+  /**
+    * Returns `tpe0` where known associated types and effects have been erased (i.e. replaced by their actual types).
+    *
+    * Only erases associated types and effects for monomorphic (i.e. concrete known types).
+    */
+  private def eraseKnownAssociatedTypes(tpe0: Type)(implicit root: Root): Type = tpe0 match {
+    case Type.Var(_, _) => tpe0
+
+    case Type.Cst(_, _) => tpe0
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      Type.Apply(eraseKnownAssociatedTypes(tpe1), eraseKnownAssociatedTypes(tpe2), loc)
+
+    case Type.Alias(symUse, args, tpe, loc) =>
+      Type.Alias(symUse, args.map(eraseKnownAssociatedTypes), eraseKnownAssociatedTypes(tpe), loc)
+
+    case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), arg, kind, loc) =>
+      val tpe = eraseKnownAssociatedTypes(arg)
+      val optConcreteType = tryEraseAssocType(sym, tpe)
+      // Optionally return the concrete type, falling back to the erased type in the argument.
+      optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
+
+    case Type.JvmToType(tpe, loc) =>
+      Type.JvmToType(eraseKnownAssociatedTypes(tpe), loc)
+
+    case Type.JvmToEff(tpe, loc) =>
+      Type.JvmToEff(eraseKnownAssociatedTypes(tpe), loc)
+
+    case Type.UnresolvedJvmType(member, loc) =>
+      Type.UnresolvedJvmType(member.map(eraseKnownAssociatedTypes), loc)
+
+  }
+
+  /** Returns the monomorphic / concrete associated type of `sym0` from trait instance on `tpe0` if it exists. */
+  private def tryEraseAssocType(sym0: Symbol.AssocTypeSym, tpe0: Type)(implicit root: Root): Option[Type] = {
+    root.eqEnv.getAssocDef(sym0, tpe0).map(_.ret).filter(isMonomorphicType)
+  }
+
+  /** Returns `true` iff all types in `tpe0` are monomorphic (i.e. there are no type variables). */
+  private def isMonomorphicType(tpe0: Type): Boolean = tpe0 match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => true
+    case Type.Apply(tpe1, tpe2, _) => isMonomorphicType(tpe1) && isMonomorphicType(tpe2)
+    case Type.Alias(_, args, tpe, _) => args.forall(isMonomorphicType) && isMonomorphicType(tpe)
+    case Type.AssocType(_, arg, _, _) => isMonomorphicType(arg)
+    case Type.JvmToType(tpe, _) => isMonomorphicType(tpe)
+    case Type.JvmToEff(tpe, _) => isMonomorphicType(tpe)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.forall(isMonomorphicType)
   }
 
   /**
@@ -542,7 +590,7 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `c`. */
-  private def checkConstraint(c: Constraint)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = {
+  private def checkConstraint(c: Constraint)(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = {
     // Compute the set of positively defined variable symbols in the constraint.
     val posVars = positivelyDefinedVariables(c)
 
@@ -595,7 +643,7 @@ object Safety {
     * @param quantVars the quantified variables, not bound by lexical scope.
     * @param latVars   the variables in lattice position.
     */
-  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = p match {
+  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = p match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // Check for non-positively bound negative variables.
       polarity match {
@@ -713,7 +761,7 @@ object Safety {
     */
   private def checkCatchClass(clazz: Class[?], loc: SourceLocation)(implicit sctx: SharedContext): Unit =
     if (!isThrowable(clazz)) {
-      sctx.errors.add(IllegalCatchType(loc))
+      sctx.errors.add(IllegalCatchType(clazz, loc))
     }
 
   /** Returns `true` if `clazz` is [[java.lang.Throwable]] or a subclass of it. */
@@ -721,8 +769,8 @@ object Safety {
     classOf[Throwable].isAssignableFrom(clazz)
 
   /** Checks that the type of the argument to `throw` is [[java.lang.Throwable]] or a subclass. */
-  private def checkThrow(exp: Expr)(implicit sctx: SharedContext): Unit =
-    if (!isThrowableType(exp.tpe)) sctx.errors.add(IllegalThrowType(exp.loc))
+  private def checkThrow(exp: Expr)(implicit sctx: SharedContext, flix: Flix): Unit =
+    if (!isThrowableType(exp.tpe)) sctx.errors.add(IllegalThrowType(exp.tpe, exp.loc))
 
   /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
   @tailrec
@@ -737,19 +785,36 @@ object Safety {
     * are supposed to implement `clazz`.
     *
     * The conditions are that:
-    *   - `clazz` must be an interface or have a non-private constructor without arguments.
+    *   - `clazz` must be an interface or have a non-private constructor without arguments (unless user-defined constructors are provided).
     *   - `clazz` must be public.
+    *   - Each constructor body must be exactly a `super(...)` call.
+    *   - There can be at most one constructor.
     *   - `methods` must take the object itself (`this`) as the first argument.
     *   - `methods` must include all required signatures (e.g. abstract methods).
     *   - `methods` must not include non-existing methods.
     *   - `methods` must not let control effects escape.
     */
   private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, tpe0, _, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe0, _, cs, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
-      // `clazz` must be an interface or have a non-private constructor without arguments.
-      if (!clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz)) {
+      // `clazz` must be an interface or have a non-private constructor without arguments
+      // (unless user-defined constructors are provided).
+      if (!clazz.isInterface && cs.isEmpty && !hasNonPrivateZeroArgConstructor(clazz)) {
         sctx.errors.add(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
+      }
+
+      // Each constructor body must be exactly a `super(...)` call.
+      cs.foreach {
+        case JvmConstructor(exp, _, _, constructorLoc) =>
+          exp match {
+            case _: Expr.InvokeSuperConstructor => () // OK
+            case _ => sctx.errors.add(NewObjectConstructorMissingSuperCall(clazz, constructorLoc))
+          }
+      }
+
+      // There can be at most one constructor.
+      if (cs.length > 1) {
+        sctx.errors.add(NewObjectTooManyConstructors(clazz, loc))
       }
 
       // `clazz` must be public.
@@ -759,7 +824,7 @@ object Safety {
 
       // `methods` must take the object itself (`this`) as the first argument.
       methods.foreach {
-        case JvmMethod(ident, fparams, _, _, _, methodLoc) =>
+        case JvmMethod(_, ident, fparams, _, _, _, methodLoc) =>
           val firstParam = fparams.head
           firstParam.tpe match {
             case t if Type.eraseAliases(t) == tpe =>
@@ -805,7 +870,7 @@ object Safety {
   /** Returns a map of `methods` based on their [[MethodSignature]]. */
   private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
     methods.map {
-      case m@JvmMethod(ident, fparams, _, retTpe, _, _) =>
+      case m@JvmMethod(_, ident, fparams, _, retTpe, _, _) =>
         // Drop the first formal parameter (which always represents `this`)
         val paramTypes = fparams.tail.map(_.tpe)
         val signature = MethodSignature(ident.name, paramTypes.map(Type.eraseAliases), Type.eraseAliases(retTpe))
@@ -817,7 +882,7 @@ object Safety {
   private def getInstanceMethods(clazz: Class[?]): Map[MethodSignature, java.lang.reflect.Method] = {
     val methods = JvmUtils.getInstanceMethods(clazz)
     methods.map(m => {
-      val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
+      val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.instantiateJavaTypeWithObjectArgs(_, SourceLocation.Unknown)), Type.instantiateJavaTypeWithObjectArgs(m.getReturnType, SourceLocation.Unknown))
       signature -> m
     }).toMap
   }

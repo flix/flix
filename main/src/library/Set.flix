@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{Set => JSet}
 
 ///
 /// The Set type.
@@ -113,18 +112,7 @@ instance ForEach[Set[a]] {
     pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef = Set.forEach(f, s)
 }
 
-instance ToJava[Set[a]] with Order[a] {
-    type Out = JSet
-    type Aef = IO
-    pub def toJava(s: Set[a]): JSet \ IO = Adaptor.toSet(s)
-}
-
-instance ToFlix[Set[a]] with Order[a] {
-    type In = JSet
-    pub def toFlix(s: JSet): Set[a] = Adaptor.fromSet(s)
-}
-
-mod Set {
+pub mod Set {
 
     ///
     /// Returns a string representation of the given set `s`.

@@ -21,7 +21,7 @@
 ///
 
 
-mod GetOpt {
+pub mod GetOpt {
 
     ///
     /// `ArgOrder` defines how to parse further arguments that follow non-options.

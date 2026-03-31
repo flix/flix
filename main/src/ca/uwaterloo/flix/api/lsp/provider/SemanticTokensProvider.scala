@@ -29,9 +29,10 @@ import scala.collection.mutable.ArrayBuffer
 object SemanticTokensProvider {
 
   /**
-    * Processes a request for (full) semantic tokens.
+    * Returns the semantic tokens for the given URI as SemanticToken objects.
+    * Use this when you need direct access to the tokens (e.g., for highlighting).
     */
-  def provideSemanticTokens(uri: String)(implicit root: Root): List[Int] = {
+  def getSemanticTokens(uri: String)(implicit root: Root): List[SemanticToken] = {
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
@@ -47,17 +48,17 @@ object SemanticTokensProvider {
     val keywordModifierOrCommentTokens = sourceOpt match {
       case Some(source) =>
         root.tokens(source).iterator.collect {
-          case Token(kind, src, _, _, sp1, sp2) if kind.isKeyword =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Keyword, Nil, loc)
+          case token: Token if token.kind.isKeyword =>
+            SemanticToken(SemanticTokenType.Keyword, Nil, token.mkSourceLocation())
 
-          case Token(kind, src, _, _, sp1, sp2) if kind.isModifier =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Modifier, Nil, loc)
+          case token: Token if token.kind.isModifier =>
+            SemanticToken(SemanticTokenType.Modifier, Nil, token.mkSourceLocation())
 
-          case Token(kind, src, _, _, sp1, sp2) if kind.isComment =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Comment, Nil, loc)
+          case token: Token if token.kind.isCommentNonDoc =>
+            SemanticToken(SemanticTokenType.Comment, Nil, token.mkSourceLocation())
+
+          case token: Token if token.kind.isCommentDoc =>
+            SemanticToken(SemanticTokenType.Comment, List(SemanticTokenModifier.Documentation), token.mkSourceLocation())
         }
       case None => Iterator.empty
     }
@@ -135,12 +136,15 @@ object SemanticTokensProvider {
     //
     // Split multiline tokens in the list into multiple single-line tokens.
     //
-    val splitTokens = splitToken(filteredTokens)
+    splitToken(filteredTokens)
+  }
 
-    //
-    // Encode the semantic tokens as a list of integers.
-    //
-    encodeSemanticTokens(splitTokens)
+  /**
+    * Processes a request for (full) semantic tokens.
+    * Returns LSP-encoded format for the language server protocol.
+    */
+  def provideSemanticTokens(uri: String)(implicit root: Root): List[Int] = {
+    encodeSemanticTokens(getSemanticTokens(uri))
   }
 
   /**
@@ -329,7 +333,7 @@ object SemanticTokensProvider {
     */
   private def visitEffect(effect: TypedAst.Effect): Iterator[SemanticToken] = effect match {
     case TypedAst.Effect(_, ann, _, sym, tparams, ops, _) =>
-      val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
+      val t = SemanticToken(SemanticTokenType.Effect, Nil, sym.loc)
       IteratorOps.all(
         visitAnnotations(ann),
         Iterator(t),
@@ -350,9 +354,9 @@ object SemanticTokensProvider {
       )
   }
 
-  private def visitAnnotations(annotations: Annotations) = annotations.annotations.iterator.map(visitAnnotation)
+  private def visitAnnotations(annotations: Annotations): Iterator[SemanticToken] = annotations.annotations.iterator.map(visitAnnotation)
 
-  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Modifier, Nil, annotation.loc)
+  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Decorator, Nil, annotation.loc)
 
   /**
     * Returns all semantic tokens in the given expression `exp0`.
@@ -410,26 +414,26 @@ object SemanticTokensProvider {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
-    case Expr.ApplyLocalDef(LocalDefSymUse(_, loc), exps, _, _, _, _) =>
+    case Expr.ApplyLocalDef(LocalDefSymUse(_, loc), exps, _, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
-    case Expr.ApplyOp(op, exps, _, _, _) =>
+    case Expr.ApplyOp(op, exps, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 
-    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _, _, _) =>
+    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
@@ -447,7 +451,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, bnd.sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -463,8 +467,8 @@ object SemanticTokensProvider {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foldRight(visitExp(exp))((e, acc) => visitExp(e) ++ acc)
 
     case Expr.Discard(exp, _, _) => visitExp(exp)
 
@@ -473,15 +477,6 @@ object SemanticTokensProvider {
       rules.foldLeft(m) {
         case (acc, MatchRule(pat, guard, exp, _)) =>
           acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
-      }
-
-    case Expr.TypeMatch(matchExp, rules, _, _, _) =>
-      val m = visitExp(matchExp)
-      rules.foldLeft(m) {
-        case (acc, TypeMatchRule(bnd, tpe, exp, _)) =>
-          val o = getSemanticTokenType(bnd.sym, tpe)
-          val t = SemanticToken(o, Nil, bnd.sym.loc)
-          acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
     case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>
@@ -582,12 +577,9 @@ object SemanticTokensProvider {
     case Expr.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
       visitExp(exp) ++ declaredType.map(visitType).getOrElse(Iterator()) ++ declaredEff.map(visitType).getOrElse(Iterator())
 
-    case Expr.Unsafe(exp, runEff, _, _, _) =>
-      visitType(runEff) ++ visitExp(exp)
+    case Expr.Unsafe(exp, runEff, asEff, _, _, _) =>
+      visitType(runEff) ++ asEff.map(visitType).getOrElse(Iterator()) ++ visitExp(exp)
 
-    case Expr.Without(exp, symUse, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)
-      Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp1)) {
@@ -600,7 +592,7 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expr.Handler(symUse, rules, _, _, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)
+      val t = SemanticToken(SemanticTokenType.Effect, Nil, symUse.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp, _)) =>
@@ -619,9 +611,19 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
+    case Expr.InvokeSuperConstructor(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
     case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, e) => acc ++ visitExp(e)
+      }
+
+    case Expr.InvokeSuperMethod(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
       }
 
     case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
@@ -641,8 +643,10 @@ object SemanticTokensProvider {
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foldLeft(Iterator.empty[SemanticToken]) {
+    case Expr.NewObject(_, _, _, _, constructors, methods, _) =>
+      constructors.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, c) => acc ++ visitExp(c.exp)
+      } ++ methods.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 
@@ -808,7 +812,12 @@ object SemanticTokensProvider {
 
       case Type.Cst(cst, loc) =>
         if (isVisibleTypeConstructor(cst)) {
-          val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+          val tokenType = cst match {
+            case TypeConstructor.Pure => SemanticTokenType.Effect
+            case TypeConstructor.Effect(_, _) => SemanticTokenType.Effect
+            case _ => SemanticTokenType.Type
+          }
+          val t = SemanticToken(tokenType, Nil, loc)
           Iterator(t)
         } else {
           Iterator.empty
@@ -947,7 +956,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
-    case FormalParam(bnd, tpe, _, _) =>
+    case FormalParam(bnd, tpe, _, _, _) =>
       val bndToken = if (!bnd.sym.loc.isSynthetic) {
         val o = getSemanticTokenType(bnd.sym, tpe)
         val t = SemanticToken(o, Nil, bnd.sym.loc)
@@ -1011,7 +1020,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given JvmMethod `method`
     */
   private def visitJvmMethod(method: TypedAst.JvmMethod): Iterator[SemanticToken] = method match {
-    case TypedAst.JvmMethod(_, fparams, exp, tpe, eff, _) =>
+    case TypedAst.JvmMethod(_, _, fparams, exp, tpe, eff, _) =>
       fparams.iterator.flatMap(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
   }
 
@@ -1061,9 +1070,9 @@ object SemanticTokensProvider {
         splitTokens += token
       // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        for (line <- loc.sp1.lineOneIndexed to loc.sp2.lineOneIndexed) {
-          val begin = if (line == loc.sp1.lineOneIndexed) loc.sp1.colOneIndexed else 1.toShort
-          val end = if (line == loc.sp2.lineOneIndexed) loc.sp2.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
+        for (line <- loc.start.lineOneIndexed to loc.end.lineOneIndexed) {
+          val begin = if (line == loc.start.lineOneIndexed) loc.start.colOneIndexed else 1.toShort
+          val end = if (line == loc.end.lineOneIndexed) loc.end.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
           val newLoc = SourceLocation(isReal = true, loc.source, SourcePosition.mkFromOneIndexed(line, begin), SourcePosition.mkFromOneIndexed(line, end))
           splitTokens += SemanticToken(tpe, modifiers, newLoc)
         }
@@ -1083,8 +1092,8 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      var relLine = token.loc.beginLine - 1
-      var relCol = token.loc.beginCol - 1
+      var relLine = token.loc.startLine - 1
+      var relCol = token.loc.startCol - 1
 
       if (encoding.nonEmpty) {
         relLine -= prevLine
@@ -1095,12 +1104,12 @@ object SemanticTokensProvider {
 
       encoding += relLine
       encoding += relCol
-      encoding += token.loc.endCol - token.loc.beginCol
+      encoding += token.loc.endCol - token.loc.startCol
       encoding += token.tpe.toInt
       encoding += encodeModifiers(token.mod)
 
-      prevLine = token.loc.beginLine - 1
-      prevCol = token.loc.beginCol - 1
+      prevLine = token.loc.startLine - 1
+      prevCol = token.loc.startCol - 1
     }
 
     encoding.toList

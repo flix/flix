@@ -21,7 +21,13 @@ import scala.annotation.tailrec
 
 object Source {
   /** An unknown source. */
-  val Unknown: Source = Source(Input.Unknown, Array.emptyCharArray)
+  val Unknown: Source = Source.empty(Input.Unknown)
+
+  /** Returns an empty source of `input`. */
+  def empty(input: Input): Source = Source(input, Array.emptyCharArray)
+
+  /** Returns a source of `input` with the given `str`. */
+  def fromString(input: Input, str: String): Source = Source(input, str.toCharArray)
 }
 
 /**
@@ -30,8 +36,9 @@ object Source {
 case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   def name: String = input match {
-    case Input.Text(name, _, _) => name
-    case Input.TxtFile(path, _) => path.toString
+    case Input.RealFile(path, _) => path.toString
+    case Input.VirtualFile(name, _, _) => name.toString
+    case Input.VirtualUri(name, _, _) => name.toString
     case Input.PkgFile(path, _) => path.toString
     case Input.FileInPackage(_, virtualPath, _, _) => virtualPath
     case Input.Unknown => "unknown"

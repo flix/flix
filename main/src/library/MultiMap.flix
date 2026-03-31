@@ -92,7 +92,7 @@ instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
 
 instance CommutativeMonoid[MultiMap[k, v]] with Order[k], Order[v]
 
-mod MultiMap {
+pub mod MultiMap {
 
     ///
     /// Returns a string representation of `m`.
@@ -221,7 +221,7 @@ mod MultiMap {
         MultiMap(Map.remove(k, m1))
 
     ///
-    /// Removes the mapping of `(k, v)` from the MultiMap `m` it it exists.
+    /// Removes the mapping of `(k, v)` from the MultiMap `m` if it exists.
     ///
     pub def removeWithValue(k: k, v: v, m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         let MultiMap(m1) = m;

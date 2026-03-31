@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
@@ -32,7 +32,7 @@ import scala.annotation.tailrec
 object Simplifier {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffSym] = root.effects.keys.toSet
@@ -175,9 +175,9 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Stm(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Stm(exps.map(visitExp), visitExp(exp), t, simplifyEffect(eff), loc)
 
     case d@MonoAst.Expr.Discard(exp, eff, loc) =>
       val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
@@ -254,10 +254,11 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case MonoAst.Expr.NewObject(name, clazz, tpe, eff, constructors0, methods0, loc) =>
       val t = visitType(tpe)
+      val constructors = constructors0 map visitJvmConstructor
       val methods = methods0 map visitJvmMethod
-      SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
+      SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), constructors, methods, loc)
 
   }
 
@@ -619,12 +620,19 @@ object Simplifier {
     SimplifiedAst.FormalParam(p.sym, t, p.loc)
   }
 
+  private def visitJvmConstructor(constructor: MonoAst.JvmConstructor)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmConstructor = constructor match {
+    case MonoAst.JvmConstructor(exp0, retTpe, eff, loc) =>
+      val exp = visitExp(exp0)
+      val rt = visitType(retTpe)
+      SimplifiedAst.JvmConstructor(exp, rt, simplifyEffect(eff), loc)
+  }
+
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {
-    case MonoAst.JvmMethod(ident, fparams0, exp0, retTpe, eff, loc) =>
+    case MonoAst.JvmMethod(ann, ident, fparams0, exp0, retTpe, eff, loc) =>
       val fparams = fparams0 map visitFormalParam
       val exp = visitExp(exp0)
       val rt = visitType(retTpe)
-      SimplifiedAst.JvmMethod(ident, fparams, exp, rt, simplifyEffect(eff), loc)
+      SimplifiedAst.JvmMethod(ann, ident, fparams, exp, rt, simplifyEffect(eff), loc)
   }
 
   private def pat2exp(pat0: MonoAst.Pattern): SimplifiedAst.Expr = pat0 match {
@@ -971,7 +979,7 @@ object Simplifier {
 
     // Build the nested if-then-else
     val tagType = exp.tpe
-    val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(Scope.Top, flix)
+    val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(RegionScope.Top, flix)
     val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {

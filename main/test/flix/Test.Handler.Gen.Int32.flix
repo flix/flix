@@ -1,5 +1,7 @@
 mod Test.Handler.Gen.Int32 {
 
+    use Assert.assertEq;
+
     eff Gen {
         def gen(): Int32
     }
@@ -25,39 +27,39 @@ mod Test.Handler.Gen.Int32 {
         i
 
     @Test
-    def testSample01(): Bool =
-        Nil == sample(0)
+    def testSample01(): Unit \ Assert =
+        assertEq(expected = Nil, sample(0))
 
     @Test
-    def testSample02(): Bool =
-        0 :: Nil == sample(1)
+    def testSample02(): Unit \ Assert =
+        assertEq(expected = 0 :: Nil, sample(1))
 
     @Test
-    def testSample03(): Bool =
-        0 :: 1 :: Nil == sample(2)
+    def testSample03(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: Nil, sample(2))
 
     @Test
-    def testSample04(): Bool =
-        0 :: 1 :: 2 :: Nil == sample(3)
+    def testSample04(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: Nil, sample(3))
 
     @Test
-    def testSample05(): Bool =
-        0 :: 1 :: 2 :: 3 :: Nil == sample(4)
+    def testSample05(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: 3 :: Nil, sample(4))
 
     @Test
-    def testSample06(): Bool =
-        0 :: 1 :: 2 :: 3 :: 4 :: Nil == sample(5)
+    def testSample06(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: 3 :: 4 :: Nil, sample(5))
 
     @Test
-    def testSample07(): Bool =
-        0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil == sample(6)
+    def testSample07(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil, sample(6))
 
     @Test
-    def testSample08(): Bool =
-        List.range(0, 10) == sample(10)
+    def testSample08(): Unit \ Assert =
+        assertEq(expected = List.range(0, 10), sample(10))
 
     @Test
-    def testSample09(): Bool =
-        List.range(0, 100) == sample(100)
+    def testSample09(): Unit \ Assert =
+        assertEq(expected = List.range(0, 100), sample(100))
 
 }

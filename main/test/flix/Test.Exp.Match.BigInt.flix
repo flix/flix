@@ -1,47 +1,49 @@
 mod Test.Exp.Match.BigInt {
 
-    @test
-    def testMatchBigInt01(): Bool = match 0ii {
-        case 0ii => true
-        case 1ii => false
-        case 2ii => false
-        case _    => false
+    use Assert.{assertEq, success, fail}
+
+    @Test
+    def matchBigInt01(): Unit \ Assert = match 0ii {
+        case 0ii => success("matched 0ii")
+        case 1ii => fail("unexpected match on 1ii")
+        case 2ii => fail("unexpected match on 2ii")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchBigInt02(): Bool = match 1ii {
-        case 0ii => false
-        case 1ii => true
-        case 2ii => false
-        case _    => false
+    @Test
+    def matchBigInt02(): Unit \ Assert = match 1ii {
+        case 0ii => fail("unexpected match on 0ii")
+        case 1ii => success("matched 1ii")
+        case 2ii => fail("unexpected match on 2ii")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchBigInt03(): Bool = match 2ii {
-        case 0ii => false
-        case 1ii => false
-        case 2ii => true
-        case _    => false
+    @Test
+    def matchBigInt03(): Unit \ Assert = match 2ii {
+        case 0ii => fail("unexpected match on 0ii")
+        case 1ii => fail("unexpected match on 1ii")
+        case 2ii => success("matched 2ii")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchBigInt04(): Bool = match 3ii {
-        case 0ii => false
-        case 1ii => false
-        case 2ii => false
-        case _    => true
+    @Test
+    def matchBigInt04(): Unit \ Assert = match 3ii {
+        case 0ii => fail("unexpected match on 0ii")
+        case 1ii => fail("unexpected match on 1ii")
+        case 2ii => fail("unexpected match on 2ii")
+        case _   => success("matched wildcard")
     }
 
-    @test
-    def testMatchBigIntVar01(): Bool = match 0ii {
-        case x => x == 0ii
+    @Test
+    def matchBigIntVar01(): Unit \ Assert = match 0ii {
+        case x => assertEq(expected = 0ii, x)
     }
 
-    @test
-    def testMatchBigIntVar02(): Bool = match 2ii {
-        case 0ii => false
-        case 1ii => false
-        case x   => x == 2ii
+    @Test
+    def matchBigIntVar02(): Unit \ Assert = match 2ii {
+        case 0ii => fail("unexpected match on 0ii")
+        case 1ii => fail("unexpected match on 1ii")
+        case x   => assertEq(expected = 2ii, x)
     }
 
 }

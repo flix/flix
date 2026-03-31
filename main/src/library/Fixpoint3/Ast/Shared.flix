@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod Fixpoint3.Ast.Shared {
+pub mod Fixpoint3.Ast.Shared {
 
     use Fixpoint3.Boxable
     use Fixpoint3.Boxed
@@ -38,19 +38,16 @@ mod Fixpoint3.Ast.Shared {
     /// - a least upper bound (a lub function).
     /// - a greatest lower bound (a glb function).
     ///
-    @Internal
     pub enum Denotation[v] {
         case Relational
         case Latticenal(v, v -> v -> Bool, v -> v -> v, v -> v -> v)
     }
 
-    @Internal
     pub type alias BoxedDenotation = Denotation[Boxed]
 
     ///
     /// Returns `true` if the given denotation is relational.
     ///
-    @Internal
     pub def isRelational(den: Denotation[v]): Bool = match den {
         case Denotation.Relational => true
         case _                     => false
@@ -59,7 +56,7 @@ mod Fixpoint3.Ast.Shared {
     ///
     /// Returns a latticenal denotation associated with the type `t`.
     ///
-    @Internal
+    @LoweringTarget
     pub def lattice(): Denotation[v] with LowerBound[v], JoinLattice[v], MeetLattice[v] =
         Denotation.Latticenal(
             LowerBound.minValue(),
@@ -71,7 +68,7 @@ mod Fixpoint3.Ast.Shared {
     ///
     /// Boxes the lattice components inside the given denotation `d`.
     ///
-    @Internal
+    @LoweringTarget
     pub def box(d: Denotation[t]): Denotation[Boxed] with Order[t] = match d {
         case Denotation.Relational                     => Denotation.Relational
         case Denotation.Latticenal(bot, leq, lub, glb) =>
@@ -87,7 +84,6 @@ mod Fixpoint3.Ast.Shared {
     // PredSym                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Internal
     pub enum PredSym with Eq, Order {
         case PredSym(String, Int64)
     }

@@ -1,9 +1,9 @@
 mod Test.Equality.Unit {
 
-    @test
-    def testEqUnit01(): Bool = () == ()
+    use Assert.assertEq
 
-    @test
-    def testEqUnit02(): Bool = (() != ()) == false
+    @Test
+    def testEqUnit01(): Unit \ Assert =
+        assertEq(expected = (), ())
 
 }

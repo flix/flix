@@ -44,7 +44,7 @@ instance Readable[DecodingReader[t, rr]] with Readable[t] where Readable.Elm[t] 
 
 }
 
-mod DecodingReader {
+pub mod DecodingReader {
     import java.nio.charset.CharsetDecoder
     import java.nio.charset.CodingErrorAction
     import java.nio.ByteBuffer

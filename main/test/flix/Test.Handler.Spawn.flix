@@ -1,5 +1,7 @@
 mod Test.Handler.Spawn {
 
+    use Assert.assertEq;
+
     eff Ask {
         def ask(x: Int32): Unit
     }
@@ -36,30 +38,30 @@ mod Test.Handler.Spawn {
         }
 
     @Test
-    def testSpawn01(): Bool \ {Chan, NonDet} =
+    def testSpawn01(): Unit \ Assert + Chan + NonDet =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runGen(tx) @ rc;
             Channel.recv(rx)
         };
-        42 == result
+        assertEq(expected = 42, result)
 
     @Test
-    def testSpawn02(): Bool \ {Chan, NonDet} =
+    def testSpawn02(): Unit \ Assert + Chan + NonDet =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runAsk(tx) @ rc;
             Channel.recv(rx)
         };
-        42 == result
+        assertEq(expected = 42, result)
 
     @Test
-    def testSpawn03(): Bool \ {Chan, NonDet} =
+    def testSpawn03(): Unit \ Assert + Chan + NonDet =
         let result = region rc {
             let (tx, rx) = Channel.unbuffered();
             spawn runGenAsk(tx) @ rc;
             Channel.recv(rx)
         };
-        84 == result
+        assertEq(expected = 84, result)
 
 }

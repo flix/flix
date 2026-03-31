@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
@@ -72,23 +74,29 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     * This function compiles each file separately, so files cannot depend
     * each other. If that is a requirement use [[mkTestDirCollected]] instead.
     *
+    * If `prelude` is specified, it is always included.
+    *
     * Subdirectories are excluded.
     *
     */
-  def mkTestDir(path: String)(implicit options: Options): Unit = {
+  def mkTestDir(path: String, prelude: Option[String] = None)(implicit options: Options): Unit = {
     val files = FileOps.getFlixFilesIn(Paths.get(path), 1)
     for (p <- files) {
-      mkTest(p.toString)
+      mkTest(p.toString, prelude)
     }
   }
 
   /**
     * Runs all the tests in the file located at `path`.
     */
-  def mkTest(path: String)(implicit options: Options): Unit = {
+  def mkTest(path: String, prelude: Option[String])(implicit options: Options): Unit = {
     val p = Paths.get(path)
-    val n = p.getFileName.toString
-    test(n)(compileAndRun(List(p)))
+    val n = p.toString
+    val ps = prelude match {
+      case None => List(p)
+      case Some(p2) => List(p, Paths.get(p2))
+    }
+    test(n)(compileAndRun(ps))
   }
 
   private def compileAndRun(paths: List[Path])(implicit options: Options): Unit = {
@@ -105,7 +113,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
     // Add the given path.
     for (p <- paths) {
-      Flix.addFlix(p)
+      Flix.addFile(p)
     }
 
     try {
@@ -114,13 +122,12 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
         case Result.Ok(compilationResult) =>
           runTests(compilationResult)
         case Result.Err(errors) =>
-          val es = errors.map(_.messageWithLoc(Flix.getFormatter)).mkString("\n")
-          fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
+          fail(CompilationMessage.formatAll(errors.toList)(Flix.getFormatter, None))
       }
     } finally {
       // Remove the source path.
       for (p <- paths) {
-        Flix.remFlix(p)
+        Flix.remFile(p)
       }
     }
   }

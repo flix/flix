@@ -16,25 +16,21 @@
 package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import org.scalatest.DoNotDiscover
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 import scala.jdk.CollectionConverters.*
 
+@DoNotDiscover
 class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
 
   /**
     * Number of variants to make of each file. Each variant has a single line duplicated.
     */
   private val N = 30
-
-  test("simple-card-game") {
-    val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
-    val lines = Files.lines(filepath)
-    compileWithDuplicateLine(lines)
-  }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
@@ -43,7 +39,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
   }
 
   test("ford-fulkerson") {
-    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val filepath = Paths.get("examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
     compileWithDuplicateLine(lines)
   }
@@ -65,7 +61,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.head :: after).mkString("\n")
       // We use the same name for all inputs to simulate editing a file
-      flix.addSourceCode("<input>", src)(SecurityContext.Unrestricted)
+      flix.addVirtualPath(CompilerConstants.VirtualTestFile, src)(SecurityContext.Unrestricted)
       flix.compile() // We simply care that this does not crash.
     }
   }

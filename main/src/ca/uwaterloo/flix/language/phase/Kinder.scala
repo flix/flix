@@ -115,7 +115,7 @@ object Kinder {
       // the parser will have already notified the user of this error
       // The recovery step here is to simply add a single type param that is never used
       val tparams1 = if (tparams0.isEmpty && isMutable) {
-        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(VarText.Absent, loc)(Scope.Top, flix), loc)
+        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(VarText.Absent, loc)(RegionScope.Top, flix), loc)
         List(regionTparam)
       } else {
         tparams0
@@ -301,7 +301,7 @@ object Kinder {
       val kenv = getKindEnvFromSpec(spec0, kenv0, root)
       // if the spec is already calculated (this is a top-level def), then just look it up
       val spec = renv.defSpecs.getOrElse(sym, visitSpec(spec0, Nil, None, kenv, root))
-      val exp = visitExp(exp0, kenv, root)(Scope.Top, renv, sctx, flix)
+      val exp = visitExp(exp0, kenv, root)(RegionScope.Top, renv, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
   }
 
@@ -312,7 +312,7 @@ object Kinder {
     case ResolvedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, root)
       val spec = visitSpec(spec0, List(traitTparam.sym), None, kenv, root)
-      val exp = exp0.map(visitExp(_, kenv, root)(Scope.Top, renv, sctx, flix))
+      val exp = exp0.map(visitExp(_, kenv, root)(RegionScope.Top, renv, sctx, flix))
       KindedAst.Sig(sym, spec, exp, loc)
   }
 
@@ -337,21 +337,23 @@ object Kinder {
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val tpe = visitType(tpe0, Kind.Star, kenv, root)
-      val declaredEff = visitEffectDefaultPure(eff0, kenv, root)
+      val declaredEff = eff0.map(visitEff(_, kenv, root))
       // If we're inside an effect, add that effect to the scheme.
       val eff = effect match {
         case None => declaredEff
         case Some(sym) =>
-          Type.mkUnion(
-            Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown), // TODO EFFECT-TPARAMS need kind
-            declaredEff,
-            SourceLocation.Unknown
+          Some(
+            Type.mkUnion(
+              Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown), // TODO EFFECT-TPARAMS need kind
+              declaredEff.getOrElse(Type.Pure),
+              SourceLocation.Unknown
+            )
           )
       }
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, root))
       val econstrs = econstrs0.map(visitEqualityConstraint(_, kenv, root))
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
+      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff.getOrElse(Type.Pure), tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs, base)
       KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs)
   }
@@ -382,7 +384,7 @@ object Kinder {
   /**
     * Performs kinding on the given expression under the given kind environment.
     */
-  private def visitExp(exp00: ResolvedAst.Expr, kenv0: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Expr = {
+  private def visitExp(exp00: ResolvedAst.Expr, kenv0: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Expr = {
     exp00 match {
       case ResolvedAst.Expr.Var(sym, loc) =>
         KindedAst.Expr.Var(sym, loc)
@@ -474,10 +476,10 @@ object Kinder {
         val exp3 = visitExp(exp30, kenv0, root)
         KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc)
 
-      case ResolvedAst.Expr.Stm(exp10, exp20, loc) =>
-        val exp1 = visitExp(exp10, kenv0, root)
-        val exp2 = visitExp(exp20, kenv0, root)
-        KindedAst.Expr.Stm(exp1, exp2, loc)
+      case ResolvedAst.Expr.Stm(exps0, exp0, loc) =>
+        val exps = exps0.map(visitExp(_, kenv0, root))
+        val exp = visitExp(exp0, kenv0, root)
+        KindedAst.Expr.Stm(exps, exp, loc)
 
       case ResolvedAst.Expr.Discard(exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -488,7 +490,7 @@ object Kinder {
         val exp2 = visitExp(exp20, kenv0, root)
         KindedAst.Expr.Let(sym, exp1, exp2, loc)
 
-      case ResolvedAst.Expr.LocalDef(sym, fparams0, exp10, exp20, loc) =>
+      case ResolvedAst.Expr.LocalDef(ann, sym, fparams0, exp10, exp20, loc) =>
         // we must infer the formal parameters because the may contain wildcard types
         // which would not appear in the function's kenv
         val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, root))
@@ -497,7 +499,7 @@ object Kinder {
         val exp1 = visitExp(exp10, kenv1, root)
         // We visit exp2 outside the new kenv since it's not in the def's scope
         val exp2 = visitExp(exp20, kenv0, root)
-        KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc)
+        KindedAst.Expr.LocalDef(ann, sym, fparams, exp1, exp2, loc)
 
       case ResolvedAst.Expr.Region(sym, regSym, exp0, loc) =>
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -511,11 +513,6 @@ object Kinder {
         val exp = visitExp(exp0, kenv0, root)
         val rules = rules0.map(visitMatchRule(_, kenv0, root))
         KindedAst.Expr.Match(exp, rules, loc)
-
-      case ResolvedAst.Expr.TypeMatch(exp0, rules0, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        val rules = rules0.map(visitTypeMatchRule(_, kenv0, root))
-        KindedAst.Expr.TypeMatch(exp, rules, loc)
 
       case ResolvedAst.Expr.RestrictableChoose(star, exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -670,14 +667,12 @@ object Kinder {
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc)
 
-      case ResolvedAst.Expr.Unsafe(exp0, eff0, loc) =>
+      case ResolvedAst.Expr.Unsafe(exp0, eff0, asEff0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         val eff = visitType(eff0, Kind.Eff, kenv0, root)
-        KindedAst.Expr.Unsafe(exp, eff, loc)
+        val asEff = asEff0.map(visitType(_, Kind.Eff, kenv0, root))
+        KindedAst.Expr.Unsafe(exp, eff, asEff, loc)
 
-      case ResolvedAst.Expr.Without(exp0, symUse, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        KindedAst.Expr.Without(exp, symUse, loc)
 
       case ResolvedAst.Expr.TryCatch(exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -711,6 +706,12 @@ object Kinder {
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc)
 
+      case ResolvedAst.Expr.InvokeSuperConstructor(clazz, exps0, loc) =>
+        val exps = exps0.map(visitExp(_, kenv0, root))
+        val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+        KindedAst.Expr.InvokeSuperConstructor(clazz, exps, jvar, evar, loc)
+
       case ResolvedAst.Expr.InvokeMethod(exp0, methodName, exps0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         val exps = exps0.map(visitExp(_, kenv0, root))
@@ -718,6 +719,13 @@ object Kinder {
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc)
+
+      case ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, exps0, loc) =>
+        val exps = exps0.map(visitExp(_, kenv0, root))
+        val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+        KindedAst.Expr.InvokeSuperMethod(clazz, methodName, exps, jvar, tvar, evar, loc)
 
       case ResolvedAst.Expr.InvokeStaticMethod(clazz, methodName, exps0, loc) =>
         val exps = exps0.map(visitExp(_, kenv0, root))
@@ -745,9 +753,12 @@ object Kinder {
         val exp = visitExp(exp0, kenv0, root)
         KindedAst.Expr.PutStaticField(field, exp, loc)
 
-      case ResolvedAst.Expr.NewObject(name, clazz, methods0, loc) =>
+      case ResolvedAst.Expr.NewObject(name, clazz, targs0, constructors0, methods0, loc) =>
+        val targs = targs0.map(visitType(_, Kind.Star, kenv0, root))
+        val constructors = constructors0.map(visitJvmConstructor(_, kenv0, root))
         val methods = methods0.map(visitJvmMethod(_, kenv0, root))
-        KindedAst.Expr.NewObject(name, clazz, methods, loc)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        KindedAst.Expr.NewObject(name, clazz, targs, constructors, methods, tvar, loc)
 
       case ResolvedAst.Expr.NewChannel(exp0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -847,7 +858,7 @@ object Kinder {
   /**
     * Performs kinding on the given match rule under the given kind environment.
     */
-  private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.MatchRule = rule0 match {
+  private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.MatchRule = rule0 match {
     case ResolvedAst.MatchRule(pat0, guard0, exp0, loc) =>
       val pat = visitPattern(pat0, kenv, root)
       val guard = guard0.map(visitExp(_, kenv, root))
@@ -858,7 +869,7 @@ object Kinder {
   /**
     * Performs kinding on the given ext match rule under the given kind environment.
     */
-  private def visitExtMatchRule(rule0: ResolvedAst.ExtMatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.ExtMatchRule = rule0 match {
+  private def visitExtMatchRule(rule0: ResolvedAst.ExtMatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.ExtMatchRule = rule0 match {
     case ResolvedAst.ExtMatchRule(pat0, exp0, loc) =>
       val pat = visitExtPattern(pat0)
       val exp = visitExp(exp0, kenv, root)
@@ -866,20 +877,9 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given match rule under the given kind environment.
-    */
-  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv0: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
-    case ResolvedAst.TypeMatchRule(sym, tpe0, exp0, loc) =>
-      val kenv = inferType(tpe0, Kind.Star, kenv0, root)
-      val tpe = visitType(tpe0, Kind.Star, kenv, root)
-      val exp = visitExp(exp0, kenv, root)
-      KindedAst.TypeMatchRule(sym, tpe, exp, loc)
-  }
-
-  /**
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
-  private def visitRestrictableChooseRule(rule0: ResolvedAst.RestrictableChooseRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.RestrictableChooseRule = rule0 match {
+  private def visitRestrictableChooseRule(rule0: ResolvedAst.RestrictableChooseRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.RestrictableChooseRule = rule0 match {
     case ResolvedAst.RestrictableChooseRule(pat0, exp0) =>
       val pat = visitRestrictableChoosePattern(pat0)
       val exp = visitExp(exp0, kenv, root)
@@ -889,7 +889,7 @@ object Kinder {
   /**
     * Performs kinding on the given catch rule under the given kind environment.
     */
-  private def visitCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.CatchRule = rule0 match {
+  private def visitCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.CatchRule = rule0 match {
     case ResolvedAst.CatchRule(sym, clazz, exp0, loc) =>
       val exp = visitExp(exp0, kenv, root)
       KindedAst.CatchRule(sym, clazz, exp, loc)
@@ -898,7 +898,7 @@ object Kinder {
   /**
     * Performs kinding on the given handler rule under the given kind environment.
     */
-  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.HandlerRule = rule0 match {
+  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.HandlerRule = rule0 match {
     case ResolvedAst.HandlerRule(symUse, fparams0, exp0, loc) =>
       // create a new type variable for the op return type (same as resume argument type)
       val tvar = Type.freshVar(Kind.Star, exp0.loc)
@@ -910,7 +910,7 @@ object Kinder {
   /**
     * Performs kinding on the given select channel rule under the given kind environment.
     */
-  private def visitSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.SelectChannelRule = rule0 match {
+  private def visitSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.SelectChannelRule = rule0 match {
     case ResolvedAst.SelectChannelRule(sym, chan0, exp0, loc) =>
       val chan = visitExp(chan0, kenv, root)
       val exp = visitExp(exp0, kenv, root)
@@ -920,7 +920,7 @@ object Kinder {
   /**
     * Performs kinding on the given pattern under the given kind environment.
     */
-  private def visitPattern(pat00: ResolvedAst.Pattern, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, flix: Flix): KindedAst.Pattern = pat00 match {
+  private def visitPattern(pat00: ResolvedAst.Pattern, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, flix: Flix): KindedAst.Pattern = pat00 match {
     case ResolvedAst.Pattern.Wild(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Pattern.Wild(tvar, loc)
@@ -958,7 +958,7 @@ object Kinder {
   /**
     * Performs kinding on the given ext pattern under the given kind environment.
     */
-  private def visitExtPattern(pat0: ResolvedAst.ExtPattern)(implicit scope: Scope, flix: Flix): KindedAst.ExtPattern = pat0 match {
+  private def visitExtPattern(pat0: ResolvedAst.ExtPattern)(implicit scope: RegionScope, flix: Flix): KindedAst.ExtPattern = pat0 match {
     case ResolvedAst.ExtPattern.Default(loc) =>
       val tvar = Type.freshVar(Kind.SchemaRow, loc.asSynthetic)
       KindedAst.ExtPattern.Default(tvar, loc)
@@ -975,7 +975,7 @@ object Kinder {
   /**
     * Performs kinding on the given ext tag pattern under the given kind environment.
     */
-  private def visitExtTagPattern(pat0: ResolvedAst.ExtTagPattern)(implicit scope: Scope, flix: Flix): KindedAst.ExtTagPattern = pat0 match {
+  private def visitExtTagPattern(pat0: ResolvedAst.ExtTagPattern)(implicit scope: RegionScope, flix: Flix): KindedAst.ExtTagPattern = pat0 match {
     case ResolvedAst.ExtTagPattern.Wild(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.ExtTagPattern.Wild(tvar, loc)
@@ -995,7 +995,7 @@ object Kinder {
   /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
-  private def visitRestrictableChoosePattern(pat00: ResolvedAst.RestrictableChoosePattern)(implicit scope: Scope, flix: Flix): KindedAst.RestrictableChoosePattern = pat00 match {
+  private def visitRestrictableChoosePattern(pat00: ResolvedAst.RestrictableChoosePattern)(implicit scope: RegionScope, flix: Flix): KindedAst.RestrictableChoosePattern = pat00 match {
     case ResolvedAst.RestrictableChoosePattern.Tag(symUse, pats0, loc) =>
       val pats = pats0.map(visitRestrictableChoosePatternVarOrWild)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -1009,7 +1009,7 @@ object Kinder {
   /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
-  private def visitRestrictableChoosePatternVarOrWild(pat0: ResolvedAst.RestrictableChoosePattern.VarOrWild)(implicit scope: Scope, flix: Flix): KindedAst.RestrictableChoosePattern.VarOrWild = pat0 match {
+  private def visitRestrictableChoosePatternVarOrWild(pat0: ResolvedAst.RestrictableChoosePattern.VarOrWild)(implicit scope: RegionScope, flix: Flix): KindedAst.RestrictableChoosePattern.VarOrWild = pat0 match {
     case ResolvedAst.RestrictableChoosePattern.Wild(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.RestrictableChoosePattern.Wild(tvar, loc)
@@ -1026,7 +1026,7 @@ object Kinder {
   /**
     * Performs kinding on the given constraint under the given kind environment.
     */
-  private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Constraint = constraint0 match {
+  private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Constraint = constraint0 match {
     case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
       val cparams = cparams0.map(visitConstraintParam)
       val head = visitHeadPredicate(head0, kenv, root)
@@ -1044,7 +1044,7 @@ object Kinder {
   /**
     * Performs kinding on the given head predicate under the given kind environment.
     */
-  private def visitHeadPredicate(pred0: ResolvedAst.Predicate.Head, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Predicate.Head = pred0 match {
+  private def visitHeadPredicate(pred0: ResolvedAst.Predicate.Head, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Predicate.Head = pred0 match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms0, loc) =>
       val terms = terms0.map(visitExp(_, kenv, root))
       val pvar = Type.freshVar(Kind.Predicate, loc.asSynthetic)
@@ -1054,7 +1054,7 @@ object Kinder {
   /**
     * Performs kinding on the given body predicate under the given kind environment.
     */
-  private def visitBodyPredicate(pred0: ResolvedAst.Predicate.Body, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Predicate.Body = pred0 match {
+  private def visitBodyPredicate(pred0: ResolvedAst.Predicate.Body, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Predicate.Body = pred0 match {
     case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms0, loc) =>
       val terms = terms0.map(visitPattern(_, kenv, root))
       val pvar = Type.freshVar(Kind.Predicate, loc.asSynthetic)
@@ -1090,7 +1090,7 @@ object Kinder {
         unify(expectedKind, actualKind) match {
           case Some(kind) => sym.withKind(kind)
           case None =>
-            val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc)
+            val e = mkUnexpectedKindError(expectedKind, actualKind, loc)
             sctx.errors.add(e)
             sym.withKind(Kind.Error)
         }
@@ -1111,7 +1111,7 @@ object Kinder {
       unify(expectedKind, kind) match {
         case Some(_) => Type.Cst(cst, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1125,7 +1125,7 @@ object Kinder {
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, root)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, k, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1138,7 +1138,7 @@ object Kinder {
           unify(t.kind, expectedKind) match {
             case Some(_) => Type.Alias(cst, args, t, loc)
             case None =>
-              sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
+              sctx.errors.add(mkUnexpectedKindError(expectedKind, t.kind, loc))
               Type.freshError(Kind.Error, loc)
           }
       }
@@ -1156,7 +1156,7 @@ object Kinder {
               val arg = visitType(arg0, innerExpectedKind, kenv, root)
               Type.AssocType(cst, arg, kind, loc)
             case None =>
-              sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc))
+              sctx.errors.add(mkUnexpectedKindError(expectedKind, k0, loc))
               Type.freshError(Kind.Error, loc)
           }
       }
@@ -1165,10 +1165,10 @@ object Kinder {
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
         case Some(_) =>
-          val eff = visitEffectDefaultPure(eff0, kenv, root)
+          val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
           Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1177,7 +1177,14 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Enum(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          val expectedArity = Kind.kindArgs(kind).length
+          val actualArity = Kind.kindArgs(expectedKind).length
+          val error = if (expectedArity != actualArity) {
+            KindError.MismatchedArityOfEnum(sym, expectedArity, actualArity, loc)
+          } else {
+            mkUnexpectedKindError(expectedKind, kind, loc)
+          }
+          sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1186,7 +1193,7 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Effect(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1195,7 +1202,14 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Struct(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          val expectedArity = Kind.kindArgs(kind).length
+          val actualArity = Kind.kindArgs(expectedKind).length
+          val error = if (expectedArity != actualArity) {
+            KindError.MismatchedArityOfStruct(sym, expectedArity, actualArity, loc)
+          } else {
+            mkUnexpectedKindError(expectedKind, kind, loc)
+          }
+          sctx.errors.add(error)
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1204,7 +1218,7 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.RestrictableEnum(sym, k), loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, kind, loc))
           Type.freshError(Kind.Error, loc)
       }
 
@@ -1233,11 +1247,11 @@ object Kinder {
           Type.freshError(Kind.Error, loc)
         // Case 3: Unexpected kind. Error.
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
 
         case Some(k) if Kind.hasError(k) =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
 
         case Some(_) => throw InternalCompilerException("unexpected non-case set kind", loc)
@@ -1249,7 +1263,7 @@ object Kinder {
       unify(t.kind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseComplement(t, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, t.kind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1271,7 +1285,7 @@ object Kinder {
       unify(actualKind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseUnion(t1, t2, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1294,7 +1308,7 @@ object Kinder {
       unify(actualKind, expectedKind) match {
         case Some(Kind.CaseSet(enumSym)) => Type.mkCaseIntersection(t1, t2, enumSym, loc)
         case None =>
-          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
+          sctx.errors.add(mkUnexpectedKindError(expectedKind, actualKind, loc))
           Type.freshError(Kind.Error, loc)
         case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
       }
@@ -1304,16 +1318,28 @@ object Kinder {
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe0.loc)
+    case _: UnkindedType.UnappliedNative => throw InternalCompilerException("unexpected unapplied native type", tpe0.loc)
 
 
   }
 
   /**
-    * Performs kinding on the given effect, assuming it to be Pure if it is absent.
+    * Creates the appropriate kind error for an unexpected kind.
+    * Returns specialized errors for Type/Eff mismatches.
     */
-  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Type = tpe match {
-    case None => Type.mkPure(SourceLocation.Unknown)
-    case Some(t) => visitType(t, Kind.Eff, kenv, root)
+  private def mkUnexpectedKindError(expectedKind: Kind, actualKind: Kind, loc: SourceLocation): KindError = {
+    (expectedKind, actualKind) match {
+      case (Kind.Star, Kind.Eff) => KindError.UnexpectedEffect(loc)
+      case (Kind.Eff, Kind.Star) => KindError.UnexpectedType(loc)
+      case _ => KindError.UnexpectedKind(expectedKind, actualKind, loc)
+    }
+  }
+
+  /**
+    * Performs kinding on the given effect, returning None if it is absent.
+    */
+  private def visitEff(tpe: UnkindedType, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Type = {
+    visitType(tpe, Kind.Eff, kenv, root)
   }
 
   /**
@@ -1378,7 +1404,7 @@ object Kinder {
   /**
     * Performs kinding on the given predicate param under the given kind environment.
     */
-  private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): KindedAst.PredicateParam = pparam0 match {
+  private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): KindedAst.PredicateParam = pparam0 match {
     case ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       val t = Type.freshVar(Kind.Predicate, loc)
       KindedAst.PredicateParam(pred, t, loc)
@@ -1395,13 +1421,24 @@ object Kinder {
   /**
     * Performs kinding on the given JVM method.
     */
-  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.JvmMethod = method match {
-    case ResolvedAst.JvmMethod(_, fparams0, exp0, tpe0, eff0, loc) =>
+  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.JvmMethod = method match {
+    case ResolvedAst.JvmMethod(ann0, _, fparams0, exp0, tpe0, eff0, loc) =>
       val fparams = fparams0.map(visitFormalParam(_, kenv, root))
       val exp = visitExp(exp0, kenv, root)
-      val eff = visitEffectDefaultPure(eff0, kenv, root)
+      val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
       val tpe = visitType(tpe0, Kind.Wild, kenv, root)
-      KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
+      KindedAst.JvmMethod(ann0, method.ident, fparams, exp, tpe, eff, loc)
+  }
+
+  /**
+    * Performs kinding on the given JVM constructor.
+    */
+  private def visitJvmConstructor(constructor: ResolvedAst.JvmConstructor, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: RegionScope, renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.JvmConstructor = constructor match {
+    case ResolvedAst.JvmConstructor(exp0, tpe0, eff0, loc) =>
+      val exp = visitExp(exp0, kenv, root)
+      val eff = eff0.map(visitEff(_, kenv, root)).getOrElse(Type.Pure)
+      val tpe = visitType(tpe0, Kind.Wild, kenv, root)
+      KindedAst.JvmConstructor(exp, tpe, eff, loc)
   }
 
   /**
@@ -1576,6 +1613,7 @@ object Kinder {
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe.loc)
+    case _: UnkindedType.UnappliedNative => throw InternalCompilerException("unexpected unapplied native type", tpe.loc)
   }
 
   /**

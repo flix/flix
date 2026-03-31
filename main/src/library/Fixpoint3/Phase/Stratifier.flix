@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Phase.Stratifier {
+pub mod Fixpoint3.Phase.Stratifier {
     use Fixpoint3.Ast.Datalog.BodyPredicate.BodyAtom
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model, Provenance}
@@ -40,7 +40,6 @@ mod Fixpoint3.Phase.Stratifier {
     /// A pseudostratum is a group of mutually independent, consecutive strata. For example,
     /// `predSym -> (2, 1)` means `predSym` belongs to stratum 1 within pseudostrata 2.
     ///
-    @Internal
     pub def stratify(d: Datalog): Map[PredSym, (Int32, Int32)] = region rc {
         let depGraph = MutGraph.empty(rc);
         addDepEdges(depGraph, d);

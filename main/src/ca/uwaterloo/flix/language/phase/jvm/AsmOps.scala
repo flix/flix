@@ -16,19 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.JvmTarget
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes.*
 
 object AsmOps {
-
-  /**
-    * Returns the target JVM version.
-    */
-  def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
-    case JvmTarget.Version21 => V21
-  }
 
   /**
     * Returns a freshly created class writer object.

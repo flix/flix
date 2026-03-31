@@ -22,7 +22,7 @@ instance UpperBound[Float64] {
     pub def maxValue(): Float64 = Float64.maxValue()
 }
 
-mod Float64 {
+pub mod Float64 {
 
     import java.lang.Double
     import java.lang.Math
@@ -313,6 +313,32 @@ mod Float64 {
             Float32.nan()
         else
             Double.valueOf(clamp(min = minf64, max = maxf64, x)).floatValue()
+
+    ///
+    /// Convert `x` to an Int32 by truncation towards zero.
+    ///
+    /// Returns 0 if `x` is NaN. Saturates to `Int32.minValue()` or `Int32.maxValue()`
+    /// if `x` is out of range or infinite.
+    ///
+    pub def truncateToInt32(x: Float64): Int32 =
+        Double.valueOf(x).intValue()
+
+    ///
+    /// Convert `x` to an Int64 by truncation towards zero.
+    ///
+    /// Returns 0 if `x` is NaN. Saturates to `Int64.minValue()` or `Int64.maxValue()`
+    /// if `x` is out of range or infinite.
+    ///
+    pub def truncateToInt64(x: Float64): Int64 =
+        Double.valueOf(x).longValue()
+
+    ///
+    /// Convert `x` to a Float32.
+    ///
+    /// The numeric value of `x` may lose precision.
+    ///
+    pub def truncateToFloat32(x: Float64): Float32 =
+        Double.valueOf(x).floatValue()
 
     ///
     /// Returns the absolute value of `x`.

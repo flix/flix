@@ -29,7 +29,7 @@ import scala.jdk.CollectionConverters.*
 object LambdaLift {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   /**
     * Performs lambda lifting on the given AST `root`.
@@ -168,10 +168,10 @@ object LambdaLift {
       val e3 = visitExp(exp3)
       LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
+    case SimplifiedAst.Expr.Stm(exps, exp, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      LiftedAst.Expr.Stm(es, e, tpe, purity, loc)
 
     case SimplifiedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -227,18 +227,24 @@ object LambdaLift {
       }
       LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, constructors0, methods0, loc) =>
+      val constructors = constructors0.map(visitJvmConstructor)
       val methods = methods0.map(visitJvmMethod)
-      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, constructors, methods, loc)
 
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
   }
 
+  private def visitJvmConstructor(constructor: SimplifiedAst.JvmConstructor)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmConstructor = constructor match {
+    case SimplifiedAst.JvmConstructor(exp, retTpe, purity, loc) =>
+      LiftedAst.JvmConstructor(visitExp(exp), retTpe, purity, loc)
+  }
+
   private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
-    case SimplifiedAst.JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
+    case SimplifiedAst.JvmMethod(ann, ident, fparams0, exp, retTpe, purity, loc) =>
       val fparams = fparams0 map visitFormalParam
-      LiftedAst.JvmMethod(ident, fparams, visitExp(exp), retTpe, purity, loc)
+      LiftedAst.JvmMethod(ann, ident, fparams, visitExp(exp), retTpe, purity, loc)
   }
 
 

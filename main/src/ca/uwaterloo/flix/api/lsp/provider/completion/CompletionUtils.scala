@@ -204,8 +204,7 @@ object CompletionUtils {
   /**
     * Checks if the given class is public.
     */
-  def isAvailable(decl: Decl): Boolean =
-    !decl.ann.isInternal && decl.mod.isPublic
+  def isAvailable(decl: Decl): Boolean = decl.mod.isPublic
 
   /**
     * Checks if the given def is public.
@@ -246,7 +245,7 @@ object CompletionUtils {
     * Replaces the given symbol with a variable named by the given `newText`.
     */
   private def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
-    implicit val scope: Scope = Scope.Top
+    implicit val scope: RegionScope = RegionScope.Top
     tpe match {
       case Type.Var(sym, loc) if oldSym == sym => Type.Var(sym.withText(VarText.SourceText(newText)), loc)
       case Type.Var(_, _) => tpe

@@ -42,7 +42,7 @@
 /// The module operates on `Ram.Program`, so it uses, `Eq(x, y)`, `Meet(x, y)`, `Project(_)`
 /// and so on to compute the equality constraints.
 ///
-mod Fixpoint3.Boxing {
+pub mod Fixpoint3.Boxing {
     import java.lang.{Float, Double, Object, Character, Runtime}
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam.{Facts => EFacts}
@@ -64,10 +64,9 @@ mod Fixpoint3.Boxing {
     /// Returns a `(boxing, facts, idToBoxing)` where `Boxing` is information as described above,
     /// `facts` are the EDB of `program` as `Int64`, with respect to `boxing`.
     ///
-    @Internal
     pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts[r]) \ r =
         let boxingInfo = initializeInternal(rc, program, withProv);
-        let facts = unsafely IO run initializeFacts(rc, program, boxingInfo);
+        let facts = unsafe IO { initializeFacts(rc, program, boxingInfo) };
         (boxingInfo, facts)
 
     ///
@@ -90,7 +89,9 @@ mod Fixpoint3.Boxing {
         };
         foreach ((relSym, relFacts) <- f2) {
             let RelSym.Symbol(PredSym.PredSym(_, id), _, _) = relSym;
-            let newTree = MutMap.getOrElsePut(relSym, BPlusTree.empty(rc1), newFacts);
+            // Get some search. This means that we have to create one less index in the interpreter.
+            let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
+            let newTree = MutMap.getOrElsePut(relSym, BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search), newFacts);
             // `id` will always be a full `id`.
             mapAllFacts(relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), newTree)
         };
@@ -188,7 +189,6 @@ mod Fixpoint3.Boxing {
     /// Unbox `v` given the type information stored at `typeInfo[index]` in `info`.
     /// Returns `v` unboxed.
     ///
-    @Internal
     pub def unboxWith(v: Boxed, index: UnifiedTypePos, info: Boxing[r]): Int64 \ r =
         let (_, _, symInfo, _) = info;
         match v {
@@ -227,12 +227,11 @@ mod Fixpoint3.Boxing {
     /// Boxes `v` given its type information at `typeInfo[index]` in `info`.
     /// Returns `v` boxed.
     ///
-    @Internal
     pub def boxWith(v: Int64, index: UnifiedTypePos, info: Boxing[r]): Boxed \ r =
         let (_, _, typeInfo, _) = info;
         match BoxingType.getType(index, typeInfo) {
             case Types.TyBool      => Boxed.BoxedBool(not(v == 0i64))
-            case Types.TyChar      => BoxedChar(unchecked_cast(Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v)))) as _ \ {}))
+            case Types.TyChar      => BoxedChar(unsafe IO { Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v)))) })
             case Types.TyInt8      => BoxedInt8(getOrCrash(Int64.tryToInt8(v)))
             case Types.TyInt16     => BoxedInt16(getOrCrash(Int64.tryToInt16(v)))
             case Types.TyInt32     => BoxedInt32(getOrCrash(Int64.tryToInt32(v)))

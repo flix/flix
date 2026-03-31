@@ -39,7 +39,7 @@ object TokenPrinter {
   }
 
   private def printContent(token: Token): String = {
-    if (token.start >= 0 && token.end <= token.src.data.length && token.start <= token.end) {
+    if (token.startIndex >= 0 && token.endIndex <= token.src.data.length && token.startIndex <= token.endIndex) {
       token.text.replace("\r\n", "\\n").replace("\n", "\\n")
     } else "!bad offset!"
   }

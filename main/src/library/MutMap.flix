@@ -63,7 +63,7 @@ instance Formattable[MutMap[k, v, r]] with Formattable[k], Formattable[v] {
         fromString("MutMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
 }
 
-mod MutMap {
+pub mod MutMap {
 
     ///
     /// Returns a string representation of the given MutMap `m`.
@@ -208,6 +208,14 @@ mod MutMap {
     ///
     pub def getWithDefault(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] =
         Map.getWithDefault(k, d, m->inner)
+
+    ///
+    /// Returns the value associated with key `k` in the mutable map `m`.
+    ///
+    /// Aborts if the key is not present.
+    ///
+    pub def getOrAbort(k: k, m: MutMap[k, v, r]): v \ (Abort + r) with Order[k] =
+        Map.getOrAbort(k, m->inner)
 
     ///
     /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.

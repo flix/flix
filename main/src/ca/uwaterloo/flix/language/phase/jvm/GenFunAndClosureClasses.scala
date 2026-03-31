@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{SimpleType, Purity, Symbol}
+import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
@@ -71,10 +71,10 @@ object GenFunAndClosureClasses {
     *   public Object arg0;
     *   public int arg1
     *
-    *   public final Result invoke() { return this.directApply((Tagged$) this.arg0, this.arg1); }
+    *   public final Result invoke() { return this.staticApply((Tagged$) this.arg0, this.arg1); }
     *
     *   // Assuming the concrete type of Obj is `Tagged$`
-    *   public final Result directApply(Tagged$ var0, int var1) {
+    *   public final Result staticApply(Tagged$ var0, int var1) {
     *     EnterLabel:
     *     // body code ...
     *   }
@@ -86,8 +86,9 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, null)
+    visitor.visitSource(defn.loc.source.name, null)
 
     compileConstructor(functionInterface, visitor)
 
@@ -146,8 +147,9 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
     val frameInterface = BackendObjType.Frame
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+    visitor.visitSource(defn.loc.source.name, null)
 
     // Fields
     for ((x, i) <- defn.lparams.zipWithIndex) {
@@ -227,8 +229,9 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
     val frameInterface = BackendObjType.Frame
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+    visitor.visitSource(defn.loc.source.name, null)
 
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
@@ -265,15 +268,16 @@ object GenFunAndClosureClasses {
     constructor.visitEnd()
   }
 
-  private def directApplyMethod(className: JvmName, defn: Def)(implicit root: Root): StaticMethod =
-    StaticMethod(className, JvmName.DirectApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
+  private def staticApplyMethod(className: JvmName, defn: Def)(implicit root: Root): StaticMethod =
+    StaticMethod(className, JvmName.StaticApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
 
   private def compileStaticApplyMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val method = directApplyMethod(className, defn)
+    val method = staticApplyMethod(className, defn)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     implicit val m: MethodVisitor = visitor.visitMethod(modifiers, method.name, method.d.toDescriptor, null, null)
     m.visitCode()
+    BytecodeInstructions.addLoc(defn.loc)
 
     // used for self-recursive tail calls
     val enterLabel = new Label()
@@ -310,7 +314,7 @@ object GenFunAndClosureClasses {
       BytecodeInstructions.castIfNotPrim(bTpe)
     }
 
-    val method = directApplyMethod(className, defn)
+    val method = staticApplyMethod(className, defn)
     m.visitMethodInsn(INVOKESTATIC, className.toInternalName, method.name, method.d.toDescriptor, false)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
@@ -352,6 +356,7 @@ object GenFunAndClosureClasses {
     }
 
     m.visitCode()
+    BytecodeInstructions.addLoc(defn.loc)
     loadParamsOf(lparams)
 
     // used for self-recursive tail calls

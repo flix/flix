@@ -105,7 +105,7 @@ object Tester {
 
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
-            writer.println(s"  ${bgGreen(" PASS ")} $sym ${brightBlack(elapsed.fmt)}")
+            writer.println(s"  ${bgGreen(" PASS ")} $sym ${elapsed.fmt}")
             terminal.flush()
 
           case TestEvent.Failure(sym, output, elapsed) =>
@@ -128,7 +128,7 @@ object Tester {
               writer.println()
               for ((sym, output) <- failed; if output.nonEmpty) {
                 writer.println(s"  ${bgRed(" FAIL ")} $sym")
-                writer.println(s"         ${sym.loc.source.name}:${sym.loc.beginLine}")
+                writer.println(s"         ${sym.loc.source.name}:${sym.loc.startLine}")
                 for (line <- output) {
                   writer.println(s"    $line")
                 }
@@ -143,7 +143,7 @@ object Tester {
               s"Passed: ${green(passed.toString)}, " +
                 s"Failed: ${red(failed.length.toString)}. " +
                 s"Skipped: ${yellow(skipped.toString)}. " +
-                s"Elapsed: ${brightBlack(elapsed.fmt)}."
+                s"Elapsed: ${elapsed.fmt}."
             )
             terminal.flush()
             finished = true

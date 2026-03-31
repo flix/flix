@@ -1,5 +1,7 @@
 mod Test.Dec.Assoc.Type.Mult {
 
+    use Assert.assertEq
+
     ////////////////////////////////////////////////////////
     // Type Definitions                                   //
     ////////////////////////////////////////////////////////
@@ -99,63 +101,63 @@ mod Test.Dec.Assoc.Type.Mult {
     // Int32
 
     @Test
-    pub def testInt3201(): Bool =
-        12 == twiceLeftInt3201(2, 3)
+    pub def testInt3201(): Unit \ Assert =
+        assertEq(expected = 12, twiceLeftInt3201(2, 3))
 
     @Test
-    pub def testInt3202(): Bool =
-        12 == twiceLeftInt3202(2, 3)
+    pub def testInt3202(): Unit \ Assert =
+        assertEq(expected = 12, twiceLeftInt3202(2, 3))
 
     @Test
-    pub def testInt3203(): Bool =
-        18 == twiceRightInt3201(2, 3)
+    pub def testInt3203(): Unit \ Assert =
+        assertEq(expected = 18, twiceRightInt3201(2, 3))
 
     @Test
-    pub def testInt3204(): Bool =
-        18 == twiceRightInt3202(2, 3)
+    pub def testInt3204(): Unit \ Assert =
+        assertEq(expected = 18, twiceRightInt3202(2, 3))
 
 
     // String
 
     @Test
-    pub def testString01(): Bool =
-        "abcabcabcabcabcabcabcabcabc" == twiceLeftString01("abc", 3)
+    pub def testString01(): Unit \ Assert =
+        assertEq(expected = "abcabcabcabcabcabcabcabcabc", twiceLeftString01("abc", 3))
 
     @Test
-    pub def testString02(): Bool =
-        "abcabcabcabcabcabcabcabcabc" == twiceLeftString02("abc", 3)
+    pub def testString02(): Unit \ Assert =
+        assertEq(expected = "abcabcabcabcabcabcabcabcabc", twiceLeftString02("abc", 3))
 
     @Test
-    pub def testString03(): Bool =
-        "abcabcabcabcabcabcabcabcabc" == twiceRightString01("abc", 3)
+    pub def testString03(): Unit \ Assert =
+        assertEq(expected = "abcabcabcabcabcabcabcabcabc", twiceRightString01("abc", 3))
 
     @Test
-    pub def testString04(): Bool =
-        "abcabcabcabcabcabcabcabcabc" == twiceRightString02("abc", 3)
+    pub def testString04(): Unit \ Assert =
+        assertEq(expected = "abcabcabcabcabcabcabcabcabc", twiceRightString02("abc", 3))
 
 
     // Vector
 
     @Test
-    pub def testVector01(): Bool =
+    pub def testVector01(): Unit \ Assert =
         let right = 2 * 3 + 3 * 3 + 4 * 3;
-        Vector#{2 * right, 3 * right, 4 * right} == twiceLeftVector01(Vector#{2, 3, 4}, 3)
+        assertEq(expected = Vector#{2 * right, 3 * right, 4 * right}, twiceLeftVector01(Vector#{2, 3, 4}, 3))
 
     @Test
-    pub def testVector02(): Bool =
+    pub def testVector02(): Unit \ Assert =
         let right = 2 * 3 + 3 * 3 + 4 * 3;
-        Vector#{2 * right, 3 * right, 4 * right} == twiceLeftVector02(Vector#{2, 3, 4}, 3)
+        assertEq(expected = Vector#{2 * right, 3 * right, 4 * right}, twiceLeftVector02(Vector#{2, 3, 4}, 3))
 
     @Test
-    pub def testVector03(): Bool =
-        Vector#{2 * 3 * 3, 3 * 3 * 3, 4 * 3 * 3} == twiceRightVector01(Vector#{2, 3, 4}, 3)
+    pub def testVector03(): Unit \ Assert =
+        assertEq(expected = Vector#{2 * 3 * 3, 3 * 3 * 3, 4 * 3 * 3}, twiceRightVector01(Vector#{2, 3, 4}, 3))
 
     @Test
-    pub def testVector04(): Bool =
-        Vector#{2 * 3 * 3, 3 * 3 * 3, 4 * 3 * 3} == twiceRightVector02(Vector#{2, 3, 4}, 3)
+    pub def testVector04(): Unit \ Assert =
+        assertEq(expected = Vector#{2 * 3 * 3, 3 * 3 * 3, 4 * 3 * 3}, twiceRightVector02(Vector#{2, 3, 4}, 3))
 
     @Test
-    pub def testVector05(): Bool =
-        Vector#{Vector#{2 * 5, 2 * 6}, Vector#{3 * 5, 3 * 6}, Vector#{4 * 5, 4 * 6}} == outerProduct(Vector#{2, 3, 4}, Vector#{5, 6})
+    pub def testVector05(): Unit \ Assert =
+        assertEq(expected = Vector#{Vector#{2 * 5, 2 * 6}, Vector#{3 * 5, 3 * 6}, Vector#{4 * 5, 4 * 6}}, outerProduct(Vector#{2, 3, 4}, Vector#{5, 6}))
 
 }

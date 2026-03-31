@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -27,7 +27,7 @@ object RecordConstraintSolver {
   /**
     * Unifies the two given record row types.
     */
-  def solve(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv, prov: Provenance)(implicit progress: Progress, flix: Flix): (List[TypeConstraint], Substitution) = (tpe1, tpe2) match {
+  def solve(tpe1: Type, tpe2: Type, scope: RegionScope, renv: RigidityEnv, prov: Provenance)(implicit progress: Progress, flix: Flix): (List[TypeConstraint], Substitution) = (tpe1, tpe2) match {
 
     // ----------
     // ρ ~ ρ => ∅
@@ -83,7 +83,7 @@ object RecordConstraintSolver {
     *
     * Returns None if no such pivot is possible.
     */
-  private def pivot(row: Type, hdLabel: Name.Label, hdTpe: Type, tvars: Set[Symbol.KindedTypeVarSym])(implicit scope: Scope, renv: RigidityEnv, flix: Flix): Option[(Type, Substitution)] = row match {
+  private def pivot(row: Type, hdLabel: Name.Label, hdTpe: Type, tvars: Set[Symbol.KindedTypeVarSym])(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): Option[(Type, Substitution)] = row match {
 
     // If head labels match, then there is nothing to do. We return the same row.
     //

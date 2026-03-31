@@ -21,7 +21,7 @@
 /// CodePoint extends access to include _supplementary characters_ so all
 /// Unicode characters can be represented.
 ///
-mod CodePoint {
+pub mod CodePoint {
 
     import java.lang.Character
     import java.lang.Exception
