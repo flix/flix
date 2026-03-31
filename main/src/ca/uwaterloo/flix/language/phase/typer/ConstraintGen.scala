@@ -1003,21 +1003,12 @@ object ConstraintGen {
 
       case Expr.NewObject(_, clazz, targs, constructors, methods, tvar, loc) =>
         constructors.foreach(visitJvmConstructor)
-        val numTypeParams = clazz.getTypeParameters.length
-        val resTpe = if (numTypeParams > 0) {
-          val baseTpe = Type.mkNative(clazz, loc)
-          val typeArgs = if (targs.nonEmpty && targs.length == numTypeParams) targs
-                         else List.fill(numTypeParams)(freshVar(Kind.Star, loc))
-          Type.mkApply(baseTpe, typeArgs, loc)
-        } else {
-          Type.getFlixType(clazz)
-        }
+        val resTpe = if (targs.nonEmpty) Type.mkApply(Type.mkNative(clazz, loc), targs, loc)
+                     else Type.mkNative(clazz, loc)
         c.unifyType(tvar, resTpe, loc)
 
         // Build substitution from Java type variable names to Flix types.
-        val substMap: Map[String, Type] = if (numTypeParams > 0) {
-          clazz.getTypeParameters.map(_.getName).zip(resTpe.typeArguments).toMap
-        } else Map.empty
+        val substMap = clazz.getTypeParameters.map(_.getName).zip(targs).toMap
 
         // Constrain each method's params against the resolved Java method signature.
         methods.foreach(m => visitNewObjectMethod(m, clazz, substMap))
@@ -1343,6 +1334,11 @@ object ConstraintGen {
     * Generates constraints for a JVM method in a NewObject expression,
     * including constraints that the Flix method's parameter and return types
     * match the resolved Java method signature.
+    *
+    * For example, given `new Comparator[String]` with substMap `{T -> String}`,
+    * Java's `Comparator.compare(T, T) -> int` resolves to `compare(String, String) -> Int32`.
+    * If the Flix method declares `t: Int32` instead of `t: String`, the emitted
+    * constraint `Int32 ~ String` produces a type error.
     */
   private def visitNewObjectMethod(method: KindedAst.JvmMethod, clazz: Class[?], substMap: Map[String, Type])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
     case KindedAst.JvmMethod(_, ident, fparams, exp, returnTpe, eff, _) =>
@@ -1358,22 +1354,23 @@ object ConstraintGen {
 
       // Find the matching Java method by name and arity (excluding 'this' param).
       val flixParamCount = fparams.tail.length
-      val javaMethod = JvmUtils.getInstanceMethods(clazz)
+      val javaMethodOpt = JvmUtils.getInstanceMethods(clazz)
         .find(m => m.getName == ident.name && m.getParameterCount == flixParamCount)
+      javaMethodOpt match {
+        case Some(jm) =>
+          // Constrain each Flix param type against the resolved Java param type.
+          val resolvedParams = jm.getGenericParameterTypes.toList.map(resolveJavaType(_, substMap, ident.loc))
+          fparams.tail.zip(resolvedParams).foreach {
+            case (KindedAst.FormalParam(_, tpe, _, paramLoc), expectedType) =>
+              c.expectType(expected = expectedType, actual = tpe, paramLoc)
+          }
 
-      javaMethod.foreach { jm =>
-        // Constrain each Flix param type against the resolved Java param type.
-        val resolvedParams = jm.getGenericParameterTypes.toList.map(resolveJavaType(_, substMap, ident.loc))
-        fparams.tail.zip(resolvedParams).foreach {
-          case (KindedAst.FormalParam(_, tpe, _, paramLoc), expectedType) =>
-            c.expectType(expected = expectedType, actual = tpe, paramLoc)
-        }
-
-        // Constrain the return type.
-        val resolvedRet = resolveJavaType(jm.getGenericReturnType, substMap, ident.loc)
-        if (jm.getReturnType != java.lang.Void.TYPE) {
-          c.expectType(expected = resolvedRet, actual = returnTpe, ident.loc)
-        }
+          // Constrain the return type.
+          if (jm.getReturnType == java.lang.Void.TYPE)
+            c.expectType(expected = Type.Unit, actual = returnTpe, ident.loc)
+          else
+            c.expectType(expected = resolveJavaType(jm.getGenericReturnType, substMap, ident.loc), actual = returnTpe, ident.loc)
+        case None => // No matching Java method found; Safety will report the error.
       }
   }
 
