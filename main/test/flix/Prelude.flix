@@ -23,6 +23,7 @@ mod Test.Exp.Fixpoint {}
 mod Test.Exp.Fixpoint.Solve {}
 mod Test.Exp.Jvm {}
 mod Test.Exp.Jvm.Generic {}
+mod Test.Exp.Jvm.Generic.Poly {}
 mod Test.Exp.Jvm.InvokeMethod {}
 mod Test.Exp.Jvm.InvokeMethod.Overload {}
 mod Test.Exp.Jvm.InvokeMethod2 {}
