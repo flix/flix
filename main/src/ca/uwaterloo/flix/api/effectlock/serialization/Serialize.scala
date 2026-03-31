@@ -103,7 +103,7 @@ object Serialize {
     case TypeConstructor.RestrictableEnum(sym, kind) => RestrictableEnum(serializeRestrictableEnumSym(sym), serializeKind(kind))
     case TypeConstructor.Native(clazz) => serializeJvmClass(clazz)
     case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
-    case TypeConstructor.JvmMethod(_, _) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
+    case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
     case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
     case TypeConstructor.Array => Array
     case TypeConstructor.ArrayWithoutRegion => ArrayWithoutRegion

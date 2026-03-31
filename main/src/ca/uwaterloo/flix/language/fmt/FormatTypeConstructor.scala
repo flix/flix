@@ -72,7 +72,7 @@ object FormatTypeConstructor {
     // JVM types
     case TypeConstructor.Native(clazz) => clazz.getSimpleName
     case TypeConstructor.JvmConstructor(constructor) => s"Constructor(${constructor.getDeclaringClass.getSimpleName})"
-    case TypeConstructor.JvmMethod(method, _) => s"Method(${method.getName})"
+    case TypeConstructor.JvmMethod(method) => s"Method(${method.getName})"
     case TypeConstructor.JvmField(field) => s"Field(${field.getName})"
 
     // Tuples and relations

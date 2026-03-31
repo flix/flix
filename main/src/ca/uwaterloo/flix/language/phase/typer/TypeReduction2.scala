@@ -22,11 +22,11 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, RegionScope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
-import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.{ClassUtils => ApacheClassUtils}
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, GenericArrayType, Method, ParameterizedType, TypeVariable, WildcardType}
+import scala.annotation.tailrec
 
 object TypeReduction2 {
 
@@ -97,13 +97,14 @@ object TypeReduction2 {
           progress.markProgress()
           instantiateJavaTypeWithFreshVars(constructor.getDeclaringClass, scope, loc)
 
-        case Type.Cst(TypeConstructor.JvmMethod(method, receiverType), _) =>
-          progress.markProgress()
-          resolveMethodReturnType(method, receiverType, scope, loc)
-
         case Type.Cst(TypeConstructor.JvmField(field), _) =>
           progress.markProgress()
           instantiateJavaTypeWithFreshVars(field.getType, scope, loc)
+
+        case t if t.typeConstructor.exists(_.isInstanceOf[TypeConstructor.JvmMethod]) =>
+          val TypeConstructor.JvmMethod(method) = t.typeConstructor.get: @unchecked
+          progress.markProgress()
+          resolveMethodReturnType(method, t.typeArguments, scope, loc)
 
         case t => Type.JvmToType(t, loc)
       }
@@ -114,7 +115,8 @@ object TypeReduction2 {
           progress.markProgress()
           PrimitiveEffects.getConstructorEffs(constructor, loc)
 
-        case Type.Cst(TypeConstructor.JvmMethod(method, _), _) =>
+        case t if t.typeConstructor.exists(_.isInstanceOf[TypeConstructor.JvmMethod]) =>
+          val TypeConstructor.JvmMethod(method) = t.typeConstructor.get: @unchecked
           progress.markProgress()
           PrimitiveEffects.getMethodEffs(method, loc)
 
@@ -142,9 +144,13 @@ object TypeReduction2 {
         case JvmMember.JvmMethod(tpe, name, tpes) =>
           lookupMethod(tpe, name.name, tpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              if (genericArgTypesMatch(method, Some(tpe), tpes, scope, loc)) {
+              val classTypeArgs = extractClassTypeArgs(method, tpe, scope, loc)
+              val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
+              val allTypeArgs = classTypeArgs ++ methodTypeArgs
+              if (genericArgTypesMatch(method, allTypeArgs, tpes)) {
                 progress.markProgress()
-                Type.Cst(TypeConstructor.JvmMethod(method, Some(tpe)), loc)
+                val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
+                Type.mkApply(base, allTypeArgs, loc)
               } else {
                 unresolved
               }
@@ -154,9 +160,11 @@ object TypeReduction2 {
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
           lookupStaticMethod(clazz, name.name, tpes) match {
             case JavaMethodResolution.Resolved(method) =>
-              if (genericArgTypesMatch(method, None, tpes, scope, loc)) {
+              val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
+              if (genericArgTypesMatch(method, methodTypeArgs, tpes)) {
                 progress.markProgress()
-                Type.Cst(TypeConstructor.JvmMethod(method, None), loc)
+                val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
+                Type.mkApply(base, methodTypeArgs, loc)
               } else {
                 unresolved
               }
@@ -399,6 +407,7 @@ object TypeReduction2 {
   }
 
   /** Returns `true` if the base type of a chain of applications is a `Native` constructor. */
+  @tailrec
   private def isNativeBase(tpe: Type): Boolean = tpe match {
     case Type.Cst(TypeConstructor.Native(_), _) => true
     case Type.Apply(t1, _, _) => isNativeBase(t1)
@@ -431,9 +440,9 @@ object TypeReduction2 {
     * Example 4: `String.length()` -- the return type is `int` (not a type variable).
     *   Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
     */
-  private def resolveMethodReturnType(method: Method, receiverType: Option[Type],
+  private def resolveMethodReturnType(method: Method, typeArgs: List[Type],
       scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
-    val substMap = buildTypeVarSubstitution(method, receiverType, scope, loc)
+    val substMap = buildTypeVarSubstitution(method, typeArgs)
     method.getGenericReturnType match {
       case tv: TypeVariable[_] =>
         // Bare type variable return (e.g., E from ArrayList<E>.get()).
@@ -513,47 +522,44 @@ object TypeReduction2 {
 
   /**
     * Builds a mapping from Java type variable names (e.g., `"E"`, `"K"`, `"V"`) to Flix types,
-    * using the receiver's type arguments for class-level type parameters and fresh variables
-    * for method-level type parameters.
+    * using the provided type arguments (class-level first, then method-level).
     *
-    * Example: For `HashMap[String, Int32].get(Object)`, where `HashMap<K, V>` declares
-    * type parameters `K` and `V`, this produces the mapping `{"K" -> String, "V" -> Int32}`.
+    * Example: For `JvmMethod(HashMap.get)[String][Int32]`, where `HashMap<K, V>` declares
+    * type parameters `K` and `V`, the typeArgs are `[String, Int32]` and the result is
+    * `{"K" -> String, "V" -> Int32}`.
     *
-    * Class-level type arguments that are themselves type variables (e.g., from `HttpResponse[?v]`)
-    * are excluded from the substitution. This prevents returning unconstrained type variables that
-    * become `AnyType` when the result is used in a context (like `unchecked_cast`) that doesn't
-    * constrain the type. Excluded variables fall back to the erased return type via `getOrElse`.
+    * Class-level type arguments that are type variables (e.g., from `HttpResponse[?v]`) are
+    * excluded from the substitution. This prevents returning unconstrained type variables
+    * that become `AnyType` when the result is used in a context (like `unchecked_cast`)
+    * that doesn't constrain the type. Excluded variables fall back to the erased return
+    * type via `getOrElse`.
+    *
+    * Method-level type arguments (fresh vars) are always included so they can flow through
+    * to the constraint solver for proper unification.
     */
-  private def buildTypeVarSubstitution(method: Method, receiverType: Option[Type],
-      scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Map[String, Type] = {
-    // Class-level type param names (e.g., "E" from ArrayList<E>).
-    // Extract names eagerly to avoid existential type inference issues.
-    val classParamNames: Array[String] = method.getDeclaringClass.getTypeParameters.map(_.getName)
-    val classSubst: Map[String, Type] = receiverType match {
-      case Some(tpe) =>
-        val typeArgs = tpe.typeArguments
-        if (classParamNames.length == typeArgs.length)
-          // Only include concrete type arguments; exclude type variables to avoid
-          // propagating unconstrained vars that become AnyType.
-          classParamNames.zip(typeArgs).collect {
-            case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
-          }.toMap
-        else
-          Map.empty
-      case None =>
-        Map.empty
-    }
-    // Method-level type param names (e.g., "T" from <T> Collections.emptyList()).
+  private def buildTypeVarSubstitution(method: Method, typeArgs: List[Type]): Map[String, Type] = {
+    val classParamNames: Array[String] =
+      if (java.lang.reflect.Modifier.isStatic(method.getModifiers)) Array.empty
+      else method.getDeclaringClass.getTypeParameters.map(_.getName)
     val methodParamNames: Array[String] = method.getTypeParameters.map(_.getName)
-    val methodSubst: Map[String, Type] = methodParamNames.map { name =>
-      name -> Type.freshVar(Kind.Star, loc)(scope, flix)
-    }.toMap
-    classSubst ++ methodSubst
+    val allParamNames = classParamNames ++ methodParamNames
+    if (allParamNames.length == typeArgs.length) {
+      val numClassParams = classParamNames.length
+      val (classArgs, methodArgs) = typeArgs.splitAt(numClassParams)
+      // Exclude class-level type vars to prevent AnyType propagation.
+      val classSubst = classParamNames.zip(classArgs).collect {
+        case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
+      }.toMap
+      // Method-level fresh vars are always included for constraint unification.
+      val methodSubst = methodParamNames.zip(methodArgs).toMap
+      classSubst ++ methodSubst
+    } else
+      Map.empty
   }
 
   /**
     * Returns `true` if the argument types are compatible with the method's generic
-    * parameter types after substituting type variables from the receiver.
+    * parameter types after substituting type variables.
     *
     * For each parameter whose generic type is a bare `TypeVariable`, looks up the
     * concrete type in the substitution map and verifies the argument type is
@@ -564,9 +570,9 @@ object TypeReduction2 {
     * Example: For `ArrayList[String].add(123)`, the generic param `E` resolves
     * to `String`, and `Int32` is not assignable to `String`, so this returns `false`.
     */
-  private def genericArgTypesMatch(method: Method, receiverType: Option[Type],
-      argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Boolean = {
-    val substMap = buildTypeVarSubstitution(method, receiverType, scope, loc)
+  private def genericArgTypesMatch(method: Method, typeArgs: List[Type],
+      argTypes: List[Type]): Boolean = {
+    val substMap = buildTypeVarSubstitution(method, typeArgs)
     val genericParamTypes = method.getGenericParameterTypes
     argTypes.zip(genericParamTypes).forall { case (argType, genericParamType) =>
       genericParamType match {
@@ -582,5 +588,17 @@ object TypeReduction2 {
         case _ => true // Not a bare TypeVariable: erased lookup already validated.
       }
     }
+  }
+
+  /**
+    * Extracts class-level type arguments from the receiver type for a method.
+    * Falls back to fresh type variables when the receiver doesn't have the expected number of args.
+    */
+  private def extractClassTypeArgs(method: Method, receiverType: Type,
+      scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): List[Type] = {
+    val n = method.getDeclaringClass.getTypeParameters.length
+    val typeArgs = receiverType.typeArguments
+    if (typeArgs.length == n) typeArgs
+    else List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix))
   }
 }

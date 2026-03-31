@@ -522,7 +522,7 @@ object DisplayType {
         case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => mkApply(Name(clazz.getName), t.typeArguments.map(visit))
         case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
-        case TypeConstructor.JvmMethod(method, _) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
+        case TypeConstructor.JvmMethod(method) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
         case TypeConstructor.JvmField(field) => mkApply(JvmField(field), t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)

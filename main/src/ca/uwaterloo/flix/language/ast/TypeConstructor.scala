@@ -285,14 +285,22 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of a Java method.
     *
-    * The `receiverType` is the Flix type of the object on which the method is invoked.
-    * It is used to resolve generic return types by mapping Java type variables to
-    * the receiver's concrete type arguments. For object methods, `receiverType` is
-    * `Some(tpe)` where `tpe` is the receiver's type (e.g., `ArrayList[String]`).
-    * For static methods, `receiverType` is `None` since there is no receiver.
+    * The kind depends on the number of type parameters:
+    * - For instance methods: class type parameters + method type parameters.
+    * - For static methods: only method type parameters (class params are not in scope).
+    *
+    * Examples:
+    * - `JvmMethod(String.length)` has kind `Jvm` (no type parameters).
+    * - `JvmMethod(ArrayList.get)` has kind `Star -> Jvm` (one class type parameter `E`).
+    * - `JvmMethod(HashMap.get)` has kind `Star -> Star -> Jvm` (two class type parameters `K`, `V`).
+    *
+    * Type arguments are applied via `Type.Apply`, e.g., `JvmMethod(ArrayList.get)[String]`.
     */
-  case class JvmMethod(method: Method, receiverType: Option[Type]) extends TypeConstructor {
-    def kind: Kind = Kind.Jvm
+  case class JvmMethod(method: Method) extends TypeConstructor {
+    val numClassParams: Int = if (java.lang.reflect.Modifier.isStatic(method.getModifiers)) 0
+                              else method.getDeclaringClass.getTypeParameters.length
+    val numMethodParams: Int = method.getTypeParameters.length
+    def kind: Kind = Kind.mkArrowTo(numClassParams + numMethodParams, Kind.Jvm)
   }
 
   /**
