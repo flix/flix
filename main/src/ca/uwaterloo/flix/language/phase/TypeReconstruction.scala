@@ -459,10 +459,9 @@ object TypeReconstruction {
       val eff = subst(evar)
       methodTpe.typeConstructor match {
         case Some(TypeConstructor.JvmMethod(method)) =>
-          val mloc = methodTpe.baseType.loc
-          val es = getArgumentsWithVarArgs(method, es0, mloc)
-          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, mloc)
-        case None =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
+          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
+        case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
@@ -473,10 +472,9 @@ object TypeReconstruction {
       val eff = subst(evar)
       methodTpe.typeConstructor match {
         case Some(TypeConstructor.JvmMethod(method)) =>
-          val mloc = methodTpe.baseType.loc
-          val es = getArgumentsWithVarArgs(method, es0, mloc)
-          TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, mloc)
-        case None =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
+          TypedAst.Expr.InvokeSuperMethod(method, es, returnTpe, eff, loc)
+        case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), returnTpe, eff)
       }
 
@@ -487,10 +485,9 @@ object TypeReconstruction {
       val eff = subst(evar)
       methodTpe.typeConstructor match {
         case Some(TypeConstructor.JvmMethod(method)) =>
-          val mloc = methodTpe.baseType.loc
-          val es = getArgumentsWithVarArgs(method, es0, mloc)
-          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, mloc)
-        case None =>
+          val es = getArgumentsWithVarArgs(method, es0, loc)
+          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
+        case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }
 
