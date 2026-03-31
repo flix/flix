@@ -415,8 +415,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |import java.lang.Comparable
         |import java.lang.Object
         |
-        |def f(): Comparable \ IO =
-        |   new Comparable {
+        |def f(): Comparable[Object] \ IO =
+        |   new Comparable[Object] {
         |     def compareTo(x: Object, _y: Object): Int32 =
         |       let x = 0;
         |       x
@@ -935,8 +935,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |import java.lang.Comparable
         |import java.lang.Object
         |
-        |def f(): Comparable \ IO =
-        |   new Comparable {
+        |def f(): Comparable[Object] \ IO =
+        |   new Comparable[Object] {
         |     def compareTo(x: Object, _y: Object): Int32 =
         |       0
         |   }
