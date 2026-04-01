@@ -168,7 +168,7 @@ object Scheme {
     val cconstrs2 = cconstrs2_0.map {
       case TraitConstraint(head, arg, loc) =>
         // should never fail
-        val (t, cs) = TypeReduction2.reduce(subst(arg), scope, RigidityEnv.empty)(Progress(), eenv0, flix)
+        val (t, cs) = TypeReduction2.reduce(subst(arg))(scope, RigidityEnv.empty, Progress(), eenv0, flix)
         if (cs.nonEmpty) throw InternalCompilerException(s"unexpected constraints: $cs", loc)
         TraitConstraint(head, t, loc)
     }
