@@ -32,14 +32,14 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type, scope: RegionScope, renv: RigidityEnv)(implicit progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = tpe0 match {
+  def reduce(tpe0: Type)(implicit scope: RegionScope, renv: RigidityEnv, progress: Progress, eqenv: EqualityEnv, flix: Flix): (Type, List[TypeConstraint]) = tpe0 match {
     case t: Type.Var => (t, Nil)
 
     case t: Type.Cst => (t, Nil)
 
     case Type.Apply(tpe1, tpe2, loc) =>
-      val (t1, cs1) = reduce(tpe1, scope, renv)
-      val (t2, cs2) = reduce(tpe2, scope, renv)
+      val (t1, cs1) = reduce(tpe1)
+      val (t2, cs2) = reduce(tpe2)
       // Performance: Reuse this, if possible.
       val tpe = if ((t1 eq tpe1) && (t2 eq tpe2))
         tpe0
@@ -50,7 +50,7 @@ object TypeReduction2 {
     case Type.Alias(_, _, tpe, _) => (tpe, Nil)
 
     case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
-      val (t, cs) = reduce(tpe, scope, renv)
+      val (t, cs) = reduce(tpe)
 
       // Get all the associated types from the context
       val assocOpt = eqenv.getAssocDef(sym, t)
@@ -92,7 +92,7 @@ object TypeReduction2 {
       }
 
     case Type.JvmToType(tpe, loc) =>
-      val (t, cs) = reduce(tpe, scope, renv)
+      val (t, cs) = reduce(tpe)
       t match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
@@ -112,7 +112,7 @@ object TypeReduction2 {
       }
 
     case Type.JvmToEff(tpe, loc) =>
-      val (t, cs) = reduce(tpe, scope, renv)
+      val (t, cs) = reduce(tpe)
       t match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           progress.markProgress()
@@ -130,7 +130,7 @@ object TypeReduction2 {
     case unresolved@Type.UnresolvedJvmType(member, loc) =>
       member match {
         case JvmMember.JvmConstructor(clazz, tpes) =>
-          val (reducedTpes, css) = tpes.map(reduce(_, scope, renv)).unzip
+          val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
           lookupConstructor(clazz, reducedTpes) match {
             case JavaConstructorResolution.Resolved(constructor) =>
@@ -140,7 +140,7 @@ object TypeReduction2 {
           }
 
         case JvmMember.JvmField(_, tpe, name) =>
-          val (reducedTpe, cs) = reduce(tpe, scope, renv)
+          val (reducedTpe, cs) = reduce(tpe)
           lookupField(reducedTpe, name.name) match {
             case JavaFieldResolution.Resolved(field) =>
               progress.markProgress()
@@ -149,8 +149,8 @@ object TypeReduction2 {
           }
 
         case JvmMember.JvmMethod(tpe, name, tpes) =>
-          val (reducedTpe, cs0) = reduce(tpe, scope, renv)
-          val (reducedTpes, css) = tpes.map(reduce(_, scope, renv)).unzip
+          val (reducedTpe, cs0) = reduce(tpe)
+          val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = cs0 ::: css.flatten
           lookupMethod(reducedTpe, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
@@ -162,7 +162,7 @@ object TypeReduction2 {
           }
 
         case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
-          val (reducedTpes, css) = tpes.map(reduce(_, scope, renv)).unzip
+          val (reducedTpes, css) = tpes.map(reduce(_)).unzip
           val cs = css.flatten
           lookupStaticMethod(clazz, name.name, reducedTpes) match {
             case JavaMethodResolution.Resolved(method) =>
@@ -175,7 +175,7 @@ object TypeReduction2 {
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
-  private def lookupConstructor(clazz: Class[?], ts: List[Type]): JavaConstructorResolution = {
+  private def lookupConstructor(clazz: Class[?], ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): JavaConstructorResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
 
@@ -191,7 +191,7 @@ object TypeReduction2 {
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
-  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type]): JavaMethodResolution = {
+  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): JavaMethodResolution = {
     val typesAreKnown = isKnown(thisObj) && ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
@@ -202,7 +202,7 @@ object TypeReduction2 {
   }
 
   /** Tries to find a static method of `clazz` that takes arguments of type `ts`. */
-  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type]): JavaMethodResolution = {
+  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): JavaMethodResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
@@ -321,7 +321,7 @@ object TypeReduction2 {
   }
 
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
-  private def lookupField(thisObj: Type, fieldName: String): JavaFieldResolution = {
+  private def lookupField(thisObj: Type, fieldName: String)(implicit scope: RegionScope, renv: RigidityEnv): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
     val opt = for {
@@ -332,7 +332,7 @@ object TypeReduction2 {
   }
 
   /** Returns `true` if type is resolved enough for Java resolution. */
-  private def isKnown(tpe: Type): Boolean = tpe match {
+  private def isKnown(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): Boolean = tpe match {
     case Type.Var(_, _) if tpe.kind == Kind.Eff => true
     case Type.Var(_, _) => false
     case Type.Cst(_, _) => true
