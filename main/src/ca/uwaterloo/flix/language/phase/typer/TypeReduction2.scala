@@ -258,6 +258,7 @@ object TypeReduction2 {
     }
   }
 
+
   /**
     * Returns the Java reflective class object corresponding to the given Flix `tpe`.
     */
@@ -293,28 +294,11 @@ object TypeReduction2 {
       val t = getJavaType(elmType)
       t.arrayType()
 
-    // Functions
+    // Functions: map Flix Arrow types to Java functional interfaces.
     case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _) =>
-      (varArg, varRet) match {
-        case (Type.Cst(tc1, _), Type.Cst(tc2, _)) =>
-          (tc1, tc2) match {
-            case (TypeConstructor.Int32, TypeConstructor.Unit) => classOf[java.util.function.IntConsumer]
-            case (TypeConstructor.Int32, TypeConstructor.Bool) => classOf[java.util.function.IntPredicate]
-            case (TypeConstructor.Int32, TypeConstructor.Int32) => classOf[java.util.function.IntUnaryOperator]
-            case (TypeConstructor.Int32, TypeConstructor.Native(obj)) if obj == classOf[Object] => classOf[java.util.function.IntFunction[Object]]
-            case (TypeConstructor.Float64, TypeConstructor.Unit) => classOf[java.util.function.DoubleConsumer]
-            case (TypeConstructor.Float64, TypeConstructor.Bool) => classOf[java.util.function.DoublePredicate]
-            case (TypeConstructor.Float64, TypeConstructor.Float64) => classOf[java.util.function.DoubleUnaryOperator]
-            case (TypeConstructor.Float64, TypeConstructor.Native(obj)) if obj == classOf[Object] => classOf[java.util.function.DoubleFunction[Object]]
-            case (TypeConstructor.Int64, TypeConstructor.Unit) => classOf[java.util.function.LongConsumer]
-            case (TypeConstructor.Int64, TypeConstructor.Bool) => classOf[java.util.function.LongPredicate]
-            case (TypeConstructor.Int64, TypeConstructor.Int64) => classOf[java.util.function.LongUnaryOperator]
-            case (TypeConstructor.Int64, TypeConstructor.Native(obj)) if obj == classOf[Object] => classOf[java.util.function.LongFunction[Object]]
-            case (TypeConstructor.Native(obj), TypeConstructor.Unit) if obj == classOf[Object] => classOf[java.util.function.Consumer[Object]]
-            case (TypeConstructor.Native(obj), TypeConstructor.Bool) if obj == classOf[Object] => classOf[java.util.function.Predicate[Object]]
-            case _ => classOf[Object] // default
-          }
-        case _ => classOf[Object] // default
+      lookupFunIF(varArg, varRet) match {
+        case Some(mapping) => mapping.javaClass
+        case None => classOf[Object]
       }
     case _ => classOf[Object] // default
   }
@@ -447,8 +431,7 @@ object TypeReduction2 {
     * Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
     */
   private def resolveMethodReturnType(method: Method, typeArgs: List[Type],
-    scope: RegionScope, loc: SourceLocation)(implicit renv: RigidityEnv, flix: Flix): Type = {
-    implicit val sc: RegionScope = scope
+    scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     method.getGenericReturnType match {
       case tv: TypeVariable[_] =>
@@ -536,28 +519,16 @@ object TypeReduction2 {
     * type parameters `K` and `V`, the typeArgs are `[String, Int32]` and the result is
     * `{"K" -> String, "V" -> Int32}`.
     *
-    * Flexible (non-rigid) class-level type variables are excluded from the substitution.
-    * Including them would over-constrain the solver by back-propagating through chained
-    * method calls (e.g., `Stream[?t].findFirst().get()` where `?t` is a fresh var).
-    * Rigid type variables and concrete types are included — rigid vars erase to Object
-    * and should participate in constraint generation.
     */
-  private def buildTypeVarSubstitution(method: Method, typeArgs: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): Map[String, Type] = {
+  private def buildTypeVarSubstitution(method: Method, typeArgs: List[Type]): Map[String, Type] = {
     val classParamNames: Array[String] =
       if (java.lang.reflect.Modifier.isStatic(method.getModifiers)) Array.empty
       else method.getDeclaringClass.getTypeParameters.map(_.getName)
     val methodParamNames: Array[String] = method.getTypeParameters.map(_.getName)
     val allParamNames = classParamNames ++ methodParamNames
-    if (allParamNames.length == typeArgs.length) {
-      val numClassParams = classParamNames.length
-      val (classArgs, methodArgs) = typeArgs.splitAt(numClassParams)
-      val classSubst = classParamNames.zip(classArgs).flatMap {
-        case (name, t @ Type.Var(sym, _)) => if (renv.isRigid(sym)) Some(name -> t) else None
-        case (name, t) => Some(name -> t)
-      }.toMap
-      val methodSubst = methodParamNames.zip(methodArgs).toMap
-      classSubst ++ methodSubst
-    } else
+    if (allParamNames.length == typeArgs.length)
+      allParamNames.zip(typeArgs).toMap
+    else
       Map.empty
   }
 
@@ -573,7 +544,7 @@ object TypeReduction2 {
     *   - methodTypeArgs = [?t] (fresh var for `T`)
     *   - emits Equality(?t, String) for the `T` parameter
     */
-  private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit renv: RigidityEnv, flix: Flix): (Type, List[TypeConstraint]) = {
+  private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): (Type, List[TypeConstraint]) = {
     val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
     val allTypeArgs = classTypeArgs ++ methodTypeArgs
     val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
@@ -595,8 +566,7 @@ object TypeReduction2 {
     */
   private def mkArgConstraints(method: Method, typeArgs: List[Type],
     argTypes: List[Type], scope: RegionScope, loc: SourceLocation)
-    (implicit renv: RigidityEnv, flix: Flix): List[TypeConstraint] = {
-    implicit val sc: RegionScope = scope
+    (implicit flix: Flix): List[TypeConstraint] = {
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     val genericParamTypes = method.getGenericParameterTypes
     argTypes.zip(genericParamTypes).flatMap { case (argType, genericParamType) =>
@@ -607,18 +577,7 @@ object TypeReduction2 {
               TypeConstraint.Provenance.Match(expectedType, argType, loc))
           }
         case pt: ParameterizedType =>
-          // For parameterized params (e.g., BodyHandler<T>, Class<A>), emit constraints
-          // linking each resolved Java type argument to the corresponding Flix type argument.
-          val javaTypeArgs = pt.getActualTypeArguments.toList
-          val flixTypeArgs = argType.typeArguments
-          javaTypeArgs.zip(flixTypeArgs).flatMap {
-            case (tv: TypeVariable[_], flixArg) =>
-              substMap.get(tv.getName).map { expectedType =>
-                TypeConstraint.Equality(expectedType, flixArg,
-                  TypeConstraint.Provenance.Match(expectedType, flixArg, loc))
-              }
-            case _ => None
-          }
+          mkParamTypeConstraints(pt, argType, substMap, loc)
         case gat: GenericArrayType =>
           // For varargs/array params (e.g., T[] in Stream.of(T...)), emit a constraint
           // linking the component type variable to the Flix array/vector element type.
@@ -671,6 +630,123 @@ object TypeReduction2 {
         }
       case None =>
         List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix))
+    }
+  }
+
+  /**
+    * Emits equality constraints for a `ParameterizedType` Java method parameter
+    * by linking its type arguments to the corresponding Flix type arguments.
+    *
+    * Handles two cases:
+    *
+    * 1. **Arrow types** (Flix functions passed as Java functional interfaces):
+    *    Uses `lookupFunIF` to determine which Arrow component (arg/ret) maps to
+    *    which interface type param, then constrains the method's type variable
+    *    against that component.
+    *
+    *    Example: `IntStream.mapToObj(IntFunction<? extends R>)` with arg `Int32 -> Object \ IO`:
+    *    - `lookupFunIF` maps `IntFunction` to `FunIFMapping(retParam = Some("R"))`
+    *    - The interface param `R` corresponds to the Arrow return type `Object`
+    *    - The wildcard `? extends R` resolves to method type variable `R`
+    *    - Emits constraint: `?r ~ Object`
+    *
+    * 2. **Native types** (Java objects like `BodyHandler[byte[]]`, `Class[A]`):
+    *    Zips the Java type arguments with the Flix type arguments directly.
+    */
+  private def mkParamTypeConstraints(
+    pt: ParameterizedType, argType: Type,
+    substMap: Map[String, Type], loc: SourceLocation
+  ): List[TypeConstraint] = {
+    argType match {
+      case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), flixArg, _), flixRet, _) =>
+        lookupFunIF(flixArg, flixRet) match {
+          case Some(mapping) =>
+            val fiTypeArgs: Map[String, Type] =
+              mapping.argParam.map(_ -> flixArg).toMap ++
+              mapping.retParam.map(_ -> flixRet).toMap
+            val rawClass = pt.getRawType.asInstanceOf[Class[?]]
+            val interfaceParamNames = rawClass.getTypeParameters.map(_.getName)
+            interfaceParamNames.zip(pt.getActualTypeArguments).flatMap {
+              case (ifParamName, javaTypeArg) =>
+                resolveToTypeVariable(javaTypeArg).flatMap { methodTvName =>
+                  for {
+                    expectedType <- substMap.get(methodTvName)
+                    flixType <- fiTypeArgs.get(ifParamName)
+                  } yield TypeConstraint.Equality(expectedType, flixType,
+                    TypeConstraint.Provenance.Match(expectedType, flixType, loc))
+                }
+            }.toList
+          case None => Nil
+        }
+      case _ =>
+        val javaTypeArgs = pt.getActualTypeArguments.toList
+        val flixTypeArgs = argType.typeArguments
+        javaTypeArgs.zip(flixTypeArgs).flatMap {
+          case (tv: TypeVariable[_], flixArg) =>
+            substMap.get(tv.getName).map { expectedType =>
+              TypeConstraint.Equality(expectedType, flixArg,
+                TypeConstraint.Provenance.Match(expectedType, flixArg, loc))
+            }
+          case _ => None
+        }
+    }
+  }
+
+  /** Extracts the underlying TypeVariable name from a Java generic type, resolving through wildcards. */
+  private def resolveToTypeVariable(javaType: java.lang.reflect.Type): Option[String] = javaType match {
+    case tv: TypeVariable[_] => Some(tv.getName)
+    case wt: WildcardType =>
+      wt.getUpperBounds.toList.collectFirst { case tv: TypeVariable[_] => tv.getName }
+        .orElse(wt.getLowerBounds.toList.collectFirst { case tv: TypeVariable[_] => tv.getName })
+    case _ => None
+  }
+
+  /**
+    * Maps a Flix Arrow type to its Java functional interface.
+    * `argParam`/`retParam` name the interface type param that corresponds
+    * to the Arrow's argument/return type (None for primitive-specialized
+    * interfaces like IntConsumer that have no type params).
+    */
+  private case class FunIFMapping(
+    javaClass: Class[?],
+    argParam: Option[String],
+    retParam: Option[String]
+  )
+
+  /** Looks up the Java functional interface for a Flix Arrow with the given arg and ret types. */
+  private def lookupFunIF(argType: Type, retType: Type): Option[FunIFMapping] = {
+    import TypeConstructor.*
+    (argType, retType) match {
+      case (Type.Cst(Int32, _), Type.Cst(Unit, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.IntConsumer], None, None))
+      case (Type.Cst(Int32, _), Type.Cst(Bool, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.IntPredicate], None, None))
+      case (Type.Cst(Int32, _), Type.Cst(Int32, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.IntUnaryOperator], None, None))
+      case (Type.Cst(Int32, _), _) =>
+        Some(FunIFMapping(classOf[java.util.function.IntFunction[Object]], None, Some("R")))
+      case (Type.Cst(Int64, _), Type.Cst(Unit, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.LongConsumer], None, None))
+      case (Type.Cst(Int64, _), Type.Cst(Bool, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.LongPredicate], None, None))
+      case (Type.Cst(Int64, _), Type.Cst(Int64, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.LongUnaryOperator], None, None))
+      case (Type.Cst(Int64, _), _) =>
+        Some(FunIFMapping(classOf[java.util.function.LongFunction[Object]], None, Some("R")))
+      case (Type.Cst(Float64, _), Type.Cst(Unit, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.DoubleConsumer], None, None))
+      case (Type.Cst(Float64, _), Type.Cst(Bool, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.DoublePredicate], None, None))
+      case (Type.Cst(Float64, _), Type.Cst(Float64, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.DoubleUnaryOperator], None, None))
+      case (Type.Cst(Float64, _), _) =>
+        Some(FunIFMapping(classOf[java.util.function.DoubleFunction[Object]], None, Some("R")))
+      case (_, Type.Cst(Unit, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.Consumer[Object]], Some("T"), None))
+      case (_, Type.Cst(Bool, _)) =>
+        Some(FunIFMapping(classOf[java.util.function.Predicate[Object]], Some("T"), None))
+      case (_, _) =>
+        Some(FunIFMapping(classOf[java.util.function.Function[Object, Object]], Some("T"), Some("R")))
     }
   }
 }
