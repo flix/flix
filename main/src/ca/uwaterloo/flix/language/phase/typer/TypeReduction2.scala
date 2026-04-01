@@ -447,7 +447,8 @@ object TypeReduction2 {
     * Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
     */
   private def resolveMethodReturnType(method: Method, typeArgs: List[Type],
-    scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
+    scope: RegionScope, loc: SourceLocation)(implicit renv: RigidityEnv, flix: Flix): Type = {
+    implicit val sc: RegionScope = scope
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     method.getGenericReturnType match {
       case tv: TypeVariable[_] =>
@@ -533,16 +534,28 @@ object TypeReduction2 {
     * type parameters `K` and `V`, the typeArgs are `[String, Int32]` and the result is
     * `{"K" -> String, "V" -> Int32}`.
     *
+    * Flexible (non-rigid) class-level type variables are excluded from the substitution.
+    * Including them would over-constrain the solver by back-propagating through chained
+    * method calls (e.g., `Stream[?t].findFirst().get()` where `?t` is a fresh var).
+    * Rigid type variables and concrete types are included — rigid vars erase to Object
+    * and should participate in constraint generation.
     */
-  private def buildTypeVarSubstitution(method: Method, typeArgs: List[Type]): Map[String, Type] = {
+  private def buildTypeVarSubstitution(method: Method, typeArgs: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): Map[String, Type] = {
     val classParamNames: Array[String] =
       if (java.lang.reflect.Modifier.isStatic(method.getModifiers)) Array.empty
       else method.getDeclaringClass.getTypeParameters.map(_.getName)
     val methodParamNames: Array[String] = method.getTypeParameters.map(_.getName)
     val allParamNames = classParamNames ++ methodParamNames
-    if (allParamNames.length == typeArgs.length)
-      allParamNames.zip(typeArgs).toMap
-    else
+    if (allParamNames.length == typeArgs.length) {
+      val numClassParams = classParamNames.length
+      val (classArgs, methodArgs) = typeArgs.splitAt(numClassParams)
+      val classSubst = classParamNames.zip(classArgs).flatMap {
+        case (name, t @ Type.Var(sym, _)) => if (renv.isRigid(sym)) Some(name -> t) else None
+        case (name, t) => Some(name -> t)
+      }.toMap
+      val methodSubst = methodParamNames.zip(methodArgs).toMap
+      classSubst ++ methodSubst
+    } else
       Map.empty
   }
 
@@ -558,7 +571,7 @@ object TypeReduction2 {
     *   - methodTypeArgs = [?t] (fresh var for `T`)
     *   - emits Equality(?t, String) for the `T` parameter
     */
-  private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): (Type, List[TypeConstraint]) = {
+  private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit renv: RigidityEnv, flix: Flix): (Type, List[TypeConstraint]) = {
     val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
     val allTypeArgs = classTypeArgs ++ methodTypeArgs
     val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
@@ -578,7 +591,8 @@ object TypeReduction2 {
     */
   private def mkArgConstraints(method: Method, typeArgs: List[Type],
     argTypes: List[Type], scope: RegionScope, loc: SourceLocation)
-    (implicit flix: Flix): List[TypeConstraint] = {
+    (implicit renv: RigidityEnv, flix: Flix): List[TypeConstraint] = {
+    implicit val sc: RegionScope = scope
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     val genericParamTypes = method.getGenericParameterTypes
     argTypes.zip(genericParamTypes).flatMap { case (argType, genericParamType) =>
