@@ -5,22 +5,24 @@
 The project uses [Mill](https://mill-build.org/) as its build tool.
 
 - `./mill flix.compile` — Compile the compiler itself
-- `./mill flix.run <file.flix>` — Run a Flix source file through the compiler
+- `./mill flix.run <file.flix>` — Run a Flix source file through the compiler (should take at most 3 minutes)
 - `./mill flix.assembly` — Build a fat JAR at `out/flix/assembly.dest/out.jar`
 
 ## Running Tests
 
-**Important:** Before running any tests, always verify the standard library compiles by running:
+**Step 1:** First, verify the standard library compiles by running an empty file:
 
 ```bash
 touch out/empty.flix && ./mill flix.run out/empty.flix
 ```
 
-Create an empty `.flix` file in `out/` if one doesn't exist and run it through the compiler. This catches standard library compilation errors early.
+This catches standard library compilation errors early.
 
-Once that passes:
+**Step 2:** Write a minimal test case (positive or negative) in `out/example.flix` and run it with `./mill flix.run out/example.flix`. This gives a fast feedback loop before running the full test suite.
 
-- `./mill flix.test` — Run all tests
+**Step 3:** Once both pass, run the test suite:
+
+- `./mill flix.test` — Run all tests (should take at most 10 minutes)
 - `./mill flix.test.testOnly <pattern>` — Run specific test suites by fully qualified class name
 
 Examples:
@@ -33,6 +35,8 @@ Examples:
 
 **Tip:** If `flix.test` fails due to an error in a Flix test file (e.g. `main/test/flix/Test.Exp.IfThen.flix`), it is faster to iterate with `./mill flix.run main/test/flix/Test.Exp.IfThen.flix` than to rerun the full test suite.
 
+**Note:** Flix test files that reference `dev.flix.test.*` classes (test Java classes) will fail when run via `flix.run` because those classes are only on the classpath during `flix.test`. These failures are expected — use the test suite to run them.
+
 ## Commit Messages
 
 Commit messages must start with a lowercase prefix followed by a colon and space:
@@ -44,6 +48,18 @@ Commit messages must start with a lowercase prefix followed by a colon and space
 - `perf:` — performance improvement
 
 Example: `feat: add type argument support for new object expressions`
+
+## Branch Names
+
+Branch names must be prefixed with the same categories as commit messages:
+
+- `feat/` — new feature or capability
+- `fix/` — bug fix
+- `refactor/` — code restructuring with no behavior change
+- `chore/` — maintenance tasks (dependencies, CI, gitignore, etc.)
+- `perf/` — performance improvement
+
+Example: `refactor/simplify-type-reduction`
 
 ## Writing Flix Code
 
@@ -64,3 +80,7 @@ Key syntax reminders (Flix v0.68.0+):
   Chain multiple handlers — never nest multiple `run` blocks.
 - **Java interop:** `import` at file/module top level, use `new ClassName()` and `object.method()`. Prefix pure Java methods with `unsafe`. All Java interop carries the `IO` effect.
 - **Annotations** are uppercase: `@Test`, `@Parallel`, `@Lazy`, `@MustUse`.
+
+## Temporary Files
+
+All temporary files (e.g. scratch `.flix` files) should be placed in the `out/` directory.
