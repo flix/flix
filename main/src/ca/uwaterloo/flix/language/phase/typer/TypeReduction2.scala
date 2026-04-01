@@ -195,10 +195,9 @@ object TypeReduction2 {
     val typesAreKnown = isKnown(thisObj) && ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
-    Type.classFromFlixType(thisObj) match {
-      case Some(clazz) => retrieveMethod(clazz, methodName, ts, static = false)
-      case None => JavaMethodResolution.NotFound
-    }
+    // For type variables (rigid), fall back to java.lang.Object (the erased type).
+    val clazz = Type.classFromFlixType(thisObj).getOrElse(classOf[Object])
+    retrieveMethod(clazz, methodName, ts, static = false)
   }
 
   /** Tries to find a static method of `clazz` that takes arguments of type `ts`. */
@@ -331,10 +330,16 @@ object TypeReduction2 {
     opt.getOrElse(JavaFieldResolution.NotFound)
   }
 
-  /** Returns `true` if type is resolved enough for Java resolution. */
+  /**
+    * Returns `true` if type is resolved enough for Java resolution.
+    *
+    * Rigid type variables are considered known — they erase to `Object` at runtime
+    * (Java generics are erased). Flexible type variables are unknown because they
+    * may later resolve to a specific type that selects a different method overload.
+    */
   private def isKnown(tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): Boolean = tpe match {
-    case Type.Var(_, _) if tpe.kind == Kind.Eff => true
-    case Type.Var(_, _) => false
+    case Type.Var(sym, _) if tpe.kind == Kind.Eff => true
+    case Type.Var(sym, _) => renv.isRigid(sym)
     case Type.Cst(_, _) => true
     case Type.JvmToType(_, _) => false
     case Type.JvmToEff(_, _) => false
@@ -442,7 +447,8 @@ object TypeReduction2 {
     * Falls back to `instantiateJavaTypeWithFreshVars(int)` which yields `Int32`.
     */
   private def resolveMethodReturnType(method: Method, typeArgs: List[Type],
-    scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): Type = {
+    scope: RegionScope, loc: SourceLocation)(implicit renv: RigidityEnv, flix: Flix): Type = {
+    implicit val sc: RegionScope = scope
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     method.getGenericReturnType match {
       case tv: TypeVariable[_] =>
@@ -528,15 +534,13 @@ object TypeReduction2 {
     * type parameters `K` and `V`, the typeArgs are `[String, Int32]` and the result is
     * `{"K" -> String, "V" -> Int32}`.
     *
-    * Class-level type arguments that are type variables (e.g., from `HttpResponse[?v]`) are
-    * excluded from the substitution. This is necessary because Java interop requires
-    * `unchecked_cast(x as Object)` for method resolution when receiver type args are
-    * type variables, which would over-constrain the generic type parameter.
-    *
-    * Method-level type arguments (fresh vars) are always included so they can flow through
-    * to the constraint solver for proper unification.
+    * Flexible (non-rigid) class-level type variables are excluded from the substitution.
+    * Including them would over-constrain the solver by back-propagating through chained
+    * method calls (e.g., `Stream[?t].findFirst().get()` where `?t` is a fresh var).
+    * Rigid type variables and concrete types are included — rigid vars erase to Object
+    * and should participate in constraint generation.
     */
-  private def buildTypeVarSubstitution(method: Method, typeArgs: List[Type]): Map[String, Type] = {
+  private def buildTypeVarSubstitution(method: Method, typeArgs: List[Type])(implicit scope: RegionScope, renv: RigidityEnv): Map[String, Type] = {
     val classParamNames: Array[String] =
       if (java.lang.reflect.Modifier.isStatic(method.getModifiers)) Array.empty
       else method.getDeclaringClass.getTypeParameters.map(_.getName)
@@ -545,9 +549,9 @@ object TypeReduction2 {
     if (allParamNames.length == typeArgs.length) {
       val numClassParams = classParamNames.length
       val (classArgs, methodArgs) = typeArgs.splitAt(numClassParams)
-      // Exclude class-level type vars — see doc comment above.
-      val classSubst = classParamNames.zip(classArgs).collect {
-        case (name, t) if !t.isInstanceOf[Type.Var] => name -> t
+      val classSubst = classParamNames.zip(classArgs).flatMap {
+        case (name, t @ Type.Var(sym, _)) => if (renv.isRigid(sym)) Some(name -> t) else None
+        case (name, t) => Some(name -> t)
       }.toMap
       val methodSubst = methodParamNames.zip(methodArgs).toMap
       classSubst ++ methodSubst
@@ -567,7 +571,7 @@ object TypeReduction2 {
     *   - methodTypeArgs = [?t] (fresh var for `T`)
     *   - emits Equality(?t, String) for the `T` parameter
     */
-  private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): (Type, List[TypeConstraint]) = {
+  private def instantiateMethod(method: Method, classTypeArgs: List[Type], argTypes: List[Type], scope: RegionScope, loc: SourceLocation)(implicit renv: RigidityEnv, flix: Flix): (Type, List[TypeConstraint]) = {
     val methodTypeArgs = method.getTypeParameters.toList.map(_ => Type.freshVar(Kind.Star, loc)(scope, flix))
     val allTypeArgs = classTypeArgs ++ methodTypeArgs
     val base = Type.Cst(TypeConstructor.JvmMethod(method), loc)
@@ -584,20 +588,16 @@ object TypeReduction2 {
     * `add(E element)`), resolves the expected type via the substitution map and emits
     * an equality constraint between the expected type and the actual argument type.
     *
-    *
-    * Constraints are skipped when the argument type is `java.lang.Object` — this is the
-    * erased type produced by `unchecked_cast(x as Object)` in polymorphic code where method
-    * lookup requires a concrete type. Emitting a constraint in that case would force the
-    * type variable to `Object`, conflicting with the expected return type.
     */
   private def mkArgConstraints(method: Method, typeArgs: List[Type],
     argTypes: List[Type], scope: RegionScope, loc: SourceLocation)
-    (implicit flix: Flix): List[TypeConstraint] = {
+    (implicit renv: RigidityEnv, flix: Flix): List[TypeConstraint] = {
+    implicit val sc: RegionScope = scope
     val substMap = buildTypeVarSubstitution(method, typeArgs)
     val genericParamTypes = method.getGenericParameterTypes
     argTypes.zip(genericParamTypes).flatMap { case (argType, genericParamType) =>
       genericParamType match {
-        case tv: TypeVariable[_] if !isJavaObject(argType) =>
+        case tv: TypeVariable[_] =>
           substMap.get(tv.getName).map { expectedType =>
             TypeConstraint.Equality(expectedType, argType,
               TypeConstraint.Provenance.Match(expectedType, argType, loc))
@@ -605,12 +605,6 @@ object TypeReduction2 {
         case _ => None
       }
     }
-  }
-
-  /** Returns `true` if the type is `java.lang.Object`. */
-  private def isJavaObject(tpe: Type): Boolean = tpe match {
-    case Type.Cst(TypeConstructor.Native(clazz), _) => clazz == classOf[Object]
-    case _ => false
   }
 
   /**

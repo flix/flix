@@ -668,6 +668,8 @@ object TypeVerifier {
 
       case SimpleType.Array(_) => tpe // TODO: Array subtyping
 
+      case SimpleType.AnyType if klazz == classOf[Object] => tpe
+
       case _ => failMismatchedTypes(tpe, klazz, loc)
     }
   }
