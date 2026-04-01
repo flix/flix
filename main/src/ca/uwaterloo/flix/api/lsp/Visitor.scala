@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
-import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint as _, *}
+import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, EqualityConstraint, Instance, *}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 
