@@ -1007,11 +1007,8 @@ object ConstraintGen {
                      else Type.mkNative(clazz, loc)
         c.unifyType(tvar, resTpe, loc)
 
-        // Build substitution from Java type variable names to Flix types.
-        val substMap = clazz.getTypeParameters.map(_.getName).zip(targs).toMap
-
         // Constrain each method's params against the resolved Java method signature.
-        methods.foreach(m => visitNewObjectMethod(m, clazz, substMap))
+        methods.foreach(m => visitNewObjectMethod(m, clazz, targs))
 
         val resEff = Type.IO
         (tvar, resEff)
@@ -1340,7 +1337,7 @@ object ConstraintGen {
     * If the Flix method declares `t: Int32` instead of `t: String`, the emitted
     * constraint `Int32 ~ String` produces a type error.
     */
-  private def visitNewObjectMethod(method: KindedAst.JvmMethod, clazz: Class[?], substMap: Map[String, Type])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
+  private def visitNewObjectMethod(method: KindedAst.JvmMethod, clazz: Class[?], targs: List[Type])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
     case KindedAst.JvmMethod(_, ident, fparams, exp, returnTpe, eff, _) =>
       // Constrain each formal param to its declared type.
       fparams.foreach {
@@ -1358,6 +1355,15 @@ object ConstraintGen {
         .find(m => m.getName == ident.name && m.getParameterCount == flixParamCount)
       javaMethodOpt match {
         case Some(jm) =>
+          // Build a substitution from the declaring class's type parameter names
+          // to the user-provided Flix type arguments. This correctly handles
+          // inherited methods where the declaring class differs from the
+          // instantiated class (e.g., UnaryOperator.apply is declared on Function).
+          val indexMapping = JvmUtils.resolveTypeParamMapping(jm, clazz)
+          val substMap: Map[String, Type] = indexMapping.flatMap { case (name, idx) =>
+            if (idx < targs.length) Some(name -> targs(idx)) else None
+          }
+
           // Constrain each Flix param type against the resolved Java param type.
           val resolvedParams = jm.getGenericParameterTypes.toList.map(resolveJavaType(_, substMap, ident.loc))
           fparams.tail.zip(resolvedParams).foreach {
