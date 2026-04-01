@@ -139,8 +139,25 @@ object ConstraintSolverInterface {
   /**
     * Constructs a collection of type errors from a list of unsolvable type constraints `constrs`.
     */
-  private def mkTypeErrors(constrs: List[TypeConstraint], subst: SubstitutionTree, renv: RigidityEnv, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] =
-    constrs.flatMap(mkTypeError(_, subst, renv, root))
+  private def mkTypeErrors(constrs: List[TypeConstraint], subst: SubstitutionTree, renv: RigidityEnv, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = {
+    val errors = constrs.flatMap(mkTypeError(_, subst, renv, root))
+    filterEffErrors(errors)
+  }
+
+  /**
+    * Suppresses effect errors if any non-effect error is present.
+    *
+    * Effect errors are often cascading or spurious when a type error is the root cause.
+    * If there is at least one non-effect error, all effect errors are filtered out.
+    * If every error is an effect error, they are all returned.
+    *
+    * Note: This filtering is applied per constraint system (i.e. per def/sig),
+    * so effect errors are only suppressed for that specific function if it also has a type error.
+    */
+  private def filterEffErrors(errors: List[TypeError]): List[TypeError] = {
+    val (effErrors, nonEffErrors) = errors.partition(_.isEffError)
+    if (nonEffErrors.nonEmpty) nonEffErrors else effErrors
+  }
 
   /**
     * Constructs a collection of type errors from a single unsolvable constraint `constr`.
