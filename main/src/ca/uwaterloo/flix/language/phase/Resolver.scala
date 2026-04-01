@@ -115,6 +115,7 @@ object Resolver {
                   root.mainEntryPoint,
                   root.sources,
                   root.availableClasses,
+                  root.classProvider,
                   root.tokens
                 )
             }
