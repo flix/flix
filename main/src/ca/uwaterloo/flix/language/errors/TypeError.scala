@@ -31,6 +31,22 @@ import ca.uwaterloo.flix.util.{Formatter, Grammar}
   */
 sealed trait TypeError extends CompilationMessage {
   val kind: CompilationMessageKind = CompilationMessageKind.TypeError
+
+  def isEffError: Boolean = this match {
+    case _: TypeError.ArgumentGivenWrongEffect => true
+    case _: TypeError.DefaultHandlerNotInModule => true
+    case _: TypeError.DuplicateDefaultHandler => true
+    case _: TypeError.EffectfulFunctionUsesOtherEffect => true
+    case _: TypeError.ExplicitlyPureFunctionUsesEffect => true
+    case _: TypeError.ExplicitlyPureFunctionUsesIO => true
+    case _: TypeError.IllegalDefaultHandlerSignature => true
+    case _: TypeError.ImplicitlyPureFunctionUsesEffect => true
+    case _: TypeError.ImplicitlyPureFunctionUsesIO => true
+    case _: TypeError.MismatchedEffects => true
+    case _: TypeError.NonPublicDefaultHandler => true
+    case _: TypeError.UnusedEffectInSignature => true
+    case _ => false
+  }
 }
 
 object TypeError {
