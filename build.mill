@@ -28,7 +28,7 @@ object flix extends ScalaModule {
     mvn"org.tomlj:tomlj:1.1.1",            // determines antlr version
     mvn"org.antlr:antlr4-runtime:4.11.1",
     mvn"org.slf4j:slf4j-nop:2.0.17",       // silence JLine logger
-    mvn"org.eclipse.lsp4j:org.eclipse.lsp4j:0.24.0"
+    mvn"org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0"
   )
 
   def scalacOptions = Seq(
