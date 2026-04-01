@@ -13,10 +13,10 @@ The project uses [Mill](https://mill-build.org/) as its build tool.
 **Important:** Before running any tests, always verify the standard library compiles by running:
 
 ```bash
-touch empty.flix && ./mill flix.run empty.flix
+touch out/empty.flix && ./mill flix.run out/empty.flix
 ```
 
-Create an empty `.flix` file if one doesn't exist and run it through the compiler. This catches standard library compilation errors early.
+Create an empty `.flix` file in `out/` if one doesn't exist and run it through the compiler. This catches standard library compilation errors early.
 
 Once that passes:
 
