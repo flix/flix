@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import java.lang.reflect.{Field, Member, Method}
+import java.lang.reflect.{Field, Member, Method, Modifier, ParameterizedType, TypeVariable}
 
 object JvmUtils {
 
@@ -118,6 +118,126 @@ object JvmUtils {
     m1.getName == m2.getName &&
       isStatic(m1) == isStatic(m2) &&
       m1.getParameterTypes.sameElements(m2.getParameterTypes)
+  }
+
+  /**
+    * Builds a mapping from the declaring class's type parameter names to
+    * indices into `instantiatedClass.getTypeParameters`, walking the Java type
+    * hierarchy from `instantiatedClass` up to `declaringClass`.
+    *
+    * For example, `UnaryOperator<T>` extends `Function<T, T>`.
+    * If `method.getDeclaringClass` is `Function` (with params `[T, R]`)
+    * and `instantiatedClass` is `UnaryOperator` (with param `[T]`):
+    *   - `Function.T` maps to index 0 (UnaryOperator.T)
+    *   - `Function.R` maps to index 0 (UnaryOperator.T)
+    *
+    * Returns `None` for type parameters that cannot be traced back to
+    * the instantiated class (e.g., wildcards or concrete types in the hierarchy).
+    *
+    * @param method             the resolved Java method (may be declared on a supertype)
+    * @param instantiatedClass  the class being instantiated (e.g., `UnaryOperator`)
+    * @return a map from declaring-class type parameter name to index in `instantiatedClass.getTypeParameters`
+    */
+  def resolveTypeParamMapping(method: Method, instantiatedClass: Class[?]): Map[String, Int] = {
+    val declaringClass = method.getDeclaringClass
+    if (Modifier.isStatic(method.getModifiers)) return Map.empty
+    if (declaringClass == instantiatedClass) {
+      // Method declared directly on the class — identity mapping.
+      instantiatedClass.getTypeParameters.map(_.getName).zipWithIndex.toMap
+    } else {
+      // Walk the hierarchy to find how declaringClass's type params map
+      // to instantiatedClass's type params.
+      resolveHierarchy(instantiatedClass, declaringClass) match {
+        case Some(mapping) => mapping
+        case None => Map.empty
+      }
+    }
+  }
+
+  /**
+    * Walks the type hierarchy from `from` to `target`, returning a mapping from
+    * `target`'s type parameter names to indices in `from`'s type parameters.
+    *
+    * At each level, `getGenericInterfaces` / `getGenericSuperclass` gives us a
+    * `ParameterizedType` whose actual type arguments are either `TypeVariable`s
+    * (referring to `from`'s params) or concrete types.
+    */
+  private def resolveHierarchy(from: Class[?], target: Class[?]): Option[Map[String, Int]] = {
+    // Build an index: from's type param name -> position
+    val fromIndex: Map[String, Int] =
+      from.getTypeParameters.map(_.getName).zipWithIndex.toMap
+
+    // Check each generic supertype
+    val superclass: List[java.lang.reflect.Type] =
+      Option(from.getGenericSuperclass).toList
+    val genericSupertypes: List[java.lang.reflect.Type] =
+      from.getGenericInterfaces.toList ::: superclass
+
+    val results: Iterator[Option[Map[String, Int]]] = genericSupertypes.iterator.map { supertype =>
+      getRawClass(supertype) match {
+        case None => None
+        case Some(rawClass) =>
+          supertype match {
+            case pt: ParameterizedType =>
+              if (rawClass == target) {
+                Some(buildMapping(target, pt, fromIndex))
+              } else if (target.isAssignableFrom(rawClass)) {
+                val intermediateIndex = buildIndexMapping(rawClass, pt, fromIndex)
+                resolveHierarchy(rawClass, target).map { innerMap =>
+                  innerMap.flatMap { case (name, rawIdx) =>
+                    intermediateIndex.get(rawIdx).map(name -> _)
+                  }
+                }
+              } else {
+                None
+              }
+            case _ =>
+              // Raw supertype (no generic info). Can't trace type params.
+              if (rawClass == target) Some(Map.empty)
+              else if (target.isAssignableFrom(rawClass)) resolveHierarchy(rawClass, target)
+              else None
+          }
+      }
+    }
+    results.collectFirst { case Some(m) => m }
+  }
+
+  /**
+    * Extracts the raw `Class[?]` from a `java.lang.reflect.Type`.
+    */
+  @SuppressWarnings(Array("unchecked"))
+  private def getRawClass(tpe: java.lang.reflect.Type): Option[Class[?]] = tpe match {
+    case pt: ParameterizedType => getRawClass(pt.getRawType)
+    case c: Class[?] => Some(c)
+    case _ => None
+  }
+
+  /**
+    * Given a `ParameterizedType` (e.g., `Function<T, T>` where T refers to
+    * UnaryOperator.T), maps the raw class's type parameter names to
+    * indices in the `fromIndex` map.
+    */
+  private def buildMapping(targetClass: Class[?], pt: ParameterizedType, fromIndex: Map[String, Int]): Map[String, Int] = {
+    val targetParamNames: Array[String] = targetClass.getTypeParameters.map(_.getName)
+    val args = pt.getActualTypeArguments
+    targetParamNames.zip(args).flatMap {
+      case (name, tv: TypeVariable[_]) =>
+        fromIndex.get(tv.getName).map(name -> _)
+      case _ => None
+    }.toMap
+  }
+
+  /**
+    * Like `buildMapping`, but returns a map from the raw class's type parameter
+    * *index* to the `fromIndex` index. Used for composing through intermediate classes.
+    */
+  private def buildIndexMapping(rawClass: Class[?], pt: ParameterizedType, fromIndex: Map[String, Int]): Map[Int, Int] = {
+    val args = pt.getActualTypeArguments
+    args.zipWithIndex.flatMap {
+      case (tv: TypeVariable[_], i) =>
+        fromIndex.get(tv.getName).map(i -> _)
+      case _ => None
+    }.toMap
   }
 
 }

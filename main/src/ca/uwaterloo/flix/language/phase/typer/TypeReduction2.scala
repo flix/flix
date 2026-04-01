@@ -614,14 +614,41 @@ object TypeReduction2 {
   }
 
   /**
-    * Extracts class-level type arguments from the receiver type for a method.
-    * Falls back to fresh type variables when the receiver doesn't have the expected number of args.
+    * Extracts class-level type arguments from the receiver type for a method,
+    * mapped to the declaring class's type parameters.
+    *
+    * When the method is declared on a supertype (e.g., `Function.apply` found
+    * on a `UnaryOperator[String]` receiver), uses the type hierarchy to
+    * correctly map the receiver's type args to the declaring class's params.
+    *
+    * Falls back to fresh type variables for any params that cannot be resolved.
     */
   private def extractClassTypeArgs(method: Method, receiverType: Type,
     scope: RegionScope, loc: SourceLocation)(implicit flix: Flix): List[Type] = {
-    val n = method.getDeclaringClass.getTypeParameters.length
-    val typeArgs = receiverType.typeArguments
-    if (typeArgs.length == n) typeArgs
-    else List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix))
+    val declaringClass = method.getDeclaringClass
+    val n = declaringClass.getTypeParameters.length
+    if (n == 0) return Nil
+
+    val receiverArgs = receiverType.typeArguments
+    // Try to get the instantiated class from the receiver type's base.
+    val instantiatedClassOpt = Type.classFromFlixType(receiverType)
+    instantiatedClassOpt match {
+      case Some(instClass) if instClass == declaringClass =>
+        // Direct: receiver type args are for the declaring class.
+        if (receiverArgs.length == n) receiverArgs
+        else List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix))
+      case Some(instClass) =>
+        // Inherited method: map through the type hierarchy.
+        val indexMapping = JvmUtils.resolveTypeParamMapping(method, instClass)
+        val declaringParamNames: Array[String] = declaringClass.getTypeParameters.map(_.getName)
+        declaringParamNames.toList.map { name =>
+          indexMapping.get(name) match {
+            case Some(idx) if idx < receiverArgs.length => receiverArgs(idx)
+            case _ => Type.freshVar(Kind.Star, loc)(scope, flix)
+          }
+        }
+      case None =>
+        List.fill(n)(Type.freshVar(Kind.Star, loc)(scope, flix))
+    }
   }
 }
