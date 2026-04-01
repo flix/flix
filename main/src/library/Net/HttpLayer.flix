@@ -137,7 +137,7 @@ pub mod Net.HttpLayer {
             let response = client.send(jrequest, BodyHandlers.ofByteArray());
             let responseHeadersJlist: Map[String, JList[String]] = ToFlix.toFlix(response.headers().map());
             let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
-            let bytes = unchecked_cast(response.body() as Array[Int8, Static]);
+            let bytes = response.body();
             Ok(HttpResponse({
                url = response.uri().toString(),
                status = response.statusCode(),
