@@ -6,7 +6,7 @@ import mill.scalalib.Assembly.*
 
 object flix extends ScalaModule {
 
-  def scalaVersion = "2.13.17"
+  def scalaVersion = "2.13.18"
 
   // moduleDir resolves to <root>/flix/ (module name appended).
   // Our sources live at <root>/main/src, so navigate up one level.
