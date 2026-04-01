@@ -150,6 +150,9 @@ object ConstraintSolverInterface {
     * Effect errors are often cascading or spurious when a type error is the root cause.
     * If there is at least one non-effect error, all effect errors are filtered out.
     * If every error is an effect error, they are all returned.
+    *
+    * Note: This filtering is applied per constraint system (i.e. per def/sig),
+    * so effect errors are only suppressed for that specific function if it also has a type error.
     */
   private def filterEffErrors(errors: List[TypeError]): List[TypeError] = {
     val (effErrors, nonEffErrors) = errors.partition(_.isEffError)
