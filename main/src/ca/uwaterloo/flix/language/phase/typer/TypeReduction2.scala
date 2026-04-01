@@ -504,12 +504,14 @@ object TypeReduction2 {
 
       case wt: WildcardType =>
         // Resolve wildcard types like "? extends K" or "? super V".
-        // Use the upper bound (defaults to Object if no explicit bound).
-        val upperBounds = wt.getUpperBounds
-        if (upperBounds.nonEmpty)
-          resolveGenericType(upperBounds(0), substMap, classOf[Object], scope, loc)
-        else
-          instantiateJavaTypeWithFreshVars(classOf[Object], scope, loc)
+        // Use the upper bound if it references a type variable (e.g., "? extends R"),
+        // otherwise use a fresh type variable to avoid premature erasure to Object.
+        wt.getUpperBounds.toList match {
+          case (tv: TypeVariable[_]) :: _ =>
+            resolveGenericType(tv, substMap, classOf[Object], scope, loc)
+          case _ =>
+            Type.freshVar(Kind.Star, loc)(scope, flix)
+        }
 
       case gat: GenericArrayType =>
         // Resolve generic array types like "T[]".
@@ -584,10 +586,12 @@ object TypeReduction2 {
     * Builds equality constraints linking actual argument types to the expected generic
     * parameter types of the resolved Java method.
     *
-    * For each parameter whose generic type is a bare `TypeVariable` (e.g., `E` in
-    * `add(E element)`), resolves the expected type via the substitution map and emits
-    * an equality constraint between the expected type and the actual argument type.
-    *
+    * For each parameter whose generic type is a `TypeVariable` (e.g., `E` in
+    * `add(E element)`), a `ParameterizedType` (e.g., `BodyHandler<T>` in
+    * `send(req, handler)`), or a `GenericArrayType` (e.g., `T[]` in
+    * `Stream.of(T...)`), resolves the expected type via the substitution map
+    * and emits an equality constraint between the expected type and the actual
+    * argument type.
     */
   private def mkArgConstraints(method: Method, typeArgs: List[Type],
     argTypes: List[Type], scope: RegionScope, loc: SourceLocation)
@@ -601,6 +605,30 @@ object TypeReduction2 {
           substMap.get(tv.getName).map { expectedType =>
             TypeConstraint.Equality(expectedType, argType,
               TypeConstraint.Provenance.Match(expectedType, argType, loc))
+          }
+        case pt: ParameterizedType =>
+          // For parameterized params (e.g., BodyHandler<T>, Class<A>), emit constraints
+          // linking each resolved Java type argument to the corresponding Flix type argument.
+          val javaTypeArgs = pt.getActualTypeArguments.toList
+          val flixTypeArgs = argType.typeArguments
+          javaTypeArgs.zip(flixTypeArgs).flatMap {
+            case (tv: TypeVariable[_], flixArg) =>
+              substMap.get(tv.getName).map { expectedType =>
+                TypeConstraint.Equality(expectedType, flixArg,
+                  TypeConstraint.Provenance.Match(expectedType, flixArg, loc))
+              }
+            case _ => None
+          }
+        case gat: GenericArrayType =>
+          // For varargs/array params (e.g., T[] in Stream.of(T...)), emit a constraint
+          // linking the component type variable to the Flix array/vector element type.
+          (gat.getGenericComponentType, argType.typeArguments) match {
+            case (tv: TypeVariable[_], elmType :: _) =>
+              substMap.get(tv.getName).map { expectedType =>
+                TypeConstraint.Equality(expectedType, elmType,
+                  TypeConstraint.Provenance.Match(expectedType, elmType, loc))
+              }.toList
+            case _ => Nil
           }
         case _ => None
       }
