@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Instance, RegionScope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Instance, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
@@ -35,6 +35,14 @@ object Instances {
 
   // We use top scope everywhere here since we are only looking at declarations.
   private implicit val S: RegionScope = RegionScope.Top
+
+  /** Converts a TypedAst.EqualityConstraint to a shared EqualityConstraint. */
+  private def toShared(ec: TypedAst.EqualityConstraint): EqualityConstraint = ec match {
+    case TypedAst.EqualityConstraint(Type.AssocType(cst, arg, _, _), tpe2, loc) =>
+      EqualityConstraint(cst, arg, tpe2, loc)
+    case TypedAst.EqualityConstraint(tpe1, _, loc) =>
+      throw InternalCompilerException(s"unexpected non-AssocType in equality constraint: $tpe1", loc)
+  }
 
   /**
     * Validates instances and traits in the given AST root.
@@ -190,7 +198,7 @@ object Instances {
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(RegionScope.Top, flix)
-            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, eqEnv, inst.econstrs)) {
+            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, eqEnv, inst.econstrs.map(toShared))) {
               // Case 5.1: the schemes match. Success!
               ()
             } else {
@@ -251,7 +259,7 @@ object Instances {
                     }
                   }
               }
-              val substEconstrs = econstrs.map(subst.apply)
+              val substEconstrs = econstrs.map(toShared).map(subst.apply)
               superInst.econstrs.foreach {
                 econstr =>
                   val substEconstr = subst(econstr)
@@ -276,7 +284,7 @@ object Instances {
     * Reassembles an instance
     */
   private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    val eqEnv = ConstraintSolverInterface.expandEqualityEnv(root.eqEnv, inst.econstrs)
+    val eqEnv = ConstraintSolverInterface.expandEqualityEnv(root.eqEnv, inst.econstrs.map(toShared))
     checkSigMatch(inst, root, eqEnv)
     checkOrphan(inst)
     checkSuperInstances(inst, root, eqEnv)

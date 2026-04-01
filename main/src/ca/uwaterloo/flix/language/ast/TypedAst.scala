@@ -421,6 +421,8 @@ object TypedAst {
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
+  case class EqualityConstraint(tpe1: Type, tpe2: Type, loc: SourceLocation)
+
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
   sealed trait ApplyPosition

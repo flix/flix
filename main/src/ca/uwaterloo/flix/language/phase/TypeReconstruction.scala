@@ -57,7 +57,8 @@ object TypeReconstruction {
       val fparams = fparams0.map(visitFormalParam(_, SubstitutionTree.empty))
       val eff1 = eff.getOrElse(Type.Pure)
       // We do not perform substitution on any of the types because they should all be rigid.
-      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff1, tconstrs, econstrs)
+      val typedEconstrs = econstrs.map(ec => TypedAst.EqualityConstraint(Type.AssocType(ec.symUse, ec.tpe1, ec.tpe2.kind, ec.loc), ec.tpe2, ec.loc))
+      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff1, tconstrs, typedEconstrs)
   }
 
   /**

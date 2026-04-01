@@ -1198,20 +1198,27 @@ object HtmlDocumentor {
     *
     * If `econsts` is empty, nothing will be generated.
     */
-  private def docEqualityConstraints(econsts: List[EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docEqualityConstraints(econsts: List[TypedAst.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (econsts.isEmpty) {
       return
     }
 
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
-      docTraitName(e.symUse.sym.trt)
-      sb.append(".")
-      sb.append(esc(e.symUse.sym.name))
-      sb.append("[")
-      docType(e.tpe1)
-      sb.append("] ~ ")
-      docType(e.tpe2)
+      e.tpe1 match {
+        case Type.AssocType(cst, arg, _, _) =>
+          docTraitName(cst.sym.trt)
+          sb.append(".")
+          sb.append(esc(cst.sym.name))
+          sb.append("[")
+          docType(arg)
+          sb.append("] ~ ")
+          docType(e.tpe2)
+        case _ =>
+          docType(e.tpe1)
+          sb.append(" ~ ")
+          docType(e.tpe2)
+      }
     }
     sb.append("</span>")
   }
