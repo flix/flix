@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.UnkindedType
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.lang.{Class => JClass}
@@ -39,8 +40,9 @@ object LocalScope {
   *
   * @param scp        the environment map containing variable names and their corresponding resolutions.
   * @param superClass `None` means super calls are illegal here; `Some(clazz)` means super calls resolve to `clazz`.
+  * @param superTargs the type arguments of the enclosing NewObject expression, if any.
   */
-case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[JClass[?]] = None) {
+case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[JClass[?]] = None, superTargs: List[UnkindedType] = Nil) {
   /**
     * Returns the map of variable names to their resolutions.
     */
@@ -49,7 +51,7 @@ case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[JClas
   /**
     * Returns the local scope extended with another local scope.
     */
-  def ++(that: LocalScope): LocalScope = LocalScope(this.scp ++ that.scp, this.superClass)
+  def ++(that: LocalScope): LocalScope = LocalScope(this.scp ++ that.scp, this.superClass, this.superTargs)
 
   /**
     * Returns an option of the list of resolutions corresponding to the variable `name`.
@@ -64,7 +66,7 @@ case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[JClas
   /**
     * Returns the local scope extended with the additional mapping from `name` to `res`.
     */
-  def +(kv: (String, Resolution)): LocalScope = LocalScope(scp + kv, this.superClass)
+  def +(kv: (String, Resolution)): LocalScope = LocalScope(scp + kv, this.superClass, this.superTargs)
 
   /**
     * Returns the local scope extended with the additional mapping from `name` to `res`.
@@ -75,4 +77,6 @@ case class LocalScope(scp: ListMap[String, Resolution], superClass: Option[JClas
     scp.get(name).headOption
 
   def withSuperClass(clazz: Option[JClass[?]]): LocalScope = copy(superClass = clazz)
+
+  def withSuperTargs(targs: List[UnkindedType]): LocalScope = copy(superTargs = targs)
 }

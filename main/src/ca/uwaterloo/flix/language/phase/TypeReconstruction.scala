@@ -465,7 +465,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeSuperMethod(_, _, exps, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeSuperMethod(_, _, exps, _, jvar, tvar, evar, loc) =>
       val es0 = exps.map(visitExp)
       val returnTpe = subst(tvar)
       val methodTpe = subst(jvar)

@@ -1198,7 +1198,7 @@ object Resolver {
       val es = exps.map(resolveExp(_, scp0))
       scp0.superClass match {
         case Some(clazz) =>
-          ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, es, loc)
+          ResolvedAst.Expr.InvokeSuperMethod(clazz, methodName, es, scp0.superTargs, loc)
         case None =>
           val error = ResolutionError.IllegalSuperCall(loc)
           sctx.errors.add(error)
@@ -1217,7 +1217,7 @@ object Resolver {
       getNativeClassFromType(UnkindedType.eraseAliases(t)) match {
         case Some(clazz) =>
           val targs = UnkindedType.eraseAliases(t).typeArguments
-          val superScp = scp0.withSuperClass(Some(clazz))
+          val superScp = scp0.withSuperClass(Some(clazz)).withSuperTargs(targs)
           val cs = constructors.map(visitJvmConstructor(_, superScp))
           val ms = methods.map(visitJvmMethod(_, superScp))
           ResolvedAst.Expr.NewObject(name, clazz, targs, cs, ms, loc)
