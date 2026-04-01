@@ -33,6 +33,18 @@ Examples:
 
 **Tip:** If `flix.test` fails due to an error in a Flix test file (e.g. `main/test/flix/Test.Exp.IfThen.flix`), it is faster to iterate with `./mill flix.run main/test/flix/Test.Exp.IfThen.flix` than to rerun the full test suite.
 
+## Commit Messages
+
+Commit messages must start with a lowercase prefix followed by a colon and space:
+
+- `feat:` — new feature or capability
+- `fix:` — bug fix
+- `refactor:` — code restructuring with no behavior change
+- `chore:` — maintenance tasks (dependencies, CI, gitignore, etc.)
+- `perf:` — performance improvement
+
+Example: `feat: add type argument support for new object expressions`
+
 ## Writing Flix Code
 
 If you are unsure about Flix syntax, consult: https://doc.flix.dev/for-llms.html
