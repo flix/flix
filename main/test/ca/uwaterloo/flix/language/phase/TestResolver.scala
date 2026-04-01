@@ -891,17 +891,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("MismatchingType.04") {
-    val input =
-      """
-        |import java.util.Objects
-        |
-        |def isThisThingNull(x: a): Bool =
-        |    Objects.isNull(x)
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
-  }
 
   test("UndefinedJvmStaticField.01") {
     val input =
