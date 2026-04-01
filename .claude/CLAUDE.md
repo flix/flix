@@ -22,7 +22,8 @@ This catches standard library compilation errors early.
 
 **Step 3:** Once both pass, run the test suite:
 
-- `./mill flix.test` — Run all tests (should take at most 10 minutes)
+- `./mill flix.test.testForked "-oC"` — Run all tests (preferred; `-oC` suppresses passing test output, should take at most 10 minutes)
+- `./mill flix.test` — Run all tests (verbose)
 - `./mill flix.test.testOnly <pattern>` — Run specific test suites by fully qualified class name
 
 Examples:
