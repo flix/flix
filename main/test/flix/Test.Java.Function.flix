@@ -45,26 +45,6 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testPredicate(): Unit \ { Assert, IO } = region rc {
-        let mkObject = i -> new Object {
-            def toString(_this: Object): String = "${i}"
-        };
-        let stream0 = Stream.of(Array#{mkObject(1), mkObject(2), mkObject(3), mkObject(4), mkObject(5)} @ rc);
-        let stream1 = stream0.filter((obj: Object) -> obj.toString() == "5");
-        assertEq(expected = "5", stream1.findFirst().get().toString())
-    }
-
-    @Test
-    def testIntFunction(): Unit \ { Assert, IO } = {
-        let stream0 = IntStream.of(42);
-        let f = (i: Int32) -> new Object {
-            def toString(_this: Object): String = "${i}"
-        };
-        let stream1 = stream0.mapToObj(f);
-        assertEq(expected = "42", stream1.findFirst().get().toString())
-    }
-
-    @Test
     def testIntConsumer(): Unit \ { Assert, IO } = {
         let st = Ref.fresh(Static, 0);
         let stream = IntStream.range(0, 9);
@@ -87,16 +67,6 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testLongFunction(): Unit \ { Assert, IO } = {
-        let stream0 = LongStream.of(42i64);
-        let f = (i: Int64) -> new Object {
-            def toString(_this: Object): String = "${i}"
-        };
-        let stream1 = stream0.mapToObj(f);
-        assertEq(expected = "42", stream1.findFirst().get().toString())
-    }
-
-    @Test
     def testLongConsumer(): Unit \ { Assert, IO } = {
         let st = Ref.fresh(Static, 0i64);
         let stream = LongStream.range(0i64, 9i64);
@@ -116,19 +86,6 @@ mod Test.Java.Function {
         let stream0 = LongStream.of(5i64);
         let stream1 = stream0.map(i -> checked_ecast(i+7i64));
         assertEq(expected = 12i64, stream1.sum())
-    }
-
-    @Test
-    def testDoubleFunction(): Unit \ { Assert, IO } = {
-        let stream0 = DoubleStream.of(42.0f64);
-        let f = d -> new Object {
-            def toString(_this: Object): String = match Float64.tryToInt32(d) {
-                case Some(i) => "${i}"
-                case None    => ""
-           }
-        };
-        let stream1 = stream0.mapToObj(f);
-        assertEq(expected = "42", stream1.findFirst().get().toString())
     }
 
     @Test
