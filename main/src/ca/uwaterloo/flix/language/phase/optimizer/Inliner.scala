@@ -947,6 +947,8 @@ object Inliner {
       case AtomicOp.PutField(_) => exps.forall(isSimple)
       case AtomicOp.GetStaticField(_) => exps.forall(isSimple)
       case AtomicOp.PutStaticField(_) => exps.forall(isSimple)
+      case AtomicOp.StructGet(_) => exps.forall(isSimple)
+      case AtomicOp.StructPut(_) => exps.forall(isSimple)
       case _ => false
     }
     case _ => false
