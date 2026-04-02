@@ -59,24 +59,31 @@ object TypeVerifier {
       op match {
         case AtomicOp.Unary(sop) =>
           val List(t) = ts
-          val opTpe = sop match {
-            case SemanticOp.BoolOp.Not => SimpleType.Bool
-            case SemanticOp.Float32Op.Neg => SimpleType.Float32
-            case SemanticOp.Float64Op.Neg => SimpleType.Float64
-            case SemanticOp.Int8Op.Neg => SimpleType.Int8
-            case SemanticOp.Int8Op.Not => SimpleType.Int8
-            case SemanticOp.Int16Op.Neg => SimpleType.Int16
-            case SemanticOp.Int16Op.Not => SimpleType.Int16
-            case SemanticOp.Int32Op.Neg => SimpleType.Int32
-            case SemanticOp.Int32Op.Not => SimpleType.Int32
-            case SemanticOp.Int64Op.Neg => SimpleType.Int64
-            case SemanticOp.Int64Op.Not => SimpleType.Int64
-            case _: SemanticOp.ReflectOp =>
-              throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
-            case SemanticOp.ObjectOp.Ordinal => SimpleType.Int32
+          sop match {
+            case SemanticOp.ObjectOp.Ordinal =>
+              // Ordinal: any enum type -> Int32. Only check result type.
+              check(expected = SimpleType.Int32)(actual = tpe, loc)
+            case _ =>
+              val opTpe = sop match {
+                case SemanticOp.BoolOp.Not => SimpleType.Bool
+                case SemanticOp.Float32Op.Neg => SimpleType.Float32
+                case SemanticOp.Float64Op.Neg => SimpleType.Float64
+                case SemanticOp.Int8Op.Neg => SimpleType.Int8
+                case SemanticOp.Int8Op.Not => SimpleType.Int8
+                case SemanticOp.Int16Op.Neg => SimpleType.Int16
+                case SemanticOp.Int16Op.Not => SimpleType.Int16
+                case SemanticOp.Int32Op.Neg => SimpleType.Int32
+                case SemanticOp.Int32Op.Not => SimpleType.Int32
+                case SemanticOp.Int64Op.Neg => SimpleType.Int64
+                case SemanticOp.Int64Op.Not => SimpleType.Int64
+                case _: SemanticOp.ReflectOp =>
+                  throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
+                case _: SemanticOp.ObjectOp =>
+                  throw InternalCompilerException("Unexpected ObjectOp", loc)
+              }
+              check(expected = opTpe)(actual = t, loc)
+              check(expected = tpe)(actual = opTpe, loc)
           }
-          check(expected = opTpe)(actual = t, loc)
-          check(expected = tpe)(actual = opTpe, loc)
 
         case AtomicOp.Binary(sop) =>
           val List(t1, t2) = ts
