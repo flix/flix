@@ -435,7 +435,7 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val cases = ChaosMonkey.chaos(cases0.map(visitCase(_, sym)))
+      val cases = ChaosMonkey.chaos(cases0.zipWithIndex.map { case (c, i) => visitCase(c, sym, i) })
 
       NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
@@ -490,10 +490,10 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Case = case0 match {
+  private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym, ordinal: Int)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Case = case0 match {
     case DesugaredAst.Case(ident, tpes, loc) =>
       val ts = tpes.map(visitType)
-      val caseSym = Symbol.mkCaseSym(enumSym, ident)
+      val caseSym = Symbol.mkCaseSym(enumSym, ident, ordinal)
       NamedAst.Declaration.Case(caseSym, ts, loc)
   }
 

@@ -153,19 +153,23 @@ object JvmOps {
     enm.cases.values.map {
       case caze => caze.tpes match {
         case Nil =>
-          BackendObjType.NullaryTag(caze.sym.name)
+          BackendObjType.NullaryTag(caze.sym.name, caze.sym.ordinal)
         case elms =>
           BackendObjType.Tag(elms.map(BackendType.toBackendType))
       }
     }.toList
   }
 
-  /** Returns the set of extensible tag types in `types` without searching recursively. */
+  /**
+    * Returns the set of extensible tag types in `types` without searching recursively.
+    *
+    * NB: Ordinal is -1 for extensible tags because they do not have fixed ordinals.
+    */
   def getExtensibleTagTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc, SimpleType.ExtensibleExtend(cons, targs, _)) =>
         targs match {
-          case Nil => acc + BackendObjType.NullaryTag(cons.name)
+          case Nil => acc + BackendObjType.NullaryTag(cons.name, -1)
           case nary => acc + BackendObjType.Tag(nary.map(BackendType.toBackendType))
         }
       case (acc, _) => acc
