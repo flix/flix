@@ -38,6 +38,8 @@ object AtomicOp {
 
   case class Untag(sym: Symbol.CaseSym, idx: Int) extends AtomicOp
 
+  case object Ordinal extends AtomicOp
+
   case class Index(idx: Int) extends AtomicOp
 
   case object Tuple extends AtomicOp

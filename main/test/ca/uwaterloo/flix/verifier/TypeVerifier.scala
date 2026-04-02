@@ -220,6 +220,10 @@ object TypeVerifier {
           }
           tpe
 
+        case AtomicOp.Ordinal =>
+          val List(_) = ts
+          check(expected = SimpleType.Int32)(actual = tpe, loc)
+
         case AtomicOp.ArrayLength =>
           val List(t1) = ts
           t1 match {
