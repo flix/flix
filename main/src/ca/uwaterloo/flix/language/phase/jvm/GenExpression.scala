@@ -608,6 +608,13 @@ object GenExpression {
 
         compileUntag(exp, idx, termTypes)
 
+      case AtomicOp.Ordinal =>
+        import BytecodeInstructions.*
+        val List(exp) = exps
+        compileExpr(exp)
+        CHECKCAST(BackendObjType.Tagged.jvmName)
+        GETFIELD(BackendObjType.Tagged.OrdinalField)
+
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
         val List(exp) = exps
