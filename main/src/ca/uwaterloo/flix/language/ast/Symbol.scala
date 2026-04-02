@@ -224,8 +224,8 @@ object Symbol {
   /**
     * Returns the case symbol for the given name `ident` in the given `enum`.
     */
-  def mkCaseSym(sym: Symbol.EnumSym, ident: Ident): CaseSym = {
-    new CaseSym(sym, ident.name, ident.loc)
+  def mkCaseSym(sym: Symbol.EnumSym, ident: Ident, ordinal: Int): CaseSym = {
+    new CaseSym(sym, ident.name, ordinal, ident.loc)
   }
 
   /**
@@ -585,24 +585,24 @@ object Symbol {
   /**
     * Case Symbol.
     */
-  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
+  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val ordinal: Int, val loc: SourceLocation) extends Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: CaseSym => this.enumSym == that.enumSym && this.name == that.name
+      case that: CaseSym => this.enumSym == that.enumSym && this.name == that.name && this.ordinal == that.ordinal
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = Objects.hash(enumSym, name)
+    override val hashCode: Int = Objects.hash(enumSym, name, Integer.valueOf(ordinal))
 
     /**
       * Human readable representation.
       */
-    override def toString: String = enumSym.toString + "." + name
+    override def toString: String = enumSym.toString + "." + name + "#" + ordinal
 
     /**
       * The symbol's namespace.

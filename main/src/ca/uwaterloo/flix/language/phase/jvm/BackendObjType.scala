@@ -42,7 +42,7 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
-    case BackendObjType.NullaryTag(sym) => JvmName(RootPackage, mkClassName(sym.toString))
+    case BackendObjType.NullaryTag(sym, _) => JvmName(RootPackage, mkClassName(sym.toString))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
     case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
     case BackendObjType.AbstractArrow(args, result) => JvmName(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
@@ -298,11 +298,14 @@ object BackendObjType {
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
       cm.mkField(NameField, IsPublic, NotFinal, NotVolatile)
+      cm.mkField(OrdinalField, IsPublic, NotFinal, NotVolatile)
 
       cm.closeClassMaker()
     }
 
     def NameField: InstanceField = InstanceField(this.jvmName, "tag", BackendType.String)
+
+    def OrdinalField: InstanceField = InstanceField(this.jvmName, "ordinal", BackendType.Int32)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
@@ -320,7 +323,7 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte]
   }
 
-  case class NullaryTag(name: String) extends TagType {
+  case class NullaryTag(name: String, ordinal: Int) extends TagType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
 
@@ -342,6 +345,9 @@ object BackendObjType {
       thisLoad()
       Tagged.mkTagName(name)
       PUTFIELD(Tagged.NameField)
+      thisLoad()
+      pushInt(ordinal)
+      PUTFIELD(Tagged.OrdinalField)
       RETURN()
     }
   }
@@ -359,6 +365,8 @@ object BackendObjType {
     }
 
     def NameField: InstanceField = Tagged.NameField
+
+    def OrdinalField: InstanceField = Tagged.OrdinalField
 
     def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, s"v$i", elms(i))
 

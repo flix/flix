@@ -598,8 +598,9 @@ object GenExpression {
         compileIsTag(sym.name, exp, termTypes)
 
       case AtomicOp.Tag(sym) =>
-        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
-        compileTag(sym.name, exps, termTypes)
+        val caze = root.enums(sym.enumSym).cases(sym)
+        val termTypes = caze.tpes.map(BackendType.toBackendType)
+        compileTag(sym.name, Some(caze.sym.ordinal), exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
@@ -669,7 +670,8 @@ object GenExpression {
 
       case AtomicOp.ExtTag(sym) =>
         val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
-        compileTag(sym.name, exps, tpes)
+        // Extensible tags do not have a fixed ordinal.
+        compileTag(sym.name, None, exps, tpes)
 
       case AtomicOp.ExtUntag(sym, idx) =>
         import BytecodeInstructions.*
@@ -1534,7 +1536,7 @@ object GenExpression {
     compileExpr(exp)
     tpes match {
       case Nil =>
-        INSTANCEOF(BackendObjType.NullaryTag(name).jvmName)
+        INSTANCEOF(BackendObjType.NullaryTag(name, 0).jvmName)
       case _ =>
         CHECKCAST(BackendObjType.Tagged.jvmName)
         GETFIELD(BackendObjType.Tagged.NameField)
@@ -1543,11 +1545,14 @@ object GenExpression {
     }
   }
 
-  private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  /**
+    * Compiles a tag expression. `ordinal` is `None` for extensible tags which lack a fixed ordinal.
+    */
+  private def compileTag(name: String, ordinal: Option[Int], exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     tpes match {
       case Nil =>
-        GETSTATIC(BackendObjType.NullaryTag(name).SingletonField)
+        GETSTATIC(BackendObjType.NullaryTag(name, 0).SingletonField)
       case _ =>
         val tagType = BackendObjType.Tag(tpes)
         NEW(tagType.jvmName)
@@ -1556,6 +1561,11 @@ object GenExpression {
         DUP()
         BackendObjType.Tagged.mkTagName(name)
         PUTFIELD(tagType.NameField)
+        ordinal.foreach { ord =>
+          DUP()
+          pushInt(ord)
+          PUTFIELD(tagType.OrdinalField)
+        }
         exps.zipWithIndex.foreach {
           case (e, i) => DUP()
             compileExpr(e)
