@@ -167,11 +167,14 @@ object Deriver {
       val matchRules = if (cases.size > 1) mainMatchRules :+ defaultRule else mainMatchRules
 
       // group the match rules in an expression
-      KindedAst.Expr.Match(
+      val matchExp = KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
         matchRules,
         loc
       )
+
+      // short-circuit: if x === y then true else <match>
+      mkRefEqShortCircuit(param1, param2, KindedAst.Expr.Cst(Constant.Bool(true), loc), matchExp, loc)
   }
 
   /**
@@ -324,7 +327,7 @@ object Deriver {
       // Create the main match expression
       val matchRules = getCasesInStableOrder(cases).map(mkComparePairMatchRule(_, loc, root))
 
-      if (cases.size > 1) {
+      val compareExp = if (cases.size > 1) {
         // The indexOf lambda and default rule handle cross-variant ordering
         // (e.g. (Red, Blue) => compare(indexOf(x), indexOf(y))).
         // For single-case enums they are unreachable and would trigger redundancy warnings.
@@ -390,6 +393,11 @@ object Deriver {
           loc
         )
       }
+
+      // short-circuit: if x === y then EqualTo else <compare>
+      val comparisonEquals = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
+      val equalToExp = KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
+      mkRefEqShortCircuit(param1, param2, equalToExp, compareExp, loc)
   }
 
   /**
@@ -950,6 +958,25 @@ object Deriver {
     * Builds a var expression from the given var sym.
     */
   private def mkVarExpr(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(sym, loc)
+
+  /**
+    * Returns an expression that short-circuits with `thenExp` if `param1` and `param2`
+    * are the same object (JVM reference equality), otherwise evaluates `elseExp`.
+    *
+    * Generates: `if (param1 === param2) thenExp else elseExp`
+    */
+  private def mkRefEqShortCircuit(param1: Symbol.VarSym, param2: Symbol.VarSym,
+                                  thenExp: KindedAst.Expr, elseExp: KindedAst.Expr,
+                                  loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
+    val refEqExp = KindedAst.Expr.Binary(
+      SemanticOp.ObjectOp.RefEq,
+      mkVarExpr(param1, loc),
+      mkVarExpr(param2, loc),
+      Type.freshVar(Kind.Star, loc),
+      loc
+    )
+    KindedAst.Expr.IfThenElse(refEqExp, thenExp, elseExp, loc)
+  }
 
   /**
     * Builds a string concatenation expression from the given expressions.
