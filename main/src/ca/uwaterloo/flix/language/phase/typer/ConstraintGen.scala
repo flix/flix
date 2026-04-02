@@ -283,6 +283,13 @@ object ConstraintGen {
           val resEff = eff
           (resTpe, resEff)
 
+        case SemanticOp.ObjectOp.Ordinal =>
+          val (_, eff) = visitExp(exp)
+          c.unifyType(tvar, Type.Int32, exp.loc)
+          val resTpe = tvar
+          val resEff = eff
+          (resTpe, resEff)
+
       }
 
       case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -416,6 +423,15 @@ object ConstraintGen {
           c.expectType(expected = Type.Str, actual = tpe1, exp1.loc)
           c.expectType(expected = Type.Str, actual = tpe2, exp2.loc)
           c.unifyType(tvar, Type.Str, loc)
+          val resTpe = tvar
+          val resEff = Type.mkUnion(eff1, eff2, loc)
+          (resTpe, resEff)
+
+        case SemanticOp.ObjectOp.RefEq =>
+          val (tpe1, eff1) = visitExp(exp1)
+          val (tpe2, eff2) = visitExp(exp2)
+          c.unifyType(tpe1, tpe2, loc)
+          c.unifyType(tvar, Type.Bool, loc)
           val resTpe = tvar
           val resEff = Type.mkUnion(eff1, eff2, loc)
           (resTpe, resEff)
