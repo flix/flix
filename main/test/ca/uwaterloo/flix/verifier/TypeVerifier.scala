@@ -432,6 +432,10 @@ object TypeVerifier {
           checkJavaSubtype(t, classOf[Throwable], loc)
           tpe
 
+        case AtomicOp.RefEq =>
+          val List(_, _) = ts
+          check(expected = SimpleType.Bool)(actual = tpe, loc)
+
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
           checkJavaSubtype(t, new Object().getClass, loc) // must not be primitive type
