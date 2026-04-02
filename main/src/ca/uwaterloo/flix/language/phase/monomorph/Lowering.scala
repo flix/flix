@@ -247,28 +247,17 @@ object Lowering {
     case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
       case _: SemanticOp.ReflectOp =>
         throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
-      case SemanticOp.ObjectOp.Ordinal =>
-        val e = lowerExp(exp)
-        val t = lowerType(tpe)
-        MonoAst.Expr.ApplyAtomic(AtomicOp.Ordinal, List(e), t, eff, loc)
       case _ =>
         val e = lowerExp(exp)
         val t = lowerType(tpe)
         MonoAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
     }
 
-    case TypedAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => sop match {
-      case SemanticOp.ObjectOp.RefEq =>
-        val e1 = lowerExp(exp1)
-        val e2 = lowerExp(exp2)
-        val t = lowerType(tpe)
-        MonoAst.Expr.ApplyAtomic(AtomicOp.RefEq, List(e1, e2), t, eff, loc)
-      case _ =>
-        val e1 = lowerExp(exp1)
-        val e2 = lowerExp(exp2)
-        val t = lowerType(tpe)
-        MonoAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
-    }
+    case TypedAst.Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      val e1 = lowerExp(exp1)
+      val e2 = lowerExp(exp2)
+      val t = lowerType(tpe)
+      MonoAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
 
     case TypedAst.Expr.Let(bnd, exp1, exp2, tpe, eff, loc) =>
       val e1 = lowerExp(exp1)

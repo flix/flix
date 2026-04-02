@@ -182,8 +182,6 @@ object OpPrinter {
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
     case (AtomicOp.Tag(sym), _) => Tag(sym, ds)
     case (AtomicOp.Untag(_, idx), List(d)) => Untag(d, idx)
-    case (AtomicOp.Ordinal, List(d)) => Expr.Keyword("ordinal", d)
-    case (AtomicOp.RefEq, List(d1, d2)) => Expr.RefEq(d1, d2)
     case (AtomicOp.InstanceOf(clazz), List(d)) => InstanceOf(d, clazz)
     case (AtomicOp.Cast, List(d)) => UncheckedCast(d, Some(tpe), Some(eff))
     case (AtomicOp.Unbox, List(d)) => Unbox(d, tpe)

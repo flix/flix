@@ -224,10 +224,6 @@ object TypeVerifier {
           }
           tpe
 
-        case AtomicOp.Ordinal =>
-          val List(_) = ts
-          check(expected = SimpleType.Int32)(actual = tpe, loc)
-
         case AtomicOp.ArrayLength =>
           val List(t1) = ts
           t1 match {
@@ -439,10 +435,6 @@ object TypeVerifier {
           val List(t) = ts
           checkJavaSubtype(t, classOf[Throwable], loc)
           tpe
-
-        case AtomicOp.RefEq =>
-          val List(_, _) = ts
-          check(expected = SimpleType.Bool)(actual = tpe, loc)
 
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
