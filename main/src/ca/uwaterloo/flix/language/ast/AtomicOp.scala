@@ -70,6 +70,8 @@ object AtomicOp {
 
   case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
+  case object RefEq extends AtomicOp
+
   case class InstanceOf(clazz: Class[?]) extends AtomicOp
 
   case object Cast extends AtomicOp

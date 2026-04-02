@@ -182,6 +182,7 @@ object Eraser {
           val specializedStruct = e.tpe.asInstanceOf[SimpleType.Struct]
           val specializedSym = specializedFieldSym(sym, specializedStruct)
           ErasedAst.Expr.ApplyAtomic(AtomicOp.StructPut(specializedSym), es, t, purity, loc)
+        case AtomicOp.RefEq => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InstanceOf(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Cast => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Unbox => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)

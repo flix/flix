@@ -785,6 +785,13 @@ object GenExpression {
         PUTFIELD(structType.IndexField(idx))
         GETSTATIC(BackendObjType.Unit.SingletonField)
 
+      case AtomicOp.RefEq =>
+        import BytecodeInstructions.*
+        val List(exp1, exp2) = exps
+        compileExpr(exp1)
+        compileExpr(exp2)
+        ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
+
       case AtomicOp.InstanceOf(clazz) =>
         import BytecodeInstructions.*
         val List(exp) = exps
