@@ -77,7 +77,7 @@ object Eraser {
   }
 
   private def specializeCase(caze: ReducedAst.Case, newSym: Symbol.EnumSym, subst: Map[Symbol.KindedTypeVarSym, SimpleType]): ErasedAst.Case = {
-    val sym = new Symbol.CaseSym(newSym, caze.sym.name, caze.sym.loc)
+    val sym = new Symbol.CaseSym(newSym, caze.sym.name, caze.sym.ordinal, caze.sym.loc)
     ErasedAst.Case(sym, caze.tpes.map(instantiateAndEraseType(subst, _)), caze.loc)
   }
 
@@ -245,7 +245,7 @@ object Eraser {
     * }}}
     */
   private def specializedCaseSym(sym0: Symbol.CaseSym, tpe: SimpleType.Enum): Symbol.CaseSym = {
-    new Symbol.CaseSym(tpe.sym, sym0.name, sym0.loc)
+    new Symbol.CaseSym(tpe.sym, sym0.name, sym0.ordinal, sym0.loc)
   }
 
   /**
