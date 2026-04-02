@@ -435,7 +435,10 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val cases = ChaosMonkey.chaos(cases0.zipWithIndex.map { case (c, i) => visitCase(c, sym, i) })
+      // Assign each case a 0-based ordinal reflecting its declaration order.
+      // The ordinal is used for derived Eq, Order, ToString, etc.
+      val casesWithOrdinals = cases0.zipWithIndex.map { case (c, i) => visitCase(c, sym, i) }
+      val cases = ChaosMonkey.chaos(casesWithOrdinals)
 
       NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
