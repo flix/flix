@@ -73,6 +73,8 @@ object TypeVerifier {
             case SemanticOp.Int64Op.Not => SimpleType.Int64
             case _: SemanticOp.ReflectOp =>
               throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
+            case _: SemanticOp.ObjectOp =>
+              throw InternalCompilerException("ObjectOp should have been lowered to AtomicOp", loc)
           }
           check(expected = opTpe)(actual = t, loc)
           check(expected = tpe)(actual = opTpe, loc)
@@ -189,6 +191,8 @@ object TypeVerifier {
             case SemanticOp.Int64Op.Shr => (SimpleType.Int64, SimpleType.Int32, SimpleType.Int64)
 
             case SemanticOp.StringOp.Concat => (SimpleType.String, SimpleType.String, SimpleType.String)
+
+            case _: SemanticOp.ObjectOp => throw InternalCompilerException("ObjectOp should have been lowered to AtomicOp", loc)
           }
           check(expected = argTpe1)(t1, loc)
           check(expected = argTpe2)(t2, loc)

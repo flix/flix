@@ -246,6 +246,9 @@ object GenExpression {
 
           case _: ReflectOp =>
             throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
+
+          case _: ObjectOp =>
+            throw InternalCompilerException("ObjectOp should have been lowered to AtomicOp", loc)
         }
 
       case AtomicOp.Binary(sop) =>
@@ -590,6 +593,9 @@ object GenExpression {
 
           case StringOp.Concat =>
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
+
+          case _: ObjectOp =>
+            throw InternalCompilerException("ObjectOp should have been lowered to AtomicOp", loc)
         }
 
       case AtomicOp.Is(sym) =>
