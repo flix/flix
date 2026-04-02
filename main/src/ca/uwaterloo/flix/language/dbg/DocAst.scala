@@ -245,6 +245,9 @@ object DocAst {
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
 
+    def RefEq(d1: Expr, d2: Expr): Expr =
+      Binary(d1, "===", d2)
+
     def InstanceOf(d: Expr, clazz: Class[?]): Expr =
       Binary(d, "instanceof", Native(clazz))
 
