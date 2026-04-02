@@ -247,8 +247,9 @@ object GenExpression {
           case _: ReflectOp =>
             throw InternalCompilerException("ReflectOp should have been resolved in Specialization", loc)
 
-          case _: ObjectOp =>
-            throw InternalCompilerException("ObjectOp should have been lowered to AtomicOp", loc)
+          case ObjectOp.Ordinal =>
+            mv.visitTypeInsn(CHECKCAST, BackendObjType.Tagged.jvmName.toInternalName)
+            mv.visitFieldInsn(GETFIELD, BackendObjType.Tagged.jvmName.toInternalName, "ordinal", BackendType.Int32.toDescriptor)
         }
 
       case AtomicOp.Binary(sop) =>
@@ -594,8 +595,17 @@ object GenExpression {
           case StringOp.Concat =>
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
 
-          case _: ObjectOp =>
-            throw InternalCompilerException("ObjectOp should have been lowered to AtomicOp", loc)
+          case ObjectOp.RefEq =>
+            val refEqElse = new Label()
+            val refEqEnd = new Label()
+            compileExpr(exp1)
+            compileExpr(exp2)
+            mv.visitJumpInsn(IF_ACMPNE, refEqElse)
+            mv.visitInsn(ICONST_1)
+            mv.visitJumpInsn(GOTO, refEqEnd)
+            mv.visitLabel(refEqElse)
+            mv.visitInsn(ICONST_0)
+            mv.visitLabel(refEqEnd)
         }
 
       case AtomicOp.Is(sym) =>
@@ -613,13 +623,6 @@ object GenExpression {
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
         compileUntag(exp, idx, termTypes)
-
-      case AtomicOp.Ordinal =>
-        import BytecodeInstructions.*
-        val List(exp) = exps
-        compileExpr(exp)
-        CHECKCAST(BackendObjType.Tagged.jvmName)
-        GETFIELD(BackendObjType.Tagged.OrdinalField)
 
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
@@ -797,13 +800,6 @@ object GenExpression {
         compileExpr(exp2)
         PUTFIELD(structType.IndexField(idx))
         GETSTATIC(BackendObjType.Unit.SingletonField)
-
-      case AtomicOp.RefEq =>
-        import BytecodeInstructions.*
-        val List(exp1, exp2) = exps
-        compileExpr(exp1)
-        compileExpr(exp2)
-        ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
 
       case AtomicOp.InstanceOf(clazz) =>
         import BytecodeInstructions.*

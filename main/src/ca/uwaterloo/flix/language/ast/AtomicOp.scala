@@ -38,8 +38,6 @@ object AtomicOp {
 
   case class Untag(sym: Symbol.CaseSym, idx: Int) extends AtomicOp
 
-  case object Ordinal extends AtomicOp
-
   case class Index(idx: Int) extends AtomicOp
 
   case object Tuple extends AtomicOp
@@ -71,8 +69,6 @@ object AtomicOp {
   case class StructGet(sym: Symbol.StructFieldSym) extends AtomicOp
 
   case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
-
-  case object RefEq extends AtomicOp
 
   case class InstanceOf(clazz: Class[?]) extends AtomicOp
 
