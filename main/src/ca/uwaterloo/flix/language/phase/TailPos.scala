@@ -77,6 +77,12 @@ object TailPos {
       val br = MapOps.mapValues(br0)(visitExp)
       Expr.Branch(e0, br, tpe, purity, loc)
 
+    case Expr.Switch(e0, enumSym, cases0, default0, tpe, purity, loc) =>
+      // Each case and default is in tail position.
+      val cs = cases0.map { case (sym, body) => (sym, visitExp(body)) }
+      val d = visitExp(default0)
+      Expr.Switch(e0, enumSym, cs, d, tpe, purity, loc)
+
     case Expr.ApplyClo(exp, exps, _, tpe, purity, loc) =>
       // Mark expression as tail position.
       Expr.ApplyClo(exp, exps, ExpPosition.Tail, tpe, purity, loc)

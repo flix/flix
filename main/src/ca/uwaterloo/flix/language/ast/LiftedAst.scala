@@ -74,6 +74,8 @@ object LiftedAst {
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
+    case class Switch(exp: Expr, enumSym: Symbol.EnumSym, cases: List[(Symbol.CaseSym, Expr)], defaultExp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Stm(exps: List[Expr], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
