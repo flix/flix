@@ -896,7 +896,6 @@ object Inliner {
     *
     * A simple expression is a value-like expression where sub-expressions are trivial.
     */
-  @tailrec
   private def isSimple(exp0: Expr): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) => true
     case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
@@ -905,6 +904,11 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.ArrayLit, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.StructNew(_, _, _), exps, _, _, _) => exps.forall(isTrivial)
+    // IfThenElse with simple sub-expressions is simple. This enables inlining of
+    // small branching functions like Int32.compare:
+    //   if (x < y) LessThan else if (x > y) GreaterThan else EqualTo
+    case Expr.IfThenElse(cond, thn, els, _, _, _) =>
+      isSimple(cond) && isSimple(thn) && isSimple(els)
     case Expr.Cast(exp, _, _, _) => isSimple(exp)
     case exp => isTrivial(exp)
   }
