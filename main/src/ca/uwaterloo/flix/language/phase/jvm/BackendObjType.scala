@@ -299,26 +299,14 @@ object BackendObjType {
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
-      cm.mkField(NameField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(OrdinalField, IsPublic, NotFinal, NotVolatile)
 
       cm.closeClassMaker()
     }
 
-    def NameField: InstanceField = InstanceField(this.jvmName, "tag", BackendType.String)
-
     def OrdinalField: InstanceField = InstanceField(this.jvmName, "ordinal", BackendType.Int32)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
-
-    /** [...] -> [..., tagName] */
-    def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(JvmOps.getTagName(name))
-
-    /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
-    def eqTagName()(implicit mv: MethodVisitor): Unit = {
-      // ACMP is okay since tag strings are loaded through ldc instructions
-      ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
-    }
   }
 
   sealed trait TagType extends BackendObjType {
@@ -345,9 +333,6 @@ object BackendObjType {
       thisLoad()
       INVOKESPECIAL(Tagged.Constructor)
       thisLoad()
-      Tagged.mkTagName(name)
-      PUTFIELD(Tagged.NameField)
-      thisLoad()
       pushInt(ordinal)
       PUTFIELD(Tagged.OrdinalField)
       RETURN()
@@ -365,8 +350,6 @@ object BackendObjType {
 
       cm.closeClassMaker()
     }
-
-    def NameField: InstanceField = Tagged.NameField
 
     def OrdinalField: InstanceField = Tagged.OrdinalField
 
