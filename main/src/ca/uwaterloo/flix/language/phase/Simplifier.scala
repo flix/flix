@@ -706,6 +706,11 @@ object Simplifier {
     * Eliminates pattern matching by translations to labels and jumps.
     */
   private def patternMatchWithLabels(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+    // Check if the match is eligible for switch optimization.
+    if (isSwitchEligible(exp0, rules)) {
+      return generateSwitch(exp0, rules, tpe, loc)
+    }
+
     //
     // Given the code:
     //
@@ -789,6 +794,153 @@ object Simplifier {
 
     // Wrap the branches inside a let-binding for the match variable.
     SimplifiedAst.Expr.Let(matchVar, matchExp, branch, t, matchPurity, loc)
+  }
+
+  /**
+    * Returns `true` if the given match expression is eligible for switch optimization.
+    *
+    * A match is switch-eligible when:
+    * 1. The scrutinee type is an enum.
+    * 2. All top-level patterns are Tag, Wild, or Var.
+    * 3. No guards on any rule.
+    * 4. At least 2 Tag rules.
+    * 5. At most one Wild/Var, and it must be the last rule.
+    * 6. Inner patterns of each Tag are only Wild or Var.
+    */
+  private def isSwitchEligible(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule])(implicit root: MonoAst.Root): Boolean = {
+    // 1. Must be an enum type.
+    val isEnum = exp0.tpe.typeConstructor match {
+      case Some(TypeConstructor.Enum(_, _)) => true
+      case _ => false
+    }
+    if (!isEnum) return false
+
+    // 3. No guards allowed.
+    if (rules.exists(_.guard.isDefined)) return false
+
+    // Partition into tag rules and other rules.
+    val (tagRules, otherRules) = rules.partition {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tag(_, _, _, _), _, _) => true
+      case _ => false
+    }
+
+    // 4. At least 2 tag rules.
+    if (tagRules.length < 2) return false
+
+    // 2 & 5. All non-tag rules must be Wild or Var, at most one, and it must be the last rule.
+    val allOtherValid = otherRules.forall {
+      case MonoAst.MatchRule(MonoAst.Pattern.Wild(_, _), _, _) => true
+      case MonoAst.MatchRule(MonoAst.Pattern.Var(_, _, _, _), _, _) => true
+      case _ => false
+    }
+    if (!allOtherValid) return false
+    if (otherRules.length > 1) return false
+    if (otherRules.length == 1 && rules.last != otherRules.head) return false
+
+    // 6. Inner patterns of each Tag must be Wild or Var.
+    tagRules.forall {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tag(_, pats, _, _), _, _) =>
+        pats.forall {
+          case MonoAst.Pattern.Wild(_, _) => true
+          case MonoAst.Pattern.Var(_, _, _, _) => true
+          case _ => false
+        }
+      case _ => false
+    }
+  }
+
+  /**
+    * Generates a Switch expression for an eligible match on an enum.
+    *
+    * Given the code:
+    * {{{
+    * match x {
+    *   case Tag1(a, b) => body1
+    *   case Tag2(c)    => body2
+    *   case _          => body3
+    * }
+    * }}}
+    *
+    * Generates:
+    * {{{
+    * let matchVar = x;
+    * switch matchVar {
+    *   case Tag1 => let a = untag 0 matchVar; let b = untag 1 matchVar; body1
+    *   case Tag2 => let c = untag 0 matchVar; body2
+    *   default   => body3
+    * }
+    * }}}
+    */
+  private def generateSwitch(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+    val matchVar = Symbol.freshVarSym("matchVar" + Flix.Delimiter, BoundBy.Let, loc)
+    val matchExp = visitExp(exp0)
+    val t = visitType(tpe)
+
+    // Determine the enum sym from the scrutinee type.
+    val enumSym = exp0.tpe.typeConstructor match {
+      case Some(TypeConstructor.Enum(sym, _)) => sym
+      case _ => throw InternalCompilerException("Expected enum type in switch", loc)
+    }
+
+    // Separate tag rules from the optional wildcard/var default rule.
+    val (tagRules, defaultRules) = rules.partition {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tag(_, _, _, _), _, _) => true
+      case _ => false
+    }
+
+    // Build switch cases.
+    val switchCases: List[(Symbol.CaseSym, SimplifiedAst.Expr)] = tagRules.map {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tag(CaseSymUse(caseSym, _), pats, patTpe, patLoc), _, body) =>
+        val matchVarExp = SimplifiedAst.Expr.Var(matchVar, visitType(patTpe), patLoc)
+        val innerBody = visitExp(body)
+        // Generate let-bindings for inner patterns (Untag operations), built right-to-left.
+        val caseBody = pats.zipWithIndex.foldRight(innerBody) {
+          case ((MonoAst.Pattern.Wild(_, _), _), acc) => acc
+          case ((MonoAst.Pattern.Var(sym, varTpe, _, varLoc), idx), acc) =>
+            val untagExp = SimplifiedAst.Expr.ApplyAtomic(
+              AtomicOp.Untag(caseSym, idx),
+              List(matchVarExp),
+              visitType(varTpe),
+              Purity.Pure,
+              varLoc
+            )
+            SimplifiedAst.Expr.Let(sym, untagExp, acc, t, acc.purity, varLoc)
+          case _ => throw InternalCompilerException("Unexpected inner pattern in switch", loc)
+        }
+        (caseSym, caseBody)
+      case _ => throw InternalCompilerException("Unexpected rule in switch tag rules", loc)
+    }
+
+    // Build default expression.
+    val defaultExp = defaultRules match {
+      case MonoAst.MatchRule(MonoAst.Pattern.Var(sym, varTpe, _, varLoc), _, body) :: Nil =>
+        val vt = visitType(varTpe)
+        val innerBody = visitExp(body)
+        SimplifiedAst.Expr.Let(sym, SimplifiedAst.Expr.Var(matchVar, vt, varLoc), innerBody, t, innerBody.purity, varLoc)
+      case MonoAst.MatchRule(MonoAst.Pattern.Wild(_, _), _, body) :: Nil =>
+        visitExp(body)
+      case Nil =>
+        SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
+      case _ => throw InternalCompilerException("Unexpected default pattern in switch", loc)
+    }
+
+    // Compute purity.
+    val casesPurity = Purity.combineAll(switchCases.map(_._2.purity))
+    val switchPurity = Purity.combine3(matchExp.purity, casesPurity, defaultExp.purity)
+
+    // Build the Switch expression.
+    val switchExpr = SimplifiedAst.Expr.Switch(
+      SimplifiedAst.Expr.Var(matchVar, matchExp.tpe, loc),
+      enumSym,
+      switchCases,
+      defaultExp,
+      t,
+      Purity.combine(casesPurity, defaultExp.purity),
+      loc
+    )
+
+    // Wrap in let-binding for matchVar.
+    SimplifiedAst.Expr.Let(matchVar, matchExp, switchExpr, t, switchPurity, loc)
   }
 
   /**

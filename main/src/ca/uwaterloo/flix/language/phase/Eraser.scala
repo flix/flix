@@ -221,6 +221,14 @@ object Eraser {
       ErasedAst.Expr.Branch(visitExp(exp), branches.map(visitBranch), visitType(tpe), purity, loc)
     case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
       ErasedAst.Expr.JumpTo(sym, visitType(tpe), purity, loc)
+    case ReducedAst.Expr.Switch(exp, _, cases, defaultExp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val specializedEnum = e.tpe.asInstanceOf[SimpleType.Enum]
+      val cs = cases.map { case (sym, body) =>
+        (specializedCaseSym(sym, specializedEnum), visitExp(body))
+      }
+      val d = visitExp(defaultExp)
+      ErasedAst.Expr.Switch(e, specializedEnum.sym, cs, d, visitType(tpe), purity, loc)
     case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
       ErasedAst.Expr.Let(sym, visitExp(exp1), visitExp(exp2), loc)
     case ReducedAst.Expr.Stm(exps, exp, loc) =>
