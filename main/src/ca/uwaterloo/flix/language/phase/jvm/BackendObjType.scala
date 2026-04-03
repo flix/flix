@@ -46,7 +46,6 @@ sealed trait BackendObjType {
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
     case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
     case BackendObjType.ExtTagged => JvmName(RootPackage, mkClassName("ExtTagged"))
-    case BackendObjType.ExtNullaryTag(sym) => JvmName(RootPackage, mkClassName("Ext" + sym.toString))
     case BackendObjType.ExtTag(tpes) => JvmName(RootPackage, mkClassName("ExtTag", tpes))
     case BackendObjType.AbstractArrow(args, result) => JvmName(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
@@ -401,39 +400,7 @@ object BackendObjType {
     }
   }
 
-  sealed trait ExtTagType extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte]
-  }
-
-  case class ExtNullaryTag(name: String) extends ExtTagType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = ExtTagged.jvmName)
-
-      cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), singletonStaticConstructor(Constructor, SingletonField)(_))
-      cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def SingletonField: StaticField = StaticField(this.jvmName, "singleton", this.toTpe)
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
-
-    /** `[] --> return` */
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      INVOKESPECIAL(ExtTagged.Constructor)
-      thisLoad()
-      ExtTagged.mkTagName(name)
-      PUTFIELD(ExtTagged.NameField)
-      RETURN()
-    }
-  }
-
-  case class ExtTag(elms: List[BackendType]) extends ExtTagType {
-    if (elms.isEmpty) throw InternalCompilerException(s"Unexpected nullary ExtTag type", SourceLocation.Unknown)
-
+  case class ExtTag(elms: List[BackendType]) extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = ExtTagged.jvmName)
 

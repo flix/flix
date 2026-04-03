@@ -163,13 +163,10 @@ object JvmOps {
   /**
     * Returns the set of extensible tag types in `types` without searching recursively.
     */
-  def getExtensibleTagTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.ExtTagType] =
-    types.foldLeft(Set.empty[BackendObjType.ExtTagType]) {
-      case (acc, SimpleType.ExtensibleExtend(cons, targs, _)) =>
-        targs match {
-          case Nil => acc + BackendObjType.ExtNullaryTag(cons.name)
-          case nary => acc + BackendObjType.ExtTag(nary.map(BackendType.toBackendType))
-        }
+  def getExtensibleTagTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.ExtTag] =
+    types.foldLeft(Set.empty[BackendObjType.ExtTag]) {
+      case (acc, SimpleType.ExtensibleExtend(_, targs, _)) =>
+        acc + BackendObjType.ExtTag(targs.map(BackendType.toBackendType))
       case (acc, _) => acc
     }
 
