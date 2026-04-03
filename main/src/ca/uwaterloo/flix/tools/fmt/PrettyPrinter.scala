@@ -1,9 +1,8 @@
 package ca.uwaterloo.flix.tools.fmt
 
-import ca.uwaterloo.flix.language.ast.SyntaxTree
+import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.Token
-import ca.uwaterloo.flix.tools.fmt.Doc._
+import ca.uwaterloo.flix.tools.fmt.Doc.*
 
 object PrettyPrinter {
 
@@ -15,8 +14,28 @@ object PrettyPrinter {
   }
 
   def traverse(tree: Tree): Doc = tree.kind match {
-    case TreeKind.Expr.Binary => prettyBinary(tree)
-    case _                    => prettyFallback(tree)
+    case TreeKind.Expr.Binary   => prettyBinary(tree)
+    case TreeKind.ParameterList => prettyParameterList(tree)
+    case TreeKind.Parameter     => prettyParameter(tree)
+    case _                      => prettyFallback(tree)
+  }
+
+  private def prettyParameterList(tree: Tree): Doc = {
+    tree.children.foldLeft(empty) {
+      case (acc, token: Token) if token.kind == TokenKind.Comma =>
+        acc <> text(",") <> space
+      case (acc, child) =>
+        acc <> prettyChild(child)
+    }
+  }
+
+  private def prettyParameter(tree: Tree): Doc = {
+    tree.children.foldLeft(empty) {
+      case (acc, token: Token) if token.kind == TokenKind.Colon =>
+        acc <> text(":") <> space
+      case (acc, child) =>
+        acc <> prettyChild(child)
+    }
   }
 
   private def prettyBinary(tree: Tree): Doc = {
