@@ -1357,6 +1357,32 @@ object GenExpression {
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
+    case Expr.Switch(exp, enumSym, cases, defaultExp, _, _, _) =>
+      // Compile the scrutinee (pushes enum value onto stack)
+      compileExpr(exp)
+      // Extract ordinal: checkcast Tagged, getfield ordinal
+      mv.visitTypeInsn(CHECKCAST, BackendObjType.Tagged.jvmName.toInternalName)
+      mv.visitFieldInsn(GETFIELD, BackendObjType.Tagged.jvmName.toInternalName, "ordinal", BackendType.Int32.toDescriptor)
+      // Build labels
+      val defaultLabel = new Label()
+      val endLabel = new Label()
+      val caseLabels = cases.map { case (sym, _) => sym.ordinal -> new Label() }.toMap
+      val numCases = root.enums(enumSym).cases.size
+      val table = (0 until numCases).map(i => caseLabels.getOrElse(i, defaultLabel)).toArray
+      // Emit tableswitch
+      mv.visitTableSwitchInsn(0, numCases - 1, defaultLabel, table: _*)
+      // Emit each case branch
+      cases.foreach { case (sym, body) =>
+        mv.visitLabel(caseLabels(sym.ordinal))
+        compileExpr(body)
+        mv.visitJumpInsn(GOTO, endLabel)
+      }
+      // Default branch
+      mv.visitLabel(defaultLabel)
+      compileExpr(defaultExp)
+      // End label
+      mv.visitLabel(endLabel)
+
     case Expr.Let(_, offset, exp1, exp2, _) =>
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)

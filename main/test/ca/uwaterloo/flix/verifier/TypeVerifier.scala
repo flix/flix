@@ -535,6 +535,14 @@ object TypeVerifier {
       case Some(tpe2) => checkEq(tpe1, tpe2, loc)
     }
 
+    case Expr.Switch(exp, _, cases, defaultExp, tpe, _, loc) =>
+      visitExpr(exp)
+      cases.foreach { case (_, body) =>
+        checkEq(tpe, visitExpr(body), loc)
+      }
+      checkEq(tpe, visitExpr(defaultExp), loc)
+      tpe
+
     case Expr.Let(sym, exp1, exp2, _) =>
       val letBoundType = visitExpr(exp1)
       visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)

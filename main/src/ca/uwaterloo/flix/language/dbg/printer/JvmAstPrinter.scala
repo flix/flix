@@ -52,6 +52,10 @@ object JvmAstPrinter {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case Expr.JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
+    case Expr.Switch(exp, _, cases, defaultExp, _, _, _) =>
+      val cs = cases.map { case (sym, body) => (DocAst.Expr.Meta(sym.toString), None, print(body)) }
+      val d = (DocAst.Expr.Meta("_"), None, print(defaultExp))
+      DocAst.Expr.Match(print(exp), cs :+ d)
     case Expr.Let(sym, _, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Region(sym, _, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
