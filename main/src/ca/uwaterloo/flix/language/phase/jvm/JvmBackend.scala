@@ -64,6 +64,7 @@ object JvmBackend {
 
     val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.jvmName, BackendObjType.Tagged.genByteCode()))
     val tagClasses = root.enums.values.flatMap(JvmOps.getTagsOf).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val extTaggedAbstractClass = List(JvmClass(BackendObjType.ExtTagged.jvmName, BackendObjType.ExtTagged.genByteCode()))
     val extensibleTagClasses = JvmOps.getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val tupleClasses = JvmOps.getTupleTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
@@ -117,6 +118,7 @@ object JvmBackend {
       closureAbstractClasses,
       taggedAbstractClass,
       tagClasses,
+      extTaggedAbstractClass,
       extensibleTagClasses,
       tupleClasses,
       structClasses,

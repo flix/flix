@@ -45,6 +45,9 @@ sealed trait BackendObjType {
     case BackendObjType.NullaryTag(sym, _) => JvmName(RootPackage, mkClassName(sym.toString))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
     case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
+    case BackendObjType.ExtTagged => JvmName(RootPackage, mkClassName("ExtTagged"))
+    case BackendObjType.ExtNullaryTag(sym) => JvmName(RootPackage, mkClassName("Ext" + sym.toString))
+    case BackendObjType.ExtTag(tpes) => JvmName(RootPackage, mkClassName("ExtTag", tpes))
     case BackendObjType.AbstractArrow(args, result) => JvmName(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
     case BackendObjType.Defn(sym) => JvmName(sym.namespace, JvmName.mkClassName("Def", sym.name))
@@ -367,6 +370,80 @@ object BackendObjType {
     def NameField: InstanceField = Tagged.NameField
 
     def OrdinalField: InstanceField = Tagged.OrdinalField
+
+    def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, s"v$i", elms(i))
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+  }
+
+  case object ExtTagged extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkAbstractClass(this.jvmName)
+
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
+
+      cm.mkField(NameField, IsPublic, NotFinal, NotVolatile)
+
+      cm.closeClassMaker()
+    }
+
+    def NameField: InstanceField = InstanceField(this.jvmName, "tag", BackendType.String)
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+
+    /** [...] -> [..., tagName] */
+    def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(JvmOps.getTagName(name))
+
+    /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
+    def eqTagName()(implicit mv: MethodVisitor): Unit = {
+      // ACMP is okay since tag strings are loaded through ldc instructions
+      ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
+    }
+  }
+
+  sealed trait ExtTagType extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte]
+  }
+
+  case class ExtNullaryTag(name: String) extends ExtTagType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = ExtTagged.jvmName)
+
+      cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), singletonStaticConstructor(Constructor, SingletonField)(_))
+      cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
+      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
+
+      cm.closeClassMaker()
+    }
+
+    def SingletonField: StaticField = StaticField(this.jvmName, "singleton", this.toTpe)
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+
+    /** `[] --> return` */
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
+      thisLoad()
+      INVOKESPECIAL(ExtTagged.Constructor)
+      thisLoad()
+      ExtTagged.mkTagName(name)
+      PUTFIELD(ExtTagged.NameField)
+      RETURN()
+    }
+  }
+
+  case class ExtTag(elms: List[BackendType]) extends ExtTagType {
+    if (elms.isEmpty) throw InternalCompilerException(s"Unexpected nullary ExtTag type", SourceLocation.Unknown)
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = ExtTagged.jvmName)
+
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ExtTagged.Constructor)(_))
+      elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
+
+      cm.closeClassMaker()
+    }
+
+    def NameField: InstanceField = ExtTagged.NameField
 
     def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, s"v$i", elms(i))
 
