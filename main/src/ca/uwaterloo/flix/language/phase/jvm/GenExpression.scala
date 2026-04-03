@@ -1596,7 +1596,7 @@ object GenExpression {
     import BytecodeInstructions.*
     tpes match {
       case Nil =>
-        GETSTATIC(BackendObjType.NullaryTag(enumName, name, 0).SingletonField)
+        GETSTATIC(BackendObjType.NullaryTag(enumName, name, -1).SingletonField)
       case _ =>
         val tagType = BackendObjType.Tag(tpes)
         NEW(tagType.jvmName)
