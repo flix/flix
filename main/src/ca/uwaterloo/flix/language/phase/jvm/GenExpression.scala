@@ -1589,7 +1589,7 @@ object GenExpression {
     compileExpr(exp)
     tpes match {
       case Nil =>
-        INSTANCEOF(BackendObjType.NullaryTag(name, 0).jvmName)
+        INSTANCEOF(BackendObjType.NullaryTag(name, -1).jvmName)
       case _ =>
         CHECKCAST(BackendObjType.Tagged.jvmName)
         GETFIELD(BackendObjType.Tagged.NameField)
@@ -1605,7 +1605,7 @@ object GenExpression {
     import BytecodeInstructions.*
     tpes match {
       case Nil =>
-        GETSTATIC(BackendObjType.NullaryTag(name, 0).SingletonField)
+        GETSTATIC(BackendObjType.NullaryTag(name, -1).SingletonField)
       case _ =>
         val tagType = BackendObjType.Tag(tpes)
         NEW(tagType.jvmName)
