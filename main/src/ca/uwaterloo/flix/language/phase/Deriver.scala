@@ -173,8 +173,11 @@ object Deriver {
         loc
       )
 
-      // short-circuit: if x === y then true else <match>
-      mkRefEqShortCircuit(param1, param2, KindedAst.Expr.Cst(Constant.Bool(true), loc), matchExp, loc)
+      // short-circuit: if x === y then true else if ordinal(x) != ordinal(y) then false else <match>
+      val falseExp = KindedAst.Expr.Cst(Constant.Bool(false), loc)
+      val trueExp = KindedAst.Expr.Cst(Constant.Bool(true), loc)
+      val ordinalCheck = mkOrdinalNeqCheck(param1, param2, falseExp, matchExp, loc)
+      mkRefEqShortCircuit(param1, param2, trueExp, ordinalCheck, loc)
   }
 
   /**
@@ -322,8 +325,6 @@ object Deriver {
     */
   private def mkCompareImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
-      val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
-
       // Create the main match expression
       val matchRules = getCasesInStableOrder(cases).map(mkComparePairMatchRule(_, loc, root))
 
@@ -333,23 +334,11 @@ object Deriver {
         // For single-case enums it is unreachable and would trigger redundancy warnings.
 
         // Create the default rule:
-        // `case _ => compare(ordinal(x), ordinal(y))`
+        // `case _ => if (ordinal(x) < ordinal(y)) LessThan else GreaterThan`
         val defaultMatchRule = KindedAst.MatchRule(
           KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
           None,
-          KindedAst.Expr.ApplySig(
-            SigSymUse(compareSigSym, loc),
-            List(
-              KindedAst.Expr.Unary(SemanticOp.ObjectOp.Ordinal, mkVarExpr(param1, loc), Type.freshVar(Kind.Star, loc), loc),
-              KindedAst.Expr.Unary(SemanticOp.ObjectOp.Ordinal, mkVarExpr(param2, loc), Type.freshVar(Kind.Star, loc), loc),
-            ),
-            Type.freshVar(Kind.Star, loc),
-            List.empty,
-            Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Eff, loc),
-            loc
-          ),
+          mkOrdinalCompare(param1, param2, loc, root),
           loc
         )
 
@@ -368,10 +357,13 @@ object Deriver {
         )
       }
 
-      // short-circuit: if x === y then EqualTo else <compare>
+      // short-circuit: if x === y then EqualTo
+      //           else if ordinal(x) != ordinal(y) then (if ordinal(x) < ordinal(y) then LessThan else GreaterThan)
+      //           else <compare>
       val comparisonEquals = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
       val equalToExp = KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
-      mkRefEqShortCircuit(param1, param2, equalToExp, compareExp, loc)
+      val ordinalCheck = mkOrdinalNeqCheck(param1, param2, mkOrdinalCompare(param1, param2, loc, root), compareExp, loc)
+      mkRefEqShortCircuit(param1, param2, equalToExp, ordinalCheck, loc)
   }
 
   /**
@@ -938,6 +930,42 @@ object Deriver {
       loc
     )
     KindedAst.Expr.IfThenElse(refEqExp, thenExp, elseExp, loc)
+  }
+
+  /**
+    * Returns an expression that short-circuits with `thenExp` if `param1` and `param2`
+    * have different ordinals, otherwise evaluates `elseExp`.
+    *
+    * Generates: `if (ordinal(param1) != ordinal(param2)) thenExp else elseExp`
+    */
+  private def mkOrdinalNeqCheck(param1: Symbol.VarSym, param2: Symbol.VarSym,
+                                thenExp: KindedAst.Expr, elseExp: KindedAst.Expr,
+                                loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
+    val ord1 = KindedAst.Expr.Unary(SemanticOp.ObjectOp.Ordinal, mkVarExpr(param1, loc), Type.freshVar(Kind.Star, loc), loc)
+    val ord2 = KindedAst.Expr.Unary(SemanticOp.ObjectOp.Ordinal, mkVarExpr(param2, loc), Type.freshVar(Kind.Star, loc), loc)
+    val neqExp = KindedAst.Expr.Binary(SemanticOp.Int32Op.Neq, ord1, ord2, Type.freshVar(Kind.Star, loc), loc)
+    KindedAst.Expr.IfThenElse(neqExp, thenExp, elseExp, loc)
+  }
+
+  /**
+    * Returns an expression that compares the ordinals of `param1` and `param2` directly
+    * using integer comparison, returning `LessThan` or `GreaterThan`.
+    *
+    * Generates: `if (ordinal(param1) < ordinal(param2)) LessThan else GreaterThan`
+    *
+    * NB: This assumes the ordinals are known to be different (i.e. the caller has already
+    * checked that they are not equal).
+    */
+  private def mkOrdinalCompare(param1: Symbol.VarSym, param2: Symbol.VarSym,
+                               loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = {
+    val ord1 = KindedAst.Expr.Unary(SemanticOp.ObjectOp.Ordinal, mkVarExpr(param1, loc), Type.freshVar(Kind.Star, loc), loc)
+    val ord2 = KindedAst.Expr.Unary(SemanticOp.ObjectOp.Ordinal, mkVarExpr(param2, loc), Type.freshVar(Kind.Star, loc), loc)
+    val ltExp = KindedAst.Expr.Binary(SemanticOp.Int32Op.Lt, ord1, ord2, Type.freshVar(Kind.Star, loc), loc)
+    val lessThanSym = PredefinedTraits.lookupCaseSym("Comparison", "LessThan", root)
+    val greaterThanSym = PredefinedTraits.lookupCaseSym("Comparison", "GreaterThan", root)
+    val lessThanExp = KindedAst.Expr.Tag(CaseSymUse(lessThanSym, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
+    val greaterThanExp = KindedAst.Expr.Tag(CaseSymUse(greaterThanSym, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
+    KindedAst.Expr.IfThenElse(ltExp, lessThanExp, greaterThanExp, loc)
   }
 
   /**
