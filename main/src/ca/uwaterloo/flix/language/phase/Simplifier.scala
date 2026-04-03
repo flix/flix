@@ -711,6 +711,13 @@ object Simplifier {
       return generateSwitch(exp0, rules, tpe, loc)
     }
 
+    // Check if the scrutinee is a constructed tuple that can be flattened.
+    exp0 match {
+      case MonoAst.Expr.ApplyAtomic(AtomicOp.Tuple, elms, _, _, _) if isTupleFlattenable(rules) =>
+        return flattenTupleMatch(elms, rules, tpe, loc)
+      case _ => // fall through to general case
+    }
+
     //
     // Given the code:
     //
@@ -941,6 +948,91 @@ object Simplifier {
 
     // Wrap in let-binding for matchVar.
     SimplifiedAst.Expr.Let(matchVar, matchExp, switchExpr, t, switchPurity, loc)
+  }
+
+  /**
+    * Returns `true` if all top-level patterns in `rules` are Tuple, Wild, or Var.
+    */
+  private def isTupleFlattenable(rules: List[MonoAst.MatchRule]): Boolean = {
+    rules.forall {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tuple(_, _, _), _, _) => true
+      case MonoAst.MatchRule(MonoAst.Pattern.Wild(_, _), _, _) => true
+      case _ => false
+    }
+  }
+
+  /**
+    * Eliminates a pattern match on a constructed tuple by binding each element
+    * directly to a variable, avoiding the intermediate tuple allocation.
+    *
+    * Given the code:
+    * {{{
+    * match (e1, e2) {
+    *   case (p1, p2) => body1
+    *   case _        => body2
+    * }
+    * }}}
+    *
+    * Generates:
+    * {{{
+    * let mv0 = e1;
+    * let mv1 = e2;
+    * branch {
+    *   jumpto label$1
+    *   label$1: patternMatchList([p1, p2], [mv0, mv1], guard, body1, jumpto label$2)
+    *   label$2: patternMatchList([], [], guard, body2, jumpto default)
+    *   default: MatchError
+    * }
+    * }}}
+    */
+  private def flattenTupleMatch(elms: List[MonoAst.Expr], rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+    // Create a match variable for each tuple element.
+    val matchVars = elms.map(_ => Symbol.freshVarSym("matchVar" + Flix.Delimiter, BoundBy.Let, loc))
+    val matchExps = elms.map(visitExp)
+
+    val t = visitType(tpe)
+
+    // Generate labels.
+    val defaultLab = Symbol.freshLabel("default")
+    val ruleLabels = rules.map(_ => Symbol.freshLabel("case"))
+    val nextLabel = ListOps.zip(ruleLabels, ruleLabels.drop(1) ::: defaultLab :: Nil).toMap
+
+    val jumpPurity = Purity.combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
+
+    // Create a branch for each rule.
+    val branches = ListOps.zip(ruleLabels, rules).map {
+      case (label, MonoAst.MatchRule(pat, guard, body)) =>
+        val next = nextLabel(label)
+        val success = visitExp(body)
+        val failure = SimplifiedAst.Expr.JumpTo(next, t, jumpPurity, loc)
+
+        // Flatten the top-level tuple pattern into its inner patterns.
+        val innerPats = pat match {
+          case MonoAst.Pattern.Tuple(pats, _, _) => pats.toList
+          case MonoAst.Pattern.Wild(_, patLoc) =>
+            // Expand wild into N wilds, one per element.
+            elms.map(e => MonoAst.Pattern.Wild(e.tpe, patLoc))
+          case _ =>
+            throw InternalCompilerException("Unexpected pattern in flattenTupleMatch", loc)
+        }
+
+        (label, patternMatchList(innerPats, matchVars, guard.getOrElse(MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure))
+    }
+
+    // Error branch.
+    val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
+    val errorBranch = (defaultLab, errorExp)
+
+    val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
+    val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
+    val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+
+    // Wrap in let-bindings for each match variable: let mv0 = e1; let mv1 = e2; ... branch
+    val bodyPurity = Purity.combine(Purity.combineAll(matchExps.map(_.purity)), branch.purity)
+    matchVars.zip(matchExps).foldRight(branch: SimplifiedAst.Expr) {
+      case ((sym, exp), acc) =>
+        SimplifiedAst.Expr.Let(sym, exp, acc, t, bodyPurity, loc)
+    }
   }
 
   /**
