@@ -622,12 +622,12 @@ object GenExpression {
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
-        compileIsTag(sym.enumSym.toString, sym.name, exp, termTypes)
+        compileIsTag(sym.ordinal, exp, termTypes)
 
       case AtomicOp.Tag(sym) =>
         val caze = root.enums(sym.enumSym).cases(sym)
         val termTypes = caze.tpes.map(BackendType.toBackendType)
-        compileTag(sym.enumSym.toString, sym.name, Some(caze.sym.ordinal), exps, termTypes)
+        compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
@@ -1583,24 +1583,16 @@ object GenExpression {
     BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
   }
 
-  private def compileIsTag(enumName: String, name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileIsTag(ordinal: Int, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     compileExpr(exp)
-    tpes match {
-      case Nil =>
-        INSTANCEOF(BackendObjType.NullaryTag(enumName, name, 0).jvmName)
-      case _ =>
-        CHECKCAST(BackendObjType.Tagged.jvmName)
-        GETFIELD(BackendObjType.Tagged.NameField)
-        BackendObjType.Tagged.mkTagName(name)
-        BackendObjType.Tagged.eqTagName()
-    }
+    CHECKCAST(BackendObjType.Tagged.jvmName)
+    GETFIELD(BackendObjType.Tagged.OrdinalField)
+    pushInt(ordinal)
+    ifConditionElse(Condition.ICMPEQ)(pushBool(true))(pushBool(false))
   }
 
-  /**
-    * Compiles a tag expression. `ordinal` is `None` for extensible tags which lack a fixed ordinal.
-    */
-  private def compileTag(enumName: String, name: String, ordinal: Option[Int], exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileTag(enumName: String, name: String, ordinal: Int, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     tpes match {
       case Nil =>
@@ -1611,13 +1603,8 @@ object GenExpression {
         DUP()
         INVOKESPECIAL(tagType.Constructor)
         DUP()
-        BackendObjType.Tagged.mkTagName(name)
-        PUTFIELD(tagType.NameField)
-        ordinal.foreach { ord =>
-          DUP()
-          pushInt(ord)
-          PUTFIELD(tagType.OrdinalField)
-        }
+        pushInt(ordinal)
+        PUTFIELD(tagType.OrdinalField)
         exps.zipWithIndex.foreach {
           case (e, i) => DUP()
             compileExpr(e)
