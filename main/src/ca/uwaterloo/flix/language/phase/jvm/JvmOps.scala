@@ -153,7 +153,7 @@ object JvmOps {
     enm.cases.values.map {
       case caze => caze.tpes match {
         case Nil =>
-          BackendObjType.NullaryTag(caze.sym.name, caze.sym.ordinal)
+          BackendObjType.NullaryTag(caze.sym.enumSym.toString, caze.sym.name, caze.sym.ordinal)
         case elms =>
           BackendObjType.Tag(elms.map(BackendType.toBackendType))
       }
