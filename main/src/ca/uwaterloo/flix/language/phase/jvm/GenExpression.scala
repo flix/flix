@@ -250,17 +250,6 @@ object GenExpression {
           case ObjectOp.Ordinal =>
             mv.visitTypeInsn(CHECKCAST, BackendObjType.Tagged.jvmName.toInternalName)
             mv.visitFieldInsn(GETFIELD, BackendObjType.Tagged.jvmName.toInternalName, "ordinal", BackendType.Int32.toDescriptor)
-            // Guard: throw if ordinal is -1 (unset sentinel)
-            mv.visitInsn(DUP)
-            mv.visitInsn(ICONST_M1)
-            val ordOk = new Label()
-            mv.visitJumpInsn(IF_ICMPNE, ordOk)
-            mv.visitTypeInsn(NEW, "java/lang/RuntimeException")
-            mv.visitInsn(DUP)
-            mv.visitLdcInsn("Ordinal is -1 (unset) on Tagged value")
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false)
-            mv.visitInsn(ATHROW)
-            mv.visitLabel(ordOk)
         }
 
       case AtomicOp.Binary(sop) =>
