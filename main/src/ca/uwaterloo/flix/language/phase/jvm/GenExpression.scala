@@ -693,12 +693,11 @@ object GenExpression {
       case AtomicOp.ExtIs(sym) =>
         val List(exp) = exps
         val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
-        compileIsTag(sym.name, exp, tpes)
+        compileExtIsTag(sym.name, exp, tpes)
 
       case AtomicOp.ExtTag(sym) =>
         val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
-        // Extensible tags do not have a fixed ordinal.
-        compileTag(sym.name, None, exps, tpes)
+        compileExtTag(sym.name, exps, tpes)
 
       case AtomicOp.ExtUntag(sym, idx) =>
         import BytecodeInstructions.*
@@ -706,7 +705,7 @@ object GenExpression {
         val List(exp) = exps
         val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
 
-        compileUntag(exp, idx, tpes)
+        compileExtUntag(exp, idx, tpes)
         castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.ArrayLit =>
@@ -1632,6 +1631,50 @@ object GenExpression {
     // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
     val tagType = BackendObjType.Tag(tpes)
+    compileExpr(exp)
+    CHECKCAST(tagType.jvmName)
+    GETFIELD(tagType.IndexField(idx))
+  }
+
+  private def compileExtIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    import BytecodeInstructions.*
+    compileExpr(exp)
+    tpes match {
+      case Nil =>
+        INSTANCEOF(BackendObjType.ExtNullaryTag(name).jvmName)
+      case _ =>
+        CHECKCAST(BackendObjType.ExtTagged.jvmName)
+        GETFIELD(BackendObjType.ExtTagged.NameField)
+        BackendObjType.ExtTagged.mkTagName(name)
+        BackendObjType.ExtTagged.eqTagName()
+    }
+  }
+
+  private def compileExtTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    import BytecodeInstructions.*
+    tpes match {
+      case Nil =>
+        GETSTATIC(BackendObjType.ExtNullaryTag(name).SingletonField)
+      case _ =>
+        val tagType = BackendObjType.ExtTag(tpes)
+        NEW(tagType.jvmName)
+        DUP()
+        INVOKESPECIAL(tagType.Constructor)
+        DUP()
+        BackendObjType.ExtTagged.mkTagName(name)
+        PUTFIELD(tagType.NameField)
+        exps.zipWithIndex.foreach {
+          case (e, i) => DUP()
+            compileExpr(e)
+            PUTFIELD(tagType.IndexField(i))
+        }
+    }
+  }
+
+  private def compileExtUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    import BytecodeInstructions.*
+    if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty ext tag types", exp.loc)
+    val tagType = BackendObjType.ExtTag(tpes)
     compileExpr(exp)
     CHECKCAST(tagType.jvmName)
     GETFIELD(tagType.IndexField(idx))
