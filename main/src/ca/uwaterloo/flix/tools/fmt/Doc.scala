@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.tools.fmt
 
+import scala.annotation.tailrec
+
 sealed trait Doc {
   def <>(right: Doc): Doc = Doc.Concat(this, right)
   def <+>(right: Doc): Doc = this <> Doc.space <> right
@@ -20,41 +22,20 @@ object Doc {
   def space: Doc = Text(" ")
   def empty: Doc = Empty
 
-  private sealed trait SimpleDoc
-  private case object SNil extends SimpleDoc
-  private case class SText(str: String, rest: SimpleDoc) extends SimpleDoc
-  private case class SLine(indent: Int, rest: SimpleDoc) extends SimpleDoc
-
   def pretty(doc: Doc): String = {
-    val resolved = best(0, List((0, doc)))
-    layout(resolved)
-  }
-
-  private def layout(sdoc: SimpleDoc): String = {
     val sb = new StringBuilder
-    var current = sdoc
-    while (current != SNil) {
-      current match {
-        case SText(s, rest) =>
-          sb.append(s)
-          current = rest
-        case SLine(indent, rest) =>
-          sb.append('\n')
-          sb.append(" " * indent)
-          current = rest
-        case SNil =>
-      }
-    }
+    render(sb, 0, List((0, doc)))
     sb.toString()
   }
 
-  private def best(k: Int, docs: List[(Int, Doc)]): SimpleDoc = docs match {
-    case Nil                      => SNil
-    case (_, Empty) :: z          => best(k, z)
-    case (i, Concat(x, y)) :: z  => best(k, (i, x) :: (i, y) :: z)
-    case (i, Nest(j, x)) :: z    => best(k, (i + j, x) :: z)
-    case (i, Text(s)) :: z       => SText(s, best(k + s.length, z))
-    case (i, Line()) :: z        => SLine(i, best(i, z))
-    case (i, Group(x)) :: z      => best(k, (i, x) :: z)
+  @tailrec
+  private def render(sb: StringBuilder, k: Int, docs: List[(Int, Doc)]): Unit = docs match {
+    case Nil                      =>
+    case (_, Empty) :: z          => render(sb, k, z)
+    case (i, Concat(x, y)) :: z  => render(sb, k, (i, x) :: (i, y) :: z)
+    case (i, Nest(j, x)) :: z    => render(sb, k, (i + j, x) :: z)
+    case (i, Text(s)) :: z       => sb.append(s); render(sb, k + s.length, z)
+    case (i, Line()) :: z        => sb.append('\n'); sb.append(" " * i); render(sb, i, z)
+    case (i, Group(x)) :: z      => render(sb, k, (i, x) :: z)
   }
 }
