@@ -62,7 +62,69 @@ object PrettyPrinter {
     case TreeKind.ModifierList                  => prettyModifierList(tree)
     case TreeKind.Decl.Instance                 => prettyInstance(tree)
     case TreeKind.Decl.Effect                   => prettyEffect(tree)
+    case TreeKind.Expr.Match                    => prettyMatch(tree)
+    case TreeKind.Decl.TypeAlias                => prettyTypeAlias(tree)
     case _ => prettyFallback(tree)
+  }
+
+  private def prettyTypeAlias(tree: Tree): Doc = {
+    val children = tree.children.filter {
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    }
+
+    val (docChildren, rest) = children.partition {
+      case t: Tree if t.kind == TreeKind.Doc => true
+      case _ => false
+    }
+
+    val docDoc = docChildren.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
+    val sig = spaceJoinChildren(rest, noSpacePairs = Set.empty)
+
+    if (docChildren.nonEmpty) docDoc <|> sig else sig
+  }
+
+  private def prettyMatch(tree: Tree): Doc = {
+    val layout = layoutOf(tree)
+
+    val children = tree.children.filter {
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    }
+
+    val openIndex = children.indexWhere {
+      case token: Token if token.kind == TokenKind.CurlyL => true
+      case _ => false
+    }
+
+    val closeIndex = children.lastIndexWhere {
+      case token: Token if token.kind == TokenKind.CurlyR => true
+      case _ => false
+    }
+
+    if (openIndex < 0 || closeIndex < 0) {
+      return spaceJoinChildren(children, Set.empty)
+    }
+
+    val header = children.slice(0, openIndex)
+    val body   = children.slice(openIndex + 1, closeIndex)
+
+    val headerDoc = spaceJoinChildren(header, Set.empty)
+
+    val bodyParts = body.filter {
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    }
+
+    val bodyDoc =
+      bodyParts
+        .map(prettyChild)
+        .reduceLeftOption(_ <> line <> _)
+        .getOrElse(empty)
+
+    headerDoc <+> text("{") <>
+      fmtNest(layout, 4, line <> bodyDoc) <>
+      line <> text("}")
   }
 
   private def prettyEffect(tree: Tree): Doc = {
@@ -165,14 +227,12 @@ object PrettyPrinter {
   private def prettyCase(tree: Tree): Doc = {
     val parts = tree.children
 
-    // Split on "case" tokens
     val groups = parts.foldLeft(List.empty[List[SyntaxTree.Child]]) {
       case (Nil, child) =>
         List(List(child))
 
       case (acc@(_ :: _), token: Token)
         if token.kind == TokenKind.KeywordCase =>
-        // start a new case group
         List(token) :: acc
 
       case (current :: rest, child) =>
@@ -190,19 +250,43 @@ object PrettyPrinter {
   }
 
 
-  /** Doc comment block — each /// on its own line, with a newline at the end. */
+  /**
+    * Formats a documentation comment, ensuring that each line of the comment is on its own line.
+    *
+    * @param tree The documentation comment tree.
+    * @return A Doc representing the formatted documentation comment.
+    */
   private def prettyDoc(tree: Tree): Doc = {
-    tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+    val parts = tree.children.filter {
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    }.map(prettyChild)
+    if (parts.isEmpty) return empty
+    parts.reduceLeft(_ <|> _)
   }
 
-  /** List of comment lines, each on its own line. */
+  /**
+    * Formats a list of comments, ensuring that each comment is on its own line.
+    * For example, a list of comments like "// Comment 1\n// Comment 2" would be formatted as:
+    * // Comment 1
+    * // Comment 2
+    * TODO: Currently, it adds a second line break before a function? We should try to figure out why.
+    * @param tree
+    * @return
+    */
   private def prettyCommentList(tree: Tree): Doc = {
     val comments = tree.children.collect { case token: Token => text(token.text) }
     if (comments.isEmpty) return empty
-    comments.reduceLeft(_ <|> _) <> line
+    line <> comments.reduceLeft(_ <|> _)
   }
 
-  /** Enum declaration. */
+  /**
+    * Formats an enum declaration, ensuring that the opening curly brace is on the same line as the code before.
+    * The body of the enum is indented by 4 spaces and the closing curly brace.
+    * TODO: Multiple ways to format an enum declaration cause ambigious formatting.
+    * @param tree The enum declaration tree
+    * @return A Doc representing the formatted enum declaration.
+    */
   private def prettyEnum(tree: Tree): Doc = {
     val children = tree.children.filter {
       case t: Tree if t.children.isEmpty => false
@@ -238,6 +322,16 @@ object PrettyPrinter {
       line <> text("}")
   }
 
+  /**
+    * Formats a module declaration, ensuring that the opening curly brace is on the same line as the code before.
+    * The body of the module is indented by 4 spaces and the closing curly brace is on its own line.
+    * For example, a module declaration like "module MyModule { ... }" would be formatted as:
+    * module MyModule {
+    *   <body>
+    * }
+    * @param treen The module declaration tree.
+    * @return A Doc representing the formatted module declaration.
+    */
   private def prettyModule(tree: Tree): Doc = {
     val children = tree.children.filter {
       case t: Tree if t.children.isEmpty => false
@@ -261,7 +355,6 @@ object PrettyPrinter {
 
     val headerDoc = header.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
 
-    // Separate declarations with blank lines, same as prettyRoot
     val bodyParts = body.filter {
       case t: Tree if t.children.isEmpty => false
       case _ => true
@@ -273,20 +366,44 @@ object PrettyPrinter {
       line <> text("}")
   }
 
+  /**
+    * Formats an identifier, ensuring that it is not concatenated with adjacent tokens without a space.
+    *
+    * @param tree The identifier tree.
+    * @return A Doc representing the formatted identifier.
+    */
   private def prettyIdent(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
 
+  /**
+    * Formats an operator, ensuring that it is not concatenated with adjacent tokens without a space.
+    * For example, an operator like "+" would be formatted as " + " when it appears between two expressions.
+    *
+    * @param tree The operator tree.
+    * @return A Doc representing the formatted operator.
+    */
   private def prettyOperator(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
 
+  /**
+    * Formats a qualified name, ensuring that it is not concatenated with adjacent tokens without a space.
+    *
+    * @param tree The qualified name tree.
+    * @return A Doc representing the formatted qualified name.
+    */
   private def prettyQName(tree: Tree): Doc = {
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
   }
 
+  /**
+    * Formats a new object expression, ensuring that the `new` keyword is followed by a space and that the body of the new object is properly indented.
+    *
+    * @param tree The new object expression.
+    * @return A Doc representing the formatted new object expression.
+    */
   private def prettyNewObject(tree: Tree): Doc = {
     val layout = layoutOf(tree)
 
-    // Split children into: before "{", between "{" and "}", and after "}"
     val children = tree.children
     val openIndex = children.indexWhere {
       case token: Token if token.kind == TokenKind.CurlyL => true
@@ -321,6 +438,13 @@ object PrettyPrinter {
       suffix
   }
 
+  /**
+    * Formats an invoke constructor expression, ensuring that the `new` keyword is followed by a space.
+    * For example, an invoke constructor expression would be formatted as "new MyClass()".
+    *
+    * @param tree The invoke constructor expression tree.
+    * @return A Doc representing the formatted invoke constructor expression, with proper spacing after the `new` keyword.
+    */
   private def prettyInvokeConstructor(tree: Tree): Doc = {
     tree.children.foldLeft(empty) {
       case (acc, token: Token) if token.kind == TokenKind.KeywordNew =>
@@ -330,6 +454,15 @@ object PrettyPrinter {
     }
   }
 
+  /**
+    * Formats a statement, ensuring that semicolons are followed by line breaks.
+    * For example, a statement like "val x = 10; val y = 20" would be formatted as:
+    * val x = 10;
+    * val y = 20
+    *
+    * @param tree The statement tree, expected to have the form
+    * @return A Doc representing the formatted statement, with proper spacing and line breaks after semicolons.
+    */
   private def prettyStatement(tree: Tree): Doc = {
     tree.children.foldLeft(empty) {
       case (acc, token: Token) if token.kind == TokenKind.Semi =>
@@ -339,6 +472,13 @@ object PrettyPrinter {
     }
   }
 
+  /**
+    * Formats an argument list, ensuring that commas are followed by spaces
+    * For example, an argument list like "(x,y)" would be formatted as "(x, y)".
+    *
+    * @param tree The argument list tree.
+    * @return A Doc representing the formatted argument list, with proper spacing after commas.
+    */
   private def prettyArgumentList(tree: Tree): Doc = {
     val hasArgs = tree.children.exists {
       case t: Tree => t.kind == TreeKind.Argument || t.kind == TreeKind.ArgumentNamed
@@ -355,6 +495,13 @@ object PrettyPrinter {
     }
   }
 
+  /**
+    * Formats an apply expression, ensuring that the `new` keyword is followed by a space.
+    * For example, an apply expression would be formatted as "new MyClass()".
+    *
+    * @param tree The apply expression tree, expected to have the form.
+    * @return A Doc representing the formatted apply expression, with proper spacing after the `new` keyword.
+    */
   private def prettyApply(tree: Tree): Doc = {
     tree.children.foldLeft(empty) {
       case (acc, token: Token) if token.kind == TokenKind.KeywordNew =>
@@ -364,6 +511,13 @@ object PrettyPrinter {
     }
   }
 
+  /**
+    * Formats a lambda expression, ensuring that the `->` operator is surrounded by spaces.
+    * For example, a lambda like "x->x+1" would be formatted as "x -> x + 1".
+    *
+    * @param tree The lambda expression tree.
+    * @return A Doc representing the formatted lambda expression, with proper spacing around the `->` operator.
+    */
   private def prettyLambda(tree: Tree): Doc = {
     tree.children.foldLeft(empty) {
       case (acc, token: Token) if token.kind == TokenKind.ArrowThinRWhitespace =>
@@ -375,6 +529,13 @@ object PrettyPrinter {
     }
   }
 
+  /**
+    * Formats a let-match expression, ensuring that the `let` keyword is followed by a space, the `=`
+    * operator is surrounded by spaces, and each statement is separated by a line break.
+    *
+    * @param tree The let-match expression tree
+    * @return  A Doc representing the formatted let-match expression, with proper spacing and line breaks.
+    */
   private def prettyLetMatch(tree: Tree): Doc = {
     val layout = layoutOf(tree)
     tree.children.foldLeft(empty) {
@@ -417,13 +578,24 @@ object PrettyPrinter {
       text("}")
   }
 
+  /**
+    * Formats a list of use or import statements, ensuring that each statement is on its own line.
+    *
+    * @param tree The tree representing the list of use or import statements, expected to have the form: [UseOrImportList, (Use|Import)*]
+    * @return A Doc representing the formatted list of use or import statements, with each statement on its own line
+    */
   private def prettyUseOrImportList(tree: Tree): Doc = {
     val children = tree.children.collect { case t: Tree => traverse(t) }
     if (children.isEmpty) return empty
     children.reduceLeft(_ <|> _)
   }
 
-  /** import java.awt.event.ActionEvent */
+  /**
+    * Formats an import statement, ensuring that the `import` keyword is followed by a space.
+    *
+    * @param tree The import statement tree, expected to have the form: [KeywordImport, QName, (Comma, QName)*]
+    * @return A Doc representing the formatted import statement, e.g., "import java.awt.event.ActionEvent, java.util.List"
+    */
   private def prettyImport(tree: Tree): Doc = {
     tree.children.foldLeft(empty) {
       case (acc, token: Token) if token.kind == TokenKind.KeywordImport =>
@@ -433,7 +605,12 @@ object PrettyPrinter {
     }
   }
 
-  /** use Foo.Bar */
+  /**
+    * Formatting a use statement, ensuring that the `use` keyword is followed by a space.
+    *
+    * @param tree The use statement tree, expected to have the form: [KeywordUse, QName, (Comma, QName)*]
+    * @return A Doc representing the formatted use statement, e.g., "use java.awt.event.ActionEvent, java.util.List"
+    */
   private def prettyUse(tree: Tree): Doc = {
     tree.children.foldLeft(empty) {
       case (acc, token: Token) if token.kind == TokenKind.KeywordUse =>
@@ -622,17 +799,11 @@ object PrettyPrinter {
 
     children.sliding(2).foldLeft(prettyChild(children.head): Doc) {
       case (acc, Array(prev, next)) =>
-
         val noSpace = (prev, next) match {
-          // Tree-to-tree rules
           case (p: Tree, n: Tree) if noSpacePairs.contains((p.kind, n.kind)) =>
             true
-
-          // Token rules (e.g. ":" should not have space before it)
           case (_, token: Token) if noSpaceBefore.contains(token.kind) =>
             true
-
-          // Default: we WANT a space
           case _ =>
             false
         }
