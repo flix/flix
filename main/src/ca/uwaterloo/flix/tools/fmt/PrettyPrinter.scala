@@ -67,6 +67,7 @@ object PrettyPrinter {
     case _ => prettyFallback(tree)
   }
 
+
   private def prettyTypeAlias(tree: Tree): Doc = {
     val children = tree.children.filter {
       case t: Tree if t.children.isEmpty => false
@@ -84,145 +85,27 @@ object PrettyPrinter {
     if (docChildren.nonEmpty) docDoc <|> sig else sig
   }
 
-  private def prettyMatch(tree: Tree): Doc = {
-    val layout = layoutOf(tree)
+  private def prettyMatch(tree: Tree): Doc =
+    prettyBracket(tree,
+      headerJoin = cs => spaceJoinChildren(cs, Set.empty),
+      fallback = t => spaceJoinChildren(t.children, Set.empty))
 
-    val children = tree.children.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
-
-    val openIndex = children.indexWhere {
-      case token: Token if token.kind == TokenKind.CurlyL => true
-      case _ => false
-    }
-
-    val closeIndex = children.lastIndexWhere {
-      case token: Token if token.kind == TokenKind.CurlyR => true
-      case _ => false
-    }
-
-    if (openIndex < 0 || closeIndex < 0) {
-      return spaceJoinChildren(children, Set.empty)
-    }
-
-    val header = children.slice(0, openIndex)
-    val body   = children.slice(openIndex + 1, closeIndex)
-
-    val headerDoc = spaceJoinChildren(header, Set.empty)
-
-    val bodyParts = body.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
-
-    val bodyDoc =
-      bodyParts
-        .map(prettyChild)
-        .reduceLeftOption(_ <> line <> _)
-        .getOrElse(empty)
-
-    headerDoc <+> text("{") <>
-      fmtNest(layout, 4, line <> bodyDoc) <>
-      line <> text("}")
-  }
-
-  private def prettyEffect(tree: Tree): Doc = {
-
-    val children = tree.children.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
-
-    val openIndex = children.indexWhere {
-      case token: Token if token.kind == TokenKind.CurlyL => true
-      case _ => false
-    }
-
-    val closeIndex = children.lastIndexWhere {
-      case token: Token if token.kind == TokenKind.CurlyR => true
-      case _ => false
-    }
-
-    if (openIndex < 0 || closeIndex < 0) {
-      return spaceJoinChildren(children, Set.empty)
-    }
-
-    val header = children.slice(0, openIndex)
-    val body   = children.slice(openIndex + 1, closeIndex)
-
-    val headerDoc = spaceJoinChildren(header, Set.empty)
-
-    val bodyParts = body.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
-
-    val bodyDoc =
-      bodyParts
-        .map(prettyChild)
-        .reduceLeftOption(_ <> line <> _)
-        .getOrElse(empty)
-
-    headerDoc <+> text("{") <>
-      Nest(4, line <> bodyDoc) <>
-      line <> text("}")
-  }
+  private def prettyEffect(tree: Tree): Doc =
+    prettyBracket(tree,
+      headerJoin = cs => spaceJoinChildren(cs, Set.empty),
+      nestFn = (i, d) => Nest(i, d),  // always nest, layout-unaware
+      fallback = t => spaceJoinChildren(t.children, Set.empty))
 
   private def prettyModifierList(tree: Tree): Doc = {
     val mods = tree.children.map(prettyChild)
     mods.reduceLeftOption(_ <+> _).getOrElse(empty)
   }
 
-  private def prettyInstance(tree: Tree): Doc = {
-    val layout = layoutOf(tree)
-
-    val children = tree.children.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
-
-    val openIndex = children.indexWhere {
-      case token: Token if token.kind == TokenKind.CurlyL => true
-      case _ => false
-    }
-
-    val closeIndex = children.lastIndexWhere {
-      case token: Token if token.kind == TokenKind.CurlyR => true
-      case _ => false
-    }
-
-    if (openIndex < 0 || closeIndex < 0) {
-      return spaceJoinChildren(
-        children,
-        noSpacePairs = Set.empty
-      )
-    }
-
-    val header = children.slice(0, openIndex)
-    val body   = children.slice(openIndex + 1, closeIndex)
-
-    val headerDoc = spaceJoinChildren(
-      header,
-      noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList))
-    )
-
-    val bodyParts = body.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
-
-    val bodyDoc =
-      bodyParts
-        .map(prettyChild)
-        .reduceLeftOption(_ <> line <> _)
-        .getOrElse(empty)
-
-    headerDoc <+> text("{") <>
-      fmtNest(layout, 4, line <> bodyDoc) <>
-      line <>
-      text("}")
-  }
+  private def prettyInstance(tree: Tree): Doc =
+    prettyBracket(tree,
+      headerJoin = cs => spaceJoinChildren(cs,
+        noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList))),
+      fallback = t => spaceJoinChildren(t.children, noSpacePairs = Set.empty))
 
   private def prettyCase(tree: Tree): Doc = {
     val parts = tree.children
@@ -271,13 +154,13 @@ object PrettyPrinter {
     * // Comment 1
     * // Comment 2
     * TODO: Currently, it adds a second line break before a function? We should try to figure out why.
-    * @param tree
-    * @return
+    * @param tree The comment list tree.
+    * @return A Doc representing the formatted list of comments.
     */
   private def prettyCommentList(tree: Tree): Doc = {
     val comments = tree.children.collect { case token: Token => text(token.text) }
     if (comments.isEmpty) return empty
-    line <> comments.reduceLeft(_ <|> _)
+    comments.reduceLeft(_ <|> _) <> line
   }
 
   /**
@@ -287,40 +170,14 @@ object PrettyPrinter {
     * @param tree The enum declaration tree
     * @return A Doc representing the formatted enum declaration.
     */
-  private def prettyEnum(tree: Tree): Doc = {
-    val children = tree.children.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
+  private def prettyEnum(tree: Tree): Doc =
+    prettyBracket(tree,
+      headerJoin = cs => spaceJoinChildren(cs,
+        noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
+        noSpaceBefore = Set(TokenKind.Colon)),
+      nestFn = (i, d) => Nest(i, d),
+      filterBody = false)
 
-    val openIndex = children.indexWhere {
-      case token: Token if token.kind == TokenKind.CurlyL => true
-      case _ => false
-    }
-
-    val closeIndex = children.lastIndexWhere {
-      case token: Token if token.kind == TokenKind.CurlyR => true
-      case _ => false
-    }
-
-    if (openIndex < 0 || closeIndex < 0) return prettyFallback(tree)
-
-    val header = children.slice(0, openIndex)
-    val body   = children.slice(openIndex + 1, closeIndex)
-
-    val headerDoc = spaceJoinChildren(
-      header,
-      noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
-      noSpaceBefore = Set(TokenKind.Colon)
-    )
-
-    val bodyDoc =
-      body.map(prettyChild).reduceLeftOption(_ <> line <> _).getOrElse(empty)
-
-    headerDoc <+> text("{") <>
-      Nest(4, line <> bodyDoc) <>
-      line <> text("}")
-  }
 
   /**
     * Formats a module declaration, ensuring that the opening curly brace is on the same line as the code before.
@@ -332,39 +189,9 @@ object PrettyPrinter {
     * @param treen The module declaration tree.
     * @return A Doc representing the formatted module declaration.
     */
-  private def prettyModule(tree: Tree): Doc = {
-    val children = tree.children.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
-
-    val openIndex = children.indexWhere {
-      case token: Token if token.kind == TokenKind.CurlyL => true
-      case _ => false
-    }
-    val closeIndex = children.lastIndexWhere {
-      case token: Token if token.kind == TokenKind.CurlyR => true
-      case _ => false
-    }
-
-    if (openIndex < 0 || closeIndex < 0) return prettyFallback(tree)
-
-    val header = children.slice(0, openIndex)
-    val body = children.slice(openIndex + 1, closeIndex)
-    val layout = layoutOf(tree)
-
-    val headerDoc = header.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
-
-    val bodyParts = body.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
-    val bodyDoc = bodyParts.map(prettyChild).reduceLeftOption(_ <> line <> line <> _).getOrElse(empty)
-
-    headerDoc <+> text("{") <>
-      fmtNest(layout, 4, line <> bodyDoc) <>
-      line <> text("}")
-  }
+  private def prettyModule(tree: Tree): Doc =
+    prettyBracket(tree,
+      bodySep = line <> line)  // double-spaced body
 
   /**
     * Formats an identifier, ensuring that it is not concatenated with adjacent tokens without a space.
@@ -563,19 +390,15 @@ object PrettyPrinter {
     * @return A Doc representing the formatted block expression, with proper indentation and line breaks.
     */
   private def prettyBlock(tree: Tree): Doc = {
+    // Slight variant: no header, braces ARE the tree
     val layout = layoutOf(tree)
     val body = tree.children.filter {
       case token: Token if token.kind == TokenKind.CurlyL => false
       case token: Token if token.kind == TokenKind.CurlyR => false
       case _ => true
     }.map(prettyChild)
-
     val inner = body.reduceLeftOption(_ <> _).getOrElse(empty)
-
-    text("{") <>
-      fmtNest(layout, 4, fmtLine(layout) <> inner) <>
-      fmtLine(layout) <>
-      text("}")
+    text("{") <> fmtNest(layout, 4, fmtLine(layout) <> inner) <> fmtLine(layout) <> text("}")
   }
 
   /**
@@ -813,5 +636,54 @@ object PrettyPrinter {
 
       case (acc, _) => acc
     }
+  }
+
+  /**
+    * Formats any construct of the shape:  header { body }
+    * with indented body and configurable joining strategies.
+    */
+  private def prettyBracket(
+    tree: Tree,
+    headerJoin: (Array[SyntaxTree.Child]) => Doc = cs => cs.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty),
+    bodySep: Doc = line,
+    nestFn: (Int, Doc) => Doc = (i, d) => Nest(i, d),
+    lineFn: () => Doc = () => line,
+    fallback: Tree => Doc = prettyFallback,
+    filterBody: Boolean = true
+  ): Doc = {
+    val children = tree.children.filter {
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    }
+
+    val openIndex = children.indexWhere {
+      case token: Token if token.kind == TokenKind.CurlyL => true
+      case _ => false
+    }
+    val closeIndex = children.lastIndexWhere {
+      case token: Token if token.kind == TokenKind.CurlyR => true
+      case _ => false
+    }
+
+    if (openIndex < 0 || closeIndex < 0) return fallback(tree)
+
+    val header = children.slice(0, openIndex)
+    val body   = children.slice(openIndex + 1, closeIndex)
+
+    val headerDoc = headerJoin(header)
+
+    val bodyParts = if (filterBody) body.filter {
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    } else body
+
+    val bodyDoc = bodyParts
+      .map(prettyChild)
+      .reduceLeftOption(_ <> bodySep <> _)
+      .getOrElse(empty)
+
+    headerDoc <+> text("{") <>
+      nestFn(4, lineFn() <> bodyDoc) <>
+      lineFn() <> text("}")
   }
 }
