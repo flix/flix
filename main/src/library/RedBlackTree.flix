@@ -494,20 +494,44 @@ pub mod RedBlackTree {
     /// Helper function for `insert` and `delete`.
     ///
     def balance(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Color.Black, Node(Color.Red, Node(Color.Red, a, k1, v1, b), k2, v2, c), k3, v3, d) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.Black, Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)), k3, v3, d) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.Black, a, k1, v1, Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d)) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, Node(Color.Red, c, k3, v3, d))) =>
-            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.DoubleBlack, a, k1, v1, Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d)) =>
-            Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
-        case Node(Color.DoubleBlack, Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)), k3, v3, d) =>
-            Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+        case Node(Color.Black, left, k1, v1, right) =>
+            balanceBlack(t, left, k1, v1, right)
+        case Node(Color.DoubleBlack, left, k1, v1, right) =>
+            balanceDoubleBlack(t, left, k1, v1, right)
         case _ => t
     }
+
+    ///
+    /// Helper function for `balance`. Handles the black node cases.
+    ///
+    def balanceBlack(t: RedBlackTree[k, v], left: RedBlackTree[k, v], k1: k, v1: v, right: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match left {
+            case Node(Color.Red, Node(Color.Red, a, k2, v2, b), k3, v3, c) =>
+                Node(Color.Red, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
+            case Node(Color.Red, a, k2, v2, Node(Color.Red, b, k3, v3, c)) =>
+                Node(Color.Red, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
+            case _ => match right {
+                case Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d) =>
+                    Node(Color.Red, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+                case Node(Color.Red, b, k2, v2, Node(Color.Red, c, k3, v3, d)) =>
+                    Node(Color.Red, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+                case _ => t
+            }
+        }
+
+    ///
+    /// Helper function for `balance`. Handles the double-black node cases.
+    ///
+    def balanceDoubleBlack(t: RedBlackTree[k, v], left: RedBlackTree[k, v], k1: k, v1: v, right: RedBlackTree[k, v]): RedBlackTree[k, v] =
+        match right {
+            case Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d) =>
+                Node(Color.Black, Node(Color.Black, left, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+            case _ => match left {
+                case Node(Color.Red, a, k2, v2, Node(Color.Red, b, k3, v3, c)) =>
+                    Node(Color.Black, Node(Color.Black, a, k2, v2, b), k3, v3, Node(Color.Black, c, k1, v1, right))
+                case _ => t
+            }
+        }
 
     ///
     /// Helper function for `insert`.
