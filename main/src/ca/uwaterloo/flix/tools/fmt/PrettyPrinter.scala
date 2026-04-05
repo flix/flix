@@ -75,7 +75,52 @@ object PrettyPrinter {
     case TreeKind.Expr.LiteralSet               => prettySchemaOrRecord(tree)
     case TreeKind.Expr.LiteralMap               => prettySchemaOrRecord(tree)
     case TreeKind.Expr.LiteralArray             => prettySchemaOrRecord(tree)
+    case TreeKind.Expr.Foreach                  => prettyForeach(tree)
+    case TreeKind.Decl.Trait                    => prettyDecl(tree)
+    case TreeKind.Decl.Struct                   => prettyDecl(tree)
+    case TreeKind.Decl.RestrictableEnum         => prettyDecl(tree)
     case _ => prettyFallback(tree)
+  }
+
+  private def prettyDecl(tree: Tree): Doc = {
+    val layout = layoutOf(tree)
+    prettyBracket(tree,
+      headerJoin = cs => spaceJoinChildren(cs,
+        noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
+        noSpaceBefore = Set(TokenKind.Colon)),
+      nestFn = (i, d) => fmtNest(layout, i, d),
+      lineFn = () => fmtLine(layout),
+      filterBody = false)
+  }
+
+  private def prettyForeach(tree: Tree): Doc = {
+    val layout = layoutOf(tree)
+    val children = tree.children
+
+    val closeParenIdx = children.indexWhere {
+      case token: Token if token.kind == TokenKind.ParenR => true
+      case _ => false
+    }
+
+    if (closeParenIdx < 0) return prettyFallback(tree)
+
+    val head = children.slice(0, closeParenIdx + 1)
+    val body = children.slice(closeParenIdx + 1, children.length)
+
+    val headDoc = head.foldLeft(empty) {
+      case (acc, token: Token) if token.kind == TokenKind.KeywordForeach =>
+        acc <> text("foreach") <> space
+      case (acc, token: Token) if token.kind == TokenKind.Semi =>
+        acc <> text(";") <> space
+      case (acc, child) =>
+        acc <> prettyChild(child)
+    }
+
+    val bodyDoc = body.map(prettyChild)
+      .reduceLeftOption(_ <> _)
+      .getOrElse(empty)
+
+    headDoc <> fmtNest(layout, 4, fmtLine(layout) <> bodyDoc)
   }
 
   private def prettyFixpointConstraintSet(tree: Tree): Doc =
@@ -90,11 +135,6 @@ object PrettyPrinter {
       lineFn = () => fmtLine(layout),
       filterBody = false)
   }
-
-  private def prettyExtMatch(tree: Tree): Doc =
-    prettyBracket(tree,
-      headerJoin = cs => spaceJoinChildren(cs, noSpacePairs = Set.empty),
-      fallback = t => spaceJoinChildren(t.children, noSpacePairs = Set.empty))
 
   private def prettySelect(tree: Tree): Doc =
     prettyBracket(tree,
@@ -140,32 +180,6 @@ object PrettyPrinter {
         noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList))),
       fallback = t => spaceJoinChildren(t.children, Set.empty))
 
-  private def prettyCase(tree: Tree): Doc = {
-    val parts = tree.children
-
-    val groups = parts.foldLeft(List.empty[List[SyntaxTree.Child]]) {
-      case (Nil, child) =>
-        List(List(child))
-
-      case (acc@(_ :: _), token: Token)
-        if token.kind == TokenKind.KeywordCase =>
-        List(token) :: acc
-
-      case (current :: rest, child) =>
-        (child :: current) :: rest
-    }.map(_.reverse).reverse
-
-    val caseDocs = groups.map { group =>
-      spaceJoinChildren(
-        group.toArray,
-        noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList))
-      )
-    }
-
-    caseDocs.reduceLeftOption(_ <> line <> _).getOrElse(empty)
-  }
-
-
   /**
     * Formats a documentation comment, ensuring that each line of the comment is on its own line.
     *
@@ -208,9 +222,38 @@ object PrettyPrinter {
       headerJoin = cs => spaceJoinChildren(cs,
         noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
         noSpaceBefore = Set(TokenKind.Colon)),
+      bodyJoin = Some(enumBodyJoin),
       nestFn = (i, d) => Nest(i, d),
       filterBody = false)
 
+  private def enumBodyJoin(children: Array[SyntaxTree.Child]): Doc = {
+    children.filter {
+        case token: Token if token.kind == TokenKind.Comma => false
+        case t: Tree if t.children.isEmpty => false
+        case _ => true
+      }.map(prettyChild)
+      .reduceLeftOption(_ <> line <> _)
+      .getOrElse(empty)
+  }
+
+  private def prettyCase(tree: Tree): Doc = {
+    val parts = tree.children.filter {
+      case token: Token if token.kind == TokenKind.Comma => false
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    }
+
+    val hasCase = parts.exists {
+      case token: Token if token.kind == TokenKind.KeywordCase => true
+      case _ => false
+    }
+
+    val inner = parts.map(prettyChild)
+      .reduceLeftOption(_ <+> _)
+      .getOrElse(empty)
+
+    if (hasCase) inner else text("case") <+> inner
+  }
 
   /**
     * Formats a module declaration, ensuring that the opening curly brace is on the same line as the code before.
@@ -323,9 +366,10 @@ object PrettyPrinter {
     * @return A Doc representing the formatted statement, with proper spacing and line breaks after semicolons.
     */
   private def prettyStatement(tree: Tree): Doc = {
+    val layout = layoutOf(tree)
     tree.children.foldLeft(empty) {
       case (acc, token: Token) if token.kind == TokenKind.Semi =>
-        acc <> text(";") <> line
+        acc <> text(";") <> fmtLine(layout)
       case (acc, child) =>
         acc <> prettyChild(child)
     }
