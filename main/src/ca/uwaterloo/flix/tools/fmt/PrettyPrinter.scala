@@ -79,7 +79,13 @@ object PrettyPrinter {
     case TreeKind.Decl.Trait                    => prettyDecl(tree)
     case TreeKind.Decl.Struct                   => prettyDecl(tree)
     case TreeKind.Decl.RestrictableEnum         => prettyDecl(tree)
+    case TreeKind.AnnotationList                => prettyAnnotationList(tree)
     case _ => prettyFallback(tree)
+  }
+
+  private def prettyAnnotationList(tree: Tree): Doc = {
+    val anns = tree.children.collect { case token: Token => text(token.text) }
+    anns.reduceLeftOption(_ <|> _).getOrElse(empty)
   }
 
   private def prettyDecl(tree: Tree): Doc = {
@@ -538,13 +544,20 @@ object PrettyPrinter {
       case _ => true
     }
 
-    val (docChildren, rest) = children.partition {
+    val (docChildren, rest1) = children.partition {
       case t: Tree if t.kind == TreeKind.Doc => true
+      case _ => false
+    }
+
+    val (annChildren, rest) = rest1.partition {
+      case t: Tree if t.kind == TreeKind.AnnotationList => true
       case _ => false
     }
 
     val docDoc =
       docChildren.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
+    val annDoc =
+      annChildren.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
 
     val eqIndex = rest.indexWhere {
       case token: Token if token.kind == TokenKind.Equal => true
@@ -558,11 +571,17 @@ object PrettyPrinter {
         noSpaceBefore = Set(TokenKind.Colon)
       )
 
-      return if (docChildren.nonEmpty) docDoc <|> sig else sig
+      return (docChildren.nonEmpty, annChildren.nonEmpty) match {
+        case (true, true)   => docDoc <|> annDoc <|> sig
+        case (true, false)  => docDoc <|> sig
+        case (false, true)  => annDoc <|> sig
+        case (false, false) => sig
+      }
     }
 
     val sigParts  = rest.take(eqIndex)
     val bodyParts = rest.drop(eqIndex + 1)
+
     val sig = spaceJoinChildren(
       sigParts,
       noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
@@ -578,7 +597,8 @@ object PrettyPrinter {
           t.children.exists {
             case inner: Tree => inner.kind == TreeKind.Expr.Block
             case _ => false
-          }
+          } ||
+          leftMostToken(t).exists(tok => bracketPairs.exists(_._1 == tok.kind))
       case _ => false
     }
 
@@ -589,7 +609,12 @@ object PrettyPrinter {
         sig <+> text("=") <> fmtNest(layout, 4, fmtLine(layout) <> body)
       }
 
-    if (docChildren.nonEmpty) docDoc <|> defDoc else defDoc
+    (docChildren.nonEmpty, annChildren.nonEmpty) match {
+      case (true, true)   => docDoc <|> annDoc <|> defDoc
+      case (true, false)  => docDoc <|> defDoc
+      case (false, true)  => annDoc <|> defDoc
+      case (false, false) => defDoc
+    }
   }
 
   /**
@@ -600,8 +625,13 @@ object PrettyPrinter {
     * @return A Doc representing the formatted binary expression, e.g., "a + b"
     */
   private def prettyBinary(tree: Tree): Doc = {
+    val layout = layoutOf(tree)
     val parts = tree.children.map(prettyChild)
-    parts.reduceLeftOption(_ <+> _).getOrElse(empty)
+    if (parts.length == 3) {
+      parts(0) <+> parts(1) <> fmtLine(layout) <> parts(2)
+    } else {
+      parts.reduceLeftOption(_ <+> _).getOrElse(empty)
+    }
   }
 
   /**
