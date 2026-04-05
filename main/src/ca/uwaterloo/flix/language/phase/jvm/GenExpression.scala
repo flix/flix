@@ -1428,15 +1428,13 @@ object GenExpression {
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
-      // In effect contexts, the JVM verifier may broaden local slot types at
-      // pcPointLabel targets (tableswitch merge for effect resumption). Cast to
-      // maintain exact types, but only for expressions that don't already produce
-      // the correct type: Var (loads merged slot type), IfThenElse/Branch (JVM
-      // computes LUB at join). ApplyAtomic expressions either self-cast (Untag,
-      // Index, etc.) or produce the correct type (Tag, Closure, Cast, etc.).
-      (ctx, exp1) match {
-        case (_: EffectContext, _: Expr.ApplyAtomic) => ()
-        case (_: EffectContext, _) => castIfNotPrim(bType)
+      // No cast needed in most cases: operations self-cast (Untag, Index, etc.),
+      // function calls are wrapped in Cast by the Eraser, and effect resume
+      // sites use narrowLocals. The exception is NewObject (anonymous Java
+      // classes) where the JVM verifier cannot resolve the generated subclass
+      // name and needs an explicit cast to the declared superclass type.
+      exp1 match {
+        case _: Expr.NewObject => castIfNotPrim(bType)
         case _ => ()
       }
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
