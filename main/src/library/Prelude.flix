@@ -1,4 +1,5 @@
 import java.lang.System
+import java.lang.IndexOutOfBoundsException
 
 ///
 /// Static denotes the region of global lifetime.
@@ -168,6 +169,13 @@ pub def bug!(m: String): a = unsafe IO {
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
+
+///
+/// Throws an `IndexOutOfBoundsException` with the given message `m`.
+///
+pub def indexOutOfBounds!(m: String): a = unsafe IO {
+    throw new IndexOutOfBoundsException(m)
+}
 
 pub enum Purity[a: Type, b: Type, ef: Eff] {
     case Pure(a -> b)

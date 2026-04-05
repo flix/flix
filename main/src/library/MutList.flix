@@ -44,13 +44,15 @@ instance Indexable[MutList[a, r]] {
     type Elm = a
     type Aef = r + OutOfBounds
     pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds =
-        MutList.get(i, t)
+        if (0 <= i and i < MutList.length(t)) MutList.get(i, t)
+        else OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
 }
 
 instance IndexableMut[MutList[a, r]] {
     type Aef = r + OutOfBounds
     pub def put(t: MutList[a, r], i: Int32, v: a): Unit \ r + OutOfBounds =
-        MutList.put(v, i, t)
+        if (0 <= i and i < MutList.length(t)) MutList.put(v, i, t)
+        else OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
 }
 
 instance Formattable[MutList[a, r]] with Formattable[a] {
@@ -106,20 +108,24 @@ pub mod MutList {
     ///
     /// Retrieves the value at position `i` in the mutable list `v`.
     ///
-    pub def get(i: Int32, v: MutList[a, r]): a \ r + OutOfBounds =
-        if (0 <= i and i < v->length)
-            Array.get(i, v->values)
-        else
-            OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${v->length}")
+    /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, v: MutList[a, r]): a \ r =
+        match nth(i, v) {
+            case Some(x) => x
+            case None    => indexOutOfBounds!("index ${i} is out of bounds for MutList of length ${v->length}")
+        }
 
     ///
     /// Stores the value `x` at position `i` in the mutable list `v`.
     ///
-    pub def put(x: a, i: Int32, v: MutList[a, r]): Unit \ r + OutOfBounds =
+    /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
+    ///
+    pub def put(x: a, i: Int32, v: MutList[a, r]): Unit \ r =
         if (0 <= i and i < v->length)
             Array.put(x, i, v->values)
         else
-            OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${v->length}")
+            indexOutOfBounds!("index ${i} is out of bounds for MutList of length ${v->length}")
 
     ///
     /// Optionally returns the element at position `i` in the mutable list `v`.

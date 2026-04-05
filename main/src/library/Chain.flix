@@ -225,12 +225,12 @@ pub mod Chain {
     ///
     /// Returns the element at position `i` in the chain `c`.
     ///
-    /// Throws `OutOfBounds` if the index is out of bounds.
+    /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
     ///
-    pub def get(i: Int32, c: Chain[a]): a \ OutOfBounds =
+    pub def get(i: Int32, c: Chain[a]): a =
         match nth(i, c) {
             case Some(x) => x
-            case None    => OutOfBounds.outOfBounds("index ${i} is out of bounds for Chain of length ${length(c)}")
+            case None    => indexOutOfBounds!("index ${i} is out of bounds for Chain of length ${length(c)}")
         }
 
     ///

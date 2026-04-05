@@ -8,24 +8,15 @@ mod TestString {
 
     @Test
     def get01(): Unit \ Assert =
-        let r = run String.get(0, "Hello") with handler OutOfBounds {
-            def outOfBounds(_, _) = '?'
-        };
-        assertEq(expected = 'H', r)
+        assertEq(expected = 'H', String.get(0, "Hello"))
 
     @Test
     def get02(): Unit \ Assert =
-        let r = run String.get(15, "Hello World!") with handler OutOfBounds {
-            def outOfBounds(_, _) = '?'
-        };
-        assertEq(expected = '?', r)
+        assertEq(expected = None, String.nth(15, "Hello World!"))
 
     @Test
     def get03(): Unit \ Assert =
-        let r = run String.get(-1, "Hello World!") with handler OutOfBounds {
-            def outOfBounds(_, _) = '?'
-        };
-        assertEq(expected = '?', r)
+        assertEq(expected = None, String.nth(-1, "Hello World!"))
 
     /////////////////////////////////////////////////////////////////////////////
     // charAt                                                                  //
