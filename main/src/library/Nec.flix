@@ -227,12 +227,12 @@ pub mod Nec {
     ///
     /// Returns the element at position `i` in the non-empty chain `c`.
     ///
-    /// Throws `OutOfBounds` if the index is out of bounds.
+    /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
     ///
-    pub def get(i: Int32, c: Nec[a]): a \ OutOfBounds =
+    pub def get(i: Int32, c: Nec[a]): a =
         match nth(i, c) {
             case Some(x) => x
-            case None    => OutOfBounds.outOfBounds("index ${i} is out of bounds for Nec of length ${length(c)}")
+            case None    => indexOutOfBounds!("index ${i} is out of bounds for Nec of length ${length(c)}")
         }
 
     ///
