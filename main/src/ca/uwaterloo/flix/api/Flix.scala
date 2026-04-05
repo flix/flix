@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, ClassProvider, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
@@ -80,9 +80,14 @@ class Flix {
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
+    * Lazy provider for Java runtime class models (backed by `jrt:/`).
+    */
+  val jrtClassProvider: ClassProvider = JrtClassProvider.initialize()
+
+  /**
     * The set of known Java classes and interfaces.
     */
-  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces())
+  private var availableClasses: AvailableClasses = AvailableClasses(derivePackageIndex(jrtClassProvider))
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -459,7 +464,7 @@ class Flix {
     // The global collection of errors
     val errors = mutable.ArrayBuffer.empty[CompilationMessage]
 
-    val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses)
+    val (afterReader, readerErrors) = Reader.run(getInputs, availableClasses, jrtClassProvider)
     errors ++= readerErrors
 
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
@@ -815,10 +820,10 @@ class Flix {
   }
 
   /**
-    * Returns all Java classes and interfaces in the current Java Platform.
+    * Derives the package-to-class name index from a [[ClassProvider]].
     */
-  private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
-    getPackageContent(ClassList.TheList)
+  private def derivePackageIndex(provider: ClassProvider): MultiMap[List[String], String] = {
+    getPackageContent(provider.classNames.map(_ + ".class").toList)
   }
 
   /**
