@@ -278,4 +278,43 @@ pub mod Net {
         def accept(server: TcpServer): Result[IoError, TcpSocket]
     }
 
+    ///
+    /// A serializable body: text stored as-is, bytes stored as Base64.
+    ///
+    pub enum RecordedBody {
+        case TextBody(String)
+        case BytesBody(String)
+    }
+
+    ///
+    /// A recorded HTTP request (serializable subset of HttpRequest).
+    ///
+    pub enum RecordedRequest({
+        method  = String,
+        url     = String,
+        headers = Map[String, List[String]],
+        body    = Option[RecordedBody]
+    })
+
+    ///
+    /// A recorded HTTP outcome — success or transport error.
+    ///
+    pub enum RecordedOutcome {
+        case Success({
+            status  = Int32,
+            url     = String,
+            headers = Map[String, List[String]],
+            body    = RecordedBody
+        })
+        case TransportError({kind = String, message = String})
+    }
+
+    ///
+    /// A single recorded HTTP interaction.
+    ///
+    pub enum HttpInteraction({
+        request = RecordedRequest,
+        outcome = RecordedOutcome
+    })
+
 }
