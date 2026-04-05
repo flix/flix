@@ -933,12 +933,12 @@ object Inliner {
     * - A single array operation with simple arguments.
     * - A single JVM operation with simple arguments.
     */
-  @tailrec
   private def isSingleAction(exp0: Expr): Boolean = exp0 match {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
     case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
     case Expr.Cast(exp, _, _, _) => isSingleAction(exp)
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => isSimple(exp1) && isSingleAction(exp2) && isSingleAction(exp3)
     case Expr.Match(exp, rules, _, _, _) => isSimple(exp) && rules.forall(isSimpleMatchRule)
     case Expr.ApplyAtomic(op, exps, _, _, _) => op match {
       case AtomicOp.ArrayNew => exps.forall(isSimple)
