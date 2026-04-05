@@ -91,24 +91,7 @@ mod TestList {
 
     @Test
     def get01(): Unit \ Assert =
-        let r = run List.get(0, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
-            def outOfBounds(_, _) = "error"
-        };
-        assertEq(expected = "a", r)
-
-    @Test
-    def get02(): Unit \ Assert =
-        let r = run List.get(5, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index 5 is out of bounds for List of length 3", r)
-
-    @Test
-    def get03(): Unit \ Assert =
-        let r = run List.get(-1, "a" :: "b" :: "c" :: Nil) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index -1 is out of bounds for List of length 3", r)
+        assertEq(expected = "a", List.get(0, "a" :: "b" :: "c" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //

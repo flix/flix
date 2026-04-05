@@ -77,17 +77,7 @@ mod TestNel {
 
     @Test
     def get01(): Unit \ Assert =
-        let r = run Nel.get(0, Nel("a", "b" :: "c" :: Nil)) with handler OutOfBounds {
-            def outOfBounds(_, _) = "error"
-        };
-        assertEq(expected = "a", r)
-
-    @Test
-    def get02(): Unit \ Assert =
-        let r = run Nel.get(5, Nel("a", "b" :: "c" :: Nil)) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index 5 is out of bounds for Nel of length 3", r)
+        assertEq(expected = "a", Nel.get(0, Nel("a", "b" :: "c" :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
