@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, N
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.{MethodVisitor, Opcodes}
+import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -1597,7 +1597,38 @@ object BackendObjType {
       cm.mkField(Float64Field, IsPublic, NotFinal, NotVolatile)
       cm.mkField(ObjectField, IsPublic, NotFinal, NotVolatile)
 
+      // Cached singleton Value instances for Unit, true, and false
+      cm.mkField(UnitField, IsPublic, IsFinal, NotVolatile)
+      cm.mkField(TrueField, IsPublic, IsFinal, NotVolatile)
+      cm.mkField(FalseField, IsPublic, IsFinal, NotVolatile)
+      cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), staticConstructorIns(_))
+
       cm.closeClassMaker()
+    }
+
+    private def staticConstructorIns(implicit mv: MethodVisitor): Unit = {
+      // Value.UNIT = new Value(); Value.UNIT.o = Unit.INSTANCE
+      NEW(this.jvmName)
+      DUP()
+      INVOKESPECIAL(Constructor)
+      DUP()
+      GETSTATIC(BackendObjType.Unit.SingletonField)
+      PUTFIELD(ObjectField)
+      PUTSTATIC(UnitField)
+      // Value.TRUE = new Value(); Value.TRUE.b = true
+      NEW(this.jvmName)
+      DUP()
+      INVOKESPECIAL(Constructor)
+      DUP()
+      ICONST_1()
+      PUTFIELD(BoolField)
+      PUTSTATIC(TrueField)
+      // Value.FALSE = new Value(); Value.FALSE.b = false (default, but explicit)
+      NEW(this.jvmName)
+      DUP()
+      INVOKESPECIAL(Constructor)
+      PUTSTATIC(FalseField)
+      RETURN()
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
@@ -1619,6 +1650,12 @@ object BackendObjType {
     private def Float64Field: InstanceField = InstanceField(this.jvmName, "f64", BackendType.Float64)
 
     private def ObjectField: InstanceField = InstanceField(this.jvmName, "o", BackendType.Object)
+
+    def UnitField: StaticField = StaticField(this.jvmName, "UNIT", this.toTpe)
+
+    def TrueField: StaticField = StaticField(this.jvmName, "TRUE", this.toTpe)
+
+    def FalseField: StaticField = StaticField(this.jvmName, "FALSE", this.toTpe)
 
     /**
       * Returns the field of Value corresponding to the given type
@@ -2077,13 +2114,28 @@ object BackendObjType {
     private def invokeIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       GETFIELD(ResumptionField)
-      NEW(Value.jvmName)
-      DUP()
-      INVOKESPECIAL(Value.Constructor)
-      DUP()
-      thisLoad()
-      mv.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
-      PUTFIELD(Value.fieldFromType(tpe.toErased))
+      tpe.toErased match {
+        case BackendType.Bool =>
+          // Use cached Value.TRUE / Value.FALSE singletons
+          thisLoad()
+          mv.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
+          val falseLabel = new Label()
+          val doneLabel = new Label()
+          mv.visitJumpInsn(Opcodes.IFEQ, falseLabel)
+          GETSTATIC(Value.TrueField)
+          mv.visitJumpInsn(Opcodes.GOTO, doneLabel)
+          mv.visitLabel(falseLabel)
+          GETSTATIC(Value.FalseField)
+          mv.visitLabel(doneLabel)
+        case _ =>
+          NEW(Value.jvmName)
+          DUP()
+          INVOKESPECIAL(Value.Constructor)
+          DUP()
+          thisLoad()
+          mv.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
+          PUTFIELD(Value.fieldFromType(tpe.toErased))
+      }
       INVOKEINTERFACE(Resumption.RewindMethod)
       xReturn(Result.toTpe)
     }

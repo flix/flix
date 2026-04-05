@@ -210,14 +210,8 @@ object GenExpression {
 
         sop match {
           case SemanticOp.BoolOp.Not =>
-            val condElse = new Label()
-            val condEnd = new Label()
-            mv.visitJumpInsn(IFNE, condElse)
             mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(GOTO, condEnd)
-            mv.visitLabel(condElse)
-            mv.visitInsn(ICONST_0)
-            mv.visitLabel(condEnd)
+            mv.visitInsn(IXOR)
 
           case Float32Op.Neg => mv.visitInsn(FNEG)
 
@@ -823,15 +817,32 @@ object GenExpression {
       case AtomicOp.Box =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
-        val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
-        compileExpr(exp)
-        NEW(BackendObjType.Value.jvmName)
-        DUP()
-        INVOKESPECIAL(BackendObjType.Value.Constructor)
-        DUP()
-        xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) // two objects on top of the stack
-        PUTFIELD(valueField)
+        exp.tpe match {
+          case SimpleType.Unit =>
+            compileExpr(exp)
+            POP()
+            GETSTATIC(BackendObjType.Value.UnitField)
+          case SimpleType.Bool =>
+            compileExpr(exp)
+            val falseLabel = new Label()
+            val doneLabel = new Label()
+            mv.visitJumpInsn(IFEQ, falseLabel)
+            GETSTATIC(BackendObjType.Value.TrueField)
+            mv.visitJumpInsn(GOTO, doneLabel)
+            mv.visitLabel(falseLabel)
+            GETSTATIC(BackendObjType.Value.FalseField)
+            mv.visitLabel(doneLabel)
+          case _ =>
+            val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
+            val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
+            compileExpr(exp)
+            NEW(BackendObjType.Value.jvmName)
+            DUP()
+            INVOKESPECIAL(BackendObjType.Value.Constructor)
+            DUP()
+            xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) // two objects on top of the stack
+            PUTFIELD(valueField)
+        }
 
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
@@ -1355,10 +1366,39 @@ object GenExpression {
       val defaultLabel = new Label()
       val endLabel = new Label()
       val caseLabels = cases.map { case (sym, _) => sym.ordinal -> new Label() }.toMap
-      val numCases = root.enums(enumSym).cases.size
-      val table = (0 until numCases).map(i => caseLabels.getOrElse(i, defaultLabel)).toArray
-      // Emit tableswitch
-      mv.visitTableSwitchInsn(0, numCases - 1, defaultLabel, table: _*)
+      // Choose between tableswitch and lookupswitch based on bytecode size.
+      //
+      // A tableswitch allocates a slot for every ordinal in the range 0..N-1,
+      // even if most slots just point to the default label. A lookupswitch only
+      // stores the explicitly listed cases as sorted (key, label) pairs.
+      //
+      //   tableswitch cost:  12 + 4*N bytes  (N = total enum variants, O(1) dispatch)
+      //   lookupswitch cost:  8 + 8*E bytes  (E = explicit cases,  O(log E) dispatch)
+      //
+      // Example: an enum with 161 variants, matching on 5 cases + wildcard default.
+      //
+      //   tableswitch:  12 + 4*161 = 656 bytes — a 161-entry jump table, mostly
+      //                 pointing to the default. Exceeds the JVM JIT inlining
+      //                 threshold (~325 bytes).
+      //
+      //   lookupswitch:  8 + 8*5  =  48 bytes — 5 sorted (ordinal, label) pairs.
+      //                 The JVM binary-searches the keys (≈3 comparisons for 5 entries).
+      //
+      // The crossover point is when E < (N+1)/2, i.e. when fewer than half the
+      // ordinals have explicit cases.
+      val numTotal = root.enums(enumSym).cases.size
+      val numExplicit = cases.size
+      val tableswitchCost = 12 + 4 * numTotal
+      val lookupswitchCost = 8 + 8 * numExplicit
+      if (lookupswitchCost < tableswitchCost) {
+        val sorted = cases.sortBy(_._1.ordinal)
+        val keys = sorted.map(_._1.ordinal).toArray
+        val labels = sorted.map { case (sym, _) => caseLabels(sym.ordinal) }.toArray
+        mv.visitLookupSwitchInsn(defaultLabel, keys, labels)
+      } else {
+        val table = (0 until numTotal).map(i => caseLabels.getOrElse(i, defaultLabel)).toArray
+        mv.visitTableSwitchInsn(0, numTotal - 1, defaultLabel, table: _*)
+      }
       // Emit each case branch
       cases.foreach { case (sym, body) =>
         mv.visitLabel(caseLabels(sym.ordinal))
@@ -1375,7 +1415,11 @@ object GenExpression {
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
-      castIfNotPrim(bType)
+      // Only cast when exp1 is not already a cast.
+      exp1 match {
+        case Expr.ApplyAtomic(AtomicOp.Cast, _, _, _, _) => () // Cast already emits castIfNotPrim
+        case _ => castIfNotPrim(bType)
+      }
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)
 
