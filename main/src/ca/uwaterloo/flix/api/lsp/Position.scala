@@ -97,12 +97,26 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
 
   /**
     * Returns `true` if `this` position is contained by the given source location `loc`
-    * This check is inclusive for both ends.
+    * or is the position just after `loc`.
+    */
+  def containedByOrJustAfter(loc: SourceLocation): Boolean = {
+    val start = loc.start
+    val end = loc.end
+    start.lineOneIndexed <= line &&
+      line <= end.lineOneIndexed &&
+      (line != start.lineOneIndexed || start.colOneIndexed <= character) &&
+      (line != end.lineOneIndexed || character <= end.colOneIndexed)
+  }
+
+  /**
+    * Returns `true` if `this` position is contained by the given source location `loc`.
     */
   def containedBy(loc: SourceLocation): Boolean = {
-    loc.startLine <= line &&
-      line <= loc.endLine &&
-      (line != loc.startLine || loc.startCol <= character) &&
-      (line != loc.endLine || character <= loc.endCol)
+    val start = loc.start
+    val end = loc.end
+    start.lineOneIndexed <= line &&
+      line <= end.lineOneIndexed &&
+      (line != start.lineOneIndexed || start.colOneIndexed <= character) &&
+      (line != end.lineOneIndexed || character < end.colOneIndexed)
   }
 }

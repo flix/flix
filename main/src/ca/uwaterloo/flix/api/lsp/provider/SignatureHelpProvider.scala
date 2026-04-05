@@ -53,7 +53,7 @@ object SignatureHelpProvider {
     */
   private def mkSignatureHelp(sym: Symbol, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {
     // Count the index of the active parameter, which is the first expression that contains the position of the cursor.
-    val activeParameter = exps.indexWhere(exp => pos.containedBy(exp.loc))
+    val activeParameter = exps.indexWhere(exp => pos.containedByOrJustAfter(exp.loc))
     val signatureInfo = SignatureInformation.from(sym, spec, activeParameter)
     SignatureHelp(List(signatureInfo), 0, 0)
   }
