@@ -155,13 +155,26 @@ object Deriver {
     */
   private def mkEqImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
-      // Create a match rule for each case, matching on param1 only.
-      // Value-carrying cases have a nested match on param2 to extract fields.
-      // Empty cases return true directly (the ordinal guard ensures same tag).
-      val matchRules = getCasesInStableOrder(cases).map(mkEqSplitMatchRule(_, param2, cases.size, loc, root))
+      // Only generate match rules for data-carrying variants.
+      // Nullary variants are covered by a wildcard default returning true,
+      // since the ordinal guard already ensures same tag.
+      val allCases = getCasesInStableOrder(cases)
+      val dataCases = allCases.filter(_.tpes.nonEmpty)
 
-      // Match on x only (no tuple allocation).
-      // No default rule needed: every case has an explicit rule.
+      val matchRules = if (dataCases.isEmpty) {
+        // All variants are nullary — wildcard returning true suffices.
+        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(true), loc), loc)
+        List(defaultRule)
+      } else if (dataCases.size < allCases.size) {
+        // Mixed: tag rules for data cases + wildcard default for nullary cases.
+        val tagRules = dataCases.map(mkEqSplitMatchRule(_, param2, cases.size, loc, root))
+        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(true), loc), loc)
+        tagRules :+ defaultRule
+      } else {
+        // All variants have data — no optimization, same as before.
+        allCases.map(mkEqSplitMatchRule(_, param2, cases.size, loc, root))
+      }
+
       val matchExp = KindedAst.Expr.Match(
         mkVarExpr(param1, loc),
         matchRules,
@@ -322,13 +335,28 @@ object Deriver {
     */
   private def mkCompareImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
-      // Create a match rule for each case, matching on param1 only.
-      // Value-carrying cases have a nested match on param2 to extract fields.
-      // Empty cases return EqualTo directly (the ordinal guard ensures same tag).
-      val matchRules = getCasesInStableOrder(cases).map(mkCompareSplitMatchRule(_, param2, cases.size, loc, root))
+      // Only generate match rules for data-carrying variants.
+      // Nullary variants are covered by a wildcard default returning EqualTo,
+      // since the ordinal guard already ensures same tag.
+      val comparisonEquals = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
 
-      // Match on x only (no tuple allocation).
-      // No default rule needed: every case has an explicit rule.
+      val allCases = getCasesInStableOrder(cases)
+      val dataCases = allCases.filter(_.tpes.nonEmpty)
+
+      val matchRules = if (dataCases.isEmpty) {
+        // All variants are nullary — wildcard returning EqualTo suffices.
+        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc), loc)
+        List(defaultRule)
+      } else if (dataCases.size < allCases.size) {
+        // Mixed: tag rules for data cases + wildcard default for nullary cases.
+        val tagRules = dataCases.map(mkCompareSplitMatchRule(_, param2, cases.size, loc, root))
+        val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc), loc)
+        tagRules :+ defaultRule
+      } else {
+        // All variants have data — no optimization, same as before.
+        allCases.map(mkCompareSplitMatchRule(_, param2, cases.size, loc, root))
+      }
+
       val compareExp = KindedAst.Expr.Match(
         mkVarExpr(param1, loc),
         matchRules,
@@ -338,7 +366,6 @@ object Deriver {
       // short-circuit: if x === y then EqualTo
       //           else if ordinal(x) != ordinal(y) then (if ordinal(x) < ordinal(y) then LessThan else GreaterThan)
       //           else <compare>
-      val comparisonEquals = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
       val equalToExp = KindedAst.Expr.Tag(CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
       val ordinalCheck = mkOrdinalNeqCheck(param1, param2, mkOrdinalCompare(param1, param2, loc, root), compareExp, loc)
       mkRefEqShortCircuit(param1, param2, equalToExp, ordinalCheck, loc)
