@@ -817,15 +817,32 @@ object GenExpression {
       case AtomicOp.Box =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
-        val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
-        compileExpr(exp)
-        NEW(BackendObjType.Value.jvmName)
-        DUP()
-        INVOKESPECIAL(BackendObjType.Value.Constructor)
-        DUP()
-        xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) // two objects on top of the stack
-        PUTFIELD(valueField)
+        exp.tpe match {
+          case SimpleType.Unit =>
+            compileExpr(exp)
+            POP()
+            GETSTATIC(BackendObjType.Value.UnitField)
+          case SimpleType.Bool =>
+            compileExpr(exp)
+            val falseLabel = new Label()
+            val doneLabel = new Label()
+            mv.visitJumpInsn(IFEQ, falseLabel)
+            GETSTATIC(BackendObjType.Value.TrueField)
+            mv.visitJumpInsn(GOTO, doneLabel)
+            mv.visitLabel(falseLabel)
+            GETSTATIC(BackendObjType.Value.FalseField)
+            mv.visitLabel(doneLabel)
+          case _ =>
+            val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
+            val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
+            compileExpr(exp)
+            NEW(BackendObjType.Value.jvmName)
+            DUP()
+            INVOKESPECIAL(BackendObjType.Value.Constructor)
+            DUP()
+            xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) // two objects on top of the stack
+            PUTFIELD(valueField)
+        }
 
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
