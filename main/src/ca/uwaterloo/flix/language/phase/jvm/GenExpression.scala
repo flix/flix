@@ -1415,7 +1415,7 @@ object GenExpression {
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
-      // Only cast when exp1 is an Eraser Cast (which already handles the cast itself)
+      // Only cast when exp1 is not already a cast.
       exp1 match {
         case Expr.ApplyAtomic(AtomicOp.Cast, _, _, _, _) => () // Cast already emits castIfNotPrim
         case _ => castIfNotPrim(bType)
