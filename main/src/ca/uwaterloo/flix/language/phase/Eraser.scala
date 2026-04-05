@@ -152,12 +152,12 @@ object Eraser {
           val List(e) = es
           val specializedEnum = e.tpe.asInstanceOf[SimpleType.Enum]
           val specializedSym = specializedCaseSym(sym, specializedEnum)
-          castExp(ErasedAst.Expr.ApplyAtomic(AtomicOp.Untag(specializedSym, idx), es, erase(tpe), purity, loc), t, purity, loc)
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.Untag(specializedSym, idx), es, t, purity, loc)
         case AtomicOp.Index(_) =>
-          castExp(ErasedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+          ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tuple => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordSelect(_) =>
-          castExp(ErasedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+          ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordExtend(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordRestrict(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ExtIs(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
@@ -176,7 +176,7 @@ object Eraser {
           val List(e) = es
           val specializedStruct = e.tpe.asInstanceOf[SimpleType.Struct]
           val specializedSym = specializedFieldSym(sym, specializedStruct)
-          castExp(ErasedAst.Expr.ApplyAtomic(AtomicOp.StructGet(specializedSym), es, erase(tpe), purity, loc), t, purity, loc)
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.StructGet(specializedSym), es, t, purity, loc)
         case AtomicOp.StructPut(sym) =>
           val List(e, _) = es
           val specializedStruct = e.tpe.asInstanceOf[SimpleType.Struct]
