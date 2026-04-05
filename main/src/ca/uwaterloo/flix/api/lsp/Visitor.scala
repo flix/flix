@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
-import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
+import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, EqualityConstraint, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
@@ -285,14 +285,17 @@ object Visitor {
   }
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EqualityConstraint(symUse, tpe1, tpe2, loc) = ec
+    val EqualityConstraint(tpe1, tpe2, loc) = ec
     if (!a.accept(loc)) {
       return
     }
 
     c.consumeEqualityConstraint(ec)
 
-    visitAssocTypeSymUse(symUse)
+    tpe1 match {
+      case Type.AssocType(symUse, _, _, _) => visitAssocTypeSymUse(symUse)
+      case _ => ()
+    }
     visitType(tpe1)
     visitType(tpe2)
   }
