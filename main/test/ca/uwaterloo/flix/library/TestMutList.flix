@@ -112,51 +112,27 @@ mod TestMutList {
 
     @Test
     def get01(): Unit \ Assert = region rc {
-        assertEq(expected = None, MutList.nth(0, (MutList.empty(rc): MutList[Int32, _])))
-    }
-
-    @Test
-    def get02(): Unit \ Assert = region rc {
         let l = MutList.empty(rc);
         MutList.push("item", l);
         assertEq(expected = "item", MutList.get(0, l))
     }
 
     @Test
-    def get03(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push("item", l);
-        assertEq(expected = None, MutList.nth(1, l))
-    }
-
-    @Test
-    def get04(): Unit \ Assert = region rc {
+    def get02(): Unit \ Assert = region rc {
         let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 2));
         assertEq(expected = "item 1", MutList.get(1, l))
     }
 
     @Test
-    def get05(): Unit \ Assert = region rc {
+    def get03(): Unit \ Assert = region rc {
         let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 4));
         assertEq(expected = "item 3", MutList.get(3, l))
     }
 
     @Test
-    def get06(): Unit \ Assert = region rc {
+    def get04(): Unit \ Assert = region rc {
         let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
         assertEq(expected = "item 30", MutList.get(30, l))
-    }
-
-    @Test
-    def get07(): Unit \ Assert = region rc {
-        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
-        assertEq(expected = None, MutList.nth(-30, l))
-    }
-
-    @Test
-    def get08(): Unit \ Assert = region rc {
-        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
-        assertEq(expected = None, MutList.nth(50, l))
     }
 
 
@@ -166,11 +142,6 @@ mod TestMutList {
 
     @Test
     def put01(): Unit \ Assert = region rc {
-        assertEq(expected = None, MutList.nth(0, (MutList.empty(rc): MutList[String, _])))
-    }
-
-    @Test
-    def put02(): Unit \ Assert = region rc {
         let l = MutList.empty(rc);
         MutList.push("item", l);
         MutList.put("new item", 0, l);
@@ -178,44 +149,26 @@ mod TestMutList {
     }
 
     @Test
-    def put03(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push("item", l);
-        assertEq(expected = None, MutList.nth(1, l))
-    }
-
-    @Test
-    def put04(): Unit \ Assert = region rc {
+    def put02(): Unit \ Assert = region rc {
         let l = MutList.range(rc, 0, 2);
         MutList.put(1234, 1, l);
         assertEq(expected = Some(1234), MutList.nth(1, l))
     }
 
     @Test
-    def put05(): Unit \ Assert = region rc {
+    def put03(): Unit \ Assert = region rc {
         let l = MutList.range(rc, 0, 4);
         MutList.put(1234, 3, l);
         assertEq(expected = Some(1234), MutList.nth(3, l))
     }
 
     @Test
-    def put06(): Unit \ Assert = region rc {
+    def put04(): Unit \ Assert = region rc {
         let l = MutList.range(rc, 0, 42);
         MutList.put(1234, 30, l);
         assertEq(expected = Some(1234), MutList.nth(30, l))
     }
 
-    @Test
-    def put07(): Unit \ Assert = region rc {
-        let l = MutList.range(rc, 0, 42);
-        assertEq(expected = None, MutList.nth(-30, l))
-    }
-
-    @Test
-    def put08(): Unit \ Assert = region rc {
-        let l = MutList.range(rc, 0, 42);
-        assertEq(expected = None, MutList.nth(50, l))
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////

@@ -182,14 +182,6 @@ mod TestNec {
     def get01(): Unit \ Assert =
         assertEq(expected = "b", Nec.get(1, necOf3("a", "b", "c")))
 
-    @Test
-    def get02(): Unit \ Assert =
-        assertEq(expected = None, Nec.nth(5, necOf3("a", "b", "c")))
-
-    @Test
-    def get03(): Unit \ Assert =
-        assertEq(expected = None, Nec.nth(-1, necOf3("a", "b", "c")))
-
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////

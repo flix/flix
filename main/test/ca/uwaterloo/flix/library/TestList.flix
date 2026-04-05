@@ -93,14 +93,6 @@ mod TestList {
     def get01(): Unit \ Assert =
         assertEq(expected = "a", List.get(0, "a" :: "b" :: "c" :: Nil))
 
-    @Test
-    def get02(): Unit \ Assert =
-        assertEq(expected = None, List.nth(5, "a" :: "b" :: "c" :: Nil))
-
-    @Test
-    def get03(): Unit \ Assert =
-        assertEq(expected = None, List.nth(-1, "a" :: "b" :: "c" :: Nil))
-
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////

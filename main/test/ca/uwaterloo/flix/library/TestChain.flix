@@ -153,14 +153,6 @@ mod TestChain {
     def get01(): Unit \ Assert =
         assertEq(expected = "b", Chain.get(1, List.toChain("a" :: "b" :: "c" :: Nil)))
 
-    @Test
-    def get02(): Unit \ Assert =
-        assertEq(expected = None, Chain.nth(5, List.toChain("a" :: "b" :: "c" :: Nil)))
-
-    @Test
-    def get03(): Unit \ Assert =
-        assertEq(expected = None, Chain.nth(-1, List.toChain("a" :: "b" :: "c" :: Nil)))
-
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
