@@ -1473,6 +1473,21 @@ pub mod List {
         }
 
     ///
+    /// Build a list by applying `f` to the initial value `x`.
+    ///
+    /// `f` should return `Some(a1)` to signal a new list element `a1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    pub def iterate(f: a -> Option[a] \ ef, x: a): List[a] \ ef =
+        @Tailrec
+        def loop(st, acc) = match f(st) {
+            case None     => acc
+            case Some(a1) => loop(a1, a1 :: acc)
+        };
+        reverse(loop(x, Nil))
+
+    ///
     /// Returns the list `l` with duplicates removed. The first occurrence of
     /// an element is kept and except for the removal of subsequent duplicates
     /// the order of `l` is preserved.
@@ -1534,7 +1549,7 @@ pub mod List {
                 case x :: rs => Ref.put(rs, ls); Some(x)
             }
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Helper function for `sequence` and `traverse`.

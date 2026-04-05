@@ -2372,6 +2372,26 @@ mod TestMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert =
+        assertEq(expected = (Map#{}: Map[Int32, Int32]), Map.iterate((k, _v) -> if (true) None else Some((k + 1, k + 1)), 0, 0))
+
+    @Test
+    def iterate02(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 10}, Map.iterate((k, _v) -> if (k >= 1) None else Some((k + 1, (k + 1) * 10)), 0, 0))
+
+    @Test
+    def iterate03(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 10, 2 => 20, 3 => 30}, Map.iterate((k, _v) -> if (k >= 3) None else Some((k + 1, (k + 1) * 10)), 0, 0))
+
+    @Test
+    def iterate04(): Unit \ Assert =
+        assertEq(expected = Map#{2 => 4, 4 => 8, 6 => 12}, Map.iterate((k, _v) -> if (k >= 6) None else Some((k + 2, (k + 2) * 2)), 0, 0))
+
+    /////////////////////////////////////////////////////////////////////////////
     // inverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

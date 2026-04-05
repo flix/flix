@@ -563,7 +563,7 @@ pub mod MutHashMap {
                 Ref.put(Entry.getOrderNext(entry), curr);
                 Some((Entry.getKey(entry), Entry.getValue(entry)))
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Returns an iterator over keys in `m` in insertion order.

@@ -1195,7 +1195,7 @@ pub mod DelayList {
                 Ref.put(tail(Ref.get(cursor)), cursor);
                 Some(x)
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Returns `l` as a `List`.

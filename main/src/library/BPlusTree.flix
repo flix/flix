@@ -396,7 +396,7 @@ pub mod BPlusTree {
                 }
             }
         };
-        Iterator.iterate(rc1, next)
+        Iterator.unfoldWithIter(rc1, next)
     }
 
     ///

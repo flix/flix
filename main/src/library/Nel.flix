@@ -718,4 +718,69 @@ pub mod Nel {
         toArray(rc, l) !> Array.shuffle |> Array.toNel
     }
 
+    ///
+    /// Build a non-empty list by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a, st1)` to signal a new element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    /// The first element is produced from the initial seed, so the result is always non-empty
+    /// only if `f(st)` returns `Some`. Returns `None` if `f(st)` immediately returns `None`.
+    ///
+    pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): Option[Nel[a]] \ ef =
+        match f(st) {
+            case None           => None
+            case Some((a, st1)) =>
+                @Tailrec
+                def loop(sst, acc) = match f(sst) {
+                    case None            => acc
+                    case Some((b, st2))  => loop(st2, b :: acc)
+                };
+                Some(Nel(a, List.reverse(loop(st1, Nil))))
+        }
+
+    ///
+    /// Build a non-empty list by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(a)` to signal a new element `a`.
+    ///
+    /// `next` should return `None` to signal the end of building the list.
+    ///
+    /// Returns `None` if `next` immediately returns `None`.
+    ///
+    pub def unfoldWithIter(next: Unit -> Option[a] \ ef): Option[Nel[a]] \ ef =
+        match next() {
+            case None    => None
+            case Some(a) =>
+                @Tailrec
+                def loop(acc) = match next() {
+                    case None    => acc
+                    case Some(x) => loop(x :: acc)
+                };
+                Some(Nel(a, List.reverse(loop(Nil))))
+        }
+
+    ///
+    /// Build a non-empty list by applying `f` to the initial value `x`.
+    ///
+    /// `f` should return `Some(a1)` to signal a new element `a1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    /// Returns `None` if `f(x)` immediately returns `None`.
+    ///
+    pub def iterate(f: a -> Option[a] \ ef, x: a): Option[Nel[a]] \ ef =
+        match f(x) {
+            case None     => None
+            case Some(a1) =>
+                @Tailrec
+                def loop(st, acc) = match f(st) {
+                    case None     => acc
+                    case Some(a2) => loop(a2, a2 :: acc)
+                };
+                Some(Nel(a1, List.reverse(loop(a1, Nil))))
+        }
+
 }

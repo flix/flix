@@ -406,7 +406,7 @@ pub mod MutDeque {
                 None
             }
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.

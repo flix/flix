@@ -1049,7 +1049,7 @@ pub mod RedBlackTree {
                 Ref.put(leftmost(rtree, es), state);
                 Some((k, v))
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// This represents pending items `(key, value, right-tree)` encountered while finding the
