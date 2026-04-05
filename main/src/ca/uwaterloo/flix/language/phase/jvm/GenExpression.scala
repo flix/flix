@@ -69,6 +69,7 @@ object GenExpression {
     lenv: Map[Symbol.LabelSym, Label],
     newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
     setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
+    narrowLocals: MethodVisitor => Unit, // re-cast locals to their declared types after resume
     localOffset: Int,
     pcLabels: Vector[Label],
     pcCounter: Ref[Int]
@@ -1126,7 +1127,7 @@ object GenExpression {
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)
           } else {
             ctx match {
-              case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+              case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
                 val pcPoint = pcCounter(0) + 1
                 val pcPointLabel = pcLabels(pcPoint)
                 val afterUnboxing = new Label()
@@ -1135,6 +1136,7 @@ object GenExpression {
                 mv.visitJumpInsn(GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
+                narrowLocals(mv)
 
                 mv.visitVarInsn(ALOAD, 1)
 
@@ -1203,7 +1205,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
           ctx match {
-            case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
               val defn = root.defs(sym)
               if (Purity.isControlPure(defn.expr.purity)) {
                 BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
@@ -1216,6 +1218,7 @@ object GenExpression {
                 mv.visitJumpInsn(GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
+                narrowLocals(mv)
                 mv.visitVarInsn(ALOAD, 1)
 
                 mv.visitLabel(afterUnboxing)
@@ -1230,7 +1233,7 @@ object GenExpression {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
         BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
-      case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+      case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
         import BackendObjType.Suspension
         import BytecodeInstructions.*
 
@@ -1278,6 +1281,7 @@ object GenExpression {
         xReturn(Suspension.toTpe)
 
         mv.visitLabel(pcPointLabel)
+        narrowLocals(mv)
         ALOAD(1)
         GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))
 
@@ -1286,7 +1290,7 @@ object GenExpression {
     }
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
-      case EffectContext(_, _, _, setPc, _, _, _) =>
+      case EffectContext(_, _, _, setPc, _, _, _, _) =>
         // The function abstract class name
         val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
@@ -1424,13 +1428,15 @@ object GenExpression {
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
-      // In effect contexts, the JVM verifier merges local types at pcPointLabel
-      // targets (tableswitch for effect resumption). Without a cast, locals may
-      // have a broader verifier type than their declared type at the merge point,
-      // causing setPc's PUTFIELD or subsequent GETFIELD to fail verification.
-      // In direct (pure) contexts, no such merge occurs and the cast is unnecessary.
-      ctx match {
-        case _: EffectContext => castIfNotPrim(bType)
+      // In effect contexts, the JVM verifier may broaden local slot types at
+      // pcPointLabel targets (tableswitch merge for effect resumption). Cast to
+      // maintain exact types, but only for expressions that don't already produce
+      // the correct type: Var (loads merged slot type), IfThenElse/Branch (JVM
+      // computes LUB at join). ApplyAtomic expressions either self-cast (Untag,
+      // Index, etc.) or produce the correct type (Tag, Closure, Cast, etc.).
+      (ctx, exp1) match {
+        case (_: EffectContext, _: Expr.ApplyAtomic) => ()
+        case (_: EffectContext, _) => castIfNotPrim(bType)
         case _ => ()
       }
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
@@ -1577,7 +1583,7 @@ object GenExpression {
           case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)
 
-          case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+          case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
             val pcPoint = pcCounter(0) + 1
             val pcPointLabel = pcLabels(pcPoint)
             val afterUnboxing = new Label()
@@ -1586,6 +1592,7 @@ object GenExpression {
             mv.visitJumpInsn(GOTO, afterUnboxing)
 
             mv.visitLabel(pcPointLabel)
+            narrowLocals(mv)
             BytecodeInstructions.ALOAD(1)
             mv.visitLabel(afterUnboxing)
         }
