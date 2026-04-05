@@ -15,6 +15,21 @@
  */
 
 pub mod MutHashMap.Entry {
+
+    ///
+    /// Represents an internal entry node for the hash map.
+    ///
+    /// Each entry is part of both a hash bucket chain and the insertion order chain.
+    ///
+    pub struct Entry[k: Type, v: Type, r: Region] {
+        key: k,                                    // The key for this entry
+        hash: Int32,                               // Cached hash code for the key
+        mut value: v,                              // The value associated with the key
+        mut bucketNext: Option[Entry[k, v, r]],    // Next entry in the same bucket
+        mut orderPrev: Option[Entry[k, v, r]],     // Previous entry in insertion order
+        mut orderNext: Option[Entry[k, v, r]]      // Next entry in insertion order
+    }
+
     pub def getKey(e: Entry[k, v, r]): k = e->key
     pub def getValue(e: Entry[k, v, r]): v \ r = e->value
     pub def setValue(v: v, e: Entry[k, v, r]): Unit \ r = e->value = v
