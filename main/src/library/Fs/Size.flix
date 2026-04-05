@@ -16,9 +16,65 @@
 
 pub mod Fs.Size {
 
-    use Fs.Size
-    use Fs.Size.Size
     use Fs.SizeUnit
+
+    ///
+    /// Represents a file size stored as bytes (Int64).
+    ///
+    pub enum Size(Int64) with Eq, Order, Hash
+
+    instance Add[Size] {
+        pub def add(x: Size, y: Size): Size =
+            let Size(x1) = x;
+            let Size(y1) = y;
+            Size(x1 + y1)
+    }
+
+    instance Sub[Size] {
+        pub def sub(x: Size, y: Size): Size =
+            let Size(x1) = x;
+            let Size(y1) = y;
+            Size(x1 - y1)
+    }
+
+    instance ToString[Size] {
+        pub def toString(s: Size): String =
+            let Size(b) = s;
+            if (b == 0i64)
+                "0 B"
+            else
+                let abs = Int64.abs(b);
+                let sign = if (b < 0i64) "-" else "";
+                let tb1 = 1_024i64 * 1_024i64 * 1_024i64 * 1_024i64;
+                let gb1 = 1_024i64 * 1_024i64 * 1_024i64;
+                let mb1 = 1_024i64 * 1_024i64;
+                let kb1 = 1_024i64;
+                if (abs >= tb1)
+                    let tb = abs / tb1;
+                    let rem = abs - (tb * tb1);
+                    let gb = rem / gb1;
+                    "${sign}${tb} TB ${gb} GB"
+                else if (abs >= gb1)
+                    let gb = abs / gb1;
+                    let rem = abs - (gb * gb1);
+                    let mb = rem / mb1;
+                    "${sign}${gb} GB ${mb} MB"
+                else if (abs >= mb1)
+                    let mb = abs / mb1;
+                    let rem = abs - (mb * mb1);
+                    let kb = rem / kb1;
+                    "${sign}${mb} MB ${kb} KB"
+                else if (abs >= kb1)
+                    let kb = abs / kb1;
+                    let rem = abs - (kb * kb1);
+                    "${sign}${kb} KB ${rem} B"
+                else
+                    "${sign}${abs} B"
+    }
+
+    instance Formattable[Size] {
+        pub def format(s: Size): RichString = RichString.fromString(ToString.toString(s))
+    }
 
     /// Returns the zero size.
     pub def zero(): Size = Size(0i64)

@@ -78,29 +78,30 @@ object DefaultHandlers {
     // The Default Handler must reside in the companion module of the effect.
     // Hence we use the namespace of the handler to construct the expected
     // effect symbol and look it up in the AST.
+    // Companion effects have their symbol in the parent namespace (e.g. Fs.Glob),
+    // which matches the handler's namespace (also Fs.Glob).
     val effFqn = handlerSym.namespace.mkString(".")
     val effSym = Symbol.mkEffSym(effFqn)
-    val companionEffect = root.effects.get(effSym)
+    val companionEffect = root.effects.get(effSym).map((effSym, _))
     companionEffect match {
       case None =>
         sctx.errors.add(TypeError.DefaultHandlerNotInModule(handlerSym, handlerSym.loc))
         None
-      // The default handler is NOT in the companion module of an effect
-      case Some(_) =>
+      case Some((resolvedEffSym, _)) =>
         // Synthetic location of our handler
         val loc = handlerSym.loc.asSynthetic
         // There is a valid effect to wrap
-        val handledEff = Type.Cst(TypeConstructor.Effect(effSym, Kind.Eff), loc)
+        val handledEff = Type.Cst(TypeConstructor.Effect(resolvedEffSym, Kind.Eff), loc)
         val declaredScheme = handlerDef.spec.sc
         // Generate expected scheme for generating IO
         val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
         // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
         if (!Scheme.equal(expectedSchemeIO, declaredScheme, traitEnv, eqEnv, Nil)(RegionScope.Top, flix)) {
-          sctx.errors.add(TypeError.IllegalDefaultHandlerSignature(effSym, handlerSym, handlerSym.loc))
+          sctx.errors.add(TypeError.IllegalDefaultHandlerSignature(resolvedEffSym, handlerSym, handlerSym.loc))
           errors = true
         }
         if (!errors) {
-          Some(TypedAst.DefaultHandler(handlerSym, handledEff, effSym))
+          Some(TypedAst.DefaultHandler(handlerSym, handledEff, resolvedEffSym))
         } else {
           None
         }

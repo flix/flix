@@ -16,9 +16,20 @@
 
 pub mod Fs.Glob {
 
-    use Fs.Glob
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
+
+    ///
+    /// An effect used to find files matching a glob pattern.
+    ///
+    pub eff Glob {
+
+        ///
+        /// Returns a list of paths under `base` that match the given glob `pattern`.
+        ///
+        def glob(base: String, pattern: String): Result[IoError, List[String]]
+
+    }
 
     ///
     /// Handles the `Glob` effect of the given function `f`.

@@ -105,25 +105,12 @@ pub mod Fs {
     }
 
     ///
-    /// Options for the `copyWith` operation.
-    ///
-    pub enum CopyOption with Eq, Order, ToString {
-        case CopyAttributes
-        case ReplaceExisting
-    }
-
-    ///
     /// Options for the `moveWith` operation.
     ///
     pub enum MoveOption with Eq, Order, ToString {
         case AtomicMove
         case ReplaceExisting
     }
-
-    ///
-    /// Represents a file size stored as bytes (Int64).
-    ///
-    pub enum Size(Int64) with Eq, Order, Hash
 
     ///
     /// Represents a size unit.
@@ -343,20 +330,6 @@ pub mod Fs {
         /// Returns a list with the names of all files and directories in the given directory `f`.
         ///
         def list(f: String): Result[IoError, List[String]]
-
-    }
-
-    ///
-    /// An effect used to find files matching a glob pattern.
-    ///
-    /// Use the `Glob.runWithFileSystem` handler.
-    ///
-    pub eff Glob {
-
-        ///
-        /// Returns a list of paths under `base` that match the given glob `pattern`.
-        ///
-        def glob(base: String, pattern: String): Result[IoError, List[String]]
 
     }
 
@@ -971,58 +944,3 @@ pub mod Fs {
 
 }
 
-instance Add[Fs.Size] {
-    pub def add(x: Fs.Size, y: Fs.Size): Fs.Size =
-        use Fs.Size.Size;
-        let Size(x1) = x;
-        let Size(y1) = y;
-        Size(x1 + y1)
-}
-
-instance Sub[Fs.Size] {
-    pub def sub(x: Fs.Size, y: Fs.Size): Fs.Size =
-        use Fs.Size.Size;
-        let Size(x1) = x;
-        let Size(y1) = y;
-        Size(x1 - y1)
-}
-
-instance ToString[Fs.Size] {
-    pub def toString(s: Fs.Size): String =
-        use Fs.Size.Size;
-        let Size(b) = s;
-        if (b == 0i64)
-            "0 B"
-        else
-            let abs = Int64.abs(b);
-            let sign = if (b < 0i64) "-" else "";
-            let tb1 = 1_024i64 * 1_024i64 * 1_024i64 * 1_024i64;
-            let gb1 = 1_024i64 * 1_024i64 * 1_024i64;
-            let mb1 = 1_024i64 * 1_024i64;
-            let kb1 = 1_024i64;
-            if (abs >= tb1)
-                let tb = abs / tb1;
-                let rem = abs - (tb * tb1);
-                let gb = rem / gb1;
-                "${sign}${tb} TB ${gb} GB"
-            else if (abs >= gb1)
-                let gb = abs / gb1;
-                let rem = abs - (gb * gb1);
-                let mb = rem / mb1;
-                "${sign}${gb} GB ${mb} MB"
-            else if (abs >= mb1)
-                let mb = abs / mb1;
-                let rem = abs - (mb * mb1);
-                let kb = rem / kb1;
-                "${sign}${mb} MB ${kb} KB"
-            else if (abs >= kb1)
-                let kb = abs / kb1;
-                let rem = abs - (kb * kb1);
-                "${sign}${kb} KB ${rem} B"
-            else
-                "${sign}${abs} B"
-}
-
-instance Formattable[Fs.Size] {
-    pub def format(s: Fs.Size): RichString = RichString.fromString(ToString.toString(s))
-}
