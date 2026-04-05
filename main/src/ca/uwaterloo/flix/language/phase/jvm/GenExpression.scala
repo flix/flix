@@ -1415,7 +1415,11 @@ object GenExpression {
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
-      castIfNotPrim(bType)
+      // Only cast when exp1 is not already a cast.
+      exp1 match {
+        case Expr.ApplyAtomic(AtomicOp.Cast, _, _, _, _) => () // Cast already emits castIfNotPrim
+        case _ => castIfNotPrim(bType)
+      }
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)
 
