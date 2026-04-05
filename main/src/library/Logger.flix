@@ -157,6 +157,41 @@ pub mod Logger {
     pub def runWithStdErr(f: Unit -> a \ ef): a \ ef - Logger + Console = handleWithStdErr(f)()
 
     ///
+    /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// In other words, re-interprets the `Logger` effect using the `Fs.FileWrite` effect.
+    /// If an `IoError` is encountered while writing to file, executes the optional `onError` function.
+    /// Discards style from the logged messages. 
+    ///
+    pub def handleWithFileWrite(file: String, onError: Option[IoError -> Unit \ ef2], f: a -> b \ ef1): a -> b \ (ef1 - Logger) + ef2 + Fs.FileWrite = 
+        x -> run {
+            f(x)
+        } with handler Logger {
+            def log(s, m, k) = {
+                let output = "[${ToString.toString(s)}] ${RichString.toPlainString(m)}\n";
+                let res = Fs.FileWrite.append({str = output}, file);
+                match res {
+                    case Ok() => ()
+                    case Err(e) => match onError {
+                        case Some(g) => g(e)
+                        case None => ()
+                    }
+                };
+                k()
+            }
+        }
+
+    ///
+    /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// In other words, re-interprets the `Logger` effect using the `Fs.FileWrite` effect.
+    /// If an `IoError` is encountered while writing to file, executes the optional `onError` function.
+    /// Discards style from the logged messages. 
+    ///
+    pub def runWithFileWrite(file: String, onError: Option[IoError -> Unit \ ef2], f: Unit -> a \ ef): a \ (ef - Logger) + ef2 + Fs.FileWrite =
+        handleWithFileWrite(file, onError, f)()
+
+    ///
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
     /// Otherwise, lets `Logger` effect propagate.
     ///
