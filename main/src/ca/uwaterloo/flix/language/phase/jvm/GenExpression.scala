@@ -210,14 +210,8 @@ object GenExpression {
 
         sop match {
           case SemanticOp.BoolOp.Not =>
-            val condElse = new Label()
-            val condEnd = new Label()
-            mv.visitJumpInsn(IFNE, condElse)
             mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(GOTO, condEnd)
-            mv.visitLabel(condElse)
-            mv.visitInsn(ICONST_0)
-            mv.visitLabel(condEnd)
+            mv.visitInsn(IXOR)
 
           case Float32Op.Neg => mv.visitInsn(FNEG)
 
