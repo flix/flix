@@ -1,5 +1,12 @@
 # Changelog
 
+Version 0.71.0:
+
+- Compiler: Significantly improved Java interoperability for generic/polymorphic types (thanks Magnus!)
+- Compiler: Improved pattern match compilation with ordinal dispatch and tableswitch (thanks Magnus!)
+- Compiler: Various bytecode optimizations for improved runtime performance (thanks Magnus!)
+- Compiler: Added partial semicolon inference (thanks Mikkel!)
+
 Version 0.70.0:
 - Library: Introduced new `Fs` file system effects (thanks Magnus!)
 - Library: Introduced new `Http` and `Https` effects (thanks Magnus!)
