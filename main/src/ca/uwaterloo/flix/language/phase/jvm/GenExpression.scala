@@ -1415,10 +1415,14 @@ object GenExpression {
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
-      // Only cast when exp1 is not already a cast.
-      exp1 match {
-        case Expr.ApplyAtomic(AtomicOp.Cast, _, _, _, _) => () // Cast already emits castIfNotPrim
-        case _ => castIfNotPrim(bType)
+      // In effect contexts, the JVM verifier merges local types at pcPointLabel
+      // targets (tableswitch for effect resumption). Without a cast, locals may
+      // have a broader verifier type than their declared type at the merge point,
+      // causing setPc's PUTFIELD or subsequent GETFIELD to fail verification.
+      // In direct (pure) contexts, no such merge occurs and the cast is unnecessary.
+      ctx match {
+        case _: EffectContext => castIfNotPrim(bType)
+        case _ => ()
       }
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)

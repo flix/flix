@@ -398,6 +398,7 @@ object GenFunAndClosureClasses {
           } else {
             DUP()(mv)
             xLoad(fieldType, index)(mv)
+            castIfNotPrim(fieldType)(mv)
             mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType.toDescriptor)
           }
         }
