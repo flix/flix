@@ -613,10 +613,12 @@ object GenExpression {
         compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
+        import BytecodeInstructions.*
         val List(exp) = exps
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
         compileUntag(exp, idx, termTypes)
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
@@ -626,6 +628,7 @@ object GenExpression {
 
         compileExpr(exp)
         GETFIELD(tupleType.IndexField(idx))
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Tuple =>
         import BytecodeInstructions.*
@@ -647,6 +650,7 @@ object GenExpression {
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
         CHECKCAST(recordType.jvmName)
         GETFIELD(recordType.ValueField)
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.RecordExtend(field) =>
         import BytecodeInstructions.*
@@ -722,12 +726,14 @@ object GenExpression {
       case AtomicOp.ArrayLoad =>
         import BytecodeInstructions.*
         val List(exp1, exp2) = exps
+        val elmTpe = BackendType.toBackendType(tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
-        xArrayLoad(BackendType.toBackendType(tpe))
+        xArrayLoad(elmTpe)
+        castIfNotPrim(elmTpe)
 
       case AtomicOp.ArrayStore =>
         import BytecodeInstructions.*
@@ -780,6 +786,7 @@ object GenExpression {
 
         compileExpr(exp)
         GETFIELD(structType.IndexField(idx))
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.StructPut(field) =>
         import BytecodeInstructions.*
@@ -810,9 +817,11 @@ object GenExpression {
       case AtomicOp.Unbox =>
         import BytecodeInstructions.*
         val List(exp) = exps
+        val bType = BackendType.toBackendType(tpe)
         compileExpr(exp)
         CHECKCAST(BackendObjType.Value.jvmName)
-        GETFIELD(BackendObjType.Value.fieldFromType(BackendType.toBackendType(tpe)))
+        GETFIELD(BackendObjType.Value.fieldFromType(bType))
+        castIfNotPrim(bType)
 
       case AtomicOp.Box =>
         import BytecodeInstructions.*
