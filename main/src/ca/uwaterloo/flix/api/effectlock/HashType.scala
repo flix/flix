@@ -15,16 +15,20 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.shared.SymUse
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.nio.{ByteBuffer, ByteOrder}
 import java.security.MessageDigest
 
 object HashType {
 
-  def hashType(tpe0: Type): Array[Byte] = tpe0 match {
+  def hashType(tpe0: Type): Array[Byte] = hashErasedType(eraseAliases(tpe0))
+
+  private def hashErasedType(tpe0: Type): Array[Byte] = tpe0 match {
     case Type.Var(sym, _) =>
       val h = hashKindedTypeVarSym(sym)
       // TODO: get byte representation of Type.Var
@@ -36,8 +40,8 @@ object HashType {
       hashBytes(h.appended(???))
 
     case Type.Apply(tpe1, tpe2, _) =>
-      val h1 = hashType(tpe1)
-      val h2 = hashType(tpe2)
+      val h1 = hashErasedType(tpe1)
+      val h2 = hashErasedType(tpe2)
       // TODO: get byte representation of Type.Apply
       val h3 = h1.appended(???).appendedAll(h2)
       hashBytes(h3)
@@ -50,92 +54,119 @@ object HashType {
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("Unexpected Java type", loc)
   }
 
-  private def hashTypeConstructor(tc0: TypeConstructor): Array[Byte] = hashInt(lowerTypeConstructor(tc0))
+  private def hashTypeConstructor(tc0: TypeConstructor): Array[Byte] = tc0 match {
+    case TypeConstructor.Void => hashInt(0)
+    case TypeConstructor.AnyType => hashInt(1)
+    case TypeConstructor.Unit => hashInt(2)
+    case TypeConstructor.Null => hashInt(3)
+    case TypeConstructor.Bool => hashInt(4)
+    case TypeConstructor.Char => hashInt(5)
+    case TypeConstructor.Float32 => hashInt(6)
+    case TypeConstructor.Float64 => hashInt(7)
+    case TypeConstructor.BigDecimal => hashInt(8)
+    case TypeConstructor.Int8 => hashInt(9)
+    case TypeConstructor.Int16 => hashInt(10)
+    case TypeConstructor.Int32 => hashInt(11)
+    case TypeConstructor.Int64 => hashInt(12)
+    case TypeConstructor.BigInt => hashInt(13)
+    case TypeConstructor.Str => hashInt(14)
+    case TypeConstructor.Regex => hashInt(15)
+    case TypeConstructor.Arrow(arity) =>
+      val h1 = hashInt(arity)
+      val h2 = hashInt(16)
+      hashBytes(h1.appendedAll(h2))
 
-  private def lowerTypeConstructor(tc0: TypeConstructor): Int = tc0 match {
-    case TypeConstructor.Void => 0
-    case TypeConstructor.AnyType => 1
-    case TypeConstructor.Unit => 2
-    case TypeConstructor.Null => 3
-    case TypeConstructor.Bool => 4
-    case TypeConstructor.Char => 5
-    case TypeConstructor.Float32 => 6
-    case TypeConstructor.Float64 => 7
-    case TypeConstructor.BigDecimal => 8
-    case TypeConstructor.Int8 => 9
-    case TypeConstructor.Int16 => 10
-    case TypeConstructor.Int32 => 11
-    case TypeConstructor.Int64 => 12
-    case TypeConstructor.BigInt => 13
-    case TypeConstructor.Str => 14
-    case TypeConstructor.Regex => 15
-    case TypeConstructor.Arrow(arity) => 16 // TODO: Consider args
-    case TypeConstructor.ArrowWithoutEffect(arity) => 17 // TODO: Consider args
-    case TypeConstructor.RecordRowEmpty => 18
-    case TypeConstructor.RecordRowExtend(label) => 19 // TODO: Consider args
-    case TypeConstructor.Record => 20
-    case TypeConstructor.Extensible => 21
-    case TypeConstructor.SchemaRowEmpty => 22
-    case TypeConstructor.SchemaRowExtend(pred) => 23 // TODO: Consider args
-    case TypeConstructor.Schema => 24
-    case TypeConstructor.Sender => 25
-    case TypeConstructor.Receiver => 26
-    case TypeConstructor.Lazy => 27
-    case TypeConstructor.Enum(sym, kind) => 28 // TODO: Consider args
-    case TypeConstructor.Struct(sym, kind) => 29 // TODO: Consider args
-    case TypeConstructor.RestrictableEnum(sym, kind) => 30 // TODO: Consider args
-    case TypeConstructor.Native(clazz) => 31 // TODO: Consider args
-    case TypeConstructor.JvmConstructor(constructor) => 32 // TODO: Consider args
-    case TypeConstructor.JvmMethod(method) => 33
-    case TypeConstructor.JvmField(field) => 34 // TODO: Consider args
-    case TypeConstructor.Array => 35
-    case TypeConstructor.ArrayWithoutRegion => 36
-    case TypeConstructor.Vector => 37
-    case TypeConstructor.Tuple(arity) => 38 // TODO: Consider args
-    case TypeConstructor.Relation(arity) => 39 // TODO: Consider args
-    case TypeConstructor.Lattice(arity) => 40 // TODO: Consider args
-    case TypeConstructor.True => 41
-    case TypeConstructor.False => 42
-    case TypeConstructor.Not => 43
-    case TypeConstructor.And => 44
-    case TypeConstructor.Or => 45
-    case TypeConstructor.Pure => 46
-    case TypeConstructor.Univ => 47
-    case TypeConstructor.Complement => 48
-    case TypeConstructor.Union => 49
-    case TypeConstructor.Intersection => 50
-    case TypeConstructor.Difference => 51
-    case TypeConstructor.SymmetricDiff => 52
-    case TypeConstructor.Effect(sym, kind) => 53 // TODO: Consider args
-    case TypeConstructor.CaseComplement(sym) => 54 // TODO: Consider args
-    case TypeConstructor.CaseUnion(sym) => 55 // TODO: Consider args
-    case TypeConstructor.CaseIntersection(sym) => 56 // TODO: Consider args
-    case TypeConstructor.CaseSymmetricDiff(sym) => 57 // TODO: Consider args
-    case TypeConstructor.CaseSet(syms, enumSym) => 58 // TODO: Consider args
-    case TypeConstructor.Region(sym) => 59 // TODO: Consider args
-    case TypeConstructor.RegionToStar => 60
-    case TypeConstructor.RegionWithoutRegion => 61
-    case TypeConstructor.Error(id, kind) =>
+    case TypeConstructor.ArrowWithoutEffect(arity) =>
+      val h1 = hashInt(arity)
+      val h2 = hashInt(17)
+      hashBytes(h1.appendedAll(h2))
+
+    case TypeConstructor.RecordRowEmpty => hashInt(18)
+    case TypeConstructor.RecordRowExtend(label) =>
+      val h1 = hashLabel(label)
+      val h2 = hashInt(19)
+      hashBytes(h1.appendedAll(h2))
+
+    case TypeConstructor.Record => hashInt(20)
+    case TypeConstructor.Extensible => hashInt(21)
+    case TypeConstructor.SchemaRowEmpty => hashInt(22)
+    case TypeConstructor.SchemaRowExtend(pred) => hashInt(23)
+
+    case TypeConstructor.Schema => hashInt(24)
+    case TypeConstructor.Sender => hashInt(25)
+    case TypeConstructor.Receiver => hashInt(26)
+    case TypeConstructor.Lazy => hashInt(27)
+    case TypeConstructor.Enum(sym, kind) => hashInt(28)
+    case TypeConstructor.Struct(sym, kind) => hashInt(29)
+    case TypeConstructor.RestrictableEnum(sym, kind) => hashInt(30)
+    case TypeConstructor.Native(clazz) => hashInt(31)
+    case TypeConstructor.JvmConstructor(constructor) => hashInt(32)
+    case TypeConstructor.JvmMethod(method) => hashInt(33)
+    case TypeConstructor.JvmField(field) => hashInt(34)
+    case TypeConstructor.Array => hashInt(35)
+    case TypeConstructor.ArrayWithoutRegion => hashInt(36)
+    case TypeConstructor.Vector => hashInt(37)
+    case TypeConstructor.Tuple(arity) =>
+      val h1 = hashInt(arity)
+      val h2 = hashInt(38)
+      hashBytes(h1.appendedAll(h2))
+
+    case TypeConstructor.Relation(arity) => hashInt(39)
+      val h1 = hashInt(arity)
+      val h2 = hashInt(39)
+      hashBytes(h1.appendedAll(h2))
+
+    case TypeConstructor.Lattice(arity) =>
+      val h1 = hashInt(arity)
+      val h2 = hashInt(40)
+      hashBytes(h1.appendedAll(h2))
+
+    case TypeConstructor.True => hashInt(41)
+    case TypeConstructor.False => hashInt(42)
+    case TypeConstructor.Not => hashInt(43)
+    case TypeConstructor.And => hashInt(44)
+    case TypeConstructor.Or => hashInt(45)
+    case TypeConstructor.Pure => hashInt(46)
+    case TypeConstructor.Univ => hashInt(47)
+    case TypeConstructor.Complement => hashInt(48)
+    case TypeConstructor.Union => hashInt(49)
+    case TypeConstructor.Intersection => hashInt(50)
+    case TypeConstructor.Difference => hashInt(51)
+    case TypeConstructor.SymmetricDiff => hashInt(52)
+    case TypeConstructor.Effect(sym, kind) => hashInt(53)
+    case TypeConstructor.CaseComplement(sym) => hashInt(54)
+    case TypeConstructor.CaseUnion(sym) => hashInt(55)
+    case TypeConstructor.CaseIntersection(sym) => hashInt(56)
+    case TypeConstructor.CaseSymmetricDiff(sym) => hashInt(57)
+    case TypeConstructor.CaseSet(syms, enumSym) => hashInt(58)
+    case TypeConstructor.Region(sym) => hashInt(59)
+    case TypeConstructor.RegionToStar => hashInt(60)
+    case TypeConstructor.RegionWithoutRegion => hashInt(61)
+    case TypeConstructor.Error(_, _) =>
       throw InternalCompilerException("Unexpected Error type constructor", SourceLocation.Unknown)
+  }
+
+  private def hashLabel(label0: Name.Label): Array[Byte] = {
+    hashString(label0.name)
   }
 
   private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Array[Byte] = ???
 
   private def hashInt(n: Int): Array[Byte] = {
-    // N.B.: 32-bit integer is 4 bytes.
-    val bytes = ByteBuffer.allocate(4).putInt(n).array()
+    // N.B.: 32-bit integer is 4 bytes, use big-endian to force consistent representation across platforms
+    val bytes = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(n).array()
+    hashBytes(bytes)
+  }
+
+  private def hashString(str: String): Array[Byte] = {
+    // N.B.: Use UTF-8 to force consistent representation across platforms
+    val bytes = str.getBytes(StandardCharsets.UTF_8)
     hashBytes(bytes)
   }
 
   private def hashBytes(bytes: Array[Byte]): Array[Byte] = {
     val md = MessageDigest.getInstance("SHA-256")
     md.update(bytes)
-    md.digest()
-  }
-
-  private def hashByte(byte: Byte): Array[Byte] = {
-    val md = MessageDigest.getInstance("SHA-256")
-    md.update(byte)
     md.digest()
   }
 
