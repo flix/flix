@@ -25,9 +25,9 @@ object flix extends ScalaModule {
     mvn"com.github.scopt::scopt:4.1.0",
     mvn"org.apache.commons:commons-lang3:3.20.0",
     mvn"io.get-coursier::coursier:2.1.24",
-    mvn"org.tomlj:tomlj:1.1.1",            // determines antlr version
+    mvn"org.tomlj:tomlj:1.1.1", // determines antlr version
     mvn"org.antlr:antlr4-runtime:4.11.1",
-    mvn"org.slf4j:slf4j-nop:2.0.17",       // silence JLine logger
+    mvn"org.slf4j:slf4j-nop:2.0.17", // silence JLine logger
     mvn"org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0"
   )
 
@@ -109,9 +109,13 @@ object flix extends ScalaModule {
     )
 
     def forkArgs = Seq("-Xmx3g")
+
     def forkWorkingDir = root
+
     def testSandboxWorkingDir = false
+
     def testParallelism = false
+
     def forkEnv = super.forkEnv() ++ Task.env
   }
 
@@ -141,6 +145,15 @@ object flix extends ScalaModule {
       "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
       "org.scalatest.tools.Runner",
       "-s", "ca.uwaterloo.flix.tools.pkg.PackageManagerSuite", "-o"
+    ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
+  }
+
+  /** Run: ./mill flix.testEffectLockSuite */
+  def testEffectLockSuite = Task {
+    os.proc("java", "-Xmx3g",
+      "-cp", test.runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
+      "org.scalatest.tools.Runner",
+      "-s", "ca.uwaterloo.flix.api.effectlock.EffectLockSuite", "-o"
     ).call(stdout = os.Inherit, stderr = os.Inherit, stdin = os.Inherit, cwd = root, env = Task.env)
   }
 
