@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.TestUtils
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.Suites
 
-class TestHashType extends AnyFunSuite with TestUtils {
-
-}
+class EffectLockSuite extends Suites(
+  new TestEffectSafeUpgrade,
+  new TestHashType,
+  new TestSerialization,
+  new TestUseGraph
+)
