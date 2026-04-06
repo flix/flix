@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.shared.SymUse
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.charset.StandardCharsets
@@ -262,16 +262,62 @@ object HashType {
 
     case TypeConstructor.Error(_, _) =>
       throw InternalCompilerException("Unexpected Error type constructor", SourceLocation.Unknown)
+
+  }
+
+  private def hashKind(kind0: Kind): Array[Byte] = kind0 match {
+    case Kind.Wild =>
+      hashInt(66)
+
+    case Kind.WildCaseSet =>
+      hashInt(67)
+
+    case Kind.Star =>
+      hashInt(68)
+
+    case Kind.Eff =>
+      hashInt(69)
+
+    case Kind.Bool =>
+      hashInt(70)
+
+    case Kind.RecordRow =>
+      hashInt(71)
+
+    case Kind.SchemaRow =>
+      hashInt(72)
+
+    case Kind.Predicate =>
+      hashInt(73)
+
+    case Kind.Jvm =>
+      hashInt(74)
+
+    case Kind.CaseSet(sym) =>
+      // TODO: Hash sym
+      val h1: Array[Byte] = ???
+      val h2 = hashInt(75)
+      hashBytes(h1.appendedAll(h2))
+
+    case Kind.Arrow(k1, k2) =>
+      val h1 = hashKind(k1)
+      val h2 = hashInt(76)
+      val h3 = hashKind(k2)
+      hashBytes(h1.appendedAll(h2).appendedAll(h3))
+
+    case Kind.Error =>
+      throw InternalCompilerException("Unexpected Error kind", SourceLocation.Unknown)
+
   }
 
   private def hashLabel(label0: Name.Label): Array[Byte] = {
     // N.B.: Do not hash the source location of label
-    hashBytes(hashString(label0.name).appendedAll(hashInt(66)))
+    hashBytes(hashString(label0.name).appendedAll(hashInt(77)))
   }
 
   private def hashPred(pred0: Name.Pred): Array[Byte] = {
     // N.B.: Do not hash the source location of predicate
-    hashBytes(hashString(pred0.name).appendedAll(hashInt(67)))
+    hashBytes(hashString(pred0.name).appendedAll(hashInt(78)))
   }
 
   private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Array[Byte] = ???
