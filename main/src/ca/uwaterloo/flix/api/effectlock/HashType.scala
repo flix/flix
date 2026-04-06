@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 object HashType {
@@ -121,8 +122,9 @@ object HashType {
   private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Array[Byte] = ???
 
   private def hashInt(n: Int): Array[Byte] = {
-    // TODO: Do not use toBinaryString, use actual bytes of the int instead.
-    hashBytes(n.toBinaryString.getBytes)
+    // N.B.: 32-bit integer is 4 bytes.
+    val bytes = ByteBuffer.allocate(4).putInt(n).array()
+    hashBytes(bytes)
   }
 
   private def hashBytes(bytes: Array[Byte]): Array[Byte] = {
