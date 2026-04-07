@@ -60,7 +60,6 @@ object PrettyPrinter {
     case TreeKind.ParameterList                 => prettyParameterList(tree)
     case TreeKind.ArgumentList                  => prettyArgumentList(tree)
     case TreeKind.Case                          => prettyCase(tree)
-    // Declarations
     case TreeKind.Decl.Def                      => prettyDef(tree)
     case TreeKind.Decl.Redef                    => prettyDef(tree)
     case TreeKind.Decl.Signature                => prettyDef(tree)
@@ -76,7 +75,6 @@ object PrettyPrinter {
     case TreeKind.Decl.Trait                    => prettyTrait(tree)
     case TreeKind.Decl.Struct                   => prettyStruct(tree)
     case TreeKind.Decl.RestrictableEnum         => prettyEnum(tree)
-    // Expressions
     case TreeKind.Expr.Binary                   => prettyBinary(tree)
     case TreeKind.Expr.Apply                    => prettyApply(tree)
     case TreeKind.Expr.Lambda                   => prettyLambda(tree)
@@ -91,26 +89,70 @@ object PrettyPrinter {
     case TreeKind.Expr.Select                   => prettySelect(tree)
     case TreeKind.Expr.Foreach                  => prettyForeach(tree)
     case TreeKind.Expr.FixpointConstraintSet    => prettyFixpointConstraintSet(tree)
-    // Literals (comma-separated bracket bodies)
     case TreeKind.Expr.LiteralVector            => prettyCommaBracket(tree)
     case TreeKind.Expr.LiteralList              => prettyCommaBracket(tree)
     case TreeKind.Expr.LiteralSet               => prettyCommaBracket(tree)
     case TreeKind.Expr.LiteralMap               => prettyCommaBracket(tree)
     case TreeKind.Expr.LiteralArray             => prettyCommaBracket(tree)
-    // Types
     case TreeKind.Type.Binary                   => prettyBinary(tree)
     case TreeKind.Type.Schema                   => prettyCommaBracket(tree)
     case TreeKind.Type.Extensible               => prettyCommaBracket(tree)
     case TreeKind.Type.Record                   => prettyCommaBracket(tree)
-    // Imports
     case TreeKind.UsesOrImports.UseOrImportList => prettyUseOrImportList(tree)
     case TreeKind.UsesOrImports.Import          => prettyImport(tree)
     case TreeKind.UsesOrImports.Use             => prettyUse(tree)
-    case TreeKind.Expr.RestrictableChoose     => prettyBracket(tree,
-      headerJoin = cs => spaceJoin(cs, Set.empty))
-    case TreeKind.Expr.RestrictableChooseStar => prettyBracket(tree,
-      headerJoin = cs => spaceJoin(cs, Set.empty))
+    case TreeKind.Expr.RestrictableChoose       => prettyRestrictableChoose(tree)
+    case TreeKind.Expr.RestrictableChooseStar   => prettyRestrictableChoose(tree)
+    case TreeKind.Expr.ForMonadic               => prettyFor(tree)
+    case TreeKind.Expr.ForApplicative           => prettyFor(tree)
     case _ => prettyFallback(tree)
+  }
+
+  private def prettyRestrictableChoose(tree: Tree): Fmt =
+    prettyBracket(tree,
+      headerJoin = cs => spaceJoin(cs, Set.empty))
+
+  private def prettyFor(tree: Tree): Fmt = {
+    val children = tree.children.filter {
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    }
+
+    val openIdx = children.indexWhere {
+      case token: Token if token.kind == TokenKind.ParenL => true
+      case _ => false
+    }
+    val closeIdx = children.lastIndexWhere {
+      case token: Token if token.kind == TokenKind.ParenR => true
+      case _ => false
+    }
+
+    if (openIdx < 0 || closeIdx < 0) return prettyFallback(tree)
+
+    val header = children.slice(0, openIdx)
+    val body = children.slice(openIdx + 1, closeIdx)
+    val tail = children.slice(closeIdx + 1, children.length)
+
+    val headerDoc = header.map(prettyChild)
+      .reduceLeftOption(_ <+> _)
+      .getOrElse(empty)
+
+    val bodyDoc = body.foldLeft(empty) {
+      case (acc, token: Token) if token.kind == TokenKind.Semi =>
+        acc <> text(";") <> line
+      case (acc, child) =>
+        acc <> prettyChild(child)
+    }
+
+    val tailDoc = tail.map(prettyChild)
+      .reduceLeftOption(_ <+> _)
+      .getOrElse(empty)
+
+    val tailPart = if (tail.isEmpty) empty else space <> tailDoc
+
+    localLayout(tree) {
+      headerDoc <+> text("(") <> nest(4, line <> bodyDoc) <> line <> text(")") <> tailPart
+    }
   }
 
   private val bracketPairs: List[(TokenKind, TokenKind, String, String)] = List(
@@ -396,11 +438,35 @@ object PrettyPrinter {
       case _ => false
     }
 
-    val inner = parts.map(prettyChild)
-      .reduceLeftOption(_ <+> _)
-      .getOrElse(empty)
+    val arrowIndex = parts.indexWhere {
+      case token: Token if token.kind == TokenKind.ArrowThickR => true
+      case _ => false
+    }
 
-    if (hasCase) inner else text("case") <+> inner
+    if (arrowIndex < 0) {
+      val inner = parts.map(prettyChild)
+        .reduceLeftOption(_ <+> _)
+        .getOrElse(empty)
+      if (hasCase) inner else text("case") <+> inner
+    } else {
+      val header = parts.take(arrowIndex + 1)
+      val body = parts.drop(arrowIndex + 1)
+
+      val headerDoc = {
+        val h = header.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
+        if (hasCase) h else text("case") <+> h
+      }
+
+      if (body.isEmpty) headerDoc
+      else {
+        val bodyDoc = body.map(prettyChild)
+          .reduceLeftOption(_ <|> _)
+          .getOrElse(empty)
+        localLayout(tree) {
+          headerDoc <> nest(4, line <> bodyDoc)
+        }
+      }
+    }
   }
 
   /**
@@ -482,8 +548,13 @@ object PrettyPrinter {
   private def prettyBinary(tree: Tree): Fmt = {
     val parts = tree.children.map(prettyChild)
     if (parts.length == 3) {
+      val isPipe = tree.children(1) match {
+        case t: Tree => leftMostToken(t).exists(_.text == "|>")
+        case tok: Token => tok.text == "|>"
+      }
       localLayout(tree) {
-        parts(0) <+> parts(1) <> line <> parts(2)
+        if (isPipe) parts(0) <> nest(4, line <> parts(1) <+> parts(2))
+        else parts(0) <> line <> parts(1) <+> parts(2)
       }
     } else {
       parts.reduceLeftOption(_ <+> _).getOrElse(empty)
