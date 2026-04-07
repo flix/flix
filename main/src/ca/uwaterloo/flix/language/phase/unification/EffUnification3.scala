@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
@@ -58,7 +58,7 @@ object EffUnification3 {
     *
     * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
     */
-  def unifyAll(eqs0: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
+  def unifyAll(eqs0: List[TypeConstraint.Equality], scope: RegionScope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
     // Performance: Nothing to do if the equation list is empty
     if (eqs0.isEmpty) {
       return Result.Ok(Substitution.empty)
@@ -68,7 +68,7 @@ object EffUnification3 {
     val eqs = ChaosMonkey.chaos(eqs0)
 
     // Add to implicit context.
-    implicit val scopeImplicit: Scope = scope
+    implicit val scopeImplicit: RegionScope = scope
     implicit val renvImplicit: RigidityEnv = renv
 
     // Choose a unique number for each atom.
@@ -116,7 +116,7 @@ object EffUnification3 {
     SortedBimap.from(atoms.toList.zipWithIndex)
 
   /** Returns the union of [[Atom]]s for each [[Type]] in `eqs` using [[Atom.getAtoms]]. */
-  private def getAtomsFromConstraints(eqs: List[TypeConstraint.Equality])(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = {
+  private def getAtomsFromConstraints(eqs: List[TypeConstraint.Equality])(implicit scope: RegionScope, renv: RigidityEnv): SortedSet[Atom] = {
     eqs.foldLeft(SortedSet.empty[Atom]) {
       case (acc, TypeConstraint.Equality(t1, t2, _)) => acc ++ Atom.getAtoms(t1) ++ Atom.getAtoms(t2)
     }
@@ -125,7 +125,7 @@ object EffUnification3 {
   /**
     * Returns the given list of type equations as a list of set equations.
     */
-  private def toEquations(l: List[TypeConstraint.Equality], withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): List[Equation] =
+  private def toEquations(l: List[TypeConstraint.Equality], withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): List[Equation] =
     l.map(e => toEquation(e, withSlack))
 
   /**
@@ -133,7 +133,7 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toEquation(eq: TypeConstraint.Equality, withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
+  private def toEquation(eq: TypeConstraint.Equality, withSlack: Boolean)(implicit scope: RegionScope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
     val TypeConstraint.Equality(tpe1, tpe2, prov) = eq
     Equation.mk(toSetFormula(tpe1)(withSlack = withSlack, scope, renv, m), toSetFormula(tpe2)(withSlack = withSlack, scope, renv, m), prov.loc)
   }
@@ -143,7 +143,7 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] if `t` is not valid.
     */
-  private def toSetFormula(t: Type)(implicit withSlack: Boolean, scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): SetFormula = t match {
+  private def toSetFormula(t: Type)(implicit withSlack: Boolean, scope: RegionScope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): SetFormula = t match {
     case Type.Univ => SetFormula.Univ
     case Type.Pure => SetFormula.Empty
 
@@ -341,7 +341,7 @@ object EffUnification3 {
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
     @tailrec
-    def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
+    def fromType(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym, _), _) => Atom.Eff(sym)
@@ -353,7 +353,7 @@ object EffUnification3 {
     }
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
-    private def assocFromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
+    private def assocFromType(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
       case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
@@ -374,7 +374,7 @@ object EffUnification3 {
       *     false for `ef`)
       *   - `getAtoms(Indexable.Aef[Error]) = Set.empty`
       */
-    def getAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = t match {
+    def getAtoms(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): SortedSet[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
       case Type.Cst(TypeConstructor.Effect(sym, _), _) => SortedSet(Atom.Eff(sym))
@@ -390,7 +390,7 @@ object EffUnification3 {
       * Returns the [[Atom]] of `t` if it is a valid associated [[Atom]] (according to
       * [[Atom.assocFromType]]). Invalid or unrelated types return [[None]].
       */
-    private def getAssocAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
+    private def getAssocAtoms(t: Type)(implicit scope: RegionScope, renv: RigidityEnv): Option[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.VarRigid(sym))
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) =>
         getAssocAtoms(arg).map(Atom.Assoc(sym, _))
@@ -430,7 +430,7 @@ object EffUnification3 {
     }
 
     // We can use an arbitrary scope and renv because we don't do any unification.
-    implicit val scope: Scope = Scope.Top
+    implicit val scope: RegionScope = RegionScope.Top
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 

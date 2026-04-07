@@ -102,7 +102,7 @@ object DesugaredAst {
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class Stm(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Stm(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 

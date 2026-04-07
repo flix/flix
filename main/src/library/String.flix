@@ -28,6 +28,14 @@ pub mod String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
+    /// Throws `StringIndexOutOfBoundsException` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, s: String): Char =
+        charAt(i, s)
+
+    ///
+    /// Returns the character at position `i` in the string `s`.
+    ///
     pub def charAt(i: Int32, s: String): Char = s.charAt(i)
 
     ///

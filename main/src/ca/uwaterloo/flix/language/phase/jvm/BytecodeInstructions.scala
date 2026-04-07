@@ -555,41 +555,6 @@ object BytecodeInstructions {
       SWAP()
   }
 
-  /**
-    * Converts the top of the stack to a string (including null), assuming that
-    * `tpe` accurately represents its type.
-    */
-  def xToString(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Bool)(BackendType.String)))
-    case BackendType.Char =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Char)(BackendType.String)))
-    case BackendType.Int8 =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Int32)(BackendType.String)))
-    case BackendType.Int16 =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Int32)(BackendType.String)))
-    case BackendType.Int32 =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Int32)(BackendType.String)))
-    case BackendType.Int64 =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Int64)(BackendType.String)))
-    case BackendType.Float32 =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Float32)(BackendType.String)))
-    case BackendType.Float64 =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Float64)(BackendType.String)))
-    case BackendType.Reference(_) =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Object)(BackendType.String)))
-
-    case BackendType.Array(BackendType.Bool) => INVOKESTATIC(ClassConstants.Arrays.BoolArrToString)
-    case BackendType.Array(BackendType.Char) => INVOKESTATIC(ClassConstants.Arrays.CharArrToString)
-    case BackendType.Array(BackendType.Int8) => INVOKESTATIC(ClassConstants.Arrays.Int8ArrToString)
-    case BackendType.Array(BackendType.Int16) => INVOKESTATIC(ClassConstants.Arrays.Int16ArrToString)
-    case BackendType.Array(BackendType.Int32) => INVOKESTATIC(ClassConstants.Arrays.Int32ArrToString)
-    case BackendType.Array(BackendType.Int64) => INVOKESTATIC(ClassConstants.Arrays.Int64ArrToString)
-    case BackendType.Array(BackendType.Float32) => INVOKESTATIC(ClassConstants.Arrays.Float32ArrToString)
-    case BackendType.Array(BackendType.Float64) => INVOKESTATIC(ClassConstants.Arrays.Float64ArrToString)
-    case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(ClassConstants.Arrays.DeepToString)
-  }
-
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
@@ -628,60 +593,4 @@ object BytecodeInstructions {
     case Condition.NULL => Condition.NONNULL
   }
 
-  object Util {
-
-    /**
-      * Returns a instructions `[] --> [prefix + "s1, s2, .." + suffix]`.
-      *
-      * @param prefix       `[] -> ["prefixString"]`
-      * @param suffix       `[] -> ["suffixString"]`
-      * @param length       `getNthString` will be called with the range `[0, length[`
-      * @param getNthString `[] -> [si: String]`
-      */
-    def mkString(prefix: Option[Unit => Unit], suffix: Option[Unit => Unit], length: Int, getNthString: Int => Unit)(implicit mv: MethodVisitor): Unit = {
-      val joinMethod = StaticMethod(JvmName.String, "join", mkDescriptor(JvmName.CharSequence.toTpe, BackendType.Array(JvmName.CharSequence.toTpe))(BackendType.String))
-      // [] --> [new String[length]] // Referred to as `elms`.
-      pushInt(length)
-      ANEWARRAY(JvmName.String)
-      // [elms] --> [elms, -1] // Running index referred to as `i`.
-      ICONST_M1()
-      // [elms, -1] --> [elms, length]
-      for (i <- 0 until length) {
-        // [elms, i-1] -> [elms, i]
-        ICONST_1()
-        IADD()
-        // [elms, i] -> [elms, i, elms, i]
-        DUP2()
-        // [elms, i, elms, i] -> [elms, i, elms, i, nth(i)]
-        getNthString(i)
-        // [elms, i, elms, i, nth(i)] -> [elms, i]
-        mv.visitInstruction(Opcodes.AASTORE)
-      }
-      // [elms, length] --> [elms]
-      POP()
-      // [elms] -> [", ", elms]
-      pushString(", ")
-      SWAP()
-      // [", ", elms] --> ["s1, s2, .."]
-      INVOKESTATIC(joinMethod)
-      // ["s1, s2, .."] --> [prefix + "s1, s2, .."]
-      prefix match {
-        case Some(ins) =>
-          ins(())
-          SWAP()
-          INVOKEVIRTUAL(ClassConstants.String.Concat)
-        case None =>
-          nop()
-      }
-      // [prefix + "s1, s2, .."] --> [prefix + "s1, s2, .." + suffix]
-      suffix match {
-        case Some(ins) =>
-          ins(())
-          INVOKEVIRTUAL(ClassConstants.String.Concat)
-        case None =>
-          nop()
-      }
-    }
-
-  }
 }

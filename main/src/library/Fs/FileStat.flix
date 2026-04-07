@@ -19,6 +19,8 @@ pub mod Fs.FileStat {
     use Fs.FileStat
     use Fs.FileSystem
     use Fs.FsLayer.{logPre, logPost}
+    use IoError.IoError
+    use IoError.ErrorKind
 
     ///
     /// Handles the `FileStat` effect of the given function `f`.
@@ -28,7 +30,7 @@ pub mod Fs.FileStat {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileStat) + IO = x ->
         checked_ecast(
             Fs.FileSystem.handle(
-                handleWithFileSystem(f)
+                y -> runWithFileSystem(() -> f(y))
             )(x)
         )
 
@@ -43,8 +45,8 @@ pub mod Fs.FileStat {
     ///
     /// Handles the `FileStat` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - FileStat) + FileSystem = x ->
-        run { f(x) } with handler FileStat {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - FileStat) + FileSystem =
+        run { f() } with handler FileStat {
             def exists(filename, k)           = k(Fs.FileSystem.exists(filename))
             def isDirectory(filename, k)      = k(Fs.FileSystem.isDirectory(filename))
             def isRegularFile(filename, k)    = k(Fs.FileSystem.isRegularFile(filename))
@@ -129,7 +131,7 @@ pub mod Fs.FileStat {
             def size(filename, k) = {
                 logPre("size", filename);
                 let result = FileStat.size(filename);
-                logPost("size", filename, s -> "${s} bytes", result);
+                logPost("size", filename, s -> "${s}", result);
                 k(result)
             }
         }
@@ -217,6 +219,76 @@ pub mod Fs.FileStat {
             def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
             def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
             def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileStat` effect, validating that all file paths
+    /// match at least one of the given glob `patterns`. Rejects paths that do not match
+    /// with a `PermissionDenied` error.
+    ///
+    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
+        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+        run { f() } with handler FileStat {
+            def exists(filename, k)           = k(Result.flatMap(p -> FileStat.exists(p), c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileStat.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileStat.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileStat.isSymbolicLink(p), c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(p -> FileStat.isReadable(p), c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(p -> FileStat.isWritable(p), c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileStat.isExecutable(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
+            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileStat` effect, validating that all file paths
+    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+    /// pattern with a `PermissionDenied` error.
+    ///
+    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
+        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+        run { f() } with handler FileStat {
+            def exists(filename, k)           = k(Result.flatMap(p -> FileStat.exists(p), c(filename)))
+            def isDirectory(filename, k)      = k(Result.flatMap(p -> FileStat.isDirectory(p), c(filename)))
+            def isRegularFile(filename, k)    = k(Result.flatMap(p -> FileStat.isRegularFile(p), c(filename)))
+            def isSymbolicLink(filename, k)   = k(Result.flatMap(p -> FileStat.isSymbolicLink(p), c(filename)))
+            def isReadable(filename, k)       = k(Result.flatMap(p -> FileStat.isReadable(p), c(filename)))
+            def isWritable(filename, k)       = k(Result.flatMap(p -> FileStat.isWritable(p), c(filename)))
+            def isExecutable(filename, k)     = k(Result.flatMap(p -> FileStat.isExecutable(p), c(filename)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), c(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), c(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), c(filename)))
+            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FileStat` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// - Bool ops (`exists`, `isDirectory`, etc.): resolve path; return `Ok(false)` for dangling symlinks.
+    /// - Value ops (`accessTime`, `size`, etc.): resolve path; propagate all errors.
+    /// - `isSymbolicLink`: passed through unchanged (always checks the link itself).
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FileStat) + FileStat =
+        let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+            case Ok(p)                               => op(p)
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
+            case Err(e)                              => Err(e)
+        };
+        run { f() } with handler FileStat {
+            def exists(filename, k)           = k(resolveBool(filename, p -> FileStat.exists(p)))
+            def isDirectory(filename, k)      = k(resolveBool(filename, p -> FileStat.isDirectory(p)))
+            def isRegularFile(filename, k)    = k(resolveBool(filename, p -> FileStat.isRegularFile(p)))
+            def isSymbolicLink(filename, k)   = k(FileStat.isSymbolicLink(filename))
+            def isReadable(filename, k)       = k(resolveBool(filename, p -> FileStat.isReadable(p)))
+            def isWritable(filename, k)       = k(resolveBool(filename, p -> FileStat.isWritable(p)))
+            def isExecutable(filename, k)     = k(resolveBool(filename, p -> FileStat.isExecutable(p)))
+            def accessTime(filename, k)       = k(Result.flatMap(p -> FileStat.accessTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def creationTime(filename, k)     = k(Result.flatMap(p -> FileStat.creationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def modificationTime(filename, k) = k(Result.flatMap(p -> FileStat.modificationTime(p), Fs.FsLayer.resolveRealPath(filename)))
+            def size(filename, k)             = k(Result.flatMap(p -> FileStat.size(p), Fs.FsLayer.resolveRealPath(filename)))
         }
 
 }

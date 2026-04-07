@@ -551,10 +551,10 @@ object Terminator {
           val e3 = visitExp(contexts, exp3, pos)
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-        case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-          val e1 = visitExp(contexts, exp1, ApplyPosition.NonTail)
-          val e2 = visitExp(contexts, exp2, pos)
-          Expr.Stm(e1, e2, tpe, eff, loc)
+        case Expr.Stm(exps, exp, tpe, eff, loc) =>
+          val es = exps.map(visitExp(contexts, _, ApplyPosition.NonTail))
+          val e = visitExp(contexts, exp, pos)
+          Expr.Stm(es, e, tpe, eff, loc)
 
         case Expr.Discard(exp1, eff, loc) =>
           val e = visitExp(contexts, exp1, ApplyPosition.NonTail)

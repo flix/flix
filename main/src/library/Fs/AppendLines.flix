@@ -19,28 +19,10 @@ pub mod Fs.AppendLines {
     use Fs.FileWrite
 
     ///
-    /// Handles the `AppendLines` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `AppendLines` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - AppendLines) + IO = x ->
-        run { f(x) } with handler AppendLines {
-            def appendLines(data, file, k) = k(Fs.FsLayer.appendLines(data, file))
-        }
-
-    ///
-    /// Runs the `AppendLines` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `AppendLines` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - AppendLines) + IO = handle(f)()
-
-    ///
     /// Handles the `AppendLines` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - AppendLines) + FileWrite = x ->
-        run { f(x) } with handler AppendLines {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - AppendLines) + FileWrite =
+        run { f() } with handler AppendLines {
             def appendLines(data, file, k) = k(Fs.FileWrite.appendLines(data, file))
         }
 

@@ -79,7 +79,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
-  test("IllegalEntryPointSignature.01") {
+  test("Test.IllegalRunnableEntryPointArgs.Test.01") {
     val input =
       """
         |@Test
@@ -89,7 +89,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
-  test("IllegalEntryPointSignature.02") {
+  test("Test.IllegalRunnableEntryPointArgs.Test.02") {
     val input =
       """
         |@Test
@@ -99,7 +99,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
-  test("IllegalEntryPointSignature.03") {
+  test("Test.IllegalRunnableEntryPointArgs.Test.03") {
     val input =
       """
         |@Test
@@ -109,7 +109,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
-  test("IllegalEntryPointSignature.04") {
+  test("Test.IllegalRunnableEntryPointArgs.Test.04") {
     val input =
       """
         |@Test
@@ -279,6 +279,21 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibMin)
+    expectError[EntryPointError.IllegalEntryPointEffect](result)
+  }
+
+  test("Test.IllegalEntryPointEffect.Test.04") {
+    val input =
+      """
+        |eff Print {
+        |    pub def println(): Unit
+        |}
+        |
+        |@Test
+        |def foo(): Unit \ Print = Print.println()
+        |
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
@@ -713,5 +728,102 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectSuccess(result)
+  }
+
+  test("Test.IllegalExportFunction.01") {
+    val input =
+      """
+        |mod Mod { @Export def id(x: Int32): Int32 = x }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.NonPublicExport](result)
+  }
+
+  test("Test.IllegalExportFunction.02") {
+    val input =
+      """
+        |@Export pub def id(x: Int32): Int32 = x
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalExportNamespace](result)
+  }
+
+  test("Test.IllegalExportFunction.03") {
+    val input =
+      """
+        |mod Mod { @Export pub def <><(x: Int32, _y: Int32): Int32 = x }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalExportName](result)
+  }
+
+  test("Test.IllegalExportFunction.04") {
+    val input =
+      """
+        |eff Print
+        |def println(x: t): t \ Print = ???()
+        |mod Mod { @Export pub def id(x: Int32): Int32 \ Print = println(x) }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointEffect](result)
+  }
+
+  test("Test.IllegalExportFunction.05") {
+    val input =
+      """
+        |enum Option[t] {
+        |  case Some(t)
+        |  case None
+        |}
+        |mod Mod { @Export pub def id(x: Int32): Option[Int32] = Some(x) }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalExportType](result)
+  }
+
+  test("Test.IllegalExportFunction.06") {
+    val input =
+      """
+        |enum Option[t] {
+        |  case Some(t)
+        |  case None
+        |}
+        |mod Mod { @Export pub def id(x: Int32, _y: Option[Int32]): Int32 = x }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalExportType](result)
+  }
+
+  test("Test.IllegalExportFunction.07") {
+    val input =
+      """
+        |mod Mod { @Export pub def id[t](x: t): t = x }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
+  }
+
+  test("Test.IllegalExportFunction.08") {
+    val input =
+      """
+        |struct S[t, r] {
+        |    v: t
+        |}
+        |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
+  }
+
+  test("Test.IllegalExportFunction.09") {
+    val input =
+      """
+        |struct S[t, r] {
+        |    v: t
+        |}
+        |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[EntryPointError.IllegalEntryPointTypeVariables](result)
   }
 }

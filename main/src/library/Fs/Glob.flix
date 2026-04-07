@@ -41,8 +41,8 @@ pub mod Fs.Glob {
     ///
     /// Handles the `Glob` effect of the given function `f` using the `FileSystem` effect.
     ///
-    pub def handleWithFileSystem(f: a -> b \ ef): a -> b \ (ef - Glob) + FileSystem = x ->
-        run { f(x) } with handler Glob {
+    pub def runWithFileSystem(f: Unit -> a \ ef): a \ (ef - Glob) + FileSystem =
+        run { f() } with handler Glob {
             def glob(base, pattern, k) = k(Fs.FileSystem.glob(base, pattern))
         }
 
@@ -72,6 +72,71 @@ pub mod Fs.Glob {
         let r = p -> Fs.FsLayer.resolve(baseDir, p);
         run { f() } with handler Glob {
             def glob(base, pattern, k) = k(Glob.glob(r(base), pattern))
+        }
+
+    ///
+    /// Middleware that intercepts the `Glob` effect, validating that all base paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+        }
+
+    ///
+    /// Middleware that intercepts the `Glob` effect, validating that all base paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+        }
+
+    ///
+    /// Middleware that intercepts the `Glob` effect, validating that all base paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+        }
+
+    ///
+    /// Middleware that intercepts the `Glob` effect, validating that all base paths
+    /// match at least one of the given glob `patterns`. Rejects paths that do not match
+    /// with a `PermissionDenied` error.
+    ///
+    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+        }
+
+    ///
+    /// Middleware that intercepts the `Glob` effect, validating that all base paths
+    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+    /// pattern with a `PermissionDenied` error.
+    ///
+    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Result.flatMap(p -> Glob.glob(p, pattern), c(base)))
+        }
+
+    ///
+    /// Middleware that intercepts the `Glob` effect, resolving all base paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - Glob) + Glob =
+        let resolve = p -> Fs.FsLayer.resolveRealPathOrSelf(p);
+        run { f() } with handler Glob {
+            def glob(base, pattern, k) = k(Glob.glob(resolve(base), pattern))
         }
 
 }

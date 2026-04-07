@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.language.ast.shared.{QualifiedSym, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{QualifiedSym, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Name, RigidityEnv, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 
@@ -122,7 +122,7 @@ object MagicDefCompleter {
   private def expMatchesLastArgType(tpe: Type, spec: TypedAst.Spec, root: TypedAst.Root)(implicit flix: Flix): Boolean = {
     spec.fparams.lastOption match {
       case Some(lastParam) =>
-        ConstraintSolver2.fullyUnify(tpe, lastParam.tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined
+        ConstraintSolver2.fullyUnify(tpe, lastParam.tpe, RegionScope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined
       case None => false
     }
   }

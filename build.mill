@@ -6,7 +6,7 @@ import mill.scalalib.Assembly.*
 
 object flix extends ScalaModule {
 
-  def scalaVersion = "2.13.17"
+  def scalaVersion = "2.13.18"
 
   // moduleDir resolves to <root>/flix/ (module name appended).
   // Our sources live at <root>/main/src, so navigate up one level.
@@ -18,17 +18,17 @@ object flix extends ScalaModule {
 
   def mvnDeps = Seq(
     mvn"org.java-websocket:Java-WebSocket:1.6.0",
-    mvn"org.jline:jline:3.30.6",
+    mvn"org.jline:jline:3.30.9",
     mvn"org.json4s::json4s-native:4.0.7",
-    mvn"org.ow2.asm:asm:9.8",
+    mvn"org.ow2.asm:asm:9.9.1",
     mvn"com.github.rjeschke:txtmark:0.13",
     mvn"com.github.scopt::scopt:4.1.0",
-    mvn"org.apache.commons:commons-lang3:3.18.0",
+    mvn"org.apache.commons:commons-lang3:3.20.0",
     mvn"io.get-coursier::coursier:2.1.24",
     mvn"org.tomlj:tomlj:1.1.1",            // determines antlr version
     mvn"org.antlr:antlr4-runtime:4.11.1",
-    mvn"org.slf4j:slf4j-nop:2.0.13",       // silence JLine logger
-    mvn"org.eclipse.lsp4j:org.eclipse.lsp4j:0.24.0"
+    mvn"org.slf4j:slf4j-nop:2.0.17",       // silence JLine logger
+    mvn"org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0"
   )
 
   def scalacOptions = Seq(
@@ -104,8 +104,8 @@ object flix extends ScalaModule {
     def sources = Task.Sources(flix.root / "main" / "test")
 
     def mvnDeps = Seq(
-      mvn"org.scalatest::scalatest:3.2.19",
-      mvn"org.scala-lang.modules::scala-xml:2.1.0",
+      mvn"org.scalatest::scalatest:3.2.20",
+      mvn"org.scala-lang.modules::scala-xml:2.4.0",
     )
 
     def forkArgs = Seq("-Xmx3g")

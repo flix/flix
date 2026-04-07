@@ -14,6 +14,7 @@ target
 .bloop
 crash_report_*.txt
 .DS_Store
+.bsp/
 
 # IntelliJ IDEA
 # Ignore most IDEA files, but include inspections

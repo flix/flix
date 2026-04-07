@@ -603,6 +603,7 @@ object Main {
         .children(
           arg[Int]("port").action((port, c) => c.copy(command = Command.VSCodeLsp(port)))
             .required()
+            .text("the port number to listen on.")
         )
 
       cmd("release").text("  releases a new version to GitHub.")

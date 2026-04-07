@@ -57,6 +57,7 @@ class StandardLibrarySuite extends AnyFunSuite {
     case ex: Throwable =>
       // We create a fictitious test to ensure that something shows up.
       test("StandardLibrary -- COMPILATION FAILED.") {
+        ex.printStackTrace()
         fail(ex)
       }
   }

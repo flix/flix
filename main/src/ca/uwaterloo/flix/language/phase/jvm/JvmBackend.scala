@@ -18,10 +18,12 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType}
+import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType, SourceLocation}
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
+
 
 object JvmBackend {
 
@@ -63,11 +65,12 @@ object JvmBackend {
     }.map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.jvmName, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = root.enums.values.flatMap(JvmOps.getTagsOf).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val tagClasses = root.enums.values.flatMap(JvmOps.getTagsOf).toList.distinctBy(_.jvmName).map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
+    val extTaggedAbstractClass = List(JvmClass(BackendObjType.ExtTagged.jvmName, BackendObjType.ExtTagged.genByteCode()))
     val extensibleTagClasses = JvmOps.getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val tupleClasses = JvmOps.getTupleTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
-    val structClasses = root.structs.values.map(JvmOps.getStructType).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val structClasses = root.structs.values.map(JvmOps.getStructType).toList.distinctBy(_.jvmName).map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
 
     val recordInterfaces = List(JvmClass(BackendObjType.Record.jvmName, BackendObjType.Record.genByteCode()))
     val recordEmptyClasses = List(JvmClass(BackendObjType.RecordEmpty.jvmName, BackendObjType.RecordEmpty.genByteCode()))
@@ -75,7 +78,7 @@ object JvmBackend {
 
     val lazyClasses = JvmOps.getLazyTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
-    val anonClasses = GenAnonymousClasses.gen(root.anonClasses)
+    val anonClasses = GenAnonymousClasses.gen(root.anonClasses.distinctBy(_.name))
 
     val unitClass = List(JvmClass(BackendObjType.Unit.jvmName, BackendObjType.Unit.genByteCode()))
 
@@ -117,6 +120,7 @@ object JvmBackend {
       closureAbstractClasses,
       taggedAbstractClass,
       tagClasses,
+      extTaggedAbstractClass,
       extensibleTagClasses,
       tupleClasses,
       structClasses,
@@ -151,6 +155,13 @@ object JvmBackend {
       effectClasses,
       resumptionWrappers
     ).flatten
+
+    // Check for duplicate JVM class names.
+    val duplicates = allClasses.groupBy(_.name).collect { case (name, classes) if classes.length > 1 => name }
+    if (duplicates.nonEmpty) {
+      val names = duplicates.map(_.toInternalName).mkString(", ")
+      throw InternalCompilerException(s"Duplicate JVM class names: $names", SourceLocation.Unknown)
+    }
 
     val classMap = allClasses.map(clazz => clazz.name -> clazz).toMap
 

@@ -206,7 +206,7 @@ object Summary {
     case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Region(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
-    case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.Stm(exps, exp, _, _, _) => (exps :+ exp).map(countCheckedEcasts).sum
     case Expr.Discard(exp, _, _) => countCheckedEcasts(exp)
     case Expr.Match(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.MatchRule(_, guard, exp, loc) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)

@@ -112,80 +112,27 @@ mod TestMutList {
 
     @Test
     def get01(): Unit \ Assert = region rc {
-        let r = run MutList.get(0, MutList.empty(rc)) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index 0 is out of bounds for MutList of length 0", r)
+        let l = MutList.empty(rc);
+        MutList.push("item", l);
+        assertEq(expected = "item", MutList.get(0, l))
     }
 
     @Test
     def get02(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push("item", l);
-        let r = run MutList.get(0, l) with handler OutOfBounds {
-            def outOfBounds(_, _) = "error"
-        };
-        assertEq(expected = "item", r)
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 2));
+        assertEq(expected = "item 1", MutList.get(1, l))
     }
 
     @Test
     def get03(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push("item", l);
-        let r = run MutList.get(1, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index 1 is out of bounds for MutList of length 1", r)
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 4));
+        assertEq(expected = "item 3", MutList.get(3, l))
     }
 
     @Test
     def get04(): Unit \ Assert = region rc {
-        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 2));
-
-        let r = run MutList.get(1, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "item 1", r)
-    }
-
-    @Test
-    def get05(): Unit \ Assert = region rc {
-        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 4));
-
-        let r = run MutList.get(3, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "item 3", r)
-    }
-
-    @Test
-    def get06(): Unit \ Assert = region rc {
         let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
-
-        let r = run MutList.get(30, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "item 30", r)
-    }
-
-    @Test
-    def get07(): Unit \ Assert = region rc {
-        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
-
-        let r = run MutList.get(-30, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index -30 is out of bounds for MutList of length 42", r)
-    }
-
-    @Test
-    def get08(): Unit \ Assert = region rc {
-        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
-
-        let r = run MutList.get(50, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = msg
-        };
-        assertEq(expected = "index 50 is out of bounds for MutList of length 42", r)
+        assertEq(expected = "item 30", MutList.get(30, l))
     }
 
 
@@ -195,97 +142,33 @@ mod TestMutList {
 
     @Test
     def put01(): Unit \ Assert = region rc {
-        let error = Ref.fresh(rc, None);
-        let l = MutList.empty(rc);
-
-        run MutList.put("new item", 0, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
-        };
-        assertEq(expected = Some("index 0 is out of bounds for MutList of length 0"), Ref.get(error))
-    }
-
-    @Test
-    def put02(): Unit \ Assert = region rc {
-        let error = Ref.fresh(rc, None);
         let l = MutList.empty(rc);
         MutList.push("item", l);
-
-        run MutList.put("new item", 0, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
-        };
-        assertEq(expected = None, Ref.get(error));
+        MutList.put("new item", 0, l);
         assertEq(expected = Some("new item"), MutList.nth(0, l))
     }
 
     @Test
-    def put03(): Unit \ Assert = region rc {
-        let error = Ref.fresh(rc, None);
-        let l = MutList.empty(rc);
-        MutList.push("item", l);
-
-        run MutList.put("new item", 1, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
-        };
-        assertEq(expected = Some("index 1 is out of bounds for MutList of length 1"), Ref.get(error))
-    }
-
-    @Test
-    def put04(): Unit \ Assert = region rc {
-        let error = Ref.fresh(rc, None);
+    def put02(): Unit \ Assert = region rc {
         let l = MutList.range(rc, 0, 2);
-
-        run MutList.put(1234, 1, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
-        };
-        assertEq(expected = None, Ref.get(error));
+        MutList.put(1234, 1, l);
         assertEq(expected = Some(1234), MutList.nth(1, l))
     }
 
     @Test
-    def put05(): Unit \ Assert = region rc {
-        let error = Ref.fresh(rc, None);
+    def put03(): Unit \ Assert = region rc {
         let l = MutList.range(rc, 0, 4);
-
-        run MutList.put(1234, 3, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
-        };
-        assertEq(expected = None, Ref.get(error));
+        MutList.put(1234, 3, l);
         assertEq(expected = Some(1234), MutList.nth(3, l))
     }
 
     @Test
-    def put06(): Unit \ Assert = region rc {
-        let error = Ref.fresh(rc, None);
+    def put04(): Unit \ Assert = region rc {
         let l = MutList.range(rc, 0, 42);
-
-        run MutList.put(1234, 30, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
-        };
-        assertEq(expected = None, Ref.get(error));
+        MutList.put(1234, 30, l);
         assertEq(expected = Some(1234), MutList.nth(30, l))
     }
 
-    @Test
-    def put07(): Unit \ Assert = region rc {
-        let error = Ref.fresh(rc, None);
-        let l = MutList.range(rc, 0, 42);
-
-        run MutList.put(1234, -30, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
-        };
-        assertEq(expected = Some("index -30 is out of bounds for MutList of length 42"), Ref.get(error))
-    }
-
-    @Test
-    def put08(): Unit \ Assert = region rc {
-        let error = Ref.fresh(rc, None);
-        let l = MutList.range(rc, 0, 42);
-
-        run MutList.put(1234, 50, l) with handler OutOfBounds {
-            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
-        };
-        assertEq(expected = Some("index 50 is out of bounds for MutList of length 42"), Ref.get(error))
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////

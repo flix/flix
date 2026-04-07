@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{RegionScope, VarText}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.EffectProvenance.BFSColor.{Black, Grey, White}
@@ -174,7 +174,7 @@ object EffectProvenance {
     * @param constrs0 the list of type constraints to analyze
     * @return a list of conflicts if conflicts could be found, None otherwise
     */
-  def getErrors(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv): Option[List[EffConflicted]] = {
+  def getErrors(constrs0: List[TypeConstraint])(implicit scope: RegionScope, renv: RigidityEnv): Option[List[EffConflicted]] = {
     val graph = buildGraph(constrs0)
     graph.flatMap(findErrorsInGraph)
   }
@@ -270,7 +270,7 @@ object EffectProvenance {
     * @param constraints the type constraints to analyze
     * @return Some(graph) if one or more edges could be created, otherwise None
     */
-  private def buildGraph(constraints: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv): Option[Graph] = {
+  private def buildGraph(constraints: List[TypeConstraint])(implicit scope: RegionScope, renv: RigidityEnv): Option[Graph] = {
     var flow: List[Edge] = List()
     var v: Set[Vertex] = Set.empty
     constraints.foreach {
@@ -401,7 +401,7 @@ object EffectProvenance {
     * @param constLoc the constraint location from where the type was encountered
     * @return the list of vertices representing this type
     */
-  private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: Scope, renv: RigidityEnv): List[Vertex] = tpe match {
+  private def toVertex(tpe: Type, constLoc: SourceLocation, vtpe: NodeType)(implicit scope: RegionScope, renv: RigidityEnv): List[Vertex] = tpe match {
     case Type.Var(sym, _) => renv.get(sym) match {
       case Rigidity.Flexible => List(VarVertex(sym))
       case Rigidity.Rigid => List(RigidVarVertex(sym, constLoc))

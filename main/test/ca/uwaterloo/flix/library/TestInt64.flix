@@ -1164,6 +1164,19 @@ mod TestInt64 {
     def clampToInt3207(): Unit \ Assert = assertEq(expected = -100, Int64.clampToInt32(min = -100, max = 100, Int64.minValue()))
 
     /////////////////////////////////////////////////////////////////////////////
+    // truncateToInt32                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToInt3201(): Unit \ Assert = assertEq(expected = 42, Int64.truncateToInt32(42i64))
+
+    @Test
+    def truncateToInt3202(): Unit \ Assert = assertEq(expected = 0, Int64.truncateToInt32(4294967296i64))
+
+    @Test
+    def truncateToInt3203(): Unit \ Assert = assertEq(expected = -1, Int64.truncateToInt32(-1i64))
+
+    /////////////////////////////////////////////////////////////////////////////
     // longValue                                                               //
     /////////////////////////////////////////////////////////////////////////////
 

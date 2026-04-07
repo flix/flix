@@ -206,4 +206,5 @@ object KindError {
          |""".stripMargin
     }
   }
+
 }

@@ -26,28 +26,10 @@ pub mod Fs.MoveFile {
         Fs.MoveFile.moveWith(src, dst, Set.empty())
 
     ///
-    /// Handles the `MoveFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `MoveFile` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - MoveFile) + IO = x ->
-        run { f(x) } with handler MoveFile {
-            def moveWith(src, dst, opts, k) = k(Fs.FsLayer.moveWith(src, dst, opts))
-        }
-
-    ///
-    /// Runs the `MoveFile` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `MoveFile` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - MoveFile) + IO = handle(f)()
-
-    ///
     /// Handles the `MoveFile` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - MoveFile) + FileWrite = x ->
-        run { f(x) } with handler MoveFile {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - MoveFile) + FileWrite =
+        run { f() } with handler MoveFile {
             def moveWith(src, dst, opts, k) = k(Fs.FileWrite.moveWith(src, dst, opts))
         }
 

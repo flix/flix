@@ -1,7 +1,7 @@
 mod TestLogger {
     use Sys.Console
     use Assert.assertEq
-    use Logger.{log, info, fatal, warn, trace, debug, runWithConsole}
+    use Logger.{log, info, fatal, warn, trace, debug, runWithStdOut}
 
     /////////////////////////////////////////////////////////////////////////////
     // Console                                                                 //
@@ -15,7 +15,7 @@ mod TestLogger {
         let res = run {
             Logger.log(s, m);
             ""
-        } with runWithConsole
+        } with runWithStdOut
         with consoleHandlerStub;
         let expected = "${RichString.toString(RichString.bold(RichString.red("[Fatal]")))} Testing a simple string";
         Assert.assertEq(expected="Logging to Console: " + expected, res)

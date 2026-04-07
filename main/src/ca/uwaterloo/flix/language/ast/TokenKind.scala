@@ -60,7 +60,6 @@ sealed trait TokenKind {
       case TokenKind.DebugInterpolator => "<debug-interpolator>"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
-      case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
@@ -197,12 +196,14 @@ sealed trait TokenKind {
     case _ => false
   }
 
-  /** Returns `true` if this token is a doc, line or block comment. */
-  def isComment: Boolean = this match {
+  /** Returns `true` if this token is a doc comment. */
+  def isCommentDoc: Boolean = this match {
     case TokenKind.CommentDoc => true
-    case _ if this.isCommentNonDoc => true
     case _ => false
   }
+
+  /** Returns `true` if this token is a doc, line or block comment. */
+  def isComment: Boolean = this.isCommentDoc || this.isCommentNonDoc
 
   /** Returns `true` if this token is a keyword. */
   def isKeyword: Boolean = this match {
@@ -403,7 +404,6 @@ sealed trait TokenKind {
     case TokenKind.BuiltIn => true
     case TokenKind.CurlyL => true
     case TokenKind.DebugInterpolator => true
-    case TokenKind.DotDotDot => true
     case TokenKind.HashBar => true
     case TokenKind.HashCurlyL => true
     case TokenKind.HashParenL => true
@@ -489,6 +489,38 @@ sealed trait TokenKind {
     case TokenKind.KeywordLet     => true
     case TokenKind.KeywordForeach => true
     case _ => false
+  }
+
+  /**
+    * Returns `true` if this token can follow a binary operator.
+    *
+    * Note: This is only used for error-recovery, not for parsing itself.
+    * It determines whether a binary operator could be missing between two expressions.
+    *
+    * Returns `true` e.g. for `NameLowercase`:
+    *   x y   // 'y' can follow a binary operator, so a missing operator is inferred
+    *
+    * Returns `false` e.g. for `CurlyL`:
+    *   x { }  // '{' cannot follow a binary operator, so no inference is attempted
+    */
+  def canFollowBinaryOperator: Boolean = this match {
+    case TokenKind.NameLowercase                => true
+    case TokenKind.NameUppercase                => true
+    case TokenKind.NameMath                     => true
+    case TokenKind.LiteralInt                   => true
+    case TokenKind.LiteralInt8                  => true
+    case TokenKind.LiteralInt16                 => true
+    case TokenKind.LiteralInt32                 => true
+    case TokenKind.LiteralInt64                 => true
+    case TokenKind.LiteralBigInt                => true
+    case TokenKind.LiteralFloat                 => true
+    case TokenKind.LiteralFloat32               => true
+    case TokenKind.LiteralFloat64               => true
+    case TokenKind.LiteralBigDecimal            => true
+    case TokenKind.LiteralChar                  => true
+    case TokenKind.LiteralString                => true
+    case TokenKind.LiteralStringInterpolationL  => true
+    case _                                      => false
   }
 
   /** Returns `true` if this token can validly appear as the first token of a type. */
@@ -721,8 +753,6 @@ object TokenKind {
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
-
-  case object DotDotDot extends TokenKind
 
   case object DotWhiteSpace extends TokenKind
 

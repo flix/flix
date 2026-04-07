@@ -284,6 +284,24 @@ pub mod Float32 {
             Float.valueOf(clamp(min = minf32, max = maxf32, x)).longValue()
 
     ///
+    /// Convert `x` to an Int32 by truncation towards zero.
+    ///
+    /// Returns 0 if `x` is NaN. Saturates to `Int32.minValue()` or `Int32.maxValue()`
+    /// if `x` is out of range or infinite.
+    ///
+    pub def truncateToInt32(x: Float32): Int32 =
+        Float.valueOf(x).intValue()
+
+    ///
+    /// Convert `x` to an Int64 by truncation towards zero.
+    ///
+    /// Returns 0 if `x` is NaN. Saturates to `Int64.minValue()` or `Int64.maxValue()`
+    /// if `x` is out of range or infinite.
+    ///
+    pub def truncateToInt64(x: Float32): Int64 =
+        Float.valueOf(x).longValue()
+
+    ///
     /// Returns the absolute value of `x`.
     ///
     pub def abs(x: Float32): Float32 =

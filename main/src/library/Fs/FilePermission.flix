@@ -19,6 +19,8 @@ pub mod Fs.FilePermission {
     use Fs.FilePermission
     use Fs.FileStat
     use Fs.FsLayer.{logPre, logPost}
+    use IoError.IoError
+    use IoError.ErrorKind
 
     ///
     /// Handles the `FilePermission` effect of the given function `f`.
@@ -29,9 +31,9 @@ pub mod Fs.FilePermission {
         checked_ecast(
             Fs.FileSystem.handle(
                 y -> checked_ecast(
-                    Fs.FileStat.handleWithFileSystem(
-                        handleWithFileStat(f)
-                    )(y)
+                    Fs.FileStat.runWithFileSystem(
+                        () -> runWithFileStat(() -> f(y))
+                    )
                 )
             )(x)
         )
@@ -47,8 +49,8 @@ pub mod Fs.FilePermission {
     ///
     /// Handles the `FilePermission` effect of the given function `f` using the `FileStat` effect.
     ///
-    pub def handleWithFileStat(f: a -> b \ ef): a -> b \ (ef - FilePermission) + FileStat = x ->
-        run { f(x) } with handler FilePermission {
+    pub def runWithFileStat(f: Unit -> a \ ef): a \ (ef - FilePermission) + FileStat =
+        run { f() } with handler FilePermission {
             def isReadable(filename, k)  = k(Fs.FileStat.isReadable(filename))
             def isWritable(filename, k)  = k(Fs.FileStat.isWritable(filename))
             def isExecutable(filename, k) = k(Fs.FileStat.isExecutable(filename))
@@ -94,6 +96,89 @@ pub mod Fs.FilePermission {
             def isReadable(filename, k)   = k(FilePermission.isReadable(r(filename)))
             def isWritable(filename, k)   = k(FilePermission.isWritable(r(filename)))
             def isExecutable(filename, k) = k(FilePermission.isExecutable(r(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// resolve within the given `chrootDir`. Rejects paths that escape the chroot with
+    /// a `PermissionDenied` error.
+    ///
+    pub def withChroot(chrootDir: String, f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.chroot(chrootDir, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// resolve within one of the given `allowedDirs`. Rejects paths outside the
+    /// allow list with a `PermissionDenied` error.
+    ///
+    pub def withAllowList(allowedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.allowList(allowedDirs, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// do not resolve within any of the given `deniedDirs`. Rejects paths inside a
+    /// denied directory with a `PermissionDenied` error.
+    ///
+    pub def withDenyList(deniedDirs: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.denyList(deniedDirs, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// match at least one of the given glob `patterns`. Rejects paths that do not match
+    /// with a `PermissionDenied` error.
+    ///
+    pub def withAllowGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.allowGlob(patterns, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, validating that all file paths
+    /// do not match any of the given glob `patterns`. Rejects paths that match a denied
+    /// pattern with a `PermissionDenied` error.
+    ///
+    pub def withDenyGlob(patterns: Nel[String], f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let c = p -> Fs.FsLayer.denyGlob(patterns, p);
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(Result.flatMap(p -> FilePermission.isReadable(p), c(filename)))
+            def isWritable(filename, k)   = k(Result.flatMap(p -> FilePermission.isWritable(p), c(filename)))
+            def isExecutable(filename, k) = k(Result.flatMap(p -> FilePermission.isExecutable(p), c(filename)))
+        }
+
+    ///
+    /// Middleware that intercepts the `FilePermission` effect, resolving all file paths
+    /// to their real filesystem targets by following symlinks.
+    ///
+    /// Bool ops (`isReadable`, `isWritable`, `isExecutable`): resolve path; return `Ok(false)` for dangling symlinks.
+    ///
+    pub def withFollowLinks(f: Unit -> a \ ef): a \ (ef - FilePermission) + FilePermission =
+        let resolveBool = (path, op) -> match Fs.FsLayer.resolveRealPath(path) {
+            case Ok(p)                               => op(p)
+            case Err(IoError(ErrorKind.NotFound, _)) => Ok(false)
+            case Err(e)                              => Err(e)
+        };
+        run { f() } with handler FilePermission {
+            def isReadable(filename, k)   = k(resolveBool(filename, p -> FilePermission.isReadable(p)))
+            def isWritable(filename, k)   = k(resolveBool(filename, p -> FilePermission.isWritable(p)))
+            def isExecutable(filename, k) = k(resolveBool(filename, p -> FilePermission.isExecutable(p)))
         }
 
 }

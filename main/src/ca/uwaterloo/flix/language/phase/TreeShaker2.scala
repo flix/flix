@@ -82,11 +82,14 @@ object TreeShaker2 {
     case Expr.JumpTo(_, _, _, _) =>
       Set.empty
 
+    case Expr.Switch(exp, _, cases, defaultExp, _, _, _) =>
+      visitExp(exp) ++ visitExps(cases.map(_._2)) ++ visitExp(defaultExp)
+
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foldRight(visitExp(exp))((e, acc) => visitExp(e) ++ acc)
 
     case Expr.Region(_, exp, _, _, _) =>
       visitExp(exp)

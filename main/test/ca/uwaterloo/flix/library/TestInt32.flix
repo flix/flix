@@ -1196,6 +1196,45 @@ mod TestInt32 {
     def clampToInt1607(): Unit \ Assert = assertEq(expected = -100i16, Int32.clampToInt16(min = -100i16, max = 100i16, Int32.minValue()))
 
     /////////////////////////////////////////////////////////////////////////////
+    // truncateToInt8                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToInt801(): Unit \ Assert = assertEq(expected = 42i8, Int32.truncateToInt8(42))
+
+    @Test
+    def truncateToInt802(): Unit \ Assert = assertEq(expected = 1i8, Int32.truncateToInt8(257))
+
+    @Test
+    def truncateToInt803(): Unit \ Assert = assertEq(expected = 0i8, Int32.truncateToInt8(0))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // truncateToInt16                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToInt1601(): Unit \ Assert = assertEq(expected = 42i16, Int32.truncateToInt16(42))
+
+    @Test
+    def truncateToInt1602(): Unit \ Assert = assertEq(expected = 1i16, Int32.truncateToInt16(65537))
+
+    @Test
+    def truncateToInt1603(): Unit \ Assert = assertEq(expected = 0i16, Int32.truncateToInt16(0))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // truncateToChar                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToChar01(): Unit \ Assert = assertEq(expected = 'A', Int32.truncateToChar(65))
+
+    @Test
+    def truncateToChar02(): Unit \ Assert = assertEq(expected = 'A', Int32.truncateToChar(65601))
+
+    @Test
+    def truncateToChar03(): Unit \ Assert = assertEq(expected = '\u0000', Int32.truncateToChar(0))
+
+    /////////////////////////////////////////////////////////////////////////////
     // intValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

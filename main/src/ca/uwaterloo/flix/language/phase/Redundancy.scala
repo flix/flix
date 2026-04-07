@@ -485,16 +485,13 @@ object Redundancy {
       val us3 = visitExp(exp3, env0, rc)
       us1 ++ us2 ++ us3
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      val us1 = exps.foldLeft(Used.empty)((acc, e) => acc ++ visitExp(e, env0, rc))
+      val us2 = visitExp(exp, env0, rc)
 
       // Check for useless pure expressions.
-      if (isUselessExpression(exp1)) {
-        (us1 ++ us2) + UselessExpression(exp1.loc)
-      } else {
-        us1 ++ us2
-      }
+      val useless = exps.filter(isUselessExpression).foldLeft(Used.empty)((acc, e) => acc + UselessExpression(e.loc))
+      us1 ++ us2 ++ useless
 
     case Expr.Discard(exp, _, _) =>
       val us = visitExp(exp, env0, rc)
@@ -712,20 +709,17 @@ object Redundancy {
             visitExp(exp, env0, rc)
       }
 
-    case Expr.UncheckedCast(exp, _, declaredEff, _, _, loc) =>
-      declaredEff match {
-        // Don't capture redundant purity casts if there's also a set effect
-        case Some(eff) =>
-          (eff, exp.eff) match {
-            case (Type.Pure, Type.Pure) =>
-              visitExp(exp, env0, rc) + RedundantUncheckedEffectCast(loc)
-            case (Type.Var(eff1, _), Type.Var(eff2, _))
-              if eff1 == eff2 =>
-              visitExp(exp, env0, rc) + RedundantUncheckedEffectCast(loc)
-            case _ => visitExp(exp, env0, rc)
-          }
-        case _ => visitExp(exp, env0, rc)
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val usedExp = visitExp(exp, env0, rc)
+      val typeError = declaredType match {
+        case Some(_) if exp.tpe == tpe => Used.empty + RedundantUncheckedTypeCast(exp.tpe, loc)
+        case _ => Used.empty
       }
+      val effError = declaredEff match {
+        case Some(_) if exp.eff == eff => Used.empty + RedundantUncheckedEffectCast(exp.eff, loc)
+        case _ => Used.empty
+      }
+      usedExp ++ typeError ++ effError
 
     case Expr.Unsafe(exp, runEff, _, _, _, loc) =>
       (runEff, exp.eff) match {

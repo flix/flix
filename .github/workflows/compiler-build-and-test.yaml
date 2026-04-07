@@ -23,4 +23,5 @@ jobs:
         run: ./mill flix.compile
       - name: Run tests with timeout
         timeout-minutes: 20
-        run: ./mill flix.test
+        # ScalaTest flags: -o = stdout reporter, C = suppress TestSucceeded, O = suppress SuiteCompleted
+        run: ./mill flix.test.testForked "-oCO"

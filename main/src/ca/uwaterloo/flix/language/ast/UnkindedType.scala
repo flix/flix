@@ -41,6 +41,7 @@ sealed trait UnkindedType {
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
     case t: UnkindedType.UnappliedAssocType => t
+    case t: UnkindedType.UnappliedNative => t
     case t: UnkindedType.CaseSet => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Arrow(eff, arity, loc) => UnkindedType.Arrow(eff.map(_.map(f)), arity, loc)
@@ -90,6 +91,7 @@ sealed trait UnkindedType {
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedNative(_, _) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
     case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
     case UnkindedType.CaseSet(_, _) => SortedSet.empty
@@ -208,6 +210,13 @@ object UnkindedType {
 
     override def hashCode(): Int = Objects.hash(sym)
   }
+
+  /**
+    * An unapplied native Java type with type parameters.
+    * Only exists temporarily in the Resolver until it's converted to a [[Cst]].
+    */
+  @EliminatedBy(Resolver.getClass)
+  case class UnappliedNative(clazz: java.lang.Class[?], loc: SourceLocation) extends UnkindedType
 
   /**
     * A type application.
@@ -332,7 +341,7 @@ object UnkindedType {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
+  def freshVar(loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: RegionScope, flix: Flix): UnkindedType.Var = {
     val sym = Symbol.freshUnkindedTypeVarSym(text, loc)
     UnkindedType.Var(sym, loc)
   }
@@ -554,5 +563,6 @@ object UnkindedType {
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
+    case UnappliedNative(_, loc) => throw InternalCompilerException("unexpected unapplied native type", loc)
   }
 }

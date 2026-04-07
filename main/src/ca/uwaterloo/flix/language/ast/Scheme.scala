@@ -29,7 +29,7 @@ object Scheme {
   /**
     * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
     */
-  def partiallyInstantiate(sc: Scheme, quantifier: Symbol.KindedTypeVarSym, value: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Scheme = sc match {
+  def partiallyInstantiate(sc: Scheme, quantifier: Symbol.KindedTypeVarSym, value: Type, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): Scheme = sc match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
       if (!quantifiers.contains(quantifier)) {
         throw InternalCompilerException("Quantifier not in scheme.", loc)
@@ -44,7 +44,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit scope: Scope, flix: Flix): (List[TraitConstraint], List[EqualityConstraint], Type, Map[Symbol.KindedTypeVarSym, Type.Var]) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): (List[TraitConstraint], List[EqualityConstraint], Type, Map[Symbol.KindedTypeVarSym, Type.Var]) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -117,7 +117,7 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], tpe0: Type, renv: RigidityEnv)(implicit scope: Scope): Scheme = {
+  def generalize(tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], tpe0: Type, renv: RigidityEnv)(implicit scope: RegionScope): Scheme = {
     val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
     val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
     Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
@@ -129,7 +129,7 @@ object Scheme {
     * @param localEconstrs any constraints that, unlike those in `globalEqEnv`, contain free variables that appear bound in `sc1` or `sc2`.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, traitEnv: TraitEnv, globalEqEnv: EqualityEnv, localEconstrs: List[EqualityConstraint])(implicit scope: Scope, flix: Flix): Boolean = {
+  def equal(sc1: Scheme, sc2: Scheme, traitEnv: TraitEnv, globalEqEnv: EqualityEnv, localEconstrs: List[EqualityConstraint])(implicit scope: RegionScope, flix: Flix): Boolean = {
     lessThanEqual(sc1, sc2, traitEnv, globalEqEnv, localEconstrs) && lessThanEqual(sc2, sc1, traitEnv, globalEqEnv, localEconstrs)
   }
 
@@ -143,11 +143,11 @@ object Scheme {
     *
     * @param localEconstrs any constraints that, unlike those in `globalEqEnv`, contain free variables that appear bound in `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: TraitEnv, globalEqEnv0: EqualityEnv, localEconstrs: List[EqualityConstraint])(implicit scope: Scope, flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: TraitEnv, globalEqEnv0: EqualityEnv, localEconstrs: List[EqualityConstraint])(implicit scope: RegionScope, flix: Flix): Boolean = {
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
     // We use the top scope because this function is only used for comparing schemes, which are at top-level.
-    val (cconstrs2_0, econstrs2_0, tpe2_0, substMap) = Scheme.instantiate(sc2, SourceLocation.Unknown)(Scope.Top, flix)
+    val (cconstrs2_0, econstrs2_0, tpe2_0, substMap) = Scheme.instantiate(sc2, SourceLocation.Unknown)(RegionScope.Top, flix)
 
     // Since constraints in `localEconstrs` have free vars that appear in `sc2`, we must apply the same substitution
     // before including them in the equality env.
@@ -168,7 +168,8 @@ object Scheme {
     val cconstrs2 = cconstrs2_0.map {
       case TraitConstraint(head, arg, loc) =>
         // should never fail
-        val t = TypeReduction2.reduce(subst(arg), scope, RigidityEnv.empty)(Progress(), eenv0, flix)
+        val (t, cs) = TypeReduction2.reduce(subst(arg))(scope, RigidityEnv.empty, Progress(), eenv0, flix)
+        if (cs.nonEmpty) throw InternalCompilerException(s"unexpected constraints: $cs", loc)
         TraitConstraint(head, t, loc)
     }
 

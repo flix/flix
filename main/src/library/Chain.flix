@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{Iterator => JIterator}
-import java.util.{List => JList}
 
 ///
 /// The Chain type.
@@ -132,20 +130,6 @@ instance ForEach[Chain[a]] {
     pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = Chain.forEach(f, c)
 }
 
-instance ToJava[Chain[a]] {
-    type Out = JList
-    type Aef = IO
-    pub def toJava(c: Chain[a]): JList \ IO = Adaptor.toList(c)
-}
-
-instance ToFlix[Chain[a]] {
-    type In = JList
-    pub def toFlix(l: JList): Chain[a] = region rc {
-        let it = unsafe IO { l.iterator() };
-        it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
-    }
-}
-
 pub mod Chain {
     use Math.Shuffle
     use ViewLeft.{NoneLeft, SomeLeft}
@@ -237,6 +221,23 @@ pub mod Chain {
         case ViewRight.SomeRight(_, x) => Some(x)
         case _                         => None
     }
+
+    ///
+    /// Returns the element at position `i` in the chain `c`.
+    ///
+    /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, c: Chain[a]): a =
+        match nth(i, c) {
+            case Some(x) => x
+            case None    => indexOutOfBounds!("index ${i} is out of bounds for Chain of length ${length(c)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the chain `c`.
+    ///
+    pub def nth(i: Int32, c: Chain[a]): Option[a] =
+        List.nth(i, toList(c))
 
     ///
     /// Returns the subchain of `c` without the last element.

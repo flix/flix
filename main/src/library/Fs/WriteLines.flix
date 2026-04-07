@@ -19,28 +19,10 @@ pub mod Fs.WriteLines {
     use Fs.FileWrite
 
     ///
-    /// Handles the `WriteLines` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `WriteLines` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - WriteLines) + IO = x ->
-        run { f(x) } with handler WriteLines {
-            def writeLines(data, file, k) = k(Fs.FsLayer.writeLines(data, file))
-        }
-
-    ///
-    /// Runs the `WriteLines` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `WriteLines` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - WriteLines) + IO = handle(f)()
-
-    ///
     /// Handles the `WriteLines` effect of the given function `f` using the `FileWrite` effect.
     ///
-    pub def handleWithFileWrite(f: a -> b \ ef): a -> b \ (ef - WriteLines) + FileWrite = x ->
-        run { f(x) } with handler WriteLines {
+    pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - WriteLines) + FileWrite =
+        run { f() } with handler WriteLines {
             def writeLines(data, file, k) = k(Fs.FileWrite.writeLines(data, file))
         }
 
