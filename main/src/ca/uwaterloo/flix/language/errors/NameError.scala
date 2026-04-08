@@ -218,4 +218,27 @@ object NameError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised to indicate that an eponymous type is not the first declaration in its enclosing module.
+    *
+    * @param name the name of the eponymous type.
+    * @param loc  the location of the misplaced type declaration.
+    */
+  case class EponymousTypeMustBeFirst(name: String, loc: SourceLocation) extends NameError {
+    def code: ErrorCode = ErrorCode.E5975
+
+    def summary: String = s"Eponymous type '$name' must be the first declaration in its enclosing module."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Eponymous type '${red(name)}' must be the first declaration in its enclosing module.
+         |
+         |${highlight(loc, "misplaced declaration", fmt)}
+         |
+         |${underline("Explanation:")} When a type shares its name with its enclosing module,
+         |it must appear before all other declarations. Move it to the top of the module.
+         |""".stripMargin
+    }
+  }
 }
