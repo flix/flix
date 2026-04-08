@@ -6,12 +6,13 @@ import ca.uwaterloo.flix.tools.fmt.Doc.{empty, line, nest, pretty, space, text}
 
 object PrettyPrinter {
 
-  def format(tree: Tree): String = Doc.pretty(traverse(tree))
+  def format(tree: Tree): String = {
+    val doc = traverse(tree)
+    Doc.pretty(doc)
+  }
 
   private def traverse(tree: Tree): Doc = tree.kind match {
     case TreeKind.Root                          => prettyRoot(tree)
-    case TreeKind.Doc                           => prettyDoc(tree)
-    case TreeKind.CommentList                   => prettyCommentList(tree)
     case TreeKind.AnnotationList                => prettyAnnotationList(tree)
     case TreeKind.ModifierList                  => prettyModifierList(tree)
     case TreeKind.Ident                         => prettyIdent(tree)
@@ -57,6 +58,7 @@ object PrettyPrinter {
     case TreeKind.Expr.LiteralArray             => prettyCommaBracket(tree)
     case TreeKind.Expr.RecordOperation          => prettyCommaBracket(tree)
     case TreeKind.Expr.ParYield                 => prettyParYield(tree)
+    case TreeKind.Expr.LocalDef                 => prettyDef(tree)
     case TreeKind.Type.Binary                   => prettyBinary(tree)
     case TreeKind.Type.Schema                   => prettyCommaBracket(tree)
     case TreeKind.Type.Extensible               => prettyCommaBracket(tree)
@@ -143,12 +145,16 @@ object PrettyPrinter {
       .reduceLeftOption(_ <+> _)
       .getOrElse(empty)
 
-    val bodyDoc = body.foldLeft(empty) {
-      case (acc, token: Token) if token.kind == TokenKind.Semi =>
-        acc <> text(";") <> line
-      case (acc, child) =>
-        acc <> prettyChild(child)
-    }
+    val bodyDoc = body.zipWithIndex.foldLeft((empty, Option.empty[SyntaxTree.Child])) {
+      case ((acc, _), (token: Token, _)) if token.kind == TokenKind.Semi =>
+        (acc <> text(";") <> line, Some(token))
+      case ((acc, prev), (child, _)) =>
+        val gap = (prev.flatMap(rightMostToken), leftMostToken(child)) match {
+          case (Some(r), Some(l)) => getGap(r, l)
+          case _ => empty
+        }
+        (acc <> gap <> prettyChild(child), Some(child))
+    }._1
 
     val tailDoc = tail.map(prettyChild)
       .reduceLeftOption(_ <+> _)
@@ -434,11 +440,19 @@ object PrettyPrinter {
     * @return the formatted case expression as Doc
     */
   private def prettyCase(tree: Tree): Doc = {
-    val parts = tree.children.filter {
+    val (commentChildren, parts) = tree.children.filter {
       case token: Token if token.kind == TokenKind.Comma => false
       case t: Tree if t.children.isEmpty => false
       case _ => true
+    }.partition {
+      case t: Tree if t.kind == TreeKind.Doc => true
+      case _ => false
     }
+
+    val commentDoc = commentChildren.map(prettyChild)
+      .reduceLeftOption(_ <|> _)
+      .getOrElse(empty)
+    val hasComment = commentChildren.nonEmpty
 
     val hasCase = parts.exists {
       case token: Token if token.kind == TokenKind.KeywordCase => true
@@ -450,7 +464,7 @@ object PrettyPrinter {
       case _ => false
     }
 
-    if (arrowIndex < 0) {
+    val caseDoc = if (arrowIndex < 0) {
       val inner = parts.map(prettyChild)
         .reduceLeftOption(_ <+> _)
         .getOrElse(empty)
@@ -474,6 +488,8 @@ object PrettyPrinter {
         }
       }
     }
+
+    prepend(commentDoc, hasComment, caseDoc)
   }
 
   /**
@@ -829,34 +845,6 @@ object PrettyPrinter {
   }
 
   /**
-    * Formatting for doc comments.
-    *
-    * @param tree the doc comment tree
-    * @return the formatted doc comment as Doc
-    */
-  private def prettyDoc(tree: Tree): Doc = {
-    val parts = tree.children.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }.map(prettyChild)
-    if (parts.isEmpty) return empty
-    parts.reduceLeft(_ <|> _)
-  }
-
-  /**
-    * Formatting for comment lists.
-    * TODO: This only works somewhat, still many unnecessary newlines. Can we find their relative positions always?
-    *
-    * @param tree the comment list tree
-    * @return the formatted comment list as Doc
-    */
-  private def prettyCommentList(tree: Tree): Doc = {
-    val comments = tree.children.collect { case token: Token => text(token.text) }
-    if (comments.isEmpty) return empty
-    comments.reduceLeft(_ <|> _) <> line
-  }
-
-  /**
     * Formatting for the root of the syntax tree. Joins non-empty children with hard lines.
     *
     * @param tree the root tree
@@ -958,12 +946,12 @@ object PrettyPrinter {
 
   private def leftMostToken(child: SyntaxTree.Child): Option[Token] = child match {
     case token: Token => Some(token)
-    case tree: Tree   => tree.children.headOption.flatMap(leftMostToken)
+    case tree: Tree   => tree.children.collectFirst(Function.unlift(c => leftMostToken(c)))
   }
 
   private def rightMostToken(child: SyntaxTree.Child): Option[Token] = child match {
     case token: Token => Some(token)
-    case tree: Tree   => tree.children.lastOption.flatMap(rightMostToken)
+    case tree: Tree   => tree.children.reverse.collectFirst(Function.unlift(c => rightMostToken(c)))
   }
 
   /**
