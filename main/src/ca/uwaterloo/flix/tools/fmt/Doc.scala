@@ -21,12 +21,14 @@ object Doc {
   case class Text(str: String) extends Doc
   case class Concat(left: Doc, right: Doc) extends Doc
   case class Line() extends Doc
+  case class HardLine() extends Doc
   case class Nest(level: Int, doc: Doc) extends Doc
   case class LayoutChoice(singleLine: Doc, multiLine: Doc) extends Doc
   case class SetLayout(layout: Layout, doc: Doc) extends Doc
 
   def text(str: String): Doc = Text(str)
   def line: Doc = Line()
+  def hardline: Doc = HardLine()
   def space: Doc = Text(" ")
   def empty: Doc = Empty
   def nest(level: Int, doc: Doc): Doc = Nest(level, doc)
@@ -57,8 +59,8 @@ object Doc {
 
     case (i, l, Nest(j, x)) :: z =>
       l match {
-        case Layout.SingleLine => render(sb, k, (i, l, x) :: z)       // no-op
-        case Layout.MultiLine  => render(sb, k, (i + j, l, x) :: z)   // indent
+        case Layout.SingleLine => render(sb, k, (i, l, x) :: z)
+        case Layout.MultiLine  => render(sb, k, (i + j, l, x) :: z)
       }
 
     case (_, _, Text(s)) :: z =>
@@ -75,6 +77,11 @@ object Doc {
           sb.append(" " * i)
           render(sb, i, z)
       }
+
+    case (i, _, HardLine()) :: z =>
+      sb.append('\n')
+      sb.append(" " * i)
+      render(sb, i, z)
 
     case (i, l, LayoutChoice(s, m)) :: z =>
       l match {
@@ -93,6 +100,7 @@ object Doc {
   }
   def spread(docs: List[Doc]): Doc = folddoc(_ <+> _, docs)
   def stack(docs: List[Doc]): Doc = folddoc(_ <|> _, docs)
+  def hardStack(docs: List[Doc]): Doc = folddoc((a, b) => a <> hardline <> b, docs)
   def sep(separator: Doc, docs: List[Doc]): Doc = folddoc((a, b) => a <> separator <> b, docs)
   def bracket(l: String, x: Doc, r: String): Doc =
     text(l) <> nest(2, line <> x) <> line <> text(r)
