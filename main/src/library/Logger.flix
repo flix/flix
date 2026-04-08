@@ -162,12 +162,12 @@ pub mod Logger {
     /// Discards style from the logged messages. 
     /// Aborts if an error is encountered while writing to file.
     ///
-    pub def handleWithFileWriteAbort(file: String, f: a -> b \ ef1): a -> b \ (ef1 - Logger) + Fs.FileWrite + Abort = 
+    pub def handleWithFileWriteAbort(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite + Abort = 
         x -> run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = {
-                let output = "[${ToString.toString(s)}] ${RichString.toPlainString(m)}\n";
+                let output = "[${s}] ${RichString.toPlainString(m)}\n";
                 let res = Fs.FileWrite.append({str = output}, file);
                 match res {
                     case Err(e) => Abort.abort(RichString.text(e))
@@ -178,7 +178,7 @@ pub mod Logger {
         }
 
     ///
-    /// Handles the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
     ///
     /// Discards style from the logged messages. 
     /// Aborts if an error is encountered while writing to file.
@@ -192,16 +192,25 @@ pub mod Logger {
     /// Discards style from the logged messages. 
     /// Ignores errors encountered while writing.
     ///
-    pub def handleWithFileWrite(file: String, f: a -> b \ ef1): a -> b \ (ef1 - Logger) + Fs.FileWrite = 
+    pub def handleWithFileWrite(file: String, f: a -> b \ ef): a -> b \ (ef - Logger) + Fs.FileWrite = 
         x -> run {
             f(x)
         } with handler Logger {
             def log(s, m, k) = {
-                let output = "[${ToString.toString(s)}] ${RichString.toPlainString(m)}\n";
+                let output = "[${s}] ${RichString.toPlainString(m)}\n";
                 let _ = Fs.FileWrite.append({str = output}, file);
                 k()
             }
         }
+
+    ///
+    /// Runs the `Logger` effect of the given function `f`. Appends the logged to `file`.
+    ///
+    /// Discards style from the logged messages. 
+    /// Ignores errors encountered while writing.
+    ///
+    pub def runWithFileWrite(file: String, f: Unit -> a \ ef): a \ (ef - Logger) + Fs.FileWrite = 
+        handleWithFileWrite(file, f)()
 
     ///
     /// Aborts with the message `m` from `Logger.log` if given function `g` returns true.
