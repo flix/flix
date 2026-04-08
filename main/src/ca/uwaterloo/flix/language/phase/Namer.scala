@@ -358,7 +358,8 @@ object Namer {
       case None => table
       case Some((eponymousType, loc)) =>
         // Error if the eponymous type is not the first declaration in its enclosing module.
-        if (!decls.headOption.contains(eponymousType)) {
+        // Reference equality is safe here: collectFirst returns the same object that is in decls.
+        if (!decls.headOption.exists(_ eq eponymousType)) {
           sctx.errors.add(NameError.EponymousTypeMustBeFirst(moduleName, loc))
         }
         // 1. Downward alias: add eponymous type into the module namespace [A, B]["B"].
