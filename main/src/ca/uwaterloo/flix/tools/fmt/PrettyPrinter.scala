@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools.fmt
 
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.tools.fmt.Doc.{empty, line, nest, pretty, space, text}
+import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, pretty, space, text}
 
 object PrettyPrinter {
 
@@ -188,8 +188,8 @@ object PrettyPrinter {
       case t: Tree if t.kind == TreeKind.AnnotationList => true
       case _ => false
     }
-    val docDoc = docChildren.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
-    val annDoc = annChildren.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
+    val docDoc = hardStack(docChildren.map(prettyChild).toList)
+    val annDoc = hardStack(annChildren.map(prettyChild).toList)
     (docDoc, annDoc, docChildren.nonEmpty, annChildren.nonEmpty, rest)
   }
 
@@ -449,9 +449,7 @@ object PrettyPrinter {
       case _ => false
     }
 
-    val commentDoc = commentChildren.map(prettyChild)
-      .reduceLeftOption(_ <|> _)
-      .getOrElse(empty)
+    val commentDoc = hardStack(commentChildren.map(prettyChild).toList)
     val hasComment = commentChildren.nonEmpty
 
     val hasCase = parts.exists {
@@ -788,7 +786,7 @@ object PrettyPrinter {
 
   private def prettyAnnotationList(tree: Tree): Doc = {
     val anns = tree.children.collect { case token: Token => text(token.text) }
-    anns.reduceLeftOption(_ <|> _).getOrElse(empty)
+    hardStack(anns.toList)
   }
 
   /**
@@ -856,7 +854,7 @@ object PrettyPrinter {
       case _ => true
     }
     if (children.isEmpty) return empty
-    children.map(prettyChild).reduceLeft(_ <|> empty <|> _)
+    children.map(prettyChild).reduceLeft((a, b) => a <> hardline <> hardline <> b)
   }
 
   /**
@@ -868,7 +866,7 @@ object PrettyPrinter {
   private def prettyUseOrImportList(tree: Tree): Doc = {
     val children = tree.children.collect { case t: Tree => traverse(t) }
     if (children.isEmpty) return empty
-    children.reduceLeft(_ <|> _)
+    hardStack(children.toList)
   }
 
   private def prettyChild(child: SyntaxTree.Child): Doc = child match {
@@ -942,7 +940,7 @@ object PrettyPrinter {
     * @return the combined prefix and body if the prefix is present, otherwise just the body
     */
   private def prepend(prefix: Doc, hasPrefix: Boolean, body: Doc): Doc =
-    if (hasPrefix) prefix <|> body else body
+    if (hasPrefix) prefix <> hardline <> body else body
 
   private def leftMostToken(child: SyntaxTree.Child): Option[Token] = child match {
     case token: Token => Some(token)
