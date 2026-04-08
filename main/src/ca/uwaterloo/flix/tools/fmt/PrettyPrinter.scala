@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools.fmt
 
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.tools.fmt.Doc.{empty, line, nest, space, text}
+import ca.uwaterloo.flix.tools.fmt.Doc.{empty, line, nest, pretty, space, text}
 
 object PrettyPrinter {
 
@@ -56,6 +56,7 @@ object PrettyPrinter {
     case TreeKind.Expr.LiteralMap               => prettyCommaBracket(tree)
     case TreeKind.Expr.LiteralArray             => prettyCommaBracket(tree)
     case TreeKind.Expr.RecordOperation          => prettyCommaBracket(tree)
+    case TreeKind.Expr.ParYield                 => prettyParYield(tree)
     case TreeKind.Type.Binary                   => prettyBinary(tree)
     case TreeKind.Type.Schema                   => prettyCommaBracket(tree)
     case TreeKind.Type.Extensible               => prettyCommaBracket(tree)
@@ -68,6 +69,49 @@ object PrettyPrinter {
     case TreeKind.Expr.ForMonadic               => prettyFor(tree)
     case TreeKind.Expr.ForApplicative           => prettyFor(tree)
     case _ => prettyFallback(tree)
+  }
+
+  private def prettyParYield(tree: Tree): Doc = {
+    val children = tree.children.filter {
+      case t: Tree if t.children.isEmpty => false
+      case _ => true
+    }
+
+    val openIdx = children.indexWhere {
+      case token: Token if token.kind == TokenKind.ParenL => true
+      case _ => false
+    }
+    val closeIdx = children.lastIndexWhere {
+      case token: Token if token.kind == TokenKind.ParenR => true
+      case _ => false
+    }
+
+    if (openIdx < 0 || closeIdx < 0) return prettyFallback(tree)
+
+    val header = children.slice(0, openIdx)
+    val body = children.slice(openIdx + 1, closeIdx)
+    val tail = children.slice(closeIdx + 1, children.length)
+
+    val headerDoc = header.map(prettyChild)
+      .reduceLeftOption(_ <+> _)
+      .getOrElse(empty)
+
+    val bodyDoc = body.foldLeft(empty) {
+      case (acc, token: Token) if token.kind == TokenKind.Semi =>
+        acc <> text(";") <> space
+      case (acc, child) =>
+        acc <> prettyChild(child)
+    }
+
+    val tailDoc = tail.map(prettyChild)
+      .reduceLeftOption(_ <+> _)
+      .getOrElse(empty)
+
+    val tailPart = if (tail.isEmpty) empty else nest(4, line <> tailDoc)
+
+    localLayout(tree) {
+      headerDoc <+> text("(") <> bodyDoc <> text(")") <> tailPart
+    }
   }
 
   private def prettyRestrictableChoose(tree: Tree): Doc =
