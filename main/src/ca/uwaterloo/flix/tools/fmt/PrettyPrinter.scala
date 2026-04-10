@@ -58,6 +58,7 @@ object PrettyPrinter {
     case TreeKind.Expr.RecordOperation          => prettyCommaBracket(tree)
     case TreeKind.Expr.ParYield                 => prettyParYield(tree)
     case TreeKind.Expr.LocalDef                 => prettyDef(tree)
+    case TreeKind.Expr.MatchRuleFragment        => prettyMatchRuleFragment(tree)
     case TreeKind.Type.Binary                   => prettyBinary(tree)
     case TreeKind.Type.Schema                   => prettyCommaBracket(tree)
     case TreeKind.Type.Extensible               => prettyCommaBracket(tree)
@@ -70,6 +71,32 @@ object PrettyPrinter {
     case TreeKind.Expr.ForMonadic               => prettyFor(tree)
     case TreeKind.Expr.ForApplicative           => prettyFor(tree)
     case _ => prettyFallback(tree)
+  }
+
+  private def prettyMatchRuleFragment(tree: Tree): Doc = {
+    val children = filterEmpty(tree.children)
+    val arrowIndex = children.indexWhere {
+      case token: Token if token.kind == TokenKind.ArrowThickR => true
+      case _ => false
+    }
+    if (arrowIndex < 0) return prettyFallback(tree)
+
+    val header = children.take(arrowIndex + 1)
+    val body = children.drop(arrowIndex + 1)
+
+    val headerDoc = header.map(prettyChild)
+      .reduceLeftOption(_ <+> _)
+      .getOrElse(empty)
+
+    if (body.isEmpty) headerDoc
+    else {
+      val bodyDoc = body.map(prettyChild)
+        .reduceLeftOption(_ <|> _)
+        .getOrElse(empty)
+      localLayout(tree) {
+        headerDoc <> nest(4, line <> bodyDoc)
+      }
+    }
   }
 
   private def prettyParYield(tree: Tree): Doc =
@@ -514,9 +541,8 @@ object PrettyPrinter {
         val bodyDoc = body.map(prettyChild)
           .reduceLeftOption(_ <|> _)
           .getOrElse(empty)
-        localLayout(tree) {
-          headerDoc <> nest(4, line <> bodyDoc)
-        }
+        val break = Doc.layoutChoice(space, line)
+        headerDoc <> nest(4, break <> bodyDoc)
       }
     }
 
