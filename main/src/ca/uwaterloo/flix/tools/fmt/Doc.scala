@@ -23,6 +23,7 @@ object Doc {
   case class Line() extends Doc
   case class HardLine() extends Doc
   case class Nest(level: Int, doc: Doc) extends Doc
+  case class Align(doc: Doc) extends Doc
   case class LayoutChoice(singleLine: Doc, multiLine: Doc) extends Doc
   case class SetLayout(layout: Layout, doc: Doc) extends Doc
 
@@ -32,6 +33,7 @@ object Doc {
   def space: Doc = Text(" ")
   def empty: Doc = Empty
   def nest(level: Int, doc: Doc): Doc = Nest(level, doc)
+  def align(doc: Doc): Doc = Align(doc)
   def setLayout(layout: Layout, doc: Doc): Doc = SetLayout(layout, doc)
   def layoutChoice(singleLine: Doc, multiLine: Doc): Doc = LayoutChoice(singleLine, multiLine)
 
@@ -61,6 +63,12 @@ object Doc {
       l match {
         case Layout.SingleLine => render(sb, k, (i, l, x) :: z)
         case Layout.MultiLine  => render(sb, k, (i + j, l, x) :: z)
+      }
+
+    case (i, l, Align(x)) :: z =>
+      l match {
+        case Layout.SingleLine => render(sb, k, (i, l, x) :: z)
+        case Layout.MultiLine  => render(sb, k, (k, l, x) :: z)
       }
 
     case (_, _, Text(s)) :: z =>
