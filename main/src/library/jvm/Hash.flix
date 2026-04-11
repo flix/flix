@@ -21,4 +21,3 @@ instance Hash[BigDecimal] {
 instance Hash[BigInt] {
     pub def hash(x: BigInt): Int32 = x.hashCode()
 }
-

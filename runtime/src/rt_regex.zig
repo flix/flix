@@ -8,7 +8,7 @@ pub const CompileError = error{
     OutOfMemory,
 };
 
-// Bring-up surface: only flags used today.
+// Currently supported flag surface: only flags used today.
 pub const REG_ICASE: i32 = 2;
 
 const Unset: u32 = std.math.maxInt(u32);
@@ -92,7 +92,7 @@ pub fn execFirst(alloc: std.mem.Allocator, prog: *const Program, input: []const 
 }
 
 // -----------------------------------------------------------------------------
-// Parser (Java-ish subset, ASCII-only bring-up)
+// Parser (Java-ish subset, currently ASCII-only)
 // -----------------------------------------------------------------------------
 
 const NodeId = u32;
@@ -391,7 +391,7 @@ const Parser = struct {
 
     fn mkR(self: *Parser) CompileError!NodeId {
         // `\R` is a shorthand for Unicode linebreak sequences.
-        // In ASCII bring-up, we support CRLF, LF, CR, VT, FF.
+        // In the current ASCII-only implementation, we support CRLF, LF, CR, VT, FF.
         const cr = try self.mk(.{ .Lit = '\r' });
         const lf = try self.mk(.{ .Lit = '\n' });
         const vt = try self.mk(.{ .Lit = 0x0B });

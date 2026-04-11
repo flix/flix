@@ -14,4 +14,3 @@ instance ToFlix[List[a]] {
     type In = JList
     pub def toFlix(l: JList): List[a] = Adaptor.fromList(l)
 }
-

@@ -44,4 +44,3 @@ def main(): Unit \ IO =
         ()
     } with Env.runWithIO
       with FileReadWithResult.runWithIO
-

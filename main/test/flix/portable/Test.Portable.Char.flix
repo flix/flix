@@ -77,4 +77,3 @@ mod Test.Portable.Char {
     }
 
 }
-

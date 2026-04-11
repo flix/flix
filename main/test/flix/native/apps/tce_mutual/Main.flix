@@ -21,4 +21,3 @@ def main(): Unit \ IO = {
     println("tce-mutual: ok");
     ()
 }
-

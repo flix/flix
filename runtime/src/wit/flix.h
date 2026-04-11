@@ -24,7 +24,7 @@ typedef uint8_t flix_sys_sys_log_level_t;
 #define FLIX_SYS_SYS_LOG_LEVEL_ERROR 4
 
 // Capability discovery.
-// 
+//
 // This is intentionally coarse-grained; the portable stdlib should still
 // treat capabilities as optional and return `Unsupported` when absent.
 typedef uint8_t flix_sys_sys_capability_t;
@@ -79,7 +79,7 @@ typedef uint64_t exports_flix_runtime_runtime_def_id_t;
 typedef uint64_t exports_flix_runtime_runtime_task_id_t;
 
 // Suspension result produced by `invoke`.
-// 
+//
 // `task` may be polled via `poll-task` to observe completion after resumption.
 typedef struct exports_flix_runtime_runtime_suspended_exec_t {
   exports_flix_runtime_runtime_task_id_t   task;
@@ -537,9 +537,9 @@ extern int64_t flix_sys_sys_time_now_ms(void);
 // Return `len` random bytes.
 extern void flix_sys_sys_random_bytes(uint32_t len, flix_list_u8_t *ret);
 // Return the host-provided program arguments.
-// 
+//
 // This mirrors `Env.getArgs` semantics: it must not include the program name.
-// 
+//
 // Hosts may return an empty list when arguments are not meaningful (e.g. browsers).
 extern void flix_sys_sys_get_args(flix_list_string_t *ret);
 extern bool flix_sys_sys_has_capability(flix_sys_sys_capability_t cap);

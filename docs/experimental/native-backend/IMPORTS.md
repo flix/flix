@@ -324,6 +324,45 @@ The SQLite cross-target example follows this pattern:
 This split is deliberate. Native FFI is a synchronous C ABI boundary. Browser and Wasmtime host
 integration should use WIT resources/effects instead of pretending the raw C ABI is portable.
 
+## Quick Try: Small Native FFI Project
+
+If you want the shortest concrete path for trying native FFI in this branch, use the SQLite example
+as the template instead of starting from an empty project.
+
+Prerequisites:
+
+- `./gradlew installDist` from repo root
+- `export FLIX="$PWD/build/install/flix/bin/flix"`
+- `sqlite3` available through `pkg-config`
+- a working `zig` on `PATH`
+
+Then run:
+
+```bash
+cd examples/native-backend/sqlite-cross-target/native
+$FLIX check
+$FLIX build --target native
+./build/native/llvm/sqlite-native
+```
+
+Expected output:
+
+```text
+1:hello:4
+```
+
+To adapt this into your own small project:
+
+1. Copy the structure from
+   [sqlite-cross-target/native-bridge](../../../examples/native-backend/sqlite-cross-target/native-bridge).
+2. Replace the curated header, sidecar `.bind.toml`, and handwritten bridge C source with your own
+   library-specific bridge surface.
+3. Keep `[[bindings.native]]` and `[target.native]` in the bridge package manifest.
+4. Consume that bridge package from your app through a local path dependency while developing.
+
+That is the intended v0 workflow. We should improve the ergonomics further, but we should not hide
+the real bridge boundary behind scripts or ad hoc vendored generated sources.
+
 Practical rules:
 
 - Keep third-party headers out of the public Flix binding surface when the library API is large,

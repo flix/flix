@@ -54,7 +54,7 @@ class PortableStdlibLlvmWasmtimeRuntimeSuite extends AnyFunSuite {
     Paths.get("tools/wasm-runner-rs/Cargo.toml").toAbsolutePath.normalize()
 
   /**
-    * Known gaps in the current wasm runtime bring-up.
+    * Known gaps in the current wasm runtime.
     *
     * Keep this list empty if possible: the goal is that portable conformance runs unchanged.
     */

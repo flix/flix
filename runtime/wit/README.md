@@ -1,6 +1,6 @@
 # WIT Packages
 
-Status: source of truth for Flix wasm/component interfaces  
+Status: source of truth for Flix wasm/component interfaces
 Last updated: 2026-03-10
 
 This directory contains the authored WIT packages for the Flix LLVM backend’s wasm/component story.

@@ -20,4 +20,3 @@ pub mod Result {
         }
 
 }
-

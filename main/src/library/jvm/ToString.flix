@@ -25,4 +25,3 @@ instance ToString[BigDecimal] {
 instance ToString[Regex] {
     pub def toString(x: Regex): String = x.toString()
 }
-

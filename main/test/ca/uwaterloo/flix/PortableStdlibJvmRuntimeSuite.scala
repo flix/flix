@@ -106,4 +106,3 @@ class PortableStdlibJvmRuntimeSuite extends AnyFunSuite {
     }
   }
 }
-

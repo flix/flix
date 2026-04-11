@@ -36,4 +36,3 @@ instance Readable[InputStream] {
         }
 
 }
-

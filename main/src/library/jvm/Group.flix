@@ -23,4 +23,3 @@ instance Group[BigDecimal] {
     pub def inverse(x: BigDecimal): BigDecimal = -x
     redef remove(x: BigDecimal, y: BigDecimal): BigDecimal = x - y
 }
-

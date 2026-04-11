@@ -29,4 +29,3 @@ instance Eq[BigInt] {
     redef neq(x: BigInt, y: BigInt): Bool =
         x.compareTo(y) != 0
 }
-

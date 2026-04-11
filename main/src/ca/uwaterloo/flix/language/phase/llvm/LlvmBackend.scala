@@ -30,10 +30,11 @@ import ca.uwaterloo.flix.util.CompilationTarget
 import scala.collection.mutable
 
 /**
-  * A minimal LLVM backend for bring-up.
+  * An experimental LLVM backend for Flix.
   *
-  * The emitted LLVM IR is intentionally incomplete: it supports only a pure subset of [[LoweredAst]].
-  * The goal is to get the pipeline and artifact writing in place, while we incrementally expand support.
+  * It lowers [[LoweredAst]] to the LLVM/native/wasm runtime ABI used by the `llvm-native` and
+  * `llvm-wasm` targets. The backend is still incomplete and not yet at JVM parity, but it is
+  * usable for real programs.
   */
 object LlvmBackend {
 
@@ -495,7 +496,7 @@ object LlvmBackend {
           LlvmIr.GlobalDef.CString(LlvmNames.opName(op.sym), bytes)
         }
 
-      // Typeinfo globals for heap object shapes we emit in the bring-up backend (thunks and frames).
+      // Typeinfo globals for heap object shapes the current backend emits (thunks and frames).
       //
       // Pointer maps are deferred until we have a stable story for GC pointers vs non-GC pointers
       // (e.g. region pointers share `ptr` at the LLVM level). For now we set ptr_count=0 and ptr_offs=null.
@@ -1215,14 +1216,14 @@ object LlvmBackend {
     /**
       * Emits the def-id based invocation dispatch used by the wasm component runtime.
       *
-      * This dispatch is intentionally simple for bring-up:
+      * The current dispatch implementation:
       *   - compares `defId` in a linear chain (no LLVM `switch` yet),
       *   - checks `argc` matches the expected arity,
       *   - unboxes each argument from raw `i64` payload bits into the lowered ABI types,
       *   - calls the lowered definition, then unwinds thunks to a stable non-thunk result.
       *
-      * The runtime is expected to:
-      *   - validate that incoming WIT `value` resources match the expected kinds (future),
+      * The runtime currently:
+      *   - assumes incoming WIT `value` resources match the expected kinds,
       *   - allocate `value`/`suspension` resources for the returned result payload.
       */
     private def emitWasmInvokeDef(entries: List[LlvmWasmDefs.Entry]): LlvmIr.Function = {
@@ -1483,8 +1484,8 @@ object LlvmBackend {
     /**
       * Resumes a suspension by throwing an exception.
       *
-      * Note: The long-term semantics should inject an exception at the suspension point (catchable by surrounding
-      * Flix `try/catch`). For bring-up we treat this as aborting the task with the given exception.
+      * Current behavior: abort the task with the given exception payload rather than injecting it
+      * at the suspension point.
       *
       * Signature matches the Zig runtime's `extern fn flix_wasm_resume_throw_def`.
       */
@@ -1749,7 +1750,7 @@ object LlvmBackend {
       fnv1a64(label.name)
 
     private def fnv1a64(s: String): Long = {
-      // Stable 64-bit FNV-1a hash used for extensible tag ids in bring-up.
+      // Stable 64-bit FNV-1a hash used for extensible tag ids.
       var h = 0xcbf29ce484222325L
       val prime = 0x100000001b3L
       val bytes = s.getBytes(java.nio.charset.StandardCharsets.UTF_8)
@@ -2041,7 +2042,7 @@ object LlvmBackend {
       //
       // This is important for GC readiness: it ensures that locals have stable addresses and can
       // later be registered with an explicit root stack (shadow stack) without needing LLVM
-      // statepoints/stackmaps for this bring-up backend.
+      // statepoints/stackmaps in the current backend.
 	      defn.lparams.foreach {
 	        case LoweredAst.LocalParam(sym, tpe) =>
 	          val localTpe = llvmTypeOf(tpe)
@@ -4718,7 +4719,7 @@ object LlvmBackend {
       case Type.Ptr =>
         Value.Null(Type.Ptr)
       case other =>
-        // Should not be needed for the bring-up backend (locals are only primitive/I64/Ptr).
+        // Should not be needed for the current backend (locals are only primitive/I64/Ptr).
         Value.Undef(other)
     }
 
@@ -4828,7 +4829,7 @@ object LlvmBackend {
     /**
       * Unwinds suspension-free thunks until we reach a VALUE result and returns its payload bits.
       *
-      * Bring-up behavior:
+      * Current behavior:
       *   - Traps on SUSPENSION or EXCEPTION.
       */
     private def unwindThunkToValuePayload(result0: Value, ctxPtr: Value, fb: FunBuilder): Value = {
@@ -4859,7 +4860,7 @@ object LlvmBackend {
     /**
       * Unwinds thunks until we reach a VALUE result and returns its payload bits.
       *
-      * Bring-up behavior:
+      * Current behavior:
       *   - Propagates EXCEPTION according to `exnHandlerOpt` (branch or return).
       *   - Traps on SUSPENSION.
       */
@@ -5122,7 +5123,7 @@ object LlvmBackend {
 		      * distinguish “GC heap pointers” from region-arena pointers at this phase.
 		      *
 		      * For correctness, we conservatively treat every non-immediate value as a GC root *candidate*.
-		      * The bring-up GC uses membership checks (tracked allocation set) to ignore non-GC pointers.
+		      * The current GC uses membership checks (tracked allocation set) to ignore non-GC pointers.
 		      *
 		      * Region→heap edges are still tracked via remembered sets; rooting a region pointer itself
 		      * is harmless but does not replace remembered-set scanning.
@@ -5611,7 +5612,7 @@ object LlvmBackend {
         emitRunWithExpression(exp, effUse.sym, rules, ct, pcPointId, tpe, env, slotTypes, selfTailLabel, ctxPtr, fb, None, Map.empty, lenv, Value.IntConst(ResultTagValue, Type.I64), Value.Undef(Type.I64), Map.empty, exnHandlerOpt)
 
       case _ =>
-        // Unsupported for bring-up: emit a fail-fast trap.
+        // Currently unsupported: emit a fail-fast trap.
         fb.current.emitTrap()
         Value.Undef(llvmTypeOf(exp0.tpe))
     }
@@ -7593,11 +7594,11 @@ object LlvmBackend {
         Value.Null(Type.Ptr)
 
       case Constant.Static =>
-        // Bring-up: represent the static region as null.
+        // Represent the static region as null.
         Value.Null(Type.Ptr)
 
       case Constant.RecordEmpty =>
-        // Bring-up: represent the empty record as null.
+        // Represent the empty record as null.
         Value.Null(Type.Ptr)
 
       case Constant.Str(lit) =>
@@ -9491,21 +9492,21 @@ object LlvmBackend {
         tmp
 
       case SemanticOp.RegexOp.MatcherMatches =>
-        // Argument: (rc, matcher). rc ignored for bring-up.
+        // Argument: (rc, matcher). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val tmp = freshTmp(Type.I1)
         fb.current.emitAssign(tmp, Op.Call(Type.I1, "flix_regex_matcher_matches", List(m)))
         tmp
 
       case SemanticOp.RegexOp.MatcherFind =>
-        // Argument: (rc, matcher). rc ignored for bring-up.
+        // Argument: (rc, matcher). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val tmp = freshTmp(Type.I1)
         fb.current.emitAssign(tmp, Op.Call(Type.I1, "flix_regex_matcher_find", List(m)))
         tmp
 
       case SemanticOp.RegexOp.MatcherFindFrom =>
-        // Argument: (rc, matcher, pos). rc ignored for bring-up.
+        // Argument: (rc, matcher, pos). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val pos = loadTupleElement(x, 2L, SimpleType.Int32, fb)
         val tmp = freshTmp(Type.I1)
@@ -9513,14 +9514,14 @@ object LlvmBackend {
         tmp
 
       case SemanticOp.RegexOp.MatcherLookingAt =>
-        // Argument: (rc, matcher). rc ignored for bring-up.
+        // Argument: (rc, matcher). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val tmp = freshTmp(Type.I1)
         fb.current.emitAssign(tmp, Op.Call(Type.I1, "flix_regex_matcher_looking_at", List(m)))
         tmp
 
       case SemanticOp.RegexOp.MatcherReplaceAll =>
-        // Argument: (rc, matcher, replacement). rc ignored for bring-up.
+        // Argument: (rc, matcher, replacement). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val repl = loadTupleElement(x, 2L, SimpleType.String, fb)
         val tmp = freshTmp(Type.Ptr)
@@ -9528,7 +9529,7 @@ object LlvmBackend {
         tmp
 
       case SemanticOp.RegexOp.MatcherReplaceFirst =>
-        // Argument: (rc, matcher, replacement). rc ignored for bring-up.
+        // Argument: (rc, matcher, replacement). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val repl = loadTupleElement(x, 2L, SimpleType.String, fb)
         val tmp = freshTmp(Type.Ptr)
@@ -9546,21 +9547,21 @@ object LlvmBackend {
         tmp
 
       case SemanticOp.RegexOp.MatcherStart =>
-        // Argument: (rc, matcher). rc ignored for bring-up.
+        // Argument: (rc, matcher). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val tmp = freshTmp(Type.I32)
         fb.current.emitAssign(tmp, Op.Call(Type.I32, "flix_regex_matcher_start", List(m)))
         tmp
 
       case SemanticOp.RegexOp.MatcherEnd =>
-        // Argument: (rc, matcher). rc ignored for bring-up.
+        // Argument: (rc, matcher). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val tmp = freshTmp(Type.I32)
         fb.current.emitAssign(tmp, Op.Call(Type.I32, "flix_regex_matcher_end", List(m)))
         tmp
 
       case SemanticOp.RegexOp.MatcherGroup =>
-        // Argument: (rc, matcher, idx). rc ignored for bring-up.
+        // Argument: (rc, matcher, idx). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val idx = loadTupleElement(x, 2L, SimpleType.Int32, fb)
         val tmp = freshTmp(Type.Ptr)
@@ -9568,7 +9569,7 @@ object LlvmBackend {
         tmp
 
       case SemanticOp.RegexOp.MatcherGroupCount =>
-        // Argument: (rc, matcher). rc ignored for bring-up.
+        // Argument: (rc, matcher). rc currently ignored.
         val m = loadTupleElement(x, 1L, SimpleType.RegexMatcher, fb)
         val tmp = freshTmp(Type.I32)
         fb.current.emitAssign(tmp, Op.Call(Type.I32, "flix_regex_matcher_group_count", List(m)))
@@ -10580,7 +10581,7 @@ object LlvmBackend {
       val copyDoneBlock = fb.newBlock(copyDoneLabel)
       fb.setCurrent(copyDoneBlock)
 
-      // Install the new buffer (bring-up: leak the old buffer).
+      // Install the new buffer. The current implementation still leaks the old buffer.
       sbStoreDataPtr(sbPtr, newBuf, fb)
       sbStoreCap(sbPtr, newCap, fb)
 

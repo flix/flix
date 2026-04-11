@@ -29,4 +29,3 @@ instance Div[BigInt] {
         else
             x.divide(y)
 }
-

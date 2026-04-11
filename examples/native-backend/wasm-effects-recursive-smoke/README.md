@@ -4,9 +4,9 @@ End-to-end example for async wasm effect bindings over recursive portable values
 
 This example shows the current async import-side workflow:
 
-1. generate async effect bindings from a WIT world
-2. vendor the generated Flix source into the project
-3. build the Flix project to `llvm-wasm`
+1. declare async effect bindings from a WIT world in `flix.toml`
+2. build the Flix project to `llvm-wasm`
+3. let project mode generate the bindings bundle under `build/wasm/generated/...`
 4. run the wasm component from:
    - a JS host
    - a Rust/Wasmtime host
@@ -14,29 +14,15 @@ This example shows the current async import-side workflow:
 The WIT source is in [wit/world.wit](./wit/world.wit).
 The Flix app is in [src/Api.flix](./src/Api.flix).
 
-## Generate Bindings
+## Binding Declaration
 
-From this directory:
+Bindings are declared in `flix.toml` with `[[bindings.wasm]]`.
 
-```bash
-bash scripts/generate-bindings.sh
-```
+`flix check` and `flix build --target wasm` generate the bindings bundle automatically into:
 
-The script resolves `flix` in this order:
-
-- `FLIX=/path/to/flix`
-- `flix` on `PATH`
-- the repo-local launcher at `build/install/flix/bin/flix`
-
-That generates a structured SDK bundle under `generated/` and copies `generated/flix/Wit.flix` to `src/Wit.flix`.
-
-Current limitation:
-
-- project-mode `flix build` consumes project sources under `src/`, so the generated Flix module is currently vendored into `src/Wit.flix` before build
+- `build/wasm/generated/bindings/wasm/...`
 
 ## Build
-
-After generating bindings:
 
 ```bash
 flix build --target wasm
@@ -44,7 +30,7 @@ flix build --target wasm
 
 ## JS Host
 
-After generating bindings and building:
+After building:
 
 ```bash
 node host/wasm-js/main.mjs
@@ -52,7 +38,7 @@ node host/wasm-js/main.mjs
 
 ## Rust / Wasmtime Host
 
-After generating bindings and building:
+After building:
 
 ```bash
 cargo +stable run --manifest-path host/wasm-rust/Cargo.toml

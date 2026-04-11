@@ -35,4 +35,3 @@ instance Writable[OutputStream] {
         }
 
 }
-

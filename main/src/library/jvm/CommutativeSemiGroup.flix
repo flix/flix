@@ -17,4 +17,3 @@
 instance CommutativeSemiGroup[BigInt]
 
 instance CommutativeSemiGroup[BigDecimal]
-

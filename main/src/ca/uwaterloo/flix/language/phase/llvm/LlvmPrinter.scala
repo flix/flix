@@ -19,14 +19,14 @@ package ca.uwaterloo.flix.language.phase.llvm
 import ca.uwaterloo.flix.language.phase.llvm.LlvmIr.*
 
 /**
-  * A minimal pretty printer for the [[LlvmIr]] surface.
+  * Pretty printer for the [[LlvmIr]] surface.
   */
 object LlvmPrinter {
 
   def printModule(m: Module): String = {
     val sb = new StringBuilder(64 * 1024)
 
-    sb.append("; Flix LLVM IR (bring-up)\n")
+    sb.append("; Flix LLVM IR\n")
     sb.append(s"""source_filename = "${escape(m.sourceFilename)}"\n\n""")
 
     m.typeDefs.foreach { td =>

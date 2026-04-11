@@ -21,4 +21,3 @@ instance Add[BigDecimal] {
 instance Add[BigInt] {
     pub def add(x: BigInt, y: BigInt): BigInt = x.add(y)
 }
-

@@ -21,4 +21,3 @@ instance SemiGroup[BigInt] {
 instance SemiGroup[BigDecimal] {
     pub def combine(x: BigDecimal, y: BigDecimal): BigDecimal = x + y
 }
-

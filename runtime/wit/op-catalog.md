@@ -1,6 +1,6 @@
 # WIT Op Catalog
 
-Status: source-of-truth boundary catalog  
+Status: source-of-truth boundary catalog
 Last updated: 2026-03-10
 
 This document is a **living catalog** that maps **portable Flix primops** (and their current JVM

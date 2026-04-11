@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import { runtime } from "../../build/wasm/llvm/wasm/js/wasm-effects-smoke.component.js";
 import { FlixRunner } from "../../build/wasm/llvm/wasm-runner-js/runner.mjs";
-import { makeUnknownHandler } from "../../generated/js/index.mjs";
+import { makeUnknownHandler } from "../../build/wasm/generated/bindings/wasm/00-Wit/js/index.mjs";
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);

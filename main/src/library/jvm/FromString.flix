@@ -24,4 +24,3 @@ instance FromString[BigDecimal] {
 instance FromString[BigInt] {
     pub def fromString(x: String): Option[BigInt] = BigInt.fromString(x)
 }
-

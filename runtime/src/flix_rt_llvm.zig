@@ -38,7 +38,7 @@ const NativeHttpWaitCompleted: i32 = 0;
 const NativeHttpWaitCanceled: i32 = 1;
 // Allocator for runtime metadata and temporary buffers.
 // - On wasm32-freestanding we must not depend on libc.
-// - On native we prefer the C allocator for now.
+// - On native we currently use the C allocator.
 const rt_alloc: std.mem.Allocator = if (is_wasm) std.heap.page_allocator else std.heap.c_allocator;
 
 // ----------------------------------------------------------------------------
@@ -108,10 +108,10 @@ fn RtAtomic(comptime T: type) type {
 }
 
 // ----------------------------------------------------------------------------
-// wasm32-freestanding support: minimal libc surface expected by `runtime/src/wit/flix.c`.
+// wasm32-freestanding libc shims required by `runtime/src/wit/flix.c`.
 //
 // The generated WIT C glue uses `free`, `memcpy`, `strlen`, and may use `realloc` via a weak
-// `cabi_realloc` definition. For browser-first bring-up (no WASI libc), we provide these symbols.
+// `cabi_realloc` definition. In freestanding wasm builds (no WASI libc), we provide these symbols.
 //
 // Note: This is *not* the Flix GC heap; it is a small general-purpose allocator for canonical ABI
 // buffers (strings/lists) and for legacy runtime helper allocations.
@@ -205,7 +205,7 @@ fn wasmCabiRealloc(ptr: ?*anyopaque, old_size: usize, alignment: usize, new_size
     if (new_size == 0) return @ptrFromInt(alignment);
     if (ptr == null) return wasmCAlloc(alignment, new_size);
 
-    // Allocate+copy+free; correctness over performance (bring-up).
+    // Allocate+copy+free; prioritize correctness over performance here.
     const p = ptr.?;
     const new_ptr = wasmCAlloc(alignment, new_size) orelse return null;
     const dst: [*]u8 = @ptrCast(new_ptr);
@@ -375,7 +375,7 @@ extern fn flix_sys_sys_get_args(ret: *flix_list_string_t) void;
 extern fn flix_list_string_free(ptr: *flix_list_string_t) void;
 
 // ============================================================================
-// GC Heap (bring-up): non-moving mark/sweep, STW at pollchecks.
+// GC Heap: current runtime uses non-moving mark/sweep with STW at pollchecks.
 //
 // Key constraints:
 // - Allocation may happen anywhere (generated code + runtime helpers).
@@ -716,11 +716,11 @@ fn objPayloadSlots(obj_ptr: *anyopaque) [*]i64 {
 }
 
 // ============================================================================
-// Boxing (bring-up): represent primitives as heap objects at AnyType/Object boundaries.
+// Boxing: represent primitives as heap objects at AnyType/Object boundaries.
 //
-// This is required for the future GC scanning story: pointer-like slots must contain pointers,
-// not raw immediates. The v0 plan is to box primitives when they flow into erased types
-// (AnyType/Object), which matches JVM semantics and keeps remembered-set scanning precise.
+// Pointer-like slots must contain pointers, not raw immediates. The current runtime boxes
+// primitives when they flow into erased types (AnyType/Object), which matches JVM semantics and
+// keeps remembered-set scanning precise.
 // ============================================================================
 
 const BOX_TAG_BOOL: i64 = 1;
@@ -817,7 +817,7 @@ export fn flix_unbox_float64(box_payload: i64) i64 {
 }
 
 // ============================================================================
-// C ABI Helpers (bring-up)
+// C ABI Helpers
 // ============================================================================
 
 const FlixHandleKind = enum(u8) {
@@ -979,7 +979,7 @@ var g_spawn_roots_initialized: bool = false;
 var g_spawn_roots_mutex: RtMutex = .{};
 var g_spawn_roots: std.AutoHashMap(usize, u8) = undefined;
 
-// Registered thread contexts (best-effort bring-up registry; GC will use this later).
+// Registered thread contexts visible to handshake and GC coordination.
 var g_ctx_registry_initialized: bool = false;
 var g_ctx_registry_mutex: RtMutex = .{};
 var g_ctx_registry: std.AutoHashMap(usize, u8) = undefined;
@@ -1453,7 +1453,7 @@ export fn flix_gc_pollcheck(ctx_ptr: *anyopaque) void {
     const ctx: *FlixCtx = requireCtx(ctx_ptr);
     pollcheckCooperate(ctx);
 
-    // GC is triggered at pollchecks (bring-up): if a collection was requested and we can become
+    // GC is currently triggered at pollchecks: if a collection was requested and we can become
     // the collector thread, perform an STW mark/sweep using the handshake machinery.
     gcPollcheckMaybeCollect(ctx);
 }
@@ -1916,7 +1916,7 @@ export fn flix_float64_to_string(x: f64) *anyopaque {
 }
 
 // ============================================================================
-// BigInt (portable, bring-up)
+// BigInt (portable)
 // ============================================================================
 
 const big_int = std.math.big.int;
@@ -2370,7 +2370,7 @@ export fn flix_bigint_hash(ctx_ptr: *anyopaque, a_ptr: *anyopaque) i32 {
 }
 
 // ============================================================================
-// BigDecimal (portable, bring-up)
+// BigDecimal (portable)
 // ============================================================================
 
 const FlixBigDecimalHeader = extern struct {
@@ -2904,7 +2904,7 @@ export fn flix_bigdec_to_bigint(ctx_ptr: *anyopaque, a_ptr: *anyopaque) *anyopaq
 }
 
 // ============================================================================
-// Regex (bring-up)
+// Regex
 // ============================================================================
 
 const RegexObj = struct {
@@ -3686,7 +3686,7 @@ fn flixStringToAsciiZ(ptr: *anyopaque) [:0]u8 {
     var i: usize = 0;
     while (i < len) : (i += 1) {
         const cu: u16 = units[i];
-        if (cu > 0x7f) @panic("regex bring-up: non-ASCII string not supported");
+        if (cu > 0x7f) @panic("regex: non-ASCII string not supported yet");
         bytes[i] = @intCast(cu);
     }
     bytes[len] = 0;
@@ -3705,7 +3705,7 @@ fn flixStringToAsciiZInRegion(ctx: *anyopaque, region_ptr0: ?*anyopaque, ptr: *a
     var i: usize = 0;
     while (i < len) : (i += 1) {
         const cu: u16 = units[i];
-        if (cu > 0x7f) @panic("regex bring-up: non-ASCII string not supported");
+        if (cu > 0x7f) @panic("regex: non-ASCII string not supported yet");
         bytes[i] = @intCast(cu);
     }
     bytes[len] = 0;
@@ -4143,7 +4143,7 @@ export fn flix_regex_split(ctx: *anyopaque, region_ptr0: ?*anyopaque, rgx_ptr: *
 }
 
 // ============================================================================
-// Channels (bring-up)
+// Channels
 // ============================================================================
 
 const ChannelWaiter = struct {
@@ -6227,7 +6227,7 @@ export fn flix_cyclic_barrier_await_resumable(ctx: *anyopaque, barrier_ptr: *any
 }
 
 // ============================================================================
-// IO + Spawn (bring-up)
+// IO + Spawn
 // ============================================================================
 
 var g_next_id: RtAtomic(i64) = .init(0);
@@ -6372,7 +6372,7 @@ export fn flix_time_now_ms(_: i64) i64 {
 }
 
 // ============================================================================
-// Portable IO primops (bring-up stubs + basic Env)
+// Portable IO primops (Env support plus unsupported-operation stubs)
 // ============================================================================
 
 fn stubMsg(op: []const u8) *anyopaque {
@@ -6440,7 +6440,7 @@ export fn flix_env_get_args(ctx: *anyopaque, region_ptr0: ?*anyopaque) *anyopaqu
 
 export fn flix_env_get_env_pairs(ctx: *anyopaque, region_ptr0: ?*anyopaque) *anyopaque {
     if (is_wasm) {
-        // No environment variables in wasm32-freestanding (browser-first bring-up).
+        // No environment variables in wasm32-freestanding environments.
         return allocFlixArrayFromPtrPayloadsInRegion(ctx, region_ptr0, &[_]*anyopaque{});
     } else {
         var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -6563,7 +6563,7 @@ export fn flix_env_virtual_processors(_: i64) i32 {
 
 const NativeFsTcp = if (is_wasm) struct {} else struct {
 // ============================================================================
-// File System (bring-up)
+// File System
 // ============================================================================
 
 const IOERR_ALREADY_EXISTS: i64 = 0;
@@ -9037,7 +9037,7 @@ const RESULT_TAG_SUSPENSION: i64 = 3;
 const RESULT_TAG_EXCEPTION: i64 = 4;
 
 // ----------------------------------------------------------------------------
-// Portable logical stack traces (bring-up)
+// Portable logical stack traces
 //
 // We maintain a per-thread logical stack of Flix function names (C strings),
 // pushed/popped by compiler-inserted calls around function entry/exit.
@@ -9301,7 +9301,7 @@ fn payloadFromNullablePtrOrZero(ptr: ?*anyopaque) i64 {
 
 export fn flix_alloc(ctx_ptr: *anyopaque, ti: *const FlixTypeInfo) *anyopaque {
     _ = ctx_ptr;
-    if (ti.size_bytes == 0) @panic("flix_alloc: flex objects not supported in bring-up");
+    if (ti.size_bytes == 0) @panic("flix_alloc: flex objects require flix_alloc_flex");
     const size: usize = @intCast(ti.size_bytes);
     return gcAllocBytes(size, ti);
 }
@@ -9327,7 +9327,7 @@ fn invokeThunk(ctx: *anyopaque, thunk: *anyopaque, arg_tag: i64, arg_payload: i6
 }
 
 // ----------------------------------------------------------------------------
-// Frames / Resumptions / Suspensions (bring-up)
+// Frames / Resumptions / Suspensions
 //
 // Representation (all pointers are to i64 slot arrays; nil = null pointer):
 //
@@ -11393,7 +11393,7 @@ const SpawnArgs = struct {
 fn spawnThreadMain(args: SpawnArgs) void {
     const region_bits: usize = if (args.region) |r| @intFromPtr(r) else 0;
     dbg("spawn: start region={x}\n", .{region_bits});
-    // Each thread owns its own runtime context (per pollcheck/handshake and future root tracking).
+    // Each thread owns its own runtime context for pollcheck/handshake coordination and root tracking.
     const ctx = flix_ctx_new();
     defer flix_ctx_free(ctx);
 
@@ -11459,7 +11459,7 @@ fn spawnThreadMain(args: SpawnArgs) void {
 }
 
 // ----------------------------------------------------------------------------
-// Regions (bring-up): structured concurrency + region arenas.
+// Regions: structured concurrency + region arenas.
 //
 // v0 semantics: region exit joins attached children and propagates the first
 // child exception (if any), taking precedence over the parent outcome.
@@ -11861,7 +11861,7 @@ export fn flix_region_malloc(ctx: *anyopaque, region_ptr0: ?*anyopaque, size_byt
 }
 
 export fn flix_region_alloc(ctx: *anyopaque, region_ptr0: ?*anyopaque, ti: *const FlixTypeInfo) *anyopaque {
-    if (ti.size_bytes == 0) @panic("flix_region_alloc: flex objects not supported in bring-up");
+    if (ti.size_bytes == 0) @panic("flix_region_alloc: flex objects require flix_region_alloc_flex");
     const size_bytes_i64: i64 = @intCast(ti.size_bytes);
     const mem = flix_region_malloc(ctx, region_ptr0, size_bytes_i64);
     const obj: *FlixObj = @ptrCast(@alignCast(mem));
@@ -11977,7 +11977,7 @@ export fn flix_spawn(ctx: *anyopaque, region_ptr0: ?*anyopaque, clo: *anyopaque)
 }
 
 // ----------------------------------------------------------------------------
-// Wasm Component Model (WIT) Runtime Exports (bring-up)
+// Wasm Component Model (WIT) Runtime Exports
 //
 // These exports implement `flix:runtime/runtime@0.1.0` as generated by
 // `wit-bindgen` (C) in `runtime/src/wit/flix.c`.

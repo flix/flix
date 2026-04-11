@@ -75,4 +75,3 @@ pub mod DnsWithResult {
     pub def runWithIO(f: Unit -> a \ ef): a \ ef - DnsWithResult + IO = handle(f)()
 
 }
-

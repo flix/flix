@@ -74,4 +74,3 @@ pub mod Dns {
     pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Dns + IO = handle(f)()
 
 }
-

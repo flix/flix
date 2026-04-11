@@ -83,6 +83,44 @@ async function sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function waitForExit(proc, timeoutMs) {
+  if (proc.exitCode !== null || proc.signalCode !== null) return true;
+  return await new Promise((resolve) => {
+    const onExit = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    const timer = setTimeout(() => {
+      proc.off("exit", onExit);
+      resolve(false);
+    }, timeoutMs);
+    proc.once("exit", onExit);
+  });
+}
+
+async function terminateProcess(proc) {
+  if (proc.exitCode !== null || proc.signalCode !== null) return;
+  proc.kill("SIGTERM");
+  if (await waitForExit(proc, 2_000)) return;
+  proc.kill("SIGKILL");
+  await waitForExit(proc, 2_000);
+}
+
+async function removeTreeWithRetries(dir, retries = 20, delayMs = 100) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      await fs.rm(dir, { recursive: true, force: true });
+      return;
+    } catch (err) {
+      const code = typeof err?.code === "string" ? err.code : "";
+      if (!["ENOTEMPTY", "EBUSY", "EPERM"].includes(code) || attempt === retries) {
+        throw err;
+      }
+      await sleep(delayMs);
+    }
+  }
+}
+
 async function fetchJson(url, timeoutMs) {
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(new Error("timeout")), timeoutMs);
@@ -316,8 +354,8 @@ async function main() {
 
     throw new Error("timeout waiting for data-flix-status");
   } finally {
-    p.kill("SIGKILL");
-    await fs.rm(userDataDir, { recursive: true, force: true });
+    await terminateProcess(p);
+    await removeTreeWithRetries(userDataDir);
     if (stderr.trim().length > 0) {
       // Only print stderr on failure to keep test output small.
       if (process.exitCode && process.exitCode !== 0) {

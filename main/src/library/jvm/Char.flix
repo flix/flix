@@ -25,4 +25,3 @@ pub mod Char {
         Character.valueOf(c)
 
 }
-

@@ -36,4 +36,3 @@ def main(): Unit \ IO = region rc {
         def get(k) = k(Ref.get(state))
     }
 }
-

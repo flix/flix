@@ -52,7 +52,7 @@ class PortableStdlibLlvmWasmRuntimeSuite extends AnyFunSuite {
     Paths.get("tools/wasm-runner-js/run-flix.mjs").toAbsolutePath.normalize()
 
   /**
-    * Known gaps in the current wasm runtime bring-up.
+    * Known gaps in the current wasm runtime.
     *
     * Keep this list empty if possible: the goal is that portable conformance runs unchanged.
     */

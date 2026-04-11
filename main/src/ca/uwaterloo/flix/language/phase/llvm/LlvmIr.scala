@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.llvm
 /**
   * A small typed LLVM IR surface (textual `.ll`).
   *
-  * This is intentionally minimal: it covers only what the current bring-up backend emits.
+  * This is intentionally partial: it models only the LLVM constructs the current backend emits.
   * Extend it as we add language features to the LLVM backend.
   */
 object LlvmIr {

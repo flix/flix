@@ -54,4 +54,3 @@ def main(): Unit \ IO =
         ()
     } with Env.runWithIO
       with TcpConnectWithResult.runWithIO
-

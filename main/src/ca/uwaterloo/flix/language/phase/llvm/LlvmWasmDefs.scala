@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.ExportAbi
   * Computes the set of lowered definitions that are invokable via the wasm component runtime
   * (i.e. via `def-id` in the WIT surface).
   *
-  * Bring-up choice: allocate sequential def-ids and emit a manifest for hosts.
+  * Current scheme: allocate sequential def-ids and emit a manifest for hosts.
   *
   * Invariants:
   *   - If `main` exists, it is always assigned def-id 0.

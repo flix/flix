@@ -95,7 +95,7 @@ jar {
         include '**/ClassList.txt'
     }
 
-    // LLVM-native bring-up runtime support (Zig sources).
+    // LLVM-native runtime support (Zig sources).
     //
     // Note: `flix_rt_llvm.zig` may import sibling Zig files (e.g. unicode tables). Keep these
     // resources bundled together so the CLI can extract+compile the runtime out-of-tree.
@@ -155,7 +155,7 @@ test {
     // so we must treat them as test inputs; otherwise Gradle may incorrectly mark `:test` UP-TO-DATE.
     inputs.files(fileTree('main/src/library') { include '**/*.flix' })
     inputs.files(fileTree('main/test/flix') { include '**/*.flix' })
-    // LLVM runtime bring-up sources are compiled/used during some tests.
+    // LLVM runtime sources are compiled/used during some tests.
     inputs.files(fileTree('runtime/src') { include '**/*.zig' })
     inputs.files(fileTree('runtime/wit') { include '**/*.wit' })
     filter {

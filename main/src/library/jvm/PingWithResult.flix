@@ -59,4 +59,3 @@ pub mod PingWithResult {
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - PingWithResult) + IO = handle(f)()
 
 }
-

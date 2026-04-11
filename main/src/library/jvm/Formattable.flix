@@ -21,4 +21,3 @@ instance Formattable[BigInt] {
 instance Formattable[BigDecimal] {
     pub def format(x: BigDecimal): RichString = RichString.fromString(ToString.toString(x))
 }
-

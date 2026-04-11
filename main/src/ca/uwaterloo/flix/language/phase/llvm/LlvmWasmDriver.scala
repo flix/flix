@@ -28,7 +28,7 @@ import scala.jdk.CollectionConverters.*
 /**
   * Drives the host toolchain to turn textual LLVM IR (`.ll`) into a wasm component + JS package.
   *
-  * Browser-first bring-up:
+  * Current wasm pipeline:
   *   - core module is `wasm32-freestanding` (no WASI preview1),
   *   - the component world is described by WIT (`runtime/wit/flix-bindings`),
   *   - we use `wasm-tools component embed/new` to produce a component,
@@ -198,7 +198,7 @@ object LlvmWasmDriver {
   /**
     * Resolves the Zig runtime support file for the LLVM backend.
     *
-    * Bring-up behavior:
+    * Resolution order:
     *   1. Prefer `runtime/src/flix_rt_llvm.zig` relative to the current working directory.
     *   2. Otherwise, extract the bundled runtime source tree from `flix.jar` into `outDir`.
     */
@@ -310,7 +310,7 @@ object LlvmWasmDriver {
   /**
     * Compiles the generated WIT C glue.
     *
-    * Bring-up shortcut: compile as `wasm32-wasi` (headers available) but link into a freestanding core module.
+    * Current toolchain choice: compile as `wasm32-wasi` (headers available) but link into a freestanding core module.
     * This avoids introducing a WASI dependency as long as we do not link wasi-libc.
     */
   private def compileWitGlue(witGlueC: Path, out: Path, wasmDir: Path, optFlag: String): Path = {

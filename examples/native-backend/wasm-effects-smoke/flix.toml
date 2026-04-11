@@ -5,3 +5,11 @@ version = "0.1.0"
 flix = "0.68.0"
 authors = ["The Flix Team"]
 license = "Apache-2.0"
+
+[build]
+targets = ["wasm"]
+
+[[bindings.wasm]]
+wit = "wit"
+world = "demo"
+module = "Wit"

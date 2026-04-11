@@ -32,4 +32,3 @@ def main(): Unit \ IO = region rc {
     println("array-foreach: ok");
     ()
 }
-

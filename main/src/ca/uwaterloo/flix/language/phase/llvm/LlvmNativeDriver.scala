@@ -27,7 +27,7 @@ import scala.jdk.CollectionConverters.*
 /**
  * Drives the host toolchain to turn textual LLVM IR (`.ll`) into a native executable.
  *
- * Bring-up choice: use `zig cc` to compile LLVM IR and Zig runtime sources into objects.
+ * Current toolchain choice: use `zig cc` to compile LLVM IR and Zig runtime sources into objects.
  * On macOS we use the platform C linker for the final link step because the current
  * Zig 0.15 toolchain on this host does not reliably resolve libc symbols when linking
  * object-only inputs.
@@ -172,7 +172,7 @@ object LlvmNativeDriver {
   /**
     * Resolves the Zig runtime support file for the LLVM-native backend.
     *
-    * Bring-up behavior:
+    * Resolution order:
     *   1. Prefer `runtime/src/flix_rt_llvm.zig` relative to the current working directory.
     *   2. Otherwise, extract the bundled runtime source tree and vendored `libxev` source into `outDir`.
     */

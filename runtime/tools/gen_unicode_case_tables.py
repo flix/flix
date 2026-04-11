@@ -3,7 +3,7 @@
 Generates Zig tables for portable (locale-insensitive) Unicode operations used by the LLVM backend runtime.
 
 We target the same Unicode version as the JDK used by our CI/dev toolchain.
-As of Flix bring-up (2026), JDK 21 uses Unicode 15.0.0.
+As of 2026, JDK 21 uses Unicode 15.0.0.
 
 Inputs (downloaded from unicode.org):
   - UnicodeData.txt              (simple upper/lower/title mappings; general categories; numeric properties)
