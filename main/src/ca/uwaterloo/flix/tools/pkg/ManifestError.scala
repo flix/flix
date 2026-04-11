@@ -216,7 +216,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""The toml file has a table named ${f.red(tableName)}, which is not allowed.
          |Allowed table names:
-         |  package, dependencies, dev-dependencies, mvn-dependencies, dev-mvn-dependencies, jar-dependencies
+         |  package, build, bindings, bindings.native, bindings.wasm, run, test, target, target.jvm, target.native, target.wasm, dependencies, mvn-dependencies, jar-dependencies
          |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }

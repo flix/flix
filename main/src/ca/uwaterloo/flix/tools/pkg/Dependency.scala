@@ -18,12 +18,18 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 
 import java.net.{URI, URL}
+import java.nio.file.Path
 
 sealed trait Dependency
 
 object Dependency {
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, sctx: SecurityContext) extends Dependency {
+  sealed trait FlixPackageDependency extends Dependency {
+    def identifier: String
+    def sctx: SecurityContext
+  }
+
+  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, sctx: SecurityContext) extends FlixPackageDependency {
     val identifier: String = {
       val r = repo.toString.toLowerCase
       s"$r:$username/$projectName"
@@ -31,6 +37,14 @@ object Dependency {
 
     override def toString: String = {
       s"\"$identifier\" = { version = \"$version\", security = \"$sctx\" }"
+    }
+  }
+
+  case class PathDependency(name: String, path: Path, sctx: SecurityContext) extends FlixPackageDependency {
+    val identifier: String = name
+
+    override def toString: String = {
+      s""""$identifier" = { path = "${path.toString}", security = "$sctx" }"""
     }
   }
 

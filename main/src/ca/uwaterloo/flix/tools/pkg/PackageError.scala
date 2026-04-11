@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixPackageDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -115,7 +115,7 @@ object PackageError {
     * @param dependency the dependency that requires a higher security level than what is allowed by the declaring manifest.
     * @param sctx       the maximum allowed security context.
     */
-  case class DepGraphSecurityError(manifest: Manifest, dependency: FlixDependency, sctx: SecurityContext) extends PackageError {
+  case class DepGraphSecurityError(manifest: Manifest, dependency: FlixPackageDependency, sctx: SecurityContext) extends PackageError {
     // TODO: Show the offending original dependency/-ies (from origin manifest)
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String = {
@@ -158,7 +158,7 @@ object PackageError {
     * @param manifest   the manifest which [[dependency]] resolves to.
     * @param dependency a valid flix dependency.
     */
-  case class MismatchedVersions(manifest: Manifest, dependency: FlixDependency) extends PackageError {
+  case class MismatchedVersions(manifest: Manifest, dependency: Dependency.FlixDependency) extends PackageError {
     override def message(f: Formatter): String = {
       s"""Mismatched versions:
          |  Dependency ${dependency.identifier} required version ${dependency.version}

@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
+import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, FlixPackageDependency, JarDependency, MavenDependency, PathDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
@@ -42,8 +42,9 @@ object FlixPackageManager {
     */
   case class Resolution(origin: Manifest,
                         manifests: List[Manifest],
+                        manifestRoots: Map[Manifest, Path],
                         immediateDependents: Map[Manifest, List[Manifest]],
-                        manifestToFlixDeps: ListMap[Manifest, FlixDependency])
+                        manifestToFlixDeps: ListMap[Manifest, FlixPackageDependency])
 
   /**
     * Represents the dependency resolution of [[origin]] where the maximum security level has been computed
@@ -56,7 +57,8 @@ object FlixPackageManager {
     */
   case class SecureResolution(origin: Manifest,
                               security: Map[Manifest, SecurityContext],
-                              manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
+                              manifestRoots: Map[Manifest, Path],
+                              manifestToFlixDeps: ListMap[Manifest, FlixPackageDependency]) {
     /**
       * All manifests in the resolution.
       */
@@ -71,8 +73,9 @@ object FlixPackageManager {
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
     out.println("Resolving Flix dependencies...")
     implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map(manifest -> List.empty)
-    implicit val manifestToFlixDeps: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map(manifest -> List.empty)
-    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) })))
+    implicit val manifestToFlixDeps: mutable.Map[Manifest, List[FlixPackageDependency]] = mutable.Map(manifest -> List.empty)
+    implicit val manifestRoots: mutable.Map[Manifest, Path] = mutable.Map(manifest -> path.normalize())
+    findTransitiveDependenciesRec(manifest, path.normalize(), path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, manifestRoots.toMap, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) })))
   }
 
   /**
@@ -82,7 +85,7 @@ object FlixPackageManager {
     implicit val securityContexts: mutable.Map[Manifest, SecurityContext] = mutable.Map(resolution.origin -> SecurityContext.Unrestricted)
     implicit val res: Resolution = resolution
     val manifests = resolution.manifests.map(m => (m, minSecurityLevel(m))).toMap
-    SecureResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
+    SecureResolution(resolution.origin, manifests, resolution.manifestRoots, resolution.manifestToFlixDeps)
   }
 
   /**
@@ -98,8 +101,8 @@ object FlixPackageManager {
   /**
     * Finds the Flix dependencies in a Manifest.
     */
-  def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
-    manifest.dependencies.collect { case dep: FlixDependency => dep }
+  def findFlixDependencies(manifest: Manifest): List[FlixPackageDependency] = {
+    manifest.dependencies.collect { case dep: FlixPackageDependency => dep }
   }
 
   /**
@@ -125,17 +128,18 @@ object FlixPackageManager {
   def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, SecurityContext)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    val allFlixDeps = ListMap.from(resolution.manifestToFlixDeps.map { case (manifest, flixDep) => resolution.security(manifest) -> flixDep })
+    val flixPaths = resolution.manifestToFlixDeps.map(identity).toList.flatMap {
+      case (manifest, dep: FlixDependency) =>
+        val depName: String = s"${dep.username}/${dep.projectName}"
+        install(depName, dep.version, "fpkg", projectRoot, apiKey) match {
+          case Ok(p) => Some((p, resolution.security(manifest)))
+          case Err(e) =>
+            out.println(s"ERROR: Installation of `$depName' failed.")
+            return Err(e)
+        }
 
-    val flixPaths = allFlixDeps.map { case (sctx, dep) =>
-      val depName: String = s"${dep.username}/${dep.projectName}"
-      install(depName, dep.version, "fpkg", projectRoot, apiKey) match {
-        case Ok(p) => (p, sctx)
-        case Err(e) =>
-          out.println(s"ERROR: Installation of `$depName' failed.")
-          return Err(e)
-      }
-    }.toList
+      case (_, _: PathDependency) => None
+    }
 
     Ok(flixPaths)
   }
@@ -203,23 +207,23 @@ object FlixPackageManager {
     * parses them to manifests. Returns the list of manifests.
     * `res` is the list of Manifests found so far to avoid duplicates.
     */
-  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  private def findTransitiveDependenciesRec(manifest: Manifest, manifestRoot: Path, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixPackageDependency]], manifestRoots: mutable.Map[Manifest, Path], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     // find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
     for {
-      // download toml files
-      tomlPaths <- traverse(flixDeps) { dep =>
-        val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, "toml", path, apiKey).map(p => (p, dep))
+      // resolve and parse manifests
+      transitiveEntries <- traverse(flixDeps) { dep =>
+        resolveDependencyManifest(dep, manifestRoot, path, apiKey)
       }
 
-      // parse manifests
-      transitiveManifests <- traverse(tomlPaths) { case (p, d) => validateManifest(p, d) }
-
     } yield {
+      val transitiveManifests = transitiveEntries.map(_._1)
       for (m <- transitiveManifests) {
         immediateDependents.put(m, manifest :: immediateDependents.getOrElse(m, List.empty))
+      }
+      for ((m, rootOpt) <- transitiveEntries.map { case (m, _, rootOpt) => (m, rootOpt) }) {
+        rootOpt.foreach(root => manifestRoots.put(m, root))
       }
 
       // remove duplicates
@@ -227,8 +231,9 @@ object FlixPackageManager {
       var newRes = res ++ newManifests
 
       // do recursive calls for all dependencies
-      for (m <- newManifests) {
-        findTransitiveDependenciesRec(m, path, newRes, apiKey) match {
+      for ((m, _, rootOpt) <- transitiveEntries if newManifests.contains(m)) {
+        val nextRoot = rootOpt.getOrElse(manifestRoots.getOrElse(m, manifestRoot))
+        findTransitiveDependenciesRec(m, nextRoot, path, newRes, apiKey) match {
           case Ok(t) => newRes = newRes ++ t.filter(!newRes.contains(_))
           case Err(e) => return Err(e)
         }
@@ -242,7 +247,23 @@ object FlixPackageManager {
     *
     * Also mutates `manifestToDep` by adding or updating the mapping `m -> ds` to `m -> d :: ds`.
     */
-  private def validateManifest(p: Path, flixDep: FlixDependency)(implicit manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]]): Result[Manifest, PackageError] = {
+  private def resolveDependencyManifest(dep: FlixPackageDependency, manifestRoot: Path, projectRoot: Path, apiKey: Option[String])(implicit manifestToDep: mutable.Map[Manifest, List[Dependency.FlixPackageDependency]], formatter: Formatter, out: PrintStream): Result[(Manifest, FlixPackageDependency, Option[Path]), PackageError] = dep match {
+    case flixDep: FlixDependency =>
+      val depName = s"${flixDep.username}/${flixDep.projectName}"
+      install(depName, flixDep.version, "toml", projectRoot, apiKey).flatMap { p =>
+        validateManifest(p, flixDep).map(manifest => (manifest, dep, None))
+      }
+
+    case pathDep: PathDependency =>
+      val root = if (pathDep.path.isAbsolute) pathDep.path.normalize() else manifestRoot.resolve(pathDep.path).normalize()
+      val manifestPath = root.resolve("flix.toml").normalize()
+      parseManifest(manifestPath).map { manifest =>
+        manifestToDep.put(manifest, pathDep :: manifestToDep.getOrElse(manifest, List.empty))
+        (manifest, dep, Some(root))
+      }
+  }
+
+  private def validateManifest(p: Path, flixDep: FlixDependency)(implicit manifestToDep: mutable.Map[Manifest, List[Dependency.FlixPackageDependency]]): Result[Manifest, PackageError] = {
     parseManifest(p).flatMap {
       m =>
         manifestToDep.put(m, flixDep :: manifestToDep.getOrElse(m, List.empty))
@@ -292,7 +313,7 @@ object FlixPackageManager {
     * Checks condition 1 of [[findSecurityViolations]] and returns all security inconsistencies.
     */
   private def checkGraphErrors(m: Manifest, sctx: SecurityContext): List[PackageError.DepGraphSecurityError] = {
-    val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
+    val flixDeps = m.dependencies.collect { case d: FlixPackageDependency => d }
     flixDeps.filter(d => d.sctx.greaterThan(sctx)).map(d => PackageError.DepGraphSecurityError(m, d, sctx))
   }
 
