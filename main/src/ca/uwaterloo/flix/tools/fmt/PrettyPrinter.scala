@@ -633,7 +633,7 @@ object PrettyPrinter {
         case tok: Token => tok.text == "|>"
       }
       localLayout(tree) {
-        if (isPipe) parts(0) <> nest(4, line <> parts(1) <+> parts(2))
+        if (isPipe) parts(0) <> line <> parts(1) <+> parts(2)
         else parts(0) <> line <> parts(1) <+> parts(2)
       }
     } else {
@@ -880,6 +880,12 @@ object PrettyPrinter {
     }
   }
 
+  /**
+    * This is the last resort for pretty printing if no other formatting rule applies.
+    *
+    * @param tree the tree to format
+    * @return the formatted tree as Doc.
+    */
   private def prettyFallback(tree: Tree): Doc = {
     val children = filterEmpty(tree.children)
     if (children.isEmpty) return empty
