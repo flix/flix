@@ -1,0 +1,15 @@
+package host:demo@0.1.0;
+
+interface users {
+  record user {
+    name: string,
+    score: s32,
+  }
+
+  pair-users: func(users: list<user>) -> list<tuple<string, s32>>;
+  promote: func(user: option<user>) -> result<user, s32>;
+}
+
+world demo {
+  import users;
+}

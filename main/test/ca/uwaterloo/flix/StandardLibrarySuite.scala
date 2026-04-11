@@ -81,7 +81,9 @@ class StandardLibrarySuite extends AnyFunSuite {
       for ((sym, TestFn(_, skip, run)) <- testsByName) {
         val testName = sym.toString
         if (skip){
-          ignore(testName) {}
+          test(testName) {
+            cancel("Skipped by Flix (@Skip).")
+          }
         } else {
           test(testName) {
             run()

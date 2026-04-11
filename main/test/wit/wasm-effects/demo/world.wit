@@ -1,0 +1,10 @@
+package host:demo@0.1.0;
+
+interface clock {
+  echo: func(s: string) -> string;
+  now: func() -> s64;
+}
+
+world demo {
+  import clock;
+}

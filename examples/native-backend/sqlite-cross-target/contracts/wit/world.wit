@@ -1,0 +1,25 @@
+package example:sqlite@0.1.0;
+
+interface bridge {
+  resource db {
+    exec: func(sql: string) -> s32;
+    errmsg: func() -> string;
+    prepare: func(sql: string) -> result<stmt, s32>;
+  }
+
+  resource stmt {
+    bind-text: func(index: s32, value: string) -> s32;
+    bind-blob: func(index: s32, value: list<u8>) -> s32;
+    step: func() -> s32;
+    reset: func() -> s32;
+    column-int64: func(index: s32) -> s64;
+    column-text: func(index: s32) -> string;
+    column-blob: func(index: s32) -> list<u8>;
+  }
+
+  open: func(path: string) -> result<db, s32>;
+}
+
+world sqlite-demo {
+  import bridge;
+}

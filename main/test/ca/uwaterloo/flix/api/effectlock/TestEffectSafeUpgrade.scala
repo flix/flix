@@ -202,7 +202,8 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  ignore("IsEffectSafeUpgrade.12") {
+  test("IsEffectSafeUpgrade.12") {
+    cancel("Disabled (known issue).")
     val input =
       """
         |pub eff E {
@@ -221,7 +222,8 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  ignore("IsEffectSafeUpgrade.13") {
+  test("IsEffectSafeUpgrade.13") {
+    cancel("Disabled (known issue).")
     val input =
       """
         |pub eff E {
@@ -240,7 +242,8 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "g", "f", result.get))
   }
 
-  ignore("IsEffectSafeUpgrade.14") {
+  test("IsEffectSafeUpgrade.14") {
+    cancel("Disabled (known issue).")
     val input =
       """
         |pub eff E {
@@ -259,7 +262,8 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "g", "f", result.get))
   }
 
-  ignore("IsEffectSafeUpgrade.15") {
+  test("IsEffectSafeUpgrade.15") {
+    cancel("Disabled (known issue).")
     val input =
       """
         |pub eff E {

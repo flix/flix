@@ -1,0 +1,68 @@
+[[binding]]
+symbol = "flix_sqlite_open"
+result = "status-owned-handle"
+type = "Db"
+out = "out_db"
+ok = "0"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_db_close"
+effect = "IO"
+destroy = "db"
+
+[[binding]]
+symbol = "flix_sqlite_db_errmsg"
+result = "borrowed-string"
+borrowed-from = "db"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_db_exec"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_db_prepare"
+result = "status-owned-handle"
+type = "Stmt"
+out = "out_stmt"
+ok = "0"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_stmt_finalize"
+effect = "IO"
+destroy = "stmt"
+
+[[binding]]
+symbol = "flix_sqlite_stmt_bind_text"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_stmt_bind_blob"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_stmt_step"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_stmt_reset"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_stmt_column_int64"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_stmt_column_text"
+result = "borrowed-string"
+borrowed-from = "stmt"
+effect = "IO"
+
+[[binding]]
+symbol = "flix_sqlite_stmt_column_blob"
+result = "borrowed-bytes"
+len = "out_len"
+borrowed-from = "stmt"
+effect = "IO"

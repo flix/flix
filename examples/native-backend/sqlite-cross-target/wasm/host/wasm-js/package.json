@@ -1,0 +1,12 @@
+{
+  "name": "sqlite-cross-target-wasm-js-host",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "3.51.2-build8"
+  },
+  "scripts": {
+    "run:node": "node node-main.mjs",
+    "serve": "node serve.mjs"
+  }
+}

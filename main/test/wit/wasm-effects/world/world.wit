@@ -1,0 +1,6 @@
+package host:demo@0.1.0;
+
+world demo {
+  import greet: func(name: string) -> string;
+  import lucky: func(seed: s32) -> result<string, s32>;
+}

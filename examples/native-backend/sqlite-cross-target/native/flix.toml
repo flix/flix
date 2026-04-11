@@ -1,0 +1,13 @@
+[package]
+name = "sqlite-native"
+description = "Native SQLite bridge example."
+version = "0.1.0"
+flix = "0.68.0"
+authors = ["The Flix Team"]
+license = "Apache-2.0"
+
+[build]
+targets = ["native"]
+
+[dependencies]
+"sqlite-bridge" = { path = "../native-bridge", security = "unrestricted" }

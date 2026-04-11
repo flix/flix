@@ -1,0 +1,13 @@
+[package]
+name = "sqlite-cross-target-wasmtime-host"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1"
+libsqlite3-sys = { version = "0.37.0", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "=1.0.146"
+wasmtime = { version = "38", features = ["component-model"] }
+flix-wit-effect-bindings = { path = "../../build/wasm/generated/bindings/wasm/00-Wit/rust" }

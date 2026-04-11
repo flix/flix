@@ -162,7 +162,12 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
         case Ok(res) => res
         case Err(e) => fail(e.message(formatter))
       }
-      val resolution = FlixPackageManager.SecureResolution(origin = manifest1, security = resolution1.security ++ resolution2.security, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps)
+      val resolution = FlixPackageManager.SecureResolution(
+        origin = manifest1,
+        security = resolution1.security ++ resolution2.security,
+        manifestRoots = resolution1.manifestRoots ++ resolution2.manifestRoots,
+        manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps,
+      )
 
 
       FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) match {

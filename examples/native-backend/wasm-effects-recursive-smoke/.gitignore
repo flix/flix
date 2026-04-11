@@ -1,0 +1,4 @@
+/build/
+/generated/
+/src/Wit.flix
+/host/wasm-rust/Cargo.lock

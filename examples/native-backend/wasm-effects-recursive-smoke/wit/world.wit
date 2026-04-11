@@ -1,0 +1,12 @@
+package host:demo@0.1.0;
+
+interface users {
+  type user = tuple<string, s32>;
+
+  pair-users: func(users: list<user>) -> list<tuple<string, s32>>;
+  promote: func(user: option<user>) -> result<tuple<string, s32>, s32>;
+}
+
+world demo {
+  import users;
+}

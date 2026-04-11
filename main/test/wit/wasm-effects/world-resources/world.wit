@@ -1,0 +1,12 @@
+package host:demo@0.1.0;
+
+world demo {
+  resource counter {
+    constructor(seed: s32);
+    get: func() -> s32;
+    add: func(delta: s32) -> s32;
+    duplicate: static func(src: borrow<counter>) -> counter;
+  }
+
+  import some-world-func: func() -> counter;
+}

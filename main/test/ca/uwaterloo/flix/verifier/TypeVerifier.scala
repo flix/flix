@@ -47,6 +47,9 @@ object TypeVerifier {
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, SimpleType], lenv: Map[Symbol.LabelSym, SimpleType]): SimpleType = expr match {
     case Expr.Cst(cst, _) => cst.tpe
 
+    case Expr.NativeImport(_, tpe, _, _) => tpe
+    case Expr.WasmImport(_, tpe, _, _) => tpe
+
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", sym.loc)
       case Some(tpe2) =>
@@ -59,21 +62,235 @@ object TypeVerifier {
       op match {
         case AtomicOp.Unary(sop) =>
           val List(t) = ts
-          val opTpe = sop match {
-            case SemanticOp.BoolOp.Not => SimpleType.Bool
-            case SemanticOp.Float32Op.Neg => SimpleType.Float32
-            case SemanticOp.Float64Op.Neg => SimpleType.Float64
-            case SemanticOp.Int8Op.Neg => SimpleType.Int8
-            case SemanticOp.Int8Op.Not => SimpleType.Int8
-            case SemanticOp.Int16Op.Neg => SimpleType.Int16
-            case SemanticOp.Int16Op.Not => SimpleType.Int16
-            case SemanticOp.Int32Op.Neg => SimpleType.Int32
-            case SemanticOp.Int32Op.Not => SimpleType.Int32
-            case SemanticOp.Int64Op.Neg => SimpleType.Int64
-            case SemanticOp.Int64Op.Not => SimpleType.Int64
+          val (argTpe, resTpe) = sop match {
+            case SemanticOp.ExnOp.KindId => (t, SimpleType.Int32)
+            case SemanticOp.BoolOp.Not => (SimpleType.Bool, SimpleType.Bool)
+            case SemanticOp.Float32Op.Neg => (SimpleType.Float32, SimpleType.Float32)
+            case SemanticOp.Float64Op.Neg => (SimpleType.Float64, SimpleType.Float64)
+            case SemanticOp.Int8Op.Neg => (SimpleType.Int8, SimpleType.Int8)
+            case SemanticOp.Int8Op.Not => (SimpleType.Int8, SimpleType.Int8)
+            case SemanticOp.Int16Op.Neg => (SimpleType.Int16, SimpleType.Int16)
+            case SemanticOp.Int16Op.Not => (SimpleType.Int16, SimpleType.Int16)
+            case SemanticOp.Int32Op.Neg => (SimpleType.Int32, SimpleType.Int32)
+            case SemanticOp.Int32Op.Not => (SimpleType.Int32, SimpleType.Int32)
+            case SemanticOp.Int64Op.Neg => (SimpleType.Int64, SimpleType.Int64)
+            case SemanticOp.Int64Op.Not => (SimpleType.Int64, SimpleType.Int64)
+            case SemanticOp.BigIntOp.Neg => (SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Not => (SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.BitLength => (SimpleType.BigInt, SimpleType.Int32)
+            case SemanticOp.BigIntOp.FromInt64 => (SimpleType.Int64, SimpleType.BigInt)
+            case SemanticOp.BigDecimalOp.Neg => (SimpleType.BigDecimal, SimpleType.BigDecimal)
+            case SemanticOp.BigDecimalOp.Scale => (SimpleType.BigDecimal, SimpleType.Int32)
+            case SemanticOp.BigDecimalOp.Precision => (SimpleType.BigDecimal, SimpleType.Int32)
+            case SemanticOp.BigDecimalOp.Ceil => (SimpleType.BigDecimal, SimpleType.BigDecimal)
+            case SemanticOp.BigDecimalOp.Floor => (SimpleType.BigDecimal, SimpleType.BigDecimal)
+            case SemanticOp.BigDecimalOp.Round => (SimpleType.BigDecimal, SimpleType.BigDecimal)
+            case SemanticOp.BigDecimalOp.ToBigInt => (SimpleType.BigDecimal, SimpleType.BigInt)
+            case SemanticOp.BigDecimalOp.ToPlainString => (SimpleType.BigDecimal, SimpleType.String)
+            case SemanticOp.CodePointOp.IsLetter => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsDigit => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsLowerCase => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsUpperCase => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsTitleCase => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsWhitespace => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsAlphabetic => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsDefined => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsIdeographic => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsISOControl => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.IsMirrored => (SimpleType.Int32, SimpleType.Bool)
+            case SemanticOp.CodePointOp.ToLowerCase => (SimpleType.Int32, SimpleType.Int32)
+            case SemanticOp.CodePointOp.ToUpperCase => (SimpleType.Int32, SimpleType.Int32)
+            case SemanticOp.CodePointOp.ToTitleCase => (SimpleType.Int32, SimpleType.Int32)
+            case SemanticOp.CodePointOp.GetName => (SimpleType.Int32, SimpleType.String)
+            case SemanticOp.CodePointOp.GetNumericValue => (SimpleType.Int32, SimpleType.Int32)
+
+            case SemanticOp.ToStringOp.CharToString => (SimpleType.Char, SimpleType.String)
+            case SemanticOp.ToStringOp.Float32ToString => (SimpleType.Float32, SimpleType.String)
+            case SemanticOp.ToStringOp.Float64ToString => (SimpleType.Float64, SimpleType.String)
+            case SemanticOp.ToStringOp.Int8ToString => (SimpleType.Int8, SimpleType.String)
+            case SemanticOp.ToStringOp.Int16ToString => (SimpleType.Int16, SimpleType.String)
+            case SemanticOp.ToStringOp.Int32ToString => (SimpleType.Int32, SimpleType.String)
+            case SemanticOp.ToStringOp.Int64ToString => (SimpleType.Int64, SimpleType.String)
+            case SemanticOp.ToStringOp.BigIntToString => (SimpleType.BigInt, SimpleType.String)
+            case SemanticOp.ToStringOp.BigDecimalToString => (SimpleType.BigDecimal, SimpleType.String)
+
+            case SemanticOp.ConvertOp.Int8ToInt16 => (SimpleType.Int8, SimpleType.Int16)
+            case SemanticOp.ConvertOp.Int8ToInt32 => (SimpleType.Int8, SimpleType.Int32)
+            case SemanticOp.ConvertOp.Int8ToInt64 => (SimpleType.Int8, SimpleType.Int64)
+            case SemanticOp.ConvertOp.Int8ToFloat32 => (SimpleType.Int8, SimpleType.Float32)
+            case SemanticOp.ConvertOp.Int8ToFloat64 => (SimpleType.Int8, SimpleType.Float64)
+            case SemanticOp.ConvertOp.Int16ToInt8 => (SimpleType.Int16, SimpleType.Int8)
+            case SemanticOp.ConvertOp.Int16ToInt32 => (SimpleType.Int16, SimpleType.Int32)
+            case SemanticOp.ConvertOp.Int16ToInt64 => (SimpleType.Int16, SimpleType.Int64)
+            case SemanticOp.ConvertOp.Int16ToFloat32 => (SimpleType.Int16, SimpleType.Float32)
+            case SemanticOp.ConvertOp.Int16ToFloat64 => (SimpleType.Int16, SimpleType.Float64)
+            case SemanticOp.ConvertOp.Int32ToInt8 => (SimpleType.Int32, SimpleType.Int8)
+            case SemanticOp.ConvertOp.Int32ToInt16 => (SimpleType.Int32, SimpleType.Int16)
+            case SemanticOp.ConvertOp.Int32ToInt64 => (SimpleType.Int32, SimpleType.Int64)
+            case SemanticOp.ConvertOp.Int32ToFloat32 => (SimpleType.Int32, SimpleType.Float32)
+            case SemanticOp.ConvertOp.Int32ToFloat64 => (SimpleType.Int32, SimpleType.Float64)
+            case SemanticOp.ConvertOp.Int64ToInt8 => (SimpleType.Int64, SimpleType.Int8)
+            case SemanticOp.ConvertOp.Int64ToInt16 => (SimpleType.Int64, SimpleType.Int16)
+            case SemanticOp.ConvertOp.Int64ToInt32 => (SimpleType.Int64, SimpleType.Int32)
+            case SemanticOp.ConvertOp.Int64ToFloat32 => (SimpleType.Int64, SimpleType.Float32)
+            case SemanticOp.ConvertOp.Int64ToFloat64 => (SimpleType.Int64, SimpleType.Float64)
+            case SemanticOp.ConvertOp.Float32ToInt8 => (SimpleType.Float32, SimpleType.Int8)
+            case SemanticOp.ConvertOp.Float32ToInt16 => (SimpleType.Float32, SimpleType.Int16)
+            case SemanticOp.ConvertOp.Float32ToInt32 => (SimpleType.Float32, SimpleType.Int32)
+            case SemanticOp.ConvertOp.Float32ToInt64 => (SimpleType.Float32, SimpleType.Int64)
+            case SemanticOp.ConvertOp.Float32ToFloat64 => (SimpleType.Float32, SimpleType.Float64)
+            case SemanticOp.ConvertOp.Float64ToInt8 => (SimpleType.Float64, SimpleType.Int8)
+            case SemanticOp.ConvertOp.Float64ToInt16 => (SimpleType.Float64, SimpleType.Int16)
+            case SemanticOp.ConvertOp.Float64ToInt32 => (SimpleType.Float64, SimpleType.Int32)
+            case SemanticOp.ConvertOp.Float64ToInt64 => (SimpleType.Float64, SimpleType.Int64)
+            case SemanticOp.ConvertOp.Float64ToFloat32 => (SimpleType.Float64, SimpleType.Float32)
+
+            case SemanticOp.PlatformOp.FileSeparator => (SimpleType.Unit, SimpleType.String)
+            case SemanticOp.PlatformOp.PathSeparator => (SimpleType.Unit, SimpleType.String)
+            case SemanticOp.PlatformOp.LineSeparator => (SimpleType.Unit, SimpleType.String)
+
+            case SemanticOp.ObjectOp.IsNull => (t, SimpleType.Bool)
+
+            case SemanticOp.StringOp.Length => (SimpleType.String, SimpleType.Int32)
+            case SemanticOp.StringOp.ToLowerCase => (SimpleType.String, SimpleType.String)
+            case SemanticOp.StringOp.ToUpperCase => (SimpleType.String, SimpleType.String)
+
+            case SemanticOp.ParseOp.Int8FromString => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int8)))
+            case SemanticOp.ParseOp.Int16FromString => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int16)))
+            case SemanticOp.ParseOp.Int32FromString => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32)))
+            case SemanticOp.ParseOp.Int64FromString => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64)))
+            case SemanticOp.ParseOp.Float32FromString => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Float32)))
+            case SemanticOp.ParseOp.Float64FromString => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Float64)))
+            case SemanticOp.ParseOp.BigIntFromString => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.BigInt)))
+            case SemanticOp.ParseOp.BigDecimalFromString => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.BigDecimal)))
+            case SemanticOp.ParseOp.Int32Parse => (SimpleType.mkTuple(List(SimpleType.Int32, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32)))
+            case SemanticOp.ParseOp.Int64Parse => (SimpleType.mkTuple(List(SimpleType.Int32, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64)))
+
+            case SemanticOp.StringBuilderOp.New => (SimpleType.Region, SimpleType.StringBuilderHandle)
+            case SemanticOp.StringBuilderOp.AppendString => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.StringBuilderHandle, SimpleType.String)), SimpleType.Unit)
+            case SemanticOp.StringBuilderOp.AppendCodePoint => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.StringBuilderHandle, SimpleType.Int32)), SimpleType.Unit)
+            case SemanticOp.StringBuilderOp.CharAt => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.StringBuilderHandle, SimpleType.Int32)), SimpleType.Char)
+            case SemanticOp.StringBuilderOp.Length => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.StringBuilderHandle)), SimpleType.Int32)
+            case SemanticOp.StringBuilderOp.SetLength => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.StringBuilderHandle, SimpleType.Int32)), SimpleType.Unit)
+            case SemanticOp.StringBuilderOp.ToString => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.StringBuilderHandle)), SimpleType.String)
+
+            case SemanticOp.RegexOp.FlagCanonEq => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.FlagCaseInsensitive => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.FlagComments => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.FlagDotall => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.FlagLiteral => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.FlagMultiline => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.FlagUnicodeCase => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.FlagUnicodeCharacterClass => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.FlagUnixLines => (SimpleType.Unit, SimpleType.Int32)
+            case SemanticOp.RegexOp.Compile => (SimpleType.String, SimpleType.Regex)
+            case SemanticOp.RegexOp.CompileWithFlags => (SimpleType.mkTuple(List(SimpleType.Int32, SimpleType.String)), SimpleType.Regex)
+            case SemanticOp.RegexOp.TryCompile => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Regex, SimpleType.String)))
+            case SemanticOp.RegexOp.TryCompileWithFlags => (SimpleType.mkTuple(List(SimpleType.Int32, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Regex, SimpleType.String)))
+            case SemanticOp.RegexOp.Quote => (SimpleType.String, SimpleType.String)
+            case SemanticOp.RegexOp.Pattern => (SimpleType.Regex, SimpleType.String)
+            case SemanticOp.RegexOp.Flags => (SimpleType.Regex, SimpleType.Int32)
+            case SemanticOp.RegexOp.Split => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.Regex, SimpleType.String)), SimpleType.Array(SimpleType.String))
+            case SemanticOp.RegexOp.NewMatcher => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.Regex, SimpleType.String)), SimpleType.RegexMatcher)
+            case SemanticOp.RegexOp.MatcherMatches => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher)), SimpleType.Bool)
+            case SemanticOp.RegexOp.MatcherFind => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher)), SimpleType.Bool)
+            case SemanticOp.RegexOp.MatcherFindFrom => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher, SimpleType.Int32)), SimpleType.Bool)
+            case SemanticOp.RegexOp.MatcherLookingAt => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher)), SimpleType.Bool)
+            case SemanticOp.RegexOp.MatcherReplaceAll => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher, SimpleType.String)), SimpleType.String)
+            case SemanticOp.RegexOp.MatcherReplaceFirst => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher, SimpleType.String)), SimpleType.String)
+            case SemanticOp.RegexOp.MatcherSetBounds => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher, SimpleType.Int32, SimpleType.Int32)), SimpleType.Unit)
+            case SemanticOp.RegexOp.MatcherStart => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher)), SimpleType.Int32)
+            case SemanticOp.RegexOp.MatcherEnd => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher)), SimpleType.Int32)
+            case SemanticOp.RegexOp.MatcherGroup => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher, SimpleType.Int32)), SimpleType.String)
+            case SemanticOp.RegexOp.MatcherGroupCount => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.RegexMatcher)), SimpleType.Int32)
+
+            case SemanticOp.CharOp.IsLetter => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsDigit => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsLetterOrDigit => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsLowerCase => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsUpperCase => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsTitleCase => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsWhitespace => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsDefined => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsISOControl => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsMirrored => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.IsSurrogate => (SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.ToLowerCase => (SimpleType.Char, SimpleType.Char)
+            case SemanticOp.CharOp.ToUpperCase => (SimpleType.Char, SimpleType.Char)
+            case SemanticOp.CharOp.ToTitleCase => (SimpleType.Char, SimpleType.Char)
+            case SemanticOp.CharOp.GetNumericValue => (SimpleType.Char, SimpleType.Int32)
+
+            case SemanticOp.HashOp.CharHash => (SimpleType.Char, SimpleType.Int32)
+            case SemanticOp.HashOp.Float32Hash => (SimpleType.Float32, SimpleType.Int32)
+            case SemanticOp.HashOp.Float64Hash => (SimpleType.Float64, SimpleType.Int32)
+            case SemanticOp.HashOp.Int8Hash => (SimpleType.Int8, SimpleType.Int32)
+            case SemanticOp.HashOp.Int16Hash => (SimpleType.Int16, SimpleType.Int32)
+            case SemanticOp.HashOp.Int32Hash => (SimpleType.Int32, SimpleType.Int32)
+            case SemanticOp.HashOp.Int64Hash => (SimpleType.Int64, SimpleType.Int32)
+            case SemanticOp.HashOp.BigIntHash => (SimpleType.BigInt, SimpleType.Int32)
+            case SemanticOp.HashOp.BigDecimalHash => (SimpleType.BigDecimal, SimpleType.Int32)
+            case SemanticOp.HashOp.StringHash => (SimpleType.String, SimpleType.Int32)
+
+            case SemanticOp.IoOp.Print => (SimpleType.String, SimpleType.Unit)
+            case SemanticOp.IoOp.EPrint => (SimpleType.String, SimpleType.Unit)
+            case SemanticOp.IoOp.Readln => (SimpleType.Unit, SimpleType.String)
+            case SemanticOp.IoOp.Println => (SimpleType.String, SimpleType.Unit)
+            case SemanticOp.IoOp.EPrintln => (SimpleType.String, SimpleType.Unit)
+            case SemanticOp.IoOp.SleepMillis => (SimpleType.Int64, SimpleType.Unit)
+            case SemanticOp.IoOp.Exit => (SimpleType.Int32, SimpleType.Unit)
+            case SemanticOp.IoOp.NewId => (SimpleType.Unit, SimpleType.Int64)
+            case SemanticOp.IoOp.TimeNowMillis => (SimpleType.Unit, SimpleType.Int64)
+            case SemanticOp.IoOp.FileExists => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileIsDirectory => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileIsRegularFile => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileIsReadable => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileIsSymbolicLink => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileIsWritable => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileIsExecutable => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileAccessTime => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileCreationTime => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileModificationTime => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileSize => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileRead => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.String, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileReadLines => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Array(SimpleType.String), SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileReadBytes => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Array(SimpleType.Int8), SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileList => (SimpleType.mkTuple(List(SimpleType.Region, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Array(SimpleType.String), SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileWrite => (SimpleType.mkTuple(List(SimpleType.String, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Unit, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileWriteBytes => (SimpleType.mkTuple(List(SimpleType.Array(SimpleType.Int8), SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Unit, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileAppend => (SimpleType.mkTuple(List(SimpleType.String, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Unit, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileAppendBytes => (SimpleType.mkTuple(List(SimpleType.Array(SimpleType.Int8), SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Unit, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileTruncate => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Unit, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileMkDir => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Unit, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileMkDirs => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Unit, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.FileMkTempDir => (SimpleType.String, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.String, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.TcpSocketRead => (SimpleType.mkTuple(List(SimpleType.Int64, SimpleType.Array(SimpleType.Int8))), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.TcpSocketWrite => (SimpleType.mkTuple(List(SimpleType.Int64, SimpleType.Array(SimpleType.Int8))), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.TcpSocketConnect => (SimpleType.mkTuple(List(SimpleType.Array(SimpleType.Int8), SimpleType.Int32)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.TcpSocketClose => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.String)))
+            case SemanticOp.IoOp.TcpServerBind => (SimpleType.mkTuple(List(SimpleType.Array(SimpleType.Int8), SimpleType.Int32)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.TcpServerLocalPort => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.TcpServerAccept => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.TcpServerClose => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessStdinWrite => (SimpleType.mkTuple(List(SimpleType.Int64, SimpleType.Array(SimpleType.Int8))), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessExec => (SimpleType.mkTuple(List(SimpleType.Array(SimpleType.String), SimpleType.Bool, SimpleType.String, SimpleType.Array(SimpleType.String))), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessExitValue => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessIsAlive => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessPid => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int64, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessStop => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Unit, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessWaitFor => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessWaitForTimeout => (SimpleType.mkTuple(List(SimpleType.Int64, SimpleType.Int64)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Bool, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessStdoutRead => (SimpleType.mkTuple(List(SimpleType.Int64, SimpleType.Array(SimpleType.Int8))), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessStderrRead => (SimpleType.mkTuple(List(SimpleType.Int64, SimpleType.Array(SimpleType.Int8))), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.ProcessRelease => (SimpleType.Int64, SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.String)))
+            case SemanticOp.IoOp.HttpRequest => (SimpleType.mkTuple(List(SimpleType.String, SimpleType.String, SimpleType.Array(SimpleType.String), SimpleType.Bool, SimpleType.String)), SimpleType.mkTuple(List(SimpleType.Bool, SimpleType.Int32, SimpleType.Array(SimpleType.String), SimpleType.String, SimpleType.Int32, SimpleType.String)))
+            case SemanticOp.IoOp.EnvGetArgs => (SimpleType.Region, SimpleType.Array(SimpleType.String))
+            case SemanticOp.IoOp.EnvGetEnvPairs => (SimpleType.Region, SimpleType.Array(SimpleType.String))
+            case SemanticOp.IoOp.EnvGetVar => (SimpleType.String, SimpleType.String)
+            case SemanticOp.IoOp.EnvGetProp => (SimpleType.String, SimpleType.String)
+            case SemanticOp.IoOp.EnvVirtualProcessors => (SimpleType.Unit, SimpleType.Int32)
           }
-          check(expected = opTpe)(actual = t, loc)
-          check(expected = tpe)(actual = opTpe, loc)
+          check(expected = argTpe)(actual = t, loc)
+          check(expected = tpe)(actual = resTpe, loc)
 
         case AtomicOp.Binary(sop) =>
           val List(t1, t2) = ts
@@ -89,6 +306,10 @@ object TypeVerifier {
             case SemanticOp.CharOp.Gt => (SimpleType.Char, SimpleType.Char, SimpleType.Bool)
             case SemanticOp.CharOp.Le => (SimpleType.Char, SimpleType.Char, SimpleType.Bool)
             case SemanticOp.CharOp.Lt => (SimpleType.Char, SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.Digit => (SimpleType.Char, SimpleType.Int32, SimpleType.Int32)
+            case SemanticOp.CharOp.IsSurrogatePair => (SimpleType.Char, SimpleType.Char, SimpleType.Bool)
+            case SemanticOp.CharOp.ToCodePoint => (SimpleType.Char, SimpleType.Char, SimpleType.Int32)
+            case SemanticOp.CharOp.ForDigit => (SimpleType.Int32, SimpleType.Int32, SimpleType.Char)
 
             case SemanticOp.Float32Op.Eq => (SimpleType.Float32, SimpleType.Float32, SimpleType.Bool)
             case SemanticOp.Float32Op.Neq => (SimpleType.Float32, SimpleType.Float32, SimpleType.Bool)
@@ -186,6 +407,26 @@ object TypeVerifier {
             case SemanticOp.Int64Op.Shl => (SimpleType.Int64, SimpleType.Int32, SimpleType.Int64)
             case SemanticOp.Int64Op.Shr => (SimpleType.Int64, SimpleType.Int32, SimpleType.Int64)
 
+            case SemanticOp.BigIntOp.Add => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Sub => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Mul => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Div => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Rem => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.And => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Or => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Xor => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Shl => (SimpleType.BigInt, SimpleType.Int32, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Shr => (SimpleType.BigInt, SimpleType.Int32, SimpleType.BigInt)
+            case SemanticOp.BigIntOp.Cmp => (SimpleType.BigInt, SimpleType.BigInt, SimpleType.Int32)
+
+            case SemanticOp.BigDecimalOp.Add => (SimpleType.BigDecimal, SimpleType.BigDecimal, SimpleType.BigDecimal)
+            case SemanticOp.BigDecimalOp.Sub => (SimpleType.BigDecimal, SimpleType.BigDecimal, SimpleType.BigDecimal)
+            case SemanticOp.BigDecimalOp.Mul => (SimpleType.BigDecimal, SimpleType.BigDecimal, SimpleType.BigDecimal)
+            case SemanticOp.BigDecimalOp.Div => (SimpleType.BigDecimal, SimpleType.BigDecimal, SimpleType.BigDecimal)
+            case SemanticOp.BigDecimalOp.Cmp => (SimpleType.BigDecimal, SimpleType.BigDecimal, SimpleType.Int32)
+
+            case SemanticOp.StringOp.CharAt => (SimpleType.String, SimpleType.Int32, SimpleType.Char)
+            case SemanticOp.StringOp.Repeat => (SimpleType.String, SimpleType.Int32, SimpleType.String)
             case SemanticOp.StringOp.Concat => (SimpleType.String, SimpleType.String, SimpleType.String)
           }
           check(expected = argTpe1)(t1, loc)
@@ -385,11 +626,22 @@ object TypeVerifier {
           tpe
 
         case AtomicOp.Box =>
-          check(expected = SimpleType.Object)(actual = tpe, loc)
+          // Boxing is used for casts from primitives into an erased "any" value type.
+          // Depending on the cast target, the result is either `Object` (JVM erased type)
+          // or `AnyType` (portable erased value type).
+          tpe match {
+            case SimpleType.AnyType => tpe
+            case SimpleType.Native(clazz) if clazz == classOf[java.lang.Object] => tpe
+            case _ => failUnexpectedType(tpe, SimpleType.Object, loc)
+          }
 
         case AtomicOp.Unbox =>
           val List(t1) = ts
-          check(expected = SimpleType.Object)(actual = t1, loc)
+          t1 match {
+            case SimpleType.AnyType => ()
+            case SimpleType.Native(clazz) if clazz == classOf[java.lang.Object] => ()
+            case _ => failUnexpectedType(t1, SimpleType.Object, loc)
+          }
           tpe
 
         // cast may result in any type
@@ -404,6 +656,128 @@ object TypeVerifier {
           }
 
           check(expected = SimpleType.Region)(actual = t2, loc)
+          check(expected = SimpleType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.ChannelNew =>
+          val List(t1) = ts
+          check(expected = SimpleType.Int32)(actual = t1, loc)
+          check(expected = SimpleType.ChannelHandle)(actual = tpe, loc)
+
+        case AtomicOp.ChannelGet =>
+          val List(t1) = ts
+          check(expected = SimpleType.ChannelHandle)(actual = t1, loc)
+          tpe
+
+        case AtomicOp.ChannelPut =>
+          val List(t1, _) = ts
+          check(expected = SimpleType.ChannelHandle)(actual = t1, loc)
+          check(expected = SimpleType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.ChannelSelect =>
+          if (ts.isEmpty) {
+            throw InternalCompilerException("Unexpected arity for ChannelSelect", loc)
+          }
+          val (channels, rest) = ts.splitAt(ts.length - 1)
+          channels.foreach(t => check(expected = SimpleType.ChannelHandle)(actual = t, loc))
+          rest match {
+            case List(blocking) =>
+              check(expected = SimpleType.Bool)(actual = blocking, loc)
+            case _ =>
+              throw InternalCompilerException(s"Unexpected arity for ChannelSelect: ${ts.length}", loc)
+          }
+          check(expected = SimpleType.Int64)(actual = tpe, loc)
+
+        case AtomicOp.ChannelSelectIndex =>
+          val List(tokenTpe) = ts
+          check(expected = SimpleType.Int64)(actual = tokenTpe, loc)
+          check(expected = SimpleType.Int32)(actual = tpe, loc)
+
+        case AtomicOp.ChannelSelectGet =>
+          val List(tokenTpe) = ts
+          check(expected = SimpleType.Int64)(actual = tokenTpe, loc)
+          tpe
+
+        case AtomicOp.ReentrantLockNew =>
+          check(expected = SimpleType.ReentrantLockHandle)(actual = tpe, loc)
+
+        case AtomicOp.ReentrantLockLock =>
+          val List(lockTpe) = ts
+          check(expected = SimpleType.ReentrantLockHandle)(actual = lockTpe, loc)
+          check(expected = SimpleType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.ReentrantLockTryLock =>
+          val List(lockTpe) = ts
+          check(expected = SimpleType.ReentrantLockHandle)(actual = lockTpe, loc)
+          check(expected = SimpleType.Bool)(actual = tpe, loc)
+
+        case AtomicOp.ReentrantLockUnlock =>
+          val List(lockTpe) = ts
+          check(expected = SimpleType.ReentrantLockHandle)(actual = lockTpe, loc)
+          check(expected = SimpleType.Bool)(actual = tpe, loc)
+
+        case AtomicOp.ConditionNew =>
+          val List(lockTpe) = ts
+          check(expected = SimpleType.ReentrantLockHandle)(actual = lockTpe, loc)
+          check(expected = SimpleType.ConditionHandle)(actual = tpe, loc)
+
+        case AtomicOp.ConditionAwait =>
+          val List(conditionTpe) = ts
+          check(expected = SimpleType.ConditionHandle)(actual = conditionTpe, loc)
+          check(expected = SimpleType.Int32)(actual = tpe, loc)
+
+        case AtomicOp.ConditionSignal =>
+          val List(conditionTpe) = ts
+          check(expected = SimpleType.ConditionHandle)(actual = conditionTpe, loc)
+          check(expected = SimpleType.Bool)(actual = tpe, loc)
+
+        case AtomicOp.ConditionSignalAll =>
+          val List(conditionTpe) = ts
+          check(expected = SimpleType.ConditionHandle)(actual = conditionTpe, loc)
+          check(expected = SimpleType.Bool)(actual = tpe, loc)
+
+        case AtomicOp.CyclicBarrierNew =>
+          val List(partiesTpe) = ts
+          check(expected = SimpleType.Int32)(actual = partiesTpe, loc)
+          check(expected = SimpleType.CyclicBarrierHandle)(actual = tpe, loc)
+
+        case AtomicOp.CyclicBarrierAwait =>
+          val List(barrierTpe) = ts
+          check(expected = SimpleType.CyclicBarrierHandle)(actual = barrierTpe, loc)
+          check(expected = SimpleType.Int32)(actual = tpe, loc)
+
+        case AtomicOp.CountDownLatchNew =>
+          val List(countTpe) = ts
+          check(expected = SimpleType.Int32)(actual = countTpe, loc)
+          check(expected = SimpleType.CountDownLatchHandle)(actual = tpe, loc)
+
+        case AtomicOp.CountDownLatchAwait =>
+          val List(latchTpe) = ts
+          check(expected = SimpleType.CountDownLatchHandle)(actual = latchTpe, loc)
+          check(expected = SimpleType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.CountDownLatchCountDown =>
+          val List(latchTpe) = ts
+          check(expected = SimpleType.CountDownLatchHandle)(actual = latchTpe, loc)
+          check(expected = SimpleType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.SemaphoreNew =>
+          val List(permitsTpe) = ts
+          check(expected = SimpleType.Int32)(actual = permitsTpe, loc)
+          check(expected = SimpleType.SemaphoreHandle)(actual = tpe, loc)
+
+        case AtomicOp.SemaphoreAcquire =>
+          val List(semTpe) = ts
+          check(expected = SimpleType.SemaphoreHandle)(actual = semTpe, loc)
+          check(expected = SimpleType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.SemaphoreTryAcquire =>
+          val List(semTpe) = ts
+          check(expected = SimpleType.SemaphoreHandle)(actual = semTpe, loc)
+          check(expected = SimpleType.Bool)(actual = tpe, loc)
+
+        case AtomicOp.SemaphoreRelease =>
+          val List(semTpe) = ts
+          check(expected = SimpleType.SemaphoreHandle)(actual = semTpe, loc)
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
         case AtomicOp.GetField(field) =>
@@ -427,7 +801,14 @@ object TypeVerifier {
 
         case AtomicOp.Throw =>
           val List(t) = ts
-          checkJavaSubtype(t, classOf[Throwable], loc)
+          t match {
+            case SimpleType.Native(clazz) =>
+              if (!classOf[Throwable].isAssignableFrom(clazz)) {
+                failMismatchedTypes(t, classOf[Throwable], loc)
+              }
+            case SimpleType.Enum(sym, _) if sym.text == "Exn" && sym.namespace.isEmpty => ()
+            case _ => failMismatchedTypes(t, classOf[Throwable], loc)
+          }
           tpe
 
         case AtomicOp.InstanceOf(_) =>
@@ -526,8 +907,16 @@ object TypeVerifier {
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Region), lenv), loc)
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
-      for (CatchRule(sym, clazz, exp) <- rules) {
-        checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Native(clazz)), lenv), exp.loc)
+      lazy val exnTpe: SimpleType = root.enums.keys.find(sym => sym.text == "Exn" && sym.namespace.isEmpty) match {
+        case Some(sym) => SimpleType.mkEnum(sym, Nil)
+        case None => throw InternalCompilerException("Missing enum symbol: Exn.", loc)
+      }
+      for (CatchRule(sym, catchTpe, exp) <- rules) {
+        val binderTpe = catchTpe match {
+          case SimpleType.Native(clazz) => SimpleType.Native(clazz)
+          case _ => exnTpe
+        }
+        checkEq(tpe, visitExpr(exp)(root, env + (sym -> binderTpe), lenv), exp.loc)
       }
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)

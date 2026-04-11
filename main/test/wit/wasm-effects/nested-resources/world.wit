@@ -1,0 +1,28 @@
+package host:demo@0.1.0;
+
+interface counters {
+  resource counter {
+    constructor(seed: s32);
+    get: func() -> s32;
+  }
+
+  record counter-step {
+    counter: borrow<counter>,
+    delta: s32,
+  }
+
+  record counter-total {
+    counter: counter,
+    total: s32,
+  }
+
+  tuple-hop: func(x: tuple<borrow<counter>, s32>) -> tuple<counter, s32>;
+  option-hop: func(x: option<borrow<counter>>) -> option<counter>;
+  result-hop: func(flag: bool, x: borrow<counter>) -> result<counter, string>;
+  list-hop: func(xs: list<borrow<counter>>) -> list<counter>;
+  record-hop: func(x: counter-step) -> counter-total;
+}
+
+world demo {
+  import counters;
+}

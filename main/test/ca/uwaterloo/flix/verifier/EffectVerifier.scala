@@ -74,6 +74,8 @@ object EffectVerifier {
     */
   def visitExp(e: Expr)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = e match {
     case Expr.Cst(cst, tpe, loc) => ()
+    case Expr.NativeImport(_, _, _, _) => ()
+    case Expr.WasmImport(_, _, _, _) => ()
     case Expr.Var(sym, tpe, loc) => ()
     case Expr.Hole(sym, env, tpe, eff, loc) => ()
     case Expr.HoleWithExp(exp, env, tpe, eff, loc) =>
@@ -349,6 +351,56 @@ object EffectVerifier {
       visitExp(exp1)
       visitExp(exp2)
       // TODO region stuff
+      ()
+    case Expr.NewReentrantLock(tpe, eff, loc) =>
+      ()
+    case Expr.LockReentrantLock(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.TryLockReentrantLock(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.UnlockReentrantLock(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.NewCondition(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.AwaitCondition(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.SignalCondition(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.SignalAllCondition(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.NewCyclicBarrier(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.AwaitCyclicBarrier(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.NewCountDownLatch(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.AwaitCountDownLatch(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.CountDownLatchCountDown(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.NewSemaphore(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.AcquireSemaphore(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.TryAcquireSemaphore(exp, tpe, eff, loc) =>
+      visitExp(exp)
+      ()
+    case Expr.ReleaseSemaphore(exp, tpe, eff, loc) =>
+      visitExp(exp)
       ()
     case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
       rules.foreach { r => visitExp(r.exp) }

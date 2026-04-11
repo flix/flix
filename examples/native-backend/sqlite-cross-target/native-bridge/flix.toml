@@ -1,0 +1,18 @@
+[package]
+name = "sqlite-bridge"
+description = "Reusable native SQLite bridge package."
+version = "0.1.0"
+flix = "0.68.0"
+authors = ["The Flix Team"]
+license = "Apache-2.0"
+
+[target.native]
+pkg-config = ["sqlite3"]
+compile-sources = ["bridge/sqlite_bridge.c"]
+compile-include = ["contracts/native"]
+
+[[bindings.native]]
+header = "contracts/native/sqlite_bridge.h"
+module = "Sqlite"
+spec = "contracts/native/sqlite_bridge.bind.toml"
+include = ["contracts/native"]
