@@ -1,0 +1,10 @@
+package flix:bindings@0.1.0;
+
+/// Aggregate world for the Flix runtime component boundary.
+///
+/// - The host provides system capabilities via `flix:sys`.
+/// - The component exports the embedding/runtime API via `flix:runtime`.
+world flix {
+  import flix:sys/sys@0.1.0;
+  export flix:runtime/runtime@0.1.0;
+}

@@ -325,19 +325,74 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Def)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = allowedModifiers, mustBePublic)
-      mapN(
-        pickDocumentation(tree),
-        pickNameIdent(tree),
-        Types.pickKindedParameters(tree),
-        pickFormalParameters(tree),
-        Exprs.pickExpr(tree),
-        Types.pickType(tree),
-        Types.pickConstraints(tree),
-        pickEqualityConstraints(tree),
-        Types.tryPickEffect(tree)
-      ) {
-        (doc, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
-          Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+      val maybeExpression = tryPick(TreeKind.Expr.Expr, tree)
+      if (hasToken(TokenKind.KeywordExtern, tree)) {
+        pickExternKind(tree) match {
+          case Some("native") =>
+            mapN(
+              pickDocumentation(tree),
+              pickNameIdent(tree),
+              Types.pickKindedParameters(tree),
+              pickFormalParameters(tree),
+              pickNativeImportSpec(tree),
+              Types.pickType(tree),
+              Types.pickConstraints(tree),
+              pickEqualityConstraints(tree),
+              Types.tryPickEffect(tree)
+            ) {
+              (doc, ident, tparams, fparams, spec, ttype, tconstrs, constrs, eff) =>
+                maybeExpression.foreach(_ => sctx.errors.add(Malformed(NamedTokenSet.Declaration, SyntacticContext.Decl.Module, hint = Some("`extern native` definitions must not have a body."), loc = tree.loc)))
+                val exp = Expr.NativeImport(spec, tree.loc.asSynthetic)
+                Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+            }
+          case Some("wasm") =>
+            mapN(
+              pickDocumentation(tree),
+              pickNameIdent(tree),
+              Types.pickKindedParameters(tree),
+              pickFormalParameters(tree),
+              pickWasmImportSpec(tree),
+              Types.pickType(tree),
+              Types.pickConstraints(tree),
+              pickEqualityConstraints(tree),
+              Types.tryPickEffect(tree)
+            ) {
+              (doc, ident, tparams, fparams, spec, ttype, tconstrs, constrs, eff) =>
+                maybeExpression.foreach(_ => sctx.errors.add(Malformed(NamedTokenSet.Declaration, SyntacticContext.Decl.Module, hint = Some("`extern wasm` definitions must not have a body."), loc = tree.loc)))
+                val exp = Expr.WasmImport(spec, tree.loc.asSynthetic)
+                Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+            }
+          case _ =>
+            sctx.errors.add(Malformed(NamedTokenSet.Declaration, SyntacticContext.Decl.Module, hint = Some("Only `extern native` and `extern wasm` definitions are supported."), loc = tree.loc))
+            mapN(
+              pickDocumentation(tree),
+              pickNameIdent(tree),
+              Types.pickKindedParameters(tree),
+              pickFormalParameters(tree),
+              Types.pickType(tree),
+              Types.pickConstraints(tree),
+              pickEqualityConstraints(tree),
+              Types.tryPickEffect(tree)
+            ) {
+              (doc, ident, tparams, fparams, ttype, tconstrs, constrs, eff) =>
+                Declaration.Def(doc, ann, mod, ident, tparams, fparams, Expr.Error(Malformed(NamedTokenSet.Declaration, SyntacticContext.Decl.Module, hint = Some("Only `extern native` and `extern wasm` definitions are supported."), loc = tree.loc)), ttype, eff, tconstrs, constrs, tree.loc)
+            }
+        }
+      } else {
+        mapN(
+          pickDocumentation(tree),
+          pickNameIdent(tree),
+          Types.pickKindedParameters(tree),
+          pickFormalParameters(tree),
+          Exprs.pickExpr(tree),
+          Types.pickType(tree),
+          Types.pickConstraints(tree),
+          pickEqualityConstraints(tree),
+          Types.tryPickEffect(tree)
+        ) {
+          (doc, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+            Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+        }
       }
     }
 
@@ -1923,12 +1978,16 @@ object Weeder2 {
 
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchRuleFragment)
-      mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
-        case (ident, qname, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr, tree.loc)
-        case (ident, qname, expr) =>
-          val error = IllegalQualifiedName(qname.loc)
-          sctx.errors.add(error)
-          CatchRule(ident, qname.ident, expr, tree.loc)
+      mapN(pickNameIdent(tree), Types.pickType(tree), pickExpr(tree)) {
+        case (ident, tpe, expr) =>
+          tpe match {
+            case Type.Ambiguous(qname, _) if !qname.isUnqualified =>
+              val error = IllegalQualifiedName(tree.loc)
+              sctx.errors.add(error)
+              CatchRule(ident, Type.Error(tree.loc), Expr.Error(error), tree.loc)
+            case _ =>
+              CatchRule(ident, tpe, expr, tree.loc)
+          }
       }
     }
 
@@ -2240,7 +2299,7 @@ object Weeder2 {
       * Returns the intrinsic expression corresponding to the given intrinsic.
       *
       *   - `args = None` is an unapplied intrinsic (e.g. `%%LINE%%`)
-      *   - `args = Some(Nil)` is an applied intrinsic with zero arguments (e.g. `%%EXAMPLE%%()`)
+      *   - `args = Some(List(Unit))` is an applied intrinsic with zero arguments (e.g. `%%EXAMPLE%%()`)
       *   - `args = Some(Cons(.., ..))` is an applied intrinsic with some arguments (e.g. `%%VECTOR_LENGTH%%(v)`)
       */
     private def visitIntrinsic(tree: Tree, args: Option[List[Expr]])(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
@@ -2260,13 +2319,175 @@ object Weeder2 {
         case ("CHANNEL_GET", Some(e1 :: Nil)) => Expr.GetChannel(e1, loc)
         case ("CHANNEL_NEW", Some(e :: Nil)) => Expr.NewChannel(e, loc)
         case ("CHANNEL_PUT", Some(e1 :: e2 :: Nil)) => Expr.PutChannel(e1, e2, loc)
+        case ("REENTRANT_LOCK_NEW", None) => Expr.NewReentrantLock(loc)
+        case ("REENTRANT_LOCK_NEW", Some(Nil)) => Expr.NewReentrantLock(loc)
+        case ("REENTRANT_LOCK_NEW", Some(_ :: Nil)) => Expr.NewReentrantLock(loc)
+        case ("REENTRANT_LOCK_LOCK", Some(e1 :: Nil)) => Expr.LockReentrantLock(e1, loc)
+        case ("REENTRANT_LOCK_TRY_LOCK", Some(e1 :: Nil)) => Expr.TryLockReentrantLock(e1, loc)
+        case ("REENTRANT_LOCK_UNLOCK", Some(e1 :: Nil)) => Expr.UnlockReentrantLock(e1, loc)
+        case ("CONDITION_NEW", Some(e1 :: Nil)) => Expr.NewCondition(e1, loc)
+        case ("CONDITION_AWAIT", Some(e1 :: Nil)) => Expr.AwaitCondition(e1, loc)
+        case ("CONDITION_SIGNAL", Some(e1 :: Nil)) => Expr.SignalCondition(e1, loc)
+        case ("CONDITION_SIGNAL_ALL", Some(e1 :: Nil)) => Expr.SignalAllCondition(e1, loc)
+        case ("CYCLIC_BARRIER_NEW", Some(e1 :: Nil)) => Expr.NewCyclicBarrier(e1, loc)
+        case ("CYCLIC_BARRIER_AWAIT", Some(e1 :: Nil)) => Expr.AwaitCyclicBarrier(e1, loc)
+        case ("COUNT_DOWN_LATCH_NEW", Some(e1 :: Nil)) => Expr.NewCountDownLatch(e1, loc)
+        case ("COUNT_DOWN_LATCH_AWAIT", Some(e1 :: Nil)) => Expr.AwaitCountDownLatch(e1, loc)
+        case ("COUNT_DOWN_LATCH_COUNT_DOWN", Some(e1 :: Nil)) => Expr.CountDownLatchCountDown(e1, loc)
+        case ("SEMAPHORE_NEW", Some(e1 :: Nil)) => Expr.NewSemaphore(e1, loc)
+        case ("SEMAPHORE_ACQUIRE", Some(e1 :: Nil)) => Expr.AcquireSemaphore(e1, loc)
+        case ("SEMAPHORE_TRY_ACQUIRE", Some(e1 :: Nil)) => Expr.TryAcquireSemaphore(e1, loc)
+        case ("SEMAPHORE_RELEASE", Some(e1 :: Nil)) => Expr.ReleaseSemaphore(e1, loc)
         case ("CHAR_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Eq, e1, e2, loc)
         case ("CHAR_GE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Ge, e1, e2, loc)
         case ("CHAR_GT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Gt, e1, e2, loc)
         case ("CHAR_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Le, e1, e2, loc)
         case ("CHAR_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Lt, e1, e2, loc)
         case ("CHAR_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Neq, e1, e2, loc)
+        case ("CHAR_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.CharToString, e1, loc)
+        case ("CHAR_IS_LETTER", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsLetter, e1, loc)
+        case ("CHAR_IS_DIGIT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsDigit, e1, loc)
+        case ("CHAR_IS_LETTER_OR_DIGIT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsLetterOrDigit, e1, loc)
+        case ("CHAR_IS_LOWER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsLowerCase, e1, loc)
+        case ("CHAR_IS_UPPER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsUpperCase, e1, loc)
+        case ("CHAR_IS_TITLE_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsTitleCase, e1, loc)
+        case ("CHAR_IS_WHITESPACE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsWhitespace, e1, loc)
+        case ("CHAR_IS_DEFINED", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsDefined, e1, loc)
+        case ("CHAR_IS_ISO_CONTROL", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsISOControl, e1, loc)
+        case ("CHAR_IS_MIRRORED", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsMirrored, e1, loc)
+        case ("CHAR_IS_SURROGATE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.IsSurrogate, e1, loc)
+        case ("CHAR_IS_SURROGATE_PAIR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.IsSurrogatePair, e1, e2, loc)
+        case ("CHAR_TO_LOWER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.ToLowerCase, e1, loc)
+        case ("CHAR_TO_UPPER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.ToUpperCase, e1, loc)
+        case ("CHAR_TO_TITLE_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.ToTitleCase, e1, loc)
+        case ("CHAR_GET_NUMERIC_VALUE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CharOp.GetNumericValue, e1, loc)
+        case ("CHAR_TO_CODE_POINT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.ToCodePoint, e1, e2, loc)
+        case ("CHAR_DIGIT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Digit, e1, e2, loc)
+        case ("CHAR_FOR_DIGIT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.ForDigit, e1, e2, loc)
         case ("FILE", None) => Expr.Cst(Constant.Str(s"${loc.source.name}"), loc)
+        case ("FILE_SEPARATOR", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.PlatformOp.FileSeparator, e1, loc)
+        case ("PATH_SEPARATOR", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.PlatformOp.PathSeparator, e1, loc)
+        case ("LINE_SEPARATOR", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.PlatformOp.LineSeparator, e1, loc)
+        case ("OBJECT_IS_NULL", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ObjectOp.IsNull, e1, loc)
+        case ("EXN_KIND_ID", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ExnOp.KindId, e1, loc)
+        case ("STRING_LENGTH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringOp.Length, e1, loc)
+        case ("STRING_CHAR_AT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.StringOp.CharAt, e1, e2, loc)
+        case ("STRING_TO_LOWER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringOp.ToLowerCase, e1, loc)
+        case ("STRING_TO_UPPER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringOp.ToUpperCase, e1, loc)
+        case ("STRING_REPEAT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.StringOp.Repeat, e1, e2, loc)
+        case ("INT8_FROM_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.Int8FromString, e1, loc)
+        case ("INT16_FROM_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.Int16FromString, e1, loc)
+        case ("INT32_FROM_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.Int32FromString, e1, loc)
+        case ("INT64_FROM_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.Int64FromString, e1, loc)
+        case ("FLOAT32_FROM_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.Float32FromString, e1, loc)
+        case ("FLOAT64_FROM_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.Float64FromString, e1, loc)
+        case ("BIGINT_FROM_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.BigIntFromString, e1, loc)
+        case ("BIGDEC_FROM_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.BigDecimalFromString, e1, loc)
+        case ("INT32_PARSE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.Int32Parse, e1, loc)
+        case ("INT64_PARSE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ParseOp.Int64Parse, e1, loc)
+        case ("STRINGBUILDER_NEW", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringBuilderOp.New, e1, loc)
+        case ("STRINGBUILDER_APPEND_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringBuilderOp.AppendString, e1, loc)
+        case ("STRINGBUILDER_APPEND_CODE_POINT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringBuilderOp.AppendCodePoint, e1, loc)
+        case ("STRINGBUILDER_CHAR_AT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringBuilderOp.CharAt, e1, loc)
+        case ("STRINGBUILDER_LENGTH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringBuilderOp.Length, e1, loc)
+        case ("STRINGBUILDER_SET_LENGTH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringBuilderOp.SetLength, e1, loc)
+        case ("STRINGBUILDER_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.StringBuilderOp.ToString, e1, loc)
+        case ("REGEX_FLAG_CANON_EQ", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagCanonEq, e1, loc)
+        case ("REGEX_FLAG_CASE_INSENSITIVE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagCaseInsensitive, e1, loc)
+        case ("REGEX_FLAG_COMMENTS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagComments, e1, loc)
+        case ("REGEX_FLAG_DOTALL", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagDotall, e1, loc)
+        case ("REGEX_FLAG_LITERAL", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagLiteral, e1, loc)
+        case ("REGEX_FLAG_MULTILINE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagMultiline, e1, loc)
+        case ("REGEX_FLAG_UNICODE_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagUnicodeCase, e1, loc)
+        case ("REGEX_FLAG_UNICODE_CHARACTER_CLASS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagUnicodeCharacterClass, e1, loc)
+        case ("REGEX_FLAG_UNIX_LINES", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.FlagUnixLines, e1, loc)
+        case ("REGEX_COMPILE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.Compile, e1, loc)
+        case ("REGEX_COMPILE_WITH_FLAGS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.CompileWithFlags, e1, loc)
+        case ("REGEX_TRY_COMPILE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.TryCompile, e1, loc)
+        case ("REGEX_TRY_COMPILE_WITH_FLAGS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.TryCompileWithFlags, e1, loc)
+        case ("REGEX_QUOTE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.Quote, e1, loc)
+        case ("REGEX_PATTERN", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.Pattern, e1, loc)
+        case ("REGEX_FLAGS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.Flags, e1, loc)
+        case ("REGEX_SPLIT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.Split, e1, loc)
+        case ("REGEX_NEW_MATCHER", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.NewMatcher, e1, loc)
+        case ("REGEX_MATCHER_MATCHES", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherMatches, e1, loc)
+        case ("REGEX_MATCHER_FIND", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherFind, e1, loc)
+        case ("REGEX_MATCHER_FIND_FROM", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherFindFrom, e1, loc)
+        case ("REGEX_MATCHER_LOOKING_AT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherLookingAt, e1, loc)
+        case ("REGEX_MATCHER_REPLACE_ALL", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherReplaceAll, e1, loc)
+        case ("REGEX_MATCHER_REPLACE_FIRST", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherReplaceFirst, e1, loc)
+        case ("REGEX_MATCHER_SET_BOUNDS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherSetBounds, e1, loc)
+        case ("REGEX_MATCHER_START", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherStart, e1, loc)
+        case ("REGEX_MATCHER_END", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherEnd, e1, loc)
+        case ("REGEX_MATCHER_GROUP", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherGroup, e1, loc)
+        case ("REGEX_MATCHER_GROUP_COUNT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.RegexOp.MatcherGroupCount, e1, loc)
+        case ("CHAR_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.CharHash, e1, loc)
+        case ("FLOAT32_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.Float32Hash, e1, loc)
+        case ("FLOAT64_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.Float64Hash, e1, loc)
+        case ("INT8_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.Int8Hash, e1, loc)
+        case ("INT16_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.Int16Hash, e1, loc)
+        case ("INT32_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.Int32Hash, e1, loc)
+        case ("INT64_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.Int64Hash, e1, loc)
+        case ("BIGINT_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.BigIntHash, e1, loc)
+        case ("BIGDEC_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.BigDecimalHash, e1, loc)
+        case ("STRING_HASH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.HashOp.StringHash, e1, loc)
+        case ("PRINT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.Print, e1, loc)
+        case ("EPRINT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.EPrint, e1, loc)
+        case ("READLN", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.Readln, e1, loc)
+        case ("PRINTLN", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.Println, e1, loc)
+        case ("EPRINTLN", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.EPrintln, e1, loc)
+        case ("SLEEP_MILLIS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.SleepMillis, e1, loc)
+        case ("EXIT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.Exit, e1, loc)
+        case ("NEW_ID", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.NewId, e1, loc)
+        case ("TIME_NOW_MILLIS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TimeNowMillis, e1, loc)
+        case ("FILE_EXISTS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileExists, e1, loc)
+        case ("FILE_IS_DIRECTORY", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileIsDirectory, e1, loc)
+        case ("FILE_IS_REGULAR_FILE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileIsRegularFile, e1, loc)
+        case ("FILE_IS_READABLE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileIsReadable, e1, loc)
+        case ("FILE_IS_SYMBOLIC_LINK", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileIsSymbolicLink, e1, loc)
+        case ("FILE_IS_WRITABLE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileIsWritable, e1, loc)
+        case ("FILE_IS_EXECUTABLE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileIsExecutable, e1, loc)
+        case ("FILE_ACCESS_TIME", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileAccessTime, e1, loc)
+        case ("FILE_CREATION_TIME", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileCreationTime, e1, loc)
+        case ("FILE_MODIFICATION_TIME", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileModificationTime, e1, loc)
+        case ("FILE_SIZE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileSize, e1, loc)
+        case ("FILE_READ", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileRead, e1, loc)
+        case ("FILE_READ_LINES", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileReadLines, e1, loc)
+        case ("FILE_READ_BYTES", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileReadBytes, e1, loc)
+        case ("FILE_LIST", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileList, e1, loc)
+        case ("FILE_WRITE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileWrite, e1, loc)
+        case ("FILE_WRITE_BYTES", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileWriteBytes, e1, loc)
+        case ("FILE_APPEND", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileAppend, e1, loc)
+        case ("FILE_APPEND_BYTES", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileAppendBytes, e1, loc)
+        case ("FILE_TRUNCATE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileTruncate, e1, loc)
+        case ("FILE_MKDIR", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileMkDir, e1, loc)
+        case ("FILE_MKDIRS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileMkDirs, e1, loc)
+        case ("FILE_MK_TEMP_DIR", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.FileMkTempDir, e1, loc)
+        case ("TCP_SOCKET_READ", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TcpSocketRead, e1, loc)
+        case ("TCP_SOCKET_WRITE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TcpSocketWrite, e1, loc)
+        case ("TCP_SOCKET_CONNECT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TcpSocketConnect, e1, loc)
+        case ("TCP_SOCKET_CLOSE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TcpSocketClose, e1, loc)
+        case ("TCP_SERVER_BIND", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TcpServerBind, e1, loc)
+        case ("TCP_SERVER_LOCAL_PORT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TcpServerLocalPort, e1, loc)
+        case ("TCP_SERVER_ACCEPT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TcpServerAccept, e1, loc)
+        case ("TCP_SERVER_CLOSE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.TcpServerClose, e1, loc)
+        case ("PROCESS_STDIN_WRITE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessStdinWrite, e1, loc)
+        case ("PROCESS_EXEC", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessExec, e1, loc)
+        case ("PROCESS_EXIT_VALUE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessExitValue, e1, loc)
+        case ("PROCESS_IS_ALIVE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessIsAlive, e1, loc)
+        case ("PROCESS_PID", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessPid, e1, loc)
+        case ("PROCESS_STOP", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessStop, e1, loc)
+        case ("PROCESS_WAIT_FOR", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessWaitFor, e1, loc)
+        case ("PROCESS_WAIT_FOR_TIMEOUT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessWaitForTimeout, e1, loc)
+        case ("PROCESS_STDOUT_READ", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessStdoutRead, e1, loc)
+        case ("PROCESS_STDERR_READ", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessStderrRead, e1, loc)
+        case ("PROCESS_RELEASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.ProcessRelease, e1, loc)
+        case ("HTTP_REQUEST", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.HttpRequest, e1, loc)
+        case ("ENV_GET_ARGS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.EnvGetArgs, e1, loc)
+        case ("ENV_GET_ENV_PAIRS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.EnvGetEnvPairs, e1, loc)
+        case ("ENV_GET_VAR", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.EnvGetVar, e1, loc)
+        case ("ENV_GET_PROP", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.EnvGetProp, e1, loc)
+        case ("ENV_VIRTUAL_PROCESSORS", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.IoOp.EnvVirtualProcessors, e1, loc)
         case ("FLOAT32_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Add, e1, e2, loc)
         case ("FLOAT32_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Div, e1, e2, loc)
         case ("FLOAT32_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc)
@@ -2279,6 +2500,7 @@ object Weeder2 {
         case ("FLOAT32_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Float32Op.Neg, e1, loc)
         case ("FLOAT32_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Neq, e1, e2, loc)
         case ("FLOAT32_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Sub, e1, e2, loc)
+        case ("FLOAT32_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.Float32ToString, e1, loc)
         case ("FLOAT64_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Add, e1, e2, loc)
         case ("FLOAT64_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Div, e1, e2, loc)
         case ("FLOAT64_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Eq, e1, e2, loc)
@@ -2291,6 +2513,7 @@ object Weeder2 {
         case ("FLOAT64_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.Float64Op.Neg, e1, loc)
         case ("FLOAT64_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Neq, e1, e2, loc)
         case ("FLOAT64_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float64Op.Sub, e1, e2, loc)
+        case ("FLOAT64_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.Float64ToString, e1, loc)
         case ("INT16_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Add, e1, e2, loc)
         case ("INT16_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.And, e1, e2, loc)
         case ("INT16_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Div, e1, e2, loc)
@@ -2309,6 +2532,7 @@ object Weeder2 {
         case ("INT16_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Shl, e1, e2, loc)
         case ("INT16_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Shr, e1, e2, loc)
         case ("INT16_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Sub, e1, e2, loc)
+        case ("INT16_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.Int16ToString, e1, loc)
         case ("INT16_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int16Op.Xor, e1, e2, loc)
         case ("INT32_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Add, e1, e2, loc)
         case ("INT32_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.And, e1, e2, loc)
@@ -2328,6 +2552,7 @@ object Weeder2 {
         case ("INT32_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Shl, e1, e2, loc)
         case ("INT32_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Shr, e1, e2, loc)
         case ("INT32_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Sub, e1, e2, loc)
+        case ("INT32_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.Int32ToString, e1, loc)
         case ("INT32_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int32Op.Xor, e1, e2, loc)
         case ("INT64_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Add, e1, e2, loc)
         case ("INT64_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.And, e1, e2, loc)
@@ -2347,7 +2572,54 @@ object Weeder2 {
         case ("INT64_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Shl, e1, e2, loc)
         case ("INT64_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Shr, e1, e2, loc)
         case ("INT64_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Sub, e1, e2, loc)
+        case ("INT64_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.Int64ToString, e1, loc)
         case ("INT64_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int64Op.Xor, e1, e2, loc)
+        case ("BIGINT_FROM_INT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigIntOp.FromInt64, e1, loc)
+        case ("BIGINT_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigIntOp.Neg, e1, loc)
+        case ("BIGINT_NOT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigIntOp.Not, e1, loc)
+        case ("BIGINT_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Add, e1, e2, loc)
+        case ("BIGINT_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Sub, e1, e2, loc)
+        case ("BIGINT_MUL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Mul, e1, e2, loc)
+        case ("BIGINT_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Div, e1, e2, loc)
+        case ("BIGINT_REM", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Rem, e1, e2, loc)
+        case ("BIGINT_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Shl, e1, e2, loc)
+        case ("BIGINT_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Shr, e1, e2, loc)
+        case ("BIGINT_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.And, e1, e2, loc)
+        case ("BIGINT_OR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Or, e1, e2, loc)
+        case ("BIGINT_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Xor, e1, e2, loc)
+        case ("BIGINT_CMP", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigIntOp.Cmp, e1, e2, loc)
+        case ("BIGINT_BIT_LENGTH", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigIntOp.BitLength, e1, loc)
+        case ("BIGINT_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.BigIntToString, e1, loc)
+        case ("BIGDEC_NEG", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigDecimalOp.Neg, e1, loc)
+        case ("BIGDEC_SCALE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigDecimalOp.Scale, e1, loc)
+        case ("BIGDEC_PRECISION", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigDecimalOp.Precision, e1, loc)
+        case ("BIGDEC_CEIL", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigDecimalOp.Ceil, e1, loc)
+        case ("BIGDEC_FLOOR", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigDecimalOp.Floor, e1, loc)
+        case ("BIGDEC_ROUND", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigDecimalOp.Round, e1, loc)
+        case ("BIGDEC_TO_BIGINT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigDecimalOp.ToBigInt, e1, loc)
+        case ("BIGDEC_TO_PLAIN_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.BigDecimalOp.ToPlainString, e1, loc)
+        case ("BIGDEC_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.BigDecimalToString, e1, loc)
+        case ("BIGDEC_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigDecimalOp.Add, e1, e2, loc)
+        case ("BIGDEC_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigDecimalOp.Sub, e1, e2, loc)
+        case ("BIGDEC_MUL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigDecimalOp.Mul, e1, e2, loc)
+        case ("BIGDEC_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigDecimalOp.Div, e1, e2, loc)
+        case ("BIGDEC_CMP", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.BigDecimalOp.Cmp, e1, e2, loc)
+        case ("CODEPOINT_IS_LETTER", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsLetter, e1, loc)
+        case ("CODEPOINT_IS_DIGIT", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsDigit, e1, loc)
+        case ("CODEPOINT_IS_LOWER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsLowerCase, e1, loc)
+        case ("CODEPOINT_IS_UPPER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsUpperCase, e1, loc)
+        case ("CODEPOINT_IS_TITLE_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsTitleCase, e1, loc)
+        case ("CODEPOINT_IS_WHITESPACE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsWhitespace, e1, loc)
+        case ("CODEPOINT_IS_ALPHABETIC", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsAlphabetic, e1, loc)
+        case ("CODEPOINT_IS_DEFINED", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsDefined, e1, loc)
+        case ("CODEPOINT_IS_IDEOGRAPHIC", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsIdeographic, e1, loc)
+        case ("CODEPOINT_IS_ISO_CONTROL", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsISOControl, e1, loc)
+        case ("CODEPOINT_IS_MIRRORED", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.IsMirrored, e1, loc)
+        case ("CODEPOINT_TO_LOWER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.ToLowerCase, e1, loc)
+        case ("CODEPOINT_TO_UPPER_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.ToUpperCase, e1, loc)
+        case ("CODEPOINT_TO_TITLE_CASE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.ToTitleCase, e1, loc)
+        case ("CODEPOINT_GET_NAME", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.GetName, e1, loc)
+        case ("CODEPOINT_GET_NUMERIC_VALUE", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.CodePointOp.GetNumericValue, e1, loc)
         case ("INT8_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Add, e1, e2, loc)
         case ("INT8_AND", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.And, e1, e2, loc)
         case ("INT8_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Div, e1, e2, loc)
@@ -2366,7 +2638,38 @@ object Weeder2 {
         case ("INT8_SHL", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Shl, e1, e2, loc)
         case ("INT8_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc)
         case ("INT8_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc)
+        case ("INT8_TO_STRING", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ToStringOp.Int8ToString, e1, loc)
         case ("INT8_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc)
+        case ("INT8_TO_INT16", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int8ToInt16, e1, loc)
+        case ("INT8_TO_INT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int8ToInt32, e1, loc)
+        case ("INT8_TO_INT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int8ToInt64, e1, loc)
+        case ("INT8_TO_FLOAT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int8ToFloat32, e1, loc)
+        case ("INT8_TO_FLOAT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int8ToFloat64, e1, loc)
+        case ("INT16_TO_INT8", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int16ToInt8, e1, loc)
+        case ("INT16_TO_INT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int16ToInt32, e1, loc)
+        case ("INT16_TO_INT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int16ToInt64, e1, loc)
+        case ("INT16_TO_FLOAT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int16ToFloat32, e1, loc)
+        case ("INT16_TO_FLOAT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int16ToFloat64, e1, loc)
+        case ("INT32_TO_INT8", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int32ToInt8, e1, loc)
+        case ("INT32_TO_INT16", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int32ToInt16, e1, loc)
+        case ("INT32_TO_INT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int32ToInt64, e1, loc)
+        case ("INT32_TO_FLOAT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int32ToFloat32, e1, loc)
+        case ("INT32_TO_FLOAT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int32ToFloat64, e1, loc)
+        case ("INT64_TO_INT8", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int64ToInt8, e1, loc)
+        case ("INT64_TO_INT16", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int64ToInt16, e1, loc)
+        case ("INT64_TO_INT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int64ToInt32, e1, loc)
+        case ("INT64_TO_FLOAT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int64ToFloat32, e1, loc)
+        case ("INT64_TO_FLOAT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Int64ToFloat64, e1, loc)
+        case ("FLOAT32_TO_INT8", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float32ToInt8, e1, loc)
+        case ("FLOAT32_TO_INT16", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float32ToInt16, e1, loc)
+        case ("FLOAT32_TO_INT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float32ToInt32, e1, loc)
+        case ("FLOAT32_TO_INT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float32ToInt64, e1, loc)
+        case ("FLOAT32_TO_FLOAT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float32ToFloat64, e1, loc)
+        case ("FLOAT64_TO_INT8", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float64ToInt8, e1, loc)
+        case ("FLOAT64_TO_INT16", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float64ToInt16, e1, loc)
+        case ("FLOAT64_TO_INT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float64ToInt32, e1, loc)
+        case ("FLOAT64_TO_INT64", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float64ToInt64, e1, loc)
+        case ("FLOAT64_TO_FLOAT32", Some(e1 :: Nil)) => Expr.Unary(SemanticOp.ConvertOp.Float64ToFloat32, e1, loc)
         case ("LINE", None) => Expr.Cst(Constant.Str(s"${loc.startLine}"), loc)
         case ("VECTOR_GET", Some(e1 :: e2 :: Nil)) => Expr.VectorLoad(e1, e2, loc)
         case ("VECTOR_LENGTH", Some(e1 :: Nil)) => Expr.VectorLength(e1, loc)
@@ -3455,6 +3758,54 @@ object Weeder2 {
       case Some(i) if i >= 1 => Success(i)
       case Some(_) => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
       case None => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
+    }
+  }
+
+  private def pickNativeImportSpec(tree: Tree)(implicit sctx: SharedContext): Validation[ca.uwaterloo.flix.language.ast.NativeImportSpec, CompilationMessage] = {
+    flatMapN(pick(TreeKind.ArgumentNamed, tree)) { argTree =>
+      mapN(pickToken(TokenKind.LiteralString, argTree)) {
+      token =>
+        Constants.toStringCst(token) match {
+          case Expr.Cst(Constant.Str(symbol), _) => ca.uwaterloo.flix.language.ast.NativeImportSpec(symbol)
+          case Expr.Error(_) => ca.uwaterloo.flix.language.ast.NativeImportSpec(token.text.stripPrefix("\"").stripSuffix("\""))
+          case _ => throw InternalCompilerException("Unexpected non-string extern native symbol.", token.mkSourceLocation())
+        }
+      }
+    }
+  }
+
+  private def pickWasmImportSpec(tree: Tree)(implicit sctx: SharedContext): Validation[ca.uwaterloo.flix.language.ast.WasmImportSpec, CompilationMessage] = {
+    val args = pickAll(TreeKind.ArgumentNamed, tree)
+
+    def pickNamedStringArg(name: String): Validation[String, CompilationMessage] = {
+      args.find(arg => text(arg).headOption.contains(name)) match {
+        case Some(argTree) =>
+          mapN(pickToken(TokenKind.LiteralString, argTree)) { token =>
+            Constants.toStringCst(token) match {
+              case Expr.Cst(Constant.Str(value), _) => value
+              case Expr.Error(_) => token.text.stripPrefix("\"").stripSuffix("\"")
+              case _ => throw InternalCompilerException(s"Unexpected non-string extern wasm $name.", token.mkSourceLocation())
+            }
+          }
+        case None =>
+          Validation.Failure(Chain(NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.LiteralString)), SyntacticContext.Decl.Module, loc = tree.loc)))
+      }
+    }
+
+    mapN(pickNamedStringArg("interface"), pickNamedStringArg("func")) {
+      (iface, func) => ca.uwaterloo.flix.language.ast.WasmImportSpec(iface, func)
+    }
+  }
+
+  private def pickExternKind(tree: Tree): Option[String] = {
+    val tokens = pickAllTokens(tree)
+    val idx = tokens.indexWhere(_.kind == TokenKind.KeywordExtern)
+    if (idx < 0 || idx + 1 >= tokens.length) None
+    else {
+      tokens(idx + 1) match {
+        case token@Token(TokenKind.NameLowercase, _, _, _, _, _) => Some(token.text)
+        case _ => None
+      }
     }
   }
 

@@ -39,6 +39,8 @@ object TypedAstOps {
     */
   def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
     case Expr.Cst(_, _, _) => Set.empty
+    case Expr.NativeImport(_, _, _, _) => Set.empty
+    case Expr.WasmImport(_, _, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
     case Expr.Hole(_, _, _, _, _) => Set.empty
     case Expr.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
@@ -101,6 +103,23 @@ object TypedAstOps {
     case Expr.NewChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expr.GetChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.NewReentrantLock(_, _, _) => Set.empty
+    case Expr.LockReentrantLock(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.TryLockReentrantLock(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.UnlockReentrantLock(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.NewCondition(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.AwaitCondition(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.SignalCondition(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.SignalAllCondition(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.NewCyclicBarrier(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.AwaitCyclicBarrier(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.NewCountDownLatch(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.AwaitCountDownLatch(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.CountDownLatchCountDown(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.NewSemaphore(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.AcquireSemaphore(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.TryAcquireSemaphore(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.ReleaseSemaphore(exp, _, _, _) => sigSymsOf(exp)
     case Expr.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expr.Spawn(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.ParYield(frags, exp, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
@@ -153,6 +172,8 @@ object TypedAstOps {
     */
   def freeVars(exp0: Expr): Map[Symbol.VarSym, Type] = exp0 match {
     case Expr.Cst(_, _, _) => Map.empty
+    case Expr.NativeImport(_, _, _, _) => Map.empty
+    case Expr.WasmImport(_, _, _, _) => Map.empty
 
     case Expr.Var(sym, tpe, _) => Map(sym -> tpe)
 
@@ -379,6 +400,57 @@ object TypedAstOps {
 
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
+
+    case Expr.NewReentrantLock(_, _, _) =>
+      Map.empty
+
+    case Expr.LockReentrantLock(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.TryLockReentrantLock(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.UnlockReentrantLock(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.NewCondition(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.AwaitCondition(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.SignalCondition(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.SignalAllCondition(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.NewCyclicBarrier(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.AwaitCyclicBarrier(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.NewCountDownLatch(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.AwaitCountDownLatch(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.CountDownLatchCountDown(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.NewSemaphore(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.AcquireSemaphore(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.TryAcquireSemaphore(exp, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.ReleaseSemaphore(exp, _, _, _) =>
+      freeVars(exp)
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val d = default.map(freeVars).getOrElse(Map.empty)

@@ -495,6 +495,11 @@ object Specialization {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, subst(tpe), loc)
 
+    case Expr.NativeImport(spec, tpe, eff, loc) =>
+      Expr.NativeImport(spec, subst(tpe), subst(eff), loc)
+    case Expr.WasmImport(spec, tpe, eff, loc) =>
+      Expr.WasmImport(spec, subst(tpe), subst(eff), loc)
+
     case Expr.Hole(sym, scp, tpe, eff, loc) =>
       val t = subst(tpe)
       Expr.Hole(sym, scp, t, subst(eff), loc)
@@ -782,11 +787,12 @@ object Specialization {
     case Expr.TryCatch(exp, rules, tpe, eff, loc0) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
-        case TypedAst.CatchRule(bnd, clazz, body, loc) =>
+        case TypedAst.CatchRule(bnd, catchTpe0, body, loc) =>
           val freshSym = Symbol.freshVarSym(bnd.sym)
           val env1 = env0 + (bnd.sym -> freshSym)
           val b = specializeExp(body, env1, subst)
-          TypedAst.CatchRule(Binder(freshSym, subst(bnd.tpe)), clazz, b, loc)
+          val catchTpe = subst(catchTpe0)
+          TypedAst.CatchRule(Binder(freshSym, subst(bnd.tpe)), catchTpe, b, loc)
       }
       Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc0)
 
@@ -866,6 +872,73 @@ object Specialization {
       val e1 = specializeExp(innerExp1, env0, subst)
       val e2 = specializeExp(innerExp2, env0, subst)
       Expr.PutChannel(e1, e2, subst(tpe), subst(eff), loc)
+
+    case Expr.NewReentrantLock(tpe, eff, loc) =>
+      Expr.NewReentrantLock(subst(tpe), subst(eff), loc)
+
+    case Expr.LockReentrantLock(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.LockReentrantLock(e, subst(tpe), subst(eff), loc)
+
+    case Expr.TryLockReentrantLock(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.TryLockReentrantLock(e, subst(tpe), subst(eff), loc)
+
+    case Expr.UnlockReentrantLock(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.UnlockReentrantLock(e, subst(tpe), subst(eff), loc)
+
+    case Expr.NewCondition(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.NewCondition(e, subst(tpe), subst(eff), loc)
+
+    case Expr.AwaitCondition(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.AwaitCondition(e, subst(tpe), subst(eff), loc)
+
+    case Expr.SignalCondition(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.SignalCondition(e, subst(tpe), subst(eff), loc)
+
+    case Expr.SignalAllCondition(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.SignalAllCondition(e, subst(tpe), subst(eff), loc)
+
+    case Expr.NewCyclicBarrier(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.NewCyclicBarrier(e, subst(tpe), subst(eff), loc)
+
+    case Expr.AwaitCyclicBarrier(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.AwaitCyclicBarrier(e, subst(tpe), subst(eff), loc)
+
+    case Expr.NewCountDownLatch(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.NewCountDownLatch(e, subst(tpe), subst(eff), loc)
+
+    case Expr.AwaitCountDownLatch(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.AwaitCountDownLatch(e, subst(tpe), subst(eff), loc)
+
+    case Expr.CountDownLatchCountDown(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.CountDownLatchCountDown(e, subst(tpe), subst(eff), loc)
+
+    case Expr.NewSemaphore(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.NewSemaphore(e, subst(tpe), subst(eff), loc)
+
+    case Expr.AcquireSemaphore(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.AcquireSemaphore(e, subst(tpe), subst(eff), loc)
+
+    case Expr.TryAcquireSemaphore(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.TryAcquireSemaphore(e, subst(tpe), subst(eff), loc)
+
+    case Expr.ReleaseSemaphore(innerExp, tpe, eff, loc) =>
+      val e = specializeExp(innerExp, env0, subst)
+      Expr.ReleaseSemaphore(e, subst(tpe), subst(eff), loc)
 
     case Expr.SelectChannel(rules0, default0, tpe, eff, loc0) =>
       val rules = rules0.map {

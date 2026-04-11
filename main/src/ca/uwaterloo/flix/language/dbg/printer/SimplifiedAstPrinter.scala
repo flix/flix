@@ -17,11 +17,16 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expr.*
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{SimpleType, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object SimplifiedAstPrinter {
+
+  private def catchClassOf(tpe: SimpleType): Class[?] = tpe match {
+    case SimpleType.Native(clazz) => clazz
+    case _ => classOf[Object]
+  }
 
   /**
     * Returns the [[DocAst.Program]] representation of `root`.
@@ -47,6 +52,8 @@ object SimplifiedAstPrinter {
     */
   def print(e: SimplifiedAst.Expr): DocAst.Expr = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
+    case NativeImport(spec, _, _, _) => DocAst.Expr.AsIs(s"""extern native("${spec.symbol}")""")
+    case WasmImport(spec, _, _, _) => DocAst.Expr.AsIs(s"""extern wasm("${spec.interface}", "${spec.func}")""")
     case Var(sym, _, _) => printVarSym(sym)
     case Lambda(fparams, exp, _, _) => DocAst.Expr.Lambda(fparams.map(printFormalParam), print(exp))
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expr.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
@@ -63,8 +70,8 @@ object SimplifiedAstPrinter {
     case LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVarSym(sym), fparams.map(printFormalParam), Some(SimpleTypePrinter.print(tpe)), Some(PurityPrinter.print(eff)), print(exp1), print(exp2))
     case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case SimplifiedAst.CatchRule(sym, clazz, body) =>
-        (sym, clazz, print(body))
+      case SimplifiedAst.CatchRule(sym, catchTpe, body) =>
+        (sym, catchClassOf(catchTpe), print(body))
     })
     case RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case SimplifiedAst.HandlerRule(op, fparams, body) =>

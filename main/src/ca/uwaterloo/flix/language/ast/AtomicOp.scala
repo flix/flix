@@ -96,6 +96,52 @@ object AtomicOp {
 
   case object Spawn extends AtomicOp
 
+  case object ChannelNew extends AtomicOp
+
+  case object ChannelGet extends AtomicOp
+
+  case object ChannelPut extends AtomicOp
+
+  case object ChannelSelect extends AtomicOp
+
+  case object ChannelSelectIndex extends AtomicOp
+
+  case object ChannelSelectGet extends AtomicOp
+
+  case object ReentrantLockNew extends AtomicOp
+
+  case object ReentrantLockLock extends AtomicOp
+
+  case object ReentrantLockTryLock extends AtomicOp
+
+  case object ReentrantLockUnlock extends AtomicOp
+
+  case object ConditionNew extends AtomicOp
+
+  case object ConditionAwait extends AtomicOp
+
+  case object ConditionSignal extends AtomicOp
+
+  case object ConditionSignalAll extends AtomicOp
+
+  case object CyclicBarrierNew extends AtomicOp
+
+  case object CyclicBarrierAwait extends AtomicOp
+
+  case object CountDownLatchNew extends AtomicOp
+
+  case object CountDownLatchAwait extends AtomicOp
+
+  case object CountDownLatchCountDown extends AtomicOp
+
+  case object SemaphoreNew extends AtomicOp
+
+  case object SemaphoreAcquire extends AtomicOp
+
+  case object SemaphoreTryAcquire extends AtomicOp
+
+  case object SemaphoreRelease extends AtomicOp
+
   case object Lazy extends AtomicOp
 
   case object Force extends AtomicOp

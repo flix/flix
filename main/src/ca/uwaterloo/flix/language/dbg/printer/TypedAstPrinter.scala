@@ -3,10 +3,16 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object TypedAstPrinter {
+
+  private def catchClassOf(tpe0: Type): Class[?] =
+    Type.eraseAliases(tpe0) match {
+      case Type.Cst(TypeConstructor.Native(clazz), _) => clazz
+      case _ => classOf[Object]
+    }
 
   /**
     * Returns the [[DocAst.Program]] representation of `root`.
@@ -28,6 +34,8 @@ object TypedAstPrinter {
     */
   private def print(e: TypedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
+    case Expr.NativeImport(spec, _, _, _) => DocAst.Expr.AsIs(s"""extern native("${spec.symbol}")""")
+    case Expr.WasmImport(spec, _, _, _) => DocAst.Expr.AsIs(s"""extern wasm("${spec.interface}", "${spec.func}")""")
     case Expr.Var(sym, _, _) => printVar(sym)
     case Expr.Hole(sym, _, _, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
@@ -90,6 +98,23 @@ object TypedAstPrinter {
     case Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.NewReentrantLock(_, _, _) => DocAst.Expr.Unknown
+    case Expr.LockReentrantLock(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.TryLockReentrantLock(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.UnlockReentrantLock(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.NewCondition(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.AwaitCondition(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.SignalCondition(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.SignalAllCondition(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.NewCyclicBarrier(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.AwaitCyclicBarrier(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.NewCountDownLatch(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.AwaitCountDownLatch(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.CountDownLatchCountDown(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.NewSemaphore(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.AcquireSemaphore(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.TryAcquireSemaphore(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ReleaseSemaphore(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Spawn(exp1, exp2, _, _, _) => DocAst.Expr.Spawn(print(exp1), print(exp2))
     case Expr.ParYield(_, _, _, _, _) => DocAst.Expr.Unknown
@@ -124,7 +149,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
-    case TypedAst.CatchRule(bnd, clazz, exp, _) => (bnd.sym, clazz, print(exp))
+    case TypedAst.CatchRule(bnd, catchTpe, exp, _) => (bnd.sym, catchClassOf(catchTpe), print(exp))
   }
 
   /**

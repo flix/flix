@@ -80,6 +80,7 @@ object JvmBackend {
     val unitClass = List(JvmClass(BackendObjType.Unit.jvmName, BackendObjType.Unit.genByteCode()))
 
     val flixErrorClass = List(JvmClass(JvmName.FlixError, ClassConstants.FlixError.genByteCode()))
+    val flixExceptionClass = List(JvmClass(JvmName.FlixException, ClassConstants.FlixException.genByteCode()))
     val rslClass = List(JvmClass(BackendObjType.ReifiedSourceLocation.jvmName, BackendObjType.ReifiedSourceLocation.genByteCode()))
     val holeErrorClass = List(JvmClass(BackendObjType.HoleError.jvmName, BackendObjType.HoleError.genByteCode()))
     val matchErrorClass = List(JvmClass(BackendObjType.MatchError.jvmName, BackendObjType.MatchError.genByteCode()))
@@ -127,6 +128,7 @@ object JvmBackend {
       anonClasses,
       unitClass,
       flixErrorClass,
+      flixExceptionClass,
       rslClass,
       holeErrorClass,
       matchErrorClass,

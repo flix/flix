@@ -308,6 +308,13 @@ object Namer {
     case "BigInt" => true
     case "String" => true
     case "Regex" => true
+    case "StringBuilderHandle" => true
+    case "RegexMatcher" => true
+    case "ReentrantLockHandle" => true
+    case "ConditionHandle" => true
+    case "CyclicBarrierHandle" => true
+    case "CountDownLatchHandle" => true
+    case "SemaphoreHandle" => true
     case _ => false
   }
 
@@ -737,6 +744,12 @@ object Namer {
     case DesugaredAst.Expr.Cst(cst, loc) =>
       NamedAst.Expr.Cst(cst, loc)
 
+    case DesugaredAst.Expr.NativeImport(spec, loc) =>
+      NamedAst.Expr.NativeImport(spec, loc)
+
+    case DesugaredAst.Expr.WasmImport(spec, loc) =>
+      NamedAst.Expr.WasmImport(spec, loc)
+
     case DesugaredAst.Expr.Apply(exp, exps, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
@@ -974,6 +987,73 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.PutChannel(e1, e2, loc)
 
+    case DesugaredAst.Expr.NewReentrantLock(loc) =>
+      NamedAst.Expr.NewReentrantLock(loc)
+
+    case DesugaredAst.Expr.LockReentrantLock(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.LockReentrantLock(e, loc)
+
+    case DesugaredAst.Expr.TryLockReentrantLock(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.TryLockReentrantLock(e, loc)
+
+    case DesugaredAst.Expr.UnlockReentrantLock(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.UnlockReentrantLock(e, loc)
+
+    case DesugaredAst.Expr.NewCondition(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.NewCondition(e, loc)
+
+    case DesugaredAst.Expr.AwaitCondition(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.AwaitCondition(e, loc)
+
+    case DesugaredAst.Expr.SignalCondition(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.SignalCondition(e, loc)
+
+    case DesugaredAst.Expr.SignalAllCondition(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.SignalAllCondition(e, loc)
+
+    case DesugaredAst.Expr.NewCyclicBarrier(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.NewCyclicBarrier(e, loc)
+
+    case DesugaredAst.Expr.AwaitCyclicBarrier(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.AwaitCyclicBarrier(e, loc)
+
+    case DesugaredAst.Expr.NewCountDownLatch(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.NewCountDownLatch(e, loc)
+
+    case DesugaredAst.Expr.AwaitCountDownLatch(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.AwaitCountDownLatch(e, loc)
+
+    case DesugaredAst.Expr.CountDownLatchCountDown(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.CountDownLatchCountDown(e, loc)
+
+    case DesugaredAst.Expr.NewSemaphore(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.NewSemaphore(e, loc)
+
+    case DesugaredAst.Expr.AcquireSemaphore(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.AcquireSemaphore(e, loc)
+
+    case DesugaredAst.Expr.TryAcquireSemaphore(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.TryAcquireSemaphore(e, loc)
+
+    case DesugaredAst.Expr.ReleaseSemaphore(exp, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.ReleaseSemaphore(e, loc)
+
     case DesugaredAst.Expr.SelectChannel(rules, exp, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val e = exp.map(visitExp(_))
@@ -1092,10 +1172,11 @@ object Namer {
     * Performs naming on the given try-catch rule `rule0`.
     */
   private def visitTryCatchRule(rule0: DesugaredAst.CatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.CatchRule = rule0 match {
-    case DesugaredAst.CatchRule(ident, className, body, loc) =>
+    case DesugaredAst.CatchRule(ident, tpe, body, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
+      val t = visitType(tpe)
       val b = visitExp(body)
-      NamedAst.CatchRule(sym, className, b, loc)
+      NamedAst.CatchRule(sym, t, b, loc)
   }
 
   /**

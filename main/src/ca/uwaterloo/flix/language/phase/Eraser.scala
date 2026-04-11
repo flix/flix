@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimpleType.erase
 import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, Purity, ReducedAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
+import ca.uwaterloo.flix.language.phase.ExportAbi
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -50,11 +51,23 @@ object Eraser {
     ErasedAst.Root(newDefs, newEnums, newStructs, newEffects, root.mainEntryPoint, root.entryPoints, root.sources)
   }(DebugNoOp())
 
-  private def visitDef(defn: ReducedAst.Def)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Def = defn match {
+  private def visitDef(defn: ReducedAst.Def)(implicit ctx: SharedContext, root: ReducedAst.Root, flix: Flix): ErasedAst.Def = defn match {
     case ReducedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
       val e = ErasedAst.Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
-      ErasedAst.Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), ErasedAst.UnboxedType(erase(originalTpe.tpe)), loc)
+      // The wasm def-id runtime invokes `main` through the same portable ABI classification as `@Export`.
+      val exportedSignature =
+        if (ann.isExport || root.mainEntryPoint.contains(sym)) ExportAbi.portableExportSignature(fparams.map(_.tpe), originalTpe.tpe)
+        else None
+      val nativeImportSignature = exp match {
+        case ReducedAst.Expr.NativeImport(_, _, _, _) => NativeImportAbi.signatureOf(fparams.map(_.tpe), originalTpe.tpe)
+        case _ => None
+      }
+      val wasmImportSignature = exp match {
+        case ReducedAst.Expr.WasmImport(_, _, _, _) => ExportAbi.portableSignature(fparams.map(_.tpe), originalTpe.tpe)
+        case _ => None
+      }
+      ErasedAst.Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), ErasedAst.UnboxedType(erase(originalTpe.tpe)), exportedSignature, nativeImportSignature, wasmImportSignature, loc)
   }
 
   private def specializeEnums(specializations: List[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.EnumSym, ErasedAst.Enum] = {
@@ -107,8 +120,8 @@ object Eraser {
   }
 
   private def visitCatchRule(rule: ReducedAst.CatchRule)(implicit ctx: SharedContext, flix: Flix): ErasedAst.CatchRule = rule match {
-    case ReducedAst.CatchRule(sym, clazz, exp) =>
-      ErasedAst.CatchRule(sym, clazz, visitExp(exp))
+    case ReducedAst.CatchRule(sym, catchTpe, exp) =>
+      ErasedAst.CatchRule(sym, catchTpe, visitExp(exp))
   }
 
   private def visitHandlerRule(rule: ReducedAst.HandlerRule)(implicit ctx: SharedContext, flix: Flix): ErasedAst.HandlerRule = rule match {
@@ -125,6 +138,10 @@ object Eraser {
   private def visitExp(exp0: ReducedAst.Expr)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Expr = exp0 match {
     case ReducedAst.Expr.Cst(cst, loc) =>
       ErasedAst.Expr.Cst(cst, loc)
+    case ReducedAst.Expr.NativeImport(spec, tpe, purity, loc) =>
+      ErasedAst.Expr.NativeImport(spec, visitType(tpe), purity, loc)
+    case ReducedAst.Expr.WasmImport(spec, tpe, purity, loc) =>
+      ErasedAst.Expr.WasmImport(spec, visitType(tpe), purity, loc)
     case ReducedAst.Expr.Var(sym, tpe, loc) =>
       ErasedAst.Expr.Var(sym, visitType(tpe), loc)
     case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
@@ -190,6 +207,29 @@ object Eraser {
         case AtomicOp.PutStaticField(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Throw => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Spawn => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ChannelNew => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ChannelGet => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ChannelPut => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ChannelSelect => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ChannelSelectIndex => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ChannelSelectGet => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ReentrantLockNew => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ReentrantLockLock => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ReentrantLockTryLock => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ReentrantLockUnlock => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ConditionNew => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ConditionAwait => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ConditionSignal => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ConditionSignalAll => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CyclicBarrierNew => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CyclicBarrierAwait => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CountDownLatchNew => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CountDownLatchAwait => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CountDownLatchCountDown => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.SemaphoreNew => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.SemaphoreAcquire => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.SemaphoreTryAcquire => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.SemaphoreRelease => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Lazy => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
           castExp(ErasedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
@@ -266,7 +306,16 @@ object Eraser {
 
   private def visitOp(op: ReducedAst.Op)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Op = op match {
     case ReducedAst.Op(sym, ann, mod, fparams, tpe, purity, loc) =>
-      ErasedAst.Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
+      ErasedAst.Op(
+        sym,
+        ann,
+        mod,
+        fparams.map(visitParam),
+        erase(tpe),
+        purity,
+        ExportAbi.portableSignature(fparams.map(_.tpe), tpe),
+        loc
+      )
   }
 
   private def visitType(tpe0: SimpleType)(implicit ctx: SharedContext, flix: Flix): SimpleType = {
@@ -287,6 +336,14 @@ object Eraser {
       case BigInt => BigInt
       case String => String
       case Regex => Regex
+      case StringBuilderHandle => StringBuilderHandle
+      case RegexMatcher => RegexMatcher
+      case ChannelHandle => ChannelHandle
+      case ReentrantLockHandle => ReentrantLockHandle
+      case ConditionHandle => ConditionHandle
+      case CyclicBarrierHandle => CyclicBarrierHandle
+      case CountDownLatchHandle => CountDownLatchHandle
+      case SemaphoreHandle => SemaphoreHandle
       case Region => Region
       case Null => Null
       case Array(tpe) => SimpleType.mkArray(visitType(tpe))

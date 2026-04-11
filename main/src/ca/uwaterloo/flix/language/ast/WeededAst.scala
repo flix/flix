@@ -96,6 +96,9 @@ object WeededAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
+    case class NativeImport(spec: NativeImportSpec, loc: SourceLocation) extends Expr
+    case class WasmImport(spec: WasmImportSpec, loc: SourceLocation) extends Expr
+
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Infix(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
@@ -211,6 +214,40 @@ object WeededAst {
     case class GetChannel(exp: Expr, loc: SourceLocation) extends Expr
 
     case class PutChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+
+    case class NewReentrantLock(loc: SourceLocation) extends Expr
+
+    case class LockReentrantLock(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class TryLockReentrantLock(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class UnlockReentrantLock(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class NewCondition(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class AwaitCondition(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class SignalCondition(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class SignalAllCondition(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class NewCyclicBarrier(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class AwaitCyclicBarrier(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class NewCountDownLatch(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class AwaitCountDownLatch(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class CountDownLatchCountDown(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class NewSemaphore(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class AcquireSemaphore(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class TryAcquireSemaphore(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class ReleaseSemaphore(exp: Expr, loc: SourceLocation) extends Expr
 
     case class SelectChannel(rules: List[SelectChannelRule], exp: Option[Expr], loc: SourceLocation) extends Expr
 
@@ -435,7 +472,7 @@ object WeededAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
+  case class CatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 

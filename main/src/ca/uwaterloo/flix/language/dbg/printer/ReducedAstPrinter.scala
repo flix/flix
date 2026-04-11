@@ -17,11 +17,16 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
-import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{ReducedAst, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object ReducedAstPrinter {
+
+  private def catchClassOf(tpe: SimpleType): Class[?] = tpe match {
+    case SimpleType.Native(clazz) => clazz
+    case _ => classOf[Object]
+  }
 
   /**
     * Returns the [[DocAst.Program]] representation of `root`.
@@ -47,6 +52,8 @@ object ReducedAstPrinter {
     */
   def print(e: ReducedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
+    case Expr.NativeImport(spec, _, _, _) => DocAst.Expr.AsIs(s"""extern native("${spec.symbol}")""")
+    case Expr.WasmImport(spec, _, _, _) => DocAst.Expr.AsIs(s"""extern wasm("${spec.interface}", "${spec.func}")""")
     case Expr.Var(sym, _, _) => printVarSym(sym)
     case Expr.ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), SimpleTypePrinter.print(tpe), PurityPrinter.print(purity))
     case Expr.ApplyClo(exp1, exp2, ct, _, _, _) => DocAst.Expr.ApplyCloWithTail(print(exp1), List(print(exp2)), ct)
@@ -60,7 +67,7 @@ object ReducedAstPrinter {
     case Expr.Stmt(exp1, exp2, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case ReducedAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
+      case ReducedAst.CatchRule(sym, catchTpe, body) => (sym, catchClassOf(catchTpe), print(body))
     })
     case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case ReducedAst.HandlerRule(op, fparams, body) =>

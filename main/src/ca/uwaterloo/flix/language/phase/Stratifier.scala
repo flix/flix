@@ -102,6 +102,9 @@ object Stratifier {
   private def visitExp(exp0: Expr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
     case Expr.Cst(_, _, _) => exp0
 
+    case Expr.NativeImport(_, _, _, _) => exp0
+    case Expr.WasmImport(_, _, _, _) => exp0
+
     case Expr.Var(_, _, _) => exp0
 
     case Expr.Hole(_, _, _, _, _) => exp0
@@ -373,6 +376,73 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.PutChannel(e1, e2, tpe, eff, loc)
 
+    case Expr.NewReentrantLock(tpe, eff, loc) =>
+      Expr.NewReentrantLock(tpe, eff, loc)
+
+    case Expr.LockReentrantLock(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.LockReentrantLock(e, tpe, eff, loc)
+
+    case Expr.TryLockReentrantLock(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.TryLockReentrantLock(e, tpe, eff, loc)
+
+    case Expr.UnlockReentrantLock(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.UnlockReentrantLock(e, tpe, eff, loc)
+
+    case Expr.NewCondition(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.NewCondition(e, tpe, eff, loc)
+
+    case Expr.AwaitCondition(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.AwaitCondition(e, tpe, eff, loc)
+
+    case Expr.SignalCondition(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.SignalCondition(e, tpe, eff, loc)
+
+    case Expr.SignalAllCondition(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.SignalAllCondition(e, tpe, eff, loc)
+
+    case Expr.NewCyclicBarrier(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.NewCyclicBarrier(e, tpe, eff, loc)
+
+    case Expr.AwaitCyclicBarrier(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.AwaitCyclicBarrier(e, tpe, eff, loc)
+
+    case Expr.NewCountDownLatch(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.NewCountDownLatch(e, tpe, eff, loc)
+
+    case Expr.AwaitCountDownLatch(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.AwaitCountDownLatch(e, tpe, eff, loc)
+
+    case Expr.CountDownLatchCountDown(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.CountDownLatchCountDown(e, tpe, eff, loc)
+
+    case Expr.NewSemaphore(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.NewSemaphore(e, tpe, eff, loc)
+
+    case Expr.AcquireSemaphore(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.AcquireSemaphore(e, tpe, eff, loc)
+
+    case Expr.TryAcquireSemaphore(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.TryAcquireSemaphore(e, tpe, eff, loc)
+
+    case Expr.ReleaseSemaphore(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.ReleaseSemaphore(e, tpe, eff, loc)
+
     case Expr.SelectChannel(rules, exp, tpe, eff, loc) =>
       val e = exp.map(visitExp)
       val rs = rules.map(visitSelectChannelRule)
@@ -467,9 +537,9 @@ object Stratifier {
   }
 
   private def visitTryCatchRule(rule: CatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): CatchRule = rule match {
-    case CatchRule(sym, clazz, exp1, loc) =>
+    case CatchRule(bnd, catchTpe, exp1, loc) =>
       val e1 = visitExp(exp1)
-      CatchRule(sym, clazz, e1, loc)
+      CatchRule(bnd, catchTpe, e1, loc)
   }
 
   private def visitRunWithRule(rule: HandlerRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): HandlerRule = rule match {

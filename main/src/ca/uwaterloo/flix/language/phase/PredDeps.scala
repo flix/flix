@@ -93,6 +93,9 @@ object PredDeps {
   private def visitExp(exp0: Expr)(implicit sctx: SharedContext): Unit = exp0 match {
     case Expr.Cst(_, _, _) => ()
 
+    case Expr.NativeImport(_, _, _, _) => ()
+    case Expr.WasmImport(_, _, _, _) => ()
+
     case Expr.Var(_, _, _) => ()
 
     case Expr.Hole(_, _, _, _, _) => ()
@@ -303,6 +306,56 @@ object PredDeps {
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
+
+    case Expr.NewReentrantLock(_, _, _) =>
+
+    case Expr.LockReentrantLock(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.TryLockReentrantLock(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.UnlockReentrantLock(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.NewCondition(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.AwaitCondition(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.NewCyclicBarrier(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.AwaitCyclicBarrier(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.NewCountDownLatch(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.AwaitCountDownLatch(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.CountDownLatchCountDown(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.NewSemaphore(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.AcquireSemaphore(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.TryAcquireSemaphore(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.ReleaseSemaphore(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.SignalCondition(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.SignalAllCondition(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       default.foreach(visitExp)

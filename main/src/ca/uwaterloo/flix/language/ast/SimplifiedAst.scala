@@ -59,6 +59,9 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
+    case class NativeImport(spec: NativeImportSpec, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class WasmImport(spec: WasmImportSpec, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+
     case class Var(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
@@ -112,7 +115,7 @@ object SimplifiedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, catchTpe: SimpleType, exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 

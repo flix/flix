@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.Executable
 
@@ -32,7 +33,14 @@ object TypeReconstruction {
   def visitDef(defn: KindedAst.Def, subst: SubstitutionTree): TypedAst.Def = defn match {
     case KindedAst.Def(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
-      val exp = visitExp(exp0)(subst)
+      val exp = exp0 match {
+        case KindedAst.Expr.NativeImport(spec1, loc1) =>
+          TypedAst.Expr.NativeImport(spec1, spec.retTpe, spec.eff, loc1)
+        case KindedAst.Expr.WasmImport(spec1, loc1) =>
+          TypedAst.Expr.WasmImport(spec1, spec.retTpe, spec.eff, loc1)
+        case _ =>
+          visitExp(exp0)(subst)
+      }
       TypedAst.Def(sym, spec, exp, loc)
   }
 
@@ -111,6 +119,12 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
+    case KindedAst.Expr.NativeImport(spec, loc) =>
+      throw InternalCompilerException(s"Unexpected native import outside def reconstruction: '$spec'.", loc)
+
+    case KindedAst.Expr.WasmImport(spec, loc) =>
+      throw InternalCompilerException(s"Unexpected wasm import outside def reconstruction: '$spec'.", loc)
+
     case KindedAst.Expr.ApplyClo(exp1, exp2, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -148,7 +162,12 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Unary(sop, exp, tvar, loc) =>
       val e = visitExp(exp)
-      val eff = e.eff
+      val eff = sop match {
+        case _: SemanticOp.IoOp =>
+          Type.mkUnion(e.eff, Type.IO, loc)
+        case _ =>
+          e.eff
+      }
       TypedAst.Expr.Unary(sop, e, subst(tvar), eff, loc)
 
     case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) =>
@@ -410,10 +429,11 @@ object TypeReconstruction {
     case KindedAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
-        case KindedAst.CatchRule(sym, clazz, body, ruleLoc) =>
+        case KindedAst.CatchRule(sym, tpe0, body, ruleLoc) =>
           val b = visitExp(body)
-          val bnd = TypedAst.Binder(sym, Type.mkNative(clazz, SourceLocation.Unknown))
-          TypedAst.CatchRule(bnd, clazz, b, ruleLoc)
+          val bnd = TypedAst.Binder(sym, subst(sym.tvar))
+          val tpe = subst(tpe0)
+          TypedAst.CatchRule(bnd, tpe, b, ruleLoc)
       }
       val tpe = rs.head.exp.tpe
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
@@ -533,6 +553,80 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       val tpe = Type.mkUnit(loc)
       TypedAst.Expr.PutChannel(e1, e2, tpe, subst(evar), loc)
+
+    case KindedAst.Expr.NewReentrantLock(loc) =>
+      val tpe = Type.Cst(TypeConstructor.ReentrantLockHandle, loc)
+      val eff = Type.IO
+      TypedAst.Expr.NewReentrantLock(tpe, eff, loc)
+
+    case KindedAst.Expr.LockReentrantLock(exp, evar, loc) =>
+      val e = visitExp(exp)
+      val tpe = Type.mkUnit(loc)
+      TypedAst.Expr.LockReentrantLock(e, tpe, subst(evar), loc)
+
+    case KindedAst.Expr.TryLockReentrantLock(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.TryLockReentrantLock(e, Type.Bool, subst(evar), loc)
+
+    case KindedAst.Expr.UnlockReentrantLock(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.UnlockReentrantLock(e, Type.Bool, subst(evar), loc)
+
+    case KindedAst.Expr.NewCondition(exp, evar, loc) =>
+      val e = visitExp(exp)
+      val tpe = Type.Cst(TypeConstructor.ConditionHandle, loc)
+      TypedAst.Expr.NewCondition(e, tpe, subst(evar), loc)
+
+    case KindedAst.Expr.AwaitCondition(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.AwaitCondition(e, Type.Int32, subst(evar), loc)
+
+    case KindedAst.Expr.SignalCondition(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.SignalCondition(e, Type.Bool, subst(evar), loc)
+
+    case KindedAst.Expr.SignalAllCondition(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.SignalAllCondition(e, Type.Bool, subst(evar), loc)
+
+    case KindedAst.Expr.NewCyclicBarrier(exp, evar, loc) =>
+      val e = visitExp(exp)
+      val tpe = Type.Cst(TypeConstructor.CyclicBarrierHandle, loc)
+      TypedAst.Expr.NewCyclicBarrier(e, tpe, subst(evar), loc)
+
+    case KindedAst.Expr.AwaitCyclicBarrier(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.AwaitCyclicBarrier(e, Type.Int32, subst(evar), loc)
+
+    case KindedAst.Expr.NewCountDownLatch(exp, evar, loc) =>
+      val e = visitExp(exp)
+      val tpe = Type.Cst(TypeConstructor.CountDownLatchHandle, loc)
+      TypedAst.Expr.NewCountDownLatch(e, tpe, subst(evar), loc)
+
+    case KindedAst.Expr.AwaitCountDownLatch(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.AwaitCountDownLatch(e, Type.Unit, subst(evar), loc)
+
+    case KindedAst.Expr.CountDownLatchCountDown(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.CountDownLatchCountDown(e, Type.Unit, subst(evar), loc)
+
+    case KindedAst.Expr.NewSemaphore(exp, evar, loc) =>
+      val e = visitExp(exp)
+      val tpe = Type.Cst(TypeConstructor.SemaphoreHandle, loc)
+      TypedAst.Expr.NewSemaphore(e, tpe, subst(evar), loc)
+
+    case KindedAst.Expr.AcquireSemaphore(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.AcquireSemaphore(e, Type.Unit, subst(evar), loc)
+
+    case KindedAst.Expr.TryAcquireSemaphore(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.TryAcquireSemaphore(e, Type.Bool, subst(evar), loc)
+
+    case KindedAst.Expr.ReleaseSemaphore(exp, evar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.ReleaseSemaphore(e, Type.Unit, subst(evar), loc)
 
     case KindedAst.Expr.SelectChannel(rules, default, tvar, evar, loc) =>
       val rs = rules map {

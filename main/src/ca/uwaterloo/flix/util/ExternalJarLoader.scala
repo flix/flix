@@ -37,10 +37,10 @@ class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatf
       super.findClass(name)
     } catch {
       case e: ClassNotFoundException =>
-        // Special case for dev.flix.runtime.Global
-        // This is never used at runtime, but we need to be able to load it at compile
-        // time in order to check method signatures
-        if (name == "dev.flix.runtime.Global")
+        // Special case for compiler/runtime support classes under dev.flix.runtime.
+        // These are intentionally visible to generated Flix code even though compiled
+        // Flix programs do not otherwise inherit the compiler classpath.
+        if (name == "dev.flix.runtime.Global" || name == "dev.flix.runtime.ChannelSupport" || name == "dev.flix.runtime.LockSupport" || name == "dev.flix.runtime.CancellationWakeup" || name == "dev.flix.runtime.RegionSupport")
           super.findSystemClass(name)
         // Special case for testing to allow us to load test classes
         else if (name.startsWith(("dev.flix.test.")))

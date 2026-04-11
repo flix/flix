@@ -71,6 +71,7 @@ object Lexer {
       ("else", TokenKind.KeywordElse),
       ("ematch", TokenKind.KeywordEMatch),
       ("enum", TokenKind.KeywordEnum),
+      ("extern", TokenKind.KeywordExtern),
       ("false", TokenKind.KeywordFalse),
       ("fix", TokenKind.KeywordFix),
       ("forA", TokenKind.KeywordForA),
@@ -981,4 +982,3 @@ object Lexer {
   }
 
 }
-

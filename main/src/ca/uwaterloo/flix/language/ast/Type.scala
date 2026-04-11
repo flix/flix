@@ -346,6 +346,16 @@ object Type {
   val Regex: Type = Type.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
 
   /**
+    * Represents the StringBuilderHandle type.
+    */
+  val StringBuilderHandle: Type = Type.Cst(TypeConstructor.StringBuilderHandle, SourceLocation.Unknown)
+
+  /**
+    * Represents the RegexMatcher type.
+    */
+  val RegexMatcher: Type = Type.Cst(TypeConstructor.RegexMatcher, SourceLocation.Unknown)
+
+  /**
     * Represents the Lazy type constructor.
     *
     * NB: This type has kind: * -> *.

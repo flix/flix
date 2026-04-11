@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Muta
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CompilationTarget, InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
 
@@ -92,6 +92,13 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Cst(cst, t, loc)
 
+    case MonoAst.Expr.NativeImport(spec, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.NativeImport(spec, t, simplifyEffect(eff), loc)
+    case MonoAst.Expr.WasmImport(spec, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.WasmImport(spec, t, simplifyEffect(eff), loc)
+
     case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
       val e = visitExp(exp)
@@ -123,7 +130,7 @@ object Simplifier {
       val es = exps.map(visitExp)
       val purity = simplifyEffect(eff)
       op match {
-        case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
+        case AtomicOp.Binary(SemanticOp.StringOp.Concat) if flix.options.target == CompilationTarget.Jvm =>
           // Translate to InvokeMethod exp
           val strClass = Class.forName("java.lang.String")
           val method = strClass.getMethod("concat", strClass)
@@ -131,8 +138,13 @@ object Simplifier {
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), es, t, purity, loc)
 
         case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
-          // The region expression is dropped (head of exps / es)
-          val es1 = es.tail
+          // The array primops take an explicit `Region` argument in source/MonoAst.
+          // For the JVM backend we drop it (regions are not a memory domain there),
+          // but LLVM targets need it to allocate in region arenas.
+          val es1 = flix.options.target match {
+            case CompilationTarget.Jvm => es.tail
+            case _ => es
+          }
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
@@ -153,6 +165,15 @@ object Simplifier {
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, Purity.Pure, loc)
+
+        case AtomicOp.Unary(SemanticOp.ExnOp.KindId) =>
+          // Exception kind ids depend only on the simplified portable payload type.
+          // Fold them here so catch dispatch and Exn.mk are keyed by the exact same type view.
+          val List(e) = es
+          val t = visitType(tpe)
+          val kindId = ExnKindId.of(e.tpe)
+          val cst = SimplifiedAst.Expr.Cst(Constant.Int32(kindId), t, loc)
+          SimplifiedAst.Expr.Stm(e, cst, t, purity, loc)
 
         case AtomicOp.HoleError(_) | AtomicOp.Throw =>
           // Simplify purity to impure, must be done after Monomorph
@@ -236,9 +257,9 @@ object Simplifier {
     case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
-        case MonoAst.CatchRule(sym, clazz, body) =>
+        case MonoAst.CatchRule(sym, catchTpe, body) =>
           val b = visitExp(body)
-          SimplifiedAst.CatchRule(sym, clazz, b)
+          SimplifiedAst.CatchRule(sym, visitType(catchTpe), b)
       }
       val t = visitType(tpe)
       SimplifiedAst.Expr.TryCatch(e, rs, t, simplifyEffect(eff), loc)
@@ -313,6 +334,22 @@ object Simplifier {
           case TypeConstructor.Str => SimpleType.String
 
           case TypeConstructor.Regex => SimpleType.Regex
+
+          case TypeConstructor.StringBuilderHandle => SimpleType.StringBuilderHandle
+
+          case TypeConstructor.RegexMatcher => SimpleType.RegexMatcher
+
+          case TypeConstructor.ChannelHandle => SimpleType.ChannelHandle
+
+          case TypeConstructor.ReentrantLockHandle => SimpleType.ReentrantLockHandle
+
+          case TypeConstructor.ConditionHandle => SimpleType.ConditionHandle
+
+          case TypeConstructor.CyclicBarrierHandle => SimpleType.CyclicBarrierHandle
+
+          case TypeConstructor.CountDownLatchHandle => SimpleType.CountDownLatchHandle
+
+          case TypeConstructor.SemaphoreHandle => SimpleType.SemaphoreHandle
 
           case TypeConstructor.RecordRowEmpty => SimpleType.RecordEmpty
 
@@ -486,6 +523,22 @@ object Simplifier {
           case TypeConstructor.Str => cst
 
           case TypeConstructor.Regex => cst
+
+          case TypeConstructor.StringBuilderHandle => cst
+
+          case TypeConstructor.RegexMatcher => cst
+
+          case TypeConstructor.ChannelHandle => cst
+
+          case TypeConstructor.ReentrantLockHandle => cst
+
+          case TypeConstructor.ConditionHandle => cst
+
+          case TypeConstructor.CyclicBarrierHandle => cst
+
+          case TypeConstructor.CountDownLatchHandle => cst
+
+          case TypeConstructor.SemaphoreHandle => cst
 
           case TypeConstructor.RecordRowEmpty => cst
 

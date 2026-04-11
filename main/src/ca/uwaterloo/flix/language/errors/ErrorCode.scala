@@ -265,4 +265,14 @@ object ErrorCode {
   case object E9914 extends ErrorCode
   case object E9956 extends ErrorCode
   case object E9999 extends ErrorCode
+  case object E6021 extends ErrorCode
+  case object E6022 extends ErrorCode
+  case object E6023 extends ErrorCode
+  case object E6024 extends ErrorCode
+  case object E6026 extends ErrorCode
+  case object E6027 extends ErrorCode
+  case object E6028 extends ErrorCode
+  case object E6029 extends ErrorCode
+  case object E6030 extends ErrorCode
+  case object E6031 extends ErrorCode
 }

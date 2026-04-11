@@ -81,6 +81,22 @@ package object serialization {
 
   case object Regex extends STC
 
+  case object StringBuilderHandle extends STC
+
+  case object RegexMatcher extends STC
+
+  case object ChannelHandle extends STC
+
+  case object ReentrantLockHandle extends STC
+
+  case object ConditionHandle extends STC
+
+  case object CyclicBarrierHandle extends STC
+
+  case object CountDownLatchHandle extends STC
+
+  case object SemaphoreHandle extends STC
+
   case class Arrow(arity: Int) extends STC
 
   case class ArrowWithoutEffect(arity: Int) extends STC
@@ -323,4 +339,3 @@ package object serialization {
         classOf[EqConstr],
       )))
 }
-

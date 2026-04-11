@@ -167,7 +167,7 @@ object Command {
     if (input == ":build-fatjar" || input == ":fatjar")
       return Command.BuildFatJar
 
-    if (input == ":build-pkg" || input == ":pkg")
+    if (input == ":package" || input == ":build-pkg" || input == ":pkg")
       return Command.BuildPkg
 
     if (input == ":release")

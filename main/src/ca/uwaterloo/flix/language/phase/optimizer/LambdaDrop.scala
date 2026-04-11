@@ -124,6 +124,10 @@ object LambdaDrop {
   private def visitExp(exp0: MonoAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
 
+    case Expr.NativeImport(_, _, _, _) =>
+
+    case Expr.WasmImport(_, _, _, _) =>
+
     case Expr.Var(_, _, _) =>
 
     case Expr.Lambda(_, exp, _, _) =>
@@ -230,6 +234,12 @@ object LambdaDrop {
     */
   private def rewriteExp(expr0: MonoAst.Expr)(implicit oldDefnSym: Symbol.DefnSym, newDefnSym: Symbol.VarSym, subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
     case Expr.Cst(_, _, _) =>
+      expr0
+
+    case Expr.NativeImport(_, _, _, _) =>
+      expr0
+
+    case Expr.WasmImport(_, _, _, _) =>
       expr0
 
     case Expr.Var(sym, tpe, loc) =>
@@ -339,9 +349,9 @@ object LambdaDrop {
     case Expr.TryCatch(exp1, rules, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val rs = rules.map {
-        case MonoAst.CatchRule(sym, clazz, exp2) =>
+        case MonoAst.CatchRule(sym, catchTpe, exp2) =>
           val e2 = rewriteExp(exp2)
-          MonoAst.CatchRule(sym, clazz, e2)
+          MonoAst.CatchRule(sym, catchTpe, e2)
       }
       Expr.TryCatch(e1, rs, tpe, eff, loc)
 

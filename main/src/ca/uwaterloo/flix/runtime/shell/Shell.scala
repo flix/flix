@@ -195,7 +195,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   private def execReload()(implicit terminal: Terminal): Result[Unit, Unit] = {
 
     // Scan the disk to find changes, and add source to the flix object
-    bootstrap.reconfigureFlix(flix)
+    bootstrap.reconfigureFlix(flix) match {
+      case Result.Ok(()) => ()
+      case Result.Err(_) => return Result.Err(())
+    }
 
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()
@@ -265,7 +268,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
     w.println("  :build-jar :jar             Builds a jar-file from the current project.")
     w.println("  :build-fatjar :fatjar       Builds a fatjar-file from the current project.")
-    w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
+    w.println("  :package :pkg               Builds a fpkg-file from the current project.")
     w.println("  :release                    Publishes a release of the current project to GitHub.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :doc :d                     Generates API documentation for the current project.")

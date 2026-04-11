@@ -6,7 +6,8 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatType
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, StdlibProfile}
+import ca.uwaterloo.flix.util.CompilationTarget
 
 /** A common super-type for safety errors. */
 sealed trait SafetyError extends CompilationMessage {
@@ -50,6 +51,273 @@ object SafetyError {
          |  "github:xxx/yyy" = { version = "1.2.3", security = "unrestricted" }
          |
          |Learn more: https://doc.flix.dev/packages.html#security
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that Java interop is not available under the portable stdlib profile.
+    */
+  case class JavaInteropNotSupportedInPortableProfile(feature: String, loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6021
+
+    def summary: String = "Java interop is not supported under the portable stdlib profile."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Java interop is not supported under the portable stdlib profile.
+         |
+         |${highlight(loc, "not supported", fmt)}
+         |
+         |Feature: ${red(feature)}
+         |
+         |${underline("Explanation:")} The portable stdlib profile is intended for non-JVM targets
+         |(e.g. future LLVM-based backends) and therefore disallows JVM-specific features such as:
+         |
+         |  - importing Java classes,
+         |  - constructing Java objects, and
+         |  - invoking Java methods / accessing Java fields.
+         |
+         |${underline("To fix:")}
+         |
+         |  - If you need Java interop, compile with: ${cyan("--Xstdlib-profile jvm")}
+         |  - Otherwise, remove the Java interop usage (or move it behind a JVM-only overlay).
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a non-JVM compilation target requires the portable stdlib profile.
+    */
+  case class PortableStdlibProfileRequiredForTarget(target: CompilationTarget, loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6022
+
+    def summary: String = "Non-JVM compilation targets require the portable stdlib profile."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      val targetText = target match {
+        case CompilationTarget.Jvm => "jvm"
+        case CompilationTarget.LlvmNative => "llvm-native"
+        case CompilationTarget.LlvmWasm => "llvm-wasm"
+      }
+      s""">> Non-JVM compilation targets require the portable stdlib profile.
+         |
+         |Target: ${red(targetText)}
+         |
+         |${underline("Explanation:")} Non-JVM targets (e.g. LLVM-based backends) cannot use JVM-only
+         |stdlib overlays or Java interop. The portable stdlib profile provides a JVM-independent
+         |baseline intended to run on both the JVM and future native/wasm targets.
+         |
+         |${underline("To fix:")}
+         |
+         |  - Compile with: ${cyan("--Xstdlib-profile portable")}
+         |  - Or select the JVM target: ${cyan("--Xtarget jvm")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that `extern native` is only available on the native target.
+    */
+  case class NativeImportNotSupportedOnTarget(target: CompilationTarget, loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6023
+
+    def summary: String = "`extern native` is only supported on the native compilation target."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      val targetText = target match {
+        case CompilationTarget.Jvm => "jvm"
+        case CompilationTarget.LlvmNative => "native"
+        case CompilationTarget.LlvmWasm => "wasm"
+      }
+      s""">> `extern native` is only supported on the native compilation target.
+         |
+         |${highlight(loc, "unsupported target", fmt)}
+         |
+         |Target: ${red(targetText)}
+         |
+         |${underline("Explanation:")} `extern native` is a direct C ABI import mechanism.
+         |That mechanism only makes sense when compiling to a native binary. It is not
+         |available on the JVM or wasm targets.
+         |
+         |${underline("To fix:")}
+         |
+         |  - Compile with: ${cyan("--target native")}
+         |  - Or replace the import with a target-appropriate mechanism.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that `extern native` does not support polymorphic signatures.
+    */
+  case class NativeImportTypeParametersNotSupported(loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6024
+
+    def summary: String = "`extern native` does not support type parameters."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> `extern native` does not support type parameters.
+         |
+         |${highlight(loc, "type parameters not supported", fmt)}
+         |
+         |${underline("Explanation:")} The v0 native import ABI is a direct raw C ABI.
+         |It only supports monomorphic scalar signatures. Generic type parameters would require
+         |an additional marshalling or specialization contract, which is intentionally not part
+         |of this first implementation.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an `extern native` type is not supported by the raw C ABI.
+    */
+  case class IllegalNativeImportType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6026
+
+    def summary: String = "`extern native` uses a type that is not supported by the native import ABI."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> `extern native` uses a type that is not supported by the native import ABI.
+         |
+         |${highlight(loc, "unsupported type", fmt)}
+         |
+         |Type: ${red(FormatType.formatType(tpe))}
+         |
+         |${underline("Explanation:")} The current native import ABI supports:
+         |
+         |  - Unit
+         |  - Bool
+         |  - Int8 / Int16 / Int32 / Int64
+         |  - Float32 / Float64
+         |  - String
+         |  - Array[Int8, Static] as Bytes
+         |  - recursive portable ABI aggregates:
+         |    - List[t]
+         |    - Array[t, Static]
+         |    - Tuple[...]
+         |    - Option[t]
+         |    - Result[e, t]
+         |    - closed records
+         |
+         |Arbitrary ADTs, open records, region-polymorphic arrays, and polymorphic types are not part
+         |of the native import ABI.
+         |""".stripMargin
+    }
+  }
+
+  case class WasmImportNotSupportedOnTarget(target: CompilationTarget, loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6030
+
+    def summary: String = "`extern wasm` is only supported on the wasm compilation target."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      val targetText = target match {
+        case CompilationTarget.Jvm => "jvm"
+        case CompilationTarget.LlvmNative => "native"
+        case CompilationTarget.LlvmWasm => "wasm"
+      }
+      s""">> `extern wasm` is only supported on the wasm compilation target.
+         |
+         |${highlight(loc, "unsupported target", fmt)}
+         |
+         |Target: ${red(targetText)}
+         |
+         |${underline("Explanation:")} `extern wasm` binds directly to typed component-model imports.
+         |That mechanism only makes sense when compiling to the wasm target.
+         |""".stripMargin
+    }
+  }
+
+  case class WasmImportTypeParametersNotSupported(loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6027
+
+    def summary: String = "`extern wasm` does not support type parameters."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> `extern wasm` does not support type parameters.
+         |
+         |${highlight(loc, "type parameters not supported", fmt)}
+         |
+         |${underline("Explanation:")} The v0 wasm import ABI is deliberately narrow and monomorphic.
+         |Generic imports would require a separate specialization or marshalling contract.
+         |""".stripMargin
+    }
+  }
+
+  case class IllegalWasmImportType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6028
+
+    def summary: String = "`extern wasm` uses a type that is not supported by the v0 direct wasm import ABI."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> `extern wasm` uses a type that is not supported by the v0 direct wasm import ABI.
+         |
+         |${highlight(loc, "unsupported type", fmt)}
+         |
+         |Type: ${red(FormatType.formatType(tpe))}
+         |
+         |${underline("Explanation:")} The v0 direct wasm import path supports the same portable
+         |sync data shapes as the current export ABI:
+         |
+         |  - Unit
+         |  - Bool
+         |  - Int8 / Int16 / Int32 / Int64
+         |  - Float32 / Float64
+         |  - String / Bytes
+         |  - List[T] / Array[T, Static]
+         |  - Tuples, closed records, Option[T], and Result[Ok, Err]
+         |
+         |Every nested field type must itself be portable and monomorphic.
+         |Open records, arbitrary ADTs, and polymorphic signatures are still excluded.
+         |""".stripMargin
+    }
+  }
+
+  case class MalformedWasmImportInterface(interface: String, loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6029
+
+    def summary: String = "`extern wasm` requires a valid WIT interface identifier."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> `extern wasm` requires a valid WIT interface identifier.
+         |
+         |${highlight(loc, "invalid interface", fmt)}
+         |
+         |Interface: ${red(interface)}
+         |
+         |${underline("Expected shape:")} ${cyan("namespace:package/interface@major.minor.patch")}
+         |
+         |Example: ${cyan("host:math/basic@0.1.0")}
+         |""".stripMargin
+    }
+  }
+
+  case class ConflictingWasmImportSignature(interface: String, func: String, loc: SourceLocation) extends SafetyError {
+    def code: ErrorCode = ErrorCode.E6031
+
+    def summary: String = "`extern wasm` binds the same imported function with conflicting signatures."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> `extern wasm` binds the same imported function with conflicting signatures.
+         |
+         |${highlight(loc, "conflicting import signature", fmt)}
+         |
+         |Interface: ${red(interface)}
+         |Function : ${red(func)}
+         |
+         |${underline("Explanation:")} A WIT world can only declare one typed signature for a given
+         |imported function. If multiple Flix defs bind the same imported symbol, they must agree on
+         |the exact parameter and result types.
          |""".stripMargin
     }
   }
@@ -211,24 +479,40 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that the Java class in a catch clause is not a Throwable.
+    * An error raised to indicate that the catch type is invalid for the active stdlib profile.
     *
     * @param loc the location of the catch parameter.
     */
-  case class IllegalCatchType(clazz: java.lang.Class[?], loc: SourceLocation) extends SafetyError {
+  case class IllegalCatchType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4354
 
-    def summary: String = s"Unexpected catch type: '${clazz.getName}' is not a subclass of Throwable."
+    def summary: String = flix.options.stdlibProfile match {
+      case StdlibProfile.Portable =>
+        s"Unexpected catch type: '${FormatType.formatType(tpe)}' is not a valid portable exception matcher."
+      case _ =>
+        s"Unexpected catch type: '${FormatType.formatType(tpe)}' is not a subclass of Throwable."
+    }
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected catch type: '${red(clazz.getName)}' is not a subclass of Throwable.
-         |
-         |${highlight(loc, "unexpected type", fmt)}
-         |
-         |${underline("Explanation:")} A catch clause can only catch subclasses of
-         |'java.lang.Throwable'.
-         |""".stripMargin
+      flix.options.stdlibProfile match {
+        case StdlibProfile.Portable =>
+          s""">> Unexpected catch type: '${red(FormatType.formatType(tpe))}' is not a valid portable exception matcher.
+             |
+             |${highlight(loc, "unexpected type", fmt)}
+             |
+             |${underline("Explanation:")} Under the portable stdlib profile, catch clauses participate in the
+             |portable exception system and match a payload type (kind) or `Exn` for catch-all.
+             |""".stripMargin
+        case _ =>
+          s""">> Unexpected catch type: '${red(FormatType.formatType(tpe))}' is not a subclass of Throwable.
+             |
+             |${highlight(loc, "unexpected type", fmt)}
+             |
+             |${underline("Explanation:")} A catch clause can only catch subclasses of
+             |'java.lang.Throwable'.
+             |""".stripMargin
+      }
     }
   }
 
@@ -240,17 +524,33 @@ object SafetyError {
   case class IllegalThrowType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     def code: ErrorCode = ErrorCode.E4465
 
-    def summary: String = s"Unexpected throw type: '${FormatType.formatType(tpe)}' is not a subclass of Throwable."
+    def summary: String = flix.options.stdlibProfile match {
+      case StdlibProfile.Portable =>
+        s"Unexpected throw type: '${FormatType.formatType(tpe)}' is not a portable exception value."
+      case _ =>
+        s"Unexpected throw type: '${FormatType.formatType(tpe)}' is not a subclass of Throwable."
+    }
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Unexpected throw type: '${red(FormatType.formatType(tpe))}' is not a subclass of Throwable.
-         |
-         |${highlight(loc, "unexpected type", fmt)}
-         |
-         |${underline("Explanation:")} A throw expression can only throw subclasses of
-         |'java.lang.Throwable'.
-         |""".stripMargin
+      flix.options.stdlibProfile match {
+        case StdlibProfile.Portable =>
+          s""">> Unexpected throw type: '${red(FormatType.formatType(tpe))}' is not a portable exception value.
+             |
+             |${highlight(loc, "unexpected type", fmt)}
+             |
+             |${underline("Explanation:")} Under the portable stdlib profile, a throw expression must throw the
+             |designated portable exception value type `Exn` (payload + trace).
+             |""".stripMargin
+        case _ =>
+          s""">> Unexpected throw type: '${red(FormatType.formatType(tpe))}' is not a subclass of Throwable.
+             |
+             |${highlight(loc, "unexpected type", fmt)}
+             |
+             |${underline("Explanation:")} A throw expression can only throw subclasses of
+             |'java.lang.Throwable'.
+             |""".stripMargin
+      }
     }
   }
 

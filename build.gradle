@@ -95,6 +95,52 @@ jar {
         include '**/ClassList.txt'
     }
 
+    // LLVM-native bring-up runtime support (Zig sources).
+    //
+    // Note: `flix_rt_llvm.zig` may import sibling Zig files (e.g. unicode tables). Keep these
+    // resources bundled together so the CLI can extract+compile the runtime out-of-tree.
+    from('runtime/src') {
+        include '**/*.zig'
+        into 'runtime/src'
+    }
+
+    from('vendor/libxev/src') {
+        include '**/*.zig'
+        into 'vendor/libxev/src'
+    }
+
+    from('runtime/src/wit') {
+        include '**/*.c'
+        include '**/*.h'
+        into 'runtime/src/wit'
+    }
+
+    // LLVM-wasm runner support (Node host bridge).
+    from('tools/wasm-runner-js') {
+        include '**/*.mjs'
+        include '**/*.js'
+        include '**/*.html'
+        into 'tools/wasm-runner-js'
+    }
+
+    from('tools/wasm-runner-rs') {
+        include 'Cargo.toml'
+        include 'Cargo.lock'
+        include 'src/**/*.rs'
+        into 'tools/wasm-runner-rs'
+    }
+
+    from('tools/wit-flix-gen-rs') {
+        include 'Cargo.toml'
+        include 'src/**/*.rs'
+        into 'tools/wit-flix-gen-rs'
+    }
+
+    from('runtime/wit/flix-bindings') {
+        include '**/*.wit'
+        into 'runtime/wit/flix-bindings'
+    }
+
     duplicatesStrategy = 'exclude'
 }
 
@@ -105,9 +151,35 @@ test {
     testLogging {
         events("passed", "skipped", "failed", "standard_error")
     }
+    // Flix sources are loaded from disk at runtime during tests (via LocalResource),
+    // so we must treat them as test inputs; otherwise Gradle may incorrectly mark `:test` UP-TO-DATE.
+    inputs.files(fileTree('main/src/library') { include '**/*.flix' })
+    inputs.files(fileTree('main/test/flix') { include '**/*.flix' })
+    // LLVM runtime bring-up sources are compiled/used during some tests.
+    inputs.files(fileTree('runtime/src') { include '**/*.zig' })
+    inputs.files(fileTree('runtime/wit') { include '**/*.wit' })
     filter {
-        // We only want to run the TestAll suite. Otherwise ALL tests are run.
-        includeTestsMatching "ca.uwaterloo.flix.TestAll"
+        // Run leaf suites directly.
+        //
+        // Note: ScalaTest `Suites` aggregators (e.g. `TestAll`) flatten nested suites when executed
+        // via the JUnit Platform engine, which can lead to duplicate test identifiers and Gradle
+        // test output tracking failures.
+        excludeTestsMatching "ca.uwaterloo.flix.TestAll"
+        excludeTestsMatching "ca.uwaterloo.flix.api.ApiSuite"
+        excludeTestsMatching "ca.uwaterloo.flix.api.lsp.LspSuite"
+        excludeTestsMatching "ca.uwaterloo.flix.language.LanguageSuite"
+        excludeTestsMatching "ca.uwaterloo.flix.language.ast.AstSuite"
+        excludeTestsMatching "ca.uwaterloo.flix.language.phase.PhaseSuite"
+        excludeTestsMatching "ca.uwaterloo.flix.language.phase.TestParser"
+        excludeTestsMatching "ca.uwaterloo.flix.language.phase.unification.UnificationSuite"
+        excludeTestsMatching "ca.uwaterloo.flix.language.TestProgramArgs"
+        excludeTestsMatching "ca.uwaterloo.flix.tools.pkg.PackageManagerSuite"
+        excludeTestsMatching "ca.uwaterloo.flix.tools.pkg.TestFlixPackageManager"
+        excludeTestsMatching "ca.uwaterloo.flix.tools.pkg.TestMavenPackageManager"
+        excludeTestsMatching "ca.uwaterloo.flix.tools.pkg.TestJarPackageManager"
+        excludeTestsMatching "ca.uwaterloo.flix.util.UtilSuite"
+        excludeTestsMatching "ca.uwaterloo.flix.util.TestChain"
+        excludeTestsMatching "flix.fuzzers.FuzzerSuite"
     }
     maxParallelForks = 1
     maxHeapSize = '3g'
@@ -131,6 +203,14 @@ tasks.register('vscode', Copy) {
     dependsOn(['classes', 'jar'])
     from 'build/libs/flix.jar'
     into providers.gradleProperty('dev.flix.vscode.project')
+}
+
+tasks.register('regenWitGlue', Exec) {
+    commandLine 'bash', 'runtime/tools/regenerate_wit_glue.sh'
+}
+
+tasks.register('checkWitGlue', Exec) {
+    commandLine 'bash', 'runtime/tools/regenerate_wit_glue.sh', '--check'
 }
 
 tasks.register('testPackageManager', JavaExec) {

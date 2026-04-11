@@ -823,6 +823,12 @@ object Resolver {
     case NamedAst.Expr.Cst(cst, loc) =>
       ResolvedAst.Expr.Cst(cst, loc)
 
+    case NamedAst.Expr.NativeImport(spec, loc) =>
+      ResolvedAst.Expr.NativeImport(spec, loc)
+
+    case NamedAst.Expr.WasmImport(spec, loc) =>
+      ResolvedAst.Expr.WasmImport(spec, loc)
+
     case app@NamedAst.Expr.Apply(NamedAst.Expr.Ambiguous(qname, innerLoc), exps, outerLoc) =>
       // Special Case: We must check if we have a static method call, i.e. Math.abs(123)
       if (qname.namespace.idents.length == 1) {
@@ -1145,15 +1151,11 @@ object Resolver {
 
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rs = rules.map {
-        case NamedAst.CatchRule(sym, className, body, ruleLoc) =>
+        case NamedAst.CatchRule(sym, tpe0, body, ruleLoc) =>
           val scp = scp0 ++ mkVarScp(sym)
+          val tpe = resolveType(tpe0, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root)
           val b = resolveExp(body, scp)
-          lookupJvmClass2(className, ns0, scp0) match {
-            case Result.Ok(clazz) => ResolvedAst.CatchRule(sym, clazz, b, ruleLoc)
-            case Result.Err(error) =>
-              sctx.errors.add(error)
-              ResolvedAst.CatchRule(sym, classOf[Object], b, ruleLoc)
-          }
+          ResolvedAst.CatchRule(sym, tpe, b, ruleLoc)
       }
 
       val e = resolveExp(exp, scp0)
@@ -1236,6 +1238,73 @@ object Resolver {
       val e1 = resolveExp(exp1, scp0)
       val e2 = resolveExp(exp2, scp0)
       ResolvedAst.Expr.PutChannel(e1, e2, loc)
+
+    case NamedAst.Expr.NewReentrantLock(loc) =>
+      ResolvedAst.Expr.NewReentrantLock(loc)
+
+    case NamedAst.Expr.LockReentrantLock(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.LockReentrantLock(e, loc)
+
+    case NamedAst.Expr.TryLockReentrantLock(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.TryLockReentrantLock(e, loc)
+
+    case NamedAst.Expr.UnlockReentrantLock(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.UnlockReentrantLock(e, loc)
+
+    case NamedAst.Expr.NewCondition(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.NewCondition(e, loc)
+
+    case NamedAst.Expr.AwaitCondition(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.AwaitCondition(e, loc)
+
+    case NamedAst.Expr.SignalCondition(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.SignalCondition(e, loc)
+
+    case NamedAst.Expr.SignalAllCondition(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.SignalAllCondition(e, loc)
+
+    case NamedAst.Expr.NewCyclicBarrier(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.NewCyclicBarrier(e, loc)
+
+    case NamedAst.Expr.AwaitCyclicBarrier(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.AwaitCyclicBarrier(e, loc)
+
+    case NamedAst.Expr.NewCountDownLatch(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.NewCountDownLatch(e, loc)
+
+    case NamedAst.Expr.AwaitCountDownLatch(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.AwaitCountDownLatch(e, loc)
+
+    case NamedAst.Expr.CountDownLatchCountDown(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.CountDownLatchCountDown(e, loc)
+
+    case NamedAst.Expr.NewSemaphore(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.NewSemaphore(e, loc)
+
+    case NamedAst.Expr.AcquireSemaphore(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.AcquireSemaphore(e, loc)
+
+    case NamedAst.Expr.TryAcquireSemaphore(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.TryAcquireSemaphore(e, loc)
+
+    case NamedAst.Expr.ReleaseSemaphore(exp, loc) =>
+      val e = resolveExp(exp, scp0)
+      ResolvedAst.Expr.ReleaseSemaphore(e, loc)
 
     case NamedAst.Expr.SelectChannel(rules, default, loc) =>
       val rs = rules.map {
@@ -2253,6 +2322,7 @@ object Resolver {
       case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
         // Basic Types
         case "Void" => UnkindedType.Cst(TypeConstructor.Void, loc)
+        case "AnyType" => UnkindedType.Cst(TypeConstructor.AnyType, loc)
         case "Unit" => UnkindedType.Cst(TypeConstructor.Unit, loc)
         case "Null" => UnkindedType.Cst(TypeConstructor.Null, loc)
         case "Bool" => UnkindedType.Cst(TypeConstructor.Bool, loc)
@@ -2267,6 +2337,13 @@ object Resolver {
         case "BigInt" => UnkindedType.Cst(TypeConstructor.BigInt, loc)
         case "String" => UnkindedType.Cst(TypeConstructor.Str, loc)
         case "Regex" => UnkindedType.Cst(TypeConstructor.Regex, loc)
+        case "StringBuilderHandle" => UnkindedType.Cst(TypeConstructor.StringBuilderHandle, loc)
+        case "RegexMatcher" => UnkindedType.Cst(TypeConstructor.RegexMatcher, loc)
+        case "ReentrantLockHandle" => UnkindedType.Cst(TypeConstructor.ReentrantLockHandle, loc)
+        case "ConditionHandle" => UnkindedType.Cst(TypeConstructor.ConditionHandle, loc)
+        case "CyclicBarrierHandle" => UnkindedType.Cst(TypeConstructor.CyclicBarrierHandle, loc)
+        case "CountDownLatchHandle" => UnkindedType.Cst(TypeConstructor.CountDownLatchHandle, loc)
+        case "SemaphoreHandle" => UnkindedType.Cst(TypeConstructor.SemaphoreHandle, loc)
         case "Sender" => UnkindedType.Cst(TypeConstructor.Sender, loc)
         case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc)
         case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc)

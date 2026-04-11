@@ -245,7 +245,11 @@ object Redundancy {
     // Compute the used symbols inside the definition.
     val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.bnd.sym), RecursionContext.ofDef(defn.sym))
 
-    val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
+    val unusedFormalParams = defn.exp match {
+      case Expr.NativeImport(_, _, _, _) => Nil
+      case Expr.WasmImport(_, _, _, _) => Nil
+      case _ => findUnusedFormalParameters(defn.spec.fparams, usedExp)
+    }
     val unusedTypeParams = findUnusedTypeParameters(defn.spec)
 
     // Check for unused parameters and remove all variable symbols.
@@ -329,6 +333,9 @@ object Redundancy {
     */
   private def visitExp(e0: Expr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
     case Expr.Cst(_, _, _) => Used.empty
+
+    case Expr.NativeImport(_, _, _, _) => Used.empty
+    case Expr.WasmImport(_, _, _, _) => Used.empty
 
     case Expr.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
       // Case 1: Non-wild, non-recursive use of sym.
@@ -843,6 +850,57 @@ object Redundancy {
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
+
+    case Expr.NewReentrantLock(_, _, _) =>
+      Used.empty
+
+    case Expr.LockReentrantLock(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.TryLockReentrantLock(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.UnlockReentrantLock(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.NewCondition(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.AwaitCondition(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.SignalCondition(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.SignalAllCondition(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.NewCyclicBarrier(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.AwaitCyclicBarrier(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.NewCountDownLatch(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.AwaitCountDownLatch(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.CountDownLatchCountDown(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.NewSemaphore(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.AcquireSemaphore(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.TryAcquireSemaphore(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expr.ReleaseSemaphore(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
 
     case Expr.SelectChannel(rules, defaultOpt, _, _, _) =>
       val defaultUsed = defaultOpt match {

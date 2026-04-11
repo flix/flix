@@ -71,6 +71,14 @@ object Deserialize {
     case BigInt => TypeConstructor.BigInt
     case Str => TypeConstructor.Str
     case Regex => TypeConstructor.Regex
+    case StringBuilderHandle => TypeConstructor.StringBuilderHandle
+    case RegexMatcher => TypeConstructor.RegexMatcher
+    case ChannelHandle => TypeConstructor.ChannelHandle
+    case ReentrantLockHandle => TypeConstructor.ReentrantLockHandle
+    case ConditionHandle => TypeConstructor.ConditionHandle
+    case CyclicBarrierHandle => TypeConstructor.CyclicBarrierHandle
+    case CountDownLatchHandle => TypeConstructor.CountDownLatchHandle
+    case SemaphoreHandle => TypeConstructor.SemaphoreHandle
     case Arrow(arity) => TypeConstructor.Arrow(arity)
     case ArrowWithoutEffect(arity) => TypeConstructor.ArrowWithoutEffect(arity)
     case RecordRowEmpty => TypeConstructor.RecordRowEmpty

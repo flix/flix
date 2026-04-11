@@ -99,6 +99,9 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
+    case class NativeImport(spec: NativeImportSpec, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class WasmImport(spec: WasmImportSpec, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
@@ -248,6 +251,40 @@ object TypedAst {
     case class GetChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class PutChannel(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class NewReentrantLock(tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class LockReentrantLock(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class TryLockReentrantLock(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class UnlockReentrantLock(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class NewCondition(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class AwaitCondition(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class SignalCondition(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class SignalAllCondition(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class NewCyclicBarrier(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class AwaitCyclicBarrier(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class NewCountDownLatch(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class AwaitCountDownLatch(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class CountDownLatchCountDown(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class NewSemaphore(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class AcquireSemaphore(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class TryAcquireSemaphore(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class ReleaseSemaphore(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -404,7 +441,7 @@ object TypedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
+  case class CatchRule(bnd: Binder, catchTpe: Type, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 

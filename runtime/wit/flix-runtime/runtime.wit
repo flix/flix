@@ -1,0 +1,778 @@
+package flix:runtime@0.1.0;
+
+/// Handle-based runtime substrate for embedding Flix from wasm component-model hosts.
+///
+/// Notes:
+/// - This is the “untyped substrate” API. It is intentionally low-level.
+/// - A typed WIT layer can be generated later for `@Export` defs.
+/// - Async is represented via an explicit `exec` outcome that may return a `suspension`.
+interface runtime {
+  /// Opaque per-thread context (not used concurrently).
+  resource ctx;
+
+  /// Opaque handle to a Flix heap value.
+  ///
+  /// This must remain valid across moving/non-moving collectors.
+  resource value;
+
+  /// Opaque suspension handle.
+  resource suspension;
+
+  /// Stable symbol id (effect ids, op ids, def ids, etc).
+  type sym = u64;
+
+  /// Stable exported definition id.
+  type def-id = u64;
+
+  /// Host-visible id for a scheduled task (opaque to the host).
+  type task-id = u64;
+
+  /// Execution outcome.
+  variant exec {
+    /// Normal return with a value.
+    ok(value),
+    /// Thrown exception as a designated `Exn` value.
+    thrown(value),
+    /// Suspended computation; host must resume later and poll the task.
+    suspended(suspended-exec),
+  }
+
+  /// Suspension result produced by `invoke`.
+  ///
+  /// `task` may be polled via `poll-task` to observe completion after resumption.
+  record suspended-exec {
+    task: task-id,
+    suspension: suspension,
+  }
+
+  /// Request payload for `timer-sleep` (host-backed).
+  record timer-sleep-req {
+    ms: u64,
+  }
+
+  /// HTTP header pair.
+  record http-header {
+    name: string,
+    value: string,
+  }
+
+  /// Request payload for `http-request` (host-backed).
+  record http-request-req {
+    method: string,
+    url: string,
+    headers: list<http-header>,
+    body: option<string>,
+  }
+
+  /// HTTP response payload for `http-request` (host-backed).
+  record http-response {
+    status: u16,
+    headers: list<http-header>,
+    body: string,
+  }
+
+  /// Portable IO error payload (matches `IoError.errorKindFromCode`).
+  record io-error {
+    kind-code: s32,
+    msg: string,
+  }
+
+  /// Request payload for `file-exists` (host-backed).
+  record file-exists-req {
+    path: string,
+  }
+
+  /// Request payload for `file-is-directory` (host-backed).
+  record file-is-directory-req {
+    path: string,
+  }
+
+  /// Request payload for `file-is-regular-file` (host-backed).
+  record file-is-regular-file-req {
+    path: string,
+  }
+
+  /// Request payload for `file-is-readable` (host-backed).
+  record file-is-readable-req {
+    path: string,
+  }
+
+  /// Request payload for `file-is-symbolic-link` (host-backed).
+  record file-is-symbolic-link-req {
+    path: string,
+  }
+
+  /// Request payload for `file-is-writable` (host-backed).
+  record file-is-writable-req {
+    path: string,
+  }
+
+  /// Request payload for `file-is-executable` (host-backed).
+  record file-is-executable-req {
+    path: string,
+  }
+
+  /// Request payload for `file-access-time` (host-backed).
+  record file-access-time-req {
+    path: string,
+  }
+
+  /// Request payload for `file-creation-time` (host-backed).
+  record file-creation-time-req {
+    path: string,
+  }
+
+  /// Request payload for `file-modification-time` (host-backed).
+  record file-modification-time-req {
+    path: string,
+  }
+
+  /// Request payload for `file-size` (host-backed).
+  record file-size-req {
+    path: string,
+  }
+
+  /// Request payload for `file-read` (host-backed).
+  record file-read-req {
+    path: string,
+  }
+
+  /// Request payload for `file-read-lines` (host-backed).
+  record file-read-lines-req {
+    path: string,
+  }
+
+  /// Request payload for `file-read-bytes` (host-backed).
+  record file-read-bytes-req {
+    path: string,
+  }
+
+  /// Request payload for `file-list` (host-backed).
+  record file-list-req {
+    path: string,
+  }
+
+  /// Request payload for `file-write` (host-backed).
+  record file-write-req {
+    path: string,
+    data: string,
+  }
+
+  /// Request payload for `file-write-bytes` (host-backed).
+  record file-write-bytes-req {
+    path: string,
+    bytes: list<u8>,
+  }
+
+  /// Request payload for `file-append` (host-backed).
+  record file-append-req {
+    path: string,
+    data: string,
+  }
+
+  /// Request payload for `file-append-bytes` (host-backed).
+  record file-append-bytes-req {
+    path: string,
+    bytes: list<u8>,
+  }
+
+  /// Request payload for `file-truncate` (host-backed).
+  record file-truncate-req {
+    path: string,
+  }
+
+  /// Request payload for `file-mkdir` (host-backed).
+  record file-mkdir-req {
+    path: string,
+  }
+
+  /// Request payload for `file-mkdirs` (host-backed).
+  record file-mkdirs-req {
+    path: string,
+  }
+
+  /// Request payload for `file-mk-temp-dir` (host-backed).
+  record file-mk-temp-dir-req {
+    prefix: string,
+  }
+
+  /// Environment variable entry for `process-exec`.
+  record process-env-var {
+    key: string,
+    value: string,
+  }
+
+  /// Request payload for `process-exec` (host-backed).
+  record process-exec-req {
+    /// Command + arguments (argv[0] is the executable).
+    argv: list<string>,
+    /// Working directory (optional).
+    cwd: option<string>,
+    /// Environment variable overrides.
+    env: list<process-env-var>,
+  }
+
+  /// Request payload for `process-exit-value` (host-backed).
+  record process-exit-value-req {
+    process-id: u64,
+  }
+
+  /// Request payload for `process-is-alive` (host-backed).
+  record process-is-alive-req {
+    process-id: u64,
+  }
+
+  /// Request payload for `process-pid` (host-backed).
+  record process-pid-req {
+    process-id: u64,
+  }
+
+  /// Request payload for `process-stop` (host-backed).
+  record process-stop-req {
+    process-id: u64,
+  }
+
+  /// Request payload for `process-wait-for` (host-backed).
+  record process-wait-for-req {
+    process-id: u64,
+  }
+
+  /// Request payload for `process-wait-for-timeout` (host-backed).
+  record process-wait-for-timeout-req {
+    process-id: u64,
+    timeout-ms: s64,
+  }
+
+  /// Request payload for `process-stdin-write` (host-backed).
+  record process-stdin-write-req {
+    process-id: u64,
+    bytes: list<u8>,
+  }
+
+  /// Request payload for `process-stdout-read` (host-backed).
+  record process-stdout-read-req {
+    process-id: u64,
+    /// Maximum number of bytes requested.
+    max-bytes: u32,
+  }
+
+  /// Request payload for `process-stderr-read` (host-backed).
+  record process-stderr-read-req {
+    process-id: u64,
+    /// Maximum number of bytes requested.
+    max-bytes: u32,
+  }
+
+  /// Request payload for `process-release` (host-backed).
+  record process-release-req {
+    process-id: u64,
+  }
+
+  /// Request payload for `tcp-socket-connect` (host-backed).
+  record tcp-socket-connect-req {
+    /// IPv4 (4 bytes) or IPv6 (16 bytes).
+    ip: list<u8>,
+    /// TCP port number.
+    port: u16,
+  }
+
+  /// Request payload for `tcp-socket-read` (host-backed).
+  record tcp-socket-read-req {
+    socket-id: u64,
+    /// Maximum number of bytes requested.
+    max-bytes: u32,
+  }
+
+  /// Request payload for `tcp-socket-write` (host-backed).
+  record tcp-socket-write-req {
+    socket-id: u64,
+    bytes: list<u8>,
+  }
+
+  /// Request payload for `tcp-socket-close` (host-backed).
+  record tcp-socket-close-req {
+    socket-id: u64,
+  }
+
+  /// Request payload for `tcp-server-bind` (host-backed).
+  record tcp-server-bind-req {
+    /// IPv4 (4 bytes) or IPv6 (16 bytes).
+    ip: list<u8>,
+    /// TCP port number.
+    port: u16,
+  }
+
+  /// Request payload for `tcp-server-accept` (host-backed).
+  record tcp-server-accept-req {
+    server-id: u64,
+  }
+
+  /// Request payload for `tcp-server-local-port` (host-backed).
+  record tcp-server-local-port-req {
+    server-id: u64,
+  }
+
+  /// Request payload for `tcp-server-close` (host-backed).
+  record tcp-server-close-req {
+    server-id: u64,
+  }
+
+  /// Typed request for a suspended host operation.
+  record unknown-req {
+    eff-id: sym,
+    op-id: sym,
+  }
+
+  variant op-request {
+    timer-sleep(timer-sleep-req),
+    http-request(http-request-req),
+    file-exists(file-exists-req),
+    file-is-directory(file-is-directory-req),
+    file-is-regular-file(file-is-regular-file-req),
+    file-is-readable(file-is-readable-req),
+    file-is-symbolic-link(file-is-symbolic-link-req),
+    file-is-writable(file-is-writable-req),
+    file-is-executable(file-is-executable-req),
+    file-access-time(file-access-time-req),
+    file-creation-time(file-creation-time-req),
+    file-modification-time(file-modification-time-req),
+    file-size(file-size-req),
+    file-read(file-read-req),
+    file-read-lines(file-read-lines-req),
+    file-read-bytes(file-read-bytes-req),
+    file-list(file-list-req),
+    file-write(file-write-req),
+    file-write-bytes(file-write-bytes-req),
+    file-append(file-append-req),
+    file-append-bytes(file-append-bytes-req),
+    file-truncate(file-truncate-req),
+    file-mkdir(file-mkdir-req),
+    file-mkdirs(file-mkdirs-req),
+    file-mk-temp-dir(file-mk-temp-dir-req),
+    process-exec(process-exec-req),
+    process-exit-value(process-exit-value-req),
+    process-is-alive(process-is-alive-req),
+    process-pid(process-pid-req),
+    process-stop(process-stop-req),
+    process-wait-for(process-wait-for-req),
+    process-wait-for-timeout(process-wait-for-timeout-req),
+    process-stdin-write(process-stdin-write-req),
+    process-stdout-read(process-stdout-read-req),
+    process-stderr-read(process-stderr-read-req),
+    process-release(process-release-req),
+    tcp-socket-connect(tcp-socket-connect-req),
+    tcp-socket-read(tcp-socket-read-req),
+    tcp-socket-write(tcp-socket-write-req),
+    tcp-socket-close(tcp-socket-close-req),
+    tcp-server-bind(tcp-server-bind-req),
+    tcp-server-accept(tcp-server-accept-req),
+    tcp-server-local-port(tcp-server-local-port-req),
+    tcp-server-close(tcp-server-close-req),
+    console-readln,
+    unknown(unknown-req),
+  }
+
+  /// Task completion outcome (never suspended).
+  variant task-outcome {
+    /// Normal return with a value.
+    ok(value),
+    /// Thrown exception as a designated `Exn` value.
+    thrown(value),
+  }
+
+  /// Minimal suspension metadata.
+  record suspension-info {
+    eff-id: sym,
+    op-id: sym,
+  }
+
+  /// Create a new runtime context for the current host thread.
+  new-ctx: func() -> ctx;
+
+  /// Invoke an exported def by its numeric id.
+  ///
+  /// `args` are Flix values represented as `value` handles.
+  invoke: func(ctx: borrow<ctx>, def-id: def-id, args: list<borrow<value>>) -> exec;
+
+  /// Start (enqueue) a task to be driven by `sched-step`.
+  ///
+  /// The host may start multiple tasks, call `sched-step` to surface any
+  /// effect operations (as suspensions), and later resume them.
+  start-task: func(ctx: borrow<ctx>, def-id: def-id, args: list<borrow<value>>) -> task-id;
+
+  /// Drive the cooperative scheduler for up to `budget` steps.
+  ///
+  /// Returns any newly-created suspensions that require host action.
+  ///
+  /// Notes:
+  /// - A budget of `0` is permitted and may return immediately.
+  /// - This function does not block; if no tasks are runnable it returns `[]`.
+  sched-step: func(ctx: borrow<ctx>, budget: u32) -> list<suspension>;
+
+  /// Poll for task completion.
+  ///
+  /// Returns:
+  /// - `none` if the task is still running or blocked on a suspension.
+  /// - `some(task-outcome)` once, after which the task result is considered consumed.
+  poll-task: func(ctx: borrow<ctx>, task-id: task-id) -> option<task-outcome>;
+
+  /// Inspect a suspension without allocating.
+  suspension-peek: func(ctx: borrow<ctx>, s: borrow<suspension>) -> suspension-info;
+
+  /// Get the typed request payload for a suspension.
+  suspension-request: func(ctx: borrow<ctx>, s: borrow<suspension>) -> op-request;
+
+  /// Return the number of captured suspension arguments.
+  suspension-arg-count: func(ctx: borrow<ctx>, s: borrow<suspension>) -> u32;
+
+  /// Return the captured suspension argument at `idx` as an immediate payload.
+  ///
+  /// The returned `value` is an owned handle suitable for generic unboxing.
+  suspension-arg-as-i64: func(ctx: borrow<ctx>, s: borrow<suspension>, idx: u32) -> value;
+
+  /// Return the captured suspension argument at `idx` as a pointer payload.
+  ///
+  /// The returned `value` is an owned handle suitable for generic unboxing.
+  suspension-arg-as-ptr: func(ctx: borrow<ctx>, s: borrow<suspension>, idx: u32) -> value;
+
+  /// Resume a suspended computation with a value.
+  resume-ok: func(ctx: borrow<ctx>, s: suspension, v: borrow<value>);
+
+  /// Resume a suspended computation by throwing an exception value.
+  resume-throw: func(ctx: borrow<ctx>, s: suspension, e: borrow<value>);
+
+  /// Resume a suspended computation with a value and run it synchronously until
+  /// it either completes or suspends again.
+  resume-ok-sync: func(ctx: borrow<ctx>, s: suspension, v: borrow<value>) -> exec;
+
+  /// Resume a suspended computation by throwing an exception value and run it
+  /// synchronously until it either completes or suspends again.
+  resume-throw-sync: func(ctx: borrow<ctx>, s: suspension, e: borrow<value>) -> exec;
+
+  /// Resume a `timer-sleep` suspension successfully.
+  ///
+  /// This exists to avoid requiring the host to fabricate a Flix `Unit` value.
+  resume-timer-sleep: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `console-readln` suspension successfully.
+  resume-console-readln-ok: func(ctx: borrow<ctx>, s: suspension, line: string);
+
+  /// Resume a `http-request` suspension successfully.
+  resume-http-ok: func(ctx: borrow<ctx>, s: suspension, resp: http-response);
+
+  /// Resume a `http-request` suspension with a portable IO error.
+  resume-http-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-exists` suspension successfully.
+  resume-file-exists-ok: func(ctx: borrow<ctx>, s: suspension, exists: bool);
+
+  /// Resume a `file-exists` suspension with a portable IO error.
+  resume-file-exists-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-is-directory` suspension successfully.
+  resume-file-is-directory-ok: func(ctx: borrow<ctx>, s: suspension, is-directory: bool);
+
+  /// Resume a `file-is-directory` suspension with a portable IO error.
+  resume-file-is-directory-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-is-regular-file` suspension successfully.
+  resume-file-is-regular-file-ok: func(ctx: borrow<ctx>, s: suspension, is-regular-file: bool);
+
+  /// Resume a `file-is-regular-file` suspension with a portable IO error.
+  resume-file-is-regular-file-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-is-readable` suspension successfully.
+  resume-file-is-readable-ok: func(ctx: borrow<ctx>, s: suspension, is-readable: bool);
+
+  /// Resume a `file-is-readable` suspension with a portable IO error.
+  resume-file-is-readable-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-is-symbolic-link` suspension successfully.
+  resume-file-is-symbolic-link-ok: func(ctx: borrow<ctx>, s: suspension, is-symbolic-link: bool);
+
+  /// Resume a `file-is-symbolic-link` suspension with a portable IO error.
+  resume-file-is-symbolic-link-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-is-writable` suspension successfully.
+  resume-file-is-writable-ok: func(ctx: borrow<ctx>, s: suspension, is-writable: bool);
+
+  /// Resume a `file-is-writable` suspension with a portable IO error.
+  resume-file-is-writable-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-is-executable` suspension successfully.
+  resume-file-is-executable-ok: func(ctx: borrow<ctx>, s: suspension, is-executable: bool);
+
+  /// Resume a `file-is-executable` suspension with a portable IO error.
+  resume-file-is-executable-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-access-time` suspension successfully.
+  resume-file-access-time-ok: func(ctx: borrow<ctx>, s: suspension, ms: s64);
+
+  /// Resume a `file-access-time` suspension with a portable IO error.
+  resume-file-access-time-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-creation-time` suspension successfully.
+  resume-file-creation-time-ok: func(ctx: borrow<ctx>, s: suspension, ms: s64);
+
+  /// Resume a `file-creation-time` suspension with a portable IO error.
+  resume-file-creation-time-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-modification-time` suspension successfully.
+  resume-file-modification-time-ok: func(ctx: borrow<ctx>, s: suspension, ms: s64);
+
+  /// Resume a `file-modification-time` suspension with a portable IO error.
+  resume-file-modification-time-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-size` suspension successfully.
+  resume-file-size-ok: func(ctx: borrow<ctx>, s: suspension, bytes: s64);
+
+  /// Resume a `file-size` suspension with a portable IO error.
+  resume-file-size-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-read` suspension successfully.
+  resume-file-read-ok: func(ctx: borrow<ctx>, s: suspension, data: string);
+
+  /// Resume a `file-read` suspension with a portable IO error.
+  resume-file-read-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-read-lines` suspension successfully.
+  resume-file-read-lines-ok: func(ctx: borrow<ctx>, s: suspension, lines: list<string>);
+
+  /// Resume a `file-read-lines` suspension with a portable IO error.
+  resume-file-read-lines-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-read-bytes` suspension successfully.
+  resume-file-read-bytes-ok: func(ctx: borrow<ctx>, s: suspension, bytes: list<u8>);
+
+  /// Resume a `file-read-bytes` suspension with a portable IO error.
+  resume-file-read-bytes-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-list` suspension successfully.
+  resume-file-list-ok: func(ctx: borrow<ctx>, s: suspension, names: list<string>);
+
+  /// Resume a `file-list` suspension with a portable IO error.
+  resume-file-list-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-write` suspension successfully.
+  resume-file-write-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `file-write` suspension with a portable IO error.
+  resume-file-write-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-write-bytes` suspension successfully.
+  resume-file-write-bytes-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `file-write-bytes` suspension with a portable IO error.
+  resume-file-write-bytes-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-append` suspension successfully.
+  resume-file-append-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `file-append` suspension with a portable IO error.
+  resume-file-append-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-append-bytes` suspension successfully.
+  resume-file-append-bytes-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `file-append-bytes` suspension with a portable IO error.
+  resume-file-append-bytes-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-truncate` suspension successfully.
+  resume-file-truncate-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `file-truncate` suspension with a portable IO error.
+  resume-file-truncate-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-mkdir` suspension successfully.
+  resume-file-mkdir-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `file-mkdir` suspension with a portable IO error.
+  resume-file-mkdir-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-mkdirs` suspension successfully.
+  resume-file-mkdirs-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `file-mkdirs` suspension with a portable IO error.
+  resume-file-mkdirs-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `file-mk-temp-dir` suspension successfully.
+  resume-file-mk-temp-dir-ok: func(ctx: borrow<ctx>, s: suspension, path: string);
+
+  /// Resume a `file-mk-temp-dir` suspension with a portable IO error.
+  resume-file-mk-temp-dir-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-exec` suspension successfully.
+  resume-process-exec-ok: func(ctx: borrow<ctx>, s: suspension, process-id: u64);
+
+  /// Resume a `process-exec` suspension with a portable IO error.
+  resume-process-exec-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-exit-value` suspension successfully.
+  resume-process-exit-value-ok: func(ctx: borrow<ctx>, s: suspension, code: s32);
+
+  /// Resume a `process-exit-value` suspension with a portable IO error.
+  resume-process-exit-value-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-is-alive` suspension successfully.
+  resume-process-is-alive-ok: func(ctx: borrow<ctx>, s: suspension, is-alive: bool);
+
+  /// Resume a `process-is-alive` suspension with a portable IO error.
+  resume-process-is-alive-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-pid` suspension successfully.
+  resume-process-pid-ok: func(ctx: borrow<ctx>, s: suspension, pid: s64);
+
+  /// Resume a `process-pid` suspension with a portable IO error.
+  resume-process-pid-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-stop` suspension successfully.
+  resume-process-stop-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `process-stop` suspension with a portable IO error.
+  resume-process-stop-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-wait-for` suspension successfully.
+  resume-process-wait-for-ok: func(ctx: borrow<ctx>, s: suspension, code: s32);
+
+  /// Resume a `process-wait-for` suspension with a portable IO error.
+  resume-process-wait-for-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-wait-for-timeout` suspension successfully.
+  resume-process-wait-for-timeout-ok: func(ctx: borrow<ctx>, s: suspension, finished: bool);
+
+  /// Resume a `process-wait-for-timeout` suspension with a portable IO error.
+  resume-process-wait-for-timeout-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-stdin-write` suspension successfully.
+  ///
+  /// The runtime derives the byte count from the original request payload.
+  resume-process-stdin-write-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `process-stdin-write` suspension with a portable IO error.
+  resume-process-stdin-write-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-stdout-read` suspension successfully.
+  resume-process-stdout-read-ok: func(ctx: borrow<ctx>, s: suspension, bytes: list<u8>);
+
+  /// Resume a `process-stdout-read` suspension with a portable IO error.
+  resume-process-stdout-read-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-stderr-read` suspension successfully.
+  resume-process-stderr-read-ok: func(ctx: borrow<ctx>, s: suspension, bytes: list<u8>);
+
+  /// Resume a `process-stderr-read` suspension with a portable IO error.
+  resume-process-stderr-read-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `process-release` suspension successfully.
+  resume-process-release-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `process-release` suspension with a portable IO error.
+  resume-process-release-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `tcp-socket-connect` suspension successfully.
+  resume-tcp-socket-connect-ok: func(ctx: borrow<ctx>, s: suspension, socket-id: u64);
+
+  /// Resume a `tcp-socket-connect` suspension with a portable IO error.
+  resume-tcp-socket-connect-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `tcp-socket-read` suspension successfully.
+  resume-tcp-socket-read-ok: func(ctx: borrow<ctx>, s: suspension, bytes: list<u8>);
+
+  /// Resume a `tcp-socket-read` suspension with a portable IO error.
+  resume-tcp-socket-read-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `tcp-socket-write` suspension successfully.
+  resume-tcp-socket-write-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `tcp-socket-write` suspension with a portable IO error.
+  resume-tcp-socket-write-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `tcp-socket-close` suspension successfully.
+  resume-tcp-socket-close-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `tcp-socket-close` suspension with a portable IO error.
+  resume-tcp-socket-close-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `tcp-server-bind` suspension successfully.
+  resume-tcp-server-bind-ok: func(ctx: borrow<ctx>, s: suspension, server-id: u64);
+
+  /// Resume a `tcp-server-bind` suspension with a portable IO error.
+  resume-tcp-server-bind-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `tcp-server-accept` suspension successfully.
+  resume-tcp-server-accept-ok: func(ctx: borrow<ctx>, s: suspension, socket-id: u64);
+
+  /// Resume a `tcp-server-accept` suspension with a portable IO error.
+  resume-tcp-server-accept-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `tcp-server-local-port` suspension successfully.
+  resume-tcp-server-local-port-ok: func(ctx: borrow<ctx>, s: suspension, port: u16);
+
+  /// Resume a `tcp-server-local-port` suspension with a portable IO error.
+  resume-tcp-server-local-port-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  /// Resume a `tcp-server-close` suspension successfully.
+  resume-tcp-server-close-ok: func(ctx: borrow<ctx>, s: suspension);
+
+  /// Resume a `tcp-server-close` suspension with a portable IO error.
+  resume-tcp-server-close-err: func(ctx: borrow<ctx>, s: suspension, err: io-error);
+
+  // --- minimal constructors/accessors for interop ---
+
+  box-i8: func(ctx: borrow<ctx>, x: s8) -> value;
+  unbox-i8: func(ctx: borrow<ctx>, v: borrow<value>) -> s8;
+
+  box-i16: func(ctx: borrow<ctx>, x: s16) -> value;
+  unbox-i16: func(ctx: borrow<ctx>, v: borrow<value>) -> s16;
+
+  box-i32: func(ctx: borrow<ctx>, x: s32) -> value;
+  unbox-i32: func(ctx: borrow<ctx>, v: borrow<value>) -> s32;
+
+  box-i64: func(ctx: borrow<ctx>, x: s64) -> value;
+  unbox-i64: func(ctx: borrow<ctx>, v: borrow<value>) -> s64;
+
+  box-f32: func(ctx: borrow<ctx>, x: f32) -> value;
+  unbox-f32: func(ctx: borrow<ctx>, v: borrow<value>) -> f32;
+
+  box-f64: func(ctx: borrow<ctx>, x: f64) -> value;
+  unbox-f64: func(ctx: borrow<ctx>, v: borrow<value>) -> f64;
+
+  box-bool: func(ctx: borrow<ctx>, b: bool) -> value;
+  unbox-bool: func(ctx: borrow<ctx>, v: borrow<value>) -> bool;
+
+  box-string: func(ctx: borrow<ctx>, s: string) -> value;
+  unbox-string: func(ctx: borrow<ctx>, v: borrow<value>) -> string;
+
+  box-bytes: func(ctx: borrow<ctx>, bytes: list<u8>) -> value;
+  unbox-bytes: func(ctx: borrow<ctx>, v: borrow<value>) -> list<u8>;
+
+  /// Construct a Flix tuple value from already-boxed field handles.
+  tuple-new: func(ctx: borrow<ctx>, fields: list<borrow<value>>) -> value;
+
+  /// Return the tuple field at `idx` as an owned handle.
+  tuple-field: func(ctx: borrow<ctx>, tup: borrow<value>, idx: u32) -> value;
+
+  /// Construct a Flix tagged enum value from an explicit tag id and boxed field handles.
+  tag-new: func(ctx: borrow<ctx>, tag-id: sym, fields: list<borrow<value>>) -> value;
+
+  /// Return the tag id stored in a tagged enum value.
+  tag-id: func(ctx: borrow<ctx>, tagged: borrow<value>) -> sym;
+
+  /// Return the tagged enum field at `idx` as an owned scalar handle.
+  tag-field-i64: func(ctx: borrow<ctx>, tagged: borrow<value>, idx: u32) -> value;
+
+  /// Return the tagged enum field at `idx` as an owned pointer handle.
+  tag-field-ptr: func(ctx: borrow<ctx>, tagged: borrow<value>, idx: u32) -> value;
+
+  /// Count the logical elements in a Flix `List` value identified by the supplied tag ids.
+  list-len: func(ctx: borrow<ctx>, xs: borrow<value>, nil-tag-id: sym, cons-tag-id: sym) -> u32;
+
+  /// Construct a Flix `Array[t, Static]` from boxed element handles.
+  array-new: func(ctx: borrow<ctx>, ptr-elems: bool, elems: list<borrow<value>>) -> value;
+
+  /// Return the logical length of a Flix array value.
+  array-len: func(ctx: borrow<ctx>, arr: borrow<value>) -> u32;
+
+  /// Return the array element at `idx` as an owned handle.
+  array-elem: func(ctx: borrow<ctx>, arr: borrow<value>, idx: u32) -> value;
+}

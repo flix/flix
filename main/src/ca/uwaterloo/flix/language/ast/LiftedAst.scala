@@ -56,6 +56,9 @@ object LiftedAst {
       def purity: Purity = Pure
     }
 
+    case class NativeImport(spec: NativeImportSpec, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class WasmImport(spec: WasmImportSpec, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+
     case class Var(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
@@ -96,7 +99,7 @@ object LiftedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, catchTpe: SimpleType, exp: Expr)
 
   case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
@@ -105,4 +108,3 @@ object LiftedAst {
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
 }
-

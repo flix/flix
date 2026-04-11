@@ -26,6 +26,12 @@ object Options {
     */
   val Default: Options = Options(
     lib = LibLevel.All,
+    stdlibProfile = StdlibProfile.Jvm,
+    target = CompilationTarget.Jvm,
+    artifactName = ArtifactNames.DefaultBaseName,
+    emits = Set.empty,
+    nativeLinkConfig = NativeLinkConfig(),
+    nativeCompileConfig = NativeCompileConfig(),
     build = Build.Development,
     entryPoint = None,
     githubToken = None,
@@ -87,6 +93,12 @@ object Options {
   * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
   */
 case class Options(lib: LibLevel,
+                   stdlibProfile: StdlibProfile,
+                   target: CompilationTarget,
+                   artifactName: String,
+                   emits: Set[EmitKind] = Set.empty,
+                   nativeLinkConfig: NativeLinkConfig = NativeLinkConfig(),
+                   nativeCompileConfig: NativeCompileConfig = NativeCompileConfig(),
                    build: Build,
                    entryPoint: Option[Symbol.DefnSym],
                    githubToken: Option[String],
@@ -147,6 +159,70 @@ object LibLevel {
     */
   case object All extends LibLevel
 
+}
+
+/**
+  * An option to control which stdlib profile is used.
+  */
+sealed trait StdlibProfile
+
+object StdlibProfile {
+  /**
+    * The current JVM stdlib profile (may include Java interop and JVM-only overlays).
+    */
+  case object Jvm extends StdlibProfile
+
+  /**
+    * The portable stdlib profile intended for LLVM targets (no Java interop).
+    *
+    * Note: this profile can also be used on the JVM backend to run the portable conformance suite.
+    */
+  case object Portable extends StdlibProfile
+}
+
+/**
+  * An option to control which compilation target is used.
+  */
+sealed trait CompilationTarget
+
+object CompilationTarget {
+  /**
+    * Compile to JVM bytecode and execute on the JVM.
+    */
+  case object Jvm extends CompilationTarget
+
+  /**
+    * Compile to LLVM IR intended for native targets (x86_64/aarch64).
+    */
+  case object LlvmNative extends CompilationTarget
+
+  /**
+    * Compile to LLVM IR intended for WebAssembly.
+    */
+  case object LlvmWasm extends CompilationTarget
+}
+
+sealed trait EmitKind
+
+object EmitKind {
+  case object Classes extends EmitKind
+  case object Jar extends EmitKind
+  case object FatJar extends EmitKind
+  case object Exe extends EmitKind
+  case object StaticLib extends EmitKind
+  case object SharedLib extends EmitKind
+  case object Component extends EmitKind
+  case object Js extends EmitKind
+}
+
+sealed trait RunnerKind
+
+object RunnerKind {
+  case object Jvm extends RunnerKind
+  case object Native extends RunnerKind
+  case object Node extends RunnerKind
+  case object Browser extends RunnerKind
+  case object Wasmtime extends RunnerKind
 }
 
 sealed trait Subeffecting

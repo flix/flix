@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.language.fmt.FormatType
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{CompilationTarget, Formatter}
 
 /**
   * A common super-type for errors produced by [[ca.uwaterloo.flix.language.phase.EntryPoints]].
@@ -175,13 +175,21 @@ object EntryPointError {
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
+
+      val allowedTypes = flix.options.target match {
+        case CompilationTarget.Jvm =>
+          "Bool, Char, Int8, Int16, Int32, Int64, Float32, Float64, or java.lang.Object"
+        case CompilationTarget.LlvmNative | CompilationTarget.LlvmWasm =>
+          "Unit, Bool, Int8, Int16, Int32, Int64, Float32, Float64, String, Bytes (Array[Int8, Static]), List[T], Array[T, Static], Tuple, Option, Result, or closed Records with distinct labels"
+      }
+
       s""">> Unexpected type '${red(FormatType.formatType(t))}' in exported function.
          |
          |${highlight(loc, "type not exportable", fmt)}
          |
-         |${underline("Explanation:")} Exported functions can only use primitive Java types:
+         |${underline("Explanation:")} Exported functions can only use a small set of portable types:
          |
-         |  Bool, Char, Int8, Int16, Int32, Int64, Float32, Float64, or java.lang.Object
+         |  $allowedTypes
          |""".stripMargin
     }
   }

@@ -78,6 +78,12 @@ object TreeShaker1 {
     case Expr.Cst(_, _, _) =>
       Set.empty
 
+    case Expr.NativeImport(_, _, _, _) =>
+      Set.empty
+
+    case Expr.WasmImport(_, _, _, _) =>
+      Set.empty
+
     case Expr.Var(_, _, _) =>
       Set.empty
 
@@ -263,6 +269,57 @@ object TreeShaker1 {
 
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.NewReentrantLock(_, _, _) =>
+      Set.empty
+
+    case Expr.LockReentrantLock(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.TryLockReentrantLock(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.UnlockReentrantLock(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.NewCondition(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.AwaitCondition(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.SignalCondition(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.NewCyclicBarrier(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.AwaitCyclicBarrier(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.NewCountDownLatch(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.AwaitCountDownLatch(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.CountDownLatchCountDown(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.NewSemaphore(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.AcquireSemaphore(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.TryAcquireSemaphore(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.ReleaseSemaphore(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.SignalAllCondition(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)

@@ -18,11 +18,17 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol, TypeConstructor, UnkindedType}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 
 object ResolvedAstPrinter {
+
+  private def catchClassOf(tpe0: UnkindedType): Class[?] =
+    UnkindedType.eraseAliases(tpe0) match {
+      case UnkindedType.Cst(TypeConstructor.Native(clazz), _) => clazz
+      case _ => classOf[Object]
+    }
 
   /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: ResolvedAst.Root): DocAst.Program = {
@@ -49,6 +55,8 @@ object ResolvedAstPrinter {
     case Expr.OpenAs(_, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
+    case Expr.NativeImport(spec, _) => DocAst.Expr.AsIs(s"""extern native("${spec.symbol}")""")
+    case Expr.WasmImport(spec, _) => DocAst.Expr.AsIs(s"""extern wasm("${spec.interface}", "${spec.func}")""")
     case Expr.ApplyClo(exp1, exp2, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
@@ -99,7 +107,7 @@ object ResolvedAstPrinter {
     case Expr.Unsafe(exp, runEff, asEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff), asEff.map(UnkindedTypePrinter.print))
     case Expr.Without(exp, symUse, _) => DocAst.Expr.Without(print(exp), symUse.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case ResolvedAst.CatchRule(sym, clazz, body, _) => (sym, clazz, print(body))
+      case ResolvedAst.CatchRule(sym, tpe, body, _) => (sym, catchClassOf(tpe), print(body))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _) => DocAst.Expr.Handler(symUse.sym, rules.map {
@@ -117,6 +125,23 @@ object ResolvedAstPrinter {
     case Expr.NewChannel(_, _) => DocAst.Expr.Unknown
     case Expr.GetChannel(_, _) => DocAst.Expr.Unknown
     case Expr.PutChannel(_, _, _) => DocAst.Expr.Unknown
+    case Expr.NewReentrantLock(_) => DocAst.Expr.Unknown
+    case Expr.LockReentrantLock(_, _) => DocAst.Expr.Unknown
+    case Expr.TryLockReentrantLock(_, _) => DocAst.Expr.Unknown
+    case Expr.UnlockReentrantLock(_, _) => DocAst.Expr.Unknown
+    case Expr.NewCondition(_, _) => DocAst.Expr.Unknown
+    case Expr.AwaitCondition(_, _) => DocAst.Expr.Unknown
+    case Expr.SignalCondition(_, _) => DocAst.Expr.Unknown
+    case Expr.SignalAllCondition(_, _) => DocAst.Expr.Unknown
+    case Expr.NewCyclicBarrier(_, _) => DocAst.Expr.Unknown
+    case Expr.AwaitCyclicBarrier(_, _) => DocAst.Expr.Unknown
+    case Expr.NewCountDownLatch(_, _) => DocAst.Expr.Unknown
+    case Expr.AwaitCountDownLatch(_, _) => DocAst.Expr.Unknown
+    case Expr.CountDownLatchCountDown(_, _) => DocAst.Expr.Unknown
+    case Expr.NewSemaphore(_, _) => DocAst.Expr.Unknown
+    case Expr.AcquireSemaphore(_, _) => DocAst.Expr.Unknown
+    case Expr.TryAcquireSemaphore(_, _) => DocAst.Expr.Unknown
+    case Expr.ReleaseSemaphore(_, _) => DocAst.Expr.Unknown
     case Expr.SelectChannel(_, _, _) => DocAst.Expr.Unknown
     case Expr.Spawn(_, _, _) => DocAst.Expr.Unknown
     case Expr.ParYield(_, _, _) => DocAst.Expr.Unknown

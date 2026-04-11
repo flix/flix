@@ -58,6 +58,12 @@ object OccurrenceAnalyzer {
       case Expr.Cst(_, _, _) =>
         (exp0, ExprContext.Empty)
 
+      case Expr.NativeImport(_, _, _, _) =>
+        (exp0, ExprContext.Empty)
+
+      case Expr.WasmImport(_, _, _, _) =>
+        (exp0, ExprContext.Empty)
+
       case Expr.Var(sym, _, _) =>
         (exp0, ExprContext.Empty.addVar(sym, Occur.Once))
 
@@ -306,13 +312,13 @@ object OccurrenceAnalyzer {
   }
 
   private def visitCatchRule(rule: MonoAst.CatchRule)(implicit sym0: Symbol.DefnSym): (MonoAst.CatchRule, ExprContext) = rule match {
-    case MonoAst.CatchRule(sym, clazz, exp) =>
+    case MonoAst.CatchRule(sym, catchTpe, exp) =>
       val (e, ctx1) = visitExp(exp)
       val ctx2 = ctx1.removeVar(sym)
       if (e eq exp) {
         (rule, ctx2) // Reuse rule.
       } else {
-        (MonoAst.CatchRule(sym, clazz, e), ctx2)
+        (MonoAst.CatchRule(sym, catchTpe, e), ctx2)
       }
   }
 

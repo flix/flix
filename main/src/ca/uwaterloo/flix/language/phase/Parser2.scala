@@ -386,6 +386,21 @@ object Parser2 {
     }
   }
 
+  /** Checks if the parser is at a lowercase name with the given text. */
+  private def atLowercaseName(text: String)(implicit s: State): Boolean = {
+    nthToken(0).exists(t => t.kind == TokenKind.NameLowercase && t.text == text)
+  }
+
+  /** Advances past the current token if it is a lowercase name with the given text. */
+  private def eatLowercaseName(text: String)(implicit s: State): Boolean = {
+    if (atLowercaseName(text)) {
+      advance()
+      true
+    } else {
+      false
+    }
+  }
+
   /** Checks if the parser is at a token of kind in `kinds` and advances past it if it is. */
   private def eatAny(kinds: Set[TokenKind])(implicit s: State): Boolean = {
     if (atAny(kinds)) {
@@ -474,6 +489,22 @@ object Parser2 {
     }
     closeWithError(mark, error)
     None
+  }
+
+  /** Expects the current token to be a specific lowercase name. */
+  private def expectLowercaseName(text: String, hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Unit = {
+    if (eatLowercaseName(text)) {
+      return
+    }
+
+    val mark = open()
+    val error = nth(0) match {
+      case TokenKind.CommentLine => MisplacedComments(sctx, currentSourceLocation())
+      case TokenKind.CommentBlock => MisplacedComments(sctx, currentSourceLocation())
+      case TokenKind.CommentDoc => MisplacedDocComments(sctx, currentSourceLocation())
+      case at => UnexpectedToken(expected = NamedTokenSet.Name, actual = Some(at), sctx, hint = hint.orElse(Some(s"Expected `$text`.")), loc = currentSourceLocation())
+    }
+    closeWithError(mark, error)
   }
 
   /**
@@ -923,6 +954,7 @@ object Parser2 {
       nth(0) match {
         case TokenKind.KeywordTrait => traitDecl(mark)
         case TokenKind.KeywordInstance => instanceDecl(mark)
+        case TokenKind.KeywordExtern => externDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
         case TokenKind.KeywordStruct => structDecl(mark)
@@ -1075,6 +1107,58 @@ object Parser2 {
         Expr.statement()
       }
       close(mark, TreeKind.Decl.Signature)
+    }
+
+    private def externDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
+      assert(at(TokenKind.KeywordExtern))
+      expect(TokenKind.KeywordExtern)
+      if (atLowercaseName("native")) {
+        expectLowercaseName("native", hint = Some("Only `extern native` and `extern wasm` declarations are supported here."))
+        expect(TokenKind.ParenL)
+        val argMark = open()
+        expectLowercaseName("symbol", hint = Some("`extern native` requires `symbol = \"...\"`."))
+        expect(TokenKind.Equal)
+        expect(TokenKind.LiteralString)
+        close(argMark, TreeKind.ArgumentNamed)
+        expect(TokenKind.ParenR)
+      } else if (atLowercaseName("wasm")) {
+        expectLowercaseName("wasm", hint = Some("Only `extern native` and `extern wasm` declarations are supported here."))
+        expect(TokenKind.ParenL)
+        val interfaceArg = open()
+        expectLowercaseName("interface", hint = Some("`extern wasm` requires `interface = \"pkg:ns/name@version\"`."))
+        expect(TokenKind.Equal)
+        expect(TokenKind.LiteralString)
+        close(interfaceArg, TreeKind.ArgumentNamed)
+        expect(TokenKind.Comma)
+        val funcArg = open()
+        expectLowercaseName("func", hint = Some("`extern wasm` requires `func = \"...\"`."))
+        expect(TokenKind.Equal)
+        expect(TokenKind.LiteralString)
+        close(funcArg, TreeKind.ArgumentNamed)
+        expect(TokenKind.ParenR)
+      } else {
+        expectLowercaseName("native", hint = Some("Only `extern native` and `extern wasm` declarations are supported here."))
+      }
+      expect(TokenKind.KeywordDef)
+      nameUnqualified(NAME_FUNCTION)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      parameters()
+      expect(TokenKind.Colon)
+      Type.typeAndEffect()
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
+      }
+      // Parse an optional body for error recovery. The weeder rejects bodies on extern defs.
+      if (eat(TokenKind.Equal)) {
+        Expr.statement()
+      }
+      close(mark, TreeKind.Decl.Def)
     }
 
     private def definitionDecl(mark: Mark.Opened, declKind: TokenKind = TokenKind.KeywordDef)(implicit s: State): Mark.Closed = {
@@ -2792,7 +2876,7 @@ object Parser2 {
       expect(TokenKind.KeywordCase)
       nameUnqualified(NAME_VARIABLE)
       expect(TokenKind.Colon)
-      nameAllowQualified(NAME_JAVA, tail = Set())
+      Type.ttype()
       if (eat(TokenKind.Equal)) {
         closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
       } else {
@@ -3536,6 +3620,7 @@ object Parser2 {
         case TokenKind.NameUppercase => nameAllowQualified(NAME_TYPE)
         case TokenKind.NameMath
              | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE)
+        case TokenKind.NameLowercase if nth(1) == TokenKind.Dot => nameAllowQualified(NAME_JAVA, tail = Set())
         case TokenKind.NameLowercase => variableType()
         case TokenKind.KeywordUniv
              | TokenKind.KeywordFalse

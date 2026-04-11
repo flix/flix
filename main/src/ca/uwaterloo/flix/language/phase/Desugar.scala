@@ -501,6 +501,12 @@ object Desugar {
     case WeededAst.Expr.Cst(cst, loc) =>
       Expr.Cst(cst, loc)
 
+    case WeededAst.Expr.NativeImport(spec, loc) =>
+      Expr.NativeImport(spec, loc)
+
+    case WeededAst.Expr.WasmImport(spec, loc) =>
+      Expr.WasmImport(spec, loc)
+
     case WeededAst.Expr.Apply(exp, exps, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
@@ -759,6 +765,73 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.PutChannel(e1, e2, loc)
 
+    case WeededAst.Expr.NewReentrantLock(loc) =>
+      Expr.NewReentrantLock(loc)
+
+    case WeededAst.Expr.LockReentrantLock(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.LockReentrantLock(e, loc)
+
+    case WeededAst.Expr.TryLockReentrantLock(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.TryLockReentrantLock(e, loc)
+
+    case WeededAst.Expr.UnlockReentrantLock(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.UnlockReentrantLock(e, loc)
+
+    case WeededAst.Expr.NewCondition(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.NewCondition(e, loc)
+
+    case WeededAst.Expr.AwaitCondition(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.AwaitCondition(e, loc)
+
+    case WeededAst.Expr.SignalCondition(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.SignalCondition(e, loc)
+
+    case WeededAst.Expr.SignalAllCondition(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.SignalAllCondition(e, loc)
+
+    case WeededAst.Expr.NewCyclicBarrier(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.NewCyclicBarrier(e, loc)
+
+    case WeededAst.Expr.AwaitCyclicBarrier(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.AwaitCyclicBarrier(e, loc)
+
+    case WeededAst.Expr.NewCountDownLatch(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.NewCountDownLatch(e, loc)
+
+    case WeededAst.Expr.AwaitCountDownLatch(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.AwaitCountDownLatch(e, loc)
+
+    case WeededAst.Expr.CountDownLatchCountDown(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.CountDownLatchCountDown(e, loc)
+
+    case WeededAst.Expr.NewSemaphore(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.NewSemaphore(e, loc)
+
+    case WeededAst.Expr.AcquireSemaphore(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.AcquireSemaphore(e, loc)
+
+    case WeededAst.Expr.TryAcquireSemaphore(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.TryAcquireSemaphore(e, loc)
+
+    case WeededAst.Expr.ReleaseSemaphore(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.ReleaseSemaphore(e, loc)
+
     case WeededAst.Expr.SelectChannel(rules, exp, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val es = exp.map(visitExp)
@@ -948,9 +1021,10 @@ object Desugar {
     * Desugars the given [[WeededAst.CatchRule]] `rule0`.
     */
   private def visitCatchRule(rule0: WeededAst.CatchRule)(implicit flix: Flix): DesugaredAst.CatchRule = rule0 match {
-    case WeededAst.CatchRule(ident, className, exp, loc) =>
+    case WeededAst.CatchRule(ident, tpe, exp, loc) =>
       val e = visitExp(exp)
-      DesugaredAst.CatchRule(ident, className, e, loc)
+      val t = visitType(tpe)
+      DesugaredAst.CatchRule(ident, t, e, loc)
   }
 
   /**

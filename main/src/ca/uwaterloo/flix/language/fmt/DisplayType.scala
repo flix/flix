@@ -77,6 +77,22 @@ object DisplayType {
 
   case object Regex extends DisplayType
 
+  case object StringBuilderHandle extends DisplayType
+
+  case object RegexMatcher extends DisplayType
+
+  case object ChannelHandle extends DisplayType
+
+  case object ReentrantLockHandle extends DisplayType
+
+  case object ConditionHandle extends DisplayType
+
+  case object CyclicBarrierHandle extends DisplayType
+
+  case object CountDownLatchHandle extends DisplayType
+
+  case object SemaphoreHandle extends DisplayType
+
   case object Array extends DisplayType
 
   case object ArrayWithoutRegion extends DisplayType
@@ -402,6 +418,14 @@ object DisplayType {
         case TypeConstructor.BigInt => BigInt
         case TypeConstructor.Str => Str
         case TypeConstructor.Regex => Regex
+        case TypeConstructor.StringBuilderHandle => StringBuilderHandle
+        case TypeConstructor.RegexMatcher => RegexMatcher
+        case TypeConstructor.ChannelHandle => ChannelHandle
+        case TypeConstructor.ReentrantLockHandle => ReentrantLockHandle
+        case TypeConstructor.ConditionHandle => ConditionHandle
+        case TypeConstructor.CyclicBarrierHandle => CyclicBarrierHandle
+        case TypeConstructor.CountDownLatchHandle => CountDownLatchHandle
+        case TypeConstructor.SemaphoreHandle => SemaphoreHandle
 
         case TypeConstructor.Arrow(arity) =>
           val args = t.typeArguments.map(visit)

@@ -1,0 +1,47 @@
+package flix:sys@0.1.0;
+
+/// Minimal host capability surface for Flix wasm targets.
+///
+/// This is intentionally small. Prefer layering richer APIs (HTTP, files, sockets)
+/// behind effects/suspension first, then grow this surface once we have a stable
+/// portability story across WASI + browser.
+interface sys {
+  /// Logging/diagnostics.
+  enum log-level {
+    trace,
+    debug,
+    info,
+    warn,
+    error,
+  }
+
+  /// Log a message for debugging/diagnostics.
+  log: func(level: log-level, msg: string);
+
+  /// Return a monotonic-ish timestamp in milliseconds (best effort).
+  time-now-ms: func() -> s64;
+
+  /// Return `len` random bytes.
+  random-bytes: func(len: u32) -> list<u8>;
+
+  /// Return the host-provided program arguments.
+  ///
+  /// This mirrors `Env.getArgs` semantics: it must not include the program name.
+  ///
+  /// Hosts may return an empty list when arguments are not meaningful (e.g. browsers).
+  get-args: func() -> list<string>;
+
+  /// Capability discovery.
+  ///
+  /// This is intentionally coarse-grained; the portable stdlib should still
+  /// treat capabilities as optional and return `Unsupported` when absent.
+  enum capability {
+    filesystem,
+    http,
+    sockets,
+    process,
+    threads,
+  }
+
+  has-capability: func(cap: capability) -> bool;
+}

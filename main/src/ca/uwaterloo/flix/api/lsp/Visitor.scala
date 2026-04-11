@@ -328,6 +328,8 @@ object Visitor {
 
     expr match {
       case Expr.Cst(_, _, _) => ()
+      case Expr.NativeImport(_, _, _, _) => ()
+      case Expr.WasmImport(_, _, _, _) => ()
       case Expr.Var(_, _, _) => ()
       case Expr.Hole(_, _, _, _, _) => ()
 
@@ -553,6 +555,57 @@ object Visitor {
       case Expr.PutChannel(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
+
+      case Expr.NewReentrantLock(_, _, _) =>
+        ()
+
+      case Expr.LockReentrantLock(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.TryLockReentrantLock(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.UnlockReentrantLock(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.NewCondition(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.AwaitCondition(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.SignalCondition(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.SignalAllCondition(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.NewCyclicBarrier(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.AwaitCyclicBarrier(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.NewCountDownLatch(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.AwaitCountDownLatch(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.CountDownLatchCountDown(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.NewSemaphore(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.AcquireSemaphore(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.TryAcquireSemaphore(exp, _, _, _) =>
+        visitExpr(exp)
+
+      case Expr.ReleaseSemaphore(exp, _, _, _) =>
+        visitExpr(exp)
 
       case Expr.SelectChannel(rules, default, _, _, _) =>
         rules.foreach(visitSelectChannelRule)

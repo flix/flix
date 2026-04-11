@@ -1,10 +1,16 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object MonoAstPrinter {
+
+  private def catchClassOf(tpe0: Type): Class[?] =
+    Type.eraseAliases(tpe0) match {
+      case Type.Cst(TypeConstructor.Native(clazz), _) => clazz
+      case _ => classOf[Object]
+    }
 
   /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: MonoAst.Root): DocAst.Program = {
@@ -25,6 +31,8 @@ object MonoAstPrinter {
 
   private def print(e: MonoAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
+    case Expr.NativeImport(spec, _, _, _) => DocAst.Expr.AsIs(s"""extern native("${spec.symbol}")""")
+    case Expr.WasmImport(spec, _, _, _) => DocAst.Expr.AsIs(s"""extern wasm("${spec.interface}", "${spec.func}")""")
     case Expr.Var(sym, _, _) => printVar(sym)
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.ApplyAtomic(op, exps, tpe, eff, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe), TypePrinter.print(eff))
@@ -62,7 +70,7 @@ object MonoAstPrinter {
 
   /** Returns the [[DocAst]] representation of `rule`. */
   private def printCatchRule(rule: MonoAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
-    case MonoAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
+    case MonoAst.CatchRule(sym, catchTpe, exp) => (sym, catchClassOf(catchTpe), print(exp))
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.{ExportAbi, NativeImportAbi}
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.*
@@ -30,7 +31,18 @@ object ErasedAst {
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+  case class Def(ann: Annotations,
+                 mod: Modifiers,
+                 sym: Symbol.DefnSym,
+                 cparams: List[FormalParam],
+                 fparams: List[FormalParam],
+                 exp: Expr,
+                 tpe: SimpleType,
+                 unboxedType: UnboxedType,
+                 exportedSignature: Option[ExportAbi.Signature],
+                 nativeImportSignature: Option[NativeImportAbi.Signature],
+                 wasmImportSignature: Option[ExportAbi.Signature],
+                 loc: SourceLocation) {
     val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
 
@@ -43,7 +55,14 @@ object ErasedAst {
 
   case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: SimpleType, purity: Purity, loc: SourceLocation)
+  case class Op(sym: Symbol.OpSym,
+                ann: Annotations,
+                mod: Modifiers,
+                fparams: List[FormalParam],
+                tpe: SimpleType,
+                purity: Purity,
+                portableSignature: Option[ExportAbi.Signature],
+                loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: SimpleType
@@ -60,6 +79,9 @@ object ErasedAst {
 
       def purity: Purity = Pure
     }
+
+    case class NativeImport(spec: NativeImportSpec, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class WasmImport(spec: WasmImportSpec, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Var(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
@@ -113,7 +135,7 @@ object ErasedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, catchTpe: SimpleType, exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
@@ -127,4 +149,3 @@ object ErasedAst {
   case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
 }
-

@@ -140,13 +140,20 @@ object JvmName {
 
   val Arrays: JvmName = JvmName(JavaUtil, "Arrays")
   val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
+  val AtomicReference: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicReference")
+  val ArrayBlockingQueue: JvmName = JvmName(JavaUtilConcurrent, "ArrayBlockingQueue")
   val BigDecimal: JvmName = JvmName(JavaMath, "BigDecimal")
   val BigInteger: JvmName = JvmName(JavaMath, "BigInteger")
+  val RoundingMode: JvmName = JvmName(JavaMath, "RoundingMode")
+  val BlockingQueue: JvmName = JvmName(JavaUtilConcurrent, "BlockingQueue")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
   val CallSite: JvmName = JvmName(JavaLangInvoke, "CallSite")
   val CharSequence: JvmName = JvmName(JavaLang, "CharSequence")
   val Character: JvmName = JvmName(JavaLang, "Character")
+  val ChannelSupport: JvmName = JvmName(List("dev", "flix", "runtime"), "ChannelSupport")
+  val CancellationWakeup: JvmName = JvmName(List("dev", "flix", "runtime"), "CancellationWakeup")
+  val LockSupport: JvmName = JvmName(List("dev", "flix", "runtime"), "LockSupport")
   val Class: JvmName = JvmName(JavaLang, "Class")
   val ConcurrentLinkedQueue: JvmName = JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
   val Double: JvmName = JvmName(JavaLang, "Double")
@@ -156,6 +163,8 @@ object JvmName {
   val DoubleUnaryOperator: JvmName = JvmName(JavaUtilFunction, "DoubleUnaryOperator")
   val Error: JvmName = JvmName(JavaLang, "Error")
   val Exception: JvmName = JvmName(JavaLang, "Exception")
+  val NumberFormatException: JvmName = JvmName(JavaLang, "NumberFormatException")
+  val File: JvmName = JvmName(JavaIO, "File")
   val Float: JvmName = JvmName(JavaLang, "Float")
   val IntConsumer: JvmName = JvmName(JavaUtilFunction, "IntConsumer")
   val IntFunction: JvmName = JvmName(JavaUtilFunction, "IntFunction")
@@ -165,6 +174,7 @@ object JvmName {
   val Iterator: JvmName = JvmName(JavaUtil, "Iterator")
   val LambdaMetafactory: JvmName = JvmName(JavaLangInvoke, "LambdaMetafactory")
   val LinkedList: JvmName = JvmName(JavaUtil, "LinkedList")
+  val Locale: JvmName = JvmName(JavaUtil, "Locale")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val LongConsumer: JvmName = JvmName(JavaUtilFunction, "LongConsumer")
   val LongFunction: JvmName = JvmName(JavaUtilFunction, "LongFunction")
@@ -181,10 +191,14 @@ object JvmName {
   val PrintStream: JvmName = JvmName(JavaIO, "PrintStream")
   val ReentrantLock: JvmName = JvmName(JavaUtilConcurrentLocks, "ReentrantLock")
   val Regex: JvmName = JvmName(JavaUtilRegex, "Pattern")
+
+  val RegexMatcher: JvmName = JvmName(JavaUtilRegex, "Matcher")
+  val RegionSupport: JvmName = JvmName(List("dev", "flix", "runtime"), "RegionSupport")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")
   val String: JvmName = JvmName(JavaLang, "String")
   val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
+  val SynchronousQueue: JvmName = JvmName(JavaUtilConcurrent, "SynchronousQueue")
   val System: JvmName = JvmName(JavaLang, "System")
   val Thread$Builder$OfVirtual: JvmName = JvmName(JavaLang, "Thread$Builder$OfVirtual")
   val Thread$UncaughtExceptionHandler: JvmName = JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
@@ -199,6 +213,8 @@ object JvmName {
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
   val FlixError: JvmName = JvmName(DevFlixRuntime, mkClassName("FlixError"))
+
+  val FlixException: JvmName = JvmName(DevFlixRuntime, mkClassName("FlixException"))
 
 }
 

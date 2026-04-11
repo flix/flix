@@ -56,6 +56,9 @@ object TailPos {
     * position with [[Expr.ApplySelfTail]].
     */
   private def visitExp(exp0: Expr)(implicit defn: Def): Expr = exp0 match {
+    case Expr.NativeImport(_, _, _, _) => exp0
+    case Expr.WasmImport(_, _, _, _) => exp0
+
     case Expr.Let(sym, exp1, exp2, loc) =>
       // `exp2` is in tail position.
       val e2 = visitExp(exp2)

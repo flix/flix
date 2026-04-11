@@ -1,0 +1,12 @@
+[package]
+name = "flix-wasm-runner"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1"
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+wasmtime = { version = "38", features = ["component-model"] }

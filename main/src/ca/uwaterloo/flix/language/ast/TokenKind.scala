@@ -87,6 +87,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordEff => "'eff'"
       case TokenKind.KeywordElse => "'else'"
       case TokenKind.KeywordEnum => "'enum'"
+      case TokenKind.KeywordExtern => "'extern'"
       case TokenKind.KeywordFalse => "'false'"
       case TokenKind.KeywordFix => "'fix'"
       case TokenKind.KeywordForA => "'forA'"
@@ -221,6 +222,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordElse => true
     case TokenKind.KeywordEnum => true
+    case TokenKind.KeywordExtern => true
     case TokenKind.KeywordFalse => true
     case TokenKind.KeywordFix => true
     case TokenKind.KeywordForA => true
@@ -337,6 +339,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordDef => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordEnum => true
+    case TokenKind.KeywordExtern => true
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordMod => true
     case TokenKind.KeywordRestrictable => true
@@ -759,6 +762,8 @@ object TokenKind {
   case object KeywordEMatch extends TokenKind
 
   case object KeywordEff extends TokenKind
+
+  case object KeywordExtern extends TokenKind
 
   case object KeywordElse extends TokenKind
 

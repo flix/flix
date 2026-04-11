@@ -58,6 +58,12 @@ object TreeShaker2 {
     case Expr.Cst(_, _, _) =>
       Set.empty
 
+    case Expr.NativeImport(_, _, _, _) =>
+      Set.empty
+
+    case Expr.WasmImport(_, _, _, _) =>
+      Set.empty
+
     case Expr.Var(_, _, _) =>
       Set.empty
 

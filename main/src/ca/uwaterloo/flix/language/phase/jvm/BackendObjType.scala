@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, N
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.{MethodVisitor, Opcodes}
+import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -1027,6 +1027,19 @@ object BackendObjType {
       cm.mkStaticMethod(GetArgsMethod, IsPublic, IsFinal, getArgsIns(_))
       cm.mkStaticMethod(SetArgsMethod, IsPublic, IsFinal, setArgsIns(_))
 
+      cm.mkField(TcpSocketsField, IsPrivate, IsFinal, NotVolatile)
+      cm.mkField(TcpServersField, IsPrivate, IsFinal, NotVolatile)
+      cm.mkField(ProcessesField, IsPrivate, IsFinal, NotVolatile)
+      cm.mkStaticMethod(PutTcpSocketMethod, IsPublic, IsFinal, putTcpSocketIns(_))
+      cm.mkStaticMethod(GetTcpSocketMethod, IsPublic, IsFinal, getTcpSocketIns(_))
+      cm.mkStaticMethod(RemoveTcpSocketMethod, IsPublic, IsFinal, removeTcpSocketIns(_))
+      cm.mkStaticMethod(PutTcpServerMethod, IsPublic, IsFinal, putTcpServerIns(_))
+      cm.mkStaticMethod(GetTcpServerMethod, IsPublic, IsFinal, getTcpServerIns(_))
+      cm.mkStaticMethod(RemoveTcpServerMethod, IsPublic, IsFinal, removeTcpServerIns(_))
+      cm.mkStaticMethod(PutProcessMethod, IsPublic, IsFinal, putProcessIns(_))
+      cm.mkStaticMethod(GetProcessMethod, IsPublic, IsFinal, getProcessIns(_))
+      cm.mkStaticMethod(RemoveProcessMethod, IsPublic, IsFinal, removeProcessIns(_))
+
       cm.closeClassMaker()
     }
 
@@ -1040,6 +1053,24 @@ object BackendObjType {
       ICONST_0()
       ANEWARRAY(JvmName.String)
       PUTSTATIC(ArgsField)
+
+      val chm = ConcurrentHashMapClass
+
+      NEW(chm)
+      DUP()
+      invokeConstructor(chm, MethodDescriptor.NothingToVoid)
+      PUTSTATIC(TcpSocketsField)
+
+      NEW(chm)
+      DUP()
+      invokeConstructor(chm, MethodDescriptor.NothingToVoid)
+      PUTSTATIC(TcpServersField)
+
+      NEW(chm)
+      DUP()
+      invokeConstructor(chm, MethodDescriptor.NothingToVoid)
+      PUTSTATIC(ProcessesField)
+
       RETURN()
     }
 
@@ -1094,6 +1125,146 @@ object BackendObjType {
     private def CounterField: StaticField = StaticField(this.jvmName, "counter", JvmName.AtomicLong.toTpe)
 
     private def ArgsField: StaticField = StaticField(this.jvmName, "args", BackendType.Array(BackendType.String))
+
+    private def ConcurrentHashMapClass: JvmName = JvmName(JvmName.JavaUtilConcurrent, "ConcurrentHashMap")
+
+    private def SocketClass: JvmName = JvmName.ofClass(classOf[java.net.Socket])
+
+    private def ServerSocketClass: JvmName = JvmName.ofClass(classOf[java.net.ServerSocket])
+
+    private def ProcessClass: JvmName = JvmName.ofClass(classOf[java.lang.Process])
+
+    private def TcpSocketsField: StaticField = StaticField(this.jvmName, "tcpSockets", ConcurrentHashMapClass.toTpe)
+
+    private def TcpServersField: StaticField = StaticField(this.jvmName, "tcpServers", ConcurrentHashMapClass.toTpe)
+
+    private def ProcessesField: StaticField = StaticField(this.jvmName, "processes", ConcurrentHashMapClass.toTpe)
+
+    private def PutTcpSocketMethod: StaticMethod =
+      StaticMethod(this.jvmName, "putTcpSocket", mkDescriptor(BackendType.Int64, SocketClass.toTpe)(VoidableType.Void))
+
+    private def GetTcpSocketMethod: StaticMethod =
+      StaticMethod(this.jvmName, "getTcpSocket", mkDescriptor(BackendType.Int64)(SocketClass.toTpe))
+
+    private def RemoveTcpSocketMethod: StaticMethod =
+      StaticMethod(this.jvmName, "removeTcpSocket", mkDescriptor(BackendType.Int64)(SocketClass.toTpe))
+
+    private def PutTcpServerMethod: StaticMethod =
+      StaticMethod(this.jvmName, "putTcpServer", mkDescriptor(BackendType.Int64, ServerSocketClass.toTpe)(VoidableType.Void))
+
+    private def GetTcpServerMethod: StaticMethod =
+      StaticMethod(this.jvmName, "getTcpServer", mkDescriptor(BackendType.Int64)(ServerSocketClass.toTpe))
+
+    private def RemoveTcpServerMethod: StaticMethod =
+      StaticMethod(this.jvmName, "removeTcpServer", mkDescriptor(BackendType.Int64)(ServerSocketClass.toTpe))
+
+    private def PutProcessMethod: StaticMethod =
+      StaticMethod(this.jvmName, "putProcess", mkDescriptor(BackendType.Int64, ProcessClass.toTpe)(VoidableType.Void))
+
+    private def GetProcessMethod: StaticMethod =
+      StaticMethod(this.jvmName, "getProcess", mkDescriptor(BackendType.Int64)(ProcessClass.toTpe))
+
+    private def RemoveProcessMethod: StaticMethod =
+      StaticMethod(this.jvmName, "removeProcess", mkDescriptor(BackendType.Int64)(ProcessClass.toTpe))
+
+    private def putTcpSocketIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      GETSTATIC(TcpSocketsField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      ALOAD(2)
+      INVOKEVIRTUAL(chm, "put", MethodDescriptor(List(BackendType.Object, BackendType.Object), BackendType.Object))
+      POP()
+      RETURN()
+    }
+
+    private def getTcpSocketIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      val socket = SocketClass
+      GETSTATIC(TcpSocketsField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      INVOKEVIRTUAL(chm, "get", MethodDescriptor(List(BackendType.Object), BackendType.Object))
+      CHECKCAST(socket)
+      ARETURN()
+    }
+
+    private def removeTcpSocketIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      val socket = SocketClass
+      GETSTATIC(TcpSocketsField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      INVOKEVIRTUAL(chm, "remove", MethodDescriptor(List(BackendType.Object), BackendType.Object))
+      CHECKCAST(socket)
+      ARETURN()
+    }
+
+    private def putTcpServerIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      GETSTATIC(TcpServersField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      ALOAD(2)
+      INVOKEVIRTUAL(chm, "put", MethodDescriptor(List(BackendType.Object, BackendType.Object), BackendType.Object))
+      POP()
+      RETURN()
+    }
+
+    private def getTcpServerIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      val serverSocket = ServerSocketClass
+      GETSTATIC(TcpServersField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      INVOKEVIRTUAL(chm, "get", MethodDescriptor(List(BackendType.Object), BackendType.Object))
+      CHECKCAST(serverSocket)
+      ARETURN()
+    }
+
+    private def removeTcpServerIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      val serverSocket = ServerSocketClass
+      GETSTATIC(TcpServersField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      INVOKEVIRTUAL(chm, "remove", MethodDescriptor(List(BackendType.Object), BackendType.Object))
+      CHECKCAST(serverSocket)
+      ARETURN()
+    }
+
+    private def putProcessIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      GETSTATIC(ProcessesField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      ALOAD(2)
+      INVOKEVIRTUAL(chm, "put", MethodDescriptor(List(BackendType.Object, BackendType.Object), BackendType.Object))
+      POP()
+      RETURN()
+    }
+
+    private def getProcessIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      val proc = ProcessClass
+      GETSTATIC(ProcessesField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      INVOKEVIRTUAL(chm, "get", MethodDescriptor(List(BackendType.Object), BackendType.Object))
+      CHECKCAST(proc)
+      ARETURN()
+    }
+
+    private def removeProcessIns(implicit mv: MethodVisitor): Unit = {
+      val chm = ConcurrentHashMapClass
+      val proc = ProcessClass
+      GETSTATIC(ProcessesField)
+      LLOAD(0)
+      INVOKESTATIC(JvmName.Long, "valueOf", MethodDescriptor(List(BackendType.Int64), JvmName.Long.toTpe))
+      INVOKEVIRTUAL(chm, "remove", MethodDescriptor(List(BackendType.Object), BackendType.Object))
+      CHECKCAST(proc)
+      ARETURN()
+    }
 
     private def arrayCopy()(implicit mv: MethodVisitor): Unit = {
       mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
@@ -1284,12 +1455,13 @@ object BackendObjType {
 
       cm.mkField(ThreadsField, IsPrivate, IsFinal, NotVolatile)
       cm.mkField(RegionThreadField, IsPrivate, IsFinal, NotVolatile)
-      cm.mkField(ChildExceptionField, IsPrivate, NotFinal, IsVolatile)
+      cm.mkField(ChildExceptionField, IsPrivate, IsFinal, NotVolatile)
       cm.mkField(OnExitField, IsPrivate, IsFinal, NotVolatile)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
 
       cm.mkMethod(SpawnMethod, IsPublic, IsFinal, spawnIns(_))
+      cm.mkMethod(CancelChildrenMethod, IsPublic, IsFinal, cancelChildrenIns(_))
       cm.mkMethod(ExitMethod, IsPublic, IsFinal, exitIns(_))
       cm.mkMethod(ReportChildExceptionMethod, IsPublic, IsFinal, reportChildExceptionIns(_))
       cm.mkMethod(ReThrowChildExceptionMethod, IsPublic, IsFinal, reThrowChildExceptionIns(_))
@@ -1307,8 +1479,8 @@ object BackendObjType {
     // private final Thread regionThread = Thread.currentThread();
     private def RegionThreadField: InstanceField = InstanceField(this.jvmName, "regionThread", JvmName.Thread.toTpe)
 
-    // private volatile Throwable childException = null;
-    private def ChildExceptionField: InstanceField = InstanceField(this.jvmName, "childException", JvmName.Throwable.toTpe)
+    // private final AtomicReference<Throwable> childException = new AtomicReference<>(null);
+    private def ChildExceptionField: InstanceField = InstanceField(this.jvmName, "childException", JvmName.AtomicReference.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
@@ -1324,7 +1496,10 @@ object BackendObjType {
       INVOKESTATIC(ClassConstants.Thread.CurrentThreadMethod)
       PUTFIELD(RegionThreadField)
       thisLoad()
+      NEW(JvmName.AtomicReference)
+      DUP()
       ACONST_NULL()
+      INVOKESPECIAL(ClassConstants.AtomicReference.Constructor)
       PUTFIELD(ChildExceptionField)
       thisLoad()
       NEW(JvmName.LinkedList)
@@ -1364,6 +1539,21 @@ object BackendObjType {
       }
     }
 
+    // final public void cancelChildren() {
+    //   RegionSupport.cancelChildren(threads, regionThread);
+    // }
+    def CancelChildrenMethod: InstanceMethod = InstanceMethod(this.jvmName, "cancelChildren", MethodDescriptor.NothingToVoid)
+
+    private def cancelChildrenIns(implicit mv: MethodVisitor): Unit = {
+      import BytecodeInstructions.*
+      thisLoad()
+      GETFIELD(ThreadsField)
+      thisLoad()
+      GETFIELD(RegionThreadField)
+      INVOKESTATIC(ClassConstants.RegionSupport.CancelChildrenMethod)
+      RETURN()
+    }
+
     // final public void exit() throws InterruptedException {
     //   Thread t;
     //   while ((t = threads.poll()) != null)
@@ -1383,8 +1573,25 @@ object BackendObjType {
           DUP()
           t.store()
         } {
+          // Joining child threads is required for correct region semantics, including on exceptional exit.
+          // Child exceptions are reported separately; an interrupt should not abort the join loop.
+          val joinStart = new Label()
+          val joinEnd = new Label()
+          val joinHandler = new Label()
+          val joinDone = new Label()
+
+          mv.visitTryCatchBlock(joinStart, joinEnd, joinHandler, JvmName.ofClass(classOf[InterruptedException]).toInternalName)
+
+          mv.visitLabel(joinStart)
           t.load()
           INVOKEVIRTUAL(ClassConstants.Thread.JoinMethod)
+          mv.visitLabel(joinEnd)
+          mv.visitJumpInsn(Opcodes.GOTO, joinDone)
+
+          mv.visitLabel(joinHandler)
+          // Stack: [InterruptedException]
+          POP()
+          mv.visitLabel(joinDone)
         }
         withName(2, JvmName.Iterator.toTpe) { i =>
           thisLoad()
@@ -1406,36 +1613,44 @@ object BackendObjType {
     }
 
     // final public void reportChildException(Throwable e) {
-    //   childException = e;
-    //   regionThread.interrupt();
+    //   RegionSupport.reportChildException(childException, e, threads, regionThread);
     // }
     def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void))
 
     private def reportChildExceptionIns(implicit mv: MethodVisitor): Unit = {
+      import BytecodeInstructions.*
       thisLoad()
+      GETFIELD(ChildExceptionField)
       ALOAD(1)
-      PUTFIELD(ChildExceptionField)
+      thisLoad()
+      GETFIELD(ThreadsField)
       thisLoad()
       GETFIELD(RegionThreadField)
-      INVOKEVIRTUAL(ClassConstants.Thread.InterruptMethod)
+      INVOKESTATIC(ClassConstants.RegionSupport.ReportChildExceptionMethod)
       RETURN()
     }
 
     // final public void reThrowChildException() throws Throwable {
-    //   if (childException != null)
-    //     throw childException;
+    //   Throwable ex = (Throwable) childException.get();
+    //   if (ex != null) throw ex;
     // }
     def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "reThrowChildException", MethodDescriptor.NothingToVoid)
 
     private def reThrowChildExceptionIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      GETFIELD(ChildExceptionField)
-      ifCondition(Condition.NONNULL) {
+      import BytecodeInstructions.*
+      withName(1, JvmName.Throwable.toTpe) { ex =>
         thisLoad()
         GETFIELD(ChildExceptionField)
-        ATHROW()
+        INVOKEVIRTUAL(ClassConstants.AtomicReference.GetMethod)
+        CHECKCAST(JvmName.Throwable)
+        DUP()
+        ex.store()
+        ifCondition(Condition.NONNULL) {
+          ex.load()
+          ATHROW()
+        }
+        RETURN()
       }
-      RETURN()
     }
 
     // final public void runOnExit(Runnable r) {

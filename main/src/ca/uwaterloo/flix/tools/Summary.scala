@@ -189,6 +189,8 @@ object Summary {
 
   private def countCheckedEcasts(expr: TypedAst.Expr): Int = expr match {
     case Expr.Cst(_, _, _) => 0
+    case Expr.NativeImport(_, _, _, _) => 0
+    case Expr.WasmImport(_, _, _, _) => 0
     case Expr.Var(_, _, _) => 0
     case Expr.Hole(_, _, _, _, _) => 0
     case Expr.HoleWithExp(exp, _, _, _, _) => countCheckedEcasts(exp)
@@ -266,6 +268,23 @@ object Summary {
     case Expr.NewChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.NewReentrantLock(_, _, _) => 0
+    case Expr.LockReentrantLock(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.TryLockReentrantLock(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.UnlockReentrantLock(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.NewCondition(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.AwaitCondition(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.SignalCondition(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.SignalAllCondition(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.NewCyclicBarrier(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.AwaitCyclicBarrier(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.NewCountDownLatch(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.AwaitCountDownLatch(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.CountDownLatchCountDown(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.NewSemaphore(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.AcquireSemaphore(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.TryAcquireSemaphore(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.ReleaseSemaphore(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.SelectChannel(rules, default, _, _, _) => default.map(countCheckedEcasts).sum + rules.map {
       case TypedAst.SelectChannelRule(_, chan, exp, _) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
     }.sum

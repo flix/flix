@@ -187,7 +187,14 @@ object Typer {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
-    val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
+    val (tpe, eff0) = defn.exp match {
+      case KindedAst.Expr.NativeImport(_, _) =>
+        (defn.spec.tpe, defn.spec.eff.getOrElse(Type.Pure))
+      case KindedAst.Expr.WasmImport(_, _) =>
+        (defn.spec.tpe, defn.spec.eff.getOrElse(Type.Pure))
+      case _ =>
+        ConstraintGen.visitExp(defn.exp)
+    }
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
 

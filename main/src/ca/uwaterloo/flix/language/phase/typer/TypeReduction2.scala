@@ -262,6 +262,8 @@ object TypeReduction2 {
     case Type.Cst(TypeConstructor.BigInt, _) => classOf[java.math.BigInteger]
     case Type.Cst(TypeConstructor.Str, _) => classOf[String]
     case Type.Cst(TypeConstructor.Regex, _) => classOf[java.util.regex.Pattern]
+    case Type.Cst(TypeConstructor.StringBuilderHandle, _) => classOf[java.lang.StringBuilder]
+    case Type.Cst(TypeConstructor.RegexMatcher, _) => classOf[java.util.regex.Matcher]
     case Type.Cst(TypeConstructor.Native(clazz), _) => clazz
 
     // Arrays

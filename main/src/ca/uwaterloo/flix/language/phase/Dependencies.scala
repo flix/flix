@@ -113,6 +113,13 @@ object Dependencies {
     case Expr.Cst(_, tpe, _) =>
       visitType(tpe)
 
+    case Expr.NativeImport(_, tpe, eff, _) =>
+      visitType(tpe)
+      visitType(eff)
+    case Expr.WasmImport(_, tpe, eff, _) =>
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.Var(_, tpe, _) =>
       visitType(tpe)
 
@@ -451,9 +458,93 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.NewReentrantLock(tpe, eff, _) =>
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.PutChannel(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.LockReentrantLock(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.TryLockReentrantLock(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.UnlockReentrantLock(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.NewCondition(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.AwaitCondition(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.NewCyclicBarrier(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.AwaitCyclicBarrier(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.NewCountDownLatch(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.AwaitCountDownLatch(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.CountDownLatchCountDown(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.NewSemaphore(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.AcquireSemaphore(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.TryAcquireSemaphore(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ReleaseSemaphore(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.SignalCondition(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.SignalAllCondition(exp, tpe, eff, _) =>
+      visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
@@ -692,6 +783,7 @@ object Dependencies {
 
   private def visitCatchRule(catchRule: TypedAst.CatchRule)(implicit sctx: SharedContext): Unit = {
     visitBinder(catchRule.bnd)
+    visitType(catchRule.catchTpe)
     visitExp(catchRule.exp)
   }
 

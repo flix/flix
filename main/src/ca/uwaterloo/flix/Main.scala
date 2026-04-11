@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer, Formatter as LspFormatter}
-import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, BrowserRunSupport, Flix, Version, WasmRunSupport}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
@@ -29,9 +29,10 @@ import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.*
 
-import java.io.{File, PrintStream}
+import java.io.{File, IOException, PrintStream}
 import java.net.BindException
-import java.nio.file.Paths
+import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.TimeUnit
 
 object Main {
 
@@ -59,9 +60,12 @@ object Main {
       case Some(s) => Some(Symbol.mkDefnSym(s))
     }
 
-    // construct flix options.
-    var options = Options(
+    // construct base flix options. Target/stdlib are resolved later per command.
+    var baseOptions = Options(
       lib = cmdOpts.xlib,
+      stdlibProfile = if (cmdOpts.xstdlibProfileExplicit) cmdOpts.xstdlibProfile else StdlibProfile.Jvm,
+      target = CompilationTarget.Jvm,
+      artifactName = ArtifactNames.DefaultBaseName,
       build = Build.Development,
       entryPoint = entryPoint,
       githubToken = githubToken,
@@ -86,13 +90,15 @@ object Main {
 
     // Don't use progress bar if benchmarking.
     if (cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
-      options = options.copy(progress = false)
+      baseOptions = baseOptions.copy(progress = false)
     }
 
     // Don't use progress bar if not attached to a console.
     if (System.console() == null) {
-      options = options.copy(progress = false)
+      baseOptions = baseOptions.copy(progress = false)
     }
+
+    val options = baseOptions
 
     // check if command was passed.
     try {
@@ -109,39 +115,39 @@ object Main {
 
           // check if the --Xbenchmark-code-size flag was passed.
           if (cmdOpts.xbenchmarkCodeSize) {
-            BenchmarkCompilerOld.benchmarkCodeSize(options)
+            BenchmarkCompilerOld.benchmarkCodeSize(baseOptions)
             System.exit(0)
           }
 
           // check if the --Xbenchmark-incremental flag was passed.
           if (cmdOpts.xbenchmarkIncremental) {
-            BenchmarkCompilerOld.benchmarkIncremental(options)
+            BenchmarkCompilerOld.benchmarkIncremental(baseOptions)
             System.exit(0)
           }
 
           // check if the --Xbenchmark-phases flag was passed.
           if (cmdOpts.xbenchmarkPhases) {
-            BenchmarkCompilerOld.benchmarkPhases(options)
+            BenchmarkCompilerOld.benchmarkPhases(baseOptions)
             System.exit(0)
           }
 
           // check if the --Xbenchmark-frontend flag was passed.
           if (cmdOpts.xbenchmarkFrontend) {
-            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
+            BenchmarkCompilerOld.benchmarkThroughput(baseOptions, frontend = true)
             System.exit(0)
           }
 
           // check if the --Xbenchmark-throughput flag was passed.
           if (cmdOpts.xbenchmarkThroughput) {
-            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
+            BenchmarkCompilerOld.benchmarkThroughput(baseOptions, frontend = false)
             System.exit(0)
           }
 
           // check if we should start a REPL
           if (cmdOpts.files.isEmpty) {
-            Bootstrap.bootstrap(cwd, options.githubToken) match {
+            Bootstrap.bootstrap(cwd, baseOptions.githubToken) match {
               case Result.Ok(bootstrap) =>
-                val shell = new Shell(bootstrap, options)
+                val shell = new Shell(bootstrap, baseOptions)
                 shell.loop()
                 System.exit(0)
               case Result.Err(error) =>
@@ -151,6 +157,20 @@ object Main {
           }
 
           // configure Flix and add the paths.
+          val target = singleResolvedCliTarget(Command.Run, cmdOpts).getOrElse {
+            System.exit(1)
+            null
+          }
+          if (cmdOpts.runner.exists(r => !isRunnerSupported(Command.Run, target, r))) {
+            println(s"Runner '${formatRunner(cmdOpts.runner.get)}' is not supported for command 'run' on target '${formatTarget(target)}'.")
+            System.exit(1)
+          }
+          val options = optionsForTarget(baseOptions, cmdOpts, target)
+          validateCommandPreflight(cmdOpts, options, runner = cmdOpts.runner).foreach { message =>
+            println(message)
+            System.exit(1)
+          }
+
           val flix = new Flix()
           flix.setOptions(options)
           implicit val sctx: SecurityContext = SecurityContext.Unrestricted
@@ -171,11 +191,30 @@ object Main {
           // evaluate main.
           flix.check() match {
             case (Some(root), Nil) =>
-              flix.codeGen(root).getMain match {
-                case None => // nop
-                case Some(m) =>
-                  // Invoke main with the supplied arguments.
-                  m(cmdOpts.args.toArray)
+              target match {
+                case CompilationTarget.LlvmWasm if cmdOpts.runner.contains(RunnerKind.Wasmtime) =>
+                  flix.codeGen(root)
+                  WasmRunSupport.runWasmtime(options, cwd, cmdOpts.args.toArray) match {
+                    case Right(_) => ()
+                    case Left(msg) =>
+                      println(msg)
+                      System.exit(1)
+                  }
+                case CompilationTarget.LlvmWasm if cmdOpts.runner.contains(RunnerKind.Browser) =>
+                  flix.codeGen(root)
+                  BrowserRunSupport.runBrowser(options, cwd, cmdOpts.args.toArray, headless = false) match {
+                    case Right(_) => ()
+                    case Left(msg) =>
+                      println(msg)
+                      System.exit(1)
+                  }
+                case _ =>
+                  flix.codeGen(root).getMain match {
+                    case None => // nop
+                    case Some(m) =>
+                      // Invoke main with the supplied arguments.
+                      m(cmdOpts.args.toArray)
+                  }
               }
               System.exit(0)
             case (optRoot, errors) =>
@@ -194,16 +233,13 @@ object Main {
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-                val flix = new Flix().setFormatter(formatter)
-                flix.setOptions(options)
-                bootstrap.check(flix)
+                resolveProjectTargets(Command.Check, cmdOpts, bootstrap).flatMap { targets =>
+                  runCheckForTargets(targets, baseOptions, cmdOpts, bootstrap)
+                }
               }
             }
           } else {
-            val flix = mkFlixWithFiles(cmdOpts.files, options)
-            val (optRoot, errors) = flix.check()
-            if (errors.isEmpty) System.exit(0)
-            else exitWithErrors(flix, errors, optRoot)
+            exitOnResult(runFileCheckForTargets(cmdOpts, baseOptions))
           }
 
         case Command.Build =>
@@ -211,17 +247,25 @@ object Main {
             println("The 'build' command does not support file arguments.")
             System.exit(1)
           }
-          exitOnResult {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(loadClassFiles = false))
-              bootstrap.build(flix)
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+            resolveProjectTargets(Command.Build, cmdOpts, bootstrap).flatMap { targets =>
+              runBuildForTargets(cwd, targets, baseOptions, cmdOpts, bootstrap)
             }
+          } match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(error) =>
+              println(error.message(formatter))
+              System.exit(1)
           }
 
         case Command.BuildJar =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'build-jar' command does not support file arguments.")
+            System.exit(1)
+          }
+          if (requestedTargets(cmdOpts).exists(_ != CompilationTarget.Jvm)) {
+            println("Command 'build-jar' is JVM-only. Use 'build --target native|wasm' for non-JVM targets.")
             System.exit(1)
           }
           exitOnResult {
@@ -235,6 +279,10 @@ object Main {
         case Command.BuildFatJar =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'build-fatjar' command does not support file arguments.")
+            System.exit(1)
+          }
+          if (requestedTargets(cmdOpts).exists(_ != CompilationTarget.Jvm)) {
+            println("Command 'build-fatjar' is JVM-only. Use 'build --target native|wasm' for non-JVM targets.")
             System.exit(1)
           }
           exitOnResult {
@@ -265,6 +313,91 @@ object Main {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               bootstrap.clean()
             }
+          }
+
+        case Command.Doctor =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'doctor' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult(runDoctor(cwd, cmdOpts, baseOptions))
+
+        case Command.BindWasmEffects =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'bind wasm-effects' command does not support file arguments.")
+            System.exit(1)
+          }
+          val witDir = cmdOpts.bindWit.getOrElse {
+            println("The 'bind wasm-effects' command requires --wit <dir>.")
+            System.exit(1)
+            null
+          }
+          val world = cmdOpts.bindWorld.getOrElse {
+            println("The 'bind wasm-effects' command requires --world <name>.")
+            System.exit(1)
+            null
+          }
+          val outDir = cmdOpts.bindOut.getOrElse {
+            println("The 'bind wasm-effects' command requires --out <dir>.")
+            System.exit(1)
+            null
+          }
+          WasmEffectBindingsTool.run(WasmEffectBindingsTool.Config(
+            witDir = witDir,
+            world = world,
+            outDir = outDir,
+            rootModule = cmdOpts.bindRootModule
+          )) match {
+            case Result.Ok(generated) =>
+              println(s"Generated ${generated.flixFile.toAbsolutePath.normalize()}")
+              println(s"Generated ${generated.bindingsFile.toAbsolutePath.normalize()}")
+              println(s"Generated ${generated.jsFile.toAbsolutePath.normalize()}")
+              println(s"Generated ${generated.dtsFile.toAbsolutePath.normalize()}")
+              println(s"Generated ${generated.rustFile.toAbsolutePath.normalize()}")
+              System.exit(0)
+            case Result.Err(msg) =>
+              println(msg)
+              System.exit(1)
+          }
+
+        case Command.BindNative =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'bind native' command does not support file arguments.")
+            System.exit(1)
+          }
+          val header = cmdOpts.bindHeader.getOrElse {
+            println("The 'bind native' command requires --header <file>.")
+            System.exit(1)
+            null
+          }
+          val outDir = cmdOpts.bindOut.getOrElse {
+            println("The 'bind native' command requires --out <dir>.")
+            System.exit(1)
+            null
+          }
+          NativeBindingsTool.run(NativeBindingsTool.Config(
+            header = header,
+            outDir = outDir,
+            rootModule = cmdOpts.bindNativeModule,
+            spec = cmdOpts.bindSpec,
+            includePaths = cmdOpts.bindIncludePaths,
+            defines = cmdOpts.bindDefines,
+            cflags = cmdOpts.bindCFlags,
+          )) match {
+            case Result.Ok(generated) =>
+              println(s"Generated ${generated.flixFile.toAbsolutePath.normalize()}")
+              generated.shimFile.foreach(p => println(s"Generated ${p.toAbsolutePath.normalize()}"))
+              generated.shimHeaderFile.foreach(p => println(s"Generated ${p.toAbsolutePath.normalize()}"))
+              if (generated.skipped.nonEmpty) {
+                println(s"Generated ${generated.generatedDecls} of ${generated.totalDecls} extern declarations.")
+                generated.skipped.foreach { skip =>
+                  println(s"Skipped ${skip.symbol}: ${skip.reason}")
+                }
+              }
+              System.exit(0)
+            case Result.Err(msg) =>
+              println(msg)
+              System.exit(1)
           }
 
         case Command.Doc =>
@@ -312,9 +445,39 @@ object Main {
           }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
-              bootstrap.run(flix, cmdOpts.args.toArray)
+              resolveSingleProjectTarget(Command.Run, cmdOpts, bootstrap).flatMap { target =>
+                resolveRunner(Command.Run, target, cmdOpts, bootstrap).flatMap { runner =>
+                  val targetOptions = optionsForTarget(baseOptions, cmdOpts, target)
+                  validateCommandPreflight(cmdOpts, targetOptions, runner = Some(runner)) match {
+                    case Some(message) => Result.Err(BootstrapError.GeneralError(message))
+                    case None =>
+                      runner match {
+                        case RunnerKind.Wasmtime =>
+                          val flix = new Flix().setFormatter(formatter)
+                          flix.setOptions(targetOptions)
+                          bootstrap.build(flix).flatMap { _ =>
+                            WasmRunSupport.runWasmtime(flix.options, cwd, cmdOpts.args.toArray) match {
+                              case Right(_) => Result.Ok(())
+                              case Left(msg) => Result.Err(BootstrapError.GeneralError(msg))
+                            }
+                          }
+                        case RunnerKind.Browser =>
+                          val flix = new Flix().setFormatter(formatter)
+                          flix.setOptions(targetOptions)
+                          bootstrap.build(flix).flatMap { _ =>
+                            BrowserRunSupport.runBrowser(flix.options, cwd, cmdOpts.args.toArray, headless = false) match {
+                              case Right(_) => Result.Ok(())
+                              case Left(msg) => Result.Err(BootstrapError.GeneralError(msg))
+                            }
+                          }
+                        case _ =>
+                          val flix = new Flix().setFormatter(formatter)
+                          flix.setOptions(targetOptions)
+                          bootstrap.run(flix, cmdOpts.args.toArray)
+                      }
+                  }
+                }
+              }
             }
           }
 
@@ -322,21 +485,37 @@ object Main {
           if (cmdOpts.files.isEmpty) {
             exitOnResult {
               Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
-                val flix = new Flix().setFormatter(formatter)
-                flix.setOptions(options.copy(progress = false))
-                bootstrap.test(flix)
+                resolveSingleProjectTarget(Command.Test, cmdOpts, bootstrap).flatMap { target =>
+                  resolveRunner(Command.Test, target, cmdOpts, bootstrap).flatMap { runner =>
+                    val targetOptions = optionsForTarget(baseOptions.copy(progress = false), cmdOpts, target)
+                    validateCommandPreflight(cmdOpts, targetOptions, runner = Some(runner)) match {
+                      case Some(message) => Result.Err(BootstrapError.GeneralError(message))
+                      case None =>
+                        val flix = new Flix().setFormatter(formatter)
+                        flix.setOptions(targetOptions)
+                        bootstrap.test(flix, Some(runner))
+                    }
+                  }
+                }
               }
             }
           } else {
-            val flix = mkFlixWithFiles(cmdOpts.files, options.copy(progress = false))
-            flix.compile() match {
-              case Validation.Success(compilationResult) =>
-                Tester.run(Nil, compilationResult)(flix) match {
-                  case Result.Ok(_) => System.exit(0)
-                  case Result.Err(_) => System.exit(1)
-                }
-              case Validation.Failure(errors) => exitWithErrors(flix, errors.toList, None)
+            val target = singleResolvedCliTarget(Command.Test, cmdOpts).getOrElse {
+              System.exit(1)
+              null
             }
+            val runner = cmdOpts.runner.getOrElse(defaultRunner(target))
+            if (!isRunnerSupported(Command.Test, target, runner)) {
+              println(s"Runner '${formatRunner(runner)}' is not supported for command 'test' on target '${formatTarget(target)}'.")
+              System.exit(1)
+            }
+            val targetOptions = optionsForTarget(baseOptions.copy(progress = false), cmdOpts, target)
+            validateCommandPreflight(cmdOpts, targetOptions, runner = Some(runner)).foreach { message =>
+              println(message)
+              System.exit(1)
+            }
+            val flix = mkFlixWithFiles(cmdOpts.files, targetOptions)
+            runFileTests(flix, target, runner)
           }
 
         case Command.Repl =>
@@ -462,6 +641,18 @@ object Main {
   case class CmdOpts(
     command: Command = Command.None,
     args: List[String] = Nil,
+    bindCFlags: List[String] = Nil,
+    bindDefines: List[String] = Nil,
+    bindHeader: Option[Path] = None,
+    bindIncludePaths: List[Path] = Nil,
+    bindNativeModule: String = "Native",
+    bindOut: Option[Path] = None,
+    bindSpec: Option[Path] = None,
+    bindRootModule: String = "Wit",
+    bindWit: Option[Path] = None,
+    bindWorld: Option[String] = None,
+    emits: List[EmitKind] = Nil,
+    runner: Option[RunnerKind] = None,
     entryPoint: Option[String] = None,
     installDeps: Boolean = true,
     githubToken: Option[String] = None,
@@ -476,6 +667,9 @@ object Main {
     xbenchmarkThroughput: Boolean = false,
     xnodeprecated: Boolean = false,
     xlib: LibLevel = LibLevel.All,
+    xstdlibProfile: StdlibProfile = StdlibProfile.Jvm,
+    xstdlibProfileExplicit: Boolean = false,
+    targets: List[CompilationTarget] = Nil,
     xprintphases: Boolean = false,
     xsummary: Boolean = false,
     xsubeffecting: Set[Subeffecting] = Set.empty,
@@ -507,6 +701,12 @@ object Main {
     case object BuildPkg extends Command
 
     case object Clean extends Command
+
+    case object Doctor extends Command
+
+    case object BindNative extends Command
+
+    case object BindWasmEffects extends Command
 
     case object Doc extends Command
 
@@ -566,6 +766,40 @@ object Main {
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are comma-separated combinations of 'mod-defs', 'ins-defs', and 'lambdas'.")
     }
 
+    implicit val readStdlibProfile: scopt.Read[StdlibProfile] = scopt.Read.reads {
+      case "jvm" => StdlibProfile.Jvm
+      case "portable" => StdlibProfile.Portable
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid stdlib profile. Valid options are 'jvm' and 'portable'.")
+    }
+
+    implicit val readCompilationTarget: scopt.Read[CompilationTarget] = scopt.Read.reads {
+      case "jvm" => CompilationTarget.Jvm
+      case "native" => CompilationTarget.LlvmNative
+      case "wasm" => CompilationTarget.LlvmWasm
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid compilation target. Valid options are 'jvm', 'native', and 'wasm'.")
+    }
+
+    implicit val readEmitKind: scopt.Read[EmitKind] = scopt.Read.reads {
+      case "classes" => EmitKind.Classes
+      case "jar" => EmitKind.Jar
+      case "fatjar" => EmitKind.FatJar
+      case "exe" => EmitKind.Exe
+      case "staticlib" => EmitKind.StaticLib
+      case "sharedlib" => EmitKind.SharedLib
+      case "component" => EmitKind.Component
+      case "js" => EmitKind.Js
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid build emit kind. Valid options are 'classes', 'jar', 'fatjar', 'exe', 'staticlib', 'sharedlib', 'component', and 'js'.")
+    }
+
+    implicit val readRunnerKind: scopt.Read[RunnerKind] = scopt.Read.reads {
+      case "jvm" => RunnerKind.Jvm
+      case "native" => RunnerKind.Native
+      case "node" => RunnerKind.Node
+      case "browser" => RunnerKind.Browser
+      case "wasmtime" => RunnerKind.Wasmtime
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid runner. Valid options are 'jvm', 'native', 'node', 'browser', and 'wasmtime'.")
+    }
+
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
 
       // Head
@@ -578,13 +812,25 @@ object Main {
 
       cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  builds (i.e. compiles) the current project.")
 
-      cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
+      cmd("build-jar").hidden().action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
 
-      cmd("build-fatjar").action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
+      cmd("build-fatjar").hidden().action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
 
-      cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
+      cmd("package").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
+
+      cmd("build-pkg").hidden().action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
       cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
+
+      cmd("doctor").action((_, c) => c.copy(command = Command.Doctor)).text("  checks toolchains and target configuration.")
+
+      cmd("bind").text("  generates source bindings from external interface definitions.")
+        .children(
+          cmd("native").action((_, c) => c.copy(command = Command.BindNative))
+            .text("  generates Flix native bindings from a curated C header."),
+          cmd("wasm-effects").action((_, c) => c.copy(command = Command.BindWasmEffects))
+            .text("  generates Flix async effect bindings from a WIT world.")
+        )
 
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
 
@@ -645,6 +891,36 @@ object Main {
       opt[String]("github-token").action((s, c) => c.copy(githubToken = Some(s))).
         text("API key to use for GitHub dependency resolution.")
 
+      opt[String]("wit").action((s, c) => c.copy(bindWit = Some(Paths.get(s)))).
+        text("WIT package directory for binding generation.")
+
+      opt[String]("header").action((s, c) => c.copy(bindHeader = Some(Paths.get(s)))).
+        text("curated C header for native binding generation.")
+
+      opt[String]("spec").action((s, c) => c.copy(bindSpec = Some(Paths.get(s)))).
+        text("sidecar TOML spec for native binding generation semantics.")
+
+      opt[String]("world").action((s, c) => c.copy(bindWorld = Some(s))).
+        text("WIT world name for binding generation.")
+
+      opt[String]("out").action((s, c) => c.copy(bindOut = Some(Paths.get(s)))).
+        text("output directory for generated bindings.")
+
+      opt[String]("root-module").action((s, c) => c.copy(bindRootModule = s)).
+        text("root Flix module for generated WIT effect bindings.")
+
+      opt[String]("native-module").action((s, c) => c.copy(bindNativeModule = s)).
+        text("root Flix module for generated native bindings.")
+
+      opt[String]("include").unbounded().action((s, c) => c.copy(bindIncludePaths = c.bindIncludePaths :+ Paths.get(s))).
+        text("additional C include path for native binding generation.")
+
+      opt[String]("define").unbounded().action((s, c) => c.copy(bindDefines = c.bindDefines :+ s)).
+        text("preprocessor definition for native binding generation.")
+
+      opt[String]("cflag").unbounded().action((s, c) => c.copy(bindCFlags = c.bindCFlags :+ s)).
+        text("additional C compiler flag for native binding generation.")
+
       help("help").text("prints this usage information.")
 
       opt[Unit]("json").action((_, c) => c.copy(json = true)).
@@ -666,6 +942,24 @@ object Main {
       version("version").text("prints the version number.")
 
       // Experimental options:
+      opt[CompilationTarget]("target").unbounded().action((arg, c) => c.copy(targets = c.targets :+ arg)).
+        text("selects compilation target (jvm, native, wasm). Repeat for multi-target check/build.")
+
+      opt[EmitKind]("emit").unbounded().action((arg, c) => c.copy(emits = c.emits :+ arg)).
+        text("selects artifact kind for build (classes, jar, fatjar, exe, staticlib, sharedlib, component, js).")
+
+      opt[RunnerKind]("runner").action((arg, c) => c.copy(runner = Some(arg))).
+        text("selects runtime runner (jvm, native, node, browser, wasmtime).")
+
+      opt[Unit]("jvm").action((_, c) => c.copy(targets = c.targets :+ CompilationTarget.Jvm)).
+        text("alias for --target jvm.")
+
+      opt[Unit]("native").action((_, c) => c.copy(targets = c.targets :+ CompilationTarget.LlvmNative)).
+        text("alias for --target native.")
+
+      opt[Unit]("wasm").action((_, c) => c.copy(targets = c.targets :+ CompilationTarget.LlvmWasm)).
+        text("alias for --target wasm.")
+
       note("")
       note("The following options are experimental:")
 
@@ -692,6 +986,14 @@ object Main {
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
+
+      // Xstdlib-profile
+      opt[StdlibProfile]("Xstdlib-profile").hidden().action((arg, c) => c.copy(xstdlibProfile = arg, xstdlibProfileExplicit = true)).
+        text("[experimental] selects stdlib profile (jvm, portable). Default: jvm on JVM target, portable on LLVM targets.")
+
+      // Xtarget
+      opt[CompilationTarget]("Xtarget").hidden().action((arg, c) => c.copy(targets = c.targets :+ arg)).
+        text("[experimental] selects compilation target (jvm, native, wasm).")
 
       // Xno-deprecated
       opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
@@ -757,6 +1059,624 @@ object Main {
       case Result.Err(error) =>
         println(error.message(formatter))
         System.exit(1)
+    }
+  }
+
+  private[flix] case class ToolRequirement(name: String, probe: List[String])
+
+  private def requestedTargets(cmdOpts: CmdOpts): List[CompilationTarget] =
+    cmdOpts.targets.distinct
+
+  private[flix] def effectiveStdlibProfile(cmdOpts: CmdOpts, target: CompilationTarget): StdlibProfile =
+    if (cmdOpts.xstdlibProfileExplicit) cmdOpts.xstdlibProfile
+    else defaultStdlibProfile(target)
+
+  private[flix] def defaultStdlibProfile(target: CompilationTarget): StdlibProfile = target match {
+    case CompilationTarget.Jvm => StdlibProfile.Jvm
+    case CompilationTarget.LlvmNative | CompilationTarget.LlvmWasm => StdlibProfile.Portable
+  }
+
+  private def optionsForTarget(baseOptions: Options, cmdOpts: CmdOpts, target: CompilationTarget): Options =
+    baseOptions.copy(target = target, stdlibProfile = effectiveStdlibProfile(cmdOpts, target))
+
+  private def singleResolvedCliTarget(command: Command, cmdOpts: CmdOpts): Option[CompilationTarget] = {
+    requestedTargets(cmdOpts) match {
+      case Nil => Some(CompilationTarget.Jvm)
+      case target :: Nil => Some(target)
+      case targets =>
+        println(s"Command '${formatCommand(command)}' accepts exactly one target, but got: ${targets.map(formatTarget).mkString(", ")}")
+        None
+    }
+  }
+
+  private def resolveProjectTargets(command: Command,
+                                    cmdOpts: CmdOpts,
+                                    bootstrap: Bootstrap): Result[List[CompilationTarget], BootstrapError] = {
+    val requested = requestedTargets(cmdOpts)
+
+    command match {
+      case Command.Check | Command.Build =>
+        val targets = if (requested.nonEmpty) requested else bootstrap.buildTargets
+        Result.Ok(targets)
+
+      case Command.Run =>
+        requested match {
+          case Nil =>
+            bootstrap.runTarget
+              .orElse(bootstrap.buildTargets match {
+                case target :: Nil => Some(target)
+                case _ => None
+              })
+              .map(Result.Ok(_))
+              .getOrElse(Result.Err(BootstrapError.GeneralError("No default run target configured. Add a [run] target to flix.toml or pass --target.")))
+              .map(List(_))
+          case target :: Nil => Result.Ok(List(target))
+          case targets => Result.Err(BootstrapError.GeneralError(s"Command 'run' accepts exactly one target, but got: ${targets.map(formatTarget).mkString(", ")}"))
+        }
+
+      case Command.Test =>
+        requested match {
+          case Nil => Result.Ok(List(bootstrap.testTarget.getOrElse(CompilationTarget.Jvm)))
+          case target :: Nil => Result.Ok(List(target))
+          case targets => Result.Err(BootstrapError.GeneralError(s"Command 'test' accepts exactly one target, but got: ${targets.map(formatTarget).mkString(", ")}"))
+        }
+
+      case _ => Result.Ok(List(CompilationTarget.Jvm))
+    }
+  }
+
+  private def resolveSingleProjectTarget(command: Command,
+                                         cmdOpts: CmdOpts,
+                                         bootstrap: Bootstrap): Result[CompilationTarget, BootstrapError] =
+    resolveProjectTargets(command, cmdOpts, bootstrap).flatMap {
+      case target :: Nil => Result.Ok(target)
+      case Nil => Result.Err(BootstrapError.GeneralError(s"No target resolved for command '${formatCommand(command)}'."))
+      case targets => Result.Err(BootstrapError.GeneralError(s"Command '${formatCommand(command)}' accepts exactly one target, but got: ${targets.map(formatTarget).mkString(", ")}"))
+    }
+
+  private def defaultRunner(target: CompilationTarget): RunnerKind = target match {
+    case CompilationTarget.Jvm => RunnerKind.Jvm
+    case CompilationTarget.LlvmNative => RunnerKind.Native
+    case CompilationTarget.LlvmWasm => RunnerKind.Node
+  }
+
+  private val allRunners: List[RunnerKind] =
+    List(RunnerKind.Jvm, RunnerKind.Native, RunnerKind.Node, RunnerKind.Browser, RunnerKind.Wasmtime)
+
+  private def resolveRunner(command: Command,
+                            target: CompilationTarget,
+                            cmdOpts: CmdOpts,
+                            bootstrap: Bootstrap): Result[RunnerKind, BootstrapError] = {
+    val runner = cmdOpts.runner
+      .orElse(command match {
+        case Command.Run => bootstrap.runRunner
+        case Command.Test => bootstrap.testRunner
+        case _ => None
+      })
+      .getOrElse(defaultRunner(target))
+
+    if (isRunnerSupported(command, target, runner)) Result.Ok(runner)
+    else Result.Err(BootstrapError.GeneralError(s"Runner '${formatRunner(runner)}' is not supported for command '${formatCommand(command)}' on target '${formatTarget(target)}'."))
+  }
+
+  private def runDoctor(cwd: Path,
+                        cmdOpts: CmdOpts,
+                        baseOptions: Options)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+    val manifestPath = cwd.resolve("flix.toml").normalize()
+    val manifestOptResult =
+      if (Files.exists(manifestPath)) {
+        ca.uwaterloo.flix.tools.pkg.ManifestParser.parse(manifestPath) match {
+          case Result.Ok(m) => Result.Ok(Some(m))
+          case Result.Err(e) => Result.Err(BootstrapError.ManifestParseError(e))
+        }
+      } else {
+        Result.Ok(None)
+      }
+
+    manifestOptResult.map { manifestOpt =>
+      val requested = requestedTargets(cmdOpts)
+      val targets =
+        if (requested.nonEmpty) requested
+        else manifestOpt match {
+          case Some(m) =>
+            (m.buildConfig.targets ::: m.runConfig.target.toList ::: m.testConfig.target.toList).distinct
+          case None =>
+            List(CompilationTarget.Jvm, CompilationTarget.LlvmNative, CompilationTarget.LlvmWasm)
+        }
+
+      val lines = scala.collection.mutable.ListBuffer.empty[String]
+      lines += s"Flix doctor for ${cwd.toAbsolutePath.normalize()}"
+      lines += s"Manifest: ${if (manifestOpt.isDefined) "found" else "not found"}"
+      lines += s"Artifact base name: ${manifestOpt.map(_.name).getOrElse(baseOptions.artifactName)}"
+
+      manifestOpt.foreach { m =>
+        lines += s"Build targets: ${m.buildConfig.targets.map(formatTarget).mkString(", ")}"
+        lines += s"Run default: ${m.runConfig.target.map(formatTarget).getOrElse("<none>")} / ${m.runConfig.runner.map(formatRunner).getOrElse("<default>")}"
+        lines += s"Test default: ${m.testConfig.target.map(formatTarget).getOrElse("<none>")} / ${m.testConfig.runner.map(formatRunner).getOrElse("<default>")}"
+      }
+
+      for (target <- targets) {
+        val targetOptions = optionsForTarget(baseOptions, cmdOpts, target)
+        val buildEmits = manifestOpt.flatMap(_.targetConfigs.emitFor(target)).getOrElse(defaultEmits(target))
+        lines += ""
+        lines += s"Target ${formatTarget(target)}"
+        lines += s"  stdlib: ${formatStdlibProfile(targetOptions.stdlibProfile)}"
+        lines += s"  default emits: ${formatDefaultEmits(target, buildEmits)}"
+
+        val buildTools = doctorToolStatuses(Command.Build, targetOptions, runner = None)
+        if (buildTools.nonEmpty) {
+          lines += "  build tools:"
+          buildTools.foreach(t => lines += s"    ${t.name}: ${if (t.ok) "ok" else "missing"}")
+        }
+
+        val supportedRunners = allRunners.filter(r => isRunnerSupported(Command.Run, target, r))
+        if (supportedRunners.nonEmpty) {
+          lines += "  run runners:"
+          supportedRunners.foreach { runner =>
+            val statuses = doctorToolStatuses(Command.Run, targetOptions, runner = Some(runner))
+            val toolText =
+              if (statuses.isEmpty) "n/a"
+              else statuses.map(t => s"${t.name}=${if (t.ok) "ok" else "missing"}").mkString(", ")
+            lines += s"    ${formatRunner(runner)}: $toolText"
+          }
+        }
+
+        val testRunners = allRunners.filter(r => isRunnerSupported(Command.Test, target, r))
+        if (testRunners.nonEmpty) {
+          lines += "  test runners:"
+          testRunners.foreach { runner =>
+            val statuses = doctorToolStatuses(Command.Test, targetOptions, runner = Some(runner))
+            val toolText =
+              if (statuses.isEmpty) "n/a"
+              else statuses.map(t => s"${t.name}=${if (t.ok) "ok" else "missing"}").mkString(", ")
+            lines += s"    ${formatRunner(runner)}: $toolText"
+          }
+        }
+      }
+
+      println(lines.mkString(System.lineSeparator()))
+    }
+  }
+
+  private case class DoctorToolStatus(name: String, ok: Boolean)
+
+  private def doctorToolStatuses(command: Command,
+                                 options: Options,
+                                 runner: Option[RunnerKind]): List[DoctorToolStatus] = {
+    val required = requiredTools(command, options, runner).map(t => DoctorToolStatus(t.name, hasCmd(t.probe)))
+    (options.target, runner) match {
+      case (CompilationTarget.LlvmWasm, Some(RunnerKind.Browser)) =>
+        required :+ DoctorToolStatus("chrome", BrowserRunSupport.findChromeBinary().nonEmpty)
+      case _ => required
+    }
+  }
+
+  private def isRunnerSupported(command: Command, target: CompilationTarget, runner: RunnerKind): Boolean = (command, target, runner) match {
+    case (_, CompilationTarget.Jvm, RunnerKind.Jvm) => true
+    case (_, CompilationTarget.LlvmNative, RunnerKind.Native) => true
+    case (Command.Run, CompilationTarget.LlvmWasm, RunnerKind.Node) => true
+    case (Command.Run, CompilationTarget.LlvmWasm, RunnerKind.Browser) => true
+    case (Command.Run, CompilationTarget.LlvmWasm, RunnerKind.Wasmtime) => true
+    case (Command.Test, CompilationTarget.LlvmWasm, RunnerKind.Node) => true
+    case (Command.Test, CompilationTarget.LlvmWasm, RunnerKind.Browser) => true
+    case (Command.Test, CompilationTarget.LlvmWasm, RunnerKind.Wasmtime) => true
+    case _ => false
+  }
+
+  private def runFileTests(flix: Flix,
+                           target: CompilationTarget,
+                           runner: RunnerKind)(implicit formatter: Formatter): Unit = target match {
+    case CompilationTarget.Jvm =>
+      flix.compile() match {
+        case Validation.Success(compilationResult) =>
+          Tester.run(Nil, compilationResult)(flix) match {
+            case Result.Ok(_) => System.exit(0)
+            case Result.Err(_) => System.exit(1)
+          }
+        case Validation.Failure(errors) => exitWithErrors(flix, errors.toList, None)
+      }
+
+    case CompilationTarget.LlvmNative | CompilationTarget.LlvmWasm =>
+      implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+      val rootDir = Paths.get(".").toAbsolutePath.normalize()
+      val driverPath = flix.options.outputPath.resolve("__FlixFileTestDriver.flix").normalize()
+      flix.setOptions(flix.options.copy(entryPoint = None))
+
+      flix.check() match {
+        case (Some(root), Nil) =>
+          flix.remVirtualPath(driverPath)
+          flix.addVirtualPath(driverPath, ProjectTestDriver.mkDriverSource(ProjectTestDriver.collectProjectTests(root))(flix))
+          flix.setOptions(flix.options.copy(entryPoint = Some(ProjectTestDriver.EntryPointSym)))
+          flix.compile() match {
+            case Validation.Success(compilationResult) =>
+              val result = target match {
+                case CompilationTarget.LlvmWasm if runner == RunnerKind.Wasmtime =>
+                  WasmRunSupport.runWasmtime(flix.options, rootDir, Array.empty) match {
+                    case Right(_) => Result.Ok(())
+                    case Left(msg) => Result.Err(BootstrapError.GeneralError(msg))
+                  }
+                case CompilationTarget.LlvmWasm if runner == RunnerKind.Browser =>
+                  BrowserRunSupport.runBrowser(flix.options, rootDir, Array.empty, headless = true) match {
+                    case Right(_) => Result.Ok(())
+                    case Left(msg) => Result.Err(BootstrapError.GeneralError(msg))
+                  }
+                case _ =>
+                  compilationResult.getMain match {
+                    case Some(main) =>
+                      try {
+                        main(Array.empty)
+                        Result.Ok(())
+                      } catch {
+                        case ex: Throwable =>
+                          Result.Err(BootstrapError.GeneralError(Option(ex.getMessage).getOrElse(ex.toString)))
+                      }
+                    case None =>
+                      Result.Err(BootstrapError.GeneralError("Generated test driver has no main entry point."))
+                  }
+              }
+              exitOnResult(result)
+            case Validation.Failure(errors) =>
+              exitWithErrors(flix, errors.toList, None)
+          }
+
+        case (optRoot, errors) =>
+          exitWithErrors(flix, errors, optRoot)
+      }
+  }
+
+  private def runCheckForTargets(targets: List[CompilationTarget],
+                                 baseOptions: Options,
+                                 cmdOpts: CmdOpts,
+                                 bootstrap: Bootstrap)(implicit formatter: Formatter): Result[Unit, BootstrapError] =
+    targets.foldLeft(Result.Ok(()): Result[Unit, BootstrapError]) {
+      case (acc, target) =>
+        acc.flatMap { _ =>
+          val targetOptions = optionsForTarget(baseOptions, cmdOpts, target)
+          validateCommandPreflight(cmdOpts, targetOptions)
+            .map(msg => Result.Err[Unit, BootstrapError](BootstrapError.GeneralError(msg)))
+            .getOrElse {
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(targetOptions)
+              bootstrap.check(flix)
+            }
+        }
+    }
+
+  private def runFileCheckForTargets(cmdOpts: CmdOpts,
+                                     baseOptions: Options)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+    val targets = requestedTargets(cmdOpts) match {
+      case Nil => List(CompilationTarget.Jvm)
+      case ts => ts
+    }
+
+    targets.foldLeft(Result.Ok(()): Result[Unit, BootstrapError]) {
+      case (acc, target) =>
+        acc.flatMap { _ =>
+          val targetOptions = optionsForTarget(baseOptions, cmdOpts, target)
+          validateCommandPreflight(cmdOpts, targetOptions)
+            .map(msg => Result.Err[Unit, BootstrapError](BootstrapError.GeneralError(msg)))
+            .getOrElse {
+              val flix = mkFlixWithFiles(cmdOpts.files, targetOptions)
+              val (optRoot, errors) = flix.check()
+              if (errors.isEmpty) Result.Ok(())
+              else Result.Err(BootstrapError.GeneralError(CompilationMessage.formatAll(errors)(flix.getFormatter, optRoot)))
+            }
+        }
+    }
+  }
+
+  private def runBuildForTargets(cwd: Path,
+                                 targets: List[CompilationTarget],
+                                 baseOptions: Options,
+                                 cmdOpts: CmdOpts,
+                                 bootstrap: Bootstrap)(implicit formatter: Formatter): Result[Unit, BootstrapError] =
+    validateBuildCliEmits(targets, cmdOpts.emits) match {
+      case Some(message) => Result.Err(BootstrapError.GeneralError(message))
+      case None =>
+        targets.foldLeft(Result.Ok(()): Result[Unit, BootstrapError]) {
+          case (acc, target) =>
+            acc.flatMap { _ =>
+              val targetOptions = optionsForTarget(baseOptions.copy(loadClassFiles = false), cmdOpts, target)
+              val emits = resolveBuildEmits(target, cmdOpts, bootstrap)
+              validateCommandPreflight(cmdOpts, targetOptions)
+                .map(msg => Result.Err[Unit, BootstrapError](BootstrapError.GeneralError(msg)))
+                .orElse(validateBuildEmits(target, emits).map(msg => Result.Err[Unit, BootstrapError](BootstrapError.GeneralError(msg))))
+                .getOrElse(runBuildForTargetAndEmits(cwd, target, targetOptions, emits, bootstrap))
+            }
+        }
+    }
+
+  private def runBuildForTargetAndEmits(cwd: Path,
+                                        target: CompilationTarget,
+                                        options: Options,
+                                        emits: List[EmitKind],
+                                        bootstrap: Bootstrap)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+    val flix = new Flix().setFormatter(formatter)
+    val requestedEmits = emits.distinct
+    flix.setOptions(options.copy(emits = requestedEmits.toSet))
+
+    (target, requestedEmits) match {
+      case (CompilationTarget.Jvm, emits0) =>
+        emits0.foldLeft(Result.Ok(()): Result[Unit, BootstrapError]) {
+          case (acc, EmitKind.Classes) => acc.flatMap(_ => bootstrap.build(flix).map(_ => ()))
+          case (acc, EmitKind.Jar) => acc.flatMap(_ => bootstrap.buildJar(flix))
+          case (acc, EmitKind.FatJar) => acc.flatMap(_ => bootstrap.buildFatJar(flix))
+          case (_, emit) => Result.Err(BootstrapError.GeneralError(s"Emit '${formatEmit(emit)}' is not supported for target '${formatTarget(target)}'."))
+        }
+
+      case (CompilationTarget.LlvmNative, _) =>
+        bootstrap.build(flix).map { _ =>
+          formatBuildArtifactsSummary(cwd, flix.options).foreach(println)
+        }
+
+      case (CompilationTarget.LlvmWasm, _) =>
+        bootstrap.build(flix).map { _ =>
+          formatBuildArtifactsSummary(cwd, flix.options).foreach(println)
+        }
+    }
+  }
+
+  private def defaultEmits(target: CompilationTarget): List[EmitKind] = target match {
+    case CompilationTarget.Jvm => List(EmitKind.Classes)
+    case CompilationTarget.LlvmNative => Nil
+    case CompilationTarget.LlvmWasm => List(EmitKind.Component, EmitKind.Js)
+  }
+
+  private def formatDefaultEmits(target: CompilationTarget, emits: List[EmitKind]): String =
+    if (emits.nonEmpty) emits.map(formatEmit).mkString(", ")
+    else target match {
+      case CompilationTarget.LlvmNative => "auto (exe if main, staticlib/sharedlib if exports)"
+      case _ => "<none>"
+    }
+
+  private def resolveBuildEmits(target: CompilationTarget, cmdOpts: CmdOpts, bootstrap: Bootstrap): List[EmitKind] =
+    if (cmdOpts.emits.nonEmpty) cmdOpts.emits.distinct
+    else bootstrap.buildEmits(target).getOrElse(defaultEmits(target))
+
+  private def validateBuildCliEmits(targets: List[CompilationTarget], emits: List[EmitKind]): Option[String] = {
+    if (emits.isEmpty) None
+    else if (targets.size != 1) {
+      Some("Explicit --emit values currently require exactly one build target.")
+    } else validateBuildEmits(targets.head, emits)
+  }
+
+  private def validateBuildEmits(target: CompilationTarget, emits: List[EmitKind]): Option[String] = {
+    val invalid = emits.filterNot {
+      case EmitKind.Classes | EmitKind.Jar | EmitKind.FatJar => target == CompilationTarget.Jvm
+      case EmitKind.Exe | EmitKind.StaticLib | EmitKind.SharedLib => target == CompilationTarget.LlvmNative
+      case EmitKind.Component | EmitKind.Js => target == CompilationTarget.LlvmWasm
+    }
+
+    invalid.headOption.map(emit => s"Emit '${formatEmit(emit)}' is not supported for target '${formatTarget(target)}'.")
+  }
+
+  private[flix] def validateCommandPreflight(cmdOpts: CmdOpts,
+                                             options: Options,
+                                             runner: Option[RunnerKind] = None,
+                                             hasCmd: List[String] => Boolean = Main.hasCmd,
+                                             hasUsableZig: => Boolean = ca.uwaterloo.flix.util.ZigToolchain.hasUsableCommand): Option[String] = {
+    val effectiveCommand = cmdOpts.command match {
+      case Command.None if cmdOpts.files.nonEmpty => Command.Run
+      case other => other
+    }
+
+    if (!shouldValidatePreflight(effectiveCommand)) {
+      None
+    } else {
+      validateTargetProfile(cmdOpts, options)
+        .orElse(validateCommandSupport(effectiveCommand, options))
+        .orElse(validateRequiredTools(effectiveCommand, options, runner, hasCmd, hasUsableZig))
+        .orElse(validateBrowserRunner(options, runner))
+    }
+  }
+
+  private def validateBrowserRunner(options: Options, runner: Option[RunnerKind]): Option[String] = (options.target, runner) match {
+    case (CompilationTarget.LlvmWasm, Some(RunnerKind.Browser)) if BrowserRunSupport.findChromeBinary().isEmpty =>
+      Some(
+        s"""Missing required browser for target '${formatTarget(options.target)}': Chrome/Chromium
+           |
+           |Set:
+           |  FLIX_CHROME=/path/to/chrome
+           |or install `google-chrome` / `chromium`.
+           |""".stripMargin
+      )
+    case _ => None
+  }
+
+  private[flix] def validateTargetProfile(cmdOpts: CmdOpts, options: Options): Option[String] = options.target match {
+    case CompilationTarget.Jvm => None
+    case CompilationTarget.LlvmNative | CompilationTarget.LlvmWasm if options.stdlibProfile != StdlibProfile.Portable =>
+      Some(
+        s"""Target '${formatTarget(options.target)}' uses the portable standard library profile.
+           |
+           |The explicit profile '${formatStdlibProfile(cmdOpts.xstdlibProfile)}' is not supported with this target.
+           |
+           |Re-run with:
+           |  --target ${formatTarget(options.target)}
+           |""".stripMargin
+      )
+    case _ => None
+  }
+
+  private[flix] def validateCommandSupport(command: Command, options: Options): Option[String] = (command, options.target) match {
+    case (Command.BuildJar | Command.BuildFatJar, CompilationTarget.LlvmNative | CompilationTarget.LlvmWasm) =>
+      Some(
+        s"""Command '${formatCommand(command)}' is JVM-only.
+           |
+           |Use:
+           |  build --target ${formatTarget(options.target)}
+           |to produce LLVM artifacts instead.
+           |""".stripMargin
+      )
+    case _ => None
+  }
+
+  private[flix] def validateRequiredTools(command: Command,
+                                          options: Options,
+                                          runner: Option[RunnerKind],
+                                          hasCmd: List[String] => Boolean,
+                                          hasUsableZig: => Boolean): Option[String] = {
+    def toolAvailable(t: ToolRequirement): Boolean =
+      if (t.name == "zig") hasUsableZig
+      else hasCmd(t.probe)
+
+    val missing = requiredTools(command, options, runner).filterNot(toolAvailable)
+    if (missing.isEmpty) None
+    else {
+      val tools = missing.map(_.name).mkString(", ")
+      val invocation = invocationHint(command, options)
+      Some(
+        s"""Missing required tool${if (missing.length == 1) "" else "s"} for target '${formatTarget(options.target)}': $tools
+           |
+           |Command:
+           |  $invocation
+           |""".stripMargin
+      )
+    }
+  }
+
+  private def requiredTools(command: Command, options: Options, runner: Option[RunnerKind]): List[ToolRequirement] = (command, options.target, runner) match {
+    case (Command.Build | Command.Run | Command.Test, CompilationTarget.LlvmNative, _) =>
+      List(ToolRequirement("zig", Nil))
+    case (Command.Build, CompilationTarget.LlvmWasm, _) =>
+      List(
+        ToolRequirement("zig", Nil),
+        ToolRequirement("wasm-tools", List("wasm-tools", "--version")),
+        ToolRequirement("jco", List("jco", "--version"))
+      )
+    case (Command.Run | Command.Test, CompilationTarget.LlvmWasm, Some(RunnerKind.Wasmtime)) =>
+      List(
+        ToolRequirement("zig", Nil),
+        ToolRequirement("wasm-tools", List("wasm-tools", "--version")),
+        ToolRequirement("jco", List("jco", "--version")),
+        ToolRequirement("cargo +stable", List("cargo", "+stable", "--version"))
+      )
+    case (Command.Run | Command.Test, CompilationTarget.LlvmWasm, _) =>
+      List(
+        ToolRequirement("zig", Nil),
+        ToolRequirement("wasm-tools", List("wasm-tools", "--version")),
+        ToolRequirement("jco", List("jco", "--version")),
+        ToolRequirement("node", List("node", "--version"))
+      )
+    case _ => Nil
+  }
+
+  private def shouldValidatePreflight(command: Command): Boolean = command match {
+    case Command.Check | Command.Build | Command.BuildJar | Command.BuildFatJar | Command.Run | Command.Test => true
+    case _ => false
+  }
+
+  private def invocationHint(command: Command, options: Options): String = {
+    val parts = List(formatCommand(command), "--target", formatTarget(options.target))
+    parts.mkString(" ")
+  }
+
+  private def formatCommand(command: Command): String = command match {
+    case Command.None => "<files>"
+    case Command.Init => "init"
+    case Command.Check => "check"
+    case Command.Build => "build"
+    case Command.BuildJar => "build-jar"
+    case Command.BuildFatJar => "build-fatjar"
+    case Command.BuildPkg => "package"
+    case Command.Clean => "clean"
+    case Command.Doctor => "doctor"
+    case Command.BindNative => "bind native"
+    case Command.BindWasmEffects => "bind wasm-effects"
+    case Command.Doc => "doc"
+    case Command.Format => "format"
+    case Command.Run => "run"
+    case Command.Test => "test"
+    case Command.Repl => "repl"
+    case Command.PlainLsp => "lsp"
+    case Command.VSCodeLsp(_) => "lsp-vscode"
+    case Command.Release => "release"
+    case Command.Outdated => "outdated"
+    case Command.EffCheck => "eff-check"
+    case Command.EffLock => "eff-lock"
+    case Command.CompilerPerf => "Xperf"
+    case Command.CompilerMemory => "Xmemory"
+    case Command.Zhegalkin => "Xzhegalkin"
+  }
+
+  private def formatTarget(target: CompilationTarget): String = target match {
+    case CompilationTarget.Jvm => "jvm"
+    case CompilationTarget.LlvmNative => "native"
+    case CompilationTarget.LlvmWasm => "wasm"
+  }
+
+  private def formatStdlibProfile(profile: StdlibProfile): String = profile match {
+    case StdlibProfile.Jvm => "jvm"
+    case StdlibProfile.Portable => "portable"
+  }
+
+  private def formatEmit(emit: EmitKind): String = emit match {
+    case EmitKind.Classes => "classes"
+    case EmitKind.Jar => "jar"
+    case EmitKind.FatJar => "fatjar"
+    case EmitKind.Exe => "exe"
+    case EmitKind.StaticLib => "staticlib"
+    case EmitKind.SharedLib => "sharedlib"
+    case EmitKind.Component => "component"
+    case EmitKind.Js => "js"
+  }
+
+  private def formatRunner(runner: RunnerKind): String = runner match {
+    case RunnerKind.Jvm => "jvm"
+    case RunnerKind.Native => "native"
+    case RunnerKind.Node => "node"
+    case RunnerKind.Browser => "browser"
+    case RunnerKind.Wasmtime => "wasmtime"
+  }
+
+  private def hasCmd(cmd: List[String]): Boolean = {
+    try {
+      val p = new ProcessBuilder(cmd: _*).redirectErrorStream(true).start()
+      p.waitFor(2, TimeUnit.SECONDS) && p.exitValue() == 0
+    } catch {
+      case _: IOException => false
+      case _: InterruptedException => false
+    }
+  }
+
+  private def formatBuildArtifactsSummary(cwd: Path, options: Options): Option[String] = {
+    val buildDir = Bootstrap.getBuildTargetDirectory(cwd, options.target).toAbsolutePath.normalize()
+    val llvmDir = buildDir.resolve("llvm")
+
+    options.target match {
+      case CompilationTarget.Jvm => None
+      case CompilationTarget.LlvmNative =>
+        val paths = List(
+          ca.uwaterloo.flix.language.phase.llvm.LlvmExportSdkWriter.nativeSdkDir(options.outputPath),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmExportSdkWriter.nativeManifestPath(options.outputPath),
+          llvmDir.resolve("module.ll"),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmNativeDriver.executablePath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmNativeDriver.staticLibraryPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmExportWriter.exportsHeaderPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmNativeDriver.sharedLibraryPath(options.outputPath, options.artifactName)
+        ).filter(Files.exists(_))
+
+        Some((s"Built ${formatTarget(options.target)} artifacts:" :: paths.map(p => s"  $p")).mkString(System.lineSeparator()))
+
+      case CompilationTarget.LlvmWasm =>
+        val paths = List(
+          ca.uwaterloo.flix.language.phase.llvm.LlvmExportSdkWriter.wasmSdkDir(options.outputPath),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmExportSdkWriter.wasmManifestPath(options.outputPath),
+          llvmDir.resolve("module.ll"),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmExportWriter.manifestPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmDriver.coreWasmPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmDriver.componentWasmPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmTypedExportsWriter.typedComponentPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmDriver.componentJsPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmTypedExportsWriter.typedComponentJsPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmTypedExportsWriter.typedComponentTypesPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmBindingWriter.bindingsJsPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmBindingWriter.bindingsTypesPath(options.outputPath, options.artifactName),
+          ca.uwaterloo.flix.language.phase.llvm.LlvmWasmTypedExportsWriter.typedWitDirPath(options.outputPath, options.artifactName),
+          llvmDir.resolve("wasm").resolve("js")
+        ).filter(Files.exists(_))
+
+        Some((s"Built ${formatTarget(options.target)} artifacts:" :: paths.map(p => s"  $p")).mkString(System.lineSeparator()))
     }
   }
 

@@ -368,6 +368,9 @@ object SemanticTokensProvider {
 
     case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
+    case Expr.NativeImport(_, _, _, _) => Iterator.empty
+    case Expr.WasmImport(_, _, _, _) => Iterator.empty
+
     case Expr.OpenAs(RestrictableEnumSymUse(_, loc), exp, _, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, loc)
       Iterator(t) ++ visitExp(exp)
@@ -653,6 +656,40 @@ object SemanticTokensProvider {
 
     case Expr.PutChannel(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
+    case Expr.NewReentrantLock(_, _, _) => Iterator.empty
+
+    case Expr.LockReentrantLock(exp, _, _, _) => visitExp(exp)
+
+    case Expr.TryLockReentrantLock(exp, _, _, _) => visitExp(exp)
+
+    case Expr.UnlockReentrantLock(exp, _, _, _) => visitExp(exp)
+
+    case Expr.NewCondition(exp, _, _, _) => visitExp(exp)
+
+    case Expr.AwaitCondition(exp, _, _, _) => visitExp(exp)
+
+    case Expr.SignalCondition(exp, _, _, _) => visitExp(exp)
+
+    case Expr.SignalAllCondition(exp, _, _, _) => visitExp(exp)
+
+    case Expr.NewCyclicBarrier(exp, _, _, _) => visitExp(exp)
+
+    case Expr.AwaitCyclicBarrier(exp, _, _, _) => visitExp(exp)
+
+    case Expr.NewCountDownLatch(exp, _, _, _) => visitExp(exp)
+
+    case Expr.AwaitCountDownLatch(exp, _, _, _) => visitExp(exp)
+
+    case Expr.CountDownLatchCountDown(exp, _, _, _) => visitExp(exp)
+
+    case Expr.NewSemaphore(exp, _, _, _) => visitExp(exp)
+
+    case Expr.AcquireSemaphore(exp, _, _, _) => visitExp(exp)
+
+    case Expr.TryAcquireSemaphore(exp, _, _, _) => visitExp(exp)
+
+    case Expr.ReleaseSemaphore(exp, _, _, _) => visitExp(exp)
+
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val rs = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, SelectChannelRule(Binder(sym, _), chan, exp, _)) =>
@@ -856,12 +893,14 @@ object SemanticTokensProvider {
     case TypeConstructor.Int16 => true
     case TypeConstructor.Int32 => true
     case TypeConstructor.Int64 => true
-    case TypeConstructor.BigInt => true
-    case TypeConstructor.Str => true
-    case TypeConstructor.Regex => true
-    case TypeConstructor.Sender => true
-    case TypeConstructor.Receiver => true
-    case TypeConstructor.Lazy => true
+	    case TypeConstructor.BigInt => true
+	    case TypeConstructor.Str => true
+	    case TypeConstructor.Regex => true
+	    case TypeConstructor.StringBuilderHandle => true
+	    case TypeConstructor.RegexMatcher => true
+	    case TypeConstructor.Sender => true
+	    case TypeConstructor.Receiver => true
+	    case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Struct(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
@@ -911,6 +950,12 @@ object SemanticTokensProvider {
     case TypeConstructor.ArrowWithoutEffect(_) => false
     case TypeConstructor.ArrayWithoutRegion => false
     case TypeConstructor.RegionWithoutRegion => false
+    case TypeConstructor.ChannelHandle => false
+    case TypeConstructor.ReentrantLockHandle => false
+    case TypeConstructor.ConditionHandle => false
+    case TypeConstructor.CyclicBarrierHandle => false
+    case TypeConstructor.CountDownLatchHandle => false
+    case TypeConstructor.SemaphoreHandle => false
   }
 
   /**

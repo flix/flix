@@ -21,7 +21,8 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, JvmLoader, JvmWriter}
+import ca.uwaterloo.flix.language.phase.llvm.{LlvmBackend, LlvmExportSdkWriter, LlvmExportWriter, LlvmNativeDriver, LlvmWasmBindingWriter, LlvmWasmDriver, LlvmWasmEffectManifestWriter, LlvmWasmExportWriter, LlvmWasmImportsWriter, LlvmWasmTypedExportsWriter, LlvmWriter}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, JvmLoader, JvmLowerer, JvmWriter}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
@@ -34,11 +35,12 @@ import ca.uwaterloo.flix.util.tc.Debug
 
 import java.net.URI
 import java.nio.charset.Charset
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.ForkJoinPool
 import java.util.zip.ZipFile
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters.*
 import scala.language.implicitConversions
 import scala.util.Using
 
@@ -617,22 +619,147 @@ class Flix {
     var eraserAst = Eraser.run(tailPosAst)
     tailPosAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    var reducerAst = Reducer.run(eraserAst)
+    var loweredAst = Lowerer.run(eraserAst)
     eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    // Generate JVM classes.
-    val bytecodeAst = JvmBackend.run(reducerAst)
-    reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+    val result = flix.options.target match {
+      case CompilationTarget.Jvm =>
+        var jvmAst = JvmLowerer.run(loweredAst)
+        loweredAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    val totalTime = flix.getTotalTime
+        // Generate JVM classes.
+        val bytecodeAst = JvmBackend.run(jvmAst)
+        jvmAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    JvmWriter.run(bytecodeAst)
-    // (Optionally) load generated JVM classes.
-    val loaderResult = JvmLoader.run(bytecodeAst)
+        val totalTime = flix.getTotalTime
 
-    // Construct the compilation result.
-    val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
-    val result = new CompilationResult(loaderResult.main, loaderResult.tests, loaderResult.sources, totalTime, totalSize)
+        JvmWriter.run(bytecodeAst)
+        // (Optionally) load generated JVM classes.
+        val loaderResult = JvmLoader.run(bytecodeAst)
+
+        // Construct the compilation result.
+        val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
+        new CompilationResult(loaderResult.main, loaderResult.tests, loaderResult.sources, totalTime, totalSize)
+
+      case _ =>
+        val hasMain = loweredAst.mainEntryPoint.nonEmpty
+        val hasExports = loweredAst.defs.values.exists(_.ann.isExport)
+        val module = LlvmBackend.run(loweredAst)
+        val requestedEmits = flix.options.emits
+
+        val totalTime = flix.getTotalTime
+        val totalSize = LlvmWriter.run(module)
+
+        val result = flix.options.target match {
+          case CompilationTarget.LlvmNative =>
+            val emitExe = if (requestedEmits.isEmpty) hasMain else requestedEmits.contains(EmitKind.Exe)
+            val emitStaticLib = if (requestedEmits.isEmpty) hasExports else requestedEmits.contains(EmitKind.StaticLib)
+            val emitSharedLib = if (requestedEmits.isEmpty) hasExports else requestedEmits.contains(EmitKind.SharedLib)
+
+            if ((emitStaticLib || emitSharedLib) && !hasExports) {
+              throw new RuntimeException("Requested native library emit, but the program has no @Export definitions.")
+            }
+
+            if (emitExe && !hasMain) {
+              throw new RuntimeException("Requested native executable emit, but the program has no main entry point.")
+            }
+
+            val exportHeader =
+              if (hasExports && (emitExe || emitStaticLib || emitSharedLib)) LlvmExportWriter.run(loweredAst)
+              else None
+
+            val main =
+              if (emitExe) {
+                val artifacts = LlvmNativeDriver.run(LlvmWriter.modulePath(flix.options.outputPath))
+                Some((args: Array[String]) => {
+                  val cmd = (artifacts.executable.toString :: args.toList).asJava
+                  val pb = new ProcessBuilder(cmd)
+                  pb.inheritIO()
+                  val exit = pb.start().waitFor()
+                  if (exit != 0) {
+                    throw new RuntimeException(s"LLVM-native program exited with code: $exit")
+                  }
+                })
+              } else None
+
+            val staticLibrary =
+              if (emitStaticLib) Some(LlvmNativeDriver.buildStaticLibrary(LlvmWriter.modulePath(flix.options.outputPath)).staticLibrary)
+              else None
+
+            val sharedLibrary =
+              if (emitSharedLib) Some(LlvmNativeDriver.buildSharedLibrary(LlvmWriter.modulePath(flix.options.outputPath)).sharedLibrary)
+              else None
+
+            if (hasExports && (staticLibrary.nonEmpty || sharedLibrary.nonEmpty)) {
+              LlvmExportSdkWriter.packageNative(
+                entries = LlvmExportSdkWriter.exportEntries(loweredAst),
+                header = exportHeader.getOrElse(throw new RuntimeException("Missing native export header for export SDK packaging.")),
+                staticLibrary = staticLibrary,
+                sharedLibrary = sharedLibrary,
+                artifactName = flix.options.artifactName,
+                outputPath = flix.options.outputPath
+              )
+            }
+
+            new CompilationResult(main, Map.empty, typedAst.sources, totalTime, totalSize)
+
+          case CompilationTarget.LlvmWasm =>
+            LlvmWasmExportWriter.run(loweredAst)
+            val effectManifest = LlvmWasmEffectManifestWriter.run(loweredAst)
+            val emitJs = requestedEmits.isEmpty || requestedEmits.contains(EmitKind.Js)
+            val typedExports = LlvmWasmTypedExportsWriter.compute(loweredAst)
+            val wasmImports = LlvmWasmImportsWriter.compute(loweredAst)
+            val artifacts = LlvmWasmDriver.run(LlvmWriter.modulePath(flix.options.outputPath), typedExports = typedExports, wasmImports = wasmImports, emitJs = emitJs)
+            if (emitJs && hasExports) {
+              LlvmWasmBindingWriter.run(loweredAst)
+            }
+            if (hasExports) {
+              LlvmExportSdkWriter.packageWasm(
+                entries = LlvmExportSdkWriter.exportEntries(loweredAst),
+                typedEntries = typedExports,
+                wasmImports = wasmImports,
+                effectManifest = effectManifest,
+                typedComponent = artifacts.typedExportComponent.getOrElse(throw new RuntimeException("Missing typed wasm export component for export SDK packaging.")),
+                typedWitDir = artifacts.typedExportWitDir.getOrElse(throw new RuntimeException("Missing typed wasm export WIT directory for export SDK packaging.")),
+                artifactName = flix.options.artifactName,
+                outputPath = flix.options.outputPath,
+                emitJs = emitJs
+              )
+            }
+            val main =
+              if (hasMain) {
+                Some((args: Array[String]) => {
+                  val rootDir = Paths.get(".").toAbsolutePath.normalize()
+                  val cmd =
+                    List(
+                      "node",
+                      artifacts.nodeRunner.toString,
+                      "--js",
+                      artifacts.componentJs.toString,
+                      "--exports",
+                      artifacts.exportsManifest.toString,
+                      "--rootDir",
+                      rootDir.toString
+                    ) ::: args.toList.flatMap(arg => List("--argv", arg))
+
+                  val pb = new ProcessBuilder(cmd.asJava)
+                  pb.inheritIO()
+                  val exit = pb.start().waitFor()
+                  if (exit != 0) {
+                    throw new RuntimeException(s"LLVM-wasm program exited with code: $exit")
+                  }
+                })
+              } else None
+            new CompilationResult(main, Map.empty, typedAst.sources, totalTime, totalSize)
+
+          case _ =>
+            // LLVM artifacts are written to disk. We do not (yet) support running or loading them.
+            new CompilationResult(None, Map.empty, typedAst.sources, totalTime, totalSize)
+        }
+
+        loweredAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+        result
+    }
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
@@ -775,10 +902,30 @@ class Flix {
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
   private def getInputs: List[Input] = {
+    // LLVM targets always use the portable stdlib profile (no Java interop).
+    //
+    // Note: We do not treat `options.stdlibProfile = Jvm` as an error here because the Flix API is
+    // used programmatically and we prefer to keep "select target, get the right stdlib" behavior.
+    // The CLI option parsing can still surface a nicer message if we ever want to make this explicit.
+    val effectiveStdlibProfile = options.target match {
+      case CompilationTarget.Jvm => options.stdlibProfile
+      case _ => StdlibProfile.Portable
+    }
+
+    val coreLib = effectiveStdlibProfile match {
+      case StdlibProfile.Jvm => Library.CoreLibrary
+      case StdlibProfile.Portable => Library.CoreLibraryBase
+    }
+
+    val standardLib = effectiveStdlibProfile match {
+      case StdlibProfile.Jvm => Library.StandardLibrary
+      case StdlibProfile.Portable => Library.StandardLibraryPortable
+    }
+
     val lib = options.lib match {
       case LibLevel.Nix => Nil
-      case LibLevel.Min => getLibraryInputs(Library.CoreLibrary)
-      case LibLevel.All => getLibraryInputs(Library.CoreLibrary ++ Library.StandardLibrary)
+      case LibLevel.Min => getLibraryInputs(coreLib)
+      case LibLevel.All => getLibraryInputs(coreLib ++ standardLib)
     }
     inputs.values.toList ::: lib
   }
