@@ -54,11 +54,6 @@ instance PartialOrder[Int64] {
     pub def lessEqual(x: Int64, y: Int64): Bool = %%INT64_LE%%(x, y)
 }
 
-instance PartialOrder[BigInt] {
-    pub def lessEqual(x: BigInt, y: BigInt): Bool =
-        x.compareTo(y) <= 0
-}
-
 instance PartialOrder[(a1, a2)] with PartialOrder[a1], PartialOrder[a2] {
     pub def lessEqual(x: (a1, a2),
                            y: (a1, a2)): Bool = match (x, y) {

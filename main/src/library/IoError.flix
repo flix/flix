@@ -51,6 +51,53 @@ pub mod IoError {
         case Other
     }
 
+    ///
+    /// Converts an integer error kind code to an `ErrorKind`.
+    ///
+    /// This mapping is part of the portable runtime contract for IO primops and syscalls.
+    ///
+    pub def errorKindFromCode(code: Int32): ErrorKind = match code {
+        case 0  => ErrorKind.AlreadyExists
+        case 1  => ErrorKind.ConnectionFailed
+        case 2  => ErrorKind.Interrupted
+        case 3  => ErrorKind.InvalidPath
+        case 4  => ErrorKind.InvalidInput
+        case 5  => ErrorKind.InvalidData
+        case 6  => ErrorKind.NotFound
+        case 7  => ErrorKind.NotFile
+        case 8  => ErrorKind.NotDirectory
+        case 9  => ErrorKind.PermissionDenied
+        case 10 => ErrorKind.Timeout
+        case 11 => ErrorKind.UnexpectedEof
+        case 12 => ErrorKind.Unsupported
+        case 13 => ErrorKind.UnknownHost
+        case 14 => ErrorKind.Other
+        case _  => ErrorKind.Other
+    }
+
+    ///
+    /// Converts an `ErrorKind` to its integer error kind code.
+    ///
+    /// This mapping is part of the portable runtime contract for IO primops and syscalls.
+    ///
+    pub def errorKindToCode(kind: ErrorKind): Int32 = match kind {
+        case ErrorKind.AlreadyExists      => 0
+        case ErrorKind.ConnectionFailed   => 1
+        case ErrorKind.Interrupted        => 2
+        case ErrorKind.InvalidPath        => 3
+        case ErrorKind.InvalidInput       => 4
+        case ErrorKind.InvalidData        => 5
+        case ErrorKind.NotFound           => 6
+        case ErrorKind.NotFile            => 7
+        case ErrorKind.NotDirectory       => 8
+        case ErrorKind.PermissionDenied   => 9
+        case ErrorKind.Timeout            => 10
+        case ErrorKind.UnexpectedEof      => 11
+        case ErrorKind.Unsupported        => 12
+        case ErrorKind.UnknownHost        => 13
+        case ErrorKind.Other              => 14
+    }
+
     instance Formattable[ErrorKind] {
         pub def format(k: ErrorKind): RichString = RichString.fromString(ToString.toString(k))
     }

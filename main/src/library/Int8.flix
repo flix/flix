@@ -24,11 +24,6 @@ instance UpperBound[Int8] {
 
 pub mod Int8 {
 
-    import java.lang.Byte
-    import java.lang.NumberFormatException
-    import java.math.BigDecimal
-    import java.math.BigInteger
-
     ///
     /// Returns the number of bits used to represent an `Int8`.
     ///
@@ -336,10 +331,9 @@ pub mod Int8 {
     /// Parse the string `s` as an Int8, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Int8] = try {
-        Some(Byte.parseByte(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
+    pub def fromString(s: String): Option[Int8] = {
+        let (ok, v) = %%INT8_FROM_STRING%%(s);
+        if (ok) Some(v) else None
     }
 
     ///
@@ -348,7 +342,7 @@ pub mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt16(x: Int8): Int16 =
-        Byte.valueOf(x).shortValue()
+        %%INT8_TO_INT16%%(x)
 
     ///
     /// Convert `x` to an Int32.
@@ -356,7 +350,7 @@ pub mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt32(x: Int8): Int32 =
-        Byte.valueOf(x).intValue()
+        %%INT8_TO_INT32%%(x)
 
     ///
     /// Convert `x` to an Int64.
@@ -364,15 +358,7 @@ pub mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int8): Int64 =
-        Byte.valueOf(x).longValue()
-
-    ///
-    /// Convert `x` to a BigInt.
-    ///
-    /// The numeric value of `x` is preserved exactly.
-    ///
-    pub def toBigInt(x: Int8): BigInt =
-        BigInteger.valueOf(Byte.valueOf(x).longValue())
+        %%INT8_TO_INT64%%(x)
 
     ///
     /// Convert `x` to a Float32.
@@ -380,7 +366,7 @@ pub mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat32(x: Int8): Float32 =
-        Byte.valueOf(x).floatValue()
+        %%INT8_TO_FLOAT32%%(x)
 
     ///
     /// Convert `x` to a Float64.
@@ -388,32 +374,6 @@ pub mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int8): Float64 =
-        Byte.valueOf(x).doubleValue()
-
-    ///
-    /// Convert `x` to a BigDecimal.
-    ///
-    /// The numeric value of `x` is preserved exactly.
-    ///
-    pub def toBigDecimal(x: Int8): BigDecimal =
-        new BigDecimal(Int8.toInt32(x))
-
-    ///
-    /// Get the primitive Int8 value from its object representation (i.e. Byte).
-    ///
-    /// This function is expected to be used when marshaling Int8s from Java. Generally in Flix
-    /// code you should not need to use `Byte`.
-    ///
-    pub def byteValue(i: Byte): Int8 =
-        i.byteValue()
-
-    ///
-    /// Convert an Int8 value to its object representation (i.e. Byte).
-    ///
-    /// This function is expected to be used when marshaling Int8s to Java. Generally in Flix
-    /// code you should not need to use `Byte`.
-    ///
-    pub def valueOf(i: Int8): Byte =
-        Byte.valueOf(i)
+        %%INT8_TO_FLOAT64%%(x)
 
 }

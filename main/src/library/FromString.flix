@@ -55,10 +55,6 @@ instance FromString[Float64] {
     pub def fromString(x: String): Option[Float64] = Float64.fromString(x)
 }
 
-instance FromString[BigDecimal] {
-    pub def fromString(x: String): Option[BigDecimal] = BigDecimal.fromString(x)
-}
-
 instance FromString[Int8] {
     pub def fromString(x: String): Option[Int8] = Int8.fromString(x)
 }
@@ -73,10 +69,6 @@ instance FromString[Int32] {
 
 instance FromString[Int64] {
     pub def fromString(x: String): Option[Int64] = Int64.fromString(x)
-}
-
-instance FromString[BigInt] {
-    pub def fromString(x: String): Option[BigInt] = BigInt.fromString(x)
 }
 
 instance FromString[String] {

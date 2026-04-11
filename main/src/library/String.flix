@@ -16,17 +16,12 @@
 
 pub mod String {
 
-    import java.lang.System
-    import java.util.regex.Pattern
-    import java.util.regex.PatternSyntaxException
-    import java.lang.IndexOutOfBoundsException
-
     use Regex.Flag
 
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int32, s: String): Char = s.charAt(i)
+    pub def charAt(i: Int32, s: String): Char = %%STRING_CHAR_AT%%(s, i)
 
     ///
     /// Optionally return the character at position `i` in the string `s`.
@@ -40,7 +35,16 @@ pub mod String {
     ///
     /// Returns the code point at position `i` in the string `s`.
     ///
-    pub def codePointAt(i: Int32, s: String): Int32 = s.codePointAt(i)
+    pub def codePointAt(i: Int32, s: String): Int32 =
+        let c1 = charAt(i, s);
+        if (i + 1 < length(s))
+            let c2 = charAt(i + 1, s);
+            if (Char.isSurrogatePair(high = c1, low = c2))
+                Char.toSupplementaryCodePoint(high = c1, low = c2)
+            else
+                Char.toBmpCodePoint(c1)
+        else
+            Char.toBmpCodePoint(c1)
 
     ///
     /// Optionally returns the code point at position `i` in the string `s`.
@@ -55,13 +59,13 @@ pub mod String {
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
-        s1.concat(s2)
+        s1 + s2
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
     pub def isEmpty(s: String): Bool =
-        s.isEmpty()
+        length(s) == 0
 
     ///
     /// Returns `true` if the string `s` is non-empty.
@@ -72,7 +76,7 @@ pub mod String {
     /// Returns the number of characters in the string `s`.
     ///
     pub def length(s: String): Int32 =
-        s.length()
+        %%STRING_LENGTH%%(s)
 
     ///
     /// Returns the number of characters in the string `s`.
@@ -83,31 +87,61 @@ pub mod String {
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
     pub def startsWith(prefix: {prefix = String}, s: String): Bool =
-        s.startsWith(prefix#prefix)
+        let p = prefix#prefix;
+        let plen = length(p);
+        if (plen > length(s))
+            false
+        else
+            def loop(i) = {
+                if (i >= plen)
+                    true
+                else if (charAt(i, s) != charAt(i, p))
+                    false
+                else
+                    loop(i + 1)
+            };
+            loop(0)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
     pub def endsWith(suffix: {suffix = String}, s: String): Bool =
-        s.endsWith(suffix#suffix)
+        let suf = suffix#suffix;
+        let suflen = length(suf);
+        let slen = length(s);
+        if (suflen > slen)
+            false
+        else
+            def loop(i) = {
+                if (i >= suflen)
+                    true
+                else {
+                    let j = slen - suflen + i;
+                    if (charAt(j, s) != charAt(i, suf))
+                        false
+                    else
+                        loop(i + 1)
+                }
+            };
+            loop(0)
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex = String}, s: String): List[String] =
-        unsafe IO { Array.toList(s.split(regex#regex)) }
+        Regex.split(Regex.compile(regex#regex), s)
 
     ///
     /// Returns the lower case version of the string `s`.
     ///
     pub def toLowerCase(s: String): String =
-        s.toLowerCase()
+        %%STRING_TO_LOWER_CASE%%(s)
 
     ///
     /// Returns the upper case version of the string `s`.
     ///
     pub def toUpperCase(s: String): String =
-        s.toUpperCase()
+        %%STRING_TO_UPPER_CASE%%(s)
 
     ///
     /// Returns the given string `s` as a list of characters.
@@ -120,12 +154,12 @@ pub mod String {
     /// Returns a new empty string if there is no characters in `s`.
     ///
     pub def trim(s: String): String =
-        s.trim()
+        dropWhileAround(c -> c <= ' ', s)
 
     ///
     /// Get the system line separator.
     ///
-    pub def lineSeparator(): String = System.lineSeparator()
+    pub def lineSeparator(): String = %%LINE_SEPARATOR%%(())
 
     ///
     /// Returns the given string `s` as an array of characters.
@@ -154,9 +188,7 @@ pub mod String {
     /// Regex literals are checked at compile time.
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
-        Result.tryCatch(_ -> {
-            Pattern.compile(regex)
-        })
+        Regex.tryCompile(regex)
 
 
     ///
@@ -169,9 +201,7 @@ pub mod String {
     /// `java.util.regex.Pattern` for guidance on enabling flags with embedded flag expressions.
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
-        Result.tryCatch(_ -> {
-            Pattern.compile(regex, Regex.sumFlags(flags))
-        })
+        Regex.tryCompileWithFlags(flags, regex)
 
 
     ///
@@ -301,28 +331,18 @@ pub mod String {
     /// Note - use `isSubmatch` to search for a substring.
     ///
     pub def isMatch(regex: {regex = String}, s: String): Bool =
-        try {
-            s.matches(regex#regex)
-        } catch {
-            case _: PatternSyntaxException => false
+        match toRegex(regex#regex) {
+            case Ok(rgx) => Regex.isMatch(rgx, s)
+            case Err(_)  => false
         }
 
     ///
     /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
     ///
     pub def isSubmatch(regex: {regex = String}, s: String): Bool =
-        isSubmatchHelper(regex#regex, s)
-
-    ///
-    /// Helper function for `isSubmatch`.
-    ///
-    def isSubmatchHelper(pattern: String, s: String): Bool =
-        try {
-            let p1 = Pattern.compile(pattern);
-            let m1 = p1.matcher(s);
-            unsafe IO { m1.find(0) }
-        } catch {
-            case _: PatternSyntaxException => false
+        match toRegex(regex#regex) {
+            case Ok(rgx) => Regex.isSubmatch(rgx, s)
+            case Err(_)  => false
         }
 
     ///
@@ -330,11 +350,14 @@ pub mod String {
     ///
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
-    pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
-        s.substring(start#start, end#end)
-    } catch {
-        case _: IndexOutOfBoundsException => ""
-    }
+    pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String =
+        let b = start#start;
+        let e = end#end;
+        let len = length(s);
+        if (b < 0 or e < 0 or b > e or b > len or e > len)
+            ""
+        else
+            init(i -> charAt(b + i, s), e - b)
 
     ///
     /// Get the substring of `s` to the left of index `end` (exclusive).
@@ -761,7 +784,7 @@ pub mod String {
         if (n < 0)
             ""
         else
-            s.repeat(n)
+            %%STRING_REPEAT%%(s, n)
 
     ///
     /// Pad the string `s` at the left with the supplied char `c` to fit the width `w`.
@@ -810,25 +833,57 @@ pub mod String {
     /// Returns `s` with every match of the substring `src` replaced by the string `dst`.
     ///
     pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
-        s.replace(src#src, dst#dst)
+        let target = src#src;
+        if (isEmpty(target))
+            region rc {
+                let sb = StringBuilder.empty(rc);
+                let replacement = dst#dst;
+                StringBuilder.appendString(replacement, sb);
+                let len = length(s);
+                def loop(i) = {
+                    if (i >= len)
+                        StringBuilder.toString(sb)
+                    else {
+                        StringBuilder.append(charAt(i, s), sb);
+                        StringBuilder.appendString(replacement, sb);
+                        loop(i + 1)
+                    }
+                };
+                loop(0)
+            }
+        else region rc {
+            let sb = StringBuilder.empty(rc);
+            let targetLen = length(target);
+            def loop(i) = match indexOfLeftWithOffset(substr = target, offset = i, s) {
+                case None =>
+                    StringBuilder.appendString(sliceRight(start = i, s), sb);
+                    StringBuilder.toString(sb)
+                case Some(j) => {
+                    StringBuilder.appendString(slice(start = i, end = j, s), sb);
+                    StringBuilder.appendString(dst#dst, sb);
+                    loop(j + targetLen)
+                }
+            };
+            loop(0)
+        }
 
     ///
     /// Returns `s` with every match of the character `src` replaced by the character `dst`.
     ///
     pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
-        s.replace(src#src, dst#dst)
+        map(c -> if (c == src#src) dst#dst else c, s)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceMatches(regex: {regex = String}, to: {to = String}, s: String): String =
-        s.replaceAll(regex#regex, to#to)
+        Regex.replace(src = Regex.compile(regex#regex), dst = to#to, s)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceFirstMatch(regex: {regex = String}, to: {to = String}, s: String): String =
-        s.replaceFirst(regex#regex, to#to)
+        Regex.replaceFirst(src = Regex.compile(regex#regex), dst = to#to, s)
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
@@ -982,12 +1037,7 @@ pub mod String {
     /// If `substr` is the empty string return None.
     ///
     pub def indexOfLeft(substr: {substr = String}, s: String): Option[Int32] =
-        if (isEmpty(substr#substr))
-            None
-        else {
-            let i = s.indexOf(substr#substr);
-            if (i < 0) None else Some(i)
-        }
+        indexOfLeftWithOffset(substr, {offset = 0}, s)
 
     ///
     /// Return the index of the first occurrence of `substr` in `s` from the right.
@@ -997,12 +1047,7 @@ pub mod String {
     /// If `substr` is the empty string return None.
     ///
     pub def indexOfRight(substr: {substr = String}, s: String): Option[Int32] =
-        if (isEmpty(substr#substr))
-            None
-        else {
-            let i = s.lastIndexOf(substr#substr);
-            if (i < 0) None else Some(i)
-        }
+        indexOfRightWithOffset(substr, {offset = length(s)}, s)
 
     ///
     /// Returns `true` if and only if `substr` is an infix of `s`.
@@ -1185,11 +1230,35 @@ pub mod String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
-        if (isEmpty(substr#substr))
+        let sub = substr#substr;
+        if (isEmpty(sub))
             None
         else {
-            let ix = s.indexOf(substr#substr, offset#offset);
-            if (ix < 0) None else Some(ix)
+            let slen = length(s);
+            let sublen = length(sub);
+            let lastStart = slen - sublen;
+            // Note: Java `String.indexOf(_, offset)` treats negative offsets as `0`.
+            let start = if (offset#offset < 0) 0 else offset#offset;
+            def matchesAt(i) = {
+                def loop(j) = {
+                    if (j >= sublen)
+                        true
+                    else if (charAt(i + j, s) != charAt(j, sub))
+                        false
+                    else
+                        loop(j + 1)
+                };
+                loop(0)
+            };
+            def loop(i) = {
+                if (i > lastStart)
+                    None
+                else if (matchesAt(i))
+                    Some(i)
+                else
+                    loop(i + 1)
+            };
+            if (lastStart < 0 or start > lastStart) None else loop(start)
         }
 
     ///
@@ -1198,11 +1267,39 @@ pub mod String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfRightWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
-        if (isEmpty(substr#substr))
+        let sub = substr#substr;
+        if (isEmpty(sub))
             None
         else {
-            let ix = s.lastIndexOf(substr#substr, offset#offset);
-            if (ix < 0) None else Some(ix)
+            let slen = length(s);
+            let sublen = length(sub);
+            let lastStart = slen - sublen;
+            // Note: Java `String.lastIndexOf(_, offset)` treats negative offsets as not-found.
+            if (offset#offset < 0 or lastStart < 0)
+                None
+            else {
+                let start = Int32.min(offset#offset, lastStart);
+                def matchesAt(i) = {
+                    def loop(j) = {
+                        if (j >= sublen)
+                            true
+                        else if (charAt(i + j, s) != charAt(j, sub))
+                            false
+                        else
+                            loop(j + 1)
+                    };
+                    loop(0)
+                };
+                def loop(i) = {
+                    if (i < 0)
+                        None
+                    else if (matchesAt(i))
+                        Some(i)
+                    else
+                        loop(i - 1)
+                };
+                loop(start)
+            }
         }
 
     ///
@@ -1306,8 +1403,45 @@ pub mod String {
     def linesWithNewLine(s: String): List[String] =
         if (isEmpty(s))
             Nil
-        else
-            split({regex = "(?<=\\R)"}, s)
+        else {
+            let len = length(s);
+
+            ///
+            /// Returns the length of the linebreak sequence starting at `ix`, or `0` if none.
+            ///
+            /// Matches the same set as Java's `\R`:
+            ///   - CRLF ("\r\n")
+            ///   - LF ("\n"), CR ("\r"), VT ("\u000B"), FF ("\u000C"), NEL ("\u0085"),
+            ///     LS ("\u2028"), PS ("\u2029")
+            ///
+            def lbLen(ix: Int32): Int32 = {
+                let c = charAt(ix, s);
+                if (c == '\r') {
+                    if (ix + 1 < len and charAt(ix + 1, s) == '\n') 2 else 1
+                } else if (c == '\n' or c == '\u000B' or c == '\u000C' or c == '\u0085' or c == '\u2028' or c == '\u2029') {
+                    1
+                } else {
+                    0
+                }
+            };
+
+            def loop(pos: Int32, start: Int32, acc: List[String]): List[String] = {
+                if (pos >= len) {
+                    if (start >= len)
+                        List.reverse(acc)
+                    else
+                        List.reverse(slice(start = start, end = len, s) :: acc)
+                } else match lbLen(pos) {
+                    case 0 => loop(pos + 1, start, acc)
+                    case n =>
+                        let end = pos + n;
+                        let line = slice(start = start, end = end, s);
+                        loop(end, end, line :: acc)
+                }
+            };
+
+            loop(0, 0, Nil)
+        }
 
     ///
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.

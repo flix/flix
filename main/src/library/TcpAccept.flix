@@ -22,12 +22,8 @@ eff TcpAccept {
 }
 
 pub mod TcpAccept {
-    use IoError.ErrorKind
-    use IoError.IoError
 
-    import java.io.IOException
-    import java.net.SocketTimeoutException
-    import java.nio.channels.IllegalBlockingModeException
+    use IoError.IoError
 
     ///
     /// Handles the `TcpAccept` effect of the given function `f`.
@@ -39,15 +35,12 @@ pub mod TcpAccept {
             Ok(f(x))
         } with handler TcpAccept {
             def accept(server, resume) = {
-                try {
-                    let TcpServer.TcpServer(serverSocket) = server;
-                    let socket = serverSocket.accept();
-                    let inputStream = socket.getInputStream();
-                    let outputStream = socket.getOutputStream();
-                    resume(TcpSocket.TcpSocket(socket, inputStream, outputStream))
-                } catch {
-                    case ex: SocketTimeoutException => Err(IoError(ErrorKind.Timeout, ex.getMessage()))
-                    case ex: IOException            => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                let TcpServer.TcpServer(serverId) = server;
+                let (ok, socketId, kind, msg) = %%TCP_SERVER_ACCEPT%%(serverId);
+                if (ok) {
+                    resume(TcpSocket.TcpSocket(socketId))
+                } else {
+                    Err(IoError(IoError.errorKindFromCode(kind), msg))
                 }
             }
         }

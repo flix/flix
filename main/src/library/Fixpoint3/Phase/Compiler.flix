@@ -30,7 +30,7 @@ pub mod Fixpoint3.Phase.Compiler {
     use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxed
     use Fixpoint3.Counter
-    use Fixpoint3.Options.usedArity
+    use Fixpoint3.Options.{parLevel, usedArity}
     use Fixpoint3.Predicate
     use Fixpoint3.Predicate.PredType.{Full, Delta, New}
     use Fixpoint3.TypeInfo.{getType, getTypeOf, Type, typeDatalog, TypeInformation}
@@ -71,12 +71,11 @@ pub mod Fixpoint3.Phase.Compiler {
                             compileStratum(stmtsForPseudo, strataRules, stratarulesWithId, predicates, counter, functionalCounter, typeInfo);
                             RamStmt.Seq(MutList.toVector(stmtsForPseudo)) :: acc
                         });
-                    if (List.size(runInParallel) > 1) {
-                        let codeBlock = RamStmt.Par(List.toVector(runInParallel));
-                        MutList.push(codeBlock, stmts)
-                    } else match List.head(runInParallel) {
-                        case Some(v) => MutList.push(v, stmts)
-                        case None    => ()
+                    match List.toVector(runInParallel) {
+                        case xs if Vector.isEmpty(xs) => ()
+                        case xs if Vector.length(xs) == 1 => MutList.push(Vector.get(0, xs), stmts)
+                        case xs if parLevel() > 0 => MutList.push(RamStmt.Par(xs), stmts)
+                        case xs => MutList.push(RamStmt.Seq(xs), stmts)
                     }
             };
             let stmt = RamStmt.Seq(MutList.toVector(stmts));
@@ -164,12 +163,12 @@ pub mod Fixpoint3.Phase.Compiler {
         foreach ((rule, ruleNum) <- ForEach.withZip(stratum, rulesWithId)) {
             compileRule(inserts, rule, ruleNum, predicates, counter, functionalCounter, typeInfo)
         };
-        let optPar =
-            if (MutList.size(inserts) > 1) {
-                Some(RamStmt.Par(MutList.toVector(inserts)))
-            } else {
-                MutList.head(inserts)
-            };
+        let optPar = match MutList.toVector(inserts) {
+            case xs if Vector.isEmpty(xs) => None
+            case xs if Vector.length(xs) == 1 => Some(Vector.get(0, xs))
+            case xs if parLevel() > 0 => Some(RamStmt.Par(xs))
+            case xs => Some(RamStmt.Seq(xs))
+        };
         match optPar {
             case None       => ()
             case Some(par1) =>
@@ -188,12 +187,12 @@ pub mod Fixpoint3.Phase.Compiler {
                     compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter, functionalCounter, typeInfo)
                 };
                 Counter.set(finalFunctionalCounter, functionalCounter);
-                let loopParOpt =
-                    if (MutList.size(loopInserts) > 1) {
-                        Some(RamStmt.Par(MutList.toVector(loopInserts)))
-                    } else {
-                        MutList.head(loopInserts)
-                    };
+                let loopParOpt = match MutList.toVector(loopInserts) {
+                    case xs if Vector.isEmpty(xs) => None
+                    case xs if Vector.length(xs) == 1 => Some(Vector.get(0, xs))
+                    case xs if parLevel() > 0 => Some(RamStmt.Par(xs))
+                    case xs => Some(RamStmt.Seq(xs))
+                };
                 match loopParOpt {
                     case None          => ()
                     case Some(loopPar) =>

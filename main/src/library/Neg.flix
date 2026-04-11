@@ -32,10 +32,6 @@ instance Neg[Float64] {
     pub def neg(x: Float64): Float64 = %%FLOAT64_NEG%%(x)
 }
 
-instance Neg[BigDecimal] {
-    pub def neg(x: BigDecimal): BigDecimal = x.negate()
-}
-
 instance Neg[Int8] {
     pub def neg(x: Int8): Int8 = %%INT8_NEG%%(x)
 }
@@ -50,8 +46,4 @@ instance Neg[Int32] {
 
 instance Neg[Int64] {
     pub def neg(x: Int64): Int64 = %%INT64_NEG%%(x)
-}
-
-instance Neg[BigInt] {
-    pub def neg(x: BigInt): BigInt = x.negate()
 }

@@ -14,8 +14,6 @@
  *  limitations under the License.
  */
 
-import java.io.File
-
 ///
 /// A trait for division.
 ///
@@ -32,14 +30,6 @@ instance Div[Float32] {
 
 instance Div[Float64] {
     pub def div(x: Float64, y: Float64): Float64 = %%FLOAT64_DIV%%(x, y)
-}
-
-instance Div[BigDecimal] {
-    pub def div(x: BigDecimal, y: BigDecimal): BigDecimal =
-        if (y == 0ff)
-            0ff
-        else
-            x.divide(y)
 }
 
 instance Div[Int8] {
@@ -74,16 +64,8 @@ instance Div[Int64] {
             %%INT64_DIV%%(x, y)
 }
 
-instance Div[BigInt] {
-    pub def div(x: BigInt, y: BigInt): BigInt =
-        if (y == 0ii)
-            0ii
-        else
-            x.divide(y)
-}
-
 instance Div[String] {
     pub def div(x: String, y: String): String =
-        let s = File.separator;
+        let s = %%FILE_SEPARATOR%%(());
         x + s + y
 }

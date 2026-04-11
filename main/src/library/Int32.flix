@@ -24,11 +24,6 @@ instance UpperBound[Int32] {
 
 pub mod Int32 {
 
-    import java.lang.Integer
-    import java.lang.NumberFormatException
-    import java.math.BigDecimal
-    import java.math.BigInteger
-
     ///
     /// Returns the number of bits used to represent an `Int32`.
     ///
@@ -340,10 +335,9 @@ pub mod Int32 {
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Int32] = try {
-        Some(Integer.parseInt(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
+    pub def fromString(s: String): Option[Int32] = {
+        let (ok, v) = %%INT32_FROM_STRING%%(s);
+        if (ok) Some(v) else None
     }
 
     ///
@@ -351,12 +345,10 @@ pub mod Int32 {
     /// Leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def parse(radix: Int32, s: String): Result[String, Int32] =
-        try {
-            Ok(Integer.parseInt(s.strip(), radix))
-        } catch {
-            case _: NumberFormatException => Err("Int32.parse")
-        }
+    pub def parse(radix: Int32, s: String): Result[String, Int32] = {
+        let (ok, v) = %%INT32_PARSE%%((radix, s));
+        if (ok) Ok(v) else Err("Int32.parse")
+    }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -370,7 +362,7 @@ pub mod Int32 {
        if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
             None
         else
-            Some(Integer.valueOf(x).byteValue())
+            Some(%%INT32_TO_INT8%%(x))
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -384,7 +376,7 @@ pub mod Int32 {
         if (x < Int16.toInt32(Int16.minValue()) or x > Int16.toInt32(Int16.maxValue()))
             None
         else
-            Some(Integer.valueOf(x).shortValue())
+            Some(%%INT32_TO_INT16%%(x))
 
     ///
     /// Convert `x` to a Int64.
@@ -392,15 +384,7 @@ pub mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int32): Int64 =
-        Integer.valueOf(x).longValue()
-
-    ///
-    /// Convert `x` to a BigInt.
-    ///
-    /// The numeric value of `x` is preserved exactly.
-    ///
-    pub def toBigInt(x: Int32): BigInt =
-        BigInteger.valueOf(Integer.valueOf(x).longValue())
+        %%INT32_TO_INT64%%(x)
 
     ///
     /// Convert `x` to an Float32.
@@ -408,7 +392,7 @@ pub mod Int32 {
     /// The numeric value of `x` may lose precision.
     ///
     pub def toFloat32(x: Int32): Float32 =
-         Integer.valueOf(x).floatValue()
+        %%INT32_TO_FLOAT32%%(x)
 
     ///
     /// Convert `x` to a Float64.
@@ -416,15 +400,7 @@ pub mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int32): Float64 =
-        Integer.valueOf(x).doubleValue()
-
-    ///
-    /// Convert `x` to a BigDecimal.
-    ///
-    /// The numeric value of `x` is preserved exactly.
-    ///
-    pub def toBigDecimal(x: Int32): BigDecimal =
-        new BigDecimal(x)
+        %%INT32_TO_FLOAT64%%(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -446,7 +422,7 @@ pub mod Int32 {
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int32): Int8 =
         let mini32 = Int8.toInt32(min#min);
         let maxi32 = Int8.toInt32(max#max);
-        Integer.valueOf(clamp(min = mini32, max = maxi32, x)).byteValue()
+        %%INT32_TO_INT8%%(clamp(min = mini32, max = maxi32, x))
 
 
     ///
@@ -457,24 +433,6 @@ pub mod Int32 {
     pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int32): Int16 =
         let mini32 = Int16.toInt32(min#min);
         let maxi32 = Int16.toInt32(max#max);
-        Integer.valueOf(clamp(min = mini32, max = maxi32, x)).shortValue()
-
-    ///
-    /// Get the primitive Int32 value from its object representation (i.e. Integer).
-    ///
-    /// This function is expected to be used when marshaling Int32s from Java. Generally in Flix
-    /// code you should not need to use `Integer`.
-    ///
-    pub def intValue(i: Integer): Int32 =
-        i.intValue()
-
-    ///
-    /// Convert an Int32 value to its object representation (i.e. Integer).
-    ///
-    /// This function is expected to be used when marshaling Int32s to Java. Generally in Flix
-    /// code you should not need to use `Integer`.
-    ///
-    pub def valueOf(i: Int32): Integer =
-        Integer.valueOf(i)
+        %%INT32_TO_INT16%%(clamp(min = mini32, max = maxi32, x))
 
 }

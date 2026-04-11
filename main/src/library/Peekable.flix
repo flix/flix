@@ -14,8 +14,6 @@
  *  limitations under the License.
  */
 
-import java.lang.String
-
 ///
 /// Extends `Readable` with the ability to `peek` at values that have not yet been `read`,
 /// `skip` values that don't need to be read, and perform other kinds of conditional reads.
@@ -75,11 +73,13 @@ trait Peekable[t] with Readable[t] {
     /// Returns `Err(err)` if there is an IO error.
     ///
     pub def readLine(reader: t): Result[IoError, String] \ IO + Readable.Aef[t] where Readable.Elm[t] ~ Char =
-        forM(
-            line <- Peekable.readUntil(c -> c == '\n' or c == '\r', reader);
-            _ <- Peekable.skipElem('\r', reader);
-            _ <- Peekable.skipElem('\n', reader)
-        ) yield new String(line)
+        unchecked_cast(
+            forM(
+                line <- Peekable.readUntil(c -> c == '\n' or c == '\r', reader);
+                _ <- Peekable.skipElem('\r', reader);
+                _ <- Peekable.skipElem('\n', reader)
+            ) yield String.init(i -> Vector.get(i, line), Vector.length(line))
+        as _ \ (IO + Readable.Aef[t]))
 
     ///
     /// Skips over the next element if it equals `a`.

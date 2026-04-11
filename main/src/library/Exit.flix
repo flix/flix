@@ -28,8 +28,6 @@ eff Exit {
 
 pub mod Exit {
 
-    import java.lang.System
-
     ///
     /// Handles the `Exit` effect of the given function `f`.
     ///
@@ -41,7 +39,7 @@ pub mod Exit {
         run {
             f(x)
         } with handler Exit {
-            def exit(ec, _k) = unchecked_cast(System.exit(ec) as b)
+            def exit(ec, _k) = unchecked_cast(%%EXIT%%(ec) as b)
         }
 
     ///

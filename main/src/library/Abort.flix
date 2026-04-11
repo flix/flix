@@ -30,8 +30,6 @@ pub eff Abort {
 
 pub mod Abort {
 
-    import java.lang.System
-
     ///
     /// Handles the `Abort` effect of the given function `f` by printing the error message and exiting.
     ///
@@ -44,8 +42,8 @@ pub mod Abort {
             f(x)
         } with handler Abort {
             def abort(m, _k) = {
-                System.err.println(RichString.toString(m));
-                unchecked_cast(System.exit(1) as b)
+                %%EPRINTLN%%(RichString.toString(m));
+                unchecked_cast(%%EXIT%%(1) as b)
             }
         }
 

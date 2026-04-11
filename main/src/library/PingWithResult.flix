@@ -21,45 +21,4 @@ eff PingWithResult {
     def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
 }
 
-pub mod PingWithResult {
-    use IoError.ErrorKind
-    use IoError.IoError
-
-    import java.io.IOException
-    import java.lang.IllegalArgumentException
-    import java.net.InetAddress
-    import java.net.UnknownHostException
-
-    ///
-    /// Handles the `PingWithResult` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - PingWithResult) + IO = x ->
-        run {
-            f(x)
-        } with handler PingWithResult {
-            def isReachable(host, timeout, u, k) = {
-                try {
-                    let ms = TimeUnit.toMilliseconds(u);
-                    let timeoutMs = ms * timeout;
-                    let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
-                    k(Ok(addr.isReachable(timeoutMs)))
-                } catch {
-                    case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
-                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                }
-            }
-        }
-
-    ///
-    /// Runs the `PingWithResult` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
-    ///
-    @DefaultHandler
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - PingWithResult) + IO = handle(f)()
-
-}
-
+// JVM-only: the default handler implementation lives in `jvm/PingWithResult.flix`.

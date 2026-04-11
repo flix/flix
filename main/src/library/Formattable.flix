@@ -66,14 +66,6 @@ instance Formattable[String] {
     pub def format(x: String): RichString = RichString.fromString(x)
 }
 
-instance Formattable[BigInt] {
-    pub def format(x: BigInt): RichString = RichString.fromString(ToString.toString(x))
-}
-
-instance Formattable[BigDecimal] {
-    pub def format(x: BigDecimal): RichString = RichString.fromString(ToString.toString(x))
-}
-
 instance Formattable[(a1, a2)] with Formattable[a1], Formattable[a2] {
     type Aef[(a1, a2)] = Formattable.Aef[a1] + Formattable.Aef[a2]
 

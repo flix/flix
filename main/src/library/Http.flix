@@ -23,25 +23,35 @@ eff Http {
 
 pub mod Http {
 
-    use IoError.ErrorKind
     use IoError.IoError
-
-    import java.io.IOException
-    import java.io.UncheckedIOException
-    import java.lang.IllegalArgumentException
-    import java.lang.InterruptedException
-    import java.net.ConnectException
-    import java.net.http.HttpClient
-    import java.net.http.{HttpResponse$BodyHandlers => BodyHandlers}
-    import java.net.http.HttpRequest
-    import java.net.http.{HttpRequest$BodyPublishers => BodyPublishers}
-    import java.net.URI
-    import java.util.{List => JList}
 
     ///
     /// A response from an HTTP request.
     ///
     pub enum Response({status = Int32, headers = Map[String, List[String]], body = String})
+
+    def headersFromPairs(pairs: Vector[String]): Map[String, List[String]] =
+        let n = Vector.length(pairs);
+        def loop(i, m) = {
+            if (i >= n) {
+                m
+            } else {
+                let k = Vector.get(i, pairs);
+                let v = Vector.get(i + 1, pairs);
+                let m1 = Map.insertWith(
+                    (newList, oldList) -> match newList {
+                        case x :: _ => x :: oldList
+                        case Nil => oldList
+                    },
+                    k,
+                    v :: Nil,
+                    m
+                );
+                loop(i + 2, m1)
+            }
+        };
+        let mRev = loop(0, Map.empty());
+        Map.map(List.reverse, mRev)
 
     ///
     /// Send a `GET` request to the given `url` with the given `headers` and wait for the response.
@@ -102,39 +112,40 @@ pub mod Http {
         run {
             Ok(f(x))
         } with handler Http {
-            def request(method, url, headers, body, k) =
-                try {
-                    let bodyPublisher = match body {
-                       case Some(b) => BodyPublishers.ofString(b)
-                       case None    => BodyPublishers.noBody()
-                    };
-                    let builder =
-                       HttpRequest.newBuilder(URI.create(url)).method(method, bodyPublisher)
-                           |> builder -> Map.foldLeftWithKey(
-                               (mb, key, l) -> List.foldLeft((lb, v) -> lb.header(key, v), mb, l),
-                               builder,
-                               headers
-                           );
-                    let request = builder.build();
+	            def request(method, url, headers, bodyOpt, k) = {
+	                let res = region rc {
+	                    let reqPairs =
+	                        headers
+	                            |> Map.toList
+	                            |> List.flatMap(e -> {
+	                                let key = fst(e);
+	                                let vs = snd(e);
+	                                vs |> List.flatMap(v -> key :: v :: Nil)
+	                            });
+	                    let reqHeaders = List.toArray(rc, reqPairs);
 
-                    let client = HttpClient.newHttpClient();
-                    let response = client.send(request, BodyHandlers.ofString());
+	                    let (hasBody, bodyStr) = match bodyOpt {
+	                        case Some(b) => (true, b)
+	                        case None => (false, "")
+	                    };
 
-                    let responseHeadersJlist: Map[String, JList] = ToFlix.toFlix(response.headers().map());
-                    let responseHeaders: Map[String, List[String]] = Map.map(ToFlix.toFlix, responseHeadersJlist);
-
-                    k(Http.Response.Response({
-                       status = response.statusCode(),
-                       headers = responseHeaders,
-                       body = response.body().toString() // Body already is a string but has type Object
-                    }))
-                } catch {
-                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: ConnectException         => Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage()))
-                    case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
-                    case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
+	                    let (ok, status, respPairs, respBody, kindCode, msg) = %%HTTP_REQUEST%%((method, url, reqHeaders, hasBody, bodyStr));
+	                    if (ok) {
+	                        let respHeaders = headersFromPairs(respPairs);
+	                        Ok(Http.Response.Response({
+	                            status = status,
+	                            headers = respHeaders,
+	                            body = respBody
+	                        }))
+	                    } else {
+	                        Err(IoError(IoError.errorKindFromCode(kindCode), msg))
+	                    }
+	                };
+	                match res {
+	                    case Ok(resp) => k(resp)
+	                    case Err(err) => Err(err)
+	                }
+	            }
         }
 
     ///

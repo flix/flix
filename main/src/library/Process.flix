@@ -14,6 +14,14 @@
  *  limitations under the License.
  */
 
+use IoError.ErrorKind
+use IoError.IoError
+use ProcessHandle.ProcessHandle
+
+use Process.StdIn.StdIn
+use Process.StdOut.StdOut
+use Process.StdErr.StdErr
+
 ///
 /// An effect used to start a process outside the JVM.
 ///
@@ -76,51 +84,20 @@ eff Process {
 
 pub mod Process {
 
-    use IoError.ErrorKind
-    use IoError.IoError
-    use ProcessHandle.ProcessHandle
+    ///
+    /// Represents stdin of a process.
+    ///
+    pub enum StdIn(ProcessHandle)
 
-    import java.lang.IllegalArgumentException
-    import java.lang.IllegalThreadStateException
-    import java.lang.InterruptedException
-    import java.lang.UnsupportedOperationException
-    import java.io.IOException
-    import java.lang.ProcessBuilder
-    import java.lang.Runtime
-    import java.io.{File => JFile}
-    import java.io.InputStream
-    import java.io.OutputStream
-    import java.util.concurrent.{TimeUnit => JTimeUnit}
-    use Process.StdIn.StdIn
-    use Process.StdErr.StdErr
-    use Process.StdOut.StdOut
+    ///
+    /// Represents stdout of a process.
+    ///
+    pub enum StdOut(ProcessHandle)
 
-    pub enum StdIn(OutputStream)
-    instance Writable[StdIn] {
-        type Elm = Int8
-        type Aef = IO
-        pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
-            let StdIn(pr) = r;
-            Writable.write(b, pr)
-    }
-
-    pub enum StdOut(InputStream)
-    instance Readable[StdOut] {
-        type Elm = Int8
-        type Aef = IO
-        pub def read(b: Array[Int8, r], r: StdOut): Result[IoError, Int32] \ r + IO =
-            let StdOut(pr) = r;
-            Readable.read(b, pr)
-    }
-
-    pub enum StdErr(InputStream)
-    instance Readable[StdErr] {
-        type Elm
-        type Aef = IO
-        pub def read(b: Array[Int8, r], r: StdErr): Result[IoError, Int32] \ r + IO =
-            let StdErr(pr) = r;
-            Readable.read(b, pr)
-    }
+    ///
+    /// Represents stderr of a process.
+    ///
+    pub enum StdErr(ProcessHandle)
 
     ///
     /// Executes the command `cmd` with the arguments `args`.
@@ -140,111 +117,42 @@ pub mod Process {
     pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): ProcessHandle \ Process =
         Process.execWithCwdAndEnv(cmd, args, None, env)
 
-    ///
-    /// Handles the `Process` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `Process` effect using the `IO` effect.
-    ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Process) + IO = x ->
-        run {
-            Ok(f(x))
-        } with handler Process {
-            def execWithCwdAndEnv(cmd, args, cwdPath, env, k) = region rc {
-                try {
-                    let arr = List.toArray(rc, cmd :: args);
-                    let pb = new ProcessBuilder(arr);
-                    foreach(e <- Map.toList(env)) {
-                        pb.environment().put(fst(e), snd(e));
-                        ()
-                    };
-                    match cwdPath {
-                        case Some(cwd) => pb.directory(new JFile(cwd)); ()
-                        case None => ()
-                    };
-                    let process = pb.start();
-                    k(ProcessHandle(process))
-                } catch {
-                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-            }
-
-            def exitValue(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Some(jProc.exitValue()))
-                } catch {
-                    case _: IllegalThreadStateException => k(None)
-                    case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-            def isAlive(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(jProc.isAlive())
-                } catch {
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-            def pid(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    let pid = jProc.pid();
-                    k(pid)
-                } catch {
-                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
-                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-            def stdin(ph, k) =
-                let ProcessHandle(jProc) = ph;
-                k(StdIn(jProc.getOutputStream()))
-
-            def stdout(ph, k) =
-                let ProcessHandle(jProc) = ph;
-                k(StdOut(jProc.getInputStream()))
-
-            def stderr(ph, k) =
-                let ProcessHandle(jProc) = ph;
-                k(StdErr(jProc.getErrorStream()))
-
-            def stop(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(jProc.destroy())
-                } catch {
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-            def waitFor(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    let exitVal = jProc.waitFor();
-                    k(exitVal)
-                } catch {
-                    case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-            def waitForTimeout(ph, time, unit, k) =
-                try {
-                    let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
-                    let ProcessHandle(jProc) = ph;
-                    let exitVal = jProc.waitFor(timeMS, JTimeUnit.MILLISECONDS);
-                    k(exitVal)
-                } catch {
-                    case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-        }
-
-    ///
-    /// Runs the `Process` effect of the given function `f`.
-    ///
-    /// In other words, re-interprets the `Process` effect using the `IO` effect.
-    ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Process) + IO = handle(f)()
-
 }
 
+instance Writable[Process.StdIn] {
+    type Elm = Int8
+    type Aef = IO
+
+    pub def write(b: Array[Int8, r], r: Process.StdIn): Result[IoError, Int32] \ r + IO = {
+        let StdIn(ph) = r;
+        let ProcessHandle(id) = ph;
+        let (ok, n, kind, msg) = %%PROCESS_STDIN_WRITE%%((id, b));
+        if (ok) Ok(n) else Err(IoError(IoError.errorKindFromCode(kind), msg))
+    }
+}
+
+instance Readable[Process.StdOut] {
+    type Elm = Int8
+    type Aef = IO
+
+    pub def read(b: Array[Int8, r], r: Process.StdOut): Result[IoError, Int32] \ r + IO = {
+        let StdOut(ph) = r;
+        let ProcessHandle(id) = ph;
+        let (ok, n, kind, msg) = %%PROCESS_STDOUT_READ%%((id, b));
+        if (ok) Ok(n) else Err(IoError(IoError.errorKindFromCode(kind), msg))
+    }
+}
+
+instance Readable[Process.StdErr] {
+    type Elm = Int8
+    type Aef = IO
+
+    pub def read(b: Array[Int8, r], r: Process.StdErr): Result[IoError, Int32] \ r + IO = {
+        let StdErr(ph) = r;
+        let ProcessHandle(id) = ph;
+        let (ok, n, kind, msg) = %%PROCESS_STDERR_READ%%((id, b));
+        if (ok) Ok(n) else Err(IoError(IoError.errorKindFromCode(kind), msg))
+    }
+}
+
+// JVM-only: the default handler implementation lives in `jvm/Process.flix`.

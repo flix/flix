@@ -24,11 +24,6 @@ instance UpperBound[Float64] {
 
 pub mod Float64 {
 
-    import java.lang.Double
-    import java.lang.Math
-    import java.math.BigDecimal
-    import java.lang.NumberFormatException
-
     ///
     /// Returns the number of bits used to represent a `Float64`.
     ///
@@ -108,10 +103,9 @@ pub mod Float64 {
     /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Float64] = try {
-        Some(Double.parseDouble(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
+    pub def fromString(s: String): Option[Float64] = {
+        let (ok, v) = %%FLOAT64_FROM_STRING%%(s);
+        if (ok) Some(v) else None
     }
 
     ///
@@ -127,7 +121,7 @@ pub mod Float64 {
         if (x < Int8.toFloat64(Int8.minValue()) or x > Int8.toFloat64(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(Double.valueOf(x).byteValue())
+            Some(%%FLOAT64_TO_INT8%%(x))
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -142,7 +136,7 @@ pub mod Float64 {
         if (x < Int16.toFloat64(Int16.minValue()) or x > Int16.toFloat64(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(Double.valueOf(x).shortValue())
+            Some(%%FLOAT64_TO_INT16%%(x))
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -157,7 +151,7 @@ pub mod Float64 {
         if (x < Int32.toFloat64(Int32.minValue()) or x > Int32.toFloat64(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(Double.valueOf(x).intValue())
+            Some(%%FLOAT64_TO_INT32%%(x))
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -175,22 +169,7 @@ pub mod Float64 {
         if (x < Int64.toFloat64(Int64.minValue()) or x > Int64.toFloat64(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(Double.valueOf(x).longValue())
-
-    ///
-    /// Convert `x` to an `Option[BigInt]`.
-    ///
-    /// Returns `Some(x as BigInt)` if the numeric value of `x` is representable as a BigInt.
-    ///
-    /// Returns `None` if the value of `x` is NaN or infinity.
-    ///
-    pub def tryToBigInt(x: Float64): Option[BigInt] =
-        try {
-            Some(BigDecimal.valueOf(x).toBigInteger())
-        } catch {
-            // Catch NaN, isInfinite.
-            case _: NumberFormatException => None
-        }
+            Some(%%FLOAT64_TO_INT64%%(x))
 
     ///
     /// Convert `x` to an `Option[Float32]`.
@@ -208,22 +187,7 @@ pub mod Float64 {
         if (x < Float32.toFloat64(Float32.minValue()) or x > Float32.toFloat64(Float32.maxValue()))
             None
         else
-            Some(Double.valueOf(x).floatValue())
-
-    ///
-    /// Convert `x` to an `Option[BigDecimal]`.
-    ///
-    /// Returns `Some(x as BigDecimal)` if the numeric value of `x` is representable
-    /// as a BigDecimal value.
-    ///
-    /// If `x` is NaN or infinity return `None`.
-    ///
-    pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
-        try {
-            Some(new BigDecimal(x))
-        } catch {
-            case _: NumberFormatException => None
-        }
+            Some(%%FLOAT64_TO_FLOAT32%%(x))
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -251,7 +215,7 @@ pub mod Float64 {
         if (isNan(x))
             nanValue#nanValue
         else
-            Double.valueOf(clamp(min = minf64, max = maxf64, x)).byteValue()
+            %%FLOAT64_TO_INT8%%(clamp(min = minf64, max = maxf64, x))
 
     ///
     /// Convert `x` to an `Int16`.
@@ -267,7 +231,7 @@ pub mod Float64 {
         if (isNan(x))
             nanValue#nanValue
         else
-            Double.valueOf(clamp(min = minf64, max = maxf64, x)).shortValue()
+            %%FLOAT64_TO_INT16%%(clamp(min = minf64, max = maxf64, x))
 
     ///
     /// Convert `x` to an `Int32`.
@@ -283,7 +247,7 @@ pub mod Float64 {
         if (isNan(x))
             nanValue#nanValue
         else
-            Double.valueOf(clamp(min = minf64, max = maxf64, x)).intValue()
+            %%FLOAT64_TO_INT32%%(clamp(min = minf64, max = maxf64, x))
 
     ///
     /// Convert `x` to an `Int64`.
@@ -299,7 +263,7 @@ pub mod Float64 {
         if (isNan(x))
             nanValue#nanValue
         else
-            Double.valueOf(clamp(min = minf64, max = maxf64, x)).longValue()
+            %%FLOAT64_TO_INT64%%(clamp(min = minf64, max = maxf64, x))
 
     ///
     /// Convert `x` to a `Float32`.
@@ -312,62 +276,11 @@ pub mod Float64 {
         if (isNan(x))
             Float32.nan()
         else
-            Double.valueOf(clamp(min = minf64, max = maxf64, x)).floatValue()
-
-    ///
-    /// Returns the absolute value of `x`.
-    ///
-    pub def abs(x: Float64): Float64 =
-        Math.abs(x)
-
-    ///
-    /// Returns `x` rounded up to a Float64 representing the nearest larger integer value.
-    ///
-    pub def ceil(x: Float64): Float64 =
-        Math.ceil(x)
-
-    ///
-    /// Returns `x` rounded down to a Float64 representing the nearest smaller integer value.
-    ///
-    pub def floor(x: Float64): Float64 =
-        Math.floor(x)
-
-    ///
-    /// Returns `x` rounded to a Float64 representing the nearest integer value.
-    ///
-    /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
-    /// close, `x` will be rounded to an even value (i.e. `round(0.5f64) == 0.0f64`).
-    ///
-    pub def round(x: Float64): Float64 =
-        Math.rint(x)
+            %%FLOAT64_TO_FLOAT32%%(clamp(min = minf64, max = maxf64, x))
 
     ///
     /// Returns ` base` raised to the power of `n`.
     ///
     pub def pow(base: {base = Float64}, n: Float64): Float64 = %%FLOAT64_EXP%%(base#base, n)
-
-    ///
-    /// Returns the exponential of `x`.
-    ///
-    pub def exp(x: Float64): Float64 =
-        Math.exp(x)
-
-    ///
-    /// Get the primitive Float64 value from its object representation (i.e. java.lang.Double).
-    ///
-    /// This function is expected to be used when marshaling Float64s from Java. Generally in Flix
-    /// code you should not need to use `java.lang.Double`.
-    ///
-    pub def doubleValue(i: Double): Float64 =
-        i.doubleValue()
-
-    ///
-    /// Convert an Float64 value to its object representation (i.e. java.lang.Double).
-    ///
-    /// This function is expected to be used when marshaling Float64s to Java. Generally in Flix
-    /// code you should not need to use `java.lang.Double`.
-    ///
-    pub def valueOf(i: Float64): Double =
-        Double.valueOf(i)
 
 }

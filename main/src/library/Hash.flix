@@ -14,14 +14,6 @@
  *  limitations under the License.
  */
 
-import java.lang.Byte
-import java.lang.Character
-import java.lang.Double
-import java.lang.Float
-import java.lang.Integer
-import java.lang.Long
-import java.lang.Short
-
 use Bool.{==>}
 
 ///
@@ -51,43 +43,35 @@ instance Hash[Bool] {
 }
 
 instance Hash[Char] {
-    pub def hash(x: Char): Int32 = Character.hashCode(x)
+    pub def hash(x: Char): Int32 = %%CHAR_HASH%%(x)
 }
 
 instance Hash[Float32] {
-    pub def hash(x: Float32): Int32 = Float.hashCode(x)
+    pub def hash(x: Float32): Int32 = %%FLOAT32_HASH%%(x)
 }
 
 instance Hash[Float64] {
-    pub def hash(x: Float64): Int32 = Double.hashCode(x)
-}
-
-instance Hash[BigDecimal] {
-    pub def hash(x: BigDecimal): Int32 = x.hashCode()
+    pub def hash(x: Float64): Int32 = %%FLOAT64_HASH%%(x)
 }
 
 instance Hash[Int8] {
-    pub def hash(x: Int8): Int32 = Byte.hashCode(x)
+    pub def hash(x: Int8): Int32 = %%INT8_HASH%%(x)
 }
 
 instance Hash[Int16] {
-    pub def hash(x: Int16): Int32 = Short.hashCode(x)
+    pub def hash(x: Int16): Int32 = %%INT16_HASH%%(x)
 }
 
 instance Hash[Int32] {
-    pub def hash(x: Int32): Int32 = Integer.hashCode(x)
+    pub def hash(x: Int32): Int32 = %%INT32_HASH%%(x)
 }
 
 instance Hash[Int64] {
-    pub def hash(x: Int64): Int32 = Long.hashCode(x)
+    pub def hash(x: Int64): Int32 = %%INT64_HASH%%(x)
 }
 
 instance Hash[String] {
-    pub def hash(x: String): Int32 = x.hashCode()
-}
-
-instance Hash[BigInt] {
-    pub def hash(x: BigInt): Int32 = x.hashCode()
+    pub def hash(x: String): Int32 = %%STRING_HASH%%(x)
 }
 
 instance Hash[(a1, a2)] with Hash[a1], Hash[a2] {

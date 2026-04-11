@@ -32,8 +32,8 @@ pub mod Fixpoint3.TypeInfo {
     use Fixpoint3.Boxed
     use Fixpoint3.BoxingType.UnifiedTypePos
     use Fixpoint3.Counter
-    use Fixpoint3.Predicate.{allFullRelSyms, getMax}
     use Fixpoint3.Util.getOrCrash
+    use Fixpoint3.Predicate.{allFullRelSyms, getMax}
 
     ///
     /// As far as we are concerned a `Type` is simply a description of where
@@ -127,12 +127,11 @@ pub mod Fixpoint3.TypeInfo {
                                     Array.put(newType, index, curArr)
                                 case someType =>
                                     Array.put(someType, index, curArr)
-                            }
+                        }
                     }
                 }
             };
-            // Don't copy arrays, just cast them.
-            unchecked_cast(arr as TypeInformation)
+            Array.toVector(arr) |> Vector.map(Array.toVector)
         }
         case _ => unreachable!()
     }
@@ -172,9 +171,8 @@ pub mod Fixpoint3.TypeInfo {
     ///
     /// Returns the type of the relation with predicate `PredSym(_, id)`.
     ///
-    pub def getTypeOf(id: Int64, typeInfo: TypeInformation): RelType = {
+    pub def getTypeOf(id: Int64, typeInfo: TypeInformation): RelType =
         Vector.get(toInt32(id), typeInfo)
-    }
 
     ///
     /// Unifies the types of `rule`.

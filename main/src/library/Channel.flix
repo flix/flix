@@ -16,8 +16,6 @@
 
 pub mod Channel {
 
-    import java.lang.{Thread => JThread}
-
     ///
     /// Returns a new buffered channel with capacity for `n` elements.
     ///
@@ -38,6 +36,17 @@ pub mod Channel {
     pub def recv(receiver: Receiver[t]): t \ {Chan, NonDet} = %%CHANNEL_GET%%(receiver)
 
     ///
+    /// Attempts to receive a message from the given channel `receiver`.
+    ///
+    /// Returns `Some(x)` if a message is immediately available and `None` otherwise.
+    ///
+    pub def tryRecv(receiver: Receiver[t]): Option[t] \ {Chan, NonDet} =
+        select {
+            case x <- recv(receiver) => Some(x)
+            case _                   => None
+        }
+
+    ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
@@ -48,9 +57,23 @@ pub mod Channel {
     /// Returns a channel that receives the `Unit` message after `duration` in the given time `unit`.
     ///
     pub def timeout(duration: Int32, unit: TimeUnit): Receiver[Unit] \ {Chan, IO} =
-        let millis =  Int32.toInt64(duration * TimeUnit.toMilliseconds(unit));
         let (tx, rx) = Channel.buffered(1);
-        spawn { JThread.sleep(millis); send((), tx) } @ Static;
+        spawn {
+            Timer.runWithIO(() -> Timer.sleepFor(Int32.toInt64(duration), unit));
+            send((), tx)
+        } @ Static;
         rx
+
+    ///
+    /// Attempts to receive a message from `receiver` before the given timeout expires.
+    ///
+    /// Returns `Some(x)` if a message is received first and `None` on timeout.
+    ///
+    pub def recvWithTimeout(receiver: Receiver[t], duration: Int32, unit: TimeUnit): Option[t] \ {Chan, NonDet, IO} =
+        let timeoutRx = timeout(duration, unit);
+        select {
+            case x <- recv(receiver)   => Some(x)
+            case _ <- recv(timeoutRx)  => None
+        }
 
 }

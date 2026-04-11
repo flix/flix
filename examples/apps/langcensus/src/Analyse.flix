@@ -27,20 +27,21 @@ mod Analyse {
         run {
             f()
         } with handler Analyse {
-            def analyseByRepo(commits, resume) =
-                let allStats : List[(String, Stat)] = foreach (
-                    (repo, shas) <- commits;
-                    sha <- shas
-                ) yield commitToAddsDels(repo, sha);
+            def analyseByRepo(commits, resume) = {
+                let allStats: List[(String, Stat)] =
+                    Map.foldLeftWithKey((acc, repo, shas) ->
+                        acc ::: List.map(sha -> commitToAddsDels(repo, sha), shas)
+                    , Nil, commits);
                 mergeStats(allStats) |> resume
+            }
 
             def analyseByByte(repos, resume) = {
-                let allStats: List[(String, BigInt)] = foreach (
-                    repo <- repos;
-                    languageStat = Github.getLanguages(repo);
-                    languageStatMap = Util.fromJson(languageStat);
-                    (lang, size) <- (languageStatMap: Map[String, BigInt])
-                ) yield (lang, size);
+                let allStats: List[(String, BigInt)] =
+                    List.foldLeft((acc, repo) -> {
+                        let languageStat = Github.getLanguages(repo);
+                        let languageStatMap: Map[String, BigInt] = Util.fromJson(languageStat);
+                        acc ::: Map.toList(languageStatMap)
+                    }, Nil, repos);
                 mergeStatsByByte(allStats) |> resume
             }
         }

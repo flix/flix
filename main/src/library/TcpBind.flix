@@ -18,17 +18,12 @@
 /// The effect used to bind a TCP server.
 ///
 eff TcpBind {
-    def bind(ip: IpAddr, port: Int16): TcpServer
+    def bind(ip: IpAddr, port: Int32): TcpServer
 }
 
 pub mod TcpBind {
-    use IoError.ErrorKind
-    use IoError.IoError
 
-    import java.io.IOException
-    import java.lang.IllegalArgumentException
-    import java.net.InetAddress
-    import java.net.ServerSocket
+    use IoError.IoError
 
     ///
     /// Handles the `TcpBind` effect of the given function `f`.
@@ -40,15 +35,11 @@ pub mod TcpBind {
             Ok(f(x))
         } with handler TcpBind {
             def bind(ip, port, resume) = {
-                try {
-                    let inet: InetAddress = InetAddress.getByAddress(IpAddr.toBytes(ip));
-                    let maxQueueLength = 50;
-                    let socket = new ServerSocket(Int16.toInt32(port), maxQueueLength, inet);
-                    let server = TcpServer.TcpServer(socket);
-                    resume(server)
-                } catch {
-                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                let (ok, id, kind, msg) = %%TCP_SERVER_BIND%%((IpAddr.toBytes(ip), port));
+                if (ok) {
+                    resume(TcpServer.TcpServer(id))
+                } else {
+                    Err(IoError(IoError.errorKindFromCode(kind), msg))
                 }
             }
         }
@@ -61,4 +52,3 @@ pub mod TcpBind {
     pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - TcpBind + IO = handle(f)()
 
 }
-

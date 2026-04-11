@@ -45,13 +45,9 @@ instance CommutativeSemiGroup[Int32]
 
 instance CommutativeSemiGroup[Int64]
 
-instance CommutativeSemiGroup[BigInt]
-
 instance CommutativeSemiGroup[Float32]
 
 instance CommutativeSemiGroup[Float64]
-
-instance CommutativeSemiGroup[BigDecimal]
 
 instance CommutativeSemiGroup[(a1, a2)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2]
 
@@ -70,4 +66,3 @@ instance CommutativeSemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8)] with Commutative
 instance CommutativeSemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2], CommutativeSemiGroup[a3], CommutativeSemiGroup[a4], CommutativeSemiGroup[a5], CommutativeSemiGroup[a6], CommutativeSemiGroup[a7], CommutativeSemiGroup[a8], CommutativeSemiGroup[a9]
 
 instance CommutativeSemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2], CommutativeSemiGroup[a3], CommutativeSemiGroup[a4], CommutativeSemiGroup[a5], CommutativeSemiGroup[a6], CommutativeSemiGroup[a7], CommutativeSemiGroup[a8], CommutativeSemiGroup[a9], CommutativeSemiGroup[a10]
-

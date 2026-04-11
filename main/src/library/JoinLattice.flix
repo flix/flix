@@ -61,10 +61,6 @@ instance JoinLattice[Int64] {
     pub def leastUpperBound(x: Int64, y: Int64): Int64 = Order.max(x, y)
 }
 
-instance JoinLattice[BigInt] {
-    pub def leastUpperBound(x: BigInt, y: BigInt): BigInt = Order.max(x, y)
-}
-
 instance JoinLattice[(a1, a2)] with JoinLattice[a1], JoinLattice[a2] {
     pub def leastUpperBound(x: (a1, a2),
                             y: (a1, a2)): (a1, a2) = match (x, y) {

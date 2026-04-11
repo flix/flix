@@ -17,8 +17,6 @@
  */
 
 pub mod Fixpoint3.Solver {
-    import dev.flix.runtime.Global
-
     use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym}
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadTerm}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model, Provenance}
@@ -227,21 +225,28 @@ pub mod Fixpoint3.Solver {
     pub def rename(preds: List[PredSym], d: Datalog): Datalog = {
         // Determine all the predicate symbols in `d`.
         let predSyms = PredSymsOf.predSymsOf(d);
+        let nextId0 = (
+            predSyms
+            |> Set.toList
+            |> List.map(match PredSym(_, id) -> id)
+            |> List.maximum
+            |> Option.getWithDefault(-1i64)
+        ) + 1i64;
 
         // Compute a substitition that assignes fresh names to all predicates except those in `preds`.
-        def f(macc, predSym) = {
+        def f(acc, predSym) = {
+            let (macc, nextId) = acc;
             if (List.memberOf(predSym, preds)) {
                 // Case 1: Do not rename. Do not extend the map.
-                macc
+                (macc, nextId)
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let nextId = unsafe IO { Global.newId() + 1i64 };  // We add one because the counter starts at zero.
                 let newPredSym = PredSym(name, nextId);
-                Map.insert(predSym, newPredSym, macc)
+                (Map.insert(predSym, newPredSym, macc), nextId + 1i64)
             }
         };
-        let s = Set.foldLeft(f, Map.empty(), predSyms);
+        let (s, _) = Set.foldLeft(f, (Map.empty(), nextId0), predSyms);
 
         // Apply the computed substitution to the Datalog program `d`.
         SubstitutePredSym.substitute(d, s)

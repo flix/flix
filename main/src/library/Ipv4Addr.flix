@@ -34,10 +34,6 @@ instance Formattable[Ipv4Addr] {
 }
 
 pub mod Ipv4Addr {
-    import java.net.InetAddress
-    import java.net.UnknownHostException
-    import java.lang.NumberFormatException
-
     use Ipv4Addr.Ipv4Addr
 
     ///
@@ -106,4 +102,3 @@ pub mod Ipv4Addr {
         ) yield i8
 
 }
-

@@ -66,8 +66,6 @@ instance ForEach[DelayMap[k, v]] {
 
 pub mod DelayMap {
 
-    import java.lang.Runtime
-
     ///
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
@@ -84,10 +82,10 @@ pub mod DelayMap {
     /// It is assumed that this function is only used in contexts
     /// where this effect is not observable outside of the DelayMap module.
     ///
-    def threads(): Int32 = {
+    def threads(): Int32 = unsafe IO {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
-        multiplier * Runtime.getRuntime().availableProcessors()
+        multiplier * %%ENV_VIRTUAL_PROCESSORS%%(())
     }
 
     ///

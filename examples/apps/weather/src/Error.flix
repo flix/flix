@@ -20,3 +20,10 @@ instance ToString[WeatherError] {
     }
 
 }
+
+instance Formattable[WeatherError] {
+
+    pub def format(err: WeatherError): RichString =
+        RichString.fromString(ToString.toString(err))
+
+}

@@ -14,9 +14,33 @@
  *  limitations under the License.
  */
 
-import java.net.ServerSocket
-
 ///
 /// Represents a TCP server
 ///
-enum TcpServer(ServerSocket)
+///
+/// The underlying value is an opaque runtime handle.
+///
+enum TcpServer(Int64)
+
+pub mod TcpServer {
+
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    ///
+    /// Closes the server socket.
+    ///
+    pub def close(server: TcpServer): Result[IoError, Unit] \ IO =
+        let TcpServer(id) = server;
+        let (ok, msg) = %%TCP_SERVER_CLOSE%%(id);
+        if (ok) Ok(()) else Err(IoError(ErrorKind.Other, msg))
+
+    ///
+    /// Returns the local port that the server is bound to.
+    ///
+    pub def localPort(server: TcpServer): Result[IoError, Int32] \ IO =
+        let TcpServer(id) = server;
+        let (ok, port, msg) = %%TCP_SERVER_LOCAL_PORT%%(id);
+        if (ok) Ok(port) else Err(IoError(ErrorKind.Other, msg))
+
+}

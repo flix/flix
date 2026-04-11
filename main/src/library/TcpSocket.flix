@@ -14,14 +14,13 @@
  *  limitations under the License.
  */
 
-import java.io.InputStream
-import java.io.OutputStream
-import java.net.Socket
-
 ///
 /// Represents a TCP socket
 ///
-enum TcpSocket(Socket, InputStream, OutputStream)
+///
+/// The underlying value is an opaque runtime handle.
+///
+enum TcpSocket(Int64)
 
 instance Readable[TcpSocket] {
 
@@ -46,12 +45,25 @@ instance Writable[TcpSocket] {
 
 pub mod TcpSocket {
 
+    use IoError.ErrorKind
+    use IoError.IoError
+
     pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
-        let TcpSocket(_, inputStream, _) = socket;
-        Readable.read(buffer, inputStream)
+        let TcpSocket(id) = socket;
+        let (ok, n, msg) = %%TCP_SOCKET_READ%%((id, buffer));
+        if (ok) Ok(n) else Err(IoError(ErrorKind.Other, msg))
 
     pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
-        let TcpSocket(_, _, outputStream) = socket;
-        Writable.write(buffer, outputStream)
+        let TcpSocket(id) = socket;
+        let (ok, n, msg) = %%TCP_SOCKET_WRITE%%((id, buffer));
+        if (ok) Ok(n) else Err(IoError(ErrorKind.Other, msg))
+
+    ///
+    /// Closes the socket.
+    ///
+    pub def close(socket: TcpSocket): Result[IoError, Unit] \ IO =
+        let TcpSocket(id) = socket;
+        let (ok, msg) = %%TCP_SOCKET_CLOSE%%(id);
+        if (ok) Ok(()) else Err(IoError(ErrorKind.Other, msg))
 
 }

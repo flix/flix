@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-import java.lang.{StringBuilder => JStringBuilder}
-
 use IoError.IoError
 
 ///
 /// Represents a StringBuilder.
 ///
-enum StringBuilder[_: Region](JStringBuilder)
+pub struct StringBuilder[r: Region] {
+    rc: Region[r],
+    handle: StringBuilderHandle
+}
 
 instance Writable[StringBuilder[r]] {
 
@@ -37,13 +38,12 @@ instance Writable[StringBuilder[r]] {
 }
 
 pub mod StringBuilder {
-    import java.lang.{StringBuilder => JStringBuilder};
 
     ///
     /// Returns a new mutable StringBuilder.
     ///
-    pub def empty(_: Region[r]): StringBuilder[r] \ r =
-        StringBuilder(unsafe IO as r { new JStringBuilder() })
+    pub def empty(rc: Region[r]): StringBuilder[r] \ r =
+        new StringBuilder @ rc {rc = rc, handle = %%STRINGBUILDER_NEW%%(rc)}
 
     ///
     /// Append `x` to the StringBuilder `sb`.
@@ -57,15 +57,13 @@ pub mod StringBuilder {
     /// Append the String `s` to the StringBuilder `sb`.
     ///
     pub def appendString(s: String, sb: StringBuilder[r]): Unit \ r =
-        let StringBuilder(msb) = sb;
-        discard unsafe IO as r { msb.append(s) }
+        %%STRINGBUILDER_APPEND_STRING%%((sb->rc, sb->handle, s))
 
     ///
     /// Append the code point `cp` to the StringBuilder `sb`.
     ///
     pub def appendCodePoint(cp: Int32, sb: StringBuilder[r]): Unit \ r =
-        let StringBuilder(msb) = sb;
-        discard unsafe IO as r { msb.appendCodePoint(cp) }
+        %%STRINGBUILDER_APPEND_CODE_POINT%%((sb->rc, sb->handle, cp))
 
     ///
     /// Append the system line separator to the StringBuilder `sb`.
@@ -116,15 +114,19 @@ pub mod StringBuilder {
     /// Returns an iterator over `sb`.
     ///
     pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
-        let StringBuilder(msb) = sb;
-        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unsafe IO as r2 { msb.charAt(i) })
+        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> charAt(i, sb))
+
+    ///
+    /// Returns the character at the given index in the StringBuilder `sb`.
+    ///
+    def charAt(i: Int32, sb: StringBuilder[r]): Char \ r =
+        %%STRINGBUILDER_CHAR_AT%%((sb->rc, sb->handle, i))
 
     ///
     /// Return the number of characters in the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ r =
-        let StringBuilder(msb) = sb;
-        unsafe IO as r { msb.length() }
+        %%STRINGBUILDER_LENGTH%%((sb->rc, sb->handle))
 
     ///
     /// Return the number of characters in the StringBuilder `sb`.
@@ -135,14 +137,12 @@ pub mod StringBuilder {
     /// Sets the length of the StringBuilder `sb`.
     ///
     pub def setLength(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
-        let StringBuilder.StringBuilder(msb) = sb;
-        unsafe IO as r { msb.setLength(newLength) }
+        %%STRINGBUILDER_SET_LENGTH%%((sb->rc, sb->handle, newLength))
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ r =
-        let StringBuilder(msb) = sb;
-        unsafe IO as r { msb.toString() }
+        %%STRINGBUILDER_TO_STRING%%((sb->rc, sb->handle))
 
 }

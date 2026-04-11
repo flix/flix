@@ -272,17 +272,20 @@ pub mod Fixpoint3.Interpreter {
             }
         case RamStmt.Comment(_) => ()
         // Note: The region construct ensures that all threads spawned in rc2 will have completed before we leave its lexical scope.
-        case RamStmt.Par(stmts) => region rc2 {
-            foreach (innerStmt <- stmts) {
-                unchecked_cast({
-                    let _: Unit = spawn unchecked_cast({
-                        let threadCtx = copyCtx(rc, ctx);
-                        evalStmt(rc, threadCtx, parLevel, innerStmt)
-                    } as _ \ IO) @ rc2; // spawn may not take an `r` effect, so we cast it to `IO`
-                    ()
-                } as _ \ rc2)
+        case RamStmt.Par(stmts) =>
+            if (parLevel <= 0) {
+                Vector.forEach(evalStmt(rc, ctx, parLevel), stmts)
+            } else region rc2 {
+                foreach (innerStmt <- stmts) {
+                    unchecked_cast({
+                        let _: Unit = spawn unchecked_cast({
+                            let threadCtx = copyCtx(rc, ctx);
+                            evalStmt(rc, threadCtx, parLevel, innerStmt)
+                        } as _ \ IO) @ rc2; // spawn may not take an `r` effect, so we cast it to `IO`
+                        ()
+                    } as _ \ rc2)
+                }
             }
-        }
     }
 
     ///
@@ -316,10 +319,8 @@ pub mod Fixpoint3.Interpreter {
                 lookupIndex(searchIndex, db) |>
                     BPlusTree.rangeQueryWith(
                         evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel),
-                        // We could here use Vector.toArray, but it would create a copy. To avoid memory
-                        // allocation we simply cast.
-                        unchecked_cast((Vector.get(tuplePos, minEnv): Array[Int64, r]) as Tuple),
-                        unchecked_cast((Vector.get(tuplePos, maxEnv): Array[Int64, r]) as Tuple)
+                        Array.toVector(Vector.get(tuplePos, minEnv)),
+                        Array.toVector(Vector.get(tuplePos, maxEnv))
                     )
             case RelOp.If(test, then) =>
                 if (evalBoolExps(ctx, test))
@@ -360,10 +361,8 @@ pub mod Fixpoint3.Interpreter {
                 lookupIndex(searchIndex, db) |>
                     BPlusTree.rangeQueryWith(
                         evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel),
-                        // We could here use Vector.toArray, but it would create a copy. To avoid memory
-                        // allocation we simply cast.
-                        unchecked_cast((Vector.get(tuplePos, minEnv): Array[Int64, r]) as Tuple),
-                        unchecked_cast((Vector.get(tuplePos, maxEnv): Array[Int64, r]) as Tuple)
+                        Array.toVector(Vector.get(tuplePos, minEnv)),
+                        Array.toVector(Vector.get(tuplePos, maxEnv))
                     )
             case RelOp.Project(terms, rel, Latticenal(bot, leq, lub, _)) =>
                 let relIndex = lookupIndex(rel, db);

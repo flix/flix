@@ -13,11 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-use IoError.ErrorKind
 use IoError.IoError
-
-import java.io.IOException
-import java.io.OutputStream
 
 ///
 /// A trait for types which are resources that can be written to.
@@ -48,7 +44,6 @@ trait Writable[t] {
 }
 
 pub mod Writable {
-    import java.lang.System
 
     ///
     /// Writes `string` to `writer`.
@@ -70,8 +65,8 @@ pub mod Writable {
     /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
     ///
     pub def writeNewLine(writer: t): Result[IoError, Unit] \ IO + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
-        let newLine = System.getProperty("line.separator");
-        writeString(newLine, writer)
+        let sep = Env.runWithIO(_ -> Env.getLineSeparator());
+        writeString(sep, writer)
 
     ///
     /// Writes `line` to `writer` and appends a new line separator.
@@ -83,21 +78,5 @@ pub mod Writable {
             _ <- writeString(line, writer);
             _ <- writeNewLine(writer)
         ) yield ()
-
-}
-
-instance Writable[OutputStream] {
-
-    type Elm = Int8
-
-    type Aef = IO
-
-    pub def write(b: Array[Int8, r], r: OutputStream): Result[IoError, Int32] \ r + IO =
-        try {
-            r.write(b);
-            checked_ecast(Ok(Array.length(b)))
-        } catch {
-            case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-        }
 
 }

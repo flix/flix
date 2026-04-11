@@ -15,18 +15,12 @@
  */
 pub mod Object {
 
-    import java.util.Objects
-    import java.lang.Object
-
     ///
     /// Returns `true` if the given value `x` is `null`.
     ///
     @Inline
     pub def isNull(x: a): Bool =
-        match Reflect.reflect(x) {
-            case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
-            case _ => false
-        }
+        %%OBJECT_IS_NULL%%(x)
 
     ///
     /// Returns `None` if the given value `x` is `null`, otherwise returns `Some(x)`.

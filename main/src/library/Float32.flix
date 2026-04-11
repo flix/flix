@@ -24,11 +24,6 @@ instance UpperBound[Float32] {
 
 pub mod Float32 {
 
-    import java.lang.Double
-    import java.lang.Float
-    import java.lang.Math
-    import java.lang.NumberFormatException
-
     ///
     /// Returns the number of bits used to represent a `Float32`.
     ///
@@ -108,11 +103,10 @@ pub mod Float32 {
     /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Float32] = try {
-        Some(Float.parseFloat(s.strip()))
-     } catch {
-         case _: NumberFormatException => None
-     }
+    pub def fromString(s: String): Option[Float32] = {
+        let (ok, v) = %%FLOAT32_FROM_STRING%%(s);
+        if (ok) Some(v) else None
+    }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -127,7 +121,7 @@ pub mod Float32 {
         if (x < Int8.toFloat32(Int8.minValue()) or x > Int8.toFloat32(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(Float.valueOf(x).byteValue())
+            Some(%%FLOAT32_TO_INT8%%(x))
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -142,7 +136,7 @@ pub mod Float32 {
         if (x < Int16.toFloat32(Int16.minValue()) or x > Int16.toFloat32(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(Float.valueOf(x).shortValue())
+            Some(%%FLOAT32_TO_INT16%%(x))
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -160,7 +154,7 @@ pub mod Float32 {
         if (x < Int32.toFloat32(Int32.minValue()) or x > Int32.toFloat32(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(Float.valueOf(x).intValue())
+            Some(%%FLOAT32_TO_INT32%%(x))
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -178,34 +172,13 @@ pub mod Float32 {
         if (x < Int64.toFloat32(Int64.minValue()) or x > Int64.toFloat32(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(Float.valueOf(x).longValue())
-
-    ///
-    /// Convert `x` to an `Option[BigInt]`.
-    ///
-    /// Returns `Some(x as BigInt)` if the numeric value of `x` is representable as a BigInt.
-    ///
-    /// Returns `None` if the value of `x` is NaN or infinity.
-    ///
-    pub def tryToBigInt(x: Float32): Option[BigInt] =
-        Float64.tryToBigInt(toFloat64(x))
+            Some(%%FLOAT32_TO_INT64%%(x))
 
     ///
     /// Convert `x` to an Float64.
     ///
     pub def toFloat64(x: Float32): Float64 =
-        Float.valueOf(x).doubleValue()
-
-    ///
-    /// Convert `x` to an `Option[BigDecimal]`.
-    ///
-    /// Returns `Some(x as BigDecimal)` if the numeric value of `x` is representable
-    /// as a BigDecimal value.
-    ///
-    /// If `x` is NaN or infinity return `None`.
-    ///
-    pub def tryToBigDecimal(x: Float32): Option[BigDecimal] =
-        toFloat64(x) |> Float64.tryToBigDecimal
+        %%FLOAT32_TO_FLOAT64%%(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -233,7 +206,7 @@ pub mod Float32 {
         if (isNan(x))
             nanValue#nanValue
         else
-            Float.valueOf(clamp(min = minf32, max = maxf32, x)).byteValue()
+            %%FLOAT32_TO_INT8%%(clamp(min = minf32, max = maxf32, x))
 
     ///
     /// Convert `x` to an `Int16`.
@@ -249,7 +222,7 @@ pub mod Float32 {
         if (isNan(x))
             nanValue#nanValue
         else
-            Float.valueOf(clamp(min = minf32, max = maxf32, x)).shortValue()
+            %%FLOAT32_TO_INT16%%(clamp(min = minf32, max = maxf32, x))
 
     ///
     /// Convert `x` to an `Int32`.
@@ -265,7 +238,7 @@ pub mod Float32 {
         if (isNan(x))
             nanValue#nanValue
         else
-            Float.valueOf(clamp(min = minf32, max = maxf32, x)).intValue()
+            %%FLOAT32_TO_INT32%%(clamp(min = minf32, max = maxf32, x))
 
     ///
     /// Convert `x` to an `Int64`.
@@ -281,59 +254,11 @@ pub mod Float32 {
         if (isNan(x))
             nanValue#nanValue
         else
-            Float.valueOf(clamp(min = minf32, max = maxf32, x)).longValue()
-
-    ///
-    /// Returns the absolute value of `x`.
-    ///
-    pub def abs(x: Float32): Float32 =
-        Math.abs(x)
-
-    ///
-    /// Returns `x` rounded up to a Float32 representing the nearest larger integer value.
-    ///
-    pub def ceil(x: Float32): Float32 =
-        let x1 = Math.ceil(Float.valueOf(x).doubleValue());
-        Double.valueOf(x1).floatValue()
-
-    ///
-    /// Returns `x` rounded down to a Float32 representing the nearest smaller integer value.
-    ///
-    pub def floor(x: Float32): Float32 =
-        let x1 = Math.floor(Float.valueOf(x).doubleValue());
-        Double.valueOf(x1).floatValue()
-
-    ///
-    /// Returns `x` rounded to a Float32 representing the nearest integer value.
-    ///
-    /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
-    /// close, `x` will be rounded to an even value (i.e. `round(0.5f32) == 0.0f32`).
-    ///
-    pub def round(x: Float32): Float32 =
-        let x1 = Math.rint(Float.valueOf(x).doubleValue());
-        Double.valueOf(x1).floatValue()
+            %%FLOAT32_TO_INT64%%(clamp(min = minf32, max = maxf32, x))
 
     ///
     /// Returns `base` raised to the power of `n`.
     ///
     pub def pow(base: {base = Float32}, n: Float32): Float32 = %%FLOAT32_EXP%%(base#base, n)
-
-    ///
-    /// Get the primitive Float32 value from its object representation (i.e. java.lang.Float).
-    ///
-    /// This function is expected to be used when marshaling Float32s from Java. Generally in Flix
-    /// code you should not need to use `java.lang.Float`.
-    ///
-    pub def floatValue(d: Float): Float32 =
-        d.floatValue()
-
-    ///
-    /// Convert an Float32 value to its object representation (i.e. java.lang.Float).
-    ///
-    /// This function is expected to be used when marshaling Float32s to Java. Generally in Flix
-    /// code you should not need to use `java.lang.Float`.
-    ///
-    pub def valueOf(d: Float32): Float =
-        Float.valueOf(d)
 
 }

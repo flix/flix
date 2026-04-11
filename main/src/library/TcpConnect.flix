@@ -18,16 +18,12 @@
 /// The effect used to connect to a TCP server.
 ///
 eff TcpConnect {
-    def connect(ip: IpAddr, port: Int16): TcpSocket
+    def connect(ip: IpAddr, port: Int32): TcpSocket
 }
 
 pub mod TcpConnect {
-    use IoError.ErrorKind
-    use IoError.IoError
 
-    import java.net.InetAddress
-    import java.net.Socket
-    import java.io.IOException
+    use IoError.IoError
 
     ///
     /// Handles the `TcpConnect` effect of the given function `f`.
@@ -39,14 +35,11 @@ pub mod TcpConnect {
             Ok(f(x))
         } with handler TcpConnect {
             def connect(ip, port, k) = {
-                try {
-                    let inet: InetAddress = InetAddress.getByAddress(IpAddr.toBytes(ip));
-                    let socket = new Socket(inet, Int16.toInt32(port));
-                    let inputStream = socket.getInputStream();
-                    let outputStream = socket.getOutputStream();
-                    k(TcpSocket.TcpSocket(socket, inputStream, outputStream))
-                } catch {
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                let (ok, id, kind, msg) = %%TCP_SOCKET_CONNECT%%((IpAddr.toBytes(ip), port));
+                if (ok) {
+                    k(TcpSocket.TcpSocket(id))
+                } else {
+                    Err(IoError(IoError.errorKindFromCode(kind), msg))
                 }
             }
         }

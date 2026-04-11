@@ -76,14 +76,6 @@ instance Eq[Float64] {
     redef neq(x: Float64, y: Float64): Bool = %%FLOAT64_NEQ%%(x, y)
 }
 
-instance Eq[BigDecimal] {
-    pub def eq(x: BigDecimal, y: BigDecimal): Bool =
-        x.compareTo(y) == 0
-
-    redef neq(x: BigDecimal, y: BigDecimal): Bool =
-        x.compareTo(y) != 0
-}
-
 instance Eq[Int8] {
     pub def eq(x: Int8, y: Int8): Bool = %%INT8_EQ%%(x, y)
     redef neq(x: Int8, y: Int8): Bool = %%INT8_NEQ%%(x, y)
@@ -104,16 +96,21 @@ instance Eq[Int64] {
     redef neq(x: Int64, y: Int64): Bool = %%INT64_NEQ%%(x, y)
 }
 
-instance Eq[BigInt] {
-    pub def eq(x: BigInt, y: BigInt): Bool =
-        x.compareTo(y) == 0
-
-    redef neq(x: BigInt, y: BigInt): Bool =
-        x.compareTo(y) != 0
-}
-
 instance Eq[String] {
-    pub def eq(x: String, y: String): Bool = x.equals(y)
+    pub def eq(x: String, y: String): Bool =
+        let len = %%STRING_LENGTH%%(x);
+        if (len != %%STRING_LENGTH%%(y))
+            false
+        else {
+            def loop(i) =
+                if (i >= len)
+                    true
+                else if (%%STRING_CHAR_AT%%(x, i) != %%STRING_CHAR_AT%%(y, i))
+                    false
+                else
+                    loop(i + 1);
+            loop(0)
+        }
 }
 
 instance Eq[(a1, a2)] with Eq[a1], Eq[a2] {

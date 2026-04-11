@@ -99,8 +99,6 @@ instance ForEach[RedBlackTree[k, v]] {
 
 pub mod RedBlackTree {
 
-    import java.lang.Runtime
-
     ///
     /// The color of a red-black tree node.
     ///
@@ -124,10 +122,10 @@ pub mod RedBlackTree {
     /// It is assumed that this function is only used in contexts
     /// where this effect is not observable outside of the RedBlackTree module.
     ///
-    def threads(): Int32 = {
+    def threads(): Int32 = unsafe IO {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
-        multiplier * Runtime.getRuntime().availableProcessors()
+        multiplier * %%ENV_VIRTUAL_PROCESSORS%%(())
     }
 
     ///

@@ -22,12 +22,8 @@ eff TcpAcceptWithResult {
 }
 
 pub mod TcpAcceptWithResult {
-    use IoError.ErrorKind
-    use IoError.IoError
 
-    import java.io.IOException
-    import java.net.SocketTimeoutException
-    import java.nio.channels.IllegalBlockingModeException
+    use IoError.IoError
 
     ///
     /// Handles the `TcpAcceptWithResult` effect of the given function `f`.
@@ -39,15 +35,12 @@ pub mod TcpAcceptWithResult {
             f(x)
         } with handler TcpAcceptWithResult {
             def accept(server, resume) = {
-                try {
-                    let TcpServer.TcpServer(serverSocket) = server;
-                    let socket = serverSocket.accept();
-                    let inputStream = socket.getInputStream();
-                    let outputStream = socket.getOutputStream();
-                    resume(Ok(TcpSocket.TcpSocket(socket, inputStream, outputStream)))
-                } catch {
-                    case ex: SocketTimeoutException => resume(Err(IoError(ErrorKind.Timeout, ex.getMessage())))
-                    case ex: IOException            => resume(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                let TcpServer.TcpServer(serverId) = server;
+                let (ok, socketId, kind, msg) = %%TCP_SERVER_ACCEPT%%(serverId);
+                if (ok) {
+                    resume(Ok(TcpSocket.TcpSocket(socketId)))
+                } else {
+                    resume(Err(IoError(IoError.errorKindFromCode(kind), msg)))
                 }
             }
         }

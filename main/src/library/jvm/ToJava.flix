@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+// JVM-only: marshaling values to Java objects.
+
 import java.lang.Byte
 import java.lang.Character
 import java.lang.Double

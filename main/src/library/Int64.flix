@@ -24,11 +24,6 @@ instance UpperBound[Int64] {
 
 pub mod Int64 {
 
-    import java.lang.Long
-    import java.lang.NumberFormatException
-    import java.math.BigDecimal
-    import java.math.BigInteger
-
     ///
     /// Returns the number of bits used to represent an `Int64`.
     ///
@@ -340,10 +335,9 @@ pub mod Int64 {
     /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Int64] = try {
-        Some(Long.parseLong(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
+    pub def fromString(s: String): Option[Int64] = {
+        let (ok, v) = %%INT64_FROM_STRING%%(s);
+        if (ok) Some(v) else None
     }
 
     ///
@@ -351,10 +345,9 @@ pub mod Int64 {
     /// Leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def parse(radix: Int32, s: String): Result[String, Int64] = try {
-        Ok(Long.parseLong(s.strip(), radix))
-    } catch {
-        case _: NumberFormatException => Err("Int64.parse")
+    pub def parse(radix: Int32, s: String): Result[String, Int64] = {
+        let (ok, v) = %%INT64_PARSE%%((radix, s));
+        if (ok) Ok(v) else Err("Int64.parse")
     }
 
     ///
@@ -369,7 +362,7 @@ pub mod Int64 {
         if (x < Int8.toInt64(Int8.minValue()) or x > Int8.toInt64(Int8.maxValue()))
             None
         else
-            Some(Long.valueOf(x).byteValue())
+            Some(%%INT64_TO_INT8%%(x))
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -383,7 +376,7 @@ pub mod Int64 {
         if (x < Int16.toInt64(Int16.minValue()) or x > Int16.toInt64(Int16.maxValue()))
             None
         else
-            Some(Long.valueOf(x).shortValue())
+            Some(%%INT64_TO_INT16%%(x))
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -397,14 +390,7 @@ pub mod Int64 {
         if (x < Int32.toInt64(Int32.minValue()) or x > Int32.toInt64(Int32.maxValue()))
             None
         else
-            Some(Long.valueOf(x).intValue())
-    ///
-    /// Convert `x` to a BigInt.
-    ///
-    /// The numeric value of `x` is preserved exactly.
-    ///
-    pub def toBigInt(x: Int64): BigInt =
-        BigInteger.valueOf(Long.valueOf(x).longValue())
+            Some(%%INT64_TO_INT32%%(x))
 
     ///
     /// Convert `x` to a Float32.
@@ -412,7 +398,7 @@ pub mod Int64 {
     /// Warning: The numeric value of `x` may lose precision.
     ///
     pub def toFloat32(x: Int64): Float32 =
-        Long.valueOf(x).floatValue()
+        %%INT64_TO_FLOAT32%%(x)
 
     ///
     /// Convert `x` to a Float64.
@@ -420,15 +406,7 @@ pub mod Int64 {
     /// Warning: The numeric value of `x` may lose precision.
     ///
     pub def toFloat64(x: Int64): Float64 =
-        Long.valueOf(x).doubleValue()
-
-    ///
-    /// Convert `x` to a BigDecimal.
-    ///
-    /// Warning: The numeric value of `x` may lose precision.
-    ///
-    pub def toBigDecimal(x: Int64): BigDecimal =
-        new BigDecimal(x)
+        %%INT64_TO_FLOAT64%%(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -450,7 +428,7 @@ pub mod Int64 {
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int64): Int8 =
         let mini64 = Int8.toInt64(min#min);
         let maxi64 = Int8.toInt64(max#max);
-        Long.valueOf(clamp(min = mini64, max = maxi64, x)).byteValue()
+        %%INT64_TO_INT8%%(clamp(min = mini64, max = maxi64, x))
 
     ///
     /// Convert `x` to an `Int16`.
@@ -460,7 +438,7 @@ pub mod Int64 {
     pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int64): Int16 =
         let mini64 = Int16.toInt64(min#min);
         let maxi64 = Int16.toInt64(max#max);
-        Long.valueOf(clamp(min = mini64, max = maxi64, x)).shortValue()
+        %%INT64_TO_INT16%%(clamp(min = mini64, max = maxi64, x))
 
 
     ///
@@ -471,24 +449,6 @@ pub mod Int64 {
     pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, x: Int64): Int32 =
         let mini64 = Int32.toInt64(min#min);
         let maxi64 = Int32.toInt64(max#max);
-        Long.valueOf(clamp(min = mini64, max = maxi64, x)).intValue()
-
-    ///
-    /// Get the primitive Int64 value from its object representation (i.e. Long).
-    ///
-    /// This function is expected to be used when marshaling Int64s from Java. Generally in Flix
-    /// code you should not need to use `Long`.
-    ///
-    pub def longValue(i: Long): Int64 =
-        i.longValue()
-
-    ///
-    /// Convert an Int64 value to its object representation (i.e. Long).
-    ///
-    /// This function is expected to be used when marshaling Int64s to Java. Generally in Flix
-    /// code you should not need to use `Long`.
-    ///
-    pub def valueOf(i: Int64): Long =
-        Long.valueOf(i)
+        %%INT64_TO_INT32%%(clamp(min = mini64, max = maxi64, x))
 
 }

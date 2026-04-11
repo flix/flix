@@ -6,4 +6,4 @@ flix        = "0.58.1"
 authors     = ["chenhaogao123@gmail.com"]
 
 [dependencies]
-"github:mlutze/flix-json" =  "0.12.18"
+"github:mlutze/flix-json" =  "0.13.1"

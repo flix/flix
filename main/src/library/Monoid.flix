@@ -67,20 +67,12 @@ instance Monoid[Int64] {
     pub def empty(): Int64 = 0i64
 }
 
-instance Monoid[BigInt] {
-    pub def empty(): BigInt = 0ii
-}
-
 instance Monoid[Float32] {
     pub def empty(): Float32 = 0.0f32
 }
 
 instance Monoid[Float64] {
     pub def empty(): Float64 = 0.0f64
-}
-
-instance Monoid[BigDecimal] {
-    pub def empty(): BigDecimal = 0.0ff
 }
 
 instance Monoid[String] {

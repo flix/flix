@@ -504,15 +504,27 @@ pub mod Fixpoint3.ProvenanceReconstruct {
     /// Would return `[Box(23), Box(99), Box(55), Box(42), Box(77)]`
     ///
     def combineToFact(filter: Vector[(Int32, Boxed)], newValues: Vector[Boxed]): Vector[Boxed] = region rc {
-        let c1 = Counter.fresh(rc);
-        let c2 = Counter.fresh(rc);
         let size = Vector.length(filter) + Vector.length(newValues);
-        Vector.init(i -> {
-                if (Counter.get(c1) < Vector.length(filter) and i == fst(Vector.get(Counter.get(c1), filter))) {
-                    snd(Vector.get(Counter.getAndIncrement(c1), filter))
-                } else {
-                    Vector.get(Counter.getAndIncrement(c2), newValues)
+        let arr = Array.empty(rc, size);
+        def loop(i: Int32, j: Int32, k: Int32): Unit \ rc =
+            if (i < size) {
+                match Vector.nth(j, filter) {
+                    case Some((dst, value)) if i == dst =>
+                        Array.put(value, i, arr);
+                        loop(i + 1, j + 1, k)
+                    case _ =>
+                        match Vector.nth(k, newValues) {
+                            case Some(value) =>
+                                Array.put(value, i, arr);
+                                loop(i + 1, j, k + 1)
+                            case None =>
+                                bug!("Fixpoint3.ProvenanceReconstruct.combineToFact: exhausted newValues (filterLen=${Vector.length(filter)}, newLen=${Vector.length(newValues)}, size=${size}, i=${i}, filter=${filter}, newValues=${newValues}).")
+                        }
                 }
-        }, size)
+            } else {
+                ()
+            };
+        loop(0, 0, 0);
+        Array.toVector(arr)
     }
 }

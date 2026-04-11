@@ -14,14 +14,6 @@
  *  limitations under the License.
  */
 
-import java.lang.Byte
-import java.lang.Character
-import java.lang.Double
-import java.lang.Float
-import java.lang.Integer
-import java.lang.Long
-import java.lang.Short
-
 ///
 /// A trait for types that can be converted to strings.
 ///
@@ -44,47 +36,35 @@ instance ToString[Bool] {
 }
 
 instance ToString[Char] {
-    pub def toString(x: Char): String = Character.toString(x)
+    pub def toString(x: Char): String = %%CHAR_TO_STRING%%(x)
 }
 
 instance ToString[Float32] {
-    pub def toString(x: Float32): String = Float.toString(x)
+    pub def toString(x: Float32): String = %%FLOAT32_TO_STRING%%(x)
 }
 
 instance ToString[Float64] {
-    pub def toString(x: Float64): String = Double.toString(x)
+    pub def toString(x: Float64): String = %%FLOAT64_TO_STRING%%(x)
 }
 
 instance ToString[Int8] {
-    pub def toString(x: Int8): String = Byte.toString(x)
+    pub def toString(x: Int8): String = %%INT8_TO_STRING%%(x)
 }
 
 instance ToString[Int16] {
-    pub def toString(x: Int16): String = Short.toString(x)
+    pub def toString(x: Int16): String = %%INT16_TO_STRING%%(x)
 }
 
 instance ToString[Int32] {
-    pub def toString(x: Int32): String = Integer.toString(x)
+    pub def toString(x: Int32): String = %%INT32_TO_STRING%%(x)
 }
 
 instance ToString[Int64] {
-    pub def toString(x: Int64): String = Long.toString(x)
+    pub def toString(x: Int64): String = %%INT64_TO_STRING%%(x)
 }
 
 instance ToString[String] {
     pub def toString(x: String): String = x
-}
-
-instance ToString[BigInt] {
-    pub def toString(x: BigInt): String = x.toString()
-}
-
-instance ToString[BigDecimal] {
-    pub def toString(x: BigDecimal): String = x.toString()
-}
-
-instance ToString[Regex] {
-    pub def toString(x: Regex): String = x.toString()
 }
 
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {

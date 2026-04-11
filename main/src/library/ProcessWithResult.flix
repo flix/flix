@@ -58,19 +58,8 @@ eff ProcessWithResult {
 
 pub mod ProcessWithResult {
 
-    use IoError.ErrorKind
     use IoError.IoError
     use ProcessHandle.ProcessHandle
-
-    import java.lang.IllegalArgumentException
-    import java.lang.IllegalThreadStateException
-    import java.lang.InterruptedException
-    import java.lang.UnsupportedOperationException
-    import java.io.IOException
-    import java.lang.ProcessBuilder
-    import java.lang.Runtime
-    import java.io.{File => JFile}
-    import java.util.concurrent.{TimeUnit => JTimeUnit}
 
     ///
     /// Executes the command `cmd` with the arguments `args`.
@@ -99,92 +88,71 @@ pub mod ProcessWithResult {
         run {
             f(x)
         } with handler ProcessWithResult {
-            def execWithCwdAndEnv(cmd, args, cwdPath, env, k) = region rc {
-                let res = try {
-                    let arr = List.toArray(rc, cmd :: args);
-                    let pb = new ProcessBuilder(arr);
-                    foreach(e <- Map.toList(env)) {
-                        pb.environment().put(fst(e), snd(e));
-                        ()
+            def execWithCwdAndEnv(cmd, args, cwdOpt, env, k) = {
+                let res = region rc {
+                    let argv = List.toArray(rc, cmd :: args);
+
+                    let envPairs = env
+                        |> Map.toList
+                        |> List.flatMap(e -> fst(e) :: snd(e) :: Nil);
+                    let envArr = List.toArray(rc, envPairs);
+
+                    let (hasCwd, cwdStr) = match cwdOpt {
+                        case Some(cwd) => (true, cwd)
+                        case None => (false, "")
                     };
-                    match cwdPath {
-                        case Some(cwd) => pb.directory(new JFile(cwd)); ()
-                        case None => ()
-                    };
-                    let process = pb.start();
-                    Ok(ProcessHandle.ProcessHandle(process))
-                } catch {
-                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+
+                    let (ok, id, kind, msg) = %%PROCESS_EXEC%%((argv, hasCwd, cwdStr, envArr));
+                    if (ok) Ok(ProcessHandle(id)) else Err(IoError(IoError.errorKindFromCode(kind), msg))
                 };
                 k(res)
             }
 
-            def exitValue(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(jProc.exitValue()))
-                } catch {
-                    case ex: IllegalThreadStateException  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                    case ex: IOException                  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                }
+            def exitValue(ph, k) = {
+                let ProcessHandle(id) = ph;
+                let (ok, v, kind, msg) = %%PROCESS_EXIT_VALUE%%(id);
+                if (ok) k(Ok(v)) else k(Err(IoError(IoError.errorKindFromCode(kind), msg)))
+            }
 
-            def isAlive(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(jProc.isAlive()))
-                } catch {
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                }
+            def isAlive(ph, k) = {
+                let ProcessHandle(id) = ph;
+                let (ok, v, kind, msg) = %%PROCESS_IS_ALIVE%%(id);
+                if (ok) k(Ok(v)) else k(Err(IoError(IoError.errorKindFromCode(kind), msg)))
+            }
 
-            def pid(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    let pid = jProc.pid();
-                    k(Ok(pid))
-                } catch {
-                    case ex: UnsupportedOperationException => k(Err(IoError(ErrorKind.Unsupported, ex.getMessage())))
-                    case ex: IOException                   => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                }
+            def pid(ph, k) = {
+                let ProcessHandle(id) = ph;
+                let (ok, v, kind, msg) = %%PROCESS_PID%%(id);
+                if (ok) k(Ok(v)) else k(Err(IoError(IoError.errorKindFromCode(kind), msg)))
+            }
 
-            def stop(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(Ok(jProc.destroy()))
-                } catch {
-                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                }
+            def stop(ph, k) = {
+                let ProcessHandle(id) = ph;
+                let (ok, _, kind, msg) = %%PROCESS_STOP%%(id);
+                if (ok) k(Ok(())) else k(Err(IoError(IoError.errorKindFromCode(kind), msg)))
+            }
 
-            def waitFor(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    let exitVal = jProc.waitFor();
-                    k(Ok(exitVal))
-                } catch {
-                    case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
-                    case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                }
+            def waitFor(ph, k) = {
+                let ProcessHandle(id) = ph;
+                let (ok, v, kind, msg) = %%PROCESS_WAIT_FOR%%(id);
+                if (ok) k(Ok(v)) else k(Err(IoError(IoError.errorKindFromCode(kind), msg)))
+            }
 
-            def waitForTimeout(ph, time, unit, k) =
-                try {
-                    let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
-                    let ProcessHandle(jProc) = ph;
-                    let exitVal = jProc.waitFor(timeMS, JTimeUnit.MILLISECONDS);
-                    k(Ok(exitVal))
-                } catch {
-                    case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
-                    case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
-                }
+            def waitForTimeout(ph, time, unit, k) = {
+                let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
+                let ProcessHandle(id) = ph;
+                let (ok, v, kind, msg) = %%PROCESS_WAIT_FOR_TIMEOUT%%((id, timeMS));
+                if (ok) k(Ok(v)) else k(Err(IoError(IoError.errorKindFromCode(kind), msg)))
+            }
 
         }
 
     ///
-    /// Runs the `Process` effect of the given function `f`.
+    /// Runs the `ProcessWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Process` effect using the `IO` effect.
+    /// In other words, re-interprets the `ProcessWithResult` effect using the `IO` effect.
     ///
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ProcessWithResult) + IO = handle(f)()
 
 }
-

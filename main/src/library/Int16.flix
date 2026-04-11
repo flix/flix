@@ -24,11 +24,6 @@ instance UpperBound[Int16] {
 
 pub mod Int16 {
 
-    import java.lang.NumberFormatException
-    import java.lang.Short
-    import java.math.BigDecimal
-    import java.math.BigInteger
-
     ///
     /// Returns the number of bits used to represent an `Int16`.
     ///
@@ -335,10 +330,9 @@ pub mod Int16 {
     /// Parse the string `s` as an Int16, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Option[Int16] = try {
-        Some(Short.parseShort(s.strip()))
-    } catch {
-        case _: NumberFormatException => None
+    pub def fromString(s: String): Option[Int16] = {
+        let (ok, v) = %%INT16_FROM_STRING%%(s);
+        if (ok) Some(v) else None
     }
 
     ///
@@ -353,7 +347,7 @@ pub mod Int16 {
         if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
-            Some(Short.valueOf(x).byteValue())
+            Some(%%INT16_TO_INT8%%(x))
 
     ///
     /// Convert `x` to a Int32.
@@ -361,7 +355,7 @@ pub mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt32(x: Int16): Int32 =
-        Short.valueOf(x).intValue()
+        %%INT16_TO_INT32%%(x)
 
     ///
     /// Convert `x` to a Int64.
@@ -369,15 +363,7 @@ pub mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int16): Int64 =
-        Short.valueOf(x).longValue()
-
-    ///
-    /// Convert `x` to a BigInt.
-    ///
-    /// The numeric value of `x` is preserved exactly.
-    ///
-    pub def toBigInt(x: Int16): BigInt =
-        BigInteger.valueOf(Short.valueOf(x).longValue())
+        %%INT16_TO_INT64%%(x)
 
     ///
     /// Convert `x` to a Float32.
@@ -385,7 +371,7 @@ pub mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat32(x: Int16): Float32 =
-        Short.valueOf(x).floatValue()
+        %%INT16_TO_FLOAT32%%(x)
 
     ///
     /// Convert `x` to a Float64.
@@ -393,15 +379,7 @@ pub mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int16): Float64 =
-        Short.valueOf(x).doubleValue()
-
-    ///
-    /// Convert `x` to a BigDecimal.
-    ///
-    /// The numeric value of `x` is preserved exactly.
-    ///
-    pub def toBigDecimal(x: Int16): BigDecimal =
-        new BigDecimal(Int16.toInt32(x))
+        %%INT16_TO_FLOAT64%%(x)
 
     ///
     /// Helper function for the `clamp` conversion function.
@@ -423,24 +401,6 @@ pub mod Int16 {
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int16): Int8 =
         let mini16 = Int8.toInt16(min#min);
         let maxi16 = Int8.toInt16(max#max);
-        Short.valueOf(clamp(min = mini16, max = maxi16, x)).byteValue()
-
-    ///
-    /// Get the primitive Int16 value from its object representation (i.e. Short).
-    ///
-    /// This function is expected to be used when marshaling Int16s from Java. Generally in Flix
-    /// code you should not need to use `Short`.
-    ///
-    pub def shortValue(i: Short): Int16 =
-        i.shortValue()
-
-    ///
-    /// Convert an Int16 value to its object representation (i.e. Short).
-    ///
-    /// This function is expected to be used when marshaling Int16s to Java. Generally in Flix
-    /// code you should not need to use `Short`.
-    ///
-    pub def valueOf(i: Int16): Short =
-        Short.valueOf(i)
+        %%INT16_TO_INT8%%(clamp(min = mini16, max = maxi16, x))
 
 }

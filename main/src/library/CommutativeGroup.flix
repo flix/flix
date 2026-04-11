@@ -32,13 +32,9 @@ instance CommutativeGroup[Int32]
 
 instance CommutativeGroup[Int64]
 
-instance CommutativeGroup[BigInt]
-
 instance CommutativeGroup[Float32]
 
 instance CommutativeGroup[Float64]
-
-instance CommutativeGroup[BigDecimal]
 
 instance CommutativeGroup[(a1, a2)] with CommutativeGroup[a1], CommutativeGroup[a2]
 

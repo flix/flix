@@ -235,29 +235,6 @@ instance Order[Float64] {
 
 }
 
-instance Order[BigDecimal] {
-
-    redef less(x: BigDecimal, y: BigDecimal): Bool =
-        x.compareTo(y) < 0
-
-    redef lessEqual(x: BigDecimal, y: BigDecimal): Bool =
-        x.compareTo(y) <= 0
-
-    redef greater(x: BigDecimal, y: BigDecimal): Bool =
-        x.compareTo(y) > 0
-
-    redef greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
-        x.compareTo(y) >= 0
-
-    pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
-        match x.compareTo(y) {
-            case 0          => Comparison.EqualTo
-            case z if z < 0 => Comparison.LessThan
-            case _          => Comparison.GreaterThan
-        }
-
-}
-
 instance Order[Int8] {
 
     redef less(x: Int8, y: Int8): Bool = %%INT8_LT%%(x, y)
@@ -338,33 +315,32 @@ instance Order[Int64] {
 
 }
 
-instance Order[BigInt] {
-
-    redef less(x: BigInt, y: BigInt): Bool =
-        x.compareTo(y) < 0
-
-    redef lessEqual(x: BigInt, y: BigInt): Bool =
-        x.compareTo(y) <= 0
-
-    redef greater(x: BigInt, y: BigInt): Bool =
-        x.compareTo(y) > 0
-
-    redef greaterEqual(x: BigInt, y: BigInt): Bool =
-        x.compareTo(y) >= 0
-
-    pub def compare(x: BigInt, y: BigInt): Comparison =
-        match x.compareTo(y) {
-            case 0          => Comparison.EqualTo
-            case z if z < 0 => Comparison.LessThan
-            case _          => Comparison.GreaterThan
-        }
-
-}
-
 instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
-        Comparison.fromInt32(x.compareTo(y))
+        let xLen = %%STRING_LENGTH%%(x);
+        let yLen = %%STRING_LENGTH%%(y);
+        let minLen = if (xLen < yLen) xLen else yLen;
+        def loop(i) = {
+            if (i >= minLen) {
+                if (xLen < yLen)
+                    Comparison.LessThan
+                else if (xLen > yLen)
+                    Comparison.GreaterThan
+                else
+                    Comparison.EqualTo
+            } else {
+                let xCh = %%STRING_CHAR_AT%%(x, i);
+                let yCh = %%STRING_CHAR_AT%%(y, i);
+                if (xCh < yCh)
+                    Comparison.LessThan
+                else if (xCh > yCh)
+                    Comparison.GreaterThan
+                else
+                    loop(i + 1)
+            }
+        };
+        loop(0)
 
 }
 

@@ -62,9 +62,6 @@ instance Formattable[Array[a, r]] with Formattable[a] {
 }
 
 pub mod Array {
-    import java.lang.Object
-    import java.lang.System
-    import java.util.Arrays
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -220,10 +217,11 @@ pub mod Array {
     ///
     /// Returns `a` as a Vector.
     ///
-    pub def toVector(a: Array[a, r]): Vector[a] \ r = region rc {
-        let arr1 = copyOfRange(rc, 0, length(a), a);
-        unchecked_cast(arr1 as Vector[a])
-    }
+    pub def toVector(a: Array[a, r]): Vector[a] \ r =
+        unsafe IO as r {
+            let arr1 = copyOfRange(Static, 0, length(a), a);
+            unchecked_cast(arr1 as Vector[a])
+        }
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -1542,9 +1540,33 @@ pub mod Array {
     ///
     /// If `src` and `dst` refer to the same array the result will be as though the range was copied to a separate array before pasting to the `dst` array.
     pub def copyInto(srcPos: { srcPos = Int32 }, dstPos: { dstPos = Int32 }, len: { len = Int32 }, src: { src = Array[a, r1] }, dst: Array[a, r2]): Unit \ { r1, r2 } =
-        let srcObj: Object = checked_cast(src#src);
-        let dstObj: Object = checked_cast(dst);
-        unsafe IO as { r1, r2 } { System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) }
+        if (len#len <= 0)
+            ()
+        else {
+            // Use memmove semantics to correctly handle overlapping ranges (when `src == dst`).
+            let n = len#len;
+            if (dstPos#dstPos < srcPos#srcPos) {
+                def loop(i) = {
+                    if (i >= n)
+                        ()
+                    else {
+                        Array.put(Array.get(srcPos#srcPos + i, src#src), dstPos#dstPos + i, dst);
+                        loop(i + 1)
+                    }
+                };
+                loop(0)
+            } else {
+                def loop(i) = {
+                    if (i < 0)
+                        ()
+                    else {
+                        Array.put(Array.get(srcPos#srcPos + i, src#src), dstPos#dstPos + i, dst);
+                        loop(i - 1)
+                    }
+                };
+                loop(n - 1)
+            }
+        }
 
     ///
     /// Returns a shallow copy of the array `a`.
@@ -1561,38 +1583,33 @@ pub mod Array {
     /// If the range is valid and greater than the length of `a`, the resulting array will have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } = {
+    pub def copyOfRange(rc2: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } = {
         use Reflect.JvmType;
-        // All of the below casts are required to cast the type to `Array[a, ...]`.
-        match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
-            // The casts here are used to both modify the java method type and to simulate GADT typing
-            case JvmType.JvmBool =>
-                let arr = unchecked_cast(a as Array[Bool, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmChar =>
-                let arr = unchecked_cast(a as Array[Char, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmInt8 =>
-                let arr = unchecked_cast(a as Array[Int8, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmInt16 =>
-                let arr = unchecked_cast(a as Array[Int16, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmInt32 =>
-                let arr = unchecked_cast(a as Array[Int32, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmInt64 =>
-                let arr = unchecked_cast(a as Array[Int64, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmFloat32 =>
-                let arr = unchecked_cast(a as Array[Float32, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmFloat64 =>
-                let arr = unchecked_cast(a as Array[Float64, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
-            case JvmType.JvmObject =>
-                let arr = unchecked_cast(a as Array[Object, r1]);
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+        let len = Array.length(a);
+        if (b < 0 or b > len or e < b)
+            unreachable!()
+        else {
+            let newLen = e - b;
+            if (newLen <= 0)
+                Array#{} @ rc2
+            else {
+                let zero = match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
+                    case JvmType.JvmBool    => unchecked_cast(false as a)
+                    case JvmType.JvmChar    => unchecked_cast('\u0000' as a)
+                    case JvmType.JvmInt8    => unchecked_cast(0i8 as a)
+                    case JvmType.JvmInt16   => unchecked_cast(0i16 as a)
+                    case JvmType.JvmInt32   => unchecked_cast(0i32 as a)
+                    case JvmType.JvmInt64   => unchecked_cast(0i64 as a)
+                    case JvmType.JvmFloat32 => unchecked_cast(0.0f32 as a)
+                    case JvmType.JvmFloat64 => unchecked_cast(0.0f64 as a)
+                    case JvmType.JvmObject  => unchecked_cast(null as a)
+                };
+
+                let out = %%ARRAY_NEW%%(rc2, zero, newLen);
+                let copyLen = Int32.min(len - b, newLen);
+                if (copyLen > 0) { copyInto(srcPos = b, dstPos = 0, len = copyLen, src = a, out) };
+                out
+            }
         }
     }
 

@@ -62,10 +62,6 @@ instance MeetLattice[Int64] {
     pub def greatestLowerBound(x: Int64, y: Int64): Int64 = Order.min(x, y)
 }
 
-instance MeetLattice[BigInt] {
-    pub def greatestLowerBound(x: BigInt, y: BigInt): BigInt = Order.min(x, y)
-}
-
 instance MeetLattice[(a1, a2)] with MeetLattice[a1], MeetLattice[a2] {
     pub def greatestLowerBound(x: (a1, a2),
                             y: (a1, a2)): (a1, a2) = match (x, y) {

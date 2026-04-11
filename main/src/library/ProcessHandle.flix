@@ -14,10 +14,27 @@
  *  limitations under the License.
  */
 
-import java.lang.{Process=> JProcess}
-
 ///
 /// Handles the created Process.
 ///
-enum ProcessHandle (JProcess)
+///
+/// The underlying value is an opaque runtime handle.
+///
+enum ProcessHandle(Int64)
 
+pub mod ProcessHandle {
+
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    ///
+    /// Releases the process handle, removing it from the runtime handle table.
+    ///
+    /// Note: This does not stop/kill the underlying process.
+    ///
+    pub def release(ph: ProcessHandle): Result[IoError, Unit] \ IO =
+        let ProcessHandle(id) = ph;
+        let (ok, msg) = %%PROCESS_RELEASE%%(id);
+        if (ok) Ok(()) else Err(IoError(ErrorKind.Other, msg))
+
+}

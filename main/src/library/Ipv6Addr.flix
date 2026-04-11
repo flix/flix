@@ -39,11 +39,6 @@ instance Formattable[Ipv6Addr] {
 }
 
 pub mod Ipv6Addr {
-    import java.lang.Integer
-    import java.lang.NumberFormatException
-    import java.net.InetAddress
-    import java.net.UnknownHostException
-
     use Ipv6Addr.Ipv6Addr
 
     ///
@@ -95,27 +90,30 @@ pub mod Ipv6Addr {
     ///
     def byteToHex(b1: Int8, b2: Int8): String = {
         let combined = (toUnsigned8(b1) * 256) + toUnsigned8(b2);
-        let hexString = String.toUpperCase(Integer.toString(combined, 16));
-        match String.length(hexString) {
-            case 4 => hexString
-            case i => String.repeat(4 - i,"0") ++ hexString
-        }
+        def digit(n: Int32): Char = match Char.forDigit(radix = 16, n) {
+            case Some(c) => Char.toUpperCase(c)
+            case None    => unreachable!()
+        };
+        String.init(i -> match i {
+            case 0 => digit(Int32.bitwiseAnd(Int32.rightShift(combined, 12), 0xF))
+            case 1 => digit(Int32.bitwiseAnd(Int32.rightShift(combined, 8), 0xF))
+            case 2 => digit(Int32.bitwiseAnd(Int32.rightShift(combined, 4), 0xF))
+            case 3 => digit(Int32.bitwiseAnd(combined, 0xF))
+            case _ => unreachable!()
+        }, 4)
     }
 
     ///
     /// Attempts to convert a hex String `s` into Int8.
     ///
     def byteStringToInt8(s: String): Option[Int8] =
-        try {
-            let b = Integer.parseInt(s, 16);
-            if (b > 127)
-                let bs = Int32.toString(b-256);
-                Int8.fromString(bs)
-            else
-                let bs = Int32.toString(b);
-                Int8.fromString(bs)
-        } catch {
-            case _: NumberFormatException => None
+        match Int32.parse(16, s) {
+            case Ok(b) =>
+                if (b > 127)
+                    Int32.tryToInt8(b - 256)
+                else
+                    Int32.tryToInt8(b)
+            case Err(_) => None
         }
 
     ///
@@ -172,4 +170,3 @@ pub mod Ipv6Addr {
         |> List.traverse(byteStringToInt8)
 
 }
-

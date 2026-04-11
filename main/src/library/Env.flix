@@ -96,16 +96,6 @@ eff Env {
 
 pub mod Env {
 
-    import dev.flix.runtime.Global
-    import java.lang.Exception
-    import java.lang.Runtime
-    import java.lang.System
-    import java.io.{File => JFile}
-    import java.util.{Iterator => JIterator}
-    import java.util.{Map => JMap}
-    import java.util.{Set => JSet}
-    import java.util.{Map$Entry => Entry}
-
     ///
     /// Handles the `Env` effect of the given function `f`.
     ///
@@ -116,49 +106,41 @@ pub mod Env {
             f(x)
         } with handler Env {
             def getArgs(k) =
-                k(Array.toList(Global.getArgs()))
+                region rc {
+                    k(Array.toList(%%ENV_GET_ARGS%%(rc)))
+                }
 
             def getEnv(k) = region rc {
-                try {
-                    let _ = rc;
-                    let iter = unsafe IO as rc { System.getenv().entrySet().iterator() };
-                    k(getEnvHelper(iter, Map.empty()))
-                } catch {
-                    case _: Exception => k(Map.empty())
-                }
+                let pairs = %%ENV_GET_ENV_PAIRS%%(rc);
+                k(getEnvFromPairs(pairs, 0, Map.empty()))
             }
 
             def getVar(name, k) =
-                try {
-                    let result = System.getenv(name);
-                    k(Object.toOption(result))
-                } catch {
-                    case _: Exception => k(None)
-                }
+                k(Object.toOption(%%ENV_GET_VAR%%(name)))
 
-            def getProp(name, k) = k(getPropHelper(name))
+            def getProp(name, k) = k(Object.toOption(%%ENV_GET_PROP%%(name)))
 
-            def getOsName(k) = k(getPropHelper("os.name"))
+            def getOsName(k) = k(Object.toOption(%%ENV_GET_PROP%%("os.name")))
 
-            def getOsArch(k) = k(getPropHelper("os.arch"))
+            def getOsArch(k) = k(Object.toOption(%%ENV_GET_PROP%%("os.arch")))
 
-            def getOsVersion(k) = k(getPropHelper("os.version"))
+            def getOsVersion(k) = k(Object.toOption(%%ENV_GET_PROP%%("os.version")))
 
-            def getFileSeparator(k) = k(JFile.separator)
+            def getFileSeparator(k) = k(%%FILE_SEPARATOR%%(()))
 
-            def getPathSeparator(k) = k(JFile.pathSeparator)
+            def getPathSeparator(k) = k(%%PATH_SEPARATOR%%(()))
 
-            def getLineSeparator(k) = k(System.lineSeparator())
+            def getLineSeparator(k) = k(%%LINE_SEPARATOR%%(()))
 
-            def getCurrentWorkingDirectory(k) = k(getPropHelper("user.dir"))
+            def getCurrentWorkingDirectory(k) = k(Object.toOption(%%ENV_GET_PROP%%("user.dir")))
 
-            def getTemporaryDirectory(k) = k(getPropHelper("java.io.tmpdir"))
+            def getTemporaryDirectory(k) = k(Object.toOption(%%ENV_GET_PROP%%("java.io.tmpdir")))
 
-            def getUserName(k) = k(getPropHelper("user.name"))
+            def getUserName(k) = k(Object.toOption(%%ENV_GET_PROP%%("user.name")))
 
-            def getUserHomeDirectory(k) = k(getPropHelper("user.home"))
+            def getUserHomeDirectory(k) = k(Object.toOption(%%ENV_GET_PROP%%("user.home")))
 
-            def getVirtualProcessors(k) = k(Runtime.getRuntime().availableProcessors())
+            def getVirtualProcessors(k) = k(%%ENV_VIRTUAL_PROCESSORS%%(()))
         }
 
     ///
@@ -169,20 +151,11 @@ pub mod Env {
     @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Env) + IO = handle(f)()
 
-    def getPropHelper(name: String): Option[String] \ IO =
-            try {
-                let result = System.getProperty(name);
-                Object.toOption(result)
-            } catch {
-                case _: Exception => None
-            }
-
-    def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] \ IO =
-        if (iter.hasNext())
-            let e = unchecked_cast(iter.next() as Entry);
-            let k = unchecked_cast(e.getKey() as String);
-            let v = unchecked_cast(e.getValue() as String);
-            getEnvHelper(iter, Map.insert(k, v, m))
+    def getEnvFromPairs(pairs: Array[String, r], i: Int32, m: Map[String, String]): Map[String, String] \ r =
+        if (i + 1 < Array.length(pairs))
+            let k = Array.get(i, pairs);
+            let v = Array.get(i + 1, pairs);
+            getEnvFromPairs(pairs, i + 2, Map.insert(k, v, m))
         else
             m
 

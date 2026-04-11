@@ -24,8 +24,6 @@ instance UpperBound[Char] {
 
 pub mod Char {
 
-    import java.lang.Character
-
     ///
     /// Returns `true` if the given char `c` is an ascii character.
     ///
@@ -36,20 +34,20 @@ pub mod Char {
     /// Returns `true` if the given char `c` is a letter character.
     ///
     pub def isLetter(c: Char): Bool =
-        Character.isLetter(c)
+        %%CHAR_IS_LETTER%%(c)
 
     ///
     /// Returns `true` if the given char `c` is a recognized Unicode digit.
     /// This includes the ASCII range 0..9 but also Arabic-Indic digits, Devagari digits and Fullwidth digits.
     ///
     pub def isDigit(c: Char): Bool =
-        Character.isDigit(c)
+        %%CHAR_IS_DIGIT%%(c)
 
     ///
     /// Returns `true` if the given char `c` is a recognized Unicode letter or digit.
     ///
     pub def isLetterOrDigit(c: Char): Bool =
-        Character.isLetterOrDigit(c)
+        %%CHAR_IS_LETTER_OR_DIGIT%%(c)
 
     ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
@@ -77,58 +75,58 @@ pub mod Char {
     /// Returns `true` if the given char `c` is lowercase.
     ///
     pub def isLowerCase(c: Char): Bool =
-        Character.isLowerCase(c)
+        %%CHAR_IS_LOWER_CASE%%(c)
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
     ///
     pub def isUpperCase(c: Char): Bool =
-        Character.isUpperCase(c)
+        %%CHAR_IS_UPPER_CASE%%(c)
 
     ///
     /// Returns `true` if the given char `c` is titlecase, i.e. in the Unicode
     /// category of title case letters.
     ///
     pub def isTitleCase(c: Char): Bool =
-        Character.isTitleCase(c)
+        %%CHAR_IS_TITLE_CASE%%(c)
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
     pub def isWhitespace(c: Char): Bool =
-        Character.isWhitespace(c)
+        %%CHAR_IS_WHITESPACE%%(c)
 
     ///
     /// Returns `true` if the given char `c` is defined either as a entry in the
     /// UnicodeData file or a value within a range defined in the UnicodeData file.
     ///
     pub def isDefined(c: Char): Bool =
-        Character.isDefined(c)
+        %%CHAR_IS_DEFINED%%(c)
 
     ///
     /// Returns `true` if the given char `c` is an ISO control character.
     ///
     pub def isISOControl(c: Char): Bool =
-        Character.isISOControl(c)
+        %%CHAR_IS_ISO_CONTROL%%(c)
 
     ///
     /// Returns `true` if the given char `c` is mirrored.
     ///
     pub def isMirrored(c: Char): Bool =
-        Character.isMirrored(c)
+        %%CHAR_IS_MIRRORED%%(c)
 
     ///
     /// Returns `true` if the given char `c` is a surrogate code unit.
     ///
     pub def isSurrogate(c: Char): Bool =
-        Character.isSurrogate(c)
+        %%CHAR_IS_SURROGATE%%(c)
 
     ///
     /// Returns `true` if the given characters `high` and `low` represent a valid
     /// Unicode surrogate pair.
     ///
     pub def isSurrogatePair(high: {high = Char}, low: {low = Char}): Bool =
-        Character.isSurrogatePair(high#high, low#low)
+        %%CHAR_IS_SURROGATE_PAIR%%(high#high, low#low)
 
     ///
     /// Converts a letter to its lowercase version.
@@ -136,7 +134,7 @@ pub mod Char {
     /// Returns the original character if it does not have a lowercase version.
     ///
     pub def toLowerCase(c: Char): Char =
-        Character.toLowerCase(c)
+        %%CHAR_TO_LOWER_CASE%%(c)
 
     ///
     /// Converts a letter to its uppercase version.
@@ -144,7 +142,7 @@ pub mod Char {
     /// Returns the original character if it does not have a uppercase version.
     ///
     pub def toUpperCase(c: Char): Char =
-        Character.toUpperCase(c)
+        %%CHAR_TO_UPPER_CASE%%(c)
 
     ///
     /// Converts a letter to its titlecase version.
@@ -153,7 +151,7 @@ pub mod Char {
     /// version or a mapping to uppercase.
     ///
     pub def toTitleCase(c: Char): Char =
-        Character.toTitleCase(c)
+        %%CHAR_TO_TITLE_CASE%%(c)
 
     ///
     /// Returns the code point representation of Char `c`.
@@ -167,7 +165,7 @@ pub mod Char {
     /// Caution - this function does no validation, use `isSurrogatePair` to check `high` and `low` are valid.
     ///
     pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
-        Character.toCodePoint(high#high, low#low)
+        %%CHAR_TO_CODE_POINT%%(high#high, low#low)
 
     ///
     /// Returns the character `c` as a string.
@@ -191,7 +189,7 @@ pub mod Char {
     /// This function cannot handle supplementary characters.
     ///
     pub def getNumericValue(c: Char): Option[Int32] =
-        match (Character.getNumericValue(c)) {
+        match (%%CHAR_GET_NUMERIC_VALUE%%(c)) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -204,7 +202,7 @@ pub mod Char {
     /// Returns `None` if `c` does not represent a number.
     ///
     pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
-        match (Character.digit(c, radix#radix)) {
+        match (%%CHAR_DIGIT%%(c, radix#radix)) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -217,27 +215,9 @@ pub mod Char {
     /// Returns `None` if `n` is not representable as single character in the radix.
     ///
     pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
-        match (Character.forDigit(n, radix#radix)) {
+        match (%%CHAR_FOR_DIGIT%%(n, radix#radix)) {
             case c if c == '\u0000' => None
             case c                  => Some(c)
         }
-
-    ///
-    /// Get the primitive Char value from its object representation, i.e., java.lang.Character.
-    ///
-    /// This function is expected to be used when marshaling Chars from Java. Generally in Flix
-    /// code you should not need to use `java.lang.Character`.
-    ///
-    pub def charValue(c: Character): Char =
-        c.charValue()
-
-    ///
-    /// Convert an Char value to its its object representation (i.e. java.lang.Character).
-    ///
-    /// This function is expected to be used when marshaling Chars to Java. Generally in Flix
-    /// code you should not need to use `java.lang.Character`.
-    ///
-    pub def valueOf(c: Char): Character =
-        Character.valueOf(c)
 
 }

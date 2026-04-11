@@ -18,8 +18,6 @@
 
 pub mod Concurrent.Channel {
 
-    import dev.flix.runtime.Global
-
     use Concurrent.ReentrantLock.lock
     use Concurrent.ReentrantLock
     use Concurrent.ReentrantLock.newLock
@@ -147,7 +145,7 @@ pub mod Concurrent.Channel {
             let size = Ref.fresh(Static, 0);
             Mpmc.Mpmc(
                 MpmcAdmin.MpmcAdmin(
-                    Global.newId(),
+                    %%NEW_ID%%(()),
                     reentrantLock,
                     unBuffered,
                     if (unBuffered) 1 else bufferSize,

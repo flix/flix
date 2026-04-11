@@ -1,5 +1,3 @@
-import java.lang.System
-
 ///
 /// Static denotes the region of global lifetime.
 ///
@@ -144,7 +142,7 @@ pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
-    System.out.println(x |> ToString.toString)
+    %%PRINTLN%%(x |> ToString.toString)
 
 ///
 /// Touches the given region capability `rc`.
@@ -155,12 +153,12 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = unsafe IO {
-    System.err.println("*".repeat(80));
-    System.err.println("**") ;
-    System.err.println("**  BUG: ${m}") ;
-    System.err.println("**") ;
-    System.err.println("*".repeat(80));
-    System.err.println("");
+    %%EPRINTLN%%(%%STRING_REPEAT%%("*", 80));
+    %%EPRINTLN%%("**");
+    %%EPRINTLN%%("**  BUG: ${m}");
+    %%EPRINTLN%%("**");
+    %%EPRINTLN%%(%%STRING_REPEAT%%("*", 80));
+    %%EPRINTLN%%("");
     ?panic
 }
 

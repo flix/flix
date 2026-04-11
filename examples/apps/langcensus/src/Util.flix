@@ -1,5 +1,4 @@
 mod Util {
-    import java.util.regex.Pattern
     use Json.FromJson
     use Json.JsonElement
     use Json.Parse
@@ -71,10 +70,7 @@ mod Util {
                     let nextPagesOpt = forM (
                         linkValueList <- Http.Response.headers(response) |> Map.get("link");
                         linkString <- List.head(linkValueList);
-                        pattern = Pattern.compile("<([^>]*)>; rel=\"next\"");
-                        matcher = pattern.matcher(linkString);
-                        if (matcher.find());
-                        nextLink = matcher.group(1)
+                        nextLink <- List.head(Regex.capture(regex"<([^>]*)>; rel=\"next\"", linkString))
                     ) yield getAllPages(nextLink, headers);
                     let nextPages = Option.getWithDefault(Nil, nextPagesOpt);
                     thisPage ::: nextPages
