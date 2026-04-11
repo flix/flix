@@ -59,6 +59,7 @@ object PrettyPrinter {
     case TreeKind.Expr.ParYield                 => prettyParYield(tree)
     case TreeKind.Expr.LocalDef                 => prettyDef(tree)
     case TreeKind.Expr.MatchRuleFragment        => prettyMatchRuleFragment(tree)
+    case TreeKind.Expr.IfThenElse               => prettyIfThenElse(tree)
     case TreeKind.Type.Binary                   => prettyBinary(tree)
     case TreeKind.Type.Schema                   => prettyCommaBracket(tree)
     case TreeKind.Type.Extensible               => prettyCommaBracket(tree)
@@ -71,6 +72,35 @@ object PrettyPrinter {
     case TreeKind.Expr.ForMonadic               => prettyFor(tree)
     case TreeKind.Expr.ForApplicative           => prettyFor(tree)
     case _ => prettyFallback(tree)
+  }
+
+  private def prettyIfThenElse(tree: Tree): Doc = {
+    val cs = filterEmpty(tree.children).toList
+
+    def formatBody(child: SyntaxTree.Child, isElse: Boolean = false): Doc = {
+      val isElseIf = isElse && (child match {
+        case t: Tree => t.kind == TreeKind.Expr.IfThenElse
+        case _ => false
+      })
+      if (isElseIf) space <> prettyChild(child)
+      else {
+        val isBlock = leftMostToken(child).exists(t =>
+          t.kind == TokenKind.CurlyL || t.kind == TokenKind.ParenL)
+        if (isBlock) space <> prettyChild(child)
+        else nest(4, line <> prettyChild(child))
+      }
+    }
+
+    val doc = cs match {
+      case _ :: cond :: body :: _ :: elseBody :: Nil =>
+        text("if") <+> Doc.setLayout(Layout.SingleLine, prettyChild(cond)) <> formatBody(body) <>
+          line <> text("else") <> formatBody(elseBody)
+      case _ :: cond :: body :: Nil =>
+        text("if") <+> Doc.setLayout(Layout.SingleLine, prettyChild(cond)) <> formatBody(body)
+      case _ => prettyFallback(tree)
+    }
+
+    localLayout(tree) { doc }
   }
 
   private def prettyMatchRuleFragment(tree: Tree): Doc = {
@@ -447,7 +477,7 @@ object PrettyPrinter {
     splitAtBracket(rest) match {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, _)) =>
-        val bodyDoc = Doc.sep(line, body.map(prettyChild).toList)
+        val bodyDoc = commaBodyJoin(body)
         bracketDoc(tree, header, open, bodyDoc, close, body.isEmpty,
           headerJoin = declHeaderJoin)
     })
@@ -628,13 +658,14 @@ object PrettyPrinter {
   private def prettyBinary(tree: Tree): Doc = {
     val parts = tree.children.map(prettyChild)
     if (parts.length == 3) {
-      val isPipe = tree.children(1) match {
-        case t: Tree => leftMostToken(t).exists(_.text == "|>")
-        case tok: Token => tok.text == "|>"
-      }
+      val endsWithClose = rightMostToken(tree.children(0)).exists(t =>
+        t.kind == TokenKind.CurlyR
+      )
       localLayout(tree) {
-        if (isPipe) parts(0) <> line <> parts(1) <+> parts(2)
-        else parts(0) <> line <> parts(1) <+> parts(2)
+        if (endsWithClose)
+          parts(0) <+> parts(1) <+> parts(2)
+        else
+          parts(0) <> line <> parts(1) <+> parts(2)
       }
     } else {
       parts.reduceLeftOption(_ <+> _).getOrElse(empty)
@@ -703,10 +734,25 @@ object PrettyPrinter {
     * @return the formatted lambda expression as Doc
     */
   private def prettyLambda(tree: Tree): Doc = {
-    val arrow = space <> text("->") <> space
-    joinChildren(tree.children,
-      TokenKind.ArrowThinRWhitespace -> arrow,
-      TokenKind.ArrowThinRTight      -> arrow)
+    val children = filterEmpty(tree.children)
+    val arrowIndex = children.indexWhere {
+      case token: Token => token.kind == TokenKind.ArrowThinRWhitespace ||
+        token.kind == TokenKind.ArrowThinRTight
+      case _ => false
+    }
+    if (arrowIndex < 0) return prettyFallback(tree)
+
+    val header = children.take(arrowIndex)
+    val body = children.drop(arrowIndex + 1)
+
+    val headerDoc = header.map(prettyChild)
+      .reduceLeftOption(_ <+> _).getOrElse(empty)
+    val bodyDoc = body.map(prettyChild)
+      .reduceLeftOption(_ <|> _).getOrElse(empty)
+
+    localLayout(tree) {
+      headerDoc <+> text("->") <> nest(4, line <> bodyDoc)
+    }
   }
 
   /**
@@ -822,8 +868,18 @@ object PrettyPrinter {
       case _ => false
     }
     if (!hasArgs) return text("(") <> text(")")
-    joinChildren(tree.children,
-      TokenKind.Comma -> (text(",") <> space))
+
+    splitAtBracket(filterEmpty(tree.children)) match {
+      case None => prettyFallback(tree)
+      case Some(BracketSplit(header, open, body, close, _)) =>
+        val bodyDoc = commaBodyJoin(body)
+        val openDoc =
+          if (header.isEmpty) text(open)
+          else defaultHeaderJoin(header) <> text(open)
+        localLayout(tree) {
+          openDoc <> Doc.align(bodyDoc) <> Doc.layoutChoice(empty, line) <> text(close)
+        }
+    }
   }
 
   /**
@@ -889,15 +945,16 @@ object PrettyPrinter {
   private def prettyFallback(tree: Tree): Doc = {
     val children = filterEmpty(tree.children)
     if (children.isEmpty) return empty
-
-    children.sliding(2).foldLeft(prettyChild(children.head)) {
-      case (acc, Array(prev, next)) =>
-        val gap = (rightMostToken(prev), leftMostToken(next)) match {
-          case (Some(r), Some(l)) => getGap(r, l)
-          case _                  => empty
-        }
-        acc <> gap <> prettyChild(next)
-      case (acc, _) => acc
+    localLayout(tree) {
+      children.sliding(2).foldLeft(prettyChild(children.head)) {
+        case (acc, Array(prev, next)) =>
+          val gap = (rightMostToken(prev), leftMostToken(next)) match {
+            case (Some(r), Some(l)) => getGap(r, l)
+            case _                  => empty
+          }
+          acc <> gap <> prettyChild(next)
+        case (acc, _) => acc
+      }
     }
   }
 
