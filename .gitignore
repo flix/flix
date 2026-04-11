@@ -6,7 +6,7 @@
 target
 .ensime*
 /*.flix
-/build
+build/
 /.gradle
 .metals
 .vscode
@@ -25,3 +25,17 @@ crash_report_*.txt
 
 # local development files
 **/personal/**
+**/artifact/
+**/lib/cache/
+node_modules/
+vendor
+.zig-cache
+
+# wasm smoke harness outputs
+tools/wasm-smoke/out
+tools/wasm-smoke/browser-out
+
+AGENTS.md
+.codex_tmp
+/docs/scratch/
+/runtime/scratch/
