@@ -159,22 +159,20 @@ object PrettyPrinter {
       case Some(BracketSplit(header, open, body, close, tail)) =>
         val headerDoc = defaultHeaderJoin(header)
 
-        val bodyDoc = body.zipWithIndex.foldLeft((empty, Option.empty[SyntaxTree.Child])) {
-          case ((acc, _), (token: Token, _)) if token.kind == TokenKind.Semi =>
-            (acc <> text(";") <> line, Some(token))
-          case ((acc, prev), (child, _)) =>
-            val gap = (prev.flatMap(rightMostToken), leftMostToken(child)) match {
-              case (Some(r), Some(l)) => getGap(r, l)
-              case _ => empty
-            }
-            (acc <> gap <> prettyChild(child), Some(child))
+        val bodyDoc = body.foldLeft((empty, true)) {
+          case ((acc, _), token: Token) if token.kind == TokenKind.Semi =>
+            (acc <> text(";") <> line, true)
+          case ((acc, suppressGap), child) =>
+            val gap = if (suppressGap) empty else space
+            (acc <> gap <> prettyChild(child), false)
         }._1
 
         val tailDoc = defaultHeaderJoin(tail)
-        val tailPart = if (tail.isEmpty) empty else space <> tailDoc
-
         localLayout(tree) {
-          headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <> tailPart
+          val tailStart = tail.headOption.flatMap(leftMostToken)
+          val isBlock = tailStart.exists(t => t.kind == TokenKind.CurlyL || t.kind == TokenKind.ParenL)
+          headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <>
+            (if (isBlock) space <> tailDoc else if (tail.nonEmpty) space <> tailDoc else empty)
         }
     }
 
@@ -721,8 +719,11 @@ object PrettyPrinter {
         val bodyDoc = joinChildren(body,
           TokenKind.Semi -> (text(";") <> space))
         val tailDoc = tail.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+        val tailStart = tail.headOption.flatMap(leftMostToken)
+        val isBlock = tailStart.exists(t => t.kind == TokenKind.CurlyL || t.kind == TokenKind.ParenL)
         localLayout(tree) {
-          headerDoc <+> text(open) <> bodyDoc <> text(close) <> nest(4, line <> tailDoc)
+          headerDoc <+> text(open) <> bodyDoc <> text(close) <>
+            (if (isBlock) space <> tailDoc else nest(4, line <> tailDoc))
         }
     }
 
@@ -948,24 +949,57 @@ object PrettyPrinter {
     localLayout(tree) {
       children.sliding(2).foldLeft(prettyChild(children.head)) {
         case (acc, Array(prev, next)) =>
-          val gap = (rightMostToken(prev), leftMostToken(next)) match {
-            case (Some(r), Some(l)) => getGap(r, l)
-            case _                  => empty
-          }
-          acc <> gap <> prettyChild(next)
+          acc <> structuralGap(prev, next) <> prettyChild(next)
         case (acc, _) => acc
       }
     }
   }
 
-  private def getGap(prev: Token, next: Token): Doc = {
-    if (prev.endIndex >= next.startIndex) empty
-    else {
-      val between = prev.src.data.slice(prev.endIndex, next.startIndex).mkString
-      if (between.contains('\n')) line
-      else if (between.nonEmpty) space
-      else empty
-    }
+  private val TightAfter: Set[TokenKind] = Set(TokenKind.ParenL,
+    TokenKind.BracketL,
+    TokenKind.CurlyL,
+    TokenKind.HashParenL,
+    TokenKind.HashCurlyL,
+    TokenKind.Dot,
+    TokenKind.At,
+    TokenKind.Hash,
+    TokenKind.ListHash,
+    TokenKind.SetHash,
+    TokenKind.MapHash,
+    TokenKind.VectorHash,
+    TokenKind.ArrayHash,
+    TokenKind.BarHash
+  )
+
+  /**
+    * Token kinds that bind tightly to the *previous* token (no space before).
+    * These are closing brackets, dots, commas, and semicolons.
+    */
+  private val TightBefore: Set[TokenKind] = Set(
+    TokenKind.ParenR,
+    TokenKind.BracketR,
+    TokenKind.CurlyR,
+    TokenKind.Dot,
+    TokenKind.Comma,
+    TokenKind.Semi
+  )
+
+  /**
+    * Determines the gap between two adjacent children based purely on
+    * their boundary token kinds. No need to read the source text.
+    * Needed this for idempotency for now.
+    *
+    * Returns [[Doc.Empty]] for tight pairs and [[Doc.space]] for everything else.
+    *
+    */
+  private def structuralGap(prev: SyntaxTree.Child, next: SyntaxTree.Child): Doc = {
+    val prevKind = rightMostToken(prev).map(_.kind)
+    val nextKind = leftMostToken(next).map(_.kind)
+
+    val tight = prevKind.exists(TightAfter.contains) ||
+      nextKind.exists(TightBefore.contains)
+
+    if (tight) empty else space
   }
 
   private def defaultHeaderJoin(cs: Array[SyntaxTree.Child]): Doc =
