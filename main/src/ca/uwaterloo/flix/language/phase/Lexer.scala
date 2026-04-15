@@ -86,6 +86,7 @@ object Lexer {
       ("instance", TokenKind.KeywordInstance),
       ("instanceof", TokenKind.KeywordInstanceOf),
       ("into", TokenKind.KeywordInto),
+      ("jmatch", TokenKind.KeywordJMatch),
       ("law", TokenKind.KeywordLaw),
       ("lawful", TokenKind.KeywordLawful),
       ("lazy", TokenKind.KeywordLazy),
