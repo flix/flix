@@ -108,18 +108,24 @@ private object EffAtom {
     *     [[RigidityEnv.isRigid]] is false for `ef`)
     *   - `collectAtoms(Indexable.Aef[Error], acc)` adds nothing
     */
-  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom])(implicit scope: RegionScope, renv: RigidityEnv): Unit = t match {
-    case Type.Var(sym, _) if renv.isRigid(sym) => acc += EffAtom.VarRigid(sym)
-    case Type.Var(sym, _) => acc += EffAtom.VarFlex(sym)
-    case Type.Cst(TypeConstructor.Effect(sym, _), _) => acc += EffAtom.Eff(sym)
-    case Type.Cst(TypeConstructor.Region(sym), _) => acc += EffAtom.Region(sym)
-    case Type.Cst(TypeConstructor.Error(id, _), _) => acc += EffAtom.Error(id)
-    case Type.Apply(tpe1, tpe2, _) =>
-      collectAtoms(tpe1, acc)
-      collectAtoms(tpe2, acc)
-    case Type.Alias(_, _, tpe, _) => collectAtoms(tpe, acc)
-    case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
-    case _ => ()
+  def collectAtoms(t: Type, acc: mutable.HashSet[EffAtom])(implicit scope: RegionScope, renv: RigidityEnv): Unit = {
+    // Note: The traversal is iterative to avoid stack overflow on deeply nested types.
+    val stack = mutable.Stack[Type](t)
+    while (stack.nonEmpty) {
+      stack.pop() match {
+        case Type.Var(sym, _) if renv.isRigid(sym) => acc += EffAtom.VarRigid(sym)
+        case Type.Var(sym, _) => acc += EffAtom.VarFlex(sym)
+        case Type.Cst(TypeConstructor.Effect(sym, _), _) => acc += EffAtom.Eff(sym)
+        case Type.Cst(TypeConstructor.Region(sym), _) => acc += EffAtom.Region(sym)
+        case Type.Cst(TypeConstructor.Error(id, _), _) => acc += EffAtom.Error(id)
+        case Type.Apply(tpe1, tpe2, _) =>
+          stack.push(tpe1)
+          stack.push(tpe2)
+        case Type.Alias(_, _, tpe, _) => stack.push(tpe)
+        case assoc@Type.AssocType(_, _, _, _) => getAssocAtoms(assoc).foreach(acc += _)
+        case _ => ()
+      }
+    }
   }
 
   /**

@@ -435,6 +435,27 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      // Process each binding in order, extending the environment for subsequent bindings and the body.
+      var env = env0
+      val bindingResults = bindings.map { case (Binder(sym, _), exp) =>
+        val innerUsed = visitExp(exp, env, rc)
+        val shadowedVar = shadowing(sym.text, sym.loc, env)
+        env = env + sym
+        (sym, innerUsed, shadowedVar)
+      }
+      val bodyUsed = visitExp(body, env, rc)
+      // Fold: remove each bound sym, add UnusedVarSym if dead in the subsequent expressions
+      var usedInRest = bodyUsed
+      val allUsed = bindingResults.reverseIterator.foldLeft(usedInRest) { case (acc, (sym, innerUsed, shadowedVar)) =>
+        val combined = innerUsed ++ acc ++ shadowedVar
+        if (deadVarSym(sym, acc))
+          (combined - sym) + UnusedVarSym(sym)
+        else
+          combined - sym
+      }
+      allUsed
+
     case Expr.LocalDef(_, Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym

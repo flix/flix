@@ -42,6 +42,8 @@ object TypedAstPrinter {
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foldRight(print(body)) { case ((bnd, exp), acc) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp.tpe)), print(exp), acc) }
     case Expr.LocalDef(_, TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Region(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Region(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))

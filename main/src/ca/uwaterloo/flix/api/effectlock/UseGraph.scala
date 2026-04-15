@@ -97,6 +97,9 @@ object UseGraph {
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foldLeft(visitExp(body)) { case (acc, (_, exp)) => visitExp(exp) ++ acc }
+
     case Expr.LocalDef(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 

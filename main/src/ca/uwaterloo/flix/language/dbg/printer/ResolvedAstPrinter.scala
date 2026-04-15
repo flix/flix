@@ -61,6 +61,10 @@ object ResolvedAstPrinter {
     case Expr.Stm(exps, exp, _) => exps.foldRight(print(exp))((e, acc) => DocAst.Expr.Stm(print(e), acc))
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
+    case Expr.LetSeq(bindings, body, _) =>
+      bindings.foldRight(print(body)) { case ((sym, exp), acc) =>
+        DocAst.Expr.Let(printVarSym(sym), None, print(exp), acc)
+      }
     case Expr.LocalDef(_, sym, fparams, exp1, exp2, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), None, None, print(exp1), print(exp2))
     case Expr.Region(sym, _, exp, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {

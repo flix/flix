@@ -225,6 +225,10 @@ object ConstraintCollection {
       visitExp(exp1)
       visitExp(exp2)
 
+    case Expr.LetSeq(bindings, body, _, _, _) =>
+      bindings.foreach { case (_, exp) => visitExp(exp) }
+      visitExp(body)
+
     case Expr.Lambda(_, exp, _, _) => visitExp(exp)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>

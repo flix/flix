@@ -182,6 +182,14 @@ object Reducer {
         val e2 = visitExpr(exp2)
         JvmAst.Expr.Let(sym, offset, e1, e2, loc)
 
+      case ErasedAst.Expr.LetSeq(bindings, body, loc) =>
+        val jvmBindings = bindings.map { case (sym, exp) =>
+          val offset = lctx.assignOffset(sym, exp.tpe)
+          lctx.lparams.addOne(JvmAst.LocalParam(sym, offset, exp.tpe))
+          (sym, offset, visitExpr(exp))
+        }
+        JvmAst.Expr.LetSeq(jvmBindings, visitExpr(body), loc)
+
       case ErasedAst.Expr.Stm(exps, exp, loc) =>
         val es = exps.map(visitExpr)
         val e = visitExpr(exp)

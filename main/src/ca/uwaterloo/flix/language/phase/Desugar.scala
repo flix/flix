@@ -573,6 +573,9 @@ object Desugar {
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
 
+    case WeededAst.Expr.LetSeq(bindings, body, loc) =>
+      desugarLetSeq(bindings, body, loc)
+
     case WeededAst.Expr.ExtTag(label, exps, loc) =>
       val es = visitExps(exps)
       Expr.ExtTag(label, es, loc)
@@ -1203,6 +1206,46 @@ object Desugar {
         val rule = DesugaredAst.MatchRule(p, None, e2, loc0)
         DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc0)
     }
+  }
+
+  /**
+    * Rewrites a flat sequence of let bindings into [[DesugaredAst.Expr.LetSeq]] nodes.
+    *
+    * Consecutive simple-variable bindings are grouped into a single flat [[DesugaredAst.Expr.LetSeq]].
+    * Pattern-matching bindings are converted to [[DesugaredAst.Expr.Match]] nodes that wrap the
+    * remaining bindings and the body, splitting the flat sequence at each pattern boundary.
+    * The depth of the resulting tree is proportional to the number of pattern-match bindings,
+    * not the total number of let bindings.
+    */
+  private def desugarLetSeq(bindings0: List[(WeededAst.Pattern, Option[WeededAst.Type], WeededAst.Expr)], body0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val visitedBody = visitExp(body0)
+    val visitedBindings: List[(DesugaredAst.Pattern, Option[DesugaredAst.Type], DesugaredAst.Expr)] =
+      bindings0.map { case (pat, tpe, expr) => (visitPattern(pat), tpe.map(visitType), visitExp(expr)) }
+
+    // Build the result by folding from right to left.
+    // Consecutive simple-variable bindings are accumulated into a LetSeq list and flushed
+    // into a single LetSeq node whenever a complex-pattern binding is encountered.
+    var result: DesugaredAst.Expr = visitedBody
+    var simpleBindings: List[(Name.Ident, DesugaredAst.Expr)] = Nil
+
+    for ((p, t, e) <- visitedBindings.reverse) {
+      p match {
+        case DesugaredAst.Pattern.Var(ident, _) =>
+          simpleBindings = (ident, withAscription(e, t)) :: simpleBindings
+        case _ =>
+          // Flush accumulated simple bindings before wrapping in a Match
+          if (simpleBindings.nonEmpty) {
+            result = DesugaredAst.Expr.LetSeq(simpleBindings, result, loc0)
+            simpleBindings = Nil
+          }
+          val rule = DesugaredAst.MatchRule(p, None, result, loc0)
+          result = DesugaredAst.Expr.Match(withAscription(e, t), List(rule), loc0)
+      }
+    }
+    if (simpleBindings.nonEmpty) {
+      result = DesugaredAst.Expr.LetSeq(simpleBindings, result, loc0)
+    }
+    result
   }
 
   /**

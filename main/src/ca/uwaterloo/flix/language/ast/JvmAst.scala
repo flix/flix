@@ -96,6 +96,11 @@ object JvmAst {
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
+    case class LetSeq(bindings: List[(Symbol.VarSym, Int, Expr)], body: Expr, loc: SourceLocation) extends Expr {
+      def tpe: SimpleType = body.tpe
+      def purity: Purity = Purity.combineAll(bindings.map(_._3.purity) :+ body.purity)
+    }
+
     case class Stm(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp.tpe

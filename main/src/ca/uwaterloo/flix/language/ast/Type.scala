@@ -50,19 +50,34 @@ sealed trait Type {
     *
     * Note: We cache `typeVars` to improve performance.
     */
-  lazy val typeVars: SortedSet[Type.Var] = this match {
-    case x: Type.Var => SortedSet(x)
-
-    case Type.Cst(_, _) => SortedSet.empty
-
-    case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
-    case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
-    case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
-
-    case Type.JvmToType(tpe, _) => tpe.typeVars
-    case Type.JvmToEff(tpe, _) => tpe.typeVars
-
-    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
+  lazy val typeVars: SortedSet[Type.Var] = {
+    // Iterative traversal to avoid stack overflow on deeply nested types
+    // (e.g. 5000-deep union from LetSeq effect accumulation).
+    import scala.collection.mutable
+    val result = mutable.SortedSet.empty[Type.Var]
+    val stack = mutable.Stack[Type](this)
+    while (stack.nonEmpty) {
+      stack.pop() match {
+        case x: Type.Var =>
+          result += x
+        case Type.Cst(_, _) =>
+          // no type vars
+        case Type.Apply(tpe1, tpe2, _) =>
+          stack.push(tpe1)
+          stack.push(tpe2)
+        case Type.Alias(_, args, _, _) =>
+          args.foreach(stack.push)
+        case Type.AssocType(_, arg, _, _) =>
+          stack.push(arg)
+        case Type.JvmToType(tpe, _) =>
+          stack.push(tpe)
+        case Type.JvmToEff(tpe, _) =>
+          stack.push(tpe)
+        case Type.UnresolvedJvmType(member, _) =>
+          member.getTypeArguments.foreach(stack.push)
+      }
+    }
+    result.to(SortedSet)
   }
 
   /**

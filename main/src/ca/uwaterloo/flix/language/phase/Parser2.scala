@@ -2215,14 +2215,68 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordLet))
       val mark = open()
+      // Parse the first binding.
+      val b = open()
       expect(TokenKind.KeywordLet)
       Pattern.pattern()
       if (eat(TokenKind.Colon)) {
         Type.ttype()
       }
       expect(TokenKind.Equal)
-      statement(rhsIsOptional = false)
-      close(mark, TreeKind.Expr.LetMatch)
+      letBoundValue()
+      close(b, TreeKind.Expr.LetBinding)
+      // Collect consecutive `; let` bindings iteratively to avoid stack overflow
+      // on long let-binding chains (e.g. 5000+ consecutive lets).
+      // Each additional binding is checked with one-token lookahead: the semicolon
+      // must be followed immediately by `let` to enter the loop.
+      while (at(TokenKind.Semi) && nth(1) == TokenKind.KeywordLet) {
+        eat(TokenKind.Semi)
+        val bn = open()
+        expect(TokenKind.KeywordLet)
+        Pattern.pattern()
+        if (eat(TokenKind.Colon)) {
+          Type.ttype()
+        }
+        expect(TokenKind.Equal)
+        letBoundValue()
+        close(bn, TreeKind.Expr.LetBinding)
+      }
+      // Parse the body.  We eat the semicolon here so that `statement()` starts
+      // directly at the first body expression (not at a `;` token).
+      // The body cannot start with a bare `let` (we consumed all leading lets
+      // above), so `statement()` will not recurse back into `letMatchExpr`.
+      if (eat(TokenKind.Semi)) {
+        statement()
+      } else {
+        val loc = SourceLocation.point(true, s.src, previousSourceLocation().end)
+        closeWithError(open(), ParseError.ExpectedSemicolon(sctx, loc, nth(0)))
+      }
+      close(mark, TreeKind.Expr.LetSeq)
+    }
+
+    /**
+      * Parses the value expression on the right-hand side of a let binding.
+      * Mirrors the same-line [[ParseError.MissingBinaryOperator]] detection that
+      * [[statement]] performs after parsing an expression, so that code like
+      * `let x = foo()   bar()` still produces the expected parse error.
+      */
+    private def letBoundValue()(implicit s: State): Unit = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      var exprMark = expression()
+      if (nth(0).canFollowBinaryOperator && s.inBlock) {
+        val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
+        if (!isNewLine) {
+          // Same line: wrap with a Binary(OperatorError) node so the Weeder can
+          // emit MissingBinaryOperator and recover gracefully.
+          val mark = openBefore(exprMark)
+          val markOp = open()
+          close(open(), TreeKind.OperatorError)
+          close(markOp, TreeKind.Operator)
+          expression()
+          val lhs = close(mark, TreeKind.Expr.Binary)
+          close(openBefore(lhs), TreeKind.Expr.Expr)
+        }
+      }
     }
 
     private def localDefExpr()(implicit s: State): Mark.Closed = {

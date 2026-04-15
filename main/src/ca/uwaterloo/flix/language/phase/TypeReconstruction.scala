@@ -187,6 +187,16 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.Let(bnd, e1, e2, tpe, eff, loc)
 
+    case KindedAst.Expr.LetSeq(bindings, body, loc) =>
+      val visitedBody = visitExp(body)
+      val visitedBindings = bindings.map { case (sym, exp) =>
+        val e = visitExp(exp)
+        (TypedAst.Binder(sym, e.tpe), e)
+      }
+      val tpe = visitedBody.tpe
+      val eff = visitedBindings.foldLeft(visitedBody.eff) { case (acc, (_, e)) => Type.mkUnion(e.eff, acc, loc) }
+      TypedAst.Expr.LetSeq(visitedBindings, visitedBody, tpe, eff, loc)
+
     case KindedAst.Expr.LocalDef(ann, sym, fparams, exp1, exp2, loc) =>
       val fps = fparams.map(visitFormalParam(_, subst))
       val e1 = visitExp(exp1)
