@@ -567,6 +567,9 @@ object Desugar {
       val rs = rules.map(visitMatchRule)
       Expr.Match(e, rs, loc)
 
+    case WeededAst.Expr.JMatch(exp, rules, loc) =>
+      desugarJMatch(exp, rules, loc)
+
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
@@ -1436,6 +1439,58 @@ object Desugar {
     * @param exp0 the body of the lambda.
     * @param loc0 the location of the entire lambda.
     */
+  /**
+    * Desugars a [[WeededAst.Expr.JMatch]] into nested `instanceof` + if-then-else + cast
+    * expressions.
+    *
+    * {{{
+    *   jmatch e {
+    *     case x: Foo => body1
+    *     case y: Bar => body2
+    *     case _      => default
+    *   }
+    * }}}
+    * desugars to
+    * {{{
+    *   let jmatchVar = e;
+    *   if (jmatchVar instanceof Foo) {
+    *     let x = jmatchVar as Foo;
+    *     body1
+    *   } else if (jmatchVar instanceof Bar) {
+    *     let y = jmatchVar as Bar;
+    *     body2
+    *   } else {
+    *     let _ = jmatchVar;
+    *     default
+    *   }
+    * }}}
+    */
+  private def desugarJMatch(exp0: WeededAst.Expr, rules0: List[WeededAst.JMatchRule], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val scrutinee = visitExp(exp0)
+    val scrutIdent = Name.Ident("jmatchVar" + Flix.Delimiter + flix.genSym.freshId(), loc.asSynthetic)
+    def scrutRef(l: SourceLocation): DesugaredAst.Expr =
+      DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, scrutIdent, scrutIdent.loc), l.asSynthetic)
+
+    val fallback: DesugaredAst.Expr = DesugaredAst.Expr.Hole(None, loc.asSynthetic)
+    val nested = rules0.foldRight(fallback) {
+      case (WeededAst.JMatchRule(ident, Some(className), body0, ruleLoc), acc) =>
+        val body = visitExp(body0)
+        // Only bind (and cast) if the ident is not a wildcard `_`.
+        val taken = if (ident.isWild) body else {
+          val castType = DesugaredAst.Type.Ambiguous(Name.QName(Name.RootNS, className, className.loc), className.loc)
+          val cast = DesugaredAst.Expr.UncheckedCast(scrutRef(ruleLoc), Some(castType), None, ruleLoc)
+          DesugaredAst.Expr.Let(ident, cast, body, ruleLoc)
+        }
+        val test = DesugaredAst.Expr.InstanceOf(scrutRef(ruleLoc), className, ruleLoc)
+        DesugaredAst.Expr.IfThenElse(test, taken, acc, ruleLoc)
+      case (WeededAst.JMatchRule(ident, None, body0, ruleLoc), _) =>
+        val body = visitExp(body0)
+        if (ident.isWild) body
+        else DesugaredAst.Expr.Let(ident, scrutRef(ruleLoc), body, ruleLoc)
+    }
+    DesugaredAst.Expr.Let(scrutIdent, scrutinee, nested, loc)
+  }
+
   private def desugarLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
     val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)

@@ -270,6 +270,10 @@ object SyntaxTree {
 
       case object Intrinsic extends Expr
 
+      case object JMatch extends Expr
+
+      case object JMatchRuleFragment extends Expr
+
       case object JvmConstructor extends Expr
 
       case object JvmMethod extends Expr

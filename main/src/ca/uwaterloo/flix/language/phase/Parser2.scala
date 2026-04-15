@@ -1890,6 +1890,7 @@ object Parser2 {
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
         case TokenKind.KeywordRegion => regionExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
+        case TokenKind.KeywordJMatch => jmatchExpr()
         case TokenKind.KeywordChoose
              | TokenKind.KeywordChooseStar => restrictableChooseExpr()
         case TokenKind.KeywordForA => forApplicativeExpr()
@@ -2333,6 +2334,43 @@ object Parser2 {
         }
       }
       Result.Ok((result, mark))
+    }
+
+    private def jmatchExpr()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordJMatch))
+      val mark = open()
+      expect(TokenKind.KeywordJMatch)
+      expression()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.CatchRule,
+        checkForItem = _ == TokenKind.KeywordCase,
+        getItem = jmatchRule,
+        breakWhen = _.isRecoverInExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Optional(TokenKind.Comma)
+      )
+      close(mark, TreeKind.Expr.JMatch)
+    }
+
+    private def jmatchRule()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val mark = open()
+      expect(TokenKind.KeywordCase)
+      nameUnqualified(NAME_VARIABLE)
+      if (eat(TokenKind.Colon)) {
+        nameAllowQualified(NAME_JAVA, tail = Set())
+      }
+      if (eat(TokenKind.Equal)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotEqual(sctx, previousSourceLocation()))
+      } else if (eat(TokenKind.ArrowThinRTight) || eat(TokenKind.ArrowThinRWhitespace)) {
+        closeWithError(open(), ParseError.ExpectedArrowThickRGotArrowThinR(sctx, previousSourceLocation()))
+      } else {
+        expect(TokenKind.ArrowThickR)
+      }
+      statement()
+      close(mark, TreeKind.Expr.JMatchRuleFragment)
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {

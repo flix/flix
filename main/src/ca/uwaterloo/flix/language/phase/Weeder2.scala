@@ -896,6 +896,7 @@ object Weeder2 {
         case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
         case TreeKind.Expr.Region => visitRegionExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
+        case TreeKind.Expr.JMatch => visitJMatchExpr(tree)
         case TreeKind.Expr.RestrictableChoose
              | TreeKind.Expr.RestrictableChooseStar => visitRestrictableChooseExpr(tree)
         case TreeKind.Expr.ForApplicative => visitForApplicativeExpr(tree)
@@ -1461,6 +1462,34 @@ object Weeder2 {
         case (_, _) =>
           val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           Validation.Success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error), tree.loc))
+      }
+    }
+
+    private def visitJMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.JMatch)
+      val rules0 = pickAll(TreeKind.Expr.JMatchRuleFragment, tree)
+      flatMapN(pickExpr(tree), traverse(rules0)(visitJMatchRule)) {
+        case (expr, Nil) =>
+          val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          sctx.errors.add(error)
+          Validation.Success(Expr.Error(error))
+        case (expr, rules) => Validation.Success(Expr.JMatch(expr, rules, tree.loc))
+      }
+    }
+
+    private def visitJMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[JMatchRule, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.JMatchRuleFragment)
+      val maybeQName = tryPickQName(tree)
+      mapN(pickNameIdent(tree), pickExpr(tree)) {
+        case (ident, expr) =>
+          maybeQName match {
+            case Some(qname) if qname.isUnqualified => JMatchRule(ident, Some(qname.ident), expr, tree.loc)
+            case Some(qname) =>
+              val error = IllegalQualifiedName(qname.loc)
+              sctx.errors.add(error)
+              JMatchRule(ident, Some(qname.ident), expr, tree.loc)
+            case None => JMatchRule(ident, None, expr, tree.loc)
+          }
       }
     }
 
