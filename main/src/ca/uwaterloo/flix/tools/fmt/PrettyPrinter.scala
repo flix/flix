@@ -10,16 +10,8 @@ object PrettyPrinter {
     val doc = traverse(tree)
     Doc.pretty(doc)
   }
-
-  /**
-    * The traverse function recursively formats and removes all the comments for now.
-    *
-    * @param tree
-    * @return
-    */
   private def traverse(tree: Tree): Doc = {
-    if (tree.children.isEmpty) empty
-    formatTree(tree)
+    if (tree.children.isEmpty) empty else formatTree(tree)
   }
 
   private def formatTree(tree: Tree): Doc = tree.kind match {
@@ -91,7 +83,7 @@ object PrettyPrinter {
     case TreeKind.Type.EffectSet               => prettyCommaBracket(tree)
     case TreeKind.Type.ConstraintList           => prettyCommaBracket(tree)
     case TreeKind.Type.RecordRow                => prettyCommaBracket(tree)
-    case TreeKind.Type.RecordFieldFragment      => prettyFallback(tree) // field: Type (no brackets)
+    case TreeKind.Type.RecordFieldFragment      => prettyFallback(tree)
     case TreeKind.Type.SchemaRow                => prettyCommaBracket(tree)
     case TreeKind.Type.CaseSet                  => prettyCommaBracket(tree)
     case TreeKind.Pattern.Tuple                 => prettyCommaBracket(tree)
@@ -136,12 +128,48 @@ object PrettyPrinter {
     }
   }
 
-  /**
-    * TODO: Formatting the if-then-else expression needs work
-    * @param tree
-    * @return
-    */
-  private def prettyIfThenElse(tree: Tree): Doc = prettyFallback(tree)
+  private def prettyIfThenElse(tree: Tree): Doc = {
+    val children = filterEmpty(tree.children)
+
+    splitAtBracket(children) match {
+      case None => prettyFallback(tree)
+      case Some(BracketSplit(_, open, condChildren, close, tail)) =>
+
+        val condDoc = condChildren.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+
+        val elseIdx = tail.indexWhere {
+          case t: Token if t.kind == TokenKind.KeywordElse => true
+          case _ => false
+        }
+
+        val thenChildren = if (elseIdx < 0) tail else tail.take(elseIdx)
+        val elseChildren = if (elseIdx < 0) Array.empty[SyntaxTree.Child] else tail.drop(elseIdx + 1)
+
+        val thenBody = joinWithGap(thenChildren)
+        val elseBody = joinWithGap(elseChildren)
+
+        val thenIsBlock = thenChildren.headOption.exists(isBlockExpr)
+        val elseIsBlock = elseChildren.headOption.exists(isBlockExpr)
+        val isElseIf    = elseChildren.headOption.exists(isIfThenElseExpr)
+
+        val condPart = text("if") <+> text(open) <> condDoc <> text(close)
+        val thenPart = if (thenIsBlock) condPart <+> thenBody else condPart <> nest(4, line <> thenBody)
+        val thenEndsWithComment = thenChildren.lastOption.exists(endsWithLineComment)
+        val elseConnector = if (thenEndsWithComment) hardline
+                            else if (thenIsBlock)    space
+                            else                     line
+
+        localLayout(tree) {
+          if (elseChildren.isEmpty) {
+            thenPart
+          } else if (isElseIf || elseIsBlock) {
+            thenPart <> elseConnector <> text("else") <+> elseBody
+          } else {
+            thenPart <> elseConnector <> text("else") <> nest(4, line <> elseBody)
+          }
+        }
+    }
+  }
 
   private def prettyMatchRuleFragment(tree: Tree): Doc = {
     val children = filterEmpty(tree.children)
@@ -320,8 +348,8 @@ object PrettyPrinter {
   }
 
   private def wrapWithAnn(tree: Tree, inner: Array[SyntaxTree.Child] => Doc): Doc = {
-    val (annDoc, hasAnn, rest) = extractAnnAndDoc(tree)
-    prepend(annDoc, hasAnn, inner(rest))
+    val (annDoc, _, rest) = extractAnnAndDoc(tree)
+    prepend(annDoc, inner(rest))
   }
 
   /**
@@ -401,17 +429,15 @@ object PrettyPrinter {
 
     prettyBracket(tree.copy(children = rest), filterEmpty(rest),
       headerJoin = declHeaderJoin,
-      formatBody = body => {
-        val cases = body.collect { case t: Tree if t.kind == TreeKind.Case => prettyChild(t) }
-        cases.reduceLeftOption(_ <> line <> _).getOrElse(empty)
-      })
+      formatBody = body => joinWithGap(filterEmpty(body))
+    )
   })
 
   private def prettyCase(tree: Tree): Doc = {
     val children = filterEmpty(tree.children)
     if (children.isEmpty) return prettyFallback(tree)
     localLayout(tree) {
-      joinWithGap(children, line)
+      joinWithGap(children)
     }
   }
 
@@ -485,11 +511,11 @@ object PrettyPrinter {
   /**
     * Formatting for definitions.
     *
-    * @param tree the definition tree
+    * @param tree the definit«ion tree
     * @return the formatted definition as Doc
     */
   private def prettyDef(tree: Tree): Doc = {
-    val (annDoc, hasAnn, rest) = extractAnnAndDoc(tree)
+    val (annDoc, _, rest) = extractAnnAndDoc(tree)
 
     val eqIndex = rest.indexWhere {
       case token: Token if token.kind == TokenKind.Equal => true
@@ -500,7 +526,7 @@ object PrettyPrinter {
       val sig = spaceJoin(rest,
         noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
         noSpaceBefore = Set(TokenKind.Colon))
-      return prepend(annDoc, hasAnn, sig)
+      return prepend(annDoc, sig)
     }
 
     val sigParts  = rest.take(eqIndex)
@@ -514,23 +540,15 @@ object PrettyPrinter {
       .reduceLeftOption(_ <> _)
       .getOrElse(empty)
 
-    val bodyIsBlock = bodyParts.exists {
-      case t: Tree =>
-        t.kind == TreeKind.Expr.Block ||
-          t.children.exists {
-            case inner: Tree => inner.kind == TreeKind.Expr.Block
-            case _ => false
-          } ||
-          leftMostToken(t).exists(tok => bracketPairs.exists(_._1 == tok.kind))
-      case _ => false
-    }
+    val bodyIsBlock = bodyParts.exists(isBlockExpr) ||
+      bodyParts.exists(c => leftMostToken(c).exists(tok => bracketPairs.exists(_._1 == tok.kind)))
 
     val defDoc = localLayout(tree) {
       if (bodyIsBlock) sig <+> text("=") <+> body
       else sig <+> text("=") <> nest(4, line <> body)
     }
 
-    prepend(annDoc, hasAnn, defDoc)
+    prepend(annDoc, defDoc)
   }
 
   /**
@@ -1000,12 +1018,13 @@ object PrettyPrinter {
     * For example is used with annotations and doc comments.
     *
     * @param prefix the prefix to prepend if present
-    * @param hasPrefix whether the prefix is present (TODO: Remove flag)
     * @param body the main body to return if the prefix is not present, or to append to the prefix if it is present
     * @return the combined prefix and body if the prefix is present, otherwise just the body
     */
-  private def prepend(prefix: Doc, hasPrefix: Boolean, body: Doc): Doc =
-    if (hasPrefix) prefix <> hardline <> body else body
+  private def prepend(prefix: Doc, body: Doc): Doc = prefix match {
+    case Doc.Empty => body
+    case _         => prefix <> hardline <> body
+  }
 
   private def leftMostToken(child: SyntaxTree.Child): Option[Token] = child match {
     case token: Token => Some(token)
@@ -1049,6 +1068,18 @@ object PrettyPrinter {
   }
 
   private def isCommentToken(token: Token): Boolean = isCommentKind(token.kind)
+
+  private def isBlockExpr(child: SyntaxTree.Child): Boolean = child match {
+    case t: Tree if t.kind == TreeKind.Expr.Block => true
+    case t: Tree if t.kind == TreeKind.Expr.Expr  => t.children.exists(isBlockExpr)
+    case _ => false
+  }
+
+  private def isIfThenElseExpr(child: SyntaxTree.Child): Boolean = child match {
+    case t: Tree if t.kind == TreeKind.Expr.IfThenElse => true
+    case t: Tree if t.kind == TreeKind.Expr.Expr       => t.children.exists(isIfThenElseExpr)
+    case _ => false
+  }
 
   /**
     * Sets the layout of the given document based on the layout of the given tree.
