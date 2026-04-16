@@ -20,8 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.SymbolSet
-import ca.uwaterloo.flix.language.ast.shared.Denotation
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, EffSymOrRigidVar, SymbolSet}
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.errors.Highlighter.highlight
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -31,6 +30,22 @@ import ca.uwaterloo.flix.util.{Formatter, Grammar}
   */
 sealed trait TypeError extends CompilationMessage {
   val kind: CompilationMessageKind = CompilationMessageKind.TypeError
+
+  def isEffError: Boolean = this match {
+    case _: TypeError.ArgumentGivenWrongEffect => true
+    case _: TypeError.DefaultHandlerNotInModule => true
+    case _: TypeError.DuplicateDefaultHandler => true
+    case _: TypeError.EffectfulFunctionUsesOtherEffect => true
+    case _: TypeError.ExplicitlyPureFunctionUsesEffect => true
+    case _: TypeError.ExplicitlyPureFunctionUsesIO => true
+    case _: TypeError.IllegalDefaultHandlerSignature => true
+    case _: TypeError.ImplicitlyPureFunctionUsesEffect => true
+    case _: TypeError.ImplicitlyPureFunctionUsesIO => true
+    case _: TypeError.MismatchedEffects => true
+    case _: TypeError.NonPublicDefaultHandler => true
+    case _: TypeError.UnusedEffectInSignature => true
+    case _ => false
+  }
 }
 
 object TypeError {
@@ -46,12 +61,13 @@ object TypeError {
     * @param loc2     the source location of the function signature (where the expected effect is declared)
     * @param loc3     the source location of the argument definition (where the actual effect originates)
     */
-  case class ArgumentGivenWrongEffect(expected: List[Symbol.EffSym], actual: List[Symbol.EffSym], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
+  case class ArgumentGivenWrongEffect(expected: List[EffSymOrRigidVar], actual: List[EffSymOrRigidVar], loc: SourceLocation, loc2: SourceLocation, loc3: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6218
 
-    private def effectsToString(effs: List[Symbol.EffSym]): String =
-      if (effs.length == 1) s"'${effs.head.name}'"
-      else effs.map(_.name).mkString("'{", ", ", "}'")
+    private def effectsToString(effs: List[EffSymOrRigidVar]): String = effs match {
+      case x :: Nil => s"'${x.name}'"
+      case xs => xs.map(_.name).mkString("'{", ", ", "}'")
+    }
 
     def summary: String =
       s"Mismatched effect: expected ${effectsToString(expected)}, but got ${effectsToString(actual)}"
@@ -168,19 +184,19 @@ object TypeError {
     * @param loc    the location of the function explicitly declared as defEffSym.
     * @param loc2   the location where the other effect is used.
     */
-  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[Symbol.EffSym], usedEffSym: Symbol.EffSym, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+  case class EffectfulFunctionUsesOtherEffect(defEffSyms: List[EffSymOrRigidVar], usedEffSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6216
 
     def summary: String = s"Unexpected effect '${usedEffSym.name}' in function declared as '${defEffSyms}'"
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      def printDefEffSyms(syms: List[Symbol.EffSym]): String = syms match {
+      def formatEffs(syms: List[EffSymOrRigidVar]): String = syms match {
         case Nil => ""
         case end :: Nil => s"${magenta(end.name)}"
-        case head :: tail => s"${magenta(head.name)}, " + printDefEffSyms(tail)
+        case head :: tail => s"${magenta(head.name)}, " + formatEffs(tail)
       }
-      val defString = s"{${magenta(printDefEffSyms(defEffSyms.reverse))}}"
+      val defString = s"{${magenta(formatEffs(defEffSyms))}}"
       s""">> Unexpected effect '${magenta(usedEffSym.name)}' in function declared as '$defString'.
          |
          |${highlight(loc, s"function declared as '$defString'", fmt)}
@@ -202,7 +218,7 @@ object TypeError {
     * @param loc    the location of the function explicitly declared as {}.
     * @param loc2   the location where the effect is used.
     */
-  case class ExplicitlyPureFunctionUsesEffect(effSym: Symbol.EffSym, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
+  case class ExplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, loc: SourceLocation, loc2: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6215
 
     def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
@@ -345,7 +361,7 @@ object TypeError {
     * @param emptyLoc the location of the function inferred to be Pure (empty space right before '=').
     * @param loc      the location where the effect is used.
     */
-  case class ImplicitlyPureFunctionUsesEffect(effSym: Symbol.EffSym, emptyLoc: SourceLocation, loc: SourceLocation) extends TypeError {
+  case class ImplicitlyPureFunctionUsesEffect(effSym: EffSymOrRigidVar, emptyLoc: SourceLocation, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E5252
 
     def summary: String = s"Unexpected effect '${effSym.name}' in {} function"
@@ -936,7 +952,7 @@ object TypeError {
     * @param unusedEff the symbol of the unused effect in the function signature
     * @param loc    the location of the unused effect in the function signature.
     */
-  case class UnusedEffectInSignature(unusedEff: Symbol.EffSym, loc: SourceLocation) extends TypeError {
+  case class UnusedEffectInSignature(unusedEff: EffSymOrRigidVar, loc: SourceLocation) extends TypeError {
     def code: ErrorCode = ErrorCode.E6217
 
     def summary: String = s"Unused effect '${unusedEff.name}'"

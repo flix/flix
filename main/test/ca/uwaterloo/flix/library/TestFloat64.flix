@@ -555,6 +555,45 @@ mod TestFloat64 {
         assertTrue(Float32.isNan(ans))
 
     /////////////////////////////////////////////////////////////////////////////
+    // truncateToInt32                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToInt3201(): Unit \ Assert = assertEq(expected = 3, Float64.truncateToInt32(3.99f64))
+
+    @Test
+    def truncateToInt3202(): Unit \ Assert = assertEq(expected = 0, Float64.truncateToInt32(Float64.nan()))
+
+    @Test
+    def truncateToInt3203(): Unit \ Assert = assertEq(expected = Int32.maxValue(), Float64.truncateToInt32(Float64.positiveInfinity()))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // truncateToInt64                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToInt6401(): Unit \ Assert = assertEq(expected = 3i64, Float64.truncateToInt64(3.99f64))
+
+    @Test
+    def truncateToInt6402(): Unit \ Assert = assertEq(expected = 0i64, Float64.truncateToInt64(Float64.nan()))
+
+    @Test
+    def truncateToInt6403(): Unit \ Assert = assertEq(expected = -3i64, Float64.truncateToInt64(-3.99f64))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // truncateToFloat32                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def truncateToFloat3201(): Unit \ Assert = assertEq(expected = 1.0f32, Float64.truncateToFloat32(1.0f64))
+
+    @Test
+    def truncateToFloat3202(): Unit \ Assert = assertTrue(Float32.isNan(Float64.truncateToFloat32(Float64.nan())))
+
+    @Test
+    def truncateToFloat3203(): Unit \ Assert = assertEq(expected = Float32.positiveInfinity(), Float64.truncateToFloat32(Float64.positiveInfinity()))
+
+    /////////////////////////////////////////////////////////////////////////////
     // abs                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 

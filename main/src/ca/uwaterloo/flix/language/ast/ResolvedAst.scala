@@ -119,7 +119,7 @@ object ResolvedAst {
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class Stm(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Stm(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
     case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
@@ -145,19 +145,19 @@ object ResolvedAst {
 
     case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(label: Name.Label, value: Expr, rest: Expr, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(label: Name.Label, rest: Expr, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLoad(base: Expr, index: Expr, loc: SourceLocation) extends Expr
+    case class ArrayLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayStore(base: Expr, index: Expr, elm: Expr, loc: SourceLocation) extends Expr
+    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
+    case class ArrayLength(exp: Expr, loc: SourceLocation) extends Expr
 
     case class StructNew(sym: Symbol.StructSym, exps: List[(StructFieldSymUse, Expr)], region: Option[Expr], loc: SourceLocation) extends Expr
 
@@ -196,7 +196,7 @@ object ResolvedAst {
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeSuperMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeSuperMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], targs: List[UnkindedType], loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethod(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -208,7 +208,7 @@ object ResolvedAst {
 
     case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], targs: List[UnkindedType], constructors: List[JvmConstructor], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 

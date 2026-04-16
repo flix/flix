@@ -210,9 +210,9 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
+    case Expr.Stm(exps, exp, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitExp(exp)
       visitType(tpe)
       visitType(eff)
 

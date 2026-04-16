@@ -151,9 +151,9 @@ object GenFunAndClosureClasses {
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
     visitor.visitSource(defn.loc.source.name, null)
 
-    // Fields
+    // Fields — lparams use erased types (like fparams) so setPc can store without casting
     for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toBackendType(x.tpe).toDescriptor, null, null)
+      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toErasedBackendType(x.tpe).toDescriptor, null, null)
     }
     visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
 
@@ -239,8 +239,9 @@ object GenFunAndClosureClasses {
       val field = visitor.visitField(ACC_PUBLIC, s"clo$index", BackendType.toBackendType(argType).toDescriptor, null, null)
       field.visitEnd()
     }
+    // lparams use erased types (like fparams) so setPc can store without casting
     for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toBackendType(x.tpe).toDescriptor, null, null)
+      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toErasedBackendType(x.tpe).toDescriptor, null, null)
     }
     visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
 
@@ -347,7 +348,7 @@ object GenFunAndClosureClasses {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", JvmOps.getIndex(lp.offset, localOffset), lp.sym.isWild, BackendType.toBackendType(lp.tpe), None) }
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", JvmOps.getIndex(lp.offset, localOffset), lp.sym.isWild, BackendType.toErasedBackendType(lp.tpe), Some(BackendType.toBackendType(lp.tpe))) }
     val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", JvmOps.getIndex(cp.offset, localOffset), false, BackendType.toBackendType(cp.tpe), None) }
     val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", JvmOps.getIndex(fp.offset, localOffset), false, BackendType.toErasedBackendType(fp.tpe), Some(BackendType.toBackendType(fp.tpe))) }
 
@@ -392,11 +393,12 @@ object GenFunAndClosureClasses {
         DUP_X1()(mv)
         SWAP()(mv) // clo, pc ---> clo, clo, pc
         mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, "pc", BackendType.Int32.toDescriptor)
-        for ((name, index, isWild, fieldType, _: None.type) <- lparams) {
+        for ((name, index, isWild, fieldType, _) <- lparams) {
           if (isWild) {
             nop()
           } else {
             DUP()(mv)
+            // fieldType is erased (Object for refs), so xLoad always matches the verifier type
             xLoad(fieldType, index)(mv)
             mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType.toDescriptor)
           }
@@ -404,7 +406,25 @@ object GenFunAndClosureClasses {
         POP()(mv)
       }
 
-      val ctx = GenExpression.EffectContext(enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+      // Re-narrow local variable types after resuming at a pcPointLabel.
+      // The JVM verifier merges local types at the tableswitch targets; this
+      // restores the exact declared types by loading, casting, and re-storing
+      // each non-wild, non-primitive local.
+      def narrowLocals(mv: MethodVisitor): Unit = {
+        for ((_, index, isWild, erasedType, Some(realType)) <- lparams) {
+          if (!isWild) {
+            realType match {
+              case _: BackendType.PrimitiveType => () // primitives don't need narrowing
+              case _ =>
+                BytecodeInstructions.xLoad(erasedType, index)(mv)
+                BytecodeInstructions.castIfNotPrim(realType)(mv)
+                BytecodeInstructions.xStore(realType, index)(mv)
+            }
+          }
+        }
+      }
+
+      val ctx = GenExpression.EffectContext(enterLabel, Map.empty, newFrame, setPc, narrowLocals, localOffset, pcLabels.prepended(null), Array(0))
       GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
@@ -439,7 +459,7 @@ object GenFunAndClosureClasses {
     val pc = List(("pc", BackendType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", BackendType.toBackendType(p._1.tpe)))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", BackendType.toBackendType(p._1.tpe)))
+    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
     val params = pc ++ fparams ++ cparams ++ lparams
 
     NEW(className)

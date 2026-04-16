@@ -68,6 +68,7 @@ object UnkindedTypePrinter {
       case (UnkindedType.RestrictableEnum(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAlias(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAssocType(sym, _), _) => Type.AsIs(sym.toString)
+      case (UnkindedType.UnappliedNative(clazz, _), _) => Type.AsIs(clazz.getSimpleName)
       case (UnkindedType.Arrow(eff0, arity, _), _) if args.lengthIs == arity && arity >= 2 =>
         // `(a1, a2, ..) -> b \ ef` is represented as `List(a1, a2, .., b)`
         // safe match because of the case guard

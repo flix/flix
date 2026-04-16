@@ -110,11 +110,11 @@ object ConstraintSolver2 {
     *
     * Returns None if the type are not unifiable.
     */
-  def fullyUnify(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv)(implicit eqenv: EqualityEnv, flix: Flix): Option[Substitution] = {
+  def fullyUnify(tpe1: Type, tpe2: Type, scope: RegionScope, renv: RigidityEnv)(implicit eqenv: EqualityEnv, flix: Flix): Option[Substitution] = {
     // unification is now defined as taking a single constraint and applying rules until it's done
     val constr = TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, SourceLocation.Unknown))
     implicit val r: RigidityEnv = renv
-    implicit val s: Scope = scope
+    implicit val s: RegionScope = scope
     solveAllTypes(List(constr)) match {
       // Case 1: No constraints left. Success.
       case (Nil, subst) => Some(subst)
@@ -130,13 +130,13 @@ object ConstraintSolver2 {
   def isEquivalent(tpe1: Type, tpe2: Type)(implicit eqenv: EqualityEnv, flix: Flix): Boolean = {
     // Mark everything as rigid.
     val renv = RigidityEnv.ofRigidVars(tpe1.typeVars.map(_.sym) ++ tpe2.typeVars.map(_.sym))
-    ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, renv)(eqenv, flix).isDefined
+    ConstraintSolver2.fullyUnify(tpe1, tpe2, RegionScope.Top, renv)(eqenv, flix).isDefined
   }
 
   /**
     * Solves the given constraint set as far as possible.
     */
-  def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
+  def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     val constrs = constrs0.map(initialSubst.apply)
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
@@ -149,7 +149,7 @@ object ConstraintSolver2 {
     *
     * The constraint set must contain only equality constraints.
     */
-  def solveAllTypes(constrs0: List[TypeConstraint])(implicit scope: Scope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], Substitution) = {
+  def solveAllTypes(constrs0: List[TypeConstraint])(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], Substitution) = {
     solveAll(constrs0, SubstitutionTree.empty)(scope, renv, TraitEnv(Map.empty), eqenv, flix) match {
       case (constrs, subst) => (constrs, subst.root)
     }
@@ -158,7 +158,7 @@ object ConstraintSolver2 {
   /**
     * Iterates once over all reduction rules to apply them to the constraint set.
     */
-  private def solveOne(soup: Soup, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): Soup = {
+  private def solveOne(soup: Soup, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): Soup = {
     soup
       .exhaustively(progress) {
         (soup, progress) =>
@@ -168,20 +168,20 @@ object ConstraintSolver2 {
             }
             .flatMap(eliminateIdentities(_, progress))
             .flatMap(eliminateErrors(_, progress))
-            .map(reduceTypes(_, progress))
+            .flatMap(reduceTypes(_, progress))
             .flatMapSubst(makeSubstitution(_, progress))
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
             .flatMap(eliminateErrors(_, progress))
-            .map(reduceTypes(_, progress))
+            .flatMap(reduceTypes(_, progress))
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
             .flatMap(eliminateErrors(_, progress))
-            .map(reduceTypes(_, progress))
+            .flatMap(reduceTypes(_, progress))
             .flatMapSubst(recordUnification(_, progress))
             .flatMapSubst(schemaUnification(_, progress))
             .map(purifyEmptyRegion(_, progress))
@@ -352,7 +352,7 @@ object ConstraintSolver2 {
     *   instance Ord[List[a]] with Ord[a]
     * }}}
     */
-  private def contextReduction(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
+  private def contextReduction(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
     case c: TypeConstraint.Conflicted => List(c)
@@ -408,7 +408,7 @@ object ConstraintSolver2 {
   /**
     * Performs case set unification on the given constraint.
     */
-  private def caseSetUnification(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
+  private def caseSetUnification(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
     case c@TypeConstraint.Equality(tpe1, tpe2, _) => (tpe1.kind, tpe2.kind) match {
       case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
         CaseSetZhegalkinUnification.unify(tpe1, tpe2, renv, sym1.universe, sym1) match {
@@ -430,7 +430,7 @@ object ConstraintSolver2 {
   /**
     * Performs Boolean unification on the given constraint.
     */
-  private def booleanUnification(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
+  private def booleanUnification(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
     case c@TypeConstraint.Equality(tpe1, tpe2, _) if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool =>
       // BoolUnification is all-or-nothing:
       // Either we get a substitution and have nothing left over
@@ -452,7 +452,7 @@ object ConstraintSolver2 {
   /**
     * Performs effect unification on all the given constraints.
     */
-  private def blockEffectUnification(constrs0: List[TypeConstraint], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
+  private def blockEffectUnification(constrs0: List[TypeConstraint], progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
 
     // Separate out the effect unification stuff
     val (eqConstrs, rest0) = constrs0.partitionMap {
@@ -512,7 +512,7 @@ object ConstraintSolver2 {
   /**
     * Performs record row unification on the given type constraint.
     */
-  private def recordUnification(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqEnv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
+  private def recordUnification(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqEnv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow =>
       RecordConstraintSolver.solve(tpe1, tpe2, scope, renv, prov)(progress, flix) match {
         case (constrs, subst) => (constrs, SubstitutionTree.shallow(subst))
@@ -530,7 +530,7 @@ object ConstraintSolver2 {
   /**
     * Performs schema row unification on the given type constraint.
     */
-  private def schemaUnification(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqEnv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
+  private def schemaUnification(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqEnv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) if tpe1.kind == Kind.SchemaRow && tpe2.kind == Kind.SchemaRow =>
       SchemaConstraintSolver.solve(tpe1, tpe2, scope, renv, prov)(progress, flix) match {
         case (constrs, subst) => (constrs, SubstitutionTree.shallow(subst))
@@ -549,16 +549,23 @@ object ConstraintSolver2 {
     * Performs reduction on the types in the given type constraints.
     */
   // (redU)
-  private def reduceTypes(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): TypeConstraint = constr match {
+  private def reduceTypes(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-      TypeConstraint.Equality(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
+      val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
+      val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
+      TypeConstraint.Equality(r1, r2, prov) :: cs1 ::: cs2
     case TypeConstraint.Trait(sym, tpe, loc) =>
-      TypeConstraint.Trait(sym, reduce(tpe, scope, renv)(progress, eqenv, flix), loc)
+      val (r, cs) = reduce(tpe)(scope, renv, progress, eqenv, flix)
+      TypeConstraint.Trait(sym, r, loc) :: cs
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
-      TypeConstraint.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), prov, nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)))
+      val (r1, cs1) = reduce(eff1)(scope, renv, progress, eqenv, flix)
+      val (r2, cs2) = reduce(eff2)(scope, renv, progress, eqenv, flix)
+      TypeConstraint.Purification(sym, r1, r2, prov, nested.flatMap(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix))) :: cs1 ::: cs2
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
-      TypeConstraint.Conflicted(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
-    case TypeConstraint.EffConflicted(_) => constr
+      val (r1, cs1) = reduce(tpe1)(scope, renv, progress, eqenv, flix)
+      val (r2, cs2) = reduce(tpe2)(scope, renv, progress, eqenv, flix)
+      TypeConstraint.Conflicted(r1, r2, prov) :: cs1 ::: cs2
+    case TypeConstraint.EffConflicted(_) => List(constr)
   }
 
   /**
@@ -575,7 +582,7 @@ object ConstraintSolver2 {
     * }}}
     */
   // (varU)
-  private def makeSubstitution(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv): (List[TypeConstraint], SubstitutionTree) = constr match {
+  private def makeSubstitution(constr: TypeConstraint, progress: Progress)(implicit scope: RegionScope, renv: RigidityEnv): (List[TypeConstraint], SubstitutionTree) = constr match {
     case TypeConstraint.Equality(Type.Var(sym, _), tpe2, _) if canSubstitute(sym, tpe2) =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe2))
@@ -596,7 +603,7 @@ object ConstraintSolver2 {
   /**
     * Returns true if it is valid to create a substitution from the given type variable to the given type.
     */
-  private def canSubstitute(sym: Symbol.KindedTypeVarSym, tpe: Type)(implicit scope: Scope, renv: RigidityEnv): Boolean = {
+  private def canSubstitute(sym: Symbol.KindedTypeVarSym, tpe: Type)(implicit scope: RegionScope, renv: RigidityEnv): Boolean = {
     renv.isFlexible(sym) &&
       sym.kind == tpe.kind &&
       hasIdempotentSubstitution(sym.kind) &&

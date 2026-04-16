@@ -426,6 +426,14 @@ pub mod Int16 {
         Short.valueOf(clamp(min = mini16, max = maxi16, x)).byteValue()
 
     ///
+    /// Convert `x` to an Int8 by truncation.
+    ///
+    /// Discards all but the lowest 8 bits.
+    ///
+    pub def truncateToInt8(x: Int16): Int8 =
+        Short.valueOf(x).byteValue()
+
+    ///
     /// Get the primitive Int16 value from its object representation (i.e. Short).
     ///
     /// This function is expected to be used when marshaling Int16s from Java. Generally in Flix

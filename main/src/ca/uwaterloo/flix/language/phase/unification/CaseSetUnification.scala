@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.RegionScope
 import ca.uwaterloo.flix.language.phase.unification.SetFormula.*
 
 import scala.collection.immutable.SortedSet
@@ -27,7 +27,7 @@ object CaseSetUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: Scope, flix: Flix): Option[Substitution] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: RegionScope, flix: Flix): Option[Substitution] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///

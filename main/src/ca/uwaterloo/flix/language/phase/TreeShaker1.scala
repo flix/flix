@@ -129,8 +129,8 @@ object TreeShaker1 {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Stm(exps, exp, _, _, _) =>
+      exps.foldRight(visitExp(exp))((e, acc) => visitExp(e) ++ acc)
 
     case Expr.Discard(exp, _, _) =>
       visitExp(exp)

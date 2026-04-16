@@ -1,6 +1,6 @@
 mod TestChain {
 
-    use Assert.{assertEq, assertTrue, assertFalse, fail};
+    use Assert.{assertEq, assertTrue, assertFalse, assertNone, fail};
     use Math.Shuffle
 
     /////////////////////////////////////////////////////////////////////////////
@@ -144,6 +144,27 @@ mod TestChain {
 
     @Test
     def last04(): Unit \ Assert = assertEq(expected = Some(3), Chain.last(List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def get01(): Unit \ Assert =
+        assertEq(expected = "b", Chain.get(1, List.toChain("a" :: "b" :: "c" :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nth01(): Unit \ Assert = assertEq(expected = Some(1), Chain.nth(0, List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    @Test
+    def nth02(): Unit \ Assert = assertEq(expected = Some(2), Chain.nth(1, List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    @Test
+    def nth03(): Unit \ Assert = assertNone(Chain.nth(5, List.toChain(1 :: 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                  //

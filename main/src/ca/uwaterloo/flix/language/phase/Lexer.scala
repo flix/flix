@@ -316,9 +316,7 @@ object Lexer {
       case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
       case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case '.' =>
-        if (s.sc.advanceIfMatch("..")) {
-          TokenKind.DotDotDot
-        } else if (s.sc.nth(-2).exists(_.isWhitespace)) {
+        if (s.sc.nth(-2).exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           mkErrorKind(LexerError.FreeDot(sourceLocationAtStart()))
         } else if (s.sc.peekIs(_.isWhitespace, outOfBounds = false)) {

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, RegionScope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -37,18 +37,18 @@ class TypeContext {
       *
       * Note: The function must return a _NEW_ object because each object has mutable state.
       */
-    def empty: ScopeConstraints = new ScopeConstraints(Scope.Top)
+    def empty: ScopeConstraints = new ScopeConstraints(RegionScope.Top)
 
     /**
       * Creates an empty ScopeConstraints associated with the given region.
       */
-    def emptyForScope(s: Scope): ScopeConstraints = new ScopeConstraints(s)
+    def emptyForScope(s: RegionScope): ScopeConstraints = new ScopeConstraints(s)
   }
 
   /**
     * Stores typing information relating to a particular region scope.
     */
-  private class ScopeConstraints(val scope: Scope) {
+  private class ScopeConstraints(val scope: RegionScope) {
 
     /**
       * The constraints generated for the scope.
@@ -102,7 +102,7 @@ class TypeContext {
   /**
     * Returns the current scope.
     */
-  def getScope: Scope = currentScopeConstraints.scope
+  def getScope: RegionScope = currentScopeConstraints.scope
 
   /**
     * Generates constraints unifying the given types.
@@ -291,8 +291,8 @@ class TypeContext {
     */
   def exitRegion(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
     val constr = currentScopeConstraints.scope match {
-      case Scope(Nil) => throw InternalCompilerException("unexpected missing region", loc)
-      case Scope(r :: _) =>
+      case RegionScope(Nil) => throw InternalCompilerException("unexpected missing region", loc)
+      case RegionScope(r :: _) =>
         // TODO ASSOC-TYPES improve prov. We can probably get a better prov than "match"
         val prov = Provenance.Match(externalEff1, internalEff2, loc)
         TypeConstraint.Purification(r, externalEff1, internalEff2, prov, currentScopeConstraints.getConstraints)

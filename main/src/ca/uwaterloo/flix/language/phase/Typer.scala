@@ -184,7 +184,7 @@ object Typer {
     * Reconstructs types in the given def.
     */
   private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv, open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
-    implicit val scope: Scope = Scope.Top
+    implicit val scope: RegionScope = RegionScope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
     val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
@@ -233,7 +233,7 @@ object Typer {
     * Performs type inference and reassembly on the given signature `sig`.
     */
   private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[TraitConstraint], root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Sig = {
-    implicit val scope: Scope = Scope.Top
+    implicit val scope: RegionScope = RegionScope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
     sig.exp match {

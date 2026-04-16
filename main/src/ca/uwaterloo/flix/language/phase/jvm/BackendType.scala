@@ -157,8 +157,8 @@ object BackendType {
       case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case SimpleType.RecordEmpty => BackendObjType.Record.toTpe
       case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
-      case SimpleType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
-      case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
+      case SimpleType.ExtensibleEmpty => BackendObjType.ExtTagged.toTpe
+      case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.ExtTagged.toTpe
       case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
       case SimpleType.Enum(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
       case SimpleType.Struct(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)

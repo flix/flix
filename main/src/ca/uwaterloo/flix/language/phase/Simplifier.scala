@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, RegionScope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
@@ -32,7 +32,7 @@ import scala.annotation.tailrec
 object Simplifier {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffSym] = root.effects.keys.toSet
@@ -175,9 +175,9 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.Stm(exps, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Stm(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Stm(exps.map(visitExp), visitExp(exp), t, simplifyEffect(eff), loc)
 
     case d@MonoAst.Expr.Discard(exp, eff, loc) =>
       val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
@@ -706,6 +706,21 @@ object Simplifier {
     * Eliminates pattern matching by translations to labels and jumps.
     */
   private def patternMatchWithLabels(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+    // Check if the match is eligible for switch optimization.
+    if (isSwitchEligible(exp0, rules)) {
+      return generateSwitch(exp0, rules, tpe, loc)
+    }
+
+    // Check if the scrutinee is a constructed tuple that can be flattened.
+    exp0 match {
+      case MonoAst.Expr.ApplyAtomic(AtomicOp.Tuple, elms, _, _, _) if isTupleFlattenable(rules) =>
+        findSwitchColumn(elms, rules) match {
+          case Some(col) => return flattenTupleMatchWithSwitch(elms, rules, col, tpe, loc)
+          case None      => return flattenTupleMatch(elms, rules, tpe, loc)
+        }
+      case _ => // fall through to general case
+    }
+
     //
     // Given the code:
     //
@@ -789,6 +804,458 @@ object Simplifier {
 
     // Wrap the branches inside a let-binding for the match variable.
     SimplifiedAst.Expr.Let(matchVar, matchExp, branch, t, matchPurity, loc)
+  }
+
+  /**
+    * Returns `true` if the given match expression is eligible for switch optimization.
+    *
+    * A match is switch-eligible when:
+    * 1. The scrutinee type is an enum.
+    * 2. All top-level patterns are Tag, Wild, or Var.
+    * 3. No guards on any rule.
+    * 4. At least 2 Tag rules.
+    * 5. At most one Wild/Var, and it must be the last rule.
+    * 6. Inner patterns of each Tag are only Wild or Var.
+    */
+  private def isSwitchEligible(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule])(implicit root: MonoAst.Root): Boolean = {
+    // 1. Must be an enum type.
+    val isEnum = exp0.tpe.typeConstructor match {
+      case Some(TypeConstructor.Enum(_, _)) => true
+      case _ => false
+    }
+    if (!isEnum) return false
+
+    // 3. No guards allowed.
+    if (rules.exists(_.guard.isDefined)) return false
+
+    // Partition into tag rules and other rules.
+    val (tagRules, otherRules) = rules.partition {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tag(_, _, _, _), _, _) => true
+      case _ => false
+    }
+
+    // 4. At least 2 tag rules.
+    if (tagRules.length < 2) return false
+
+    // 2 & 5. All non-tag rules must be Wild or Var, at most one, and it must be the last rule.
+    val allOtherValid = otherRules.forall {
+      case MonoAst.MatchRule(MonoAst.Pattern.Wild(_, _), _, _) => true
+      case MonoAst.MatchRule(MonoAst.Pattern.Var(_, _, _, _), _, _) => true
+      case _ => false
+    }
+    if (!allOtherValid) return false
+    if (otherRules.length > 1) return false
+    if (otherRules.length == 1 && rules.last != otherRules.head) return false
+
+    // 6. Inner patterns of each Tag must be Wild or Var.
+    tagRules.forall {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tag(_, pats, _, _), _, _) =>
+        pats.forall {
+          case MonoAst.Pattern.Wild(_, _) => true
+          case MonoAst.Pattern.Var(_, _, _, _) => true
+          case _ => false
+        }
+      case _ => false
+    }
+  }
+
+  /**
+    * Generates a Switch expression for an eligible match on an enum.
+    *
+    * Given the code:
+    * {{{
+    * match x {
+    *   case Tag1(a, b) => body1
+    *   case Tag2(c)    => body2
+    *   case _          => body3
+    * }
+    * }}}
+    *
+    * Generates:
+    * {{{
+    * let matchVar = x;
+    * switch matchVar {
+    *   case Tag1 => let a = untag 0 matchVar; let b = untag 1 matchVar; body1
+    *   case Tag2 => let c = untag 0 matchVar; body2
+    *   default   => body3
+    * }
+    * }}}
+    */
+  private def generateSwitch(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+    val matchVar = Symbol.freshVarSym("matchVar" + Flix.Delimiter, BoundBy.Let, loc)
+    val matchExp = visitExp(exp0)
+    val t = visitType(tpe)
+
+    // Determine the enum sym from the scrutinee type.
+    val enumSym = exp0.tpe.typeConstructor match {
+      case Some(TypeConstructor.Enum(sym, _)) => sym
+      case _ => throw InternalCompilerException("Expected enum type in switch", loc)
+    }
+
+    // Separate tag rules from the optional wildcard/var default rule.
+    val (tagRules, defaultRules) = rules.partition {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tag(_, _, _, _), _, _) => true
+      case _ => false
+    }
+
+    // Build switch cases.
+    val switchCases: List[(Symbol.CaseSym, SimplifiedAst.Expr)] = tagRules.map {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tag(CaseSymUse(caseSym, _), pats, patTpe, patLoc), _, body) =>
+        val matchVarExp = SimplifiedAst.Expr.Var(matchVar, visitType(patTpe), patLoc)
+        val innerBody = visitExp(body)
+        // Generate let-bindings for inner patterns (Untag operations), built right-to-left.
+        val caseBody = pats.zipWithIndex.foldRight(innerBody) {
+          case ((MonoAst.Pattern.Wild(_, _), _), acc) => acc
+          case ((MonoAst.Pattern.Var(sym, varTpe, _, varLoc), idx), acc) =>
+            val untagExp = SimplifiedAst.Expr.ApplyAtomic(
+              AtomicOp.Untag(caseSym, idx),
+              List(matchVarExp),
+              visitType(varTpe),
+              Purity.Pure,
+              varLoc
+            )
+            SimplifiedAst.Expr.Let(sym, untagExp, acc, t, acc.purity, varLoc)
+          case _ => throw InternalCompilerException("Unexpected inner pattern in switch", loc)
+        }
+        (caseSym, caseBody)
+      case _ => throw InternalCompilerException("Unexpected rule in switch tag rules", loc)
+    }
+
+    // Build default expression.
+    val defaultExp = defaultRules match {
+      case MonoAst.MatchRule(MonoAst.Pattern.Var(sym, varTpe, _, varLoc), _, body) :: Nil =>
+        val vt = visitType(varTpe)
+        val innerBody = visitExp(body)
+        SimplifiedAst.Expr.Let(sym, SimplifiedAst.Expr.Var(matchVar, vt, varLoc), innerBody, t, innerBody.purity, varLoc)
+      case MonoAst.MatchRule(MonoAst.Pattern.Wild(_, _), _, body) :: Nil =>
+        visitExp(body)
+      case Nil =>
+        SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
+      case _ => throw InternalCompilerException("Unexpected default pattern in switch", loc)
+    }
+
+    // Compute purity.
+    val casesPurity = Purity.combineAll(switchCases.map(_._2.purity))
+    val switchPurity = Purity.combine3(matchExp.purity, casesPurity, defaultExp.purity)
+
+    // Build the Switch expression.
+    val switchExpr = SimplifiedAst.Expr.Switch(
+      SimplifiedAst.Expr.Var(matchVar, matchExp.tpe, loc),
+      enumSym,
+      switchCases,
+      defaultExp,
+      t,
+      Purity.combine(casesPurity, defaultExp.purity),
+      loc
+    )
+
+    // Wrap in let-binding for matchVar.
+    SimplifiedAst.Expr.Let(matchVar, matchExp, switchExpr, t, switchPurity, loc)
+  }
+
+  /**
+    * Returns `true` if all top-level patterns in `rules` are Tuple, Wild, or Var.
+    */
+  private def isTupleFlattenable(rules: List[MonoAst.MatchRule]): Boolean = {
+    rules.forall {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tuple(_, _, _), _, _) => true
+      case MonoAst.MatchRule(MonoAst.Pattern.Wild(_, _), _, _) => true
+      case _ => false
+    }
+  }
+
+  /**
+    * Eliminates a pattern match on a constructed tuple by binding each element
+    * directly to a variable, avoiding the intermediate tuple allocation.
+    *
+    * Given the code:
+    * {{{
+    * match (e1, e2) {
+    *   case (p1, p2) => body1
+    *   case _        => body2
+    * }
+    * }}}
+    *
+    * Generates:
+    * {{{
+    * let mv0 = e1;
+    * let mv1 = e2;
+    * branch {
+    *   jumpto label$1
+    *   label$1: patternMatchList([p1, p2], [mv0, mv1], guard, body1, jumpto label$2)
+    *   label$2: patternMatchList([], [], guard, body2, jumpto default)
+    *   default: MatchError
+    * }
+    * }}}
+    */
+  private def flattenTupleMatch(elms: List[MonoAst.Expr], rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+    // Create a match variable for each tuple element.
+    val matchVars = elms.map(_ => Symbol.freshVarSym("matchVar" + Flix.Delimiter, BoundBy.Let, loc))
+    val matchExps = elms.map(visitExp)
+
+    val t = visitType(tpe)
+
+    // Generate labels.
+    val defaultLab = Symbol.freshLabel("default")
+    val ruleLabels = rules.map(_ => Symbol.freshLabel("case"))
+    val nextLabel = ListOps.zip(ruleLabels, ruleLabels.drop(1) ::: defaultLab :: Nil).toMap
+
+    val jumpPurity = Purity.combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
+
+    // Create a branch for each rule.
+    val branches = ListOps.zip(ruleLabels, rules).map {
+      case (label, MonoAst.MatchRule(pat, guard, body)) =>
+        val next = nextLabel(label)
+        val success = visitExp(body)
+        val failure = SimplifiedAst.Expr.JumpTo(next, t, jumpPurity, loc)
+
+        // Flatten the top-level tuple pattern into its inner patterns.
+        val innerPats = pat match {
+          case MonoAst.Pattern.Tuple(pats, _, _) => pats.toList
+          case MonoAst.Pattern.Wild(_, patLoc) =>
+            // Expand wild into N wilds, one per element.
+            elms.map(e => MonoAst.Pattern.Wild(e.tpe, patLoc))
+          case _ =>
+            throw InternalCompilerException("Unexpected pattern in flattenTupleMatch", loc)
+        }
+
+        (label, patternMatchList(innerPats, matchVars, guard.getOrElse(MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure))
+    }
+
+    // Error branch.
+    val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
+    val errorBranch = (defaultLab, errorExp)
+
+    val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
+    val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
+    val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+
+    // Wrap in let-bindings for each match variable: let mv0 = e1; let mv1 = e2; ... branch
+    val bodyPurity = Purity.combine(Purity.combineAll(matchExps.map(_.purity)), branch.purity)
+    matchVars.zip(matchExps).foldRight(branch: SimplifiedAst.Expr) {
+      case ((sym, exp), acc) =>
+        SimplifiedAst.Expr.Let(sym, exp, acc, t, bodyPurity, loc)
+    }
+  }
+
+  /**
+    * Returns `Some(columnIndex)` if there is a switch-eligible enum column among the
+    * flattened tuple patterns in `rules`. Returns `None` otherwise.
+    *
+    * A column is switch-eligible when:
+    * 1. The element type at that position is an enum.
+    * 2. Every Tuple pattern has a Tag at that position (with only Wild/Var inner patterns).
+    * 3. No guards on any rule.
+    * 4. At least 2 distinct tags in the column.
+    * Wild rules at the end are allowed (they become the default).
+    */
+  private def findSwitchColumn(elms: List[MonoAst.Expr], rules: List[MonoAst.MatchRule])(implicit root: MonoAst.Root): Option[Int] = {
+    // No guards allowed.
+    if (rules.exists(_.guard.isDefined)) return None
+
+    // Separate tuple rules from wild rules.
+    val (tupleRules, wildRules) = rules.partition {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tuple(_, _, _), _, _) => true
+      case _ => false
+    }
+
+    // Need at least 2 tuple rules for a switch to be worthwhile.
+    if (tupleRules.length < 2) return None
+
+    // Check each column.
+    elms.indices.find { i =>
+      // Column must be an enum type.
+      val isEnum = elms(i).tpe.typeConstructor match {
+        case Some(TypeConstructor.Enum(_, _)) => true
+        case _ => false
+      }
+      if (!isEnum) false
+      else {
+        // Every tuple rule must have a Tag at this position with only Wild/Var inner patterns.
+        val allTags = tupleRules.forall {
+          case MonoAst.MatchRule(MonoAst.Pattern.Tuple(pats, _, _), _, _) =>
+            pats.toList(i) match {
+              case MonoAst.Pattern.Tag(_, innerPats, _, _) =>
+                innerPats.forall {
+                  case MonoAst.Pattern.Wild(_, _) => true
+                  case MonoAst.Pattern.Var(_, _, _, _) => true
+                  case _ => false
+                }
+              case _ => false
+            }
+          case _ => false
+        }
+        if (!allTags) false
+        else {
+          // Collect all tags in this column.
+          val allTagSyms = tupleRules.map {
+            case MonoAst.MatchRule(MonoAst.Pattern.Tuple(pats, _, _), _, _) =>
+              pats.toList(i) match {
+                case MonoAst.Pattern.Tag(CaseSymUse(sym, _), _, _, _) => sym
+                case _ => throw InternalCompilerException("Expected tag pattern", elms(i).loc)
+              }
+            case _ => throw InternalCompilerException("Expected tuple rule", elms(i).loc)
+          }
+          // Each tag must appear exactly once (no duplicate tags).
+          val distinctTags = allTagSyms.toSet
+          distinctTags.size == allTagSyms.length && distinctTags.size >= 2
+        }
+      }
+    }
+  }
+
+  /**
+    * Flattens a tuple match and generates a Switch on the enum column at position `switchCol`.
+    *
+    * For each distinct tag in the switch column, generates a Switch case that matches
+    * the remaining columns via `patternMatchList`. Multiple rules with the same tag
+    * are compiled into a Branch/JumpTo chain within that Switch case.
+    */
+  private def flattenTupleMatchWithSwitch(elms: List[MonoAst.Expr], rules: List[MonoAst.MatchRule], switchCol: Int, tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+    // Create a match variable for each tuple element.
+    val matchVars = elms.map(_ => Symbol.freshVarSym("matchVar" + Flix.Delimiter, BoundBy.Let, loc))
+    val matchExps = elms.map(visitExp)
+    val t = visitType(tpe)
+
+    // Extract the enum sym from the switch column type.
+    val enumSym = elms(switchCol).tpe.typeConstructor match {
+      case Some(TypeConstructor.Enum(sym, _)) => sym
+      case _ => throw InternalCompilerException("Expected enum type in switch column", loc)
+    }
+
+    // Separate tuple rules from wild/default rules.
+    val (tupleRules, defaultRules) = rules.partition {
+      case MonoAst.MatchRule(MonoAst.Pattern.Tuple(_, _, _), _, _) => true
+      case _ => false
+    }
+
+    // Build the overall default expression (from the wildcard rule or MatchError).
+    val overallDefault = defaultRules match {
+      case MonoAst.MatchRule(MonoAst.Pattern.Wild(_, _), _, body) :: Nil => visitExp(body)
+      case Nil => SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
+      case _ => throw InternalCompilerException("Unexpected default pattern in flattenTupleMatchWithSwitch", loc)
+    }
+
+    // Group tuple rules by their tag in the switch column, preserving rule order.
+    val tagGroups: List[(Symbol.CaseSym, List[MonoAst.MatchRule])] = {
+      val grouped = scala.collection.mutable.LinkedHashMap.empty[Symbol.CaseSym, List[MonoAst.MatchRule]]
+      tupleRules.foreach { rule =>
+        val caseSym = rule match {
+          case MonoAst.MatchRule(MonoAst.Pattern.Tuple(pats, _, _), _, _) =>
+            pats.toList(switchCol) match {
+              case MonoAst.Pattern.Tag(CaseSymUse(sym, _), _, _, _) => sym
+              case _ => throw InternalCompilerException("Expected tag in switch column", loc)
+            }
+          case _ => throw InternalCompilerException("Expected tuple rule", loc)
+        }
+        grouped.updateWith(caseSym) {
+          case Some(existing) => Some(existing :+ rule)
+          case None => Some(List(rule))
+        }
+      }
+      grouped.toList
+    }
+
+    val jumpPurity = Purity.combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
+    val switchVar = matchVars(switchCol)
+
+    // Build a Switch case for each tag group.
+    val switchCases: List[(Symbol.CaseSym, SimplifiedAst.Expr)] = tagGroups.map { case (caseSym, groupRules) =>
+      // For each rule in this group, extract the tag's inner patterns (untag bindings)
+      // and the remaining non-switch-column patterns.
+      val tagPatTpe = groupRules.head match {
+        case MonoAst.MatchRule(MonoAst.Pattern.Tuple(pats, _, _), _, _) =>
+          pats.toList(switchCol) match {
+            case MonoAst.Pattern.Tag(_, _, patTpe, _) => patTpe
+            case _ => throw InternalCompilerException("Expected tag", loc)
+          }
+        case _ => throw InternalCompilerException("Expected tuple rule", loc)
+      }
+      val switchVarExp = SimplifiedAst.Expr.Var(switchVar, visitType(tagPatTpe), loc)
+
+      if (groupRules.length == 1) {
+        // Single rule for this tag — compile directly.
+        val MonoAst.MatchRule(MonoAst.Pattern.Tuple(pats, _, _), guard, body) = groupRules.head: @unchecked
+        val tagPat = pats.toList(switchCol).asInstanceOf[MonoAst.Pattern.Tag]
+        val remainingPats = pats.toList.zipWithIndex.filter(_._2 != switchCol).map(_._1)
+        val remainingVars = matchVars.zipWithIndex.filter(_._2 != switchCol).map(_._1)
+
+        val success = visitExp(body)
+        val failure = overallDefault
+
+        // Build untag let-bindings for the tag's inner patterns.
+        val guardExpr = guard.getOrElse(MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, SourceLocation.Unknown))
+        val matchBody = patternMatchList(remainingPats, remainingVars, guardExpr, success, failure)
+        val caseBody = tagPat.pats.zipWithIndex.foldRight(matchBody) {
+          case ((MonoAst.Pattern.Wild(_, _), _), acc) => acc
+          case ((MonoAst.Pattern.Var(sym, varTpe, _, varLoc), idx), acc) =>
+            val untagExp = SimplifiedAst.Expr.ApplyAtomic(
+              AtomicOp.Untag(caseSym, idx), List(switchVarExp),
+              visitType(varTpe), Purity.Pure, varLoc)
+            SimplifiedAst.Expr.Let(sym, untagExp, acc, t, acc.purity, varLoc)
+          case _ => throw InternalCompilerException("Unexpected inner pattern in switch", loc)
+        }
+        (caseSym, caseBody)
+      } else {
+        // Multiple rules for this tag — generate a Branch/JumpTo mini-match.
+        val defaultLab = Symbol.freshLabel("default")
+        val ruleLabels = groupRules.map(_ => Symbol.freshLabel("case"))
+        val nextLabel = ListOps.zip(ruleLabels, ruleLabels.drop(1) ::: defaultLab :: Nil).toMap
+
+        val branches = ListOps.zip(ruleLabels, groupRules).map {
+          case (label, MonoAst.MatchRule(MonoAst.Pattern.Tuple(pats, _, _), guard, body)) =>
+            val tagPat = pats.toList(switchCol).asInstanceOf[MonoAst.Pattern.Tag]
+            val remainingPats = pats.toList.zipWithIndex.filter(_._2 != switchCol).map(_._1)
+            val remainingVars = matchVars.zipWithIndex.filter(_._2 != switchCol).map(_._1)
+
+            val success = visitExp(body)
+            val next = nextLabel(label)
+            val failure = SimplifiedAst.Expr.JumpTo(next, t, jumpPurity, loc)
+
+            val guardExpr = guard.getOrElse(MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, SourceLocation.Unknown))
+            val matchBody = patternMatchList(remainingPats, remainingVars, guardExpr, success, failure)
+            val branchBody = tagPat.pats.zipWithIndex.foldRight(matchBody) {
+              case ((MonoAst.Pattern.Wild(_, _), _), acc) => acc
+              case ((MonoAst.Pattern.Var(sym, varTpe, _, varLoc), idx), acc) =>
+                val untagExp = SimplifiedAst.Expr.ApplyAtomic(
+                  AtomicOp.Untag(caseSym, idx), List(switchVarExp),
+                  visitType(varTpe), Purity.Pure, varLoc)
+                SimplifiedAst.Expr.Let(sym, untagExp, acc, t, acc.purity, varLoc)
+              case _ => throw InternalCompilerException("Unexpected inner pattern in switch", loc)
+            }
+            (label, branchBody)
+          case _ => throw InternalCompilerException("Expected tuple rule", loc)
+        }
+
+        val errorBranch = (defaultLab, overallDefault)
+        val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
+        val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
+        val caseBody = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+        (caseSym, caseBody)
+      }
+    }
+
+    // Compute purity.
+    val casesPurity = Purity.combineAll(switchCases.map(_._2.purity))
+    val switchPurity = Purity.combine(casesPurity, overallDefault.purity)
+
+    // Build the Switch expression.
+    val switchExpr = SimplifiedAst.Expr.Switch(
+      SimplifiedAst.Expr.Var(switchVar, matchExps(switchCol).tpe, loc),
+      enumSym,
+      switchCases,
+      overallDefault,
+      t,
+      switchPurity,
+      loc
+    )
+
+    // Wrap in let-bindings for each match variable.
+    val allPurity = Purity.combine(Purity.combineAll(matchExps.map(_.purity)), switchPurity)
+    matchVars.zip(matchExps).foldRight(switchExpr: SimplifiedAst.Expr) {
+      case ((sym, exp), acc) =>
+        SimplifiedAst.Expr.Let(sym, exp, acc, t, allPurity, loc)
+    }
   }
 
   /**
@@ -979,7 +1446,7 @@ object Simplifier {
 
     // Build the nested if-then-else
     val tagType = exp.tpe
-    val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(Scope.Top, flix)
+    val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(RegionScope.Top, flix)
     val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {

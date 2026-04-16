@@ -207,6 +207,14 @@ pub mod Option {
     }
 
     ///
+    /// Aborts with a stack trace if `o` is `None`.
+    ///
+    pub def orAbort(o: Option[a]): Unit \ Abort = match o {
+        case None    => Abort.abortWithTrace("Option.orAbort(): called on None")
+        case Some(_) => ()
+    }
+
+    ///
     /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     pub def withDefault(default: {default = Option[a]}, o: Option[a]): Option[a] = match o {

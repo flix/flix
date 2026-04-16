@@ -61,10 +61,10 @@ object TailPos {
       val e2 = visitExp(exp2)
       Expr.Let(sym, exp1, e2, loc)
 
-    case Expr.Stmt(exp1, exp2, loc) =>
-      // `exp2` is in tail position.
-      val e2 = visitExp(exp2)
-      Expr.Stmt(exp1, e2, loc)
+    case Expr.Stm(exps, exp, loc) =>
+      // `exp` is in tail position.
+      val e = visitExp(exp)
+      Expr.Stm(exps, e, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       // The branches are in tail position.
@@ -76,6 +76,12 @@ object TailPos {
       // Each branch is in tail position.
       val br = MapOps.mapValues(br0)(visitExp)
       Expr.Branch(e0, br, tpe, purity, loc)
+
+    case Expr.Switch(e0, enumSym, cases0, default0, tpe, purity, loc) =>
+      // Each case and default is in tail position.
+      val cs = cases0.map { case (sym, body) => (sym, visitExp(body)) }
+      val d = visitExp(default0)
+      Expr.Switch(e0, enumSym, cs, d, tpe, purity, loc)
 
     case Expr.ApplyClo(exp, exps, _, tpe, purity, loc) =>
       // Mark expression as tail position.

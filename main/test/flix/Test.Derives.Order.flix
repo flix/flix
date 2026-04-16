@@ -45,6 +45,29 @@ mod Test.Derives.Order {
 
     pub enum OpaqueType(Int32) with Eq, Order, ToString
 
+    /// All-nullary enum (no data-carrying variants).
+    pub enum AllNullaryEnum with Eq, Order, ToString {
+        case A
+        case B
+        case C
+    }
+
+    /// Many nullary variants with a single data-carrying variant.
+    pub enum MostlyNullaryEnum with Eq, Order, ToString {
+        case N1
+        case N2
+        case N3
+        case N4
+        case N5
+        case Data(Int32)
+    }
+
+    /// All data-carrying variants (no nullary).
+    pub enum AllDataEnum with Eq, Order, ToString {
+        case First(Int32)
+        case Second(Bool)
+    }
+
     @Test
     def testEq01(): Unit \ Assert =
         assertEq(expected = EqualTo, compare(Enum.EmptyCase, Enum.EmptyCase))
@@ -140,6 +163,57 @@ mod Test.Derives.Order {
     @Test
     def testEq24(): Unit \ Assert =
         assertEq(expected = EqualTo, compare(OpaqueType.OpaqueType(123), OpaqueType.OpaqueType(123)))
+
+    // All-nullary enum tests
+    @Test
+    def testEqAllNullary01(): Unit \ Assert =
+        assertEq(expected = EqualTo, compare(AllNullaryEnum.A, AllNullaryEnum.A))
+
+    @Test
+    def testLtAllNullary01(): Unit \ Assert =
+        assertTrue(AllNullaryEnum.A < AllNullaryEnum.B)
+
+    @Test
+    def testLtAllNullary02(): Unit \ Assert =
+        assertTrue(AllNullaryEnum.B < AllNullaryEnum.C)
+
+    @Test
+    def testGtAllNullary01(): Unit \ Assert =
+        assertTrue(AllNullaryEnum.C > AllNullaryEnum.A)
+
+    // Mostly-nullary enum tests
+    @Test
+    def testEqMostlyNullary01(): Unit \ Assert =
+        assertEq(expected = EqualTo, compare(MostlyNullaryEnum.N1, MostlyNullaryEnum.N1))
+
+    @Test
+    def testEqMostlyNullary02(): Unit \ Assert =
+        assertEq(expected = EqualTo, compare(MostlyNullaryEnum.Data(42), MostlyNullaryEnum.Data(42)))
+
+    @Test
+    def testLtMostlyNullary01(): Unit \ Assert =
+        assertTrue(MostlyNullaryEnum.N1 < MostlyNullaryEnum.N2)
+
+    @Test
+    def testLtMostlyNullary02(): Unit \ Assert =
+        assertTrue(MostlyNullaryEnum.N5 < MostlyNullaryEnum.Data(1))
+
+    @Test
+    def testLtMostlyNullary03(): Unit \ Assert =
+        assertTrue(MostlyNullaryEnum.Data(1) < MostlyNullaryEnum.Data(2))
+
+    // All-data enum tests
+    @Test
+    def testEqAllData01(): Unit \ Assert =
+        assertEq(expected = EqualTo, compare(AllDataEnum.First(123), AllDataEnum.First(123)))
+
+    @Test
+    def testLtAllData01(): Unit \ Assert =
+        assertTrue(AllDataEnum.First(1) < AllDataEnum.First(2))
+
+    @Test
+    def testLtAllData02(): Unit \ Assert =
+        assertTrue(AllDataEnum.First(1) < AllDataEnum.Second(true))
 
     @Test
     def testLt01(): Unit \ Assert =

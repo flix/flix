@@ -205,19 +205,45 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an effect cast is redundant.
+    * An error raised to indicate that an unchecked effect cast is redundant.
     *
+    * @param eff the effect of the expression.
     * @param loc the source location of the cast.
     */
-  case class RedundantUncheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantUncheckedEffectCast(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def code: ErrorCode = ErrorCode.E7407
 
-    def summary: String = "Redundant effect cast. The expression is already pure."
+    def summary: String = "Redundant effect cast."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
-      s""">> Redundant effect cast. The expression is already pure.
+      import fmt.*
+      s""">> Redundant effect cast.
          |
          |${highlight(loc, "redundant cast.", fmt)}
+         |
+         |The expression already has the '${cyan(FormatType.formatType(eff))}' effect.
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that an unchecked type cast is redundant.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the source location of the cast.
+    */
+  case class RedundantUncheckedTypeCast(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def code: ErrorCode = ErrorCode.E7420
+
+    def summary: String = "Redundant type cast."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> Redundant type cast.
+         |
+         |${highlight(loc, "redundant cast.", fmt)}
+         |
+         |The expression already has the type '${cyan(FormatType.formatType(tpe))}'.
          |""".stripMargin
     }
   }

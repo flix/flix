@@ -116,28 +116,28 @@ object Symbol {
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit scope: Scope, flix: Flix): VarSym = {
+  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit scope: RegionScope, flix: Flix): VarSym = {
     new VarSym(flix.genSym.freshId(), ident.name, Type.freshVar(Kind.Star, ident.loc), boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
-  def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit scope: Scope, flix: Flix): VarSym = {
+  def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): VarSym = {
     new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star, loc), boundBy, loc)
   }
 
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshKindedTypeVarSym(text: VarText, kind: Kind, isSlack: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): KindedTypeVarSym = {
+  def freshKindedTypeVarSym(text: VarText, kind: Kind, isSlack: Boolean, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): KindedTypeVarSym = {
     new KindedTypeVarSym(flix.genSym.freshId(), text, kind, isSlack, scope, loc)
   }
 
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshUnkindedTypeVarSym(text: VarText, loc: SourceLocation)(implicit scope: Scope, flix: Flix): UnkindedTypeVarSym = {
+  def freshUnkindedTypeVarSym(text: VarText, loc: SourceLocation)(implicit scope: RegionScope, flix: Flix): UnkindedTypeVarSym = {
     new UnkindedTypeVarSym(flix.genSym.freshId(), text, isSlack = false, scope, loc)
   }
 
@@ -224,8 +224,8 @@ object Symbol {
   /**
     * Returns the case symbol for the given name `ident` in the given `enum`.
     */
-  def mkCaseSym(sym: Symbol.EnumSym, ident: Ident): CaseSym = {
-    new CaseSym(sym, ident.name, ident.loc)
+  def mkCaseSym(sym: Symbol.EnumSym, ident: Ident, ordinal: Int): CaseSym = {
+    new CaseSym(sym, ident.name, ordinal, ident.loc)
   }
 
   /**
@@ -371,7 +371,7 @@ object Symbol {
   /**
     * Kinded type variable symbol.
     */
-  final class KindedTypeVarSym(val id: Int, val text: VarText, val kind: Kind, val isSlack: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
+  final class KindedTypeVarSym(val id: Int, val text: VarText, val kind: Kind, val isSlack: Boolean, val scope: RegionScope, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Returns `true` if `this` variable is non-synthetic.
@@ -417,7 +417,7 @@ object Symbol {
   /**
     * Unkinded type variable symbol.
     */
-  final class UnkindedTypeVarSym(val id: Int, val text: VarText, val isSlack: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
+  final class UnkindedTypeVarSym(val id: Int, val text: VarText, val isSlack: Boolean, val scope: RegionScope, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Ascribes this UnkindedTypeVarSym with the given kind.
@@ -585,24 +585,24 @@ object Symbol {
   /**
     * Case Symbol.
     */
-  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
+  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val ordinal: Int, val loc: SourceLocation) extends Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: CaseSym => this.enumSym == that.enumSym && this.name == that.name
+      case that: CaseSym => this.enumSym == that.enumSym && this.name == that.name && this.ordinal == that.ordinal
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = Objects.hash(enumSym, name)
+    override val hashCode: Int = Objects.hash(enumSym, name, Integer.valueOf(ordinal))
 
     /**
       * Human readable representation.
       */
-    override def toString: String = enumSym.toString + "." + name
+    override def toString: String = enumSym.toString + "." + name + "#" + ordinal
 
     /**
       * The symbol's namespace.

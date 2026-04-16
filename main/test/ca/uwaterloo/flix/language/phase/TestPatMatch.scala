@@ -800,4 +800,111 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
     expectError[PatMatchError.RedundantPattern](result)
   }
 
+  // --- I. Redundant Catch Rule Tests ---
+
+  test("RedundantCatchRule.01") {
+    // IOException is a superclass of FileNotFoundException, so the second rule is unreachable.
+    val input =
+      """import java.io.IOException
+        |import java.io.FileNotFoundException
+        |
+        |def f(): Unit \ IO =
+        |    try {
+        |        ()
+        |    } catch {
+        |        case _: IOException => ()
+        |        case _: FileNotFoundException => ()
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantCatchRule](result)
+  }
+
+  test("RedundantCatchRule.02") {
+    // Throwable covers everything, so Exception is unreachable.
+    val input =
+      """import java.lang.Throwable
+        |import java.lang.Exception
+        |
+        |def f(): Unit \ IO =
+        |    try {
+        |        ()
+        |    } catch {
+        |        case _: Throwable => ()
+        |        case _: Exception => ()
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantCatchRule](result)
+  }
+
+  test("RedundantCatchRule.03") {
+    // Same exception class caught twice — second is redundant.
+    val input =
+      """import java.lang.Exception
+        |
+        |def f(): Unit \ IO =
+        |    try {
+        |        ()
+        |    } catch {
+        |        case _: Exception => ()
+        |        case _: Exception => ()
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectError[PatMatchError.RedundantCatchRule](result)
+  }
+
+  test("RedundantCatchRule.NoFalsePositive.01") {
+    // FileNotFoundException before IOException — both reachable (subclass first).
+    val input =
+      """import java.io.IOException
+        |import java.io.FileNotFoundException
+        |
+        |def f(): Unit \ IO =
+        |    try {
+        |        ()
+        |    } catch {
+        |        case _: FileNotFoundException => ()
+        |        case _: IOException => ()
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.RedundantCatchRule](result)
+  }
+
+  test("RedundantCatchRule.NoFalsePositive.02") {
+    // Unrelated exception classes — both reachable.
+    val input =
+      """import java.lang.ArithmeticException
+        |import java.lang.IllegalArgumentException
+        |
+        |def f(): Unit \ IO =
+        |    try {
+        |        ()
+        |    } catch {
+        |        case _: ArithmeticException => ()
+        |        case _: IllegalArgumentException => ()
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.RedundantCatchRule](result)
+  }
+
+  test("RedundantCatchRule.NoFalsePositive.03") {
+    // Single catch rule — always reachable.
+    val input =
+      """import java.lang.Exception
+        |
+        |def f(): Unit \ IO =
+        |    try {
+        |        ()
+        |    } catch {
+        |        case _: Exception => ()
+        |    }
+      """.stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    rejectError[PatMatchError.RedundantCatchRule](result)
+  }
+
 }

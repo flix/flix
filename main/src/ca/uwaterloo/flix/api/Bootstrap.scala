@@ -15,12 +15,13 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FLIX, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.shell.FileWatcher
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
@@ -309,6 +310,42 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private var jarPackagePaths: List[Path] = List.empty
 
   private var securityLevels: Map[Path, SecurityContext] = Map.empty
+
+  // The file watcher, if active (used by the REPL shell).
+  private var fileWatcher: Option[FileWatcher] = None
+
+  /**
+    * Starts a file system watcher that monitors the project directories for changes.
+    * When active, `updateStaleSources` will drain watcher events instead of polling timestamps.
+    */
+  def startWatching(): Unit = {
+    val fw = new FileWatcher()
+    fw.watchShallow(projectPath)
+    // Register these as recursive roots even if they don't exist yet.
+    // The watcher will automatically pick them up when they are created.
+    fw.watchRecursively(Bootstrap.getSourceDirectory(projectPath))
+    fw.watchRecursively(Bootstrap.getTestDirectory(projectPath))
+    fw.watchRecursively(Bootstrap.getLibraryDirectory(projectPath))
+    fw.start()
+    fileWatcher = Some(fw)
+  }
+
+  /**
+    * Stops the file system watcher, if active.
+    */
+  def stopWatching(): Unit = {
+    fileWatcher.foreach(_.stop())
+    fileWatcher = None
+  }
+
+  /**
+    * Applies any pending file changes to the Flix instance.
+    * When the file watcher is active, drains watcher events.
+    * Otherwise, falls back to timestamp-based change detection.
+    */
+  def applyFileChanges(flix: Flix): Unit = {
+    Steps.updateStaleSources(flix)
+  }
 
   /**
     * Parses `flix.toml` to a Manifest and downloads all required files.
@@ -716,17 +753,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def check(flix: Flix): Result[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
     Steps.check(flix).map(_ => ())
-  }
-
-  /**
-    * Checks to see if any source files or packages have been changed.
-    * If they have, they are added to flix. Then updates the timestamps
-    * map to reflect the current source files and packages.
-    */
-  def reconfigureFlix(flix: Flix): Unit = {
-    // TODO: Figure out if this function can be removed somehow (maybe by removing shell depending on bootstrap)
-    // TODO: Can be removed by moving `updateStaleSources` into all step functions that require updating stale sources (almost all). This also remove responsibility from the caller.
-    Steps.updateStaleSources(flix)
   }
 
   /**
@@ -1186,8 +1212,117 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Checks to see if any source files or packages have been changed.
       * If they have, they are added to flix. Then updates the timestamps
       * map to reflect the current source files and packages.
+      *
+      * When a file watcher is active (REPL mode), drains watcher events instead of polling timestamps.
       */
-    def updateStaleSources(flix: Flix): Unit = {
+    def updateStaleSources(flix: Flix): Unit = fileWatcher match {
+      case Some(fw) => applyWatcherEvents(fw.drain(), flix)
+      case None => updateStaleSourcesByTimestamp(flix)
+    }
+
+    /**
+      * Applies file watcher events to the Flix instance and updates the cached path lists.
+      * On overflow, falls back to a full re-scan.
+      */
+    private def applyWatcherEvents(events: List[FileWatcher.WatchEvent], flix: Flix): Unit = {
+      import FileWatcher.WatchEvent._
+
+      if (events.exists(_ == Overflow)) {
+        // Overflow occurred: fall back to a full re-scan.
+        rescanAndUpdate(flix)
+        return
+      }
+
+      for (event <- events) event match {
+        case Created(path) =>
+          if (FileOps.checkExt(path, EXT_FLIX)) {
+            sourcePaths = path :: sourcePaths
+            flix.addFile(path)(SecurityContext.Unrestricted)
+          } else if (FileOps.checkExt(path, EXT_FPKG)) {
+            flixPackagePaths = path :: flixPackagePaths
+            flix.addPkg(path)(securityLevels.getOrElse(path, SecurityContext.Plain))
+          } else if (FileOps.checkExt(path, EXT_JAR)) {
+            val libDir = Bootstrap.getLibraryDirectory(projectPath)
+            val mavenDir = libDir.resolve(MavenPackageManager.DirName)
+            val jarDir = libDir.resolve(JarPackageManager.DirName)
+            if (path.startsWith(mavenDir)) {
+              mavenPackagePaths = path :: mavenPackagePaths
+            } else if (path.startsWith(jarDir)) {
+              jarPackagePaths = path :: jarPackagePaths
+            }
+            flix.addJar(path)
+          }
+
+        case Modified(path) =>
+          if (FileOps.checkExt(path, EXT_FLIX)) {
+            flix.addFile(path)(SecurityContext.Unrestricted)
+          } else if (FileOps.checkExt(path, EXT_FPKG)) {
+            flix.addPkg(path)(securityLevels.getOrElse(path, SecurityContext.Plain))
+          } else if (FileOps.checkExt(path, EXT_JAR)) {
+            flix.addJar(path)
+          }
+
+        case Deleted(path) =>
+          if (path.toString.endsWith(s".$EXT_FLIX")) {
+            sourcePaths = sourcePaths.filterNot(_ == path)
+            flix.remFile(path)(SecurityContext.Unrestricted)
+          } else if (path.toString.endsWith(s".$EXT_FPKG")) {
+            flixPackagePaths = flixPackagePaths.filterNot(_ == path)
+            flix.remFile(path)(SecurityContext.Unrestricted)
+          } else if (path.toString.endsWith(s".$EXT_JAR")) {
+            mavenPackagePaths = mavenPackagePaths.filterNot(_ == path)
+            jarPackagePaths = jarPackagePaths.filterNot(_ == path)
+          } else {
+            // No recognized file extension — likely a directory deletion.
+            // Remove all tracked files that were children of this path.
+            val deletedFlix = sourcePaths.filter(_.startsWith(path))
+            val deletedFpkg = flixPackagePaths.filter(_.startsWith(path))
+            sourcePaths = sourcePaths.filterNot(_.startsWith(path))
+            flixPackagePaths = flixPackagePaths.filterNot(_.startsWith(path))
+            mavenPackagePaths = mavenPackagePaths.filterNot(_.startsWith(path))
+            jarPackagePaths = jarPackagePaths.filterNot(_.startsWith(path))
+            for (p <- deletedFlix) flix.remFile(p)(SecurityContext.Unrestricted)
+            for (p <- deletedFpkg) flix.remFile(p)(SecurityContext.Unrestricted)
+          }
+
+        case Overflow => // already handled above
+      }
+    }
+
+    /**
+      * Falls back to a full directory re-scan and updates the Flix instance with any changes.
+      * Used when the watcher reports an overflow event.
+      */
+    private def rescanAndUpdate(flix: Flix): Unit = {
+      val previousSources = (sourcePaths ::: flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).toSet
+
+      // Re-scan directories to discover current files.
+      addLocalFlixFiles()
+      addLocalLibs()
+
+      val currentSources = (sourcePaths ::: flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).toSet
+
+      // Add new or re-add all current sources.
+      for (path <- currentSources) {
+        if (FileOps.checkExt(path, EXT_FLIX)) {
+          flix.addFile(path)(SecurityContext.Unrestricted)
+        } else if (FileOps.checkExt(path, EXT_FPKG)) {
+          flix.addPkg(path)(securityLevels.getOrElse(path, SecurityContext.Plain))
+        } else if (FileOps.checkExt(path, EXT_JAR)) {
+          flix.addJar(path)
+        }
+      }
+
+      // Remove deleted sources.
+      for (path <- previousSources -- currentSources) {
+        flix.remFile(path)(SecurityContext.Unrestricted)
+      }
+    }
+
+    /**
+      * Timestamp-based stale source detection (used when no file watcher is active).
+      */
+    private def updateStaleSourcesByTimestamp(flix: Flix): Unit = {
       val previousSources = timestamps.keySet
 
       for (path <- sourcePaths if hasChanged(path)) {

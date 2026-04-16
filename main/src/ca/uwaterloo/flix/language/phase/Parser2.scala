@@ -93,6 +93,9 @@ object Parser2 {
       * a list there.
       */
     val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
+
+    /** True when the parser is currently inside a block expression (`{ ... }`). */
+    var inBlock: Boolean = false
   }
 
   /**
@@ -1156,16 +1159,14 @@ object Parser2 {
       // Singleton short-hand.
       val isShorthand = at(TokenKind.ParenL)
       if (isShorthand) {
-        val markType = open()
-        val mark = open()
+        val markBody = open()
         zeroOrMore(
           namedTokenSet = NamedTokenSet.Type,
           getItem = () => Type.ttype(),
           checkForItem = _.isFirstInType,
           breakWhen = _.isRecoverInType,
         )
-        close(mark, TreeKind.Type.Tuple)
-        close(markType, TreeKind.Type.Type)
+        close(markBody, TreeKind.CaseBody)
       }
       // Derivations.
       if (at(TokenKind.KeywordWith)) {
@@ -1201,16 +1202,14 @@ object Parser2 {
         }
         nameUnqualified(NAME_TAG)
         if (at(TokenKind.ParenL)) {
-          val mark = open()
-          val markTuple = open()
+          val markBody = open()
           zeroOrMore(
             namedTokenSet = NamedTokenSet.Type,
             getItem = () => Type.ttype(),
             checkForItem = _.isFirstInType,
             breakWhen = _.isRecoverInDecl
           )
-          close(markTuple, TreeKind.Type.Tuple)
-          close(mark, TreeKind.Type.Type)
+          close(markBody, TreeKind.CaseBody)
         }
         close(mark, TreeKind.Case)
       }
@@ -1449,6 +1448,42 @@ object Parser2 {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      // Error recovery: if the next token can follow a binary operator and we are inside
+      // a block expression, we assume an operator or semicolon was accidentally omitted.
+      // Examples:
+      //   x y      // same line: infer a missing binary operator (e.g. `x + y`)
+      //   x
+      //   y        // different lines: infer a missing semicolon
+      } else if (nth(0).canFollowBinaryOperator && s.inBlock) {
+        val isNewLine = previousSourceLocation().end.lineOneIndexed != currentSourceLocation().start.lineOneIndexed
+        if (isNewLine) {
+          // Different line: infer a missing semicolon
+          val isReal = true
+          val errorLoc = SourceLocation.point(isReal, s.src, previousSourceLocation().end)
+          closeWithError(open(), ParseError.ExpectedSemicolon(sctx, errorLoc, nth(0)))
+          statement()
+          lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+        } else {
+          // Same line: We assume that a binary operator is missing between the two expressions,
+          // so we create a Binary node with a synthetic OperatorError child.
+          // The Weeder will detect OperatorError, emit ParseError.MissingBinaryOperator,
+          // and produce LetMatch(Wild) so both sub-expressions can still be type-checked.
+          val mark = openBefore(lhs)
+          val markOp = open()
+          close(open(), TreeKind.OperatorError)
+          close(markOp, TreeKind.Operator)
+          expression()
+          lhs = close(mark, TreeKind.Expr.Binary)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          // A following statement is optional here (unlike the branches above where
+          // we know another statement must follow). Only parse one if a ';' is present.
+          if (eat(TokenKind.Semi)) {
+            statement()
+            lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          }
+        }
       } else if (!rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
@@ -1866,7 +1901,6 @@ object Parser2 {
         case TokenKind.ListHash => listLiteralExpr()
         case TokenKind.SetHash => setLiteralExpr()
         case TokenKind.MapHash => mapLiteralExpr()
-        case TokenKind.DotDotDot => dotdotdotLiteral()
         case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
@@ -2211,7 +2245,10 @@ object Parser2 {
       if (eat(TokenKind.CurlyR)) { // Handle an empty block.
         return close(mark, TreeKind.Expr.RecordOperation)
       }
+      val wasInBlock = s.inBlock
+      s.inBlock = true
       statement()
+      s.inBlock = wasInBlock
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Block)
     }
@@ -2582,22 +2619,6 @@ object Parser2 {
       }
       expression()
       close(mark, TreeKind.Expr.LiteralMapKeyValueFragment)
-    }
-
-    private def dotdotdotLiteral()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.DotDotDot))
-      val mark = open()
-      expect(TokenKind.DotDotDot)
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.Expression,
-        getItem = () => expression(),
-        checkForItem = _.isFirstInExp,
-        breakWhen = _.isRecoverInExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR
-      )
-      close(mark, TreeKind.Expr.LiteralVector)
     }
 
     private def checkedTypeCastExpr()(implicit s: State): Mark.Closed = {
@@ -3297,9 +3318,22 @@ object Parser2 {
       val mark = open()
       nameAllowQualified(NAME_TAG)
       if (at(TokenKind.ParenL)) {
-        tuplePat()
+        tagBodyPat()
       }
       close(mark, TreeKind.Pattern.Tag)
+    }
+
+    private def tagBodyPat()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Pattern,
+        getItem = pattern,
+        checkForItem = _.isFirstInPattern,
+        breakWhen = _.isRecoverInExpr,
+      )
+      close(mark, TreeKind.Pattern.TagBody)
     }
 
     private def tuplePat()(implicit s: State): Mark.Closed = {

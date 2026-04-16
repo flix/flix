@@ -24,369 +24,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestTyper extends AnyFunSuite with TestUtils {
 
-  test("Test.ExplicitlyPureUsingIO.01") {
-    val input =
-      """
-        |def f () : Unit \ {} = {
-        |    println("42")
-        |}
-        |eff IO
-        |pub def println(x: String): Unit \ IO =
-        |    System.out.println(x)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ExplicitlyPureUsingIO.02") {
-    val input =
-      """
-        |enum Shape {
-        |   case Circle(Int32),
-        |   case Square(Int32),
-        |   case Rectangle(Int32, Int32)
-        |}
-        |def area(s: Shape): Int32 \ {} = match s {
-        |   case Shape.Circle(r)       => 3 * (r * r)
-        |   case Shape.Square(w)       =>
-        |       println(w);
-        |       w * w
-        |   case Shape.Rectangle(h, w) => h * w
-        |}
-        |def main(): Unit \ IO =
-        |   println(area(Shape.Rectangle(2, 4)))
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ExplicitlyPureUsingIO.03") {
-    val input =
-      """
-        |trait Bar[a] {
-        |    pub def bar(x: a): Unit
-        |}
-        |instance Bar[Int32] {
-        |    pub def bar(x: Int32): Unit \ {} = println(x)
-        |}
-        |def foo(): Unit \ IO =
-        |    Bar.bar(42)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ExplicitlyPureUsingIO.04") {
-    val input =
-      """
-        |trait Bar[a] {
-        |    pub def bar(x: a): Unit \ IO
-        |}
-        |instance Bar[Int32] {
-        |    pub def bar(x: Int32): Unit \ IO = println(x)
-        |}
-        |def foo(): Unit \ {} =
-        |    Bar.bar(42)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ExplicitlyPureUsingIO.05") {
-    val input =
-      """
-        |def a(): Unit \ IO = println(42)
-        |def b(): Unit \ {} = a()
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ExplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ImplicitlyPureUsingIO.01") {
-    val input =
-      """
-        |def f () : Unit = {
-        |    println("42")
-        |}
-        |eff IO
-        |pub def println(x: String): Unit \ IO =
-        |    System.out.println(x)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ImplicitlyPureUsingIO.02") {
-    val input =
-      """
-        |enum Shape {
-        |   case Circle(Int32),
-        |   case Square(Int32),
-        |   case Rectangle(Int32, Int32)
-        |}
-        |def area(s: Shape): Int32 = match s {
-        |   case Shape.Circle(r)       => 3 * (r * r)
-        |   case Shape.Square(w)       =>
-        |       println(w);
-        |       w * w
-        |   case Shape.Rectangle(h, w) => h * w
-        |}
-        |def main(): Unit \ IO =
-        |   println(area(Shape.Rectangle(2, 4)))
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ImplicitlyPureUsingIO.03") {
-    val input =
-      """
-        |trait Bar[a] {
-        |    pub def bar(x: a): Unit
-        |}
-        |instance Bar[Int32] {
-        |    pub def bar(x: Int32): Unit = println(x)
-        |}
-        |def foo(): Unit \ IO =
-        |    Bar.bar(42)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ImplicitlyPureUsingIO.04") {
-    val input =
-      """
-        |trait Bar[a] {
-        |    pub def bar(x: a): Unit \ IO
-        |}
-        |instance Bar[Int32] {
-        |    pub def bar(x: Int32): Unit \ IO = println(x)
-        |}
-        |def foo(): Unit =
-        |    Bar.bar(42)
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ImplicitlyPureUsingIO.05") {
-    val input =
-      """
-        |def a(): Unit \ IO = println(42)
-        |def b(): Unit = a()
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ImplicitlyPureFunctionUsesIO](result)
-  }
-
-  test("Test.ExplicitlyPureUsingEffect.01") {
-    val input =
-      """
-        |def foo(): Unit \ {} =
-        |    Bar.buzz()
-        |eff Bar {
-        |    def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
-  }
-
-  test("Test.ExplicitlyPureUsingEffect.02") {
-    val input =
-      """
-        |enum Shape {
-        |   case Circle(Int32),
-        |   case Square(Int32),
-        |   case Rectangle(Int32, Int32)
-        |}
-        |def area(s: Shape): Int32 \ {} = match s {
-        |   case Shape.Circle(r)       => 3 * (r * r)
-        |   case Shape.Square(w)       =>
-        |       Bar.buzz();
-        |       w * w
-        |   case Shape.Rectangle(h, w) => h * w
-        |}
-        |def main(): Unit \ IO =
-        |   println(area(Shape.Rectangle(2, 4)))
-        |eff Bar {
-        |    def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
-  }
-
-  test("Test.ExplicitlyPureUsingEffect.03") {
-    val input =
-      """
-        |def a(): Unit \ Bar = Bar.buzz()
-        |def b(): Unit \ {} = a()
-        |eff Bar {
-        |    def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ExplicitlyPureFunctionUsesEffect](result)
-  }
-
-  test("Test.ImplicitlyPureUsingEffect.01") {
-    val input =
-      """
-        |def foo(): Unit =
-        |    Bar.buzz()
-        |eff Bar {
-        |    def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
-  }
-
-  test("Test.ImplicitlyPureUsingEffect.02") {
-    val input =
-      """
-        |enum Shape {
-        |   case Circle(Int32),
-        |   case Square(Int32),
-        |   case Rectangle(Int32, Int32)
-        |}
-        |def area(s: Shape): Int32 = match s {
-        |   case Shape.Circle(r)       => 3 * (r * r)
-        |   case Shape.Square(w)       =>
-        |       Bar.buzz();
-        |       w * w
-        |   case Shape.Rectangle(h, w) => h * w
-        |}
-        |def main(): Unit \ IO =
-        |   println(area(Shape.Rectangle(2, 4)))
-        |eff Bar {
-        |    def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
-  }
-
-  test("Test.ImplicitlyPureUsingEffect.03") {
-    val input =
-      """
-        |def a(): Unit \ Bar = Bar.buzz()
-        |def b(): Unit = a()
-        |eff Bar {
-        |    def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.ImplicitlyPureFunctionUsesEffect](result)
-  }
-
-  test("Test.RigidEffUsingOtherRigidEff.01") {
-    val input =
-      """
-        |def foo(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2): Unit \ ef1 = g()
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
-  }
-
-  test("Test.RigidEffUsingCstEff.01") {
-    val input =
-      """
-        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = Bar.buzz()
-        |eff Bar {
-        |  def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
-  }
-
-  test("Test.RigidEffUsingIO.01") {
-    val input =
-      """
-        |def foo(_: Unit -> Unit \ ef1): Unit \ ef1 = println("42")
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
-  }
-
-  test("Test.CstEffUsingOtherCstEff.01") {
-    val input =
-      """
-        |def foo(): Unit \ Foo = Bar.buzz()
-        |eff Foo
-        |eff Bar {
-        |  def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
-  }
-
-  test("Test.IOUsingCstEff.01") {
-    val input =
-      """
-        |def foo(): Unit \ IO = Bar.buzz()
-        |eff Bar {
-        |  def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
-  }
-
-  test("Test.IOUsingCstEff.02") {
-    val input =
-      """
-        |enum Shape {
-        |   case Circle(Int32),
-        |   case Square(Int32),
-        |   case Rectangle(Int32, Int32)
-        |}
-        |def area(s: Shape): Int32 \ IO = match s {
-        |   case Shape.Circle(r)       => 3 * (r * r)
-        |   case Shape.Square(w)       =>
-        |       Bar.buzz();
-        |       w * w
-        |   case Shape.Rectangle(h, w) => h * w
-        |}
-        |def main(): Unit \ IO =
-        |   println(area(Shape.Rectangle(2, 4)))
-        |eff Bar {
-        |    def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
-  }
-
-  test("Test.CstEffUsingIO.01") {
-    val input =
-      """
-        |enum Shape {
-        |   case Circle(Int32),
-        |   case Square(Int32),
-        |   case Rectangle(Int32, Int32)
-        |}
-        |def area(s: Shape): Int32 \ Console = match s {
-        |   case Shape.Circle(r)       => 3 * (r * r)
-        |   case Shape.Square(w)       =>
-        |       println(w);
-        |       w * w
-        |   case Shape.Rectangle(h, w) => h * w
-        |}
-        |def main(): Unit \ Bar =
-        |   println(area(Shape.Rectangle(2, 4)))
-        |eff Bar {
-        | def buzz(): Unit
-        |}
-      """.stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectfulFunctionUsesOtherEffect](result)
-  }
-
   test("TestLeq01") {
     val input =
       """
@@ -1986,17 +1623,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("TypeError.ConstructorBoxing.01") {
-    val input =
-      """
-        |import java.util.{AbstractMap$SimpleEntry => SimpleEntry}
-        |
-        |def f(): Int32 \ IO = new SimpleEntry(12, true).hashCode()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
   test("TypeError.ConstructorUnboxing.01") {
     val input =
       """
@@ -2932,6 +2558,206 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
+  }
+
+  // --- Java Generic Type Checking: Negative Tests (Bug 1 - wrong argument types) ---
+
+  test("Test.JavaGenericCheck.Neg.01") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Bool \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add(123)
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.02") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Bool \ IO =
+           |    let l: ArrayList[Int32] = new ArrayList();
+           |    l.add("hello")
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.03") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Bool \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add(true)
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.04") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Bool \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add(1.0f64)
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.05") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    m.put(123, 42);
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.06") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    m.put("k", "v");
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.07") {
+    val input =
+      raw"""
+           |import java.util.HashSet
+           |def f(): Bool \ IO =
+           |    let s: HashSet[Int32] = new HashSet();
+           |    s.add("hello")
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.08") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |def f(): Unit \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add("a");
+           |    l.set(0, 42);
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.09") {
+    val input =
+      raw"""
+           |import java.util.LinkedList
+           |def f(): Bool \ IO =
+           |    let l: LinkedList[Float64] = new LinkedList();
+           |    l.add("x")
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.10") {
+    val input =
+      raw"""
+           |import java.util.TreeMap
+           |def f(): Unit \ IO =
+           |    let m: TreeMap[String, Bool] = new TreeMap();
+           |    m.put(42, true);
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  // --- Java Generic Type Checking: Negative Tests (Bug 2 - wrong return type) ---
+
+  test("Test.JavaGenericCheck.Neg.11") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |import java.util.{Set => JSet}
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    let _s: JSet[Float32] = m.keySet();
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.12") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |import java.util.{Set => JSet}
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    let _s: JSet[Int32] = m.keySet();
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.13") {
+    val input =
+      raw"""
+           |import java.util.HashMap
+           |import java.util.Collection
+           |def f(): Unit \ IO =
+           |    let m: HashMap[String, Int32] = new HashMap();
+           |    let _v: Collection[String] = m.values();
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.14") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |import java.util.Iterator
+           |def f(): Unit \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    let _it: Iterator[Int32] = l.iterator();
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.JavaGenericCheck.Neg.15") {
+    val input =
+      raw"""
+           |import java.util.ArrayList
+           |import java.util.{List => JList}
+           |def f(): Unit \ IO =
+           |    let l: ArrayList[String] = new ArrayList();
+           |    l.add("a");
+           |    let _sub: JList[Int32] = l.subList(0, 1);
+           |    ()
+         """.stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
 }

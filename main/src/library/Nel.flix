@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.util.{List => JList}
 
 ///
 /// The NonEmptyList type.
@@ -134,12 +133,6 @@ instance ForEach[Nel[a]] {
     pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = Nel.forEach(f, l)
 }
 
-instance ToJava[Nel[a]] {
-    type Out = JList
-    type Aef = IO
-    pub def toJava(l: Nel[a]): JList \ IO = Adaptor.toList(l)
-}
-
 pub mod Nel {
     use Math.Shuffle
 
@@ -175,6 +168,24 @@ pub mod Nel {
     ///
     pub def last(l: Nel[a]): a = match l {
         case Nel(x, xs) => Option.getWithDefault(x, List.last(xs))
+    }
+
+    ///
+    /// Returns the element at position `i` in the non-empty list `l`.
+    ///
+    /// Throws `IndexOutOfBoundsException` if the index is out of bounds.
+    ///
+    pub def get(i: Int32, l: Nel[a]): a =
+        match nth(i, l) {
+            case Some(x) => x
+            case None    => indexOutOfBounds!("index ${i} is out of bounds for Nel of length ${length(l)}")
+        }
+
+    ///
+    /// Optionally returns the element at position `i` in the non-empty list `l`.
+    ///
+    pub def nth(i: Int32, l: Nel[a]): Option[a] = match l {
+        case Nel(x, xs) => if (i == 0) Some(x) else List.nth(i - 1, xs)
     }
 
     ///

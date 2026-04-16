@@ -1,6 +1,6 @@
 mod TestNel {
 
-    use Assert.{assertEq, assertNeq, assertTrue, assertFalse};
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, assertNone};
     use Hash.hash
     use Math.Shuffle
     use Nel.Nel
@@ -70,6 +70,27 @@ mod TestNel {
 
     @Test
     def last03(): Unit \ Assert = assertEq(expected = 2, Nel.last(Nel(123, 1 :: 2 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def get01(): Unit \ Assert =
+        assertEq(expected = "a", Nel.get(0, Nel("a", "b" :: "c" :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nth01(): Unit \ Assert = assertEq(expected = Some(1), Nel.nth(0, Nel(1, 2 :: 3 :: Nil)))
+
+    @Test
+    def nth02(): Unit \ Assert = assertEq(expected = Some(3), Nel.nth(2, Nel(1, 2 :: 3 :: Nil)))
+
+    @Test
+    def nth03(): Unit \ Assert = assertEq(expected = None, Nel.nth(5, Nel(1, 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                    //

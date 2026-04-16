@@ -52,6 +52,33 @@ object PatMatchError {
   }
 
   /**
+    * An error raised to indicate a redundant (unreachable) catch rule in a try-catch expression.
+    *
+    * A catch rule is redundant when a preceding catch rule catches the same exception class or
+    * a superclass of it, making this rule impossible to reach.
+    *
+    * @param coveredBy the location of the preceding catch rule that covers this one.
+    * @param loc       the location of the redundant catch rule.
+    */
+  case class RedundantCatchRule(coveredBy: SourceLocation, loc: SourceLocation) extends PatMatchError {
+    def code: ErrorCode = ErrorCode.E5963
+
+    def summary: String = "Unreachable catch rule: already covered by a preceding case."
+
+    def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
+      import fmt.*
+      s""">> ${red("Unreachable catch rule: already covered by a preceding case.")}
+         |
+         |${highlight(loc, "unreachable case", fmt)}
+         |
+         |Covered by the following case:
+         |
+         |${highlight(coveredBy, "covering case", fmt)}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate a redundant (unreachable) pattern in a match expression.
     *
     * @param coveredBy the location of the first pattern that covers this one, if a single such pattern exists.

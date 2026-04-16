@@ -675,4 +675,23 @@ object SemanticOp {
     case object ReflectValue extends ReflectOp with UnaryOp
   }
 
+  /**
+    * Object Operators (compiler intrinsics for enum optimization).
+    */
+  sealed trait ObjectOp extends SemanticOp
+
+  object ObjectOp {
+
+    /**
+      * JVM reference equality (`if_acmpeq`).
+      */
+    case object RefEq extends ObjectOp with BinaryOp
+
+    /**
+      * Read the ordinal field from a tagged enum value.
+      */
+    case object Ordinal extends ObjectOp with UnaryOp
+
+  }
+
 }

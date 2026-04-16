@@ -155,7 +155,7 @@ pub mod Fixpoint3.Boxing {
         let (objectList, _, _, locks) = info;
         let lock = Vector.get(index, locks);
         ReadWriteLock.readLock(lock);
-        let res = getOrCrash(MutList.nth(getOrCrash(Int64.tryToInt32(value)), Vector.get(index, objectList)));
+        let res = MutList.get(getOrCrash(Int64.tryToInt32(value)), Vector.get(index, objectList));
         ReadWriteLock.unlockRead(lock);
         res
     }

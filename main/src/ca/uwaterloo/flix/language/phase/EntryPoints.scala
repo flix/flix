@@ -58,7 +58,7 @@ object EntryPoints {
   private case object ErrorOrMalformed
 
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
-  private implicit val S: Scope = Scope.Top
+  private implicit val S: RegionScope = RegionScope.Top
 
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
@@ -368,7 +368,7 @@ object EntryPoints {
         val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
         val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
         val constraint = TypeConstraint.Trait(traitSym, resultType, SourceLocation.Unknown)
-        val hasToString = ConstraintSolver2.solveAll(List(constraint), SubstitutionTree.empty)(Scope.Top, RigidityEnv.empty, root.traitEnv, root.eqEnv, flix) match {
+        val hasToString = ConstraintSolver2.solveAll(List(constraint), SubstitutionTree.empty)(RegionScope.Top, RigidityEnv.empty, root.traitEnv, root.eqEnv, flix) match {
           // If we could reduce all the way, it has ToString.
           case (Nil, _) => true
           // If not, there is no ToString instance.

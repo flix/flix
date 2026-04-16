@@ -264,7 +264,7 @@ mod Test.Exp.Fixpoint.If {
             Path(x, z; l + Down.Down(1)) :- Path(x, y; l), Edge(y, z), if (l == Down.Down(0)).
         };
         let res = query f, r select (x, y) from Path(x, y; l);
-        assertEq(expected = res, tuples)
+        assertEq(expected = tuples, res)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -283,7 +283,7 @@ mod Test.Exp.Fixpoint.If {
         let res1 = query p select x from P1(x);
         let res2 = query p select x from P2(x);
         assertEq(expected = res1, res2);
-        assertEq(expected = res1, tuples)
+        assertEq(expected = tuples, res1)
     }
 
     @Test
@@ -309,7 +309,7 @@ mod Test.Exp.Fixpoint.If {
             Vector.fold;
         assertEq(expected = res1, res2);
         assertEq(expected = res2, res3);
-        assertEq(expected = res3, res)
+        assertEq(expected = res, res3)
     }
 
     @Test
@@ -319,7 +319,7 @@ mod Test.Exp.Fixpoint.If {
             FriendInCommon(x, y) :- Friend(x, a), Friend(y, a), if (x != y).
         };
         let res = query f, r select (x, y) from FriendInCommon(x, y);
-        assertEq(expected = res, Vector#{("Alice", "Bob"), ("Bob", "Alice")})
+        assertEq(expected = Vector#{("Alice", "Bob"), ("Bob", "Alice")}, res)
     }
 
     @Test
@@ -329,7 +329,7 @@ mod Test.Exp.Fixpoint.If {
             FriendInCommon(x, y) :- Friend(x, a), if (x != y), Friend(y, a).
         };
         let res = query f, r select (x, y) from FriendInCommon(x, y);
-        assertEq(expected = res, Vector#{("Alice", "Bob"), ("Bob", "Alice")})
+        assertEq(expected = Vector#{("Alice", "Bob"), ("Bob", "Alice")}, res)
     }
 
     @Test
@@ -339,7 +339,7 @@ mod Test.Exp.Fixpoint.If {
             FriendInCommon(x, y) :- if (x != y), Friend(x, a), Friend(y, a).
         };
         let res = query f, r select (x, y) from FriendInCommon(x, y);
-        assertEq(expected = res, Vector#{("Alice", "Bob"), ("Bob", "Alice")})
+        assertEq(expected = Vector#{("Alice", "Bob"), ("Bob", "Alice")}, res)
     }
 
 
@@ -354,7 +354,7 @@ mod Test.Exp.Fixpoint.If {
             P(x; y) :- Q(x; y), if (x != y).
         };
         let res = query r select (x, y) from P(x; y);
-        assertEq(expected = res, Vector#{(1, 2)})
+        assertEq(expected = Vector#{(1, 2)}, res)
     }
 
     @Test
@@ -364,7 +364,7 @@ mod Test.Exp.Fixpoint.If {
             P(x; y) :- if (x != y), Q(x; y).
         };
         let res = query r select (x, y) from P(x; y);
-        assertEq(expected = res, Vector#{(1, 2)})
+        assertEq(expected = Vector#{(1, 2)}, res)
     }
 
     @Test
@@ -374,7 +374,7 @@ mod Test.Exp.Fixpoint.If {
             P(x; y) :- Q(x; y), if (x == y).
         };
         let res = query r select (x, y) from P(x; y);
-        assertEq(expected = res, Vector#{})
+        assertEq(expected = Vector#{}, res)
     }
 
     @Test
@@ -384,7 +384,7 @@ mod Test.Exp.Fixpoint.If {
             P(x; y) :- if (x == y), Q(x; y).
         };
         let res = query r select (x, y) from P(x; y);
-        assertEq(expected = res, Vector#{})
+        assertEq(expected = Vector#{}, res)
     }
 
 }
