@@ -24,7 +24,6 @@ object FormattingProvider {
 
   def formatDocument(uri: String, @unused options: FormattingOptions)(implicit @unused flix: Flix): List[TextEdit] = {
     val parsedAst = flix.getParsedAst
-    val formattedSource = Formatter.format(parsedAst, uri)
-    formattedSource
+    Formatter.format(parsedAst, uri)
   }
 }

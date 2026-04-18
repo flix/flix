@@ -7,8 +7,8 @@ import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, 
 object PrettyPrinter {
 
   def format(tree: Tree): String = {
-    val doc = traverse(tree)
-    Doc.pretty(doc)
+    val result = Doc.pretty(traverse(tree))
+    if (result.endsWith("\n")) result else result + "\n"
   }
   private def traverse(tree: Tree): Doc = {
     if (tree.children.isEmpty) empty else formatTree(tree)
@@ -1017,10 +1017,11 @@ object PrettyPrinter {
       .reduceLeftOption(_ <+> _).getOrElse(empty)
     val bodyDoc = body.map(prettyChild)
       .reduceLeftOption(_ <|> _).getOrElse(empty)
-    val bodyIsBraced = body.headOption.exists(isBracedExpr)
+    val bodyOpensWithBracket = body.headOption.exists(isBracedExpr) ||
+      body.headOption.exists(c => leftMostToken(c).exists(tok => bracketPairs.exists(_._1 == tok.kind)))
 
     localLayout(tree) {
-      if (bodyIsBraced) headerDoc <+> text("->") <+> bodyDoc
+      if (bodyOpensWithBracket) headerDoc <+> text("->") <+> bodyDoc
       else headerDoc <+> text("->") <> nest(4, line <> bodyDoc)
     }
   }
@@ -1163,8 +1164,15 @@ object PrettyPrinter {
         else {
           space <> joinWithGap(tail)
         }
+        val args = body.collect { case t: Tree if t.kind == TreeKind.Argument || t.kind == TreeKind.ArgumentNamed => t }
+        val singleBlockArg = args.length == 1 &&
+          filterEmpty(args(0).children).headOption.exists(c =>
+            leftMostToken(c).exists(tok => tok.kind == TokenKind.CurlyL || tok.kind == TokenKind.HashCurlyL))
         localLayout(tree) {
-          openDoc <> nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <> Doc.layoutChoice(empty, line) <> text(close) <> tailDoc
+          if (singleBlockArg)
+            openDoc <> bodyDoc <> text(close) <> tailDoc
+          else
+            openDoc <> nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <> Doc.layoutChoice(empty, line) <> text(close) <> tailDoc
         }
     }
   }
@@ -1261,6 +1269,8 @@ object PrettyPrinter {
     TokenKind.ParenR,
     TokenKind.BracketR,
     TokenKind.CurlyR,
+    TokenKind.ParenL,
+    TokenKind.Hash,
     TokenKind.Dot,
     TokenKind.DotWhiteSpace,
     TokenKind.Comma,

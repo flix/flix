@@ -59,10 +59,6 @@ class FormatterCorrectnessTest extends AnyFunSuite {
     flix
   }
 
-  private val ExcludedKinds: Set[TokenKind] = Set(
-    TokenKind.Eof
-  )
-
   private val CommentKinds: Set[TokenKind] = Set(
     TokenKind.CommentLine,
     TokenKind.CommentBlock,
