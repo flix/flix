@@ -1164,7 +1164,7 @@ object PrettyPrinter {
           space <> joinWithGap(tail)
         }
         localLayout(tree) {
-          openDoc <> Doc.align(bodyDoc) <> Doc.layoutChoice(empty, line) <> text(close) <> tailDoc
+          openDoc <> nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <> Doc.layoutChoice(empty, line) <> text(close) <> tailDoc
         }
     }
   }
