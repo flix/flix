@@ -158,8 +158,9 @@ object HashType {
       hashInt(34)
 
     case TypeConstructor.Native(clazz) =>
-      // TODO: Hash fully qualified name of clazz
-      hashInt(35)
+      val h1 = hashNativeClass(clazz)
+      val h2 = hashInt(35)
+      hashBytes(h1.appendedAll(h2))
 
     case TypeConstructor.JvmConstructor(constructor) =>
       // TODO: Hash fully qualified name of clazz, <init> and parameter types (fully qualified names of those)
@@ -318,6 +319,14 @@ object HashType {
   private def hashPred(pred0: Name.Pred): Array[Byte] = {
     // N.B.: Do not hash the source location of predicate
     hashBytes(hashString(pred0.name).appendedAll(hashInt(78)))
+  }
+
+  /**
+    * Hashes the fully qualified name of `clazz0` along with a
+    * unique id representing the [[Class]] type.
+    */
+  private def hashNativeClass(clazz0: Class[?]): Array[Byte] = {
+    hashBytes(hashString(clazz0.getName).appendedAll(hashInt(79)))
   }
 
   private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Array[Byte] = ???
