@@ -363,7 +363,16 @@ object HashType {
     hashBytes(hashString(clazz0.getName).appendedAll(hashInt(79)))
   }
 
-  private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Array[Byte] = ???
+  private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Array[Byte] = {
+    val h1 = hashInt(sym0.id)
+    val h2 = hashVarText(sym0.text)
+    val h3 = hashKind(sym0.kind)
+    // TODO: Do we care about slack and / or regionScope?
+    // val h4 = hashBoolean(sym0.isSlack)
+    // val h5 = hash(sym0.regionScope)
+    val hn = hashInt(80)
+    ???
+  }
 
   private def hashAssocTypeSym(sym0: Symbol.AssocTypeSym): Array[Byte] = ???
 
