@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.reflect.Constructor
 import java.nio.charset.StandardCharsets
 import java.nio.{ByteBuffer, ByteOrder}
 import java.security.MessageDigest
@@ -163,14 +164,20 @@ object HashType {
       hashBytes(h1.appendedAll(h2))
 
     case TypeConstructor.JvmConstructor(constructor) =>
+      // TODO: Can this ever occur after type inference?
+      throw InternalCompilerException("Unexpected type constructor: JvmConstructor", SourceLocation.Unknown)
       // TODO: Hash fully qualified name of clazz, <init> and parameter types (fully qualified names of those)
       hashInt(36)
 
     case TypeConstructor.JvmMethod(method) =>
+      // TODO: Can this ever occur after type inference?
+      throw InternalCompilerException("Unexpected type constructor: JvmMethod", SourceLocation.Unknown)
       // TODO: Hash fully qualified name of clazz, method name and parameter types (fully qualified names of those)
       hashInt(37)
 
     case TypeConstructor.JvmField(field) =>
+      // TODO: Can this ever occur after type inference?
+      throw InternalCompilerException("Unexpected type constructor: JvmField", SourceLocation.Unknown)
       // TODO: Hash fully qualified name of clazz, field name and type (fully qualified name of the type)
       hashInt(38)
 
