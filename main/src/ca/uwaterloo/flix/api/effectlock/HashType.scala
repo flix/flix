@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.shared.{SymUse, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -387,6 +387,14 @@ object HashType {
   private def hashRestrictableCaseSym(sym0: Symbol.RestrictableCaseSym): Array[Byte] = ???
 
   private def hashRegionSym(sym0: Symbol.RegionSym): Array[Byte] = ???
+
+  private def hashVarText(text0: VarText): Array[Byte] = text0 match {
+    case VarText.Absent => hashInt(???)
+    case VarText.SourceText(s) =>
+      val h1 = hashString(s)
+      val h2 = hashInt(???)
+      hashBytes(h1.appendedAll(h2))
+  }
 
   private def hashInt(n: Int): Array[Byte] = {
     // N.B.: 32-bit integer is 4 bytes, use big-endian to force consistent representation across platforms
