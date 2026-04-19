@@ -112,7 +112,7 @@ object PrettyPrinter {
     case TreeKind.Expr.NewStruct                => prettyCommaBracket(tree)
     case TreeKind.Type.Tuple                    => prettyCommaBracket(tree)
     case TreeKind.Type.ArgumentList             => prettyCommaBracket(tree)
-    case TreeKind.Type.EffectSet               => prettyCommaBracket(tree)
+    case TreeKind.Type.EffectSet                => prettyEffectSet(tree)
     case TreeKind.Type.ConstraintList           => prettyConstraintList(tree)
     case TreeKind.Type.Constraint               => prettyTypeConcat(tree)
     case TreeKind.Type.RecordRow                => prettyCommaBracket(tree)
@@ -374,7 +374,8 @@ object PrettyPrinter {
     split: BracketSplit,
     headerJoin: Array[SyntaxTree.Child] => Doc = defaultHeaderJoin,
     bodyDoc: Doc,
-    tailDoc: Doc = empty
+    tailDoc: Doc = empty,
+    flatPad: Doc = empty
   ): Doc = {
     val noGap = split.header.lastOption.exists {
       case token: Token => token.text.endsWith("#")
@@ -386,7 +387,7 @@ object PrettyPrinter {
       else if (noGap)           headerDoc <> text(split.open)
       else                      headerDoc <+> text(split.open)
 
-    val pad = Doc.layoutChoice(empty, line)
+    val pad = Doc.layoutChoice(flatPad, line)
     localLayout(tree) {
       bodyDoc match {
         case Doc.Empty => openDoc <> text(split.close) <> tailDoc
@@ -470,6 +471,14 @@ object PrettyPrinter {
   private def prettyCommaBracket(tree: Tree): Doc =
     prettyBracket(tree, tree.children, formatBody = commaBodyJoin)
 
+  private def prettyEffectSet(tree: Tree): Doc =
+    splitAtBracket(tree.children) match {
+      case None        => prettyFallback(tree)
+      case Some(split) => renderBracket(tree, split,
+        bodyDoc = commaBodyJoin(split.body),
+        flatPad = space)
+    }
+
   private def prettyRecordOpExtend(tree: Tree): Doc =
     joinChildren(tree.children,
       TokenKind.Plus  -> text("+"),
@@ -537,7 +546,7 @@ object PrettyPrinter {
 
   private def prettyInstance(tree: Tree): Doc =
     prettyDeclBracket(tree,
-      headerJoin = cs => spaceJoin(cs, noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList))))
+      headerJoin = cs => spaceJoin(cs, noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)), noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR), noSpaceAfter = Set(TokenKind.BracketL)))
 
   private def prettyEffect(tree: Tree): Doc =
     prettyDeclBracket(tree,
@@ -1371,7 +1380,8 @@ object PrettyPrinter {
   private def spaceJoin(
     children: Array[SyntaxTree.Child],
     noSpacePairs: Set[(TreeKind, TreeKind)],
-    noSpaceBefore: Set[TokenKind] = Set.empty
+    noSpaceBefore: Set[TokenKind] = Set.empty,
+    noSpaceAfter: Set[TokenKind] = Set.empty
   ): Doc = {
     if (children.isEmpty) return empty
 
@@ -1380,6 +1390,7 @@ object PrettyPrinter {
         val noSpace = (prev, next) match {
           case (p: Tree, n: Tree) if noSpacePairs.contains((p.kind, n.kind)) => true
           case (_, token: Token) if noSpaceBefore.contains(token.kind)       => true
+          case (token: Token, _) if noSpaceAfter.contains(token.kind)        => true
           case _ => false
         }
         val sep = if (noSpace) empty else space
