@@ -612,10 +612,13 @@ object PrettyPrinter {
   private def prettyUncheckedCast(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
       TokenKind.KeywordUncheckedCast -> text("unchecked_cast"),
-      TokenKind.KeywordAs            -> (space <> text("as") <> space))
+      TokenKind.KeywordAs            -> (space <> text("as") <> space),
+      TokenKind.Backslash            -> (space <> text("\\") <> space))
 
   private def prettyCheckedCast(tree: Tree, kind: TokenKind, kw: String): Doc =
-    joinChildren(filterEmpty(tree.children), kind -> text(kw))
+    joinChildren(filterEmpty(tree.children),
+      kind                -> text(kw),
+      TokenKind.Backslash -> (space <> text("\\") <> space))
 
   private def prettyUnsafe(tree: Tree): Doc =
     spaceJoin(filterEmpty(tree.children), Set.empty)
@@ -952,6 +955,7 @@ object PrettyPrinter {
   private def prettyLetMatch(tree: Tree): Doc = localLayout(tree) {
     joinChildren(tree.children,
       TokenKind.KeywordLet -> (text("let") <> space),
+      TokenKind.Colon      -> (text(":") <> space),
       TokenKind.Equal      -> (space <> text("=") <> space),
       TokenKind.Semi       -> (text(";") <> line))
   }
