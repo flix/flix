@@ -982,18 +982,27 @@ object PrettyPrinter {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, tail)) =>
         val headerDoc = defaultHeaderJoin(header)
-        val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
         val tailDoc = tail.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
         val tailStart = tail.headOption.flatMap(leftMostToken)
         val isBlock = tailStart.exists(t => t.kind == TokenKind.CurlyL || t.kind == TokenKind.ParenL)
-        val closeSep = if (body.nonEmpty && endsWithLineComment(body.last)) hardline
-                       else Doc.layoutChoice(empty, line)
-        localLayout(tree) {
+        val tailSep = if (isBlock) space <> tailDoc else nest(4, line <> tailDoc)
+        val headerFitsOnOneLine = body.isEmpty || {
+          val firstLine = body.headOption.flatMap(leftMostToken).map(_.start.lineOneIndexed)
+          val lastLine = body.lastOption.flatMap(rightMostToken).map(_.end.lineOneIndexed)
+          firstLine == lastLine
+        }
+        if (headerFitsOnOneLine) {
+          val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
+          headerDoc <> text(open) <> bodyDoc <> text(close) <> tailSep
+        } else {
+          val bodyDoc = joinWithGap(body)
+          val closeSep = if (body.nonEmpty && endsWithLineComment(body.last)) hardline
+                         else Doc.layoutChoice(empty, line)
           headerDoc <> text(open) <>
             nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <>
             closeSep <>
             text(close) <>
-            (if (isBlock) space <> tailDoc else nest(4, line <> tailDoc))
+            tailSep
         }
     }
 
@@ -1232,7 +1241,13 @@ object PrettyPrinter {
         val gap = if (prev.exists(endsWithLineComment)) hardline else empty
         (acc <> gap <> replMap(token.kind), Some(token))
       case ((acc, prev), child) =>
-        val gap = if (prev.exists(endsWithLineComment)) hardline else empty
+        val isComment = child match { case t: Token => isCommentKind(t.kind); case _ => false }
+        val sameLine = isComment && prev.flatMap(rightMostToken).exists(p =>
+          leftMostToken(child).exists(_.start.lineOneIndexed == p.end.lineOneIndexed))
+        val gap = if (prev.exists(endsWithLineComment)) hardline
+                  else if (sameLine) space
+                  else if (isComment) hardline
+                  else empty
         (acc <> gap <> prettyChild(child), Some(child))
     }
     doc
