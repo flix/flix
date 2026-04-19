@@ -981,15 +981,18 @@ object PrettyPrinter {
     splitAtBracket(tree.children) match {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, tail)) =>
-        val headerDoc = joinChildren(header,
-          TokenKind.KeywordForeach -> (text("foreach") <> space))
-        val bodyDoc = joinChildren(body,
-          TokenKind.Semi -> (text(";") <> space))
+        val headerDoc = defaultHeaderJoin(header)
+        val bodyDoc = joinChildren(body, TokenKind.Semi -> (text(";") <> space))
         val tailDoc = tail.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
         val tailStart = tail.headOption.flatMap(leftMostToken)
         val isBlock = tailStart.exists(t => t.kind == TokenKind.CurlyL || t.kind == TokenKind.ParenL)
+        val closeSep = if (body.nonEmpty && endsWithLineComment(body.last)) hardline
+                       else Doc.layoutChoice(empty, line)
         localLayout(tree) {
-          headerDoc <+> text(open) <> bodyDoc <> text(close) <>
+          headerDoc <> text(open) <>
+            nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <>
+            closeSep <>
+            text(close) <>
             (if (isBlock) space <> tailDoc else nest(4, line <> tailDoc))
         }
     }
@@ -1314,7 +1317,9 @@ object PrettyPrinter {
     if (children.isEmpty) return empty
     children.sliding(2).foldLeft(prettyChild(children.head)) {
       case (acc, Array(prev, next)) =>
-        val g = if (endsWithLineComment(prev)) hardline else gap
+        val g = if (endsWithLineComment(prev)) hardline
+                else if (hadBlankLineBetween(prev, next)) gap <> Doc.layoutChoice(empty, hardline)
+                else gap
         acc <> g <> prettyChild(next)
       case (acc, _) => acc
     }
