@@ -523,7 +523,7 @@ object PrettyPrinter {
     }
 
     if (!hasBraces)
-      spaceJoin(filterEmpty(rest), noSpacePairs = Set.empty)
+      spaceJoin(filterEmpty(rest), noSpacePairs = Set((TreeKind.Ident, TreeKind.CaseBody)))
     else
       prettyBracket(tree.copy(children = rest), filterEmpty(rest),
         headerJoin = declHeaderJoin,
