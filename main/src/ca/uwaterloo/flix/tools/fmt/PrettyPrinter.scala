@@ -136,7 +136,7 @@ object PrettyPrinter {
     case TreeKind.Pattern.Unary                 => prettyUnary(tree)
     case TreeKind.Expr.Region                   => prettyRegion(tree)
     case TreeKind.Expr.Run                      => prettyRun(tree)
-    case TreeKind.Expr.RunWithBodyExpr          => prettyRun(tree)
+    case TreeKind.Expr.RunWithBodyExpr          => prettyRunWith(tree)
     case TreeKind.Expr.RunWithRuleFragment      => prettyDef(tree)
     case TreeKind.Expr.Handler                  => prettyHandler(tree)
     case _ => prettyFallback(tree)
@@ -182,7 +182,24 @@ object PrettyPrinter {
     }
   }
 
-  private def prettyRun(tree: Tree): Doc =
+  private def prettyRun(tree: Tree): Doc = {
+    val children = filterEmpty(tree.children)
+    val withIdx = children.indexWhere {
+      case t: Tree if t.kind == TreeKind.Expr.RunWithBodyExpr => true
+      case _ => false
+    }
+    if (withIdx < 0) return spaceJoin(children, Set.empty)
+
+    val preamble    = children.take(withIdx)
+    val handlers    = children.drop(withIdx)
+    val preambleDoc = spaceJoin(preamble, Set.empty)
+    localLayout(tree) {
+      val handlersDoc = handlers.map(prettyChild).reduceLeftOption(_ <> line <> _).getOrElse(empty)
+      preambleDoc <+> handlersDoc
+    }
+  }
+
+  private def prettyRunWith(tree: Tree): Doc =
     spaceJoin(filterEmpty(tree.children), Set.empty)
 
   private def prettyHandler(tree: Tree): Doc =
