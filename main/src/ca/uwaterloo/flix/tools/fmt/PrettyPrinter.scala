@@ -8,7 +8,8 @@ object PrettyPrinter {
 
   def format(tree: Tree): String = {
     val result = Doc.pretty(traverse(tree))
-    if (result.endsWith("\n")) result else result + "\n"
+    val stripped = result.split("\n", -1).map(_.stripTrailing()).mkString("\n")
+    if (stripped.endsWith("\n")) stripped else stripped + "\n"
   }
   private def traverse(tree: Tree): Doc = {
     if (tree.children.isEmpty) empty else formatTree(tree)
@@ -793,7 +794,7 @@ object PrettyPrinter {
       .reduceLeftOption(_ <> _)
       .getOrElse(empty)
 
-    val bodyIsBlock = bodyParts.exists(isBlockExpr) ||
+    val bodyIsBlock = bodyParts.exists(isBracedExpr) ||
       bodyParts.exists(c => leftMostToken(c).exists(tok => bracketPairs.exists(_._1 == tok.kind)))
 
     val defDoc = localLayout(tree) {
@@ -879,7 +880,7 @@ object PrettyPrinter {
     * @return the formatted type alias as Doc
     */
   private def prettyTypeAlias(tree: Tree): Doc = wrapWithAnn(tree, rest => {
-    spaceJoin(rest, noSpacePairs = Set.empty)
+    spaceJoin(rest, noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)), noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR), noSpaceAfter = Set(TokenKind.BracketL))
   })
 
   /**
@@ -1325,8 +1326,9 @@ object PrettyPrinter {
       return if (sameLine) space else hardline
     }
 
-    val tight = prevKind.exists(TightAfter.contains) ||
-      nextKind.exists(TightBefore.contains)
+    val afterSeparator = prevKind.exists(k => k == TokenKind.Comma || k == TokenKind.Semi)
+    val tight = !afterSeparator && (prevKind.exists(TightAfter.contains) ||
+      nextKind.exists(TightBefore.contains))
     if (tight) empty
     else if (hadBlankLineBetween(prev, next)) line <> Doc.layoutChoice(empty, hardline)
     else line
