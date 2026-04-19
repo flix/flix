@@ -109,6 +109,9 @@ object PrettyPrinter {
     case TreeKind.Expr.RestrictableChooseStar   => prettyRestrictableChoose(tree)
     case TreeKind.Expr.ForMonadic               => prettyFor(tree)
     case TreeKind.Expr.ForApplicative           => prettyFor(tree)
+    case TreeKind.Expr.ForFragmentGenerator     => prettyForFragment(tree)
+    case TreeKind.Expr.ForFragmentLet           => prettyForFragment(tree)
+    case TreeKind.Expr.ForFragmentGuard         => prettyForFragment(tree)
     case TreeKind.Expr.Tuple                    => prettyCommaBracket(tree)
     case TreeKind.Expr.NewStruct                => prettyCommaBracket(tree)
     case TreeKind.Type.Tuple                    => prettyCommaBracket(tree)
@@ -300,16 +303,19 @@ object PrettyPrinter {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, tail)) =>
         val headerDoc = defaultHeaderJoin(header)
-        val bodyDoc = joinWithGap(body)
-
-        val tailDoc = defaultHeaderJoin(tail)
+        val bodyDoc   = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
+        val tailDoc   = defaultHeaderJoin(tail)
         localLayout(tree) {
-          val tailStart = tail.headOption.flatMap(leftMostToken)
-          val isBlock = tailStart.exists(t => t.kind == TokenKind.CurlyL || t.kind == TokenKind.ParenL)
           headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <>
-            (if (isBlock) space <> tailDoc else if (tail.nonEmpty) space <> tailDoc else empty)
+            (if (tail.nonEmpty) line <> tailDoc else empty)
         }
     }
+
+  private def prettyForFragment(tree: Tree): Doc =
+    joinChildren(filterEmpty(tree.children),
+      TokenKind.ArrowThinL -> (space <> text("<-") <> space),
+      TokenKind.Equal       -> (space <> text("=") <> space),
+      TokenKind.KeywordIf   -> (text("if") <> space))
 
   private val bracketPairs: List[(TokenKind, TokenKind, String, String)] = List(
     (TokenKind.HashCurlyL, TokenKind.CurlyR,    "#{", "}"),
@@ -395,7 +401,7 @@ object PrettyPrinter {
     tailDoc: Doc = empty,
     flatPad: Doc = empty
   ): Doc = {
-    val noGap = split.header.lastOption.exists {
+    val noGap = split.open == "[" || split.header.lastOption.exists {
       case token: Token => token.text.endsWith("#")
       case _ => false
     }
