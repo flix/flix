@@ -1189,8 +1189,8 @@ object PrettyPrinter {
     * @return the formatted parameter list as Doc
     */
   private def prettyParameterList(tree: Tree): Doc =
-    joinChildren(tree.children,
-      TokenKind.Comma -> (text(",") <> space))
+    prettyBracket(tree, tree.children,
+      formatBody = cs => joinChildren(cs, TokenKind.Comma -> (text(",") <> line)))
 
   /**
     * Formatting for individual parameters.
