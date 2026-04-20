@@ -302,12 +302,19 @@ object PrettyPrinter {
     splitAtBracket(filterEmpty(tree.children)) match {
       case None => prettyFallback(tree)
       case Some(BracketSplit(header, open, body, close, tail)) =>
-        val headerDoc = defaultHeaderJoin(header)
-        val bodyDoc   = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
-        val tailDoc   = defaultHeaderJoin(tail)
-        localLayout(tree) {
-          headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <>
-            (if (tail.nonEmpty) line <> tailDoc else empty)
+        val headerDoc  = defaultHeaderJoin(header)
+        val bodyDoc    = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
+        val tailDoc    = defaultHeaderJoin(tail)
+        val tailSuffix = if (tail.nonEmpty) space <> tailDoc else empty
+        val isSingle   = !body.exists { case t: Token if t.kind == TokenKind.Semi => true; case _ => false }
+        if (isSingle) {
+          Doc.setLayout(Layout.SingleLine,
+            headerDoc <+> text(open) <> bodyDoc <> text(close) <> tailSuffix
+          )
+        } else {
+          Doc.setLayout(Layout.MultiLine,
+            headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <> tailSuffix
+          )
         }
     }
 
