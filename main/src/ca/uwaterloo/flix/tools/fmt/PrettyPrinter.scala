@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools.fmt
 
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, space, text}
+import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, pretty, space, text}
 
 object PrettyPrinter {
 
@@ -151,8 +151,22 @@ object PrettyPrinter {
     case TreeKind.Pattern.FCons                 => prettyFCons(tree)
     case TreeKind.StructField                   => prettyStructField(tree)
     case TreeKind.DerivationList                => prettyConstraintList(tree)
+    case TreeKind.Type.Unary                    => prettyUnary(tree)
+    case TreeKind.Type.Ascribe                  => prettyAscribe(tree)
+    case TreeKind.Type.Effect                   => prettyTypeConcat(tree)
+    case TreeKind.Expr.Paren                    => prettyCommaBracket(tree)
+    case TreeKind.ArgumentNamed                 => prettyRecordFieldAssign(tree)
+    case TreeKind.UsesOrImports.Alias           => prettyAlias(tree)
+    case TreeKind.Decl.EqualityConstraintFragment => prettyEqualityConstraint(tree)
+    case TreeKind.AnnotationList                => spaceJoin(filterEmpty(tree.children), Set.empty)
     case _ => prettyFallback(tree)
   }
+
+  private def prettyEqualityConstraint(tree: Tree): Doc =
+    joinChildren(filterEmpty(tree.children), TokenKind.Tilde -> (space <> text("~") <> space))
+
+  private def prettyAlias(tree: Tree): Doc =
+    joinChildren(filterEmpty(tree.children), TokenKind.ArrowThickR -> (space <> text("=>") <> space))
 
   private def prettyStructField(tree: Tree): Doc =
     spaceJoin(filterEmpty(tree.children), noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon))
