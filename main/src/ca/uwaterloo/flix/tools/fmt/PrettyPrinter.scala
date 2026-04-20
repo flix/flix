@@ -664,7 +664,9 @@ object PrettyPrinter {
     }
     if (rest.isEmpty) return prettyFallback(tree)
     val bodyDoc = joinChildren(rest, TokenKind.Comma -> (text(",") <> line))
-    text("with") <> nest(4, line <> bodyDoc)
+    localLayout(tree) {
+      text("with") <> nest(4, line <> bodyDoc)
+    }
   }
 
   private def prettyFixpointConstraintSet(tree: Tree): Doc =
