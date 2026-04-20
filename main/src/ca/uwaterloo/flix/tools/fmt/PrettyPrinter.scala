@@ -101,7 +101,7 @@ object PrettyPrinter {
     case TreeKind.Type.Type                     => prettyTypeConcat(tree)
     case TreeKind.Type.Schema                   => prettyCommaBracket(tree)
     case TreeKind.Type.Extensible               => prettyCommaBracket(tree)
-    case TreeKind.Type.Record                   => prettyCommaBracket(tree)
+    case TreeKind.Type.Record                   => prettySpacedCommaBracket(tree)
     case TreeKind.UsesOrImports.UseOrImportList => prettyUseOrImportList(tree)
     case TreeKind.UsesOrImports.Import          => prettyImport(tree)
     case TreeKind.UsesOrImports.Use             => prettyUse(tree)
@@ -119,12 +119,12 @@ object PrettyPrinter {
     case TreeKind.Type.EffectSet                => prettyEffectSet(tree)
     case TreeKind.Type.ConstraintList           => prettyConstraintList(tree)
     case TreeKind.Type.Constraint               => prettyTypeConcat(tree)
-    case TreeKind.Type.RecordRow                => prettyCommaBracket(tree)
+    case TreeKind.Type.RecordRow                => prettySpacedCommaBracket(tree)
     case TreeKind.Type.RecordFieldFragment      => prettyRecordFieldAssign(tree)
     case TreeKind.Type.SchemaRow                => prettyCommaBracket(tree)
     case TreeKind.Type.CaseSet                  => prettyCommaBracket(tree)
     case TreeKind.Pattern.Tuple                 => prettyCommaBracket(tree)
-    case TreeKind.Pattern.Record                => prettyCommaBracket(tree)
+    case TreeKind.Pattern.Record                => prettySpacedCommaBracket(tree)
     case TreeKind.Pattern.RecordFieldFragment   => prettyRecordFieldAssign(tree)
     case TreeKind.Predicate.ParamList           => prettyCommaBracket(tree)
     case TreeKind.Predicate.PatternList         => prettyCommaBracket(tree)
@@ -501,6 +501,14 @@ object PrettyPrinter {
     */
   private def prettyCommaBracket(tree: Tree): Doc =
     prettyBracket(tree, tree.children, formatBody = commaBodyJoin)
+
+  private def prettySpacedCommaBracket(tree: Tree): Doc =
+    splitAtBracket(tree.children) match {
+      case None        => prettyFallback(tree)
+      case Some(split) => renderBracket(tree, split,
+        bodyDoc = commaBodyJoin(split.body),
+        flatPad = space)
+    }
 
   private def prettyEffectSet(tree: Tree): Doc =
     splitAtBracket(tree.children) match {
