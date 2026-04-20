@@ -143,8 +143,28 @@ object PrettyPrinter {
     case TreeKind.Expr.RunWithBodyExpr          => prettyRunWith(tree)
     case TreeKind.Expr.RunWithRuleFragment      => prettyDef(tree)
     case TreeKind.Expr.Handler                  => prettyHandler(tree)
+    case TreeKind.Expr.LiteralStructFieldFragment => prettyRecordFieldAssign(tree)
+    case TreeKind.Expr.LiteralMapKeyValueFragment => prettyLiteralMapKeyValueFragment(tree)
+    case TreeKind.Expr.ParYieldFragment         => prettyForFragment(tree)
+    case TreeKind.Pattern.Tag                   => prettyPatternTag(tree)
+    case TreeKind.Pattern.TagBody               => prettyCommaBracket(tree)
+    case TreeKind.Pattern.FCons                 => prettyFCons(tree)
+    case TreeKind.StructField                   => prettyStructField(tree)
+    case TreeKind.DerivationList                => prettyConstraintList(tree)
     case _ => prettyFallback(tree)
   }
+
+  private def prettyStructField(tree: Tree): Doc =
+    spaceJoin(filterEmpty(tree.children), noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon))
+
+  private def prettyFCons(tree: Tree): Doc =
+    joinChildren(filterEmpty(tree.children), TokenKind.ColonColon -> (space <> text("::") <> space))
+
+  private def prettyPatternTag(tree: Tree): Doc =
+    spaceJoin(filterEmpty(tree.children), noSpacePairs = Set((TreeKind.QName, TreeKind.CaseBody)))
+
+  private def prettyLiteralMapKeyValueFragment(tree: Tree): Doc =
+    joinChildren(filterEmpty(tree.children), TokenKind.ArrowThickR -> (space <> text("=>") <> space))
 
   private def prettyStructPut(tree: Tree): Doc = {
     val children = filterEmpty(tree.children)
