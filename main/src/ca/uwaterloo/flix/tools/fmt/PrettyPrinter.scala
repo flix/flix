@@ -895,13 +895,19 @@ object PrettyPrinter {
           if (extraBlank) hardline <> hardline else hardline
         }
 
-        val defDoc = localLayout(tree) {
+        val defLine  = sigParts.headOption.flatMap(leftMostToken).map(_.start.lineOneIndexed)
+        val bodyLine = bodyExprs.lastOption.flatMap(rightMostToken).map(_.end.lineOneIndexed)
+        val defLayout = (defLine, bodyLine) match {
+          case (Some(d), Some(b)) => if (d == b) Layout.SingleLine else Layout.MultiLine
+          case _                  => Layout.MultiLine
+        }
+        val defDoc = Doc.setLayout(defLayout, {
           val bodyPart =
             if (bodyIsBraced) sig <+> text("=") <+> bodyDoc
             else              sig <+> text("=") <> nest(4, line <> bodyDoc)
           if (contDoc == empty) bodyPart <> text(";")
           else bodyPart <> text(";") <> contSep <> contDoc
-        }
+        })
         prepend(annDoc, defDoc)
 
       case None => prettyDef(tree)
