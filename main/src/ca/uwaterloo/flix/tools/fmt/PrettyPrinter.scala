@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools.fmt
 
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, pretty, space, text}
+import ca.uwaterloo.flix.tools.fmt.Doc.{empty, hardStack, hardline, line, nest, space, text}
 
 object PrettyPrinter {
 
@@ -112,6 +112,7 @@ object PrettyPrinter {
     case TreeKind.Expr.ForFragmentGenerator     => prettyForFragment(tree)
     case TreeKind.Expr.ForFragmentLet           => prettyForFragment(tree)
     case TreeKind.Expr.ForFragmentGuard         => prettyForFragment(tree)
+    case TreeKind.CaseBody                      => prettyCaseBody(tree)
     case TreeKind.Expr.Tuple                    => prettyCommaBracket(tree)
     case TreeKind.Expr.NewStruct                => prettyCommaBracket(tree)
     case TreeKind.Type.Tuple                    => prettyCommaBracket(tree)
@@ -350,7 +351,7 @@ object PrettyPrinter {
   )
 
   /**
-    * Filters out empty [[Children]].
+    * Filters out empty [[SyntaxTree.Tree.children]].
     *
     * @param children the array of children to filter
     * @return a new array containing only non-empty children
@@ -392,7 +393,7 @@ object PrettyPrinter {
 
   /**
     * Core rendering for a bracket construct. This is where the decision point is.
-    * Applies [[localLayout]] based on the source position of [[tree]].
+    * Applies [[localLayout]] based on the source position of [[SyntaxTree.Tree]].
     *
     * @param tree      the tree used to determine single/multi-line layout
     * @param split     the pre-split bracket structure from [[splitAtBracket]]
@@ -582,6 +583,23 @@ object PrettyPrinter {
       leadingDoc <> hardline <> bodyDoc
     }
   }
+
+  private def prettyCaseBody(tree: Tree): Doc =
+    splitAtBracket(tree.children) match {
+      case None => prettyFallback(tree)
+      case Some(split) =>
+        val bodyDoc = commaBodyJoin(split.body)
+        val tailDoc = if (split.tail.isEmpty) empty else space <> joinWithGap(split.tail)
+        val bodyStartsWithBrace = split.body.headOption.exists {
+          case t: Token if t.kind == TokenKind.CurlyL => true
+          case t: Tree  => leftMostToken(t).exists(_.kind == TokenKind.CurlyL)
+          case _        => false
+        }
+        if (bodyStartsWithBrace)
+          localLayout(tree) { text(split.open) <> bodyDoc <> text(split.close) <> tailDoc }
+        else
+          renderBracket(tree, split, bodyDoc = bodyDoc, tailDoc = tailDoc)
+    }
 
   private def prettyInstance(tree: Tree): Doc =
     prettyDeclBracket(tree,
