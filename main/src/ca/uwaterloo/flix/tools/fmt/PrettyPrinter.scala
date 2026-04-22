@@ -323,9 +323,10 @@ object PrettyPrinter {
         val bodyDoc = joinChildren(body,
           TokenKind.Semi -> (text(";") <> space))
         val tailDoc = defaultHeaderJoin(tail)
-        val tailPart = if (tail.isEmpty) empty else nest(4, line <> tailDoc)
+        val tailPart = if (tail.isEmpty) empty else space <> tailDoc
+        val closeGap = if (body.nonEmpty && endsWithLineComment(body.last)) hardline else empty
         localLayout(tree) {
-          headerDoc <+> text(open) <> bodyDoc <> text(close) <> tailPart
+          headerDoc <+> text(open) <> bodyDoc <> closeGap <> text(close) <> tailPart
         }
     }
 
@@ -610,11 +611,7 @@ object PrettyPrinter {
         case _ => true
       }
       val commentDoc = comments.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
-      val leadingDoc = commentDoc match {
-        case Doc.Empty => text(",")
-        case c         => text(",") <+> c
-      }
-      leadingDoc <> hardline <> bodyDoc
+      commentDoc <> hardline <> bodyDoc
     }
   }
 
@@ -1014,11 +1011,12 @@ object PrettyPrinter {
       val endsWithClose = rightMostToken(tree.children(0)).exists(t =>
         t.kind == TokenKind.CurlyR
       )
+      val sep = if (endsWithLineComment(tree.children(1))) hardline else space
       localLayout(tree) {
         if (endsWithClose)
-          parts(0) <+> parts(1) <+> parts(2)
+          parts(0) <> space <> parts(1) <> sep <> parts(2)
         else
-          parts(0) <> line <> parts(1) <+> parts(2)
+          parts(0) <> line <> parts(1) <> sep <> parts(2)
       }
     } else {
       parts.reduceLeftOption(_ <+> _).getOrElse(empty)
@@ -1216,7 +1214,14 @@ object PrettyPrinter {
   private def keywordSpaced(tree: Tree, kind: TokenKind, kw: String): Doc =
     joinChildren(tree.children, kind -> (text(kw) <> space))
 
-  private val ReservedKeywords: Set[String] = Set("run")
+  // This must hold all keywords.
+  private val ReservedKeywords: Set[String] = Set(
+    "as", "assert", "assume", "comptime", "do", "else", "enum", "export",
+    "external", "false", "fixpoint", "for", "if", "import", "instance",
+    "intrinsic", "match", "new", "select", "struct", "then", "trait",
+    "true", "type", "use", "with", "run", "and", "or", "not", "xor", "lazy", "unchecked_cast", "checked_cast",
+    "unchecked_coerce", "checked_coerce", "inject", "into", "solve", "psolve", "project", "query", "pquery"
+  )
 
   private def prettyIdent(tree: Tree): Doc =
     tree.children.map {
