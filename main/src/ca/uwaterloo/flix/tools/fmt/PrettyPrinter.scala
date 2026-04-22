@@ -67,9 +67,9 @@ object PrettyPrinter {
     case TreeKind.Expr.OpenVariantAs            => spaceJoin(filterEmpty(tree.children), Set.empty)
     case TreeKind.Expr.UncheckedCast            => prettyUncheckedCast(tree)
     case TreeKind.Expr.CheckedTypeCast          => prettyCheckedCast(tree, TokenKind.KeywordCheckedCast, "checked_cast")
-    case TreeKind.Expr.CheckedEffectCast        => prettyCheckedCast(tree, TokenKind.KeywordCheckedECast, "checked_ecast")
-    case TreeKind.Expr.Unsafe                   => prettyUnsafe(tree)
-    case TreeKind.Expr.UnsafeAsEffFragment      => keywordSpaced(tree, TokenKind.KeywordAs, "as")
+    case TreeKind.Expr.CheckedEffectCast            => prettyCheckedCast(tree, TokenKind.KeywordCheckedECast, "checked_ecast")
+    case TreeKind.Expr.Unsafe                       => prettyUnsafe(tree)
+    case TreeKind.Expr.UnsafeAsEffFragment          => keywordSpaced(tree, TokenKind.KeywordAs, "as")
     case TreeKind.Expr.FixpointConstraintSet        => prettyFixpointConstraintSet(tree)
     case TreeKind.Expr.FixpointConstraint           => prettyFixpointConstraint(tree)
     case TreeKind.Expr.FixpointQuery                => prettyFixpointQuery(tree)
@@ -711,7 +711,7 @@ object PrettyPrinter {
       TokenKind.Backslash -> (space <> text("\\") <> space))
 
   private def prettyUnsafe(tree: Tree): Doc =
-    spaceJoin(filterEmpty(tree.children), Set.empty)
+    prettyBracket(tree, filterEmpty(tree.children))
 
   private def prettyTypeConcat(tree: Tree): Doc =
     filterEmpty(tree.children).map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
