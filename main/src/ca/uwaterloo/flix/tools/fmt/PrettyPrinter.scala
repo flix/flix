@@ -171,11 +171,26 @@ object PrettyPrinter {
   private def prettyStructField(tree: Tree): Doc =
     spaceJoin(filterEmpty(tree.children), noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon))
 
-  private def prettyFCons(tree: Tree): Doc =
-    joinChildren(filterEmpty(tree.children), TokenKind.ColonColon -> (space <> text("::") <> space))
+  private def prettyFCons(tree: Tree): Doc = {
+    val children = filterEmpty(tree.children)
+    if (children.length != 2) return prettyFallback(tree)
+
+    val headDoc = children(0) match {
+      case t: Tree =>
+        val inner = filterEmpty(t.children).filterNot {
+          case tok: Token => tok.kind == TokenKind.ColonColon
+          case _          => false
+        }
+        if (inner.isEmpty) prettyChild(children(0))
+        else if (inner.length == 1) prettyChild(inner(0))
+        else joinWithGap(inner)
+      case _ => prettyChild(children(0))
+    }
+    headDoc <> space <> text("::") <> space <> prettyChild(children(1))
+  }
 
   private def prettyPatternTag(tree: Tree): Doc =
-    spaceJoin(filterEmpty(tree.children), noSpacePairs = Set((TreeKind.QName, TreeKind.CaseBody)))
+    spaceJoin(filterEmpty(tree.children), noSpacePairs = Set((TreeKind.QName, TreeKind.Pattern.TagBody)))
 
   private def prettyLiteralMapKeyValueFragment(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children), TokenKind.ArrowThickR -> (space <> text("=>") <> space))
@@ -610,8 +625,10 @@ object PrettyPrinter {
         case t: Token if t.kind == TokenKind.Comma => false
         case _ => true
       }
-      val commentDoc = comments.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
-      commentDoc <> hardline <> bodyDoc
+      comments.map(prettyChild).reduceLeftOption(_ <+> _) match {
+        case Some(commentDoc) => space <> commentDoc <> hardline <> bodyDoc
+        case None             => hardline <> bodyDoc
+      }
     }
   }
 
@@ -1224,10 +1241,15 @@ object PrettyPrinter {
   )
 
   private def prettyIdent(tree: Tree): Doc =
-    tree.children.map {
-      case token: Token if ReservedKeywords.contains(token.text) => text("$" + token.text)
-      case child => prettyChild(child)
-    }.reduceLeftOption(_ <> _).getOrElse(empty)
+    tree.children.foldLeft((empty: Doc, Option.empty[SyntaxTree.Child])) {
+      case ((acc, prev), child) =>
+        val childDoc = child match {
+          case token: Token if ReservedKeywords.contains(token.text) => text("$" + token.text)
+          case c => prettyChild(c)
+        }
+        val gap = prev.fold(empty)(p => structuralGap(p, child))
+        (acc <> gap <> childDoc, Some(child))
+    }._1
 
   private def prettyOperator(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
