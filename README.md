@@ -8,6 +8,8 @@
 
 We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for more information about Flix. 
 
+[![Release](https://img.shields.io/github/v/release/flix/flix?label=release)](https://github.com/flix/flix/releases)
+[![License](https://img.shields.io/github/license/flix/flix)](https://github.com/flix/flix/blob/master/LICENSE.md)
 [![Build and Tests](https://img.shields.io/github/actions/workflow/status/flix/flix/compiler-build-and-test.yaml?label=build%20and%20tests&branch=master)](https://github.com/flix/flix/actions/workflows/compiler-build-and-test.yaml)
 [![Community Build](https://img.shields.io/github/actions/workflow/status/flix/flix/community-build.yaml?label=community%20build&branch=master)](https://github.com/flix/flix/actions/workflows/community-build.yaml)
 [![Zulip](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://flix.zulipchat.com/)
