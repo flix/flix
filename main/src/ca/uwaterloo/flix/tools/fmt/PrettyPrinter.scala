@@ -357,16 +357,9 @@ object PrettyPrinter {
         val bodyDoc    = joinChildren(body, TokenKind.Semi -> (text(";") <> line))
         val tailDoc    = defaultHeaderJoin(tail)
         val tailSuffix = if (tail.nonEmpty) space <> tailDoc else empty
-        val isSingle   = !body.exists { case t: Token if t.kind == TokenKind.Semi => true; case _ => false }
-        if (isSingle) {
-          Doc.setLayout(Layout.SingleLine,
-            headerDoc <+> text(open) <> bodyDoc <> text(close) <> tailSuffix
-          )
-        } else {
-          Doc.setLayout(Layout.MultiLine,
-            headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <> tailSuffix
-          )
-        }
+        Doc.setLayout(Layout.MultiLine,
+          headerDoc <+> text(open) <> nest(4, line <> bodyDoc) <> line <> text(close) <> tailSuffix
+        )
     }
 
   private def prettyForFragment(tree: Tree): Doc =
@@ -1452,7 +1445,8 @@ object PrettyPrinter {
         case (Some(p), Some(n)) => p.end.lineOneIndexed == n.start.lineOneIndexed
         case _ => false
       }
-      return if (sameLine) space else hardline
+      if (sameLine) return space
+      return if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
     }
 
     val afterSeparator = prevKind.exists(k => k == TokenKind.Comma || k == TokenKind.Semi)
