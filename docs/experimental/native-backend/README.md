@@ -30,6 +30,64 @@ I think it's largely solid and well tested to the best of my knowledge and avail
   - region-based concurrency,
   - and an initial portable `Sync/*` surface.
 
+## Language Feature Support
+
+Because the native/wasm backend reuses the existing Flix frontend and lowerer,
+most language-level features carry over. The scope below reflects what is
+actually exercised by in-tree tests and examples on this branch.
+
+**Supported end-to-end:**
+
+- algebraic data types and pattern matching
+- first-class functions, closures, higher-order functions
+- parametric polymorphism (erasure, same model as the JVM backend)
+- **effect handlers** — user-defined algebraic effects with `run ... with handler`
+  and `resume` work on both `llvm-native` and `llvm-wasm`. See
+  [counter_effect](../../../main/test/flix/native/apps/counter_effect/Main.flix)
+  for a handler with resumption and local state, and `WasmAsyncEffectsLlvmWasmSuite`
+  plus [wasm-effects-smoke](../../../examples/native-backend/wasm-effects-smoke/README.md)
+  for effects crossing the async wasm host boundary. The Zig runtime provides
+  the continuation/suspension machinery
+  ([continuation_roots_v0.zig](../../../runtime/src/continuation_roots_v0.zig))
+- regions and region-scoped mutable state (`Ref`)
+- records, tuples, structs
+- arrays and iteration
+- channels, `spawn`, and region-based concurrency
+- exceptions (`throw` / `try..catch`)
+- full tail-call elimination (exercised by
+  [tce_mutual](../../../main/test/flix/native/apps/tce_mutual/Main.flix)
+  with mutual recursion over hundreds of thousands of iterations)
+- async I/O — timers, HTTP, TCP, file and process operations, cancellation —
+  via the Zig runtime
+- async wasm imports via generated Flix effect bindings for WIT-style hosts
+- typed `@Export` values crossing into native and wasm hosts
+
+**Partial — behind the portable profile / ABI:**
+
+- standard library — only the `portable` split
+  ([main/src/library/portable](../../../main/src/library/portable)) is available
+  on non-JVM targets. A meaningful slice of ordinary Flix stdlib code compiles
+  unchanged; the rest still needs to move behind the portable split.
+- export/import ABI — scalars, strings, records, tuples, arrays, and a curated
+  set of ADTs cross the `@Export`/import boundary today. Arbitrary generic
+  values, richer ADTs, and general callback/resource conventions are not yet in
+  scope. See [EXPORTS.md](EXPORTS.md) and [IMPORTS.md](IMPORTS.md).
+- async wasm imports cover the current portable/WIT slice, not arbitrary WIT
+  surface area.
+
+**Not supported (by design, on non-JVM targets):**
+
+- JVM interop: `new` on JVM classes, `unsafe import java ...`, `java.*` types,
+  and the JVM-only `Sync/*` and `Concurrent/*` stdlib modules under
+  [main/src/library/jvm](../../../main/src/library/jvm). The portable profile
+  rejects these.
+- wasm multi-threading — the wasm runtime is currently single-threaded. Native
+  threads and spawn-based concurrency do work.
+
+Anything not listed above (e.g. `Fixpoint`/Datalog, lazy evaluation) has not
+been specifically validated on this backend yet and should be treated as
+untested rather than supported.
+
 ## Current Usability
 
 Today this looks usable for:
