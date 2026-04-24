@@ -526,14 +526,34 @@ object PrettyPrinter {
     children: Array[SyntaxTree.Child],
     headerJoin: Array[SyntaxTree.Child] => Doc = defaultHeaderJoin,
     formatBody: Array[SyntaxTree.Child] => Doc = cs => joinWithGap(filterEmpty(cs)),
-    formatTail: Array[SyntaxTree.Child] => Doc = cs => if (cs.isEmpty) empty else space <> joinWithGap(cs),
+    formatTail: Array[SyntaxTree.Child] => Doc = cs => if (cs.isEmpty) empty else joinWithGap(cs),
     fallback: Tree => Doc = prettyFallback
   ): Doc = splitAtBracket(children) match {
     case None        => fallback(tree)
     case Some(split) =>
+      val tailContent = formatTail(split.tail)
+      val tailDoc = tailContent match {
+        case Doc.Empty => empty
+        case _ =>
+          val ci = children.length - split.tail.length - 1
+          val sep = if (ci >= 0 && ci < children.length) {
+            children(ci) match {
+              case closeToken: Token =>
+                split.tail.headOption.flatMap(leftMostToken) match {
+                  case Some(first) if closeToken.end.lineOneIndexed == first.start.lineOneIndexed =>
+                    space
+                  case Some(first) if first.start.lineOneIndexed - closeToken.end.lineOneIndexed > 1 =>
+                    hardline <> hardline
+                  case _ => hardline
+                }
+              case _ => space
+            }
+          } else space
+          sep <> tailContent
+      }
       renderBracket(tree, split, headerJoin,
         bodyDoc = formatBody(split.body),
-        tailDoc = formatTail(split.tail))
+        tailDoc = tailDoc)
   }
 
   /**
@@ -1075,19 +1095,34 @@ object PrettyPrinter {
     */
   private def joinSemiPreservingBlanks(children: Array[SyntaxTree.Child]): Doc = {
     if (children.isEmpty) return empty
-    val (doc, _) = children.zipWithIndex.foldLeft((empty: Doc, Option.empty[SyntaxTree.Child])) {
-      case ((acc, prev), (token: Token, idx)) if token.kind == TokenKind.Semi =>
-        val nextOpt = if (idx + 1 < children.length) Some(children(idx + 1)) else None
-        val extraBlank = nextOpt.exists(next => hadBlankLineBetween(token, next))
-        val sep = if (extraBlank) text(";") <> line <> Doc.layoutChoice(empty, hardline)
-                  else text(";") <> line
-        val gap = if (prev.exists(endsWithLineComment)) hardline else empty
-        (acc <> gap <> sep, Some(token))
-      case ((acc, prev), (child, _)) =>
-        val gap = if (prev.exists(endsWithLineComment)) hardline else empty
-        (acc <> gap <> prettyChild(child), Some(child))
+    var i = 0
+    var acc: Doc = empty
+    var prev: Option[SyntaxTree.Child] = None
+    while (i < children.length) {
+      children(i) match {
+        case token: Token if token.kind == TokenKind.Semi =>
+          val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
+          val hasSameLineComment = nextOpt.flatMap(leftMostToken).exists { t =>
+            isCommentKind(t.kind) && t.start.lineOneIndexed == token.end.lineOneIndexed
+          }
+          val gap = if (prev.exists(endsWithLineComment)) hardline else empty
+          if (hasSameLineComment) {
+            acc = acc <> gap <> text(";") <> space
+          } else {
+            val extraBlank = nextOpt.exists(next => hadBlankLineBetween(token, next))
+            val lineSep = if (extraBlank) line <> Doc.layoutChoice(empty, hardline) else line
+            acc = acc <> gap <> text(";") <> lineSep
+          }
+          prev = Some(token)
+          i += 1
+        case child =>
+          val gap = if (prev.exists(endsWithLineComment)) hardline else empty
+          acc = acc <> gap <> prettyChild(child)
+          prev = Some(child)
+          i += 1
+      }
     }
-    doc
+    acc
   }
 
   /**
@@ -1368,21 +1403,42 @@ object PrettyPrinter {
   ): Doc = {
     val replMap = replacements.toMap
     if (children.isEmpty) return empty
-    val (doc, _) = children.foldLeft((empty: Doc, Option.empty[SyntaxTree.Child])) {
-      case ((acc, prev), token: Token) if replMap.contains(token.kind) =>
-        val gap = if (prev.exists(endsWithLineComment)) hardline else empty
-        (acc <> gap <> replMap(token.kind), Some(token))
-      case ((acc, prev), child) =>
-        val isComment = child match { case t: Token => isCommentKind(t.kind); case _ => false }
-        val sameLine = isComment && prev.flatMap(rightMostToken).exists(p =>
-          leftMostToken(child).exists(_.start.lineOneIndexed == p.end.lineOneIndexed))
-        val gap = if (prev.exists(endsWithLineComment)) hardline
-                  else if (sameLine) space
-                  else if (isComment) hardline
-                  else empty
-        (acc <> gap <> prettyChild(child), Some(child))
+    var i = 0
+    var acc: Doc = empty
+    var prev: Option[SyntaxTree.Child] = None
+    while (i < children.length) {
+      val child = children(i)
+      child match {
+        case token: Token if replMap.contains(token.kind) =>
+          val gap = if (prev.exists(endsWithLineComment)) hardline else empty
+          val replDoc = replMap(token.kind)
+          val hasSameLineComment = token.kind == TokenKind.Semi && {
+            val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
+            nextOpt.flatMap(leftMostToken).exists { t =>
+              isCommentKind(t.kind) && t.start.lineOneIndexed == token.end.lineOneIndexed
+            }
+          }
+          if (hasSameLineComment) {
+            acc = acc <> gap <> text(";") <> space
+          } else {
+            acc = acc <> gap <> replDoc
+          }
+          prev = Some(token)
+          i += 1
+        case _ =>
+          val isComment = child match { case t: Token => isCommentKind(t.kind); case _ => false }
+          val sameLine = isComment && prev.flatMap(rightMostToken).exists(p =>
+            leftMostToken(child).exists(_.start.lineOneIndexed == p.end.lineOneIndexed))
+          val gap = if (prev.exists(endsWithLineComment)) hardline
+                    else if (sameLine) space
+                    else if (isComment) hardline
+                    else empty
+          acc = acc <> gap <> prettyChild(child)
+          prev = Some(child)
+          i += 1
+      }
     }
-    doc
+    acc
   }
 
   /**
