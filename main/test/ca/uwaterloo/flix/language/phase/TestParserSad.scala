@@ -518,6 +518,81 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError.ExpectedSemicolon](error)
   }
 
+  test("ExpectedSemicolon.05") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    let x = 1
+        |    discard x
+        |    x
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
+
+  test("ExpectedSemicolon.06") {
+    val input =
+      """
+        |def foo(): Bool = {
+        |    let x = false
+        |    true
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
+
+  test("ExpectedSemicolon.07") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    let x = 1
+        |    ???
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
+
+  test("ExpectedSemicolon.08") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    let x = 1
+        |    if x == 1 then 2 else 3
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
+
+  test("ExpectedSemicolon.09") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    let x = 1
+        |    match x {
+        |        case _ => 2
+        |    }
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
+
+  test("ExpectedSemicolon.10") {
+    val input =
+      """
+        |def foo(): Bool = {
+        |    let x = true
+        |    not x
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.ExpectedSemicolon](error)
+  }
+
   test("MissingBinaryOperator.01") {
     val input =
       """
@@ -549,6 +624,39 @@ class TestParserSad extends AnyFunSuite with TestUtils {
       """
         |def foo(): Int32 = {
         |    bar 2
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBinaryOperator](error)
+  }
+
+  test("MissingBinaryOperator.04") {
+    val input =
+      """
+        |def foo(): Bool = {
+        |    false true
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBinaryOperator](error)
+  }
+
+  test("MissingBinaryOperator.05") {
+    val input =
+      """
+        |def foo(): Int32 = {
+        |    1 ???
+        |}
+        |""".stripMargin
+    val error = check(input, Options.TestWithLibNix)
+    expectError[ParseError.MissingBinaryOperator](error)
+  }
+
+  test("MissingBinaryOperator.06") {
+    val input =
+      """
+        |def foo(): Bool = {
+        |    true not false
         |}
         |""".stripMargin
     val error = check(input, Options.TestWithLibNix)
