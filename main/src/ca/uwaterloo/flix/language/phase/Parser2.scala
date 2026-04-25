@@ -1496,15 +1496,14 @@ object Parser2 {
         expect(TokenKind.Semi)
       }
       // Build right-nested Statement tree from right to left.
-      // Processing from right to left ensures that openBefore insertions at higher
-      // indices do not invalidate earlier (lower-index) marks.
-      if (exprMarks.length >= 2) {
-        for (i <- (exprMarks.length - 2) to 0 by -1) {
-          val stm = close(openBefore(exprMarks(i)), TreeKind.Expr.Statement)
-          exprMarks(i) = close(openBefore(stm), TreeKind.Expr.Expr)
-        }
+      // openBefore inserts at the mark's position, shifting all tokens rightward.
+      // Going right to left ensures each insertion only affects already-processed marks.
+      var result = exprMarks.last
+      for (i <- (exprMarks.length - 2) to 0 by -1) {
+        val stm = close(openBefore(exprMarks(i)), TreeKind.Expr.Statement)
+        result = close(openBefore(stm), TreeKind.Expr.Expr)
       }
-      exprMarks(0)
+      result
     }
 
     def expression(leftOpt: Option[Op] = None)(implicit s: State): Mark.Closed = {
