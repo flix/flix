@@ -1433,7 +1433,8 @@ object Parser2 {
       */
     def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      // Collect expression marks iteratively to avoid stack overflow on long statement chains.
+      // Formerly recursive: each branch called statement() then wrapped the result with openBefore.
+      // Now iterative: each branch adds an expression mark to exprMarks; the tree is built below.
       val exprMarks = ArrayBuffer.empty[Mark.Closed]
       exprMarks.addOne(expression())
       var continue = true
