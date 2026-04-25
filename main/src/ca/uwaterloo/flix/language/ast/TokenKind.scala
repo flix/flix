@@ -486,8 +486,9 @@ sealed trait TokenKind {
     * Note that this list should be extended in the future with more TokenKinds.
     */
   def notBinaryOperator: Boolean = this match {
-    case TokenKind.KeywordLet     => true
+    case TokenKind.KeywordDiscard => true
     case TokenKind.KeywordForeach => true
+    case TokenKind.KeywordLet     => true
     case _ => false
   }
 
@@ -504,6 +505,13 @@ sealed trait TokenKind {
     *   x { }  // '{' cannot follow a binary operator, so no inference is attempted
     */
   def canFollowBinaryOperator: Boolean = this match {
+    case TokenKind.HoleAnonymous                => true
+    case TokenKind.KeywordFalse                 => true
+    case TokenKind.KeywordIf                    => true
+    case TokenKind.KeywordMatch                 => true
+    case TokenKind.KeywordNot                   => true
+    case TokenKind.KeywordNull                  => true
+    case TokenKind.KeywordTrue                  => true
     case TokenKind.NameLowercase                => true
     case TokenKind.NameUppercase                => true
     case TokenKind.NameMath                     => true
@@ -518,6 +526,7 @@ sealed trait TokenKind {
     case TokenKind.LiteralFloat64               => true
     case TokenKind.LiteralBigDecimal            => true
     case TokenKind.LiteralChar                  => true
+    case TokenKind.LiteralRegex                 => true
     case TokenKind.LiteralString                => true
     case TokenKind.LiteralStringInterpolationL  => true
     case _                                      => false

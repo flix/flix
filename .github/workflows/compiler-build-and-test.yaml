@@ -1,6 +1,10 @@
 name: Compiler
 
-on: [ pull_request, merge_group ]
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [ master ]
 
 # Cancel previous runs if the PR is updated
 concurrency:
