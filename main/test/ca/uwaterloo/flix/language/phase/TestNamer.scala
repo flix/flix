@@ -634,7 +634,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.SuspiciousTypeVarName](result)
   }
 
-  test("EponymousTypeMustBeFirst.Enum.01") {
+  test("CompanionMustBeFirst.Enum.01") {
     val input =
       """
         |mod A.B {
@@ -643,10 +643,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NameError.EponymousTypeMustBeFirst](result)
+    expectError[NameError.CompanionMustBeFirst](result)
   }
 
-  test("EponymousTypeMustBeFirst.Struct.01") {
+  test("CompanionMustBeFirst.Struct.01") {
     val input =
       """
         |mod A.B {
@@ -655,10 +655,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NameError.EponymousTypeMustBeFirst](result)
+    expectError[NameError.CompanionMustBeFirst](result)
   }
 
-  test("EponymousTypeMustBeFirst.Effect.01") {
+  test("CompanionMustBeFirst.Effect.01") {
     val input =
       """
         |mod A.B {
@@ -667,10 +667,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NameError.EponymousTypeMustBeFirst](result)
+    expectError[NameError.CompanionMustBeFirst](result)
   }
 
-  test("EponymousTypeMustBeFirst.Trait.01") {
+  test("CompanionMustBeFirst.Trait.01") {
     val input =
       """
         |mod A.B {
@@ -679,10 +679,10 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    expectError[NameError.EponymousTypeMustBeFirst](result)
+    expectError[NameError.CompanionMustBeFirst](result)
   }
 
-  test("EponymousTypeFirst.Enum.01") {
+  test("CompanionIsFirst.Enum.01") {
     val input =
       """
         |mod A.B {
@@ -691,7 +691,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = check(input, Options.TestWithLibNix)
-    rejectError[NameError.EponymousTypeMustBeFirst](result)
+    rejectError[NameError.CompanionMustBeFirst](result)
   }
 
   test("Regression.01") {

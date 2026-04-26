@@ -220,24 +220,27 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that an eponymous type is not the first declaration in its enclosing module.
+    * An error raised to indicate that a companion is not the first declaration in its enclosing module.
     *
-    * @param name the name of the eponymous type.
-    * @param loc  the location of the misplaced type declaration.
+    * A companion is a declaration (enum, struct, effect, or trait) whose name matches its enclosing module.
+    *
+    * @param name the name of the companion.
+    * @param loc  the location of the misplaced declaration.
     */
-  case class EponymousTypeMustBeFirst(name: String, loc: SourceLocation) extends NameError {
+  case class CompanionMustBeFirst(name: String, loc: SourceLocation) extends NameError {
     def code: ErrorCode = ErrorCode.E5975
 
-    def summary: String = s"Eponymous type '$name' must be the first declaration in its enclosing module."
+    def summary: String = s"Companion '$name' must be the first declaration in its enclosing module."
 
     def message(fmt: Formatter)(implicit root: Option[TypedAst.Root]): String = {
       import fmt.*
-      s""">> Eponymous type '${red(name)}' must be the first declaration in its enclosing module.
+      s""">> Companion '${red(name)}' must be the first declaration in its enclosing module.
          |
          |${highlight(loc, "misplaced declaration", fmt)}
          |
-         |${underline("Explanation:")} When a type shares its name with its enclosing module,
-         |it must appear before all other declarations. Move it to the top of the module.
+         |${underline("Explanation:")} When a declaration shares its name with its enclosing module,
+         |it is the companion of that module and must appear before all other declarations.
+         |Move it to the top of the module.
          |""".stripMargin
     }
   }
