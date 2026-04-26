@@ -24,12 +24,12 @@ pub mod Json {
     /// canonical (sorted) key order on output.
     ///
     pub enum Json with Eq, ToString {
-        case JObject(Map[String, Json])
         case JArray(Vector[Json])
-        case JString(String)
-        case JNumber(BigDecimal)
         case JBool(Bool)
         case JNull
+        case JNumber(BigDecimal)
+        case JObject(Map[String, Json])
+        case JString(String)
     }
 
 }
