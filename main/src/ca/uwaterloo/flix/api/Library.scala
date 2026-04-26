@@ -135,6 +135,7 @@ object Library {
     "Fs/MkDirs.flix" -> LocalResource.get("/src/library/Fs/MkDirs.flix"),
     "Fs/MkTempDir.flix" -> LocalResource.get("/src/library/Fs/MkTempDir.flix"),
     "Fs/MoveFile.flix" -> LocalResource.get("/src/library/Fs/MoveFile.flix"),
+    "Fs/MoveOption.flix" -> LocalResource.get("/src/library/Fs/MoveOption.flix"),
     "Fixpoint3.flix" -> LocalResource.get("/src/library/Fixpoint3.flix"),
     "Fixpoint3/Ast.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast.flix"),
     "Fixpoint3/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Datalog.flix"),

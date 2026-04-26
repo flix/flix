@@ -105,25 +105,6 @@ pub mod Fs {
     }
 
     ///
-    /// Options for the `moveWith` operation.
-    ///
-    pub enum MoveOption with Eq, Order, ToString {
-        case AtomicMove
-        case ReplaceExisting
-    }
-
-    ///
-    /// Represents a size unit.
-    ///
-    pub enum SizeUnit with Eq, ToString {
-        case Bytes,
-        case KiloBytes,
-        case MegaBytes,
-        case GigaBytes,
-        case TeraBytes
-    }
-
-    ///
     /// An effect used to check if a file exists.
     ///
     /// Use the `FileExists.runWithFileTest` handler.
