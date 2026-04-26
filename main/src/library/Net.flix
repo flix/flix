@@ -16,32 +16,7 @@
 
 pub mod Net {
 
-    use Time.Duration
     use Time.TimeUnit
-
-    import java.io.InputStream
-    import java.io.OutputStream
-    import java.net.ServerSocket
-    import java.net.Socket
-
-    ///
-    /// Represents a TCP socket.
-    ///
-    pub enum TcpSocket(Socket, InputStream, OutputStream)
-
-    instance Readable[TcpSocket] {
-        type Elm = Int8
-        type Aef = IO
-        pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
-            TcpSocket.read(buffer, socket)
-    }
-
-    instance Writable[TcpSocket] {
-        type Elm = Int8
-        type Aef = IO
-        pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
-            TcpSocket.write(buffer, socket)
-    }
 
     ///
     /// The effect used to resolve domain names to IP addresses.
@@ -71,11 +46,6 @@ pub mod Net {
     pub eff Ping {
         def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
     }
-
-    ///
-    /// Represents a TCP server.
-    ///
-    pub enum TcpServer(ServerSocket)
 
     ///
     /// The effect used to connect to a TCP server.

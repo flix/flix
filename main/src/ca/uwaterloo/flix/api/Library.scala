@@ -230,6 +230,7 @@ object Library {
     "Net/TcpAccept.flix" -> LocalResource.get("/src/library/Net/TcpAccept.flix"),
     "Net/TcpBind.flix" -> LocalResource.get("/src/library/Net/TcpBind.flix"),
     "Net/TcpConnect.flix" -> LocalResource.get("/src/library/Net/TcpConnect.flix"),
+    "Net/TcpServer.flix" -> LocalResource.get("/src/library/Net/TcpServer.flix"),
     "Net/TcpSocket.flix" -> LocalResource.get("/src/library/Net/TcpSocket.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
