@@ -26,6 +26,13 @@ pub mod Net.TcpAccept {
     import java.net.SocketTimeoutException
 
     ///
+    /// The effect used to accept a TCP server connection.
+    ///
+    pub eff TcpAccept {
+        def accept(server: TcpServer): Result[IoError, TcpSocket]
+    }
+
+    ///
     /// Handles the `TcpAccept` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `TcpAccept` effect using the `IO` effect.

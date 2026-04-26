@@ -47,25 +47,4 @@ pub mod Net {
         def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
     }
 
-    ///
-    /// The effect used to connect to a TCP server.
-    ///
-    pub eff TcpConnect {
-        def connect(ip: IpAddr, port: Int16): Result[IoError, TcpSocket]
-    }
-
-    ///
-    /// The effect used to bind a TCP server.
-    ///
-    pub eff TcpBind {
-        def bind(ip: IpAddr, port: Int16): Result[IoError, TcpServer]
-    }
-
-    ///
-    /// The effect used to accept a TCP server connection.
-    ///
-    pub eff TcpAccept {
-        def accept(server: TcpServer): Result[IoError, TcpSocket]
-    }
-
 }

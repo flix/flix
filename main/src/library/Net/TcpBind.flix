@@ -27,6 +27,13 @@ pub mod Net.TcpBind {
     import java.lang.IllegalArgumentException
 
     ///
+    /// The effect used to bind a TCP server.
+    ///
+    pub eff TcpBind {
+        def bind(ip: IpAddr, port: Int16): Result[IoError, TcpServer]
+    }
+
+    ///
     /// Handles the `TcpBind` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `TcpBind` effect using the `IO` effect.

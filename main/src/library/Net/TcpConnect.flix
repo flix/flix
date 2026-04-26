@@ -26,6 +26,13 @@ pub mod Net.TcpConnect {
     import java.io.IOException
 
     ///
+    /// The effect used to connect to a TCP server.
+    ///
+    pub eff TcpConnect {
+        def connect(ip: IpAddr, port: Int16): Result[IoError, TcpSocket]
+    }
+
+    ///
     /// Handles the `TcpConnect` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `TcpConnect` effect using the `IO` effect.
