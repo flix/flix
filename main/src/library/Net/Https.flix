@@ -33,6 +33,13 @@ pub mod Net.Https {
 
 
     ///
+    /// The effect used to send HTTPS-only requests.
+    ///
+    pub eff Https {
+        def request(req: HttpRequest): Result[IoError, HttpResponse]
+    }
+
+    ///
     /// Sends the given request `req` via the `Https` effect.
     ///
     pub def send(req: HttpRequest): Result[IoError, HttpResponse] \ Https =

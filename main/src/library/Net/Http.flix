@@ -33,6 +33,13 @@ pub mod Net.Http {
 
 
     ///
+    /// The effect used to send HTTP requests (both http:// and https://).
+    ///
+    pub eff Http {
+        def request(req: HttpRequest): Result[IoError, HttpResponse]
+    }
+
+    ///
     /// Sends the given request `req` via the `Http` effect.
     ///
     pub def send(req: HttpRequest): Result[IoError, HttpResponse] \ Http =

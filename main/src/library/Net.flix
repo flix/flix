@@ -15,36 +15,5 @@
  */
 
 pub mod Net {
-
-    use Time.TimeUnit
-
-    ///
-    /// The effect used to resolve domain names to IP addresses.
-    ///
-    pub eff Dns {
-        def lookup(host: String): Result[IoError, IpAddr]
-        def lookupAll(host: String): Result[IoError, List[IpAddr]]
-    }
-
-    ///
-    /// The effect used to send HTTP requests (both http:// and https://).
-    ///
-    pub eff Http {
-        def request(req: HttpRequest): Result[IoError, HttpResponse]
-    }
-
-    ///
-    /// The effect used to send HTTPS-only requests.
-    ///
-    pub eff Https {
-        def request(req: HttpRequest): Result[IoError, HttpResponse]
-    }
-
-    ///
-    /// The effect used to determine if an address is reachable.
-    ///
-    pub eff Ping {
-        def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
-    }
-
+    /* empty */
 }
