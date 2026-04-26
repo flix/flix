@@ -45,6 +45,10 @@ instance Eq[RichString] {
     pub def eq(x: RichString, y: RichString): Bool = RichString.equals(x, y)
 }
 
+instance Order[RichString] {
+    pub def compare(x: RichString, y: RichString): Comparison = RichString.compare(x, y)
+}
+
 pub mod RichString {
 
     use Sys.Env
@@ -58,6 +62,26 @@ pub mod RichString {
     pub enum Color with Eq {
         case Rgb(Int32, Int32, Int32),  // Red, Green, Blue components
         case Default                    // Use terminal's default color
+    }
+
+    ///
+    /// Compares c1 and c2. 
+    ///
+    /// It follows normal rules for enum comparison, except when given two Rgb values. Here, it compares red-, green- and blue-value in this order of priority
+    ///
+    instance Order[Color] {
+        pub def compare(c1: Color, c2: Color): Comparison = match (c1, c2) {
+            case (Color.Default, Color.Default) => Comparison.EqualTo
+            case (Color.Rgb(r1, g1, b1), Color.Rgb(r2, g2, b2)) => 
+                let is_r_equal = r1 <=> r2 != Comparison.EqualTo;
+                let is_g_equal = g1 <=> g2 != Comparison.EqualTo;
+
+                if (not is_r_equal) r1 <=> r2 
+                else if (not is_g_equal) g1 <=> g2
+                else b1 <=> b2
+            case (Color.Default, Color.Rgb(_,_,_)) => Comparison.LessThan
+            case (Color.Rgb(_,_,_), Color.Default) => Comparison.GreaterThan
+        }
     }
 
     ///
@@ -136,6 +160,46 @@ pub mod RichString {
         let Span.Span({text = t2, fgColor = fg2, bgColor = bg2, styles = style2}) = s2;
         t1 == t2 and fg1 == fg2 and bg1 == bg2 and style1 == style2
 
+    ///
+    /// Returns a `Comparison` of `rs1` and `rs2`.
+    ///
+    /// Compares text, fgColor, bgColor and styling for each individual character in that order of priority.
+    ///
+    /// If `rs1` or `rs2` is a prefix of the other, it will compare the lengths of the 
+    ///
+    pub def compare(rs1: RichString, rs2: RichString): Comparison =
+        let (RichString(chain1), RichString(chain2)) = (rs1, rs2);
+        let splitSpans = (match Span.Span({text = t, fgColor = fg, bgColor = bg, styles}) -> { 
+            String.toList(t) |> List.toChain |> Chain.map(c -> (Span.Span({text = Char.toString(c), fgColor = fg, bgColor = bg, styles = styles})))
+        });
+        let l1 = Chain.flatMap(splitSpans, chain1);
+        let l2 = Chain.flatMap(splitSpans, chain2);
+        let mismatch = Chain.zip(l1, l2) |> Chain.findLeft((match (e1, e2) -> spanCompare(e1, e2) != Comparison.EqualTo));
+        let res = match mismatch { 
+            case Some((s1, s2)) => spanCompare(s1, s2)
+            case None => 
+                if (Chain.length(l1) < Chain.length(l2)) Comparison.LessThan
+                else if (Chain.length(l1) > Chain.length(l2)) Comparison.GreaterThan
+                else Comparison.EqualTo
+        };
+        res
+
+    def spanCompare(s1: Span, s2: Span): Comparison = {
+        let Span.Span({text = t1, fgColor = fg1, bgColor = bg1, styles = styles1}) = s1;
+        let Span.Span({text = t2, fgColor = fg2, bgColor = bg2, styles = styles2}) = s2;
+
+        let is_t_equal = t1 <=> t2 != Comparison.EqualTo;
+        let is_fg_equal = fg1 <=> fg2 != Comparison.EqualTo;
+        let is_bg_equal = bg1 <=> bg2 != Comparison.EqualTo;
+        let is_style_equal = styles1 <=> styles2 != Comparison.EqualTo;
+
+        if (is_t_equal) t1 <=> t2 
+        else if (is_style_equal) styles1 <=> styles2
+        else if (is_fg_equal) fg1 <=> fg2
+        else if (is_bg_equal) bg1 <=> bg2
+        else Comparison.EqualTo
+    }
+    
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given foreground color `c`.
     ///
