@@ -23,6 +23,19 @@ pub mod Net.HttpRequest {
     use Net.HttpRequest.HttpRequest
     use Time.Duration
 
+    ///
+    /// An HTTP request with method, URL, multi-valued headers, and optional body.
+    ///
+    pub enum HttpRequest({
+        method          = Method,
+        url             = String,
+        headers         = Map[String, List[String]],
+        body            = Option[Body],
+        requestTimeout  = Option[Duration],
+        connectTimeout  = Option[Duration],
+        followRedirects = Bool
+    })
+
     // --- Constructors ---
 
     ///

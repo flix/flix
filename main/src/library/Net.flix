@@ -25,27 +25,6 @@ pub mod Net {
     import java.net.Socket
 
     ///
-    /// An enum representing an HTTP method.
-    ///
-    pub enum Method with Eq, ToString {
-        case Get
-        case Head
-        case Options
-        case Post
-        case Put
-        case Patch
-        case Delete
-    }
-
-    ///
-    /// An enum representing the body of an HTTP request or response.
-    ///
-    pub enum Body with Eq, ToString {
-        case Text(String)
-        case Bytes(Vector[Int8])
-    }
-
-    ///
     /// Describes why a retry is being considered.
     ///
     pub enum RetryOutcome {
@@ -64,29 +43,6 @@ pub mod Net {
         /// Do not retry; propagate the last result.
         case Stop
     }
-
-    ///
-    /// An HTTP request with method, URL, multi-valued headers, and optional body.
-    ///
-    pub enum HttpRequest({
-        method          = Method,
-        url             = String,
-        headers         = Map[String, List[String]],
-        body            = Option[Body],
-        requestTimeout  = Option[Duration],
-        connectTimeout  = Option[Duration],
-        followRedirects = Bool
-    })
-
-    ///
-    /// An HTTP response with final URL, status code, multi-valued headers, and body.
-    ///
-    pub enum HttpResponse({
-        url     = String,
-        status  = Int32,
-        headers = Map[String, List[String]],
-        body    = Body
-    })
 
     ///
     /// Represents a V4 Ip Address.
