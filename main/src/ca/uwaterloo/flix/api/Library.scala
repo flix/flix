@@ -188,6 +188,7 @@ object Library {
     "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
     "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
+    "Json/JsonError.flix" -> LocalResource.get("/src/library/Json/JsonError.flix"),
     "KeyNotFound.flix" -> LocalResource.get("/src/library/KeyNotFound.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
