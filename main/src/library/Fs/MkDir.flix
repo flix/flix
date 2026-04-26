@@ -19,6 +19,20 @@ pub mod Fs.MkDir {
     use Fs.FileWrite
 
     ///
+    /// An effect used to create a directory.
+    ///
+    /// Use the `MkDir.runWithFileWrite` handler.
+    ///
+    pub eff MkDir {
+
+        ///
+        /// Creates the directory `d`.
+        ///
+        def mkDir(d: String): Result[IoError, Unit]
+
+    }
+
+    ///
     /// Handles the `MkDir` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - MkDir) + FileWrite =
