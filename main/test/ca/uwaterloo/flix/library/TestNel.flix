@@ -1160,4 +1160,82 @@ mod TestNel {
             }
         } with Shuffle.runWithIO
 
+    /////////////////////////////////////////////////////////////////////////////
+    // unfold                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def unfold01(): Unit \ Assert =
+        assertEq(expected = (None: Option[Nel[Int32]]), Nel.unfold(s -> if (true) None else Some((s, s + 1)), 0))
+
+    @Test
+    def unfold02(): Unit \ Assert =
+        assertEq(expected = Some(Nel.Nel(48, Nil)), Nel.unfold(s -> if (s > 0) None else Some((s + 48, s + 1)), 0))
+
+    @Test
+    def unfold03(): Unit \ Assert =
+        assertEq(expected = Some(Nel.Nel(48, 49 :: 50 :: Nil)), Nel.unfold(s -> if (s > 2) None else Some((s + 48, s + 1)), 0))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unfoldWithIter                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def unfoldWithIter01(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (true)
+                None
+            else {
+                let c = Some(Ref.get(x) + 48);
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        assertEq(expected = (None: Option[Nel[Int32]]), Nel.unfoldWithIter(step))
+    }
+
+    @Test
+    def unfoldWithIter02(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) > 0)
+                None
+            else {
+                let c = Some(Ref.get(x) + 48);
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        assertEq(expected = Some(Nel.Nel(48, Nil)), Nel.unfoldWithIter(step))
+    }
+
+    @Test
+    def unfoldWithIter03(): Unit \ Assert = region rc {
+        let x = Ref.fresh(rc, 0);
+        let step = () ->
+            if (Ref.get(x) > 2)
+                None
+            else {
+                let c = Some(Ref.get(x) + 48);
+                Ref.put(Ref.get(x) + 1, x);
+                c
+            };
+        assertEq(expected = Some(Nel.Nel(48, 49 :: 50 :: Nil)), Nel.unfoldWithIter(step))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert =
+        assertEq(expected = (None: Option[Nel[Int32]]), Nel.iterate(s -> if (true) None else Some(s + 1), 0))
+
+    @Test
+    def iterate02(): Unit \ Assert =
+        assertEq(expected = Some(Nel.Nel(1, Nil)), Nel.iterate(s -> if (s >= 1) None else Some(s + 1), 0))
+
+    @Test
+    def iterate03(): Unit \ Assert =
+        assertEq(expected = Some(Nel.Nel(1, 2 :: 3 :: Nil)), Nel.iterate(s -> if (s >= 3) None else Some(s + 1), 0))
+
 }

@@ -553,6 +553,20 @@ pub mod Set {
         loop(empty())
 
     ///
+    /// Build a set by applying `f` to the initial value `x`.
+    ///
+    /// `f` should return `Some(a1)` to signal a new set element `a1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the set.
+    ///
+    pub def iterate(f: a -> Option[a] \ ef, x: a): Set[a] \ ef with Order[a] =
+        def loop(st, s) = match f(st) {
+            case None     => s
+            case Some(a1) => loop(a1, insert(a1, s))
+        };
+        loop(x, empty())
+
+    ///
     /// Returns an iterator over `s`.
     ///
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r =

@@ -839,6 +839,20 @@ pub mod Map {
         loop(empty())
 
     ///
+    /// Build a map by applying `f` to the initial key-value pair `(k, v)`.
+    ///
+    /// `f` should return `Some(k1, v1)` to signal a new key-value pair (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the map.
+    ///
+    pub def iterate(f: (k, v) -> Option[(k, v)] \ ef, k: k, v: v): Map[k, v] \ ef with Order[k] =
+        def loop(ck, cv, m) = match f(ck, cv) {
+            case None              => m
+            case Some((k1, v1))    => loop(k1, v1, insert(k1, v1, m))
+        };
+        loop(k, v, empty())
+
+    ///
     /// Returns the set of tuples `(k, v)` where `v` is a value in `t` and `k => t`.
     ///
     pub def explode(m: Map[k, t[v]]): Set[(k, v)] \ Foldable.Aef[t] with Foldable[t], Order[k], Order[v] =

@@ -1900,6 +1900,37 @@ mod TestString {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // iterate                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def iterate01(): Unit \ Assert =
+        assertEq(expected = "", String.iterate(_c -> (None: Option[Char]), 'a'))
+
+    @Test
+    def iterate02(): Unit \ Assert =
+        assertEq(expected = "A", String.iterate(c -> if (c == 'A') None else Some(Char.toUpperCase(c)), 'a'))
+
+    @Test
+    def iterate03(): Unit \ Assert =
+        assertEq(expected = "bcd", String.iterate(c -> match c {
+            case 'a' => Some('b')
+            case 'b' => Some('c')
+            case 'c' => Some('d')
+            case _   => None
+        }, 'a'))
+
+    @Test
+    def iterate04(): Unit \ Assert =
+        assertEq(expected = "bcde", String.iterate(c -> match c {
+            case 'a' => Some('b')
+            case 'b' => Some('c')
+            case 'c' => Some('d')
+            case 'd' => Some('e')
+            case _   => None
+        }, 'a'))
+
+    /////////////////////////////////////////////////////////////////////////////
     // unfoldString                                                            //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2026 Alexander Sommer, Samuel Skovbakke
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-package ca.uwaterloo.flix.api
+import ca.uwaterloo.flix.language.ast.Symbol
 
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 71, revision = 0)
+sealed trait EffSymOrRigidVar {
+  def name: String
 }
 
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
+object EffSymOrRigidVar {
+
+  case class Eff(symbol: Symbol.EffSym) extends EffSymOrRigidVar {
+    def name: String = symbol.name
+  }
+
+  case class RigidVar(symbol: Symbol.KindedTypeVarSym) extends EffSymOrRigidVar {
+    def name: String = symbol.text match {
+      case VarText.Absent => "???"
+      case VarText.SourceText(s) => s
+    }
+  }
 }

@@ -69,6 +69,7 @@ object GenExpression {
     lenv: Map[Symbol.LabelSym, Label],
     newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
     setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
+    narrowLocals: MethodVisitor => Unit, // re-cast locals to their declared types after resume
     localOffset: Int,
     pcLabels: Vector[Label],
     pcCounter: Ref[Int]
@@ -613,10 +614,12 @@ object GenExpression {
         compileTag(sym.enumSym.toString, sym.name, caze.sym.ordinal, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
+        import BytecodeInstructions.*
         val List(exp) = exps
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
         compileUntag(exp, idx, termTypes)
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
@@ -626,6 +629,7 @@ object GenExpression {
 
         compileExpr(exp)
         GETFIELD(tupleType.IndexField(idx))
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Tuple =>
         import BytecodeInstructions.*
@@ -647,6 +651,7 @@ object GenExpression {
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
         CHECKCAST(recordType.jvmName)
         GETFIELD(recordType.ValueField)
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.RecordExtend(field) =>
         import BytecodeInstructions.*
@@ -722,12 +727,14 @@ object GenExpression {
       case AtomicOp.ArrayLoad =>
         import BytecodeInstructions.*
         val List(exp1, exp2) = exps
+        val elmTpe = BackendType.toBackendType(tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
-        xArrayLoad(BackendType.toBackendType(tpe))
+        xArrayLoad(elmTpe)
+        castIfNotPrim(elmTpe)
 
       case AtomicOp.ArrayStore =>
         import BytecodeInstructions.*
@@ -780,6 +787,7 @@ object GenExpression {
 
         compileExpr(exp)
         GETFIELD(structType.IndexField(idx))
+        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.StructPut(field) =>
         import BytecodeInstructions.*
@@ -810,9 +818,11 @@ object GenExpression {
       case AtomicOp.Unbox =>
         import BytecodeInstructions.*
         val List(exp) = exps
+        val bType = BackendType.toBackendType(tpe)
         compileExpr(exp)
         CHECKCAST(BackendObjType.Value.jvmName)
-        GETFIELD(BackendObjType.Value.fieldFromType(BackendType.toBackendType(tpe)))
+        GETFIELD(BackendObjType.Value.fieldFromType(bType))
+        castIfNotPrim(bType)
 
       case AtomicOp.Box =>
         import BytecodeInstructions.*
@@ -1117,7 +1127,7 @@ object GenExpression {
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)
           } else {
             ctx match {
-              case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+              case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
                 val pcPoint = pcCounter(0) + 1
                 val pcPointLabel = pcLabels(pcPoint)
                 val afterUnboxing = new Label()
@@ -1126,6 +1136,7 @@ object GenExpression {
                 mv.visitJumpInsn(GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
+                narrowLocals(mv)
 
                 mv.visitVarInsn(ALOAD, 1)
 
@@ -1194,7 +1205,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
           ctx match {
-            case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
               val defn = root.defs(sym)
               if (Purity.isControlPure(defn.expr.purity)) {
                 BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
@@ -1207,6 +1218,7 @@ object GenExpression {
                 mv.visitJumpInsn(GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
+                narrowLocals(mv)
                 mv.visitVarInsn(ALOAD, 1)
 
                 mv.visitLabel(afterUnboxing)
@@ -1221,7 +1233,7 @@ object GenExpression {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
         BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
-      case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+      case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
         import BackendObjType.Suspension
         import BytecodeInstructions.*
 
@@ -1269,6 +1281,7 @@ object GenExpression {
         xReturn(Suspension.toTpe)
 
         mv.visitLabel(pcPointLabel)
+        narrowLocals(mv)
         ALOAD(1)
         GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))
 
@@ -1277,7 +1290,7 @@ object GenExpression {
     }
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
-      case EffectContext(_, _, _, setPc, _, _, _) =>
+      case EffectContext(_, _, _, setPc, _, _, _, _) =>
         // The function abstract class name
         val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
@@ -1415,10 +1428,14 @@ object GenExpression {
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
-      // Only cast when exp1 is not already a cast.
+      // No cast needed in most cases: operations self-cast (Untag, Index, etc.),
+      // function calls are wrapped in Cast by the Eraser, and effect resume
+      // sites use narrowLocals. The exception is NewObject (anonymous Java
+      // classes) where the JVM verifier cannot resolve the generated subclass
+      // name and needs an explicit cast to the declared superclass type.
       exp1 match {
-        case Expr.ApplyAtomic(AtomicOp.Cast, _, _, _, _) => () // Cast already emits castIfNotPrim
-        case _ => castIfNotPrim(bType)
+        case _: Expr.NewObject => castIfNotPrim(bType)
+        case _ => ()
       }
       xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)
@@ -1564,7 +1581,7 @@ object GenExpression {
           case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)
 
-          case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+          case EffectContext(_, _, newFrame, setPc, narrowLocals, _, pcLabels, pcCounter) =>
             val pcPoint = pcCounter(0) + 1
             val pcPointLabel = pcLabels(pcPoint)
             val afterUnboxing = new Label()
@@ -1573,6 +1590,7 @@ object GenExpression {
             mv.visitJumpInsn(GOTO, afterUnboxing)
 
             mv.visitLabel(pcPointLabel)
+            narrowLocals(mv)
             BytecodeInstructions.ALOAD(1)
             mv.visitLabel(afterUnboxing)
         }

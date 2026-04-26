@@ -807,7 +807,7 @@ pub mod MutList {
                 None
             }
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Applies `f` to all the elements in `v`.
@@ -904,5 +904,51 @@ pub mod MutList {
         Array.forEach(x -> MutList.push(x, ml), a);
         ml
     }
+
+    ///
+    /// Build a mutable list by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a, st1)` to signal a new element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    pub def unfold(rc: Region[r], f: s -> Option[(a, s)] \ ef, st: s): MutList[a, r] \ { ef, r } =
+        let ml = MutList.empty(rc);
+        def loop(sst) = match f(sst) {
+            case None           => ml
+            case Some((a, st1)) => MutList.push(a, ml); loop(st1)
+        };
+        loop(st)
+
+    ///
+    /// Build a mutable list by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(a)` to signal a new element `a`.
+    ///
+    /// `next` should return `None` to signal the end of building the list.
+    ///
+    pub def unfoldWithIter(rc: Region[r], next: Unit -> Option[a] \ ef): MutList[a, r] \ { ef, r } =
+        let ml = MutList.empty(rc);
+        def loop() = match next() {
+            case None    => ml
+            case Some(x) => MutList.push(x, ml); loop()
+        };
+        loop()
+
+    ///
+    /// Build a mutable list by applying `f` to the initial value `x`.
+    ///
+    /// `f` should return `Some(a1)` to signal a new element `a1` (which also becomes the next input to `f`).
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    pub def iterate(rc: Region[r], f: a -> Option[a] \ ef, x: a): MutList[a, r] \ { ef, r } =
+        let ml = MutList.empty(rc);
+        def loop(st) = match f(st) {
+            case None     => ml
+            case Some(a1) => MutList.push(a1, ml); loop(a1)
+        };
+        loop(x)
 
 }

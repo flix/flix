@@ -835,7 +835,7 @@ pub mod Nec {
                 Ref.put(Some(viewLeft(xs)), cursor);
                 Some(x)
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Helper for the `sort` functions.
