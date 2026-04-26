@@ -222,6 +222,8 @@ object Library {
     "Net/Method.flix" -> LocalResource.get("/src/library/Net/Method.flix"),
     "Net/Ping.flix" -> LocalResource.get("/src/library/Net/Ping.flix"),
     "Net/Retry.flix" -> LocalResource.get("/src/library/Net/Retry.flix"),
+    "Net/RetryDecision.flix" -> LocalResource.get("/src/library/Net/RetryDecision.flix"),
+    "Net/RetryOutcome.flix" -> LocalResource.get("/src/library/Net/RetryOutcome.flix"),
     "Net/SocketAddr.flix" -> LocalResource.get("/src/library/Net/SocketAddr.flix"),
     "Net/TcpAccept.flix" -> LocalResource.get("/src/library/Net/TcpAccept.flix"),
     "Net/TcpBind.flix" -> LocalResource.get("/src/library/Net/TcpBind.flix"),

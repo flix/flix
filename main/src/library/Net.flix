@@ -25,26 +25,6 @@ pub mod Net {
     import java.net.Socket
 
     ///
-    /// Describes why a retry is being considered.
-    ///
-    pub enum RetryOutcome {
-        /// A transport-level failure (connection refused, timeout, etc.).
-        case TransportError(IoError)
-        /// A response was received but its status code warrants a retry (e.g. 429, 503).
-        case HttpError(HttpResponse)
-    }
-
-    ///
-    /// The decision returned by a retry handler.
-    ///
-    pub enum RetryDecision with Eq, ToString {
-        /// Retry after the given duration.
-        case Retry(Duration)
-        /// Do not retry; propagate the last result.
-        case Stop
-    }
-
-    ///
     /// Represents a V4 Ip Address.
     ///
     pub enum Ipv4Addr with Eq { // 32 bits
