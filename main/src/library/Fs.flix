@@ -105,48 +105,6 @@ pub mod Fs {
     }
 
     ///
-    /// An effect used to read the last access time of a file.
-    ///
-    /// Use the `AccessTime.runWithFileTime` handler.
-    ///
-    pub eff AccessTime {
-
-        ///
-        /// Returns the last access time of the given file `f` in milliseconds since the epoch.
-        ///
-        def accessTime(f: String): Result[IoError, Int64]
-
-    }
-
-    ///
-    /// An effect used to read the creation time of a file.
-    ///
-    /// Use the `CreationTime.runWithFileTime` handler.
-    ///
-    pub eff CreationTime {
-
-        ///
-        /// Returns the creation time of the given file `f` in milliseconds since the epoch.
-        ///
-        def creationTime(f: String): Result[IoError, Int64]
-
-    }
-
-    ///
-    /// An effect used to read the last modification time of a file.
-    ///
-    /// Use the `ModificationTime.runWithFileTime` handler.
-    ///
-    pub eff ModificationTime {
-
-        ///
-        /// Returns the last-modified timestamp of the given file `f` in milliseconds since the epoch.
-        ///
-        def modificationTime(f: String): Result[IoError, Int64]
-
-    }
-
-    ///
     /// An effect used to read the size of a file.
     ///
     /// Use the `FileSize.runWithFileStat` handler.
