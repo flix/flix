@@ -32,4 +32,100 @@ pub mod Json {
         case JString(String)
     }
 
+    ///
+    /// Returns the compact JSON rendering of `j`: a single line with
+    /// no extraneous whitespace.
+    ///
+    pub def toCompactString(j: Json): String = region rc {
+        let sb = StringBuilder.empty(rc);
+        writeCompact(j, sb);
+        StringBuilder.toString(sb)
+    }
+
+    ///
+    /// Appends the compact JSON rendering of `j` to `sb`.
+    ///
+    def writeCompact(j: Json, sb: StringBuilder[r]): Unit \ r = match j {
+        case JArray(v) =>
+            StringBuilder.append('[', sb);
+            foreach ((i, e) <- ForEach.withIndex(v)) {
+                if (i > 0) { StringBuilder.append(',', sb) };
+                writeCompact(e, sb)
+            };
+            StringBuilder.append(']', sb)
+        case JBool(b) =>
+            StringBuilder.appendString(if (b) "true" else "false", sb)
+        case JNull =>
+            StringBuilder.appendString("null", sb)
+        case JNumber(n) =>
+            StringBuilder.append(n, sb)
+        case JObject(m) =>
+            StringBuilder.append('{', sb);
+            foreach ((i, (k, x)) <- ForEach.withIndex(m)) {
+                if (i > 0) { StringBuilder.append(',', sb) };
+                writeEscaped(k, sb);
+                StringBuilder.append(':', sb);
+                writeCompact(x, sb)
+            };
+            StringBuilder.append('}', sb)
+        case JString(s) =>
+            writeEscaped(s, sb)
+    }
+
+    ///
+    /// Appends `s` to `sb` as a JSON string literal: enclosed in double quotes,
+    /// with backslash, double-quote, and control characters escaped per RFC 8259.
+    ///
+    def writeEscaped(s: String, sb: StringBuilder[r]): Unit \ r =
+        StringBuilder.append('"', sb);
+        foreach (c <- String.toList(s)) {
+            writeEscapedChar(c, sb)
+        };
+        StringBuilder.append('"', sb)
+
+    ///
+    /// Appends `c` to `sb`, JSON-escaped if necessary.
+    ///
+    /// The two-character short escapes are emitted for backslash (0x5C),
+    /// double-quote (0x22), backspace (0x08), tab (0x09), newline (0x0A),
+    /// form-feed (0x0C), and carriage-return (0x0D). Other characters with
+    /// code point below 0x20 are emitted as `\u00XX`. Everything else is
+    /// passed through unchanged.
+    ///
+    def writeEscapedChar(c: Char, sb: StringBuilder[r]): Unit \ r =
+        let cp = Char.toBmpCodePoint(c);
+        match cp {
+            case 0x5C => StringBuilder.appendString("\\\\", sb)
+            case 0x22 => StringBuilder.appendString("\\\"", sb)
+            case 0x08 => StringBuilder.appendString("\\b", sb)
+            case 0x09 => StringBuilder.appendString("\\t", sb)
+            case 0x0A => StringBuilder.appendString("\\n", sb)
+            case 0x0C => StringBuilder.appendString("\\f", sb)
+            case 0x0D => StringBuilder.appendString("\\r", sb)
+            case _ if cp < 0x20 => writeControlEscape(cp, sb)
+            case _ => StringBuilder.append(c, sb)
+        }
+
+    ///
+    /// Appends the JSON `\u00XX` escape for the given code point `cp`.
+    ///
+    /// Precondition: `0 <= cp < 0x20`.
+    ///
+    def writeControlEscape(cp: Int32, sb: StringBuilder[r]): Unit \ r =
+        StringBuilder.appendString("\\u00", sb);
+        StringBuilder.append(hexDigit(cp / 16), sb);
+        StringBuilder.append(hexDigit(Int32.bitwiseAnd(cp, 15)), sb)
+
+    ///
+    /// Returns the lowercase hex digit for `n`.
+    ///
+    /// Precondition: `0 <= n < 16`. Otherwise unreachable from the call site
+    /// in `writeControlEscape`.
+    ///
+    def hexDigit(n: Int32): Char =
+        match Char.forDigit(radix = 16, n) {
+            case Some(c) => c
+            case None    => unreachable!()
+        }
+
 }
