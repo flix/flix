@@ -105,48 +105,6 @@ pub mod Fs {
     }
 
     ///
-    /// An effect used to check if a file is readable.
-    ///
-    /// Use the `IsReadable.runWithFilePermission` handler.
-    ///
-    pub eff IsReadable {
-
-        ///
-        /// Returns `true` if the given file `f` is readable.
-        ///
-        def isReadable(f: String): Result[IoError, Bool]
-
-    }
-
-    ///
-    /// An effect used to check if a file is writable.
-    ///
-    /// Use the `IsWritable.runWithFilePermission` handler.
-    ///
-    pub eff IsWritable {
-
-        ///
-        /// Returns `true` if the given file `f` is writable.
-        ///
-        def isWritable(f: String): Result[IoError, Bool]
-
-    }
-
-    ///
-    /// An effect used to check if a file is executable.
-    ///
-    /// Use the `IsExecutable.runWithFilePermission` handler.
-    ///
-    pub eff IsExecutable {
-
-        ///
-        /// Returns `true` if the given file `f` is executable.
-        ///
-        def isExecutable(f: String): Result[IoError, Bool]
-
-    }
-
-    ///
     /// An effect used to read the last access time of a file.
     ///
     /// Use the `AccessTime.runWithFileTime` handler.
