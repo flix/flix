@@ -105,62 +105,6 @@ pub mod Fs {
     }
 
     ///
-    /// An effect used to check if a file exists.
-    ///
-    /// Use the `FileExists.runWithFileTest` handler.
-    ///
-    pub eff FileExists {
-
-        ///
-        /// Returns `true` if the given file `f` exists.
-        ///
-        def exists(f: String): Result[IoError, Bool]
-
-    }
-
-    ///
-    /// An effect used to check if a path is a directory.
-    ///
-    /// Use the `IsDirectory.runWithFileTest` handler.
-    ///
-    pub eff IsDirectory {
-
-        ///
-        /// Returns `true` if the given file `f` is a directory.
-        ///
-        def isDirectory(f: String): Result[IoError, Bool]
-
-    }
-
-    ///
-    /// An effect used to check if a path is a regular file.
-    ///
-    /// Use the `IsRegularFile.runWithFileTest` handler.
-    ///
-    pub eff IsRegularFile {
-
-        ///
-        /// Returns `true` if the given file `f` is a regular file.
-        ///
-        def isRegularFile(f: String): Result[IoError, Bool]
-
-    }
-
-    ///
-    /// An effect used to check if a path is a symbolic link.
-    ///
-    /// Use the `IsSymbolicLink.runWithFileTest` handler.
-    ///
-    pub eff IsSymbolicLink {
-
-        ///
-        /// Returns `true` if the given file `f` is a symbolic link.
-        ///
-        def isSymbolicLink(f: String): Result[IoError, Bool]
-
-    }
-
-    ///
     /// An effect used to check if a file is readable.
     ///
     /// Use the `IsReadable.runWithFilePermission` handler.
