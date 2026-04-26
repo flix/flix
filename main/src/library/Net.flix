@@ -25,63 +25,6 @@ pub mod Net {
     import java.net.Socket
 
     ///
-    /// Represents an Ipv4 Socket Address.
-    ///
-    pub enum SocketAddrV4 with Eq {
-        case SocketAddrV4(Ipv4Addr, Int32)
-    }
-
-    instance ToString[SocketAddrV4] {
-        pub def toString(x: SocketAddrV4): String =
-            let SocketAddrV4.SocketAddrV4(ip, port) = x;
-            "${ToString.toString(ip)}:${port}"
-    }
-
-    instance Formattable[SocketAddrV4] {
-        pub def format(x: SocketAddrV4): RichString = RichString.fromString(ToString.toString(x))
-    }
-
-    ///
-    /// Represents an Ipv6 Socket Address.
-    ///
-    pub enum SocketAddrV6 with Eq {
-        case SocketAddrV6(Ipv6Addr, Int32)
-    }
-
-    instance ToString[SocketAddrV6] {
-        pub def toString(x: SocketAddrV6): String =
-            let SocketAddrV6.SocketAddrV6(ip, port) = x;
-            "[${ToString.toString(ip)}]:${port}"
-    }
-
-    instance Formattable[SocketAddrV6] {
-        pub def format(x: SocketAddrV6): RichString = RichString.fromString(ToString.toString(x))
-    }
-
-    ///
-    /// Represents a Socket Address.
-    ///
-    pub enum SocketAddr with Eq {
-        case V4(SocketAddrV4)
-        case V6(SocketAddrV6)
-    }
-
-    instance FromString[SocketAddr] {
-        pub def fromString(x: String): Option[SocketAddr] = SocketAddr.fromString(x)
-    }
-
-    instance ToString[SocketAddr] {
-        pub def toString(x: SocketAddr): String = match x {
-            case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ToString.toString(ip)}:${port}"
-            case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ToString.toString(ip)}]:${port}"
-        }
-    }
-
-    instance Formattable[SocketAddr] {
-        pub def format(x: SocketAddr): RichString = RichString.fromString(ToString.toString(x))
-    }
-
-    ///
     /// Represents a TCP socket.
     ///
     pub enum TcpSocket(Socket, InputStream, OutputStream)

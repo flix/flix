@@ -225,6 +225,8 @@ object Library {
     "Net/RetryDecision.flix" -> LocalResource.get("/src/library/Net/RetryDecision.flix"),
     "Net/RetryOutcome.flix" -> LocalResource.get("/src/library/Net/RetryOutcome.flix"),
     "Net/SocketAddr.flix" -> LocalResource.get("/src/library/Net/SocketAddr.flix"),
+    "Net/SocketAddrV4.flix" -> LocalResource.get("/src/library/Net/SocketAddrV4.flix"),
+    "Net/SocketAddrV6.flix" -> LocalResource.get("/src/library/Net/SocketAddrV6.flix"),
     "Net/TcpAccept.flix" -> LocalResource.get("/src/library/Net/TcpAccept.flix"),
     "Net/TcpBind.flix" -> LocalResource.get("/src/library/Net/TcpBind.flix"),
     "Net/TcpConnect.flix" -> LocalResource.get("/src/library/Net/TcpConnect.flix"),
