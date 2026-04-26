@@ -23,6 +23,96 @@ pub mod Fs.FileWrite {
     use Fs.FsLayer.{logPre, logPre2, logPost, logPost2}
     use Fs.Size
     use Fs.Size.bytes
+    use Fs.CopyOption
+    use Fs.MoveOption
+
+    ///
+    /// An effect used to write files, append to files, truncate files, and create directories.
+    ///
+    pub eff FileWrite {
+
+        ///
+        /// Writes `str` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def write(data: {str = String}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Writes `lines` to the given file `f`.
+        ///
+        /// Creates `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Writes `data` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `str` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def append(data: {str = String}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `lines` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendLines(data: {lines = List[String]}, f: String): Result[IoError, Unit]
+
+        ///
+        /// Appends `data` to the given file `f`.
+        ///
+        /// Creates the file `f` if it does not exist.
+        ///
+        def appendBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+        ///
+        /// Truncates the given file `f`.
+        ///
+        def truncate(f: String): Result[IoError, Unit]
+
+        ///
+        /// Copies the file `src` to `dst` with the given `options`.
+        ///
+        def copyWith(src: {src = String}, dst: String, opts: Set[CopyOption]): Result[IoError, Unit]
+
+        ///
+        /// Moves (renames) the file or directory `src` to `dst` with the given `options`.
+        ///
+        def moveWith(src: {src = String}, dst: String, opts: Set[MoveOption]): Result[IoError, Unit]
+
+        ///
+        /// Deletes the given file `f`.
+        ///
+        /// Fails if the file does not exist.
+        ///
+        def delete(f: String): Result[IoError, Unit]
+
+        ///
+        /// Creates the directory `d`.
+        ///
+        def mkDir(d: String): Result[IoError, Unit]
+
+        ///
+        /// Creates the directory `d` and all its parent directories.
+        ///
+        def mkDirs(d: String): Result[IoError, Unit]
+
+        ///
+        /// Creates a new temporary directory with the given prefix.
+        ///
+        /// Returns the path to the directory.
+        ///
+        def mkTempDir(prefix: String): Result[IoError, String]
+
+    }
 
     ///
     /// Convenience function: copies `src` to `dst` with no options.

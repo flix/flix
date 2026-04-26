@@ -23,6 +23,33 @@ pub mod Fs.FileTest {
     use IoError.ErrorKind
 
     ///
+    /// An effect used to test file properties (exists, directory, regular file, symbolic link).
+    ///
+    pub eff FileTest {
+
+        ///
+        /// Returns `true` if the given file `f` exists.
+        ///
+        def exists(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a directory.
+        ///
+        def isDirectory(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a regular file.
+        ///
+        def isRegularFile(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is a symbolic link.
+        ///
+        def isSymbolicLink(f: String): Result[IoError, Bool]
+
+    }
+
+    ///
     /// Handles the `FileTest` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `FileTest` effect using the `IO` effect.

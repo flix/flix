@@ -23,6 +23,28 @@ pub mod Fs.FilePermission {
     use IoError.ErrorKind
 
     ///
+    /// An effect used to check file permissions (readable, writable, executable).
+    ///
+    pub eff FilePermission {
+
+        ///
+        /// Returns `true` if the given file `f` is readable.
+        ///
+        def isReadable(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is writable.
+        ///
+        def isWritable(f: String): Result[IoError, Bool]
+
+        ///
+        /// Returns `true` if the given file `f` is executable.
+        ///
+        def isExecutable(f: String): Result[IoError, Bool]
+
+    }
+
+    ///
     /// Handles the `FilePermission` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `FilePermission` effect using the `IO` effect.
