@@ -19,6 +19,14 @@ pub mod BPlusTree.AtomicCounter {
     import java.util.concurrent.atomic.{LongAdder => JLongAdder}
 
     ///
+    /// A thread-safe counter producing `Int32`.
+    ///
+    /// A `LongAdder` is used as `AtomicInteger`/`AtomicLong` appeared to perform
+    /// badly under high contention.
+    ///
+    pub enum AtomicCounter[_: Region](JLongAdder)
+
+    ///
     /// Returns a fresh counter with initialized to `initialVal`.
     ///
     pub def mkCounter(_: Region[r], initialValue: Int32): AtomicCounter[r] \ r =
