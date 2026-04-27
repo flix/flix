@@ -16,7 +16,16 @@
 
 pub mod Fs.SizeUnit {
 
-    use Fs.SizeUnit
+    ///
+    /// Represents a size unit.
+    ///
+    pub enum SizeUnit with Eq, ToString {
+        case Bytes,
+        case KiloBytes,
+        case MegaBytes,
+        case GigaBytes,
+        case TeraBytes
+    }
 
     ///
     /// Returns the number of bytes for the given size unit `u`.

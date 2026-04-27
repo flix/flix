@@ -19,6 +19,22 @@ pub mod Fs.WriteBytes {
     use Fs.FileWrite
 
     ///
+    /// An effect used to write bytes to a file.
+    ///
+    /// Use the `WriteBytes.runWithFileWrite` handler.
+    ///
+    pub eff WriteBytes {
+
+        ///
+        /// Writes `data` to the given file `f`.
+        ///
+        /// Creates file `f` if it does not exist. Overwrites it if it exists.
+        ///
+        def writeBytes(data: Vector[Int8], f: String): Result[IoError, Unit]
+
+    }
+
+    ///
     /// Handles the `WriteBytes` effect of the given function `f` using the `FileWrite` effect.
     ///
     pub def runWithFileWrite(f: Unit -> a \ ef): a \ (ef - WriteBytes) + FileWrite =

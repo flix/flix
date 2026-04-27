@@ -14,53 +14,53 @@
  * limitations under the License.
  */
 
-///
-/// The Validation type.
-///
-pub enum Validation[e, t] with Eq, Order, ToString {
-    case Success(t),
-    case Failure(Nec[e])
-}
-
-instance Hash[Validation[e, t]] with Hash[e], Hash[t] {
-    pub def hash(x: Validation[e, t]): Int32 = match x {
-        case Validation.Success(v) => 5407 + 197 * Hash.hash(v)
-        case Validation.Failure(v) => 5413 + 199 * Hash.hash(v)
-    }
-}
-
-instance SemiGroup[Validation[e, t]] with SemiGroup[t] {
-    pub def combine(x: Validation[e, t], y: Validation[e, t]): Validation[e, t] = match (x, y) {
-        case (Validation.Success(x1), Validation.Success(y1))       => Validation.Success(SemiGroup.combine(x1, y1))
-        case (Validation.Failure(es1), Validation.Failure(es2))     => Validation.Failure(Nec.append(es1, es2))
-        case (Validation.Failure(_), _)                             => x
-        case (_, Validation.Failure(_))                             => y
-    }
-}
-
-instance Monoid[Validation[e, t]] with Monoid[t] {
-    pub def empty(): Validation[e, t] = Validation.Success(Monoid.empty())
-}
-
-instance Functor[Validation[e]] {
-    pub def map(f: a -> b \ ef, x: Validation[e, a]): Validation[e, b] \ ef = Validation.map(f, x)
-}
-
-instance Applicative[Validation[e]] {
-    pub def point(a: a) : Validation[e, a] = Validation.Success(a)
-    pub def ap(f: Validation[e, a -> b \ ef], x: Validation[e, a]): Validation[e, b] \ ef = Validation.ap(f, x)
-}
-
-instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
-    type Aef = Formattable.Aef[e] + Formattable.Aef[t]
-
-    pub def format(x: Validation[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
-        case Validation.Success(v) => RichString.fromString("Success(") + Formattable.format(v) + RichString.fromString(")")
-        case Validation.Failure(e) => RichString.fromString("Failure(") + Formattable.format(e) + RichString.fromString(")")
-    }
-}
-
 pub mod Validation {
+
+    ///
+    /// The Validation type.
+    ///
+    pub enum Validation[e, t] with Eq, Order, ToString {
+        case Success(t),
+        case Failure(Nec[e])
+    }
+
+    instance Hash[Validation[e, t]] with Hash[e], Hash[t] {
+        pub def hash(x: Validation[e, t]): Int32 = match x {
+            case Validation.Success(v) => 5407 + 197 * Hash.hash(v)
+            case Validation.Failure(v) => 5413 + 199 * Hash.hash(v)
+        }
+    }
+
+    instance SemiGroup[Validation[e, t]] with SemiGroup[t] {
+        pub def combine(x: Validation[e, t], y: Validation[e, t]): Validation[e, t] = match (x, y) {
+            case (Validation.Success(x1), Validation.Success(y1))       => Validation.Success(SemiGroup.combine(x1, y1))
+            case (Validation.Failure(es1), Validation.Failure(es2))     => Validation.Failure(Nec.append(es1, es2))
+            case (Validation.Failure(_), _)                             => x
+            case (_, Validation.Failure(_))                             => y
+        }
+    }
+
+    instance Monoid[Validation[e, t]] with Monoid[t] {
+        pub def empty(): Validation[e, t] = Validation.Success(Monoid.empty())
+    }
+
+    instance Functor[Validation[e]] {
+        pub def map(f: a -> b \ ef, x: Validation[e, a]): Validation[e, b] \ ef = Validation.map(f, x)
+    }
+
+    instance Applicative[Validation[e]] {
+        pub def point(a: a) : Validation[e, a] = Validation.Success(a)
+        pub def ap(f: Validation[e, a -> b \ ef], x: Validation[e, a]): Validation[e, b] \ ef = Validation.ap(f, x)
+    }
+
+    instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
+        type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+
+        pub def format(x: Validation[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
+            case Validation.Success(v) => RichString.fromString("Success(") + Formattable.format(v) + RichString.fromString(")")
+            case Validation.Failure(e) => RichString.fromString("Failure(") + Formattable.format(e) + RichString.fromString(")")
+        }
+    }
 
     ///
     /// Applies the function in `v1` to the value in `v2`.

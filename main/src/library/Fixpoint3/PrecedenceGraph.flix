@@ -74,12 +74,4 @@ pub mod Fixpoint3.PrecedenceGraph {
         MutList.toList(pseudoStratums)
     }
 
-    ///
-    /// A mutable graph.
-    ///
-    pub struct MutGraph[r] {
-        vertices: MutSet[Vertex, r],
-        adjList: MutMap[Vertex, Set[Vertex], r]
-    }
-
 }

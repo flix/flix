@@ -24,6 +24,16 @@ pub mod Net.HttpResponse {
     use Net.HttpResponse.HttpResponse
 
     ///
+    /// An HTTP response with final URL, status code, multi-valued headers, and body.
+    ///
+    pub enum HttpResponse({
+        url     = String,
+        status  = Int32,
+        headers = Map[String, List[String]],
+        body    = Body
+    })
+
+    ///
     /// Returns the final URL of the response `r` (after any redirects).
     ///
     pub def url(r: HttpResponse): String = match r {

@@ -15,23 +15,23 @@
  * limitations under the License.
  */
 
-///
-/// An effect used to perform assertions during program execution.
-///
-pub eff Assert {
-
-    ///
-    /// Asserts that the given condition `cond` is `true` with a message `msg`.
-    ///
-    def assert(cond: Bool, msg: RichString): Unit
-
-}
-
 pub mod Assert {
 
     use Sys.Console
     use RichString.{blue, red, text, yellow};
     import java.lang.AssertionError;
+
+    ///
+    /// An effect used to perform assertions during program execution.
+    ///
+    pub eff Assert {
+
+        ///
+        /// Asserts that the given condition `cond` is `true` with a message `msg`.
+        ///
+        def assert(cond: Bool, msg: RichString): Unit
+
+    }
 
     ///
     /// Asserts that the given condition `cond` is `true`.

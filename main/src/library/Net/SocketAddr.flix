@@ -24,6 +24,29 @@ pub mod Net.SocketAddr {
     use Net.SocketAddrV6
 
     ///
+    /// Represents a Socket Address.
+    ///
+    pub enum SocketAddr with Eq {
+        case V4(SocketAddrV4)
+        case V6(SocketAddrV6)
+    }
+
+    instance FromString[SocketAddr] {
+        pub def fromString(x: String): Option[SocketAddr] = SocketAddr.fromString(x)
+    }
+
+    instance ToString[SocketAddr] {
+        pub def toString(x: SocketAddr): String = match x {
+            case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ip}:${port}"
+            case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ip}]:${port}"
+        }
+    }
+
+    instance Formattable[SocketAddr] {
+        pub def format(x: SocketAddr): RichString = RichString.fromString(ToString.toString(x))
+    }
+
+    ///
     /// Attempts to parse the given String `x` as a `SocketAddr`.
     ///
     /// Returns `Some(socket)` if the string was successfully parsed. Otherwise returns `None`.

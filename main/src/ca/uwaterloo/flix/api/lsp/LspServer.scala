@@ -259,8 +259,10 @@ object LspServer {
       * We need to publish empty diagnostics for sources that do not have any diagnostics to clear previous diagnostics.
       */
     private def publishDiagnostics(diagnostics: List[PublishDiagnosticsParams]): Unit = {
-      // We do not publish diagnostics for errors from the library
-      val validDiagnostics = diagnostics.filter(_.uri.startsWith("file://"))
+      // We do not publish diagnostics for errors from the library.
+      // Merge entries with the same URI so that errors and code hints for the same file are not published separately
+      // (each publishDiagnostics call replaces previous diagnostics for that URI in the LSP protocol).
+      val validDiagnostics = PublishDiagnosticsParams.merge(diagnostics.filter(_.uri.startsWith("file://")))
       val sourcesWithDiagnostics = validDiagnostics.map(d => d.uri).toSet
       val sourcesWithoutDiagnostics = sources.keysIterator.map(_.toString).toSet.diff(sourcesWithDiagnostics)
       sourcesWithoutDiagnostics.foreach { source =>

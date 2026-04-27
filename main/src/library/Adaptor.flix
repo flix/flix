@@ -125,7 +125,7 @@ pub mod Adaptor {
             }
             case false => None
         };
-        Iterator.iterate(rc, getNext)
+        Iterator.unfoldWithIter(rc, getNext)
 
     ///
     /// Returns a fresh Flix `Iterator` from the Java iterator `iter`.
@@ -140,7 +140,7 @@ pub mod Adaptor {
             }
         };
         let iterF = () -> (step());
-        Iterator.iterate(rc, iterF)
+        Iterator.unfoldWithIter(rc, iterF)
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Stream.

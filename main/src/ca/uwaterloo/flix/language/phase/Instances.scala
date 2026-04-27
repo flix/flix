@@ -79,15 +79,18 @@ object Instances {
     * It is declared in either:
     * * The trait's companion namespace.
     * * The same namespace as its type.
+    * * The type's companion module (e.g. instance in `mod Fs.Size` for enum `Fs.Size`).
     */
   private def checkOrphan(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
-    case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, ns, _) => tpe.typeConstructor match {
-      // Case 1: Enum type in the same namespace as the instance: not an orphan
-      case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ()
-      // Case 2: Struct type in the same namespace as the instance: not an orphan
-      case Some(TypeConstructor.Struct(structSym, _)) if structSym.namespace == ns.idents.map(_.name) => ()
-      // Case 3: Any type in the trait namespace: not an orphan
-      case _ if trt.sym.namespace == ns.idents.map(_.name) => ()
+    case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, ns, _) =>
+      val instNs = ns.idents.map(_.name)
+      tpe.typeConstructor match {
+      // Case 1: Enum type in the same namespace or companion module as the instance: not an orphan
+      case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == instNs || (enumSym.namespace :+ enumSym.name) == instNs => ()
+      // Case 2: Struct type in the same namespace or companion module as the instance: not an orphan
+      case Some(TypeConstructor.Struct(structSym, _)) if structSym.namespace == instNs || (structSym.namespace :+ structSym.name) == instNs => ()
+      // Case 3: Any type in the trait namespace or companion module: not an orphan
+      case _ if trt.sym.namespace == instNs || (trt.sym.namespace :+ trt.sym.name) == instNs => ()
       // Case 4: Any type outside the trait companion namespace and enum declaration namespace: orphan
       case _ => sctx.errors.add(InstanceError.OrphanInstance(trt.sym, tpe, trt.loc))
     }

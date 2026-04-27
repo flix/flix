@@ -21,6 +21,21 @@ pub mod Math.Shuffle {
     import java.util.{Random => JRandom}
 
     ///
+    /// An effect used to shuffle collections.
+    ///
+    pub eff Shuffle {
+
+        ///
+        /// Returns a permutation of integers from 0 to `len - 1`.
+        ///
+        /// The permutation is represented as a vector where each position
+        /// contains a unique integer in the range [0, len).
+        ///
+        def permutation(len: Int32): Vector[Int32]
+
+    }
+
+    ///
     /// Handles the `Shuffle` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Shuffle` effect using the `NonDet` effect.

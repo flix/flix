@@ -14,76 +14,62 @@
  * limitations under the License.
  */
 
-///
-/// Represents a mutable hash map that preserves insertion order.
-///
-/// Uses a hash table with separate chaining for collisions and a doubly-linked list
-/// to maintain insertion order.
-///
-pub struct MutHashMap[k: Type, v: Type, r: Region] {
-    rc: Region[r],
-    mut buckets: Array[Option[MutHashMap.Entry[k, v, r]], r],   // Hash table buckets
-    mut head: Option[MutHashMap.Entry[k, v, r]],                // First entry in insertion order
-    mut tail: Option[MutHashMap.Entry[k, v, r]],                // Last entry in insertion order
-    mut size: Int32                                             // Number of entries
-}
-
-instance Iterable[MutHashMap[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def iterator(rc: Region[r1], m: MutHashMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
-        MutHashMap.iterator(rc, m)
-}
-
-instance ForEach[MutHashMap[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutHashMap[k, v, r]): Unit \ ef + r =
-        MutHashMap.forEach((k, v) -> f((k, v)), m)
-}
-
-instance Indexable[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
-    type Elm = v
-    type Idx = k
-    type Aef = r + KeyNotFound
-
-    pub def get(t: MutHashMap[k, v, r], i: k): v \ r + KeyNotFound = {
-        match MutHashMap.get(i, t) {
-            case Some(v) => v
-            case None => KeyNotFound.keyNotFound("key not found")
-        }
-    }
-}
-
-instance IndexableMut[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
-    type Aef = r
-
-    pub def put(t: MutHashMap[k, v, r], i: k, v: v): Unit \ r = MutHashMap.put(i, v, t)
-}
-
-instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
-    type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
-
-    pub def format(x: MutHashMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
-        use RichString.{fromString, joinWith};
-        let kvs = MutHashMap.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
-        fromString("MutHashMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
-}
-
 pub mod MutHashMap {
 
     ///
-    /// Represents an internal entry node for the hash map.
+    /// Represents a mutable hash map that preserves insertion order.
     ///
-    /// Each entry is part of both a hash bucket chain and the insertion order chain.
+    /// Uses a hash table with separate chaining for collisions and a doubly-linked list
+    /// to maintain insertion order.
     ///
-    pub struct Entry[k: Type, v: Type, r: Region] {
-        key: k,                                    // The key for this entry
-        hash: Int32,                               // Cached hash code for the key
-        mut value: v,                              // The value associated with the key
-        mut bucketNext: Option[Entry[k, v, r]],    // Next entry in the same bucket
-        mut orderPrev: Option[Entry[k, v, r]],     // Previous entry in insertion order
-        mut orderNext: Option[Entry[k, v, r]]      // Next entry in insertion order
+    pub struct MutHashMap[k: Type, v: Type, r: Region] {
+        rc: Region[r],
+        mut buckets: Array[Option[Node[k, v, r]], r],   // Hash table buckets
+        mut head: Option[Node[k, v, r]],                // First entry in insertion order
+        mut tail: Option[Node[k, v, r]],                // Last entry in insertion order
+        mut size: Int32                                             // Number of entries
+    }
+
+    instance Iterable[MutHashMap[k, v, r]] {
+        type Elm = (k, v)
+        type Aef = r
+        pub def iterator(rc: Region[r1], m: MutHashMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+            MutHashMap.iterator(rc, m)
+    }
+
+    instance ForEach[MutHashMap[k, v, r]] {
+        type Elm = (k, v)
+        type Aef = r
+        pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutHashMap[k, v, r]): Unit \ ef + r =
+            MutHashMap.forEach((k, v) -> f((k, v)), m)
+    }
+
+    instance Indexable[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
+        type Elm = v
+        type Idx = k
+        type Aef = r + KeyNotFound
+
+        pub def get(t: MutHashMap[k, v, r], i: k): v \ r + KeyNotFound = {
+            match MutHashMap.get(i, t) {
+                case Some(v) => v
+                case None => KeyNotFound.keyNotFound("key not found")
+            }
+        }
+    }
+
+    instance IndexableMut[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
+        type Aef = r
+
+        pub def put(t: MutHashMap[k, v, r], i: k, v: v): Unit \ r = MutHashMap.put(i, v, t)
+    }
+
+    instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
+
+        pub def format(x: MutHashMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
+            use RichString.{fromString, joinWith};
+            let kvs = MutHashMap.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
+            fromString("MutHashMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
     }
 
     ///
@@ -100,6 +86,34 @@ pub mod MutHashMap {
     /// Constant denoting the largest valid load factor.
     ///
     def maxLoadFactor(): Float32 = 0.75f32
+
+    ///
+    /// Represents an internal entry node for the hash map.
+    ///
+    /// Each entry is part of both a hash bucket chain and the insertion order chain.
+    ///
+    pub struct Node[k: Type, v: Type, r: Region] {
+        key: k,                                    // The key for this entry
+        hash: Int32,                               // Cached hash code for the key
+        mut value: v,                              // The value associated with the key
+        mut bucketNext: Option[Node[k, v, r]],    // Next entry in the same bucket
+        mut orderPrev: Option[Node[k, v, r]],     // Previous entry in insertion order
+        mut orderNext: Option[Node[k, v, r]]      // Next entry in insertion order
+    }
+
+    mod Node {
+
+        pub def getKey(e: Node[k, v, r]): k = e->key
+        pub def getValue(e: Node[k, v, r]): v \ r = e->value
+        pub def setValue(v: v, e: Node[k, v, r]): Unit \ r = e->value = v
+        pub def getHash(e: Node[k, v, r]): Int32 = e->hash
+        pub def getBucketNext(e: Node[k, v, r]): Option[Node[k, v, r]] \ r = e->bucketNext
+        pub def setBucketNext(next: Option[Node[k, v, r]], e: Node[k, v, r]): Unit \ r = e->bucketNext = next
+        pub def getOrderPrev(e: Node[k, v, r]): Option[Node[k, v, r]] \ r = e->orderPrev
+        pub def setOrderPrev(prev: Option[Node[k, v, r]], e: Node[k, v, r]): Unit \ r = e->orderPrev = prev
+        pub def getOrderNext(e: Node[k, v, r]): Option[Node[k, v, r]] \ r = e->orderNext
+        pub def setOrderNext(next: Option[Node[k, v, r]], e: Node[k, v, r]): Unit \ r = e->orderNext = next
+    }
 
     ///
     /// Returns `true` if `m` is empty.
@@ -163,7 +177,7 @@ pub mod MutHashMap {
         let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
             case None => None
-            case Some(entry) => Some(Entry.getValue(entry))
+            case Some(entry) => Some(Node.getValue(entry))
         }
 
     ///
@@ -207,14 +221,14 @@ pub mod MutHashMap {
     ///
     /// Searches for an entry with the given key in the bucket chain.
     ///
-    def findInBucket(k: k, bucket: Option[Entry[k, v, r]]): Option[Entry[k, v, r]] \ r with Eq[k] =
+    def findInBucket(k: k, bucket: Option[Node[k, v, r]]): Option[Node[k, v, r]] \ r with Eq[k] =
         match bucket {
             case None => None
             case Some(entry) =>
-                if (k == Entry.getKey(entry))
+                if (k == Node.getKey(entry))
                     Some(entry)
                 else
-                    findInBucket(k, Entry.getBucketNext(entry))
+                    findInBucket(k, Node.getBucketNext(entry))
         }
 
     ///
@@ -236,7 +250,7 @@ pub mod MutHashMap {
     pub def first(m: MutHashMap[k, v, r]): Option[(k, v)] \ r =
         match m->head {
             case None => None
-            case Some(entry) => Some((Entry.getKey(entry), Entry.getValue(entry)))
+            case Some(entry) => Some((Node.getKey(entry), Node.getValue(entry)))
         }
 
     ///
@@ -247,7 +261,7 @@ pub mod MutHashMap {
     pub def last(m: MutHashMap[k, v, r]): Option[(k, v)] \ r =
         match m->tail {
             case None => None
-            case Some(entry) => Some((Entry.getKey(entry), Entry.getValue(entry)))
+            case Some(entry) => Some((Node.getKey(entry), Node.getValue(entry)))
         }
 
     ///
@@ -322,10 +336,10 @@ pub mod MutHashMap {
         match findInBucket(k, bucket) {
             case Some(entry) =>
                 // Key exists, combine values with key
-                Entry.setValue(f(k, v, Entry.getValue(entry)), entry)
+                Node.setValue(f(k, v, Node.getValue(entry)), entry)
             case None =>
                 // Key doesn't exist, insert normally
-                let entry = new Entry @ m->rc {
+                let entry = new Node @ m->rc {
                     key = k,
                     value = v,
                     hash = hash,
@@ -339,7 +353,7 @@ pub mod MutHashMap {
                         m->head = Some(entry);
                         m->tail = Some(entry)
                     case Some(tailEntry) =>
-                        Entry.setOrderNext(Some(entry), tailEntry);
+                        Node.setOrderNext(Some(entry), tailEntry);
                         m->tail = Some(entry)
                 };
                 m->size = m->size + 1;
@@ -364,7 +378,7 @@ pub mod MutHashMap {
         let hash = Hash.hash(k);
         let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
-            case Some(entry) => Entry.setValue(f(k, Entry.getValue(entry)), entry)
+            case Some(entry) => Node.setValue(f(k, Node.getValue(entry)), entry)
             case None => ()
         }
 
@@ -394,8 +408,8 @@ pub mod MutHashMap {
         let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
             case Some(entry) =>
-                match f(k, Entry.getValue(entry)) {
-                    case Some(newValue) => Entry.setValue(newValue, entry)
+                match f(k, Node.getValue(entry)) {
+                    case Some(newValue) => Node.setValue(newValue, entry)
                     case None => remove(k, m)
                 }
             case None => ()
@@ -420,20 +434,20 @@ pub mod MutHashMap {
         def removeFromBucket(curr, prev) = match curr {
             case None => None
             case Some(entry) =>
-                if (k == Entry.getKey(entry)) {
+                if (k == Node.getKey(entry)) {
                     // Found the entry - remove it from bucket chain
                     match prev {
                         case None =>
-                            // Entry is first in bucket - update bucket head
-                            Array.put(Entry.getBucketNext(entry), idx, m->buckets)
+                            // Node is first in bucket - update bucket head
+                            Array.put(Node.getBucketNext(entry), idx, m->buckets)
                         case Some(prevEntry) =>
-                            // Entry is in middle/end - bypass it in the chain
-                            Entry.setBucketNext(Entry.getBucketNext(entry), prevEntry)
+                            // Node is in middle/end - bypass it in the chain
+                            Node.setBucketNext(Node.getBucketNext(entry), prevEntry)
                     };
                     Some(entry)
                 } else {
                     // Keep searching
-                    removeFromBucket(Entry.getBucketNext(entry), Some(entry))
+                    removeFromBucket(Node.getBucketNext(entry), Some(entry))
                 }
         };
 
@@ -442,23 +456,23 @@ pub mod MutHashMap {
             case None => ()  // Key not found, nothing to do
             case Some(entry) =>
                 // Update the previous entry's next pointer (or map head if no previous)
-                match Entry.getOrderPrev(entry) {
+                match Node.getOrderPrev(entry) {
                     case None =>
                         // Removing the head of insertion order
-                        m->head = Entry.getOrderNext(entry)
+                        m->head = Node.getOrderNext(entry)
                     case Some(prevEntry) =>
                         // Bypass this entry in the order chain
-                        Entry.setOrderNext(Entry.getOrderNext(entry), prevEntry)
+                        Node.setOrderNext(Node.getOrderNext(entry), prevEntry)
                 };
 
                 // Update the next entry's previous pointer (or map tail if no next)
-                match Entry.getOrderNext(entry) {
+                match Node.getOrderNext(entry) {
                     case None =>
                         // Removing the tail of insertion order
-                        m->tail = Entry.getOrderPrev(entry)
+                        m->tail = Node.getOrderPrev(entry)
                     case Some(nextEntry) =>
                         // Bypass this entry in the order chain
-                        Entry.setOrderPrev(Entry.getOrderPrev(entry), nextEntry)
+                        Node.setOrderPrev(Node.getOrderPrev(entry), nextEntry)
                 };
 
                 // Update size and potentially shrink the bucket array
@@ -514,15 +528,15 @@ pub mod MutHashMap {
             case None => ()
             case Some(entry) =>
                 // Compute new bucket index
-                let idx = indexOfBucket(Entry.getHash(entry), newCapacity);
+                let idx = indexOfBucket(Node.getHash(entry), newCapacity);
                 let bucket = Array.get(idx, newBuckets);
 
                 // Insert into new bucket chain
-                Entry.setBucketNext(bucket, entry);
+                Node.setBucketNext(bucket, entry);
                 Array.put(Some(entry), idx, newBuckets);
 
                 // Continue with next entry in order chain
-                rehashEntry(Entry.getOrderNext(entry))
+                rehashEntry(Node.getOrderNext(entry))
         };
 
         rehashEntry(m->head);
@@ -535,8 +549,8 @@ pub mod MutHashMap {
         def loop(curr) = match curr {
             case None => ()
             case Some(entry) =>
-                f(Entry.getKey(entry), Entry.getValue(entry));
-                loop(Entry.getOrderNext(entry))
+                f(Node.getKey(entry), Node.getValue(entry));
+                loop(Node.getOrderNext(entry))
         };
         loop(m->head)
 
@@ -560,10 +574,10 @@ pub mod MutHashMap {
         def next() = match Ref.get(curr) {
             case None => None
             case Some(entry) =>
-                Ref.put(Entry.getOrderNext(entry), curr);
-                Some((Entry.getKey(entry), Entry.getValue(entry)))
+                Ref.put(Node.getOrderNext(entry), curr);
+                Some((Node.getKey(entry), Node.getValue(entry)))
         };
-        Iterator.iterate(rc, next)
+        Iterator.unfoldWithIter(rc, next)
 
     ///
     /// Returns an iterator over keys in `m` in insertion order.
@@ -610,8 +624,8 @@ pub mod MutHashMap {
         def loop(curr) = match curr {
             case None => ()
             case Some(entry) =>
-                Entry.setValue(f(Entry.getKey(entry), Entry.getValue(entry)), entry);
-                loop(Entry.getOrderNext(entry))
+                Node.setValue(f(Node.getKey(entry), Node.getValue(entry)), entry);
+                loop(Node.getOrderNext(entry))
         };
         loop(m->head)
 
@@ -629,10 +643,10 @@ pub mod MutHashMap {
         def collectKeys(curr, acc) = match curr {
             case None => acc
             case Some(entry) =>
-                let k = Entry.getKey(entry);
-                let v = Entry.getValue(entry);
+                let k = Node.getKey(entry);
+                let v = Node.getValue(entry);
                 let newAcc = if (f(k, v)) acc else k :: acc;
-                collectKeys(Entry.getOrderNext(entry), newAcc)
+                collectKeys(Node.getOrderNext(entry), newAcc)
         };
         let keysToRemove = collectKeys(m->head, Nil);
         List.forEach(k -> remove(k, m), keysToRemove)
@@ -644,7 +658,7 @@ pub mod MutHashMap {
         def loop(curr, acc) = match curr {
             case None => acc
             case Some(entry) =>
-                loop(Entry.getOrderNext(entry), f(acc, Entry.getValue(entry)))
+                loop(Node.getOrderNext(entry), f(acc, Node.getValue(entry)))
         };
         loop(m->head, s)
 
@@ -655,7 +669,7 @@ pub mod MutHashMap {
         def loop(curr, acc) = match curr {
             case None => acc
             case Some(entry) =>
-                loop(Entry.getOrderNext(entry), f(acc, Entry.getKey(entry), Entry.getValue(entry)))
+                loop(Node.getOrderNext(entry), f(acc, Node.getKey(entry), Node.getValue(entry)))
         };
         loop(m->head, s)
 
@@ -666,7 +680,7 @@ pub mod MutHashMap {
         def loop(curr, acc) = match curr {
             case None => acc
             case Some(entry) =>
-                loop(Entry.getOrderPrev(entry), f(Entry.getValue(entry), acc))
+                loop(Node.getOrderPrev(entry), f(Node.getValue(entry), acc))
         };
         loop(m->tail, s)
 
@@ -677,7 +691,7 @@ pub mod MutHashMap {
         def loop(curr, acc) = match curr {
             case None => acc
             case Some(entry) =>
-                loop(Entry.getOrderPrev(entry), f(Entry.getKey(entry), Entry.getValue(entry), acc))
+                loop(Node.getOrderPrev(entry), f(Node.getKey(entry), Node.getValue(entry), acc))
         };
         loop(m->tail, s)
 
@@ -694,10 +708,10 @@ pub mod MutHashMap {
         def loop(curr) = match curr {
             case None => false
             case Some(entry) =>
-                if (f(Entry.getKey(entry), Entry.getValue(entry)))
+                if (f(Node.getKey(entry), Node.getValue(entry)))
                     true
                 else
-                    loop(Entry.getOrderNext(entry))
+                    loop(Node.getOrderNext(entry))
         };
         loop(m->head)
 
@@ -708,8 +722,8 @@ pub mod MutHashMap {
         def loop(curr) = match curr {
             case None => true
             case Some(entry) =>
-                if (f(Entry.getKey(entry), Entry.getValue(entry)))
-                    loop(Entry.getOrderNext(entry))
+                if (f(Node.getKey(entry), Node.getValue(entry)))
+                    loop(Node.getOrderNext(entry))
                 else
                     false
         };
@@ -722,8 +736,8 @@ pub mod MutHashMap {
         def loop(curr, acc) = match curr {
             case None => acc
             case Some(entry) =>
-                let newAcc = if (f(Entry.getKey(entry), Entry.getValue(entry))) acc + 1 else acc;
-                loop(Entry.getOrderNext(entry), newAcc)
+                let newAcc = if (f(Node.getKey(entry), Node.getValue(entry))) acc + 1 else acc;
+                loop(Node.getOrderNext(entry), newAcc)
         };
         loop(m->head, 0)
 
@@ -742,12 +756,12 @@ pub mod MutHashMap {
         def loop(curr) = match curr {
             case None => None
             case Some(entry) =>
-                let k = Entry.getKey(entry);
-                let v = Entry.getValue(entry);
+                let k = Node.getKey(entry);
+                let v = Node.getValue(entry);
                 if (f(k, v))
                     Some((k, v))
                 else
-                    loop(Entry.getOrderNext(entry))
+                    loop(Node.getOrderNext(entry))
         };
         loop(m->head)
 
@@ -758,12 +772,12 @@ pub mod MutHashMap {
         def loop(curr) = match curr {
             case None => None
             case Some(entry) =>
-                let k = Entry.getKey(entry);
-                let v = Entry.getValue(entry);
+                let k = Node.getKey(entry);
+                let v = Node.getValue(entry);
                 if (f(k, v))
                     Some((k, v))
                 else
-                    loop(Entry.getOrderPrev(entry))
+                    loop(Node.getOrderPrev(entry))
         };
         loop(m->tail)
 

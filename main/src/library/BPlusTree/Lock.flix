@@ -18,6 +18,40 @@
 pub mod BPlusTree.Lock {
     import java.util.concurrent.locks.{StampedLock => JStampedLock}
 
+    ///
+    /// The purpose of Lock is to provide a thin wrapper around Java's StampedLock without
+    /// the IO effect. The lock is optimistic in the sense that reads are performed by
+    /// reading the values and only afterwards verifying that no other thread has changed
+    /// the values. Only annotating a region effect to StampedLock is safe, since it can
+    /// only non-deterministically block a thread for some ( potentially infinite) amount
+    /// of time. This is allowed under non-effectful behavior.
+    ///
+    ///
+    /// One possible danger, introduced by StampedLock, is handled by a null-check in
+    /// binarySearch. Consider the following example where everything is initialized to 0:
+    /// Thread 1 executes
+    /// {a = 2; b = 3}
+    /// Thread 2 executes
+    /// {c = a; d = b}
+    /// The question is what can `c` and `d` be? It depends on the JVM, but can be any of:
+    /// {c = 2, d = 3}, {c = 0, d = 0}, {c = 2, d = 0}, {c = 0, d = 3}
+    /// The last follows from the fact that the JVM can reorder statements under some
+    /// requirements. The requirements are roughly that the new 'code' should be
+    /// equivalent on a single-threaded machine and there are no happens-before relations
+    /// which link to other threads preventing the reordering. If either variable were
+    /// volatile we might avoid this, but volatile is expensive (and not in Flix).
+    ///
+    /// For us, this means that {array[size] = 5; size++} can be reordered to
+    /// {oldSize = size++; array[oldSize] = 5}.
+    /// Another thread reading may then see the increase of size and try to access that
+    /// position getting null. This has not happened in our experiments, but we wish to
+    /// handle the case. The risk is in binarySearch and we therefore check whether any
+    /// value read is null and if so 'aborts'.
+    ///
+    /// For Java's memory model see: https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4
+    ///
+    pub enum Lock[_: Region](JStampedLock)
+
     // Unchecked casts are here used to remove the IO effect. It is replaced with an
     // effect to a region to ensure that the code is not optimized away.
 

@@ -92,17 +92,6 @@ pub mod Fixpoint3 {
     }
 
     ///
-    /// `Counter` is a wrapper around `Ref` for a simple counter.
-    ///
-    /// Its primary use is for generating identifiers.
-    ///
-    /// Not thread-safe.
-    ///
-    pub struct Counter[r: Region] {
-        mut state: Int32
-    }
-
-    ///
     /// A trait for types that contain predicate symbols.
     ///
     pub trait PredSymsOf[t] {
@@ -119,23 +108,6 @@ pub mod Fixpoint3 {
     ///
     pub trait SubstitutePredSym[t] {
         pub def substitute(x: t, s: Map[PredSym, PredSym]): t
-    }
-
-    ///
-    /// The purpose of `UniqueInts` is to assign unique numbers/identifiers to elements.
-    ///
-    /// Example of use: When generating joins automatically we have data of type
-    /// `(RelSym, Search)`. These needs to be placed somewhere in memory. For
-    /// a pair `(rel, search)` calling `createIndex((rel, search))` will return its
-    /// index if it has been seen before and otherwise return the new index
-    /// which henceforth will be returned for subsequent queries of `(rel, search)`.
-    ///
-    /// `ReverseUniqueInts` allows using an index, `i`, assigned by `UniqueInts`, and get
-    /// the value, which `UniqueInts` assigned index `i`.
-    ///
-    pub struct UniqueInts[k: Type, r: Region] {
-        map: MutMap[k, Int32, r],
-        counter: Counter[r]
     }
 
 }

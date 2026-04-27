@@ -394,7 +394,12 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     val codeHints = CodeHinter.run(sources.keysIterator.map(_.toString).toSet)(root)
 
     // Determine the status based on whether there are errors.
-    val results = PublishDiagnosticsParams.fromMessages(currentErrors, Some(root)) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    // Merge by URI so that errors and code hints for the same file are combined into one entry rather than
+    // published separately (each entry replaces previous diagnostics for that URI in the LSP protocol).
+    val results = PublishDiagnosticsParams.merge(
+      PublishDiagnosticsParams.fromMessages(currentErrors, Some(root)) :::
+      PublishDiagnosticsParams.fromCodeHints(codeHints)
+    )
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
