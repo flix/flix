@@ -266,13 +266,11 @@ object SyntaxTree {
 
       case object IfThenElse extends Expr
 
-      case object InstanceOf extends Expr
+      case object InstanceOfMatch extends Expr
+
+      case object InstanceOfMatchRuleFragment extends Expr
 
       case object Intrinsic extends Expr
-
-      case object JMatch extends Expr
-
-      case object JMatchRuleFragment extends Expr
 
       case object JvmConstructor extends Expr
 
