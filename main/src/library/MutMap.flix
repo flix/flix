@@ -14,56 +14,56 @@
  * limitations under the License.
  */
 
-///
-/// The Mutable Map type.
-///
-pub struct MutMap[k: Type, v: Type, r: Region] {
-    rc: Region[r],
-    mut inner: Map[k, v]
-}
+pub mod MutMap {
 
-instance Indexable[MutMap[k, v, r]] with Order[k] {
-    type Idx = k
-    type Elm = v
-    type Aef = r + KeyNotFound
+    ///
+    /// The Mutable Map type.
+    ///
+    pub struct MutMap[k: Type, v: Type, r: Region] {
+        rc: Region[r],
+        mut inner: Map[k, v]
+    }
 
-    pub def get(t: MutMap[k, v, r], i: k): v \ r + KeyNotFound = {
-        match MutMap.get(i, t) {
-            case Some(v) => v
-            case None => KeyNotFound.keyNotFound("key not found")
+    instance Indexable[MutMap[k, v, r]] with Order[k] {
+        type Idx = k
+        type Elm = v
+        type Aef = r + KeyNotFound
+
+        pub def get(t: MutMap[k, v, r], i: k): v \ r + KeyNotFound = {
+            match MutMap.get(i, t) {
+                case Some(v) => v
+                case None => KeyNotFound.keyNotFound("key not found")
+            }
         }
     }
-}
 
-instance IndexableMut[MutMap[k, v, r]] with Order[k] {
-    type Aef = r
+    instance IndexableMut[MutMap[k, v, r]] with Order[k] {
+        type Aef = r
 
-    pub def put(t: MutMap[k, v, r], i: k, v: v): Unit \ r = MutMap.put(i, v, t)
-}
+        pub def put(t: MutMap[k, v, r], i: k, v: v): Unit \ r = MutMap.put(i, v, t)
+    }
 
-instance Iterable[MutMap[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def iterator(rc: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
-        MutMap.iterator(rc, m)
-}
+    instance Iterable[MutMap[k, v, r]] {
+        type Elm = (k, v)
+        type Aef = r
+        pub def iterator(rc: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+            MutMap.iterator(rc, m)
+    }
 
-instance ForEach[MutMap[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ ef + r = MutMap.forEach(k -> v -> f((k, v)), m)
-}
+    instance ForEach[MutMap[k, v, r]] {
+        type Elm = (k, v)
+        type Aef = r
+        pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ ef + r = MutMap.forEach(k -> v -> f((k, v)), m)
+    }
 
-instance Formattable[MutMap[k, v, r]] with Formattable[k], Formattable[v] {
-    type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
+    instance Formattable[MutMap[k, v, r]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
 
-    pub def format(x: MutMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
-        use RichString.{fromString, joinWith};
-        let kvs = MutMap.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
-        fromString("MutMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
-}
-
-pub mod MutMap {
+        pub def format(x: MutMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
+            use RichString.{fromString, joinWith};
+            let kvs = MutMap.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
+            fromString("MutMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
+    }
 
     ///
     /// Returns a string representation of the given MutMap `m`.

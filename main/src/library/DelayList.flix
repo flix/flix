@@ -14,126 +14,126 @@
  * limitations under the License.
  */
 
-pub enum DelayList[a] {
-    case ENil,
-    case ECons(a, DelayList[a]),
-    case LCons(a, Lazy[DelayList[a]]),
-    case LList(Lazy[DelayList[a]])
-}
-
-instance Eq[DelayList[a]] with Eq[a] {
-    pub def eq(l1: DelayList[a], l2: DelayList[a]): Bool = match (l1, l2) {
-        case (DelayList.ENil, DelayList.ENil)                   => true
-        case (DelayList.ECons(x, xs), DelayList.ECons(y, ys))   => if (x != y) false else xs == ys
-        case (DelayList.ECons(x, xs), DelayList.LCons(y, ys))   => if (x != y) false else xs == force ys
-        case (DelayList.LCons(x, xs), DelayList.ECons(y, ys))   => if (x != y) false else (force xs) == ys
-        case (DelayList.LCons(x, xs), DelayList.LCons(y, ys))   => if (x != y) false else (force xs) == force ys
-        case (DelayList.LList(xs), DelayList.LList(ys))         => (force xs) == force ys
-        case (l, DelayList.LList(ys))                           => l == force ys
-        case (DelayList.LList(xs), l)                           => (force xs) == l
-        case _                                                  => false
-    }
-}
-
-instance Order[DelayList[a]] with Order[a] {
-
-    ///
-    /// Compares `l1` and `l2` lexicographically.
-    ///
-    pub def compare(l1: DelayList[a], l2: DelayList[a]): Comparison = match (l1, l2) {
-        case (DelayList.ENil ,         DelayList.ENil) => Comparison.EqualTo
-        case (_           ,         DelayList.ENil) => Comparison.GreaterThan
-        case (DelayList.ENil        ,            _) => Comparison.LessThan
-        case (DelayList.LList(xs)   ,    DelayList.LList(ys)) => (force xs) <=> (force ys)
-        case (_           ,    DelayList.LList(ys)) =>         l1 <=> (force ys)
-        case (DelayList.LList(xs)   ,            _) => (force xs) <=>        l2
-        case (DelayList.ECons(x, xs), DelayList.ECons(y, ys)) =>
-            let cmp = x <=> y;
-            if (cmp == Comparison.EqualTo) xs <=> ys else cmp
-        case (DelayList.ECons(x, xs), DelayList.LCons(y, ys)) =>
-            let cmp = x <=> y;
-            if (cmp == Comparison.EqualTo) xs <=> (force ys) else cmp
-        case (DelayList.LCons(x, xs), DelayList.ECons(y, ys)) =>
-            let cmp = x <=> y;
-            if (cmp == Comparison.EqualTo) (force xs) <=> ys else cmp
-        case (DelayList.LCons(x, xs), DelayList.LCons(y, ys)) =>
-            let cmp = x <=> y;
-            if (cmp == Comparison.EqualTo) (force xs) <=> (force ys) else cmp
-    }
-}
-
-instance ToString[DelayList[a]] with ToString[a] {
-    pub def toString(l: DelayList[a]): String = DelayList.toString(l)
-}
-
-
-instance Foldable[DelayList] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
-    redef head(l: DelayList[a]): Option[a] = DelayList.head(l)
-    redef isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
-    redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
-    redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
-    redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
-}
-
-instance UnorderedFoldable[DelayList] {
-    pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
-    redef isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
-    redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
-    redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
-    redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
-}
-
-instance Functor[DelayList] {
-    pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef = DelayList.map(f, l)
-}
-
-instance Applicative[DelayList] {
-    pub def point(x: a): DelayList[a] = DelayList.singleton(x)
-    pub def ap(f: DelayList[a -> b \ ef], l: DelayList[a]): DelayList[b] \ ef = DelayList.ap(f, l)
-}
-
-instance Monad[DelayList] {
-    pub def flatMap(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef = DelayList.flatMap(f, l)
-}
-
-instance MonadZero[DelayList] {
-    pub def empty(): DelayList[a] = DelayList.empty()
-}
-
-instance Traversable[DelayList] {
-    pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] = DelayList.traverse(f, l)
-    redef sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
-}
-
-instance Filterable[DelayList] {
-    pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
-    redef filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
-}
-
-instance Witherable[DelayList]
-
-instance SemiGroup[DelayList[a]] {
-    pub def combine(l1: DelayList[a], l2: DelayList[a]): DelayList[a] = DelayList.append(l1, l2)
-}
-
-instance Monoid[DelayList[a]] {
-    pub def empty(): DelayList[a] = DelayList.ENil
-}
-
-instance Iterable[DelayList[a]] {
-    type Elm = a
-    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
-}
-
-instance ForEach[DelayList[a]] {
-    type Elm = a
-    pub def forEach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = DelayList.forEach(f, l)
-}
-
 pub mod DelayList {
     use Math.Shuffle
+
+    pub enum DelayList[a] {
+        case ENil,
+        case ECons(a, DelayList[a]),
+        case LCons(a, Lazy[DelayList[a]]),
+        case LList(Lazy[DelayList[a]])
+    }
+
+    instance Eq[DelayList[a]] with Eq[a] {
+        pub def eq(l1: DelayList[a], l2: DelayList[a]): Bool = match (l1, l2) {
+            case (DelayList.ENil, DelayList.ENil)                   => true
+            case (DelayList.ECons(x, xs), DelayList.ECons(y, ys))   => if (x != y) false else xs == ys
+            case (DelayList.ECons(x, xs), DelayList.LCons(y, ys))   => if (x != y) false else xs == force ys
+            case (DelayList.LCons(x, xs), DelayList.ECons(y, ys))   => if (x != y) false else (force xs) == ys
+            case (DelayList.LCons(x, xs), DelayList.LCons(y, ys))   => if (x != y) false else (force xs) == force ys
+            case (DelayList.LList(xs), DelayList.LList(ys))         => (force xs) == force ys
+            case (l, DelayList.LList(ys))                           => l == force ys
+            case (DelayList.LList(xs), l)                           => (force xs) == l
+            case _                                                  => false
+        }
+    }
+
+    instance Order[DelayList[a]] with Order[a] {
+
+        ///
+        /// Compares `l1` and `l2` lexicographically.
+        ///
+        pub def compare(l1: DelayList[a], l2: DelayList[a]): Comparison = match (l1, l2) {
+            case (DelayList.ENil ,         DelayList.ENil) => Comparison.EqualTo
+            case (_           ,         DelayList.ENil) => Comparison.GreaterThan
+            case (DelayList.ENil        ,            _) => Comparison.LessThan
+            case (DelayList.LList(xs)   ,    DelayList.LList(ys)) => (force xs) <=> (force ys)
+            case (_           ,    DelayList.LList(ys)) =>         l1 <=> (force ys)
+            case (DelayList.LList(xs)   ,            _) => (force xs) <=>        l2
+            case (DelayList.ECons(x, xs), DelayList.ECons(y, ys)) =>
+                let cmp = x <=> y;
+                if (cmp == Comparison.EqualTo) xs <=> ys else cmp
+            case (DelayList.ECons(x, xs), DelayList.LCons(y, ys)) =>
+                let cmp = x <=> y;
+                if (cmp == Comparison.EqualTo) xs <=> (force ys) else cmp
+            case (DelayList.LCons(x, xs), DelayList.ECons(y, ys)) =>
+                let cmp = x <=> y;
+                if (cmp == Comparison.EqualTo) (force xs) <=> ys else cmp
+            case (DelayList.LCons(x, xs), DelayList.LCons(y, ys)) =>
+                let cmp = x <=> y;
+                if (cmp == Comparison.EqualTo) (force xs) <=> (force ys) else cmp
+        }
+    }
+
+    instance ToString[DelayList[a]] with ToString[a] {
+        pub def toString(l: DelayList[a]): String = DelayList.toString(l)
+    }
+
+
+    instance Foldable[DelayList] {
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
+        redef head(l: DelayList[a]): Option[a] = DelayList.head(l)
+        redef isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
+        redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
+        redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
+        redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
+    }
+
+    instance UnorderedFoldable[DelayList] {
+        pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
+        redef isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
+        redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
+        redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
+        redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
+    }
+
+    instance Functor[DelayList] {
+        pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef = DelayList.map(f, l)
+    }
+
+    instance Applicative[DelayList] {
+        pub def point(x: a): DelayList[a] = DelayList.singleton(x)
+        pub def ap(f: DelayList[a -> b \ ef], l: DelayList[a]): DelayList[b] \ ef = DelayList.ap(f, l)
+    }
+
+    instance Monad[DelayList] {
+        pub def flatMap(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef = DelayList.flatMap(f, l)
+    }
+
+    instance MonadZero[DelayList] {
+        pub def empty(): DelayList[a] = DelayList.empty()
+    }
+
+    instance Traversable[DelayList] {
+        pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] = DelayList.traverse(f, l)
+        redef sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
+    }
+
+    instance Filterable[DelayList] {
+        pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
+        redef filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
+    }
+
+    instance Witherable[DelayList]
+
+    instance SemiGroup[DelayList[a]] {
+        pub def combine(l1: DelayList[a], l2: DelayList[a]): DelayList[a] = DelayList.append(l1, l2)
+    }
+
+    instance Monoid[DelayList[a]] {
+        pub def empty(): DelayList[a] = DelayList.ENil
+    }
+
+    instance Iterable[DelayList[a]] {
+        type Elm = a
+        pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
+    }
+
+    instance ForEach[DelayList[a]] {
+        type Elm = a
+        pub def forEach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = DelayList.forEach(f, l)
+    }
 
     ///
     /// Returns a string representation of `l`.
