@@ -1500,9 +1500,11 @@ object Parser2 {
       // openBefore inserts at the mark's position, shifting all tokens rightward.
       // Going right to left ensures each insertion only affects already-processed marks.
       var result = exprMarks.last
-      for (i <- (exprMarks.length - 2) to 0 by -1) {
+      var i = exprMarks.length - 2
+      while (i >= 0) {
         val stm = close(openBefore(exprMarks(i)), TreeKind.Expr.Statement)
         result = close(openBefore(stm), TreeKind.Expr.Expr)
+        i -= 1
       }
       result
     }

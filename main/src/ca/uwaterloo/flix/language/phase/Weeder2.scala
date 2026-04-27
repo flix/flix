@@ -1386,9 +1386,13 @@ object Weeder2 {
     }
 
     /**
-      * Iteratively unwinds a right-nested Statement tree chain into a list of head expression trees and a single tail tree.
+      * Flattens a right-nested Statement tree into a list of head expression trees and a single tail tree.
+      * Uses `unfold` to peek through Expr.Expr wrapper nodes.
+      *
+      * Example: Statement(f(), Expr(Statement(g(), Expr(h()))))
+      *       => (List(f(), g()), h())
       */
-    private def flattenStatementChain(tree: Tree): (List[Tree], Tree) = {
+    private def flattenStmTree(tree: Tree): (List[Tree], Tree) = {
       val heads = mutable.ArrayBuffer.empty[Tree]
       var current = tree
       var tail: Tree = null
@@ -1413,7 +1417,7 @@ object Weeder2 {
 
     private def visitStatementExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Statement)
-      val (headTrees, tailTree) = flattenStatementChain(tree)
+      val (headTrees, tailTree) = flattenStmTree(tree)
       mapN(traverse(headTrees)(visitExpr), visitExpr(tailTree)) {
         case (exps, exp) => Expr.Stm(exps, exp, tree.loc)
       }
