@@ -1116,7 +1116,9 @@ object PrettyPrinter {
           prev = Some(token)
           i += 1
         case child =>
-          val gap = if (prev.exists(endsWithLineComment)) hardline else empty
+          val gap = if (prev.exists(endsWithLineComment)) {
+            if (hadBlankLineBetween(prev.get, child)) hardline <> hardline else hardline
+          } else empty
           acc = acc <> gap <> prettyChild(child)
           prev = Some(child)
           i += 1
@@ -1406,6 +1408,7 @@ object PrettyPrinter {
     var i = 0
     var acc: Doc = empty
     var prev: Option[SyntaxTree.Child] = None
+    var prevReplEndsWithLine = false
     while (i < children.length) {
       val child = children(i)
       child match {
@@ -1420,8 +1423,10 @@ object PrettyPrinter {
           }
           if (hasSameLineComment) {
             acc = acc <> gap <> text(";") <> space
+            prevReplEndsWithLine = false
           } else {
             acc = acc <> gap <> replDoc
+            prevReplEndsWithLine = docEndsWithLine(replDoc)
           }
           prev = Some(token)
           i += 1
@@ -1429,10 +1434,16 @@ object PrettyPrinter {
           val isComment = child match { case t: Token => isCommentKind(t.kind); case _ => false }
           val sameLine = isComment && prev.flatMap(rightMostToken).exists(p =>
             leftMostToken(child).exists(_.start.lineOneIndexed == p.end.lineOneIndexed))
-          val gap = if (prev.exists(endsWithLineComment)) hardline
-                    else if (sameLine) space
-                    else if (isComment) hardline
-                    else empty
+          val blank = prev.exists(p => hadBlankLineBetween(p, child))
+          val gap = if (prevReplEndsWithLine) {
+            if (blank) hardline else empty
+          } else if (prev.exists(endsWithLineComment)) {
+            if (blank) hardline <> hardline else hardline
+          } else if (sameLine) space
+          else if (isComment) {
+            if (blank) hardline <> hardline else hardline
+          } else empty
+          prevReplEndsWithLine = false
           acc = acc <> gap <> prettyChild(child)
           prev = Some(child)
           i += 1
@@ -1492,8 +1503,8 @@ object PrettyPrinter {
     val nextKind = leftMostToken(next).map(_.kind)
 
     val afterLineComment = prevKind.exists(k =>
-      k == TokenKind.CommentLine || k == TokenKind.CommentDoc)
-    if (afterLineComment) return hardline
+      k == TokenKind.CommentLine || k == TokenKind.CommentDoc || k == TokenKind.CommentBlock)
+    if (afterLineComment) return if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
 
     val nextIsComment = nextKind.exists(isCommentKind)
     if (nextIsComment) {
@@ -1522,7 +1533,18 @@ object PrettyPrinter {
     if (children.isEmpty) return empty
     children.sliding(2).foldLeft(prettyChild(children.head)) {
       case (acc, Array(prev, next)) =>
-        val g = if (endsWithLineComment(prev)) hardline
+        val nextStartsWithComment = leftMostToken(next).exists(t => isCommentKind(t.kind))
+        val sameLine = nextStartsWithComment && {
+          (rightMostToken(prev), leftMostToken(next)) match {
+            case (Some(p), Some(n)) => p.end.lineOneIndexed == n.start.lineOneIndexed
+            case _                  => false
+          }
+        }
+        val g = if (endsWithLineComment(prev))
+          if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
+                else if (nextStartsWithComment && !sameLine)
+                  if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
+                else if (sameLine) space
                 else if (hadBlankLineBetween(prev, next)) gap <> Doc.layoutChoice(empty, hardline)
                 else gap
         acc <> g <> prettyChild(next)
@@ -1532,7 +1554,17 @@ object PrettyPrinter {
 
   private def endsWithLineComment(child: SyntaxTree.Child): Boolean =
     rightMostToken(child).exists(t =>
-      t.kind == TokenKind.CommentLine || t.kind == TokenKind.CommentDoc)
+      t.kind == TokenKind.CommentLine || t.kind == TokenKind.CommentDoc || t.kind == TokenKind.CommentBlock)
+
+  private def docEndsWithLine(doc: Doc): Boolean = doc match {
+    case Doc.Line()              => true
+    case Doc.HardLine()          => true
+    case Doc.Concat(_, right)    => docEndsWithLine(right)
+    case Doc.Nest(_, inner)      => docEndsWithLine(inner)
+    case Doc.SetLayout(_, inner) => docEndsWithLine(inner)
+    case Doc.LayoutChoice(s, m)  => docEndsWithLine(s) || docEndsWithLine(m)
+    case _                       => false
+  }
 
   private def joinWithGap(children: Array[SyntaxTree.Child]): Doc = {
     if (children.isEmpty) return empty
