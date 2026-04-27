@@ -16,7 +16,7 @@
 
 mod TestJson {
 
-    use Assert.assertEq;
+    use Assert.{assertEq, assertErr};
     use Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
 
     def num(n: Int32): Json.Json = JNumber(Int32.toBigDecimal(n))
@@ -379,5 +379,350 @@ mod TestJson {
             RichString.yellow("1") +
             RichString.fromString("\n}");
         assertEq(expected = expected, Json.toRichString(2, JObject(Map#{"a" => num(1)})))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse — primitives                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parse01(): Unit \ Assert =
+        assertEq(expected = Ok(JNull), Json.parse("null"))
+
+    @Test
+    def parse02(): Unit \ Assert =
+        assertEq(expected = Ok(JBool(true)), Json.parse("true"))
+
+    @Test
+    def parse03(): Unit \ Assert =
+        assertEq(expected = Ok(JBool(false)), Json.parse("false"))
+
+    @Test
+    def parse04(): Unit \ Assert =
+        assertEq(expected = Ok(num(0)), Json.parse("0"))
+
+    @Test
+    def parse05(): Unit \ Assert =
+        assertEq(expected = Ok(num(42)), Json.parse("42"))
+
+    @Test
+    def parse06(): Unit \ Assert =
+        assertEq(expected = Ok(num(-7)), Json.parse("-7"))
+
+    @Test
+    def parse07(): Unit \ Assert =
+        assertEq(expected = Ok(JNumber(3.14ff)), Json.parse("3.14"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse — strings                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parse08(): Unit \ Assert =
+        assertEq(expected = Ok(JString("")), Json.parse("\"\""))
+
+    @Test
+    def parse09(): Unit \ Assert =
+        assertEq(expected = Ok(JString("hello")), Json.parse("\"hello\""))
+
+    @Test
+    def parse10(): Unit \ Assert =
+        assertEq(expected = Ok(JString("\\")), Json.parse("\"\\\\\""))
+
+    @Test
+    def parse11(): Unit \ Assert =
+        assertEq(expected = Ok(JString("\"")), Json.parse("\"\\\"\""))
+
+    @Test
+    def parse12(): Unit \ Assert =
+        assertEq(expected = Ok(JString("\n")), Json.parse("\"\\n\""))
+
+    @Test
+    def parse13(): Unit \ Assert =
+        assertEq(expected = Ok(JString("\t")), Json.parse("\"\\t\""))
+
+    @Test
+    def parse14(): Unit \ Assert =
+        assertEq(expected = Ok(JString("\u0008")), Json.parse("\"\\b\""))
+
+    @Test
+    def parse15(): Unit \ Assert =
+        assertEq(expected = Ok(JString("\u000C")), Json.parse("\"\\f\""))
+
+    @Test
+    def parse16(): Unit \ Assert =
+        assertEq(expected = Ok(JString("\r")), Json.parse("\"\\r\""))
+
+    @Test
+    def parse17(): Unit \ Assert =
+        assertEq(expected = Ok(JString("\u0001")), Json.parse("\"\\u0001\""))
+
+    @Test
+    def parse18(): Unit \ Assert =
+        assertEq(expected = Ok(JString("café")), Json.parse("\"café\""))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse — arrays                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parse19(): Unit \ Assert =
+        assertEq(expected = Ok(JArray(Vector#{})), Json.parse("[]"))
+
+    @Test
+    def parse20(): Unit \ Assert =
+        assertEq(expected = Ok(JArray(Vector#{num(1)})), Json.parse("[1]"))
+
+    @Test
+    def parse21(): Unit \ Assert =
+        assertEq(
+            expected = Ok(JArray(Vector#{num(1), num(2), num(3)})),
+            Json.parse("[1,2,3]")
+        )
+
+    @Test
+    def parse22(): Unit \ Assert =
+        assertEq(
+            expected = Ok(JArray(Vector#{JArray(Vector#{num(1)}), JArray(Vector#{num(2)})})),
+            Json.parse("[[1],[2]]")
+        )
+
+    @Test
+    def parse23(): Unit \ Assert =
+        assertEq(
+            expected = Ok(JArray(Vector#{JNull, JBool(true), num(1), JString("x")})),
+            Json.parse("[null,true,1,\"x\"]")
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse — objects                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parse24(): Unit \ Assert =
+        assertEq(expected = Ok(JObject(Map#{})), Json.parse("{}"))
+
+    @Test
+    def parse25(): Unit \ Assert =
+        assertEq(
+            expected = Ok(JObject(Map#{"a" => num(1)})),
+            Json.parse("{\"a\":1}")
+        )
+
+    @Test
+    def parse26(): Unit \ Assert =
+        assertEq(
+            expected = Ok(JObject(Map#{"a" => num(1), "b" => num(2)})),
+            Json.parse("{\"a\":1,\"b\":2}")
+        )
+
+    @Test
+    def parse27(): Unit \ Assert =
+        assertEq(
+            expected = Ok(JObject(Map#{
+                "users" => JArray(Vector#{
+                    JObject(Map#{"name" => JString("alice")}),
+                    JObject(Map#{"name" => JString("bob")})
+                })
+            })),
+            Json.parse("{\"users\":[{\"name\":\"alice\"},{\"name\":\"bob\"}]}")
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse — whitespace                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parse28(): Unit \ Assert =
+        assertEq(expected = Ok(JNull), Json.parse("  null  "))
+
+    @Test
+    def parse29(): Unit \ Assert =
+        assertEq(
+            expected = Ok(JArray(Vector#{num(1), num(2)})),
+            Json.parse("[ 1 , 2 ]")
+        )
+
+    @Test
+    def parse30(): Unit \ Assert =
+        assertEq(
+            expected = Ok(JObject(Map#{"a" => num(1)})),
+            Json.parse("{ \"a\" : 1 }")
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse — negative cases                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parse31(): Unit \ Assert =
+        assertErr(Json.parse(""))
+
+    @Test
+    def parse32(): Unit \ Assert =
+        assertErr(Json.parse("null x"))
+
+    @Test
+    def parse33(): Unit \ Assert =
+        assertErr(Json.parse("["))
+
+    @Test
+    def parse34(): Unit \ Assert =
+        assertErr(Json.parse("{"))
+
+    @Test
+    def parse35(): Unit \ Assert =
+        assertErr(Json.parse("{1:2}"))
+
+    @Test
+    def parse36(): Unit \ Assert =
+        assertErr(Json.parse("{\"a\":1,\"a\":2}"))
+
+    @Test
+    def parse37(): Unit \ Assert =
+        assertErr(Json.parse("\"\\q\""))
+
+    @Test
+    def parse38(): Unit \ Assert =
+        assertErr(Json.parse("\"abc"))
+
+    @Test
+    def parse39(): Unit \ Assert =
+        assertErr(Json.parse("[1,"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse — complex / deeply-nested                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parse40(): Unit \ Assert =
+        // 4-level deep object
+        assertEq(
+            expected = Ok(JObject(Map#{
+                "a" => JObject(Map#{
+                    "b" => JObject(Map#{
+                        "c" => JObject(Map#{
+                            "d" => num(1)
+                        })
+                    })
+                })
+            })),
+            Json.parse("{\"a\":{\"b\":{\"c\":{\"d\":1}}}}")
+        )
+
+    @Test
+    def parse41(): Unit \ Assert =
+        // Object with array of objects
+        assertEq(
+            expected = Ok(JObject(Map#{
+                "items" => JArray(Vector#{
+                    JObject(Map#{"id" => num(1), "name" => JString("a")}),
+                    JObject(Map#{"id" => num(2), "name" => JString("b")})
+                })
+            })),
+            Json.parse("{\"items\":[{\"id\":1,\"name\":\"a\"},{\"id\":2,\"name\":\"b\"}]}")
+        )
+
+    @Test
+    def parse42(): Unit \ Assert =
+        // Arrays nested 3 deep
+        assertEq(
+            expected = Ok(JArray(Vector#{
+                JArray(Vector#{
+                    JArray(Vector#{num(1), num(2)}),
+                    JArray(Vector#{num(3), num(4)})
+                }),
+                JArray(Vector#{
+                    JArray(Vector#{num(5), num(6)})
+                })
+            })),
+            Json.parse("[[[1,2],[3,4]],[[5,6]]]")
+        )
+
+    @Test
+    def parse43(): Unit \ Assert =
+        // Object mixing all primitive value types
+        assertEq(
+            expected = Ok(JObject(Map#{
+                "s" => JString("x"),
+                "n" => num(1),
+                "f" => JNumber(1.5ff),
+                "b" => JBool(true),
+                "z" => JNull
+            })),
+            Json.parse("{\"s\":\"x\",\"n\":1,\"f\":1.5,\"b\":true,\"z\":null}")
+        )
+
+    @Test
+    def parse44(): Unit \ Assert =
+        // Object with array and object as values
+        assertEq(
+            expected = Ok(JObject(Map#{
+                "tags" => JArray(Vector#{JString("a"), JString("b")}),
+                "meta" => JObject(Map#{"k" => JString("v")})
+            })),
+            Json.parse("{\"tags\":[\"a\",\"b\"],\"meta\":{\"k\":\"v\"}}")
+        )
+
+    @Test
+    def parse45(): Unit \ Assert =
+        // Object with empty containers as values
+        assertEq(
+            expected = Ok(JObject(Map#{
+                "arr" => JArray(Vector#{}),
+                "obj" => JObject(Map#{}),
+                "val" => num(42)
+            })),
+            Json.parse("{\"arr\":[],\"obj\":{},\"val\":42}")
+        )
+
+    @Test
+    def parse46(): Unit \ Assert =
+        // Whitespace at every position in a nested structure
+        assertEq(
+            expected = Ok(JObject(Map#{
+                "outer" => JObject(Map#{
+                    "inner" => JArray(Vector#{num(1), num(2)})
+                })
+            })),
+            Json.parse("{ \"outer\" : { \"inner\" : [ 1 , 2 ] } }")
+        )
+
+    @Test
+    def parse47(): Unit \ Assert =
+        // Array with strings containing escapes
+        assertEq(
+            expected = Ok(JArray(Vector#{
+                JString("plain"),
+                JString("with\nnewline"),
+                JString("with\\backslash")
+            })),
+            Json.parse("[\"plain\",\"with\\nnewline\",\"with\\\\backslash\"]")
+        )
+
+    @Test
+    def parse48(): Unit \ Assert =
+        // Realistic API-shaped payload
+        assertEq(
+            expected = Ok(JObject(Map#{
+                "user" => JObject(Map#{
+                    "id" => num(42),
+                    "name" => JString("alice"),
+                    "emails" => JArray(Vector#{JString("a@x.com"), JString("b@y.com")})
+                })
+            })),
+            Json.parse("{\"user\":{\"id\":42,\"name\":\"alice\",\"emails\":[\"a@x.com\",\"b@y.com\"]}}")
+        )
+
+    @Test
+    def parse49(): Unit \ Assert =
+        // Heterogeneous array with empty object at the end
+        assertEq(
+            expected = Ok(JArray(Vector#{
+                JObject(Map#{"a" => num(1)}),
+                JObject(Map#{"b" => JArray(Vector#{JBool(true), JNull})}),
+                JObject(Map#{})
+            })),
+            Json.parse("[{\"a\":1},{\"b\":[true,null]},{}]")
+        )
 
 }
