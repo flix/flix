@@ -43,6 +43,20 @@ pub mod Json {
     }
 
     ///
+    /// Returns the pretty-printed JSON rendering of `j`, using `indent` spaces
+    /// per nesting level.
+    ///
+    /// Empty arrays and objects are rendered on a single line as `[]` or `{}`.
+    /// Non-empty containers place each element on its own line; object keys
+    /// are followed by `": "`.
+    ///
+    pub def toPrettyString(indent: Int32, j: Json): String = region rc {
+        let sb = StringBuilder.empty(rc);
+        writePretty(indent, 0, j, sb);
+        StringBuilder.toString(sb)
+    }
+
+    ///
     /// Appends the compact JSON rendering of `j` to `sb`.
     ///
     def writeCompact(j: Json, sb: StringBuilder[r]): Unit \ r = match j {
@@ -71,6 +85,57 @@ pub mod Json {
         case JString(s) =>
             writeEscaped(s, sb)
     }
+
+    ///
+    /// Appends the pretty-printed JSON rendering of `j` to `sb`.
+    ///
+    /// `indent` is the number of spaces per nesting level; `depth` is the
+    /// current nesting level (0 at the root).
+    ///
+    def writePretty(indent: Int32, depth: Int32, j: Json, sb: StringBuilder[r]): Unit \ r = match j {
+        case JArray(v) if Vector.isEmpty(v) =>
+            StringBuilder.appendString("[]", sb)
+        case JArray(v) =>
+            StringBuilder.append('[', sb);
+            foreach ((i, e) <- ForEach.withIndex(v)) {
+                if (i > 0) { StringBuilder.append(',', sb) };
+                StringBuilder.append('\n', sb);
+                writeIndent(indent * (depth + 1), sb);
+                writePretty(indent, depth + 1, e, sb)
+            };
+            StringBuilder.append('\n', sb);
+            writeIndent(indent * depth, sb);
+            StringBuilder.append(']', sb)
+        case JBool(b) =>
+            StringBuilder.appendString(if (b) "true" else "false", sb)
+        case JNull =>
+            StringBuilder.appendString("null", sb)
+        case JNumber(n) =>
+            StringBuilder.append(n, sb)
+        case JObject(m) if Map.isEmpty(m) =>
+            StringBuilder.appendString("{}", sb)
+        case JObject(m) =>
+            StringBuilder.append('{', sb);
+            foreach ((i, (k, x)) <- ForEach.withIndex(m)) {
+                if (i > 0) { StringBuilder.append(',', sb) };
+                StringBuilder.append('\n', sb);
+                writeIndent(indent * (depth + 1), sb);
+                writeEscaped(k, sb);
+                StringBuilder.appendString(": ", sb);
+                writePretty(indent, depth + 1, x, sb)
+            };
+            StringBuilder.append('\n', sb);
+            writeIndent(indent * depth, sb);
+            StringBuilder.append('}', sb)
+        case JString(s) =>
+            writeEscaped(s, sb)
+    }
+
+    ///
+    /// Appends `n` spaces to `sb`. Does nothing if `n <= 0`.
+    ///
+    def writeIndent(n: Int32, sb: StringBuilder[r]): Unit \ r =
+        if (n > 0) { StringBuilder.appendString(String.repeat(n, " "), sb) }
 
     ///
     /// Appends `s` to `sb` as a JSON string literal: enclosed in double quotes,
