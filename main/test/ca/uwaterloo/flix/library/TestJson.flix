@@ -191,4 +191,116 @@ mod TestJson {
             Json.toCompactString(JObject(Map#{"a" => num(1), "b" => num(2), "c" => num(3)}))
         )
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toPrettyString — primitives (no layout effect)                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toPrettyString01(): Unit \ Assert =
+        assertEq(expected = "null", Json.toPrettyString(2, JNull))
+
+    @Test
+    def toPrettyString02(): Unit \ Assert =
+        assertEq(expected = "true", Json.toPrettyString(2, JBool(true)))
+
+    @Test
+    def toPrettyString03(): Unit \ Assert =
+        assertEq(expected = "42", Json.toPrettyString(2, num(42)))
+
+    @Test
+    def toPrettyString04(): Unit \ Assert =
+        assertEq(expected = "\"hello\"", Json.toPrettyString(2, JString("hello")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toPrettyString — empty containers stay on one line                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toPrettyString05(): Unit \ Assert =
+        assertEq(expected = "[]", Json.toPrettyString(2, JArray(Vector#{})))
+
+    @Test
+    def toPrettyString06(): Unit \ Assert =
+        assertEq(expected = "{}", Json.toPrettyString(2, JObject(Map#{})))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toPrettyString — arrays                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toPrettyString07(): Unit \ Assert =
+        assertEq(
+            expected = "[\n  1\n]",
+            Json.toPrettyString(2, JArray(Vector#{num(1)}))
+        )
+
+    @Test
+    def toPrettyString08(): Unit \ Assert =
+        assertEq(
+            expected = "[\n  1,\n  2,\n  3\n]",
+            Json.toPrettyString(2, JArray(Vector#{num(1), num(2), num(3)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toPrettyString — objects                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toPrettyString09(): Unit \ Assert =
+        assertEq(
+            expected = "{\n  \"a\": 1\n}",
+            Json.toPrettyString(2, JObject(Map#{"a" => num(1)}))
+        )
+
+    @Test
+    def toPrettyString10(): Unit \ Assert =
+        assertEq(
+            expected = "{\n  \"a\": 1,\n  \"b\": 2\n}",
+            Json.toPrettyString(2, JObject(Map#{"a" => num(1), "b" => num(2)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toPrettyString — nesting                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toPrettyString11(): Unit \ Assert =
+        assertEq(
+            expected = "[\n  [\n    1\n  ],\n  [\n    2\n  ]\n]",
+            Json.toPrettyString(2, JArray(Vector#{JArray(Vector#{num(1)}), JArray(Vector#{num(2)})}))
+        )
+
+    @Test
+    def toPrettyString12(): Unit \ Assert =
+        assertEq(
+            expected =
+                "{\n" +
+                "  \"users\": [\n" +
+                "    {\n" +
+                "      \"name\": \"alice\"\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"name\": \"bob\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}",
+            Json.toPrettyString(2, JObject(Map#{
+                "users" => JArray(Vector#{
+                    JObject(Map#{"name" => JString("alice")}),
+                    JObject(Map#{"name" => JString("bob")})
+                })
+            }))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toPrettyString — different indent                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toPrettyString13(): Unit \ Assert =
+        assertEq(
+            expected = "[\n    1,\n    2\n]",
+            Json.toPrettyString(4, JArray(Vector#{num(1), num(2)}))
+        )
+
 }
