@@ -15,162 +15,67 @@
  * limitations under the License.
  */
 
-///
-/// A mutable concurrent B+ Tree implementation with keys of type `k` and values of type `v`.
-///
-/// A B+ Tree is an m-ary self-balancing search tree where each node is either an internal
-/// node or a leaf node. In contrast to binary search trees, a B+ Tree of arity `m` only
-/// allows nodes with at most `m` children and `m-1` keys. A B+ Tree stores its keys in
-/// a sorted order in its internal nodes, which are used to guide searches to leaf nodes
-/// that store the keys' corresponding values.
-///
-/// See below for more details:
-///
-/// - The Ubiquitous B-Tree (1979) by Douglas Comer
-///   (https://dl.acm.org/doi/10.1145/356770.356776)
-///
-/// A BPlusTree satisfies the following.
-///
-/// `root` is the root node of the tree, which upon creation of the tree is a leaf node.
-/// Through insertion into the tree, a new node may be created and propagated up to become
-/// the new root of the tree.
-///
-/// `arity` or `m` is the arity of the tree which determines the maximum number of children
-/// a node may have. The arity must be at least 3.
-///
-/// `rootLock` is a lock on the `root` pointer, which a thread must first acquire before
-/// accessing the root node. It must also be acquired before changing `root`. The node
-/// `root` has a separate lock concerning the contents of the node. The lock of `root`
-/// must first be acquired after successfully acquiring `rootLock`.
-///
-/// `rc` is the region for the tree.
-///
-/// `search` is only used internally within the Fixpoint module where keys are of type
-/// `Vector[Int64]`. A `search` describes the order in which elements should be
-/// compared. E.g. [0, 1, 2, ..., n] is the natural order. A `search` may only be used
-/// when using `Vector[Int64]` as keys.
-///
-/// `counter` is used for keeping track of the number of inserted elements.
-///
-/// For all other usages `search` will be a vector of size 0.
-///
-/// Concurrency: thread-safe operations use optimistic stamps and validation.
-/// Functions marked "Not thread-safe" traverse or mutate the live tree without a stable
-/// snapshot, so concurrent writes may affect the observed result.
-///
-pub struct BPlusTree[k, v, r] {
-    mut root: BPlusTree.Node[k, v, r],
-    arity:    Int32,
-    rootLock: BPlusTree.Lock[r],
-    rc:       Region[r],
-    counter:  BPlusTree.AtomicCounter[r],
-    search:   BPlusTree.Search
-}
-
-instance ForEach[BPlusTree[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
-}
-
 pub mod BPlusTree {
     import java.lang.Runtime
-    import java.util.concurrent.atomic.{LongAdder => JLongAdder}
-    import java.util.concurrent.locks.{StampedLock => JStampedLock}
+
+    ///
+    /// A mutable concurrent B+ Tree implementation with keys of type `k` and values of type `v`.
+    ///
+    /// A B+ Tree is an m-ary self-balancing search tree where each node is either an internal
+    /// node or a leaf node. In contrast to binary search trees, a B+ Tree of arity `m` only
+    /// allows nodes with at most `m` children and `m-1` keys. A B+ Tree stores its keys in
+    /// a sorted order in its internal nodes, which are used to guide searches to leaf nodes
+    /// that store the keys' corresponding values.
+    ///
+    /// See below for more details:
+    ///
+    /// - The Ubiquitous B-Tree (1979) by Douglas Comer
+    ///   (https://dl.acm.org/doi/10.1145/356770.356776)
+    ///
+    /// A BPlusTree satisfies the following.
+    ///
+    /// `root` is the root node of the tree, which upon creation of the tree is a leaf node.
+    /// Through insertion into the tree, a new node may be created and propagated up to become
+    /// the new root of the tree.
+    ///
+    /// `arity` or `m` is the arity of the tree which determines the maximum number of children
+    /// a node may have. The arity must be at least 3.
+    ///
+    /// `rootLock` is a lock on the `root` pointer, which a thread must first acquire before
+    /// accessing the root node. It must also be acquired before changing `root`. The node
+    /// `root` has a separate lock concerning the contents of the node. The lock of `root`
+    /// must first be acquired after successfully acquiring `rootLock`.
+    ///
+    /// `rc` is the region for the tree.
+    ///
+    /// `search` is only used internally within the Fixpoint module where keys are of type
+    /// `Vector[Int64]`. A `search` describes the order in which elements should be
+    /// compared. E.g. [0, 1, 2, ..., n] is the natural order. A `search` may only be used
+    /// when using `Vector[Int64]` as keys.
+    ///
+    /// `counter` is used for keeping track of the number of inserted elements.
+    ///
+    /// For all other usages `search` will be a vector of size 0.
+    ///
+    /// Concurrency: thread-safe operations use optimistic stamps and validation.
+    /// Functions marked "Not thread-safe" traverse or mutate the live tree without a stable
+    /// snapshot, so concurrent writes may affect the observed result.
+    ///
+    pub struct BPlusTree[k, v, r] {
+        mut root: BPlusTree.Node[k, v, r],
+        arity:    Int32,
+        rootLock: BPlusTree.Lock[r],
+        rc:       Region[r],
+        counter:  BPlusTree.AtomicCounter[r],
+        search:   BPlusTree.Search
+    }
 
     pub type alias Search = Vector[Int32]
 
-    ///
-    /// A thread-safe counter producing `Int32`.
-    ///
-    /// A `LongAdder` is used as `AtomicInteger`/`AtomicLong` appeared to perform
-    /// badly under high contention.
-    ///
-    pub enum AtomicCounter[_: Region](JLongAdder)
-
-    ///
-    /// The purpose of Lock is to provide a thin wrapper around Java's StampedLock without
-    /// the IO effect. The lock is optimistic in the sense that reads are performed by
-    /// reading the values and only afterwards verifying that no other thread has changed
-    /// the values. Only annotating a region effect to StampedLock is safe, since it can
-    /// only non-deterministically block a thread for some ( potentially infinite) amount
-    /// of time. This is allowed under non-effectful behavior.
-    ///
-    ///
-    /// One possible danger, introduced by StampedLock, is handled by a null-check in
-    /// binarySearch. Consider the following example where everything is initialized to 0:
-    /// Thread 1 executes
-    /// {a = 2; b = 3}
-    /// Thread 2 executes
-    /// {c = a; d = b}
-    /// The question is what can `c` and `d` be? It depends on the JVM, but can be any of:
-    /// {c = 2, d = 3}, {c = 0, d = 0}, {c = 2, d = 0}, {c = 0, d = 3}
-    /// The last follows from the fact that the JVM can reorder statements under some
-    /// requirements. The requirements are roughly that the new 'code' should be
-    /// equivalent on a single-threaded machine and there are no happens-before relations
-    /// which link to other threads preventing the reordering. If either variable were
-    /// volatile we might avoid this, but volatile is expensive (and not in Flix).
-    ///
-    /// For us, this means that {array[size] = 5; size++} can be reordered to
-    /// {oldSize = size++; array[oldSize] = 5}.
-    /// Another thread reading may then see the increase of size and try to access that
-    /// position getting null. This has not happened in our experiments, but we wish to
-    /// handle the case. The risk is in binarySearch and we therefore check whether any
-    /// value read is null and if so 'aborts'.
-    ///
-    /// For Java's memory model see: https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4
-    ///
-    pub enum Lock[_: Region](JStampedLock)
-
-    ///
-    /// The Node struct defines the tree, having either children or values depending on
-    /// whether the node is internal or a leaf, respectively. The following invariants
-    /// hold for Node: `parent` is `None` for the root and `Some(p)` for all other nodes
-    /// where `p` is the parent node. `next` is `None` for internal nodes and the
-    /// rightmost leaf node and `Some(p)` for all leaf nodes where `p` is the node
-    /// directly to the right. `isLeaf` is true if the node is a leaf and false
-    /// otherwise.
-    ///
-    /// If `isLeaf == true`
-    ///
-    ///     `children` is of size 0
-    ///
-    ///     `keys` and `values` have the same size (which is the `arity` of the
-    ///     tree)
-    ///
-    ///     `keys[i]` should store the key for the value stored at `values[i]`
-    ///
-    ///     `size` is the number of keys/values currently stored in the leaf
-    ///
-    /// If `isLeaf == false`
-    ///
-    ///      `values` is of size 0
-    ///
-    ///      `children` is of size `arity` and `keys` have size `arity - 1`
-    ///
-    ///      `keys[i]` stores the smallest key in the subtree `children[i+1]`
-    ///
-    ///      `size` is the number of children currently stored in the leaf
-    ///
-    /// Lock invariants:
-    ///
-    ///     `lock` is the lock associated with the node. When it is held, no other thread may
-    ///     modify the node's contents. The only exception to the previous rule is that the
-    ///     `parent` pointer is owned by the `lock` on the parent For the root node with
-    ///     parent None the parent pointer is owned by the `rootLock` on the tree. When going
-    ///     up the tree locks are forcefully acquired. When going down the tree if a lock
-    ///     cannot be acquired immediately all current locks will be released and the attempt
-    ///     restarted after the wanted lock has been released by the holder.
-    ///
-    pub struct Node[k, v, r] {
-        keys:       Array[k, r],
-        children:   Array[Node[k, v, r], r],
-        values:     Array[v, r],
-        lock:       Lock[r],
-        mut size:   Int32,
-        mut parent: Option[Node[k, v, r]],
-        mut next:   Option[Node[k, v, r]],
-        isLeaf:     Bool
+    instance ForEach[BPlusTree[k, v, r]] {
+        type Elm = (k, v)
+        type Aef = r
+        pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
     }
 
     ///

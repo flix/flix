@@ -23,6 +23,57 @@ mod BPlusTree.Node {
     use BPlusTree.Search
 
     ///
+    /// The Node struct defines the tree, having either children or values depending on
+    /// whether the node is internal or a leaf, respectively. The following invariants
+    /// hold for Node: `parent` is `None` for the root and `Some(p)` for all other nodes
+    /// where `p` is the parent node. `next` is `None` for internal nodes and the
+    /// rightmost leaf node and `Some(p)` for all leaf nodes where `p` is the node
+    /// directly to the right. `isLeaf` is true if the node is a leaf and false
+    /// otherwise.
+    ///
+    /// If `isLeaf == true`
+    ///
+    ///     `children` is of size 0
+    ///
+    ///     `keys` and `values` have the same size (which is the `arity` of the
+    ///     tree)
+    ///
+    ///     `keys[i]` should store the key for the value stored at `values[i]`
+    ///
+    ///     `size` is the number of keys/values currently stored in the leaf
+    ///
+    /// If `isLeaf == false`
+    ///
+    ///      `values` is of size 0
+    ///
+    ///      `children` is of size `arity` and `keys` have size `arity - 1`
+    ///
+    ///      `keys[i]` stores the smallest key in the subtree `children[i+1]`
+    ///
+    ///      `size` is the number of children currently stored in the leaf
+    ///
+    /// Lock invariants:
+    ///
+    ///     `lock` is the lock associated with the node. When it is held, no other thread may
+    ///     modify the node's contents. The only exception to the previous rule is that the
+    ///     `parent` pointer is owned by the `lock` on the parent For the root node with
+    ///     parent None the parent pointer is owned by the `rootLock` on the tree. When going
+    ///     up the tree locks are forcefully acquired. When going down the tree if a lock
+    ///     cannot be acquired immediately all current locks will be released and the attempt
+    ///     restarted after the wanted lock has been released by the holder.
+    ///
+    pub struct Node[k, v, r] {
+        keys:       Array[k, r],
+        children:   Array[Node[k, v, r], r],
+        values:     Array[v, r],
+        lock:       Lock[r],
+        mut size:   Int32,
+        mut parent: Option[Node[k, v, r]],
+        mut next:   Option[Node[k, v, r]],
+        isLeaf:     Bool
+    }
+
+    ///
     /// Returns the next in-bounds `(index, node)` while traversing right.
     ///
     def seek(index: Int32, node: Node[k, v, r]): Option[(Int32, Node[k, v, r])] \ r =
