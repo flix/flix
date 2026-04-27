@@ -21,6 +21,18 @@ pub mod Sys.Exit {
     import java.lang.System
 
     ///
+    /// An effect used to exit the JVM.
+    ///
+    pub eff Exit {
+
+        ///
+        /// Immediately exits the JVM with the specified `exitCode`.
+        ///
+        def exit(exitCode: Int32): Void
+
+    }
+
+    ///
     /// Handles the `Exit` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Exit` effect using the `IO` effect.
