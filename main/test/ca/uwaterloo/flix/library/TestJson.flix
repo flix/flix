@@ -18,6 +18,7 @@ mod TestJson {
 
     use Assert.{assertEq, assertErr};
     use Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
+    use Json.ToJson.ToJson
 
     def num(n: Int32): Json.Json = JNumber(Int32.toBigDecimal(n))
 
@@ -723,6 +724,242 @@ mod TestJson {
                 JObject(Map#{})
             })),
             Json.parse("[{\"a\":1},{\"b\":[true,null]},{}]")
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson — primitives                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toJson01(): Unit \ Assert =
+        assertEq(expected = JNull, ToJson.toJson(()))
+
+    @Test
+    def toJson02(): Unit \ Assert =
+        assertEq(expected = JBool(true), ToJson.toJson(true))
+
+    @Test
+    def toJson03(): Unit \ Assert =
+        assertEq(expected = JBool(false), ToJson.toJson(false))
+
+    @Test
+    def toJson04(): Unit \ Assert =
+        assertEq(expected = JString("a"), ToJson.toJson('a'))
+
+    @Test
+    def toJson05(): Unit \ Assert =
+        assertEq(expected = JString(""), ToJson.toJson(""))
+
+    @Test
+    def toJson06(): Unit \ Assert =
+        assertEq(expected = JString("hello"), ToJson.toJson("hello"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson — integers                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toJson07(): Unit \ Assert =
+        assertEq(expected = num(42), ToJson.toJson(42i8))
+
+    @Test
+    def toJson08(): Unit \ Assert =
+        assertEq(expected = num(-7), ToJson.toJson(-7i16))
+
+    @Test
+    def toJson09(): Unit \ Assert =
+        assertEq(expected = num(0), ToJson.toJson(0i32))
+
+    @Test
+    def toJson10(): Unit \ Assert =
+        assertEq(expected = num(123456789), ToJson.toJson(123456789i64))
+
+    @Test
+    def toJson11(): Unit \ Assert =
+        assertEq(expected = JNumber(BigInt.toBigDecimal(100ii)), ToJson.toJson(100ii))
+
+    @Test
+    def toJson12(): Unit \ Assert =
+        assertEq(expected = JNumber(3.14ff), ToJson.toJson(3.14ff))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson — floats                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toJson13(): Unit \ Assert =
+        // Float64 finite values become JNumber via tryToBigDecimal
+        match ToJson.toJson(2.5f64) {
+            case JNumber(_) => assertEq(expected = true, true)
+            case _          => assertEq(expected = true, false)
+        }
+
+    @Test
+    def toJson14(): Unit \ Assert =
+        // NaN -> JNull (RFC 8259 forbids NaN)
+        assertEq(expected = JNull, ToJson.toJson(Float64.nan()))
+
+    @Test
+    def toJson15(): Unit \ Assert =
+        // +Infinity -> JNull
+        assertEq(expected = JNull, ToJson.toJson(Float64.positiveInfinity()))
+
+    @Test
+    def toJson16(): Unit \ Assert =
+        // -Infinity -> JNull
+        assertEq(expected = JNull, ToJson.toJson(Float64.negativeInfinity()))
+
+    @Test
+    def toJson17(): Unit \ Assert =
+        match ToJson.toJson(1.5f32) {
+            case JNumber(_) => assertEq(expected = true, true)
+            case _          => assertEq(expected = true, false)
+        }
+
+    @Test
+    def toJson18(): Unit \ Assert =
+        assertEq(expected = JNull, ToJson.toJson(Float32.nan()))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson — Json identity                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toJson19(): Unit \ Assert =
+        assertEq(expected = num(7), ToJson.toJson(num(7)))
+
+    @Test
+    def toJson20(): Unit \ Assert =
+        let j = JObject(Map#{"k" => JArray(Vector#{JBool(true)})});
+        assertEq(expected = j, ToJson.toJson(j))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson — Option                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toJson21(): Unit \ Assert =
+        assertEq(expected = JNull, ToJson.toJson((None: Option[Int32])))
+
+    @Test
+    def toJson22(): Unit \ Assert =
+        assertEq(expected = num(42), ToJson.toJson(Some(42)))
+
+    @Test
+    def toJson23(): Unit \ Assert =
+        assertEq(expected = JString("hi"), ToJson.toJson(Some("hi")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson — collections                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toJson24(): Unit \ Assert =
+        assertEq(expected = JArray(Vector#{}), ToJson.toJson((Vector#{}: Vector[Int32])))
+
+    @Test
+    def toJson25(): Unit \ Assert =
+        assertEq(
+            expected = JArray(Vector#{num(1), num(2), num(3)}),
+            ToJson.toJson(Vector#{1, 2, 3})
+        )
+
+    @Test
+    def toJson26(): Unit \ Assert =
+        assertEq(expected = JArray(Vector#{}), ToJson.toJson((Nil: List[Int32])))
+
+    @Test
+    def toJson27(): Unit \ Assert =
+        assertEq(
+            expected = JArray(Vector#{JString("a"), JString("b")}),
+            ToJson.toJson("a" :: "b" :: Nil)
+        )
+
+    @Test
+    def toJson28(): Unit \ Assert =
+        assertEq(expected = JObject(Map#{}), ToJson.toJson((Map#{}: Map[String, Int32])))
+
+    @Test
+    def toJson29(): Unit \ Assert =
+        assertEq(
+            expected = JObject(Map#{"a" => num(1), "b" => num(2)}),
+            ToJson.toJson(Map#{"a" => 1, "b" => 2})
+        )
+
+    @Test
+    def toJson30(): Unit \ Assert =
+        // Non-String keys are stringified via ToString.
+        assertEq(
+            expected = JObject(Map#{"1" => JBool(true), "2" => JBool(false)}),
+            ToJson.toJson(Map#{1 => true, 2 => false})
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson — tuples                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toJson31(): Unit \ Assert =
+        assertEq(
+            expected = JArray(Vector#{num(1), JString("x")}),
+            ToJson.toJson((1, "x"))
+        )
+
+    @Test
+    def toJson32(): Unit \ Assert =
+        assertEq(
+            expected = JArray(Vector#{num(1), JString("x"), JBool(true)}),
+            ToJson.toJson((1, "x", true))
+        )
+
+    @Test
+    def toJson33(): Unit \ Assert =
+        assertEq(
+            expected = JArray(Vector#{num(1), num(2), num(3), num(4), num(5)}),
+            ToJson.toJson((1, 2, 3, 4, 5))
+        )
+
+    @Test
+    def toJson34(): Unit \ Assert =
+        assertEq(
+            expected = JArray(Vector#{
+                num(1), num(2), num(3), num(4), num(5),
+                num(6), num(7), num(8), num(9), num(10)
+            }),
+            ToJson.toJson((1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ToJson — nested via instances                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toJson35(): Unit \ Assert =
+        // Option[Vector[Int32]] composes Option + Vector + Int32 instances.
+        assertEq(
+            expected = JArray(Vector#{num(1), num(2)}),
+            ToJson.toJson(Some(Vector#{1, 2}))
+        )
+
+    @Test
+    def toJson36(): Unit \ Assert =
+        // Map of String to List[Bool]
+        assertEq(
+            expected = JObject(Map#{
+                "flags" => JArray(Vector#{JBool(true), JBool(false)})
+            }),
+            ToJson.toJson(Map#{"flags" => true :: false :: Nil})
+        )
+
+    @Test
+    def toJson37(): Unit \ Assert =
+        // Round-trip toJson then toCompactString
+        assertEq(
+            expected = "{\"a\":1,\"b\":[true,null]}",
+            Json.toCompactString(ToJson.toJson(Map#{
+                "a" => num(1),
+                "b" => JArray(Vector#{JBool(true), JNull})
+            }))
         )
 
 }

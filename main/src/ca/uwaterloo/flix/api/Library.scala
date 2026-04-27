@@ -190,6 +190,7 @@ object Library {
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "Json.flix" -> LocalResource.get("/src/library/Json.flix"),
     "Json/JsonError.flix" -> LocalResource.get("/src/library/Json/JsonError.flix"),
+    "Json/ToJson.flix" -> LocalResource.get("/src/library/Json/ToJson.flix"),
     "KeyNotFound.flix" -> LocalResource.get("/src/library/KeyNotFound.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
