@@ -17,6 +17,12 @@
 pub mod Concurrent.Condition {
 
     import java.lang.IllegalMonitorStateException
+    import java.util.concurrent.locks.{Condition => JCondition}
+
+    ///
+    /// A wrapper around a Java Condition.
+    ///
+    pub enum Condition(JCondition)
 
     ///
     /// Causes the current thread to wait until it is signalled or interrupted.
