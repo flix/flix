@@ -14,63 +14,63 @@
  * limitations under the License.
  */
 
-///
-/// Represents a mutable hash map that preserves insertion order.
-///
-/// Uses a hash table with separate chaining for collisions and a doubly-linked list
-/// to maintain insertion order.
-///
-pub struct MutHashMap[k: Type, v: Type, r: Region] {
-    rc: Region[r],
-    mut buckets: Array[Option[MutHashMap.Entry[k, v, r]], r],   // Hash table buckets
-    mut head: Option[MutHashMap.Entry[k, v, r]],                // First entry in insertion order
-    mut tail: Option[MutHashMap.Entry[k, v, r]],                // Last entry in insertion order
-    mut size: Int32                                             // Number of entries
-}
+pub mod MutHashMap {
 
-instance Iterable[MutHashMap[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def iterator(rc: Region[r1], m: MutHashMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
-        MutHashMap.iterator(rc, m)
-}
+    ///
+    /// Represents a mutable hash map that preserves insertion order.
+    ///
+    /// Uses a hash table with separate chaining for collisions and a doubly-linked list
+    /// to maintain insertion order.
+    ///
+    pub struct MutHashMap[k: Type, v: Type, r: Region] {
+        rc: Region[r],
+        mut buckets: Array[Option[MutHashMap.Entry[k, v, r]], r],   // Hash table buckets
+        mut head: Option[MutHashMap.Entry[k, v, r]],                // First entry in insertion order
+        mut tail: Option[MutHashMap.Entry[k, v, r]],                // Last entry in insertion order
+        mut size: Int32                                             // Number of entries
+    }
 
-instance ForEach[MutHashMap[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutHashMap[k, v, r]): Unit \ ef + r =
-        MutHashMap.forEach((k, v) -> f((k, v)), m)
-}
+    instance Iterable[MutHashMap[k, v, r]] {
+        type Elm = (k, v)
+        type Aef = r
+        pub def iterator(rc: Region[r1], m: MutHashMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+            MutHashMap.iterator(rc, m)
+    }
 
-instance Indexable[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
-    type Elm = v
-    type Idx = k
-    type Aef = r + KeyNotFound
+    instance ForEach[MutHashMap[k, v, r]] {
+        type Elm = (k, v)
+        type Aef = r
+        pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutHashMap[k, v, r]): Unit \ ef + r =
+            MutHashMap.forEach((k, v) -> f((k, v)), m)
+    }
 
-    pub def get(t: MutHashMap[k, v, r], i: k): v \ r + KeyNotFound = {
-        match MutHashMap.get(i, t) {
-            case Some(v) => v
-            case None => KeyNotFound.keyNotFound("key not found")
+    instance Indexable[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
+        type Elm = v
+        type Idx = k
+        type Aef = r + KeyNotFound
+
+        pub def get(t: MutHashMap[k, v, r], i: k): v \ r + KeyNotFound = {
+            match MutHashMap.get(i, t) {
+                case Some(v) => v
+                case None => KeyNotFound.keyNotFound("key not found")
+            }
         }
     }
-}
 
-instance IndexableMut[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
-    type Aef = r
+    instance IndexableMut[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
+        type Aef = r
 
-    pub def put(t: MutHashMap[k, v, r], i: k, v: v): Unit \ r = MutHashMap.put(i, v, t)
-}
+        pub def put(t: MutHashMap[k, v, r], i: k, v: v): Unit \ r = MutHashMap.put(i, v, t)
+    }
 
-instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
-    type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
+    instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
 
-    pub def format(x: MutHashMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
-        use RichString.{fromString, joinWith};
-        let kvs = MutHashMap.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
-        fromString("MutHashMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
-}
-
-pub mod MutHashMap {
+        pub def format(x: MutHashMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
+            use RichString.{fromString, joinWith};
+            let kvs = MutHashMap.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
+            fromString("MutHashMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
+    }
 
     ///
     /// Constant denoting the minimum allowed capacity of the bucket array.
