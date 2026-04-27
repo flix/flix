@@ -14,25 +14,25 @@
  *  limitations under the License.
  */
 
-///
-/// An effect used to abort computation with an error message.
-///
-pub eff Abort {
-
-    ///
-    /// Immediately aborts the current computation with the given error message `m`.
-    ///
-    /// The computation cannot be resumed.
-    ///
-    def abort(m: RichString): Void
-
-}
-
 pub mod Abort {
 
     import java.lang.Thread
     import java.lang.StackTraceElement
     import java.lang.System
+
+    ///
+    /// An effect used to abort computation with an error message.
+    ///
+    pub eff Abort {
+
+        ///
+        /// Immediately aborts the current computation with the given error message `m`.
+        ///
+        /// The computation cannot be resumed.
+        ///
+        def abort(m: RichString): Void
+
+    }
 
     ///
     /// Aborts the current computation with the given error message `m` enriched with a JVM stack trace.
