@@ -18,7 +18,11 @@ mod TestJson {
 
     use Assert.{assertEq, assertErr};
     use Json.Json.{JArray, JBool, JNull, JNumber, JObject, JString}
+    use Json.JsonError.JsonError
+    use Json.JsonError.JsonError.{MissingKey, TypeMismatch}
     use Json.ToJson.ToJson
+    use Json.FromJson.FromJson
+    use Json.FromJson.{getAtKey, getAtKeyOpt, decodeAtKey, decodeAtKeyOpt}
 
     def num(n: Int32): Json.Json = JNumber(Int32.toBigDecimal(n))
 
@@ -960,6 +964,280 @@ mod TestJson {
                 "a" => num(1),
                 "b" => JArray(Vector#{JBool(true), JNull})
             }))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — primitives                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromJson01(): Unit \ Assert =
+        assertEq(expected = (Ok(JBool(true)): Result[JsonError, Json.Json]), FromJson.fromJson(JBool(true)))
+
+    @Test
+    def fromJson02(): Unit \ Assert =
+        assertEq(expected = (Ok(()): Result[JsonError, Unit]), FromJson.fromJson(JNull))
+
+    @Test
+    def fromJson03(): Unit \ Assert =
+        assertEq(expected = (Err(TypeMismatch("Unit")): Result[JsonError, Unit]), FromJson.fromJson(JBool(true)))
+
+    @Test
+    def fromJson04(): Unit \ Assert =
+        assertEq(expected = (Ok(true): Result[JsonError, Bool]), FromJson.fromJson(JBool(true)))
+
+    @Test
+    def fromJson05(): Unit \ Assert =
+        assertEq(expected = (Err(TypeMismatch("Bool")): Result[JsonError, Bool]), FromJson.fromJson(JString("yes")))
+
+    @Test
+    def fromJson06(): Unit \ Assert =
+        assertEq(expected = (Ok('x'): Result[JsonError, Char]), FromJson.fromJson(JString("x")))
+
+    @Test
+    def fromJson07(): Unit \ Assert =
+        // Multi-char string is not a Char.
+        assertEq(expected = (Err(TypeMismatch("Char")): Result[JsonError, Char]), FromJson.fromJson(JString("ab")))
+
+    @Test
+    def fromJson08(): Unit \ Assert =
+        assertEq(expected = (Ok("hello"): Result[JsonError, String]), FromJson.fromJson(JString("hello")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — numbers                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromJson09(): Unit \ Assert =
+        assertEq(expected = (Ok(42i8): Result[JsonError, Int8]), FromJson.fromJson(num(42)))
+
+    @Test
+    def fromJson10(): Unit \ Assert =
+        assertEq(expected = (Ok(-7i16): Result[JsonError, Int16]), FromJson.fromJson(num(-7)))
+
+    @Test
+    def fromJson11(): Unit \ Assert =
+        assertEq(expected = (Ok(123i32): Result[JsonError, Int32]), FromJson.fromJson(num(123)))
+
+    @Test
+    def fromJson12(): Unit \ Assert =
+        assertEq(expected = (Ok(99i64): Result[JsonError, Int64]), FromJson.fromJson(num(99)))
+
+    @Test
+    def fromJson13(): Unit \ Assert =
+        // Out-of-range Int8.
+        assertEq(expected = (Err(TypeMismatch("Int8")): Result[JsonError, Int8]), FromJson.fromJson(num(200)))
+
+    @Test
+    def fromJson14(): Unit \ Assert =
+        // Fractional values are truncated towards 0.
+        assertEq(expected = (Ok(1i32): Result[JsonError, Int32]), FromJson.fromJson(JNumber(1.9ff)))
+
+    @Test
+    def fromJson15(): Unit \ Assert =
+        assertEq(expected = (Ok(BigDecimal.toBigInt(100.0ff)): Result[JsonError, BigInt]), FromJson.fromJson(num(100)))
+
+    @Test
+    def fromJson16(): Unit \ Assert =
+        assertEq(expected = (Ok(3.14ff): Result[JsonError, BigDecimal]), FromJson.fromJson(JNumber(3.14ff)))
+
+    @Test
+    def fromJson17(): Unit \ Assert =
+        assertEq(expected = (Ok(2.5f64): Result[JsonError, Float64]), FromJson.fromJson(JNumber(2.5ff)))
+
+    @Test
+    def fromJson18(): Unit \ Assert =
+        assertEq(expected = (Err(TypeMismatch("Int32")): Result[JsonError, Int32]), FromJson.fromJson(JBool(true)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — Option                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromJson19(): Unit \ Assert =
+        assertEq(expected = (Ok(None): Result[JsonError, Option[Int32]]), FromJson.fromJson(JNull))
+
+    @Test
+    def fromJson20(): Unit \ Assert =
+        assertEq(expected = (Ok(Some(7i32)): Result[JsonError, Option[Int32]]), FromJson.fromJson(num(7)))
+
+    @Test
+    def fromJson21(): Unit \ Assert =
+        assertEq(
+            expected = (Err(TypeMismatch("Int32")): Result[JsonError, Option[Int32]]),
+            FromJson.fromJson(JString("nope"))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — collections                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromJson22(): Unit \ Assert =
+        assertEq(
+            expected = (Ok(Vector#{1, 2, 3}): Result[JsonError, Vector[Int32]]),
+            FromJson.fromJson(JArray(Vector#{num(1), num(2), num(3)}))
+        )
+
+    @Test
+    def fromJson23(): Unit \ Assert =
+        assertEq(
+            expected = (Ok((Vector#{}: Vector[Int32])): Result[JsonError, Vector[Int32]]),
+            FromJson.fromJson(JArray(Vector#{}))
+        )
+
+    @Test
+    def fromJson24(): Unit \ Assert =
+        assertEq(
+            expected = (Ok("a" :: "b" :: Nil): Result[JsonError, List[String]]),
+            FromJson.fromJson(JArray(Vector#{JString("a"), JString("b")}))
+        )
+
+    @Test
+    def fromJson25(): Unit \ Assert =
+        // First failing element propagates.
+        assertEq(
+            expected = (Err(TypeMismatch("Int32")): Result[JsonError, Vector[Int32]]),
+            FromJson.fromJson(JArray(Vector#{num(1), JBool(true)}))
+        )
+
+    @Test
+    def fromJson26(): Unit \ Assert =
+        assertEq(
+            expected = (Ok(Map#{"a" => 1i32, "b" => 2i32}): Result[JsonError, Map[String, Int32]]),
+            FromJson.fromJson(JObject(Map#{"a" => num(1), "b" => num(2)}))
+        )
+
+    @Test
+    def fromJson27(): Unit \ Assert =
+        // Map keys are decoded via FromString.
+        assertEq(
+            expected = (Ok(Map#{1i32 => true, 2i32 => false}): Result[JsonError, Map[Int32, Bool]]),
+            FromJson.fromJson(JObject(Map#{"1" => JBool(true), "2" => JBool(false)}))
+        )
+
+    @Test
+    def fromJson28(): Unit \ Assert =
+        // Map key that fails FromString errors.
+        assertEq(
+            expected = (Err(TypeMismatch("Map key")): Result[JsonError, Map[Int32, Bool]]),
+            FromJson.fromJson(JObject(Map#{"notANumber" => JBool(true)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — tuples                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromJson29(): Unit \ Assert =
+        assertEq(
+            expected = (Ok((1i32, "x")): Result[JsonError, (Int32, String)]),
+            FromJson.fromJson(JArray(Vector#{num(1), JString("x")}))
+        )
+
+    @Test
+    def fromJson30(): Unit \ Assert =
+        // Wrong arity.
+        assertEq(
+            expected = (Err(TypeMismatch("JArray of length 2")): Result[JsonError, (Int32, String)]),
+            FromJson.fromJson(JArray(Vector#{num(1), JString("x"), JBool(true)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — getAtKey / getAtKeyOpt                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromJson31(): Unit \ Assert =
+        assertEq(
+            expected = Ok(num(1)),
+            getAtKey("a", JObject(Map#{"a" => num(1), "b" => num(2)}))
+        )
+
+    @Test
+    def fromJson32(): Unit \ Assert =
+        assertEq(
+            expected = Err(MissingKey("missing")),
+            getAtKey("missing", JObject(Map#{"a" => num(1)}))
+        )
+
+    @Test
+    def fromJson33(): Unit \ Assert =
+        assertEq(
+            expected = Err(TypeMismatch("JObject")),
+            getAtKey("a", num(42))
+        )
+
+    @Test
+    def fromJson34(): Unit \ Assert =
+        assertEq(
+            expected = Ok(Some(num(1))),
+            getAtKeyOpt("a", JObject(Map#{"a" => num(1)}))
+        )
+
+    @Test
+    def fromJson35(): Unit \ Assert =
+        assertEq(
+            expected = (Ok(None): Result[JsonError, Option[Json.Json]]),
+            getAtKeyOpt("missing", JObject(Map#{"a" => num(1)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — decodeAtKey / decodeAtKeyOpt                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromJson36(): Unit \ Assert =
+        assertEq(
+            expected = (Ok(42i32): Result[JsonError, Int32]),
+            decodeAtKey("a", JObject(Map#{"a" => num(42)}))
+        )
+
+    @Test
+    def fromJson37(): Unit \ Assert =
+        // Missing key bubbles up as MissingKey.
+        assertEq(
+            expected = (Err(MissingKey("a")): Result[JsonError, Int32]),
+            decodeAtKey("a", JObject(Map#{"b" => num(42)}))
+        )
+
+    @Test
+    def fromJson38(): Unit \ Assert =
+        assertEq(
+            expected = (Ok(Some(7i32)): Result[JsonError, Option[Int32]]),
+            decodeAtKeyOpt("a", JObject(Map#{"a" => num(7)}))
+        )
+
+    @Test
+    def fromJson39(): Unit \ Assert =
+        // Absent key yields Ok(None) for the Opt variant.
+        assertEq(
+            expected = (Ok(None): Result[JsonError, Option[Int32]]),
+            decodeAtKeyOpt("missing", JObject(Map#{"a" => num(1)}))
+        )
+
+    /////////////////////////////////////////////////////////////////////////////
+    // FromJson — round-trip with ToJson                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def fromJson40(): Unit \ Assert =
+        // toJson then fromJson yields the original value for a nested structure.
+        let original: Map[String, List[Int32]] = Map#{
+            "a" => 1 :: 2 :: Nil,
+            "b" => 3 :: Nil
+        };
+        assertEq(
+            expected = (Ok(original): Result[JsonError, Map[String, List[Int32]]]),
+            FromJson.fromJson(ToJson.toJson(original))
+        )
+
+    @Test
+    def fromJson41(): Unit \ Assert =
+        // Round-trip through parse + fromJson.
+        assertEq(
+            expected = (Ok((1i32, true)): Result[JsonError, (Int32, Bool)]),
+            Result.flatMap(FromJson.fromJson, Json.parse("[1,true]"))
         )
 
 }
