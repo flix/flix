@@ -896,7 +896,7 @@ object Weeder2 {
         case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
         case TreeKind.Expr.Region => visitRegionExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
-        case TreeKind.Expr.JMatch => visitJMatchExpr(tree)
+        case TreeKind.Expr.InstanceOfMatch => visitInstanceOfMatchExpr(tree)
         case TreeKind.Expr.RestrictableChoose
              | TreeKind.Expr.RestrictableChooseStar => visitRestrictableChooseExpr(tree)
         case TreeKind.Expr.ForApplicative => visitForApplicativeExpr(tree)
@@ -1315,26 +1315,6 @@ object Weeder2 {
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
                 case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
                 case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
-                case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
-                  tryPickQName(exprs(1)) match {
-                    case Some(qname) =>
-                      if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
-                      else {
-                        val error = IllegalQualifiedName(exprs(1).loc)
-                        sctx.errors.add(error)
-                        Validation.Success(Expr.Error(error))
-                      }
-                    case None =>
-                      val error = UnexpectedToken(
-                        NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
-                        None,
-                        SyntacticContext.Expr.OtherExpr,
-                        hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
-                        loc = exprs(1).loc
-                      )
-                      sctx.errors.add(error)
-                      Validation.Success(Expr.Error(error))
-                  }
                 case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
                   val ident = Name.Ident(token.text, op.loc)
                   Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
@@ -1465,30 +1445,30 @@ object Weeder2 {
       }
     }
 
-    private def visitJMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.JMatch)
-      val rules0 = pickAll(TreeKind.Expr.JMatchRuleFragment, tree)
-      flatMapN(pickExpr(tree), traverse(rules0)(visitJMatchRule)) {
+    private def visitInstanceOfMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InstanceOfMatch)
+      val rules0 = pickAll(TreeKind.Expr.InstanceOfMatchRuleFragment, tree)
+      flatMapN(pickExpr(tree), traverse(rules0)(visitInstanceOfMatchRule)) {
         case (expr, Nil) =>
           val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
-        case (expr, rules) => Validation.Success(Expr.JMatch(expr, rules, tree.loc))
+        case (expr, rules) => Validation.Success(Expr.InstanceOfMatch(expr, rules, tree.loc))
       }
     }
 
-    private def visitJMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[JMatchRule, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.JMatchRuleFragment)
+    private def visitInstanceOfMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[InstanceOfMatchRule, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InstanceOfMatchRuleFragment)
       val maybeQName = tryPickQName(tree)
       mapN(pickNameIdent(tree), pickExpr(tree)) {
         case (ident, expr) =>
           maybeQName match {
-            case Some(qname) if qname.isUnqualified => JMatchRule(ident, Some(qname.ident), expr, tree.loc)
+            case Some(qname) if qname.isUnqualified => InstanceOfMatchRule(ident, Some(qname.ident), expr, tree.loc)
             case Some(qname) =>
               val error = IllegalQualifiedName(qname.loc)
               sctx.errors.add(error)
-              JMatchRule(ident, Some(qname.ident), expr, tree.loc)
-            case None => JMatchRule(ident, None, expr, tree.loc)
+              InstanceOfMatchRule(ident, Some(qname.ident), expr, tree.loc)
+            case None => InstanceOfMatchRule(ident, None, expr, tree.loc)
           }
       }
     }

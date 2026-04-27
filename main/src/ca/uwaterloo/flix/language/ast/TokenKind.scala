@@ -101,7 +101,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordInstance => "'instance'"
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
-      case TokenKind.KeywordJMatch => "'jmatch'"
       case TokenKind.KeywordLaw => "'law'"
       case TokenKind.KeywordLawful => "'lawful'"
       case TokenKind.KeywordLazy => "'lazy'"
@@ -238,7 +237,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
-    case TokenKind.KeywordJMatch => true
     case TokenKind.KeywordLaw => true
     case TokenKind.KeywordLawful => true
     case TokenKind.KeywordLazy => true
@@ -428,7 +426,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordIf => true
     case TokenKind.KeywordImport => true
     case TokenKind.KeywordInject => true
-    case TokenKind.KeywordJMatch => true
     case TokenKind.KeywordLazy => true
     case TokenKind.KeywordLet => true
     case TokenKind.KeywordMatch => true
@@ -838,8 +835,6 @@ object TokenKind {
   case object KeywordInstanceOf extends TokenKind
 
   case object KeywordInto extends TokenKind
-
-  case object KeywordJMatch extends TokenKind
 
   case object KeywordLaw extends TokenKind
 

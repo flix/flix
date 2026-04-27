@@ -567,8 +567,8 @@ object Desugar {
       val rs = rules.map(visitMatchRule)
       Expr.Match(e, rs, loc)
 
-    case WeededAst.Expr.JMatch(exp, rules, loc) =>
-      desugarJMatch(exp, rules, loc)
+    case WeededAst.Expr.InstanceOfMatch(exp, rules, loc) =>
+      desugarInstanceOfMatch(exp, rules, loc)
 
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
@@ -679,10 +679,6 @@ object Desugar {
       val ts = expectedType.map(visitType)
       val effs = expectedEff.map(visitType)
       Expr.Ascribe(e, ts, effs, loc)
-
-    case WeededAst.Expr.InstanceOf(exp, className, loc) =>
-      val e = visitExp(exp)
-      Expr.InstanceOf(e, className, loc)
 
     case WeededAst.Expr.CheckedCast(cast, exp, loc) =>
       val e = visitExp(exp)
@@ -1440,11 +1436,11 @@ object Desugar {
     * @param loc0 the location of the entire lambda.
     */
   /**
-    * Desugars a [[WeededAst.Expr.JMatch]] into nested `instanceof` + if-then-else + cast
+    * Desugars a [[WeededAst.Expr.InstanceOfMatch]] into nested `instanceof` + if-then-else + cast
     * expressions.
     *
     * {{{
-    *   jmatch e {
+    *   e instanceof {
     *     case x: Foo => body1
     *     case y: Bar => body2
     *     case _      => default
@@ -1452,28 +1448,28 @@ object Desugar {
     * }}}
     * desugars to
     * {{{
-    *   let jmatchVar = e;
-    *   if (jmatchVar instanceof Foo) {
-    *     let x = jmatchVar as Foo;
+    *   let scrut = e;
+    *   if (scrut instanceof Foo) {
+    *     let x = scrut as Foo;
     *     body1
-    *   } else if (jmatchVar instanceof Bar) {
-    *     let y = jmatchVar as Bar;
+    *   } else if (scrut instanceof Bar) {
+    *     let y = scrut as Bar;
     *     body2
     *   } else {
-    *     let _ = jmatchVar;
+    *     let _ = scrut;
     *     default
     *   }
     * }}}
     */
-  private def desugarJMatch(exp0: WeededAst.Expr, rules0: List[WeededAst.JMatchRule], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarInstanceOfMatch(exp0: WeededAst.Expr, rules0: List[WeededAst.InstanceOfMatchRule], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val scrutinee = visitExp(exp0)
-    val scrutIdent = Name.Ident("jmatchVar" + Flix.Delimiter + flix.genSym.freshId(), loc.asSynthetic)
+    val scrutIdent = Name.Ident("instanceOfMatchVar" + Flix.Delimiter + flix.genSym.freshId(), loc.asSynthetic)
     def scrutRef(l: SourceLocation): DesugaredAst.Expr =
       DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, scrutIdent, scrutIdent.loc), l.asSynthetic)
 
     val fallback: DesugaredAst.Expr = DesugaredAst.Expr.Hole(None, loc.asSynthetic)
     val nested = rules0.foldRight(fallback) {
-      case (WeededAst.JMatchRule(ident, Some(className), body0, ruleLoc), acc) =>
+      case (WeededAst.InstanceOfMatchRule(ident, Some(className), body0, ruleLoc), acc) =>
         val body = visitExp(body0)
         // Only bind (and cast) if the ident is not a wildcard `_`.
         val taken = if (ident.isWild) body else {
@@ -1483,7 +1479,7 @@ object Desugar {
         }
         val test = DesugaredAst.Expr.InstanceOf(scrutRef(ruleLoc), className, ruleLoc)
         DesugaredAst.Expr.IfThenElse(test, taken, acc, ruleLoc)
-      case (WeededAst.JMatchRule(ident, None, body0, ruleLoc), _) =>
+      case (WeededAst.InstanceOfMatchRule(ident, None, body0, ruleLoc), _) =>
         val body = visitExp(body0)
         if (ident.isWild) body
         else DesugaredAst.Expr.Let(ident, scrutRef(ruleLoc), body, ruleLoc)
