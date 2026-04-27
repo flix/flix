@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-pub enum Iterator[a: Type, ef: Eff, r: Region] {
-    case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
-}
-
 pub mod Iterator {
     use Step.{Ans, Skip, Done}
+
+    pub enum Iterator[a: Type, ef: Eff, r: Region] {
+        case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
+    }
 
 
     ///
