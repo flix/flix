@@ -41,7 +41,7 @@ object PrettyPrinter {
     case TreeKind.Decl.Struct                   => prettyStruct(tree)
     case TreeKind.Decl.RestrictableEnum         => prettyEnum(tree)
     case TreeKind.Expr.Binary                   => prettyBinary(tree)
-    case TreeKind.Expr.Apply                    => prettyApply(tree)
+    case TreeKind.Expr.Apply                    => prettyNewKeyword(tree)
     case TreeKind.Expr.Lambda                   => prettyLambda(tree)
     case TreeKind.Expr.LambdaMatch              => prettyLambda(tree)
     case TreeKind.Expr.LambdaExtMatch           => prettyLambda(tree)
@@ -49,11 +49,11 @@ object PrettyPrinter {
     case TreeKind.Expr.Statement                => prettyStatement(tree)
     case TreeKind.Expr.LetMatch                 => prettyLetMatch(tree)
     case TreeKind.Expr.NewObject                => prettyNewObject(tree)
-    case TreeKind.Expr.InvokeConstructor        => prettyInvokeConstructor(tree)
+    case TreeKind.Expr.InvokeConstructor        => prettyNewKeyword(tree)
     case TreeKind.Expr.JvmMethod                => prettyDef(tree)
     case TreeKind.Expr.Match                    => prettyMatch(tree)
     case TreeKind.Expr.ExtMatch                 => prettyMatch(tree)
-    case TreeKind.Expr.Select                   => prettySelect(tree)
+    case TreeKind.Expr.Select                   => prettyMatch(tree)
     case TreeKind.Expr.SelectRuleFragment          => prettyMatchRuleFragment(tree)
     case TreeKind.Expr.SelectRuleDefaultFragment   => prettyMatchRuleFragment(tree)
     case TreeKind.Expr.Foreach                  => prettyForeach(tree)
@@ -680,16 +680,6 @@ object PrettyPrinter {
     prettyBracket(tree, filterEmpty(tree.children),
       headerJoin = cs => spaceJoin(cs, Set.empty))
 
-  /**
-    * Formatting for select expressions.
-    *
-    * @param tree the select expression tree
-    * @return the formatted select expression as Doc
-    */
-  private def prettySelect(tree: Tree): Doc =
-    prettyBracket(tree, filterEmpty(tree.children),
-      headerJoin = cs => spaceJoin(cs, Set.empty))
-
   private def prettyTry(tree: Tree): Doc =
     spaceJoin(filterEmpty(tree.children), Set.empty)
 
@@ -1215,17 +1205,7 @@ object PrettyPrinter {
     * @param tree the apply expression tree
     * @return the formatted apply expression as Doc
     */
-  private def prettyApply(tree: Tree): Doc =
-    keywordSpaced(tree, TokenKind.KeywordNew, "new")
-
-  /**
-    * Formatting for invoke constructor expressions.
-    * Joins children with spaces, replacing "new" keyword with "new " and surrounding it with spaces.
-    *
-    * @param tree the invoke constructor expression tree
-    * @return the formatted invoke constructor expression as Doc
-    */
-  private def prettyInvokeConstructor(tree: Tree): Doc =
+  private def prettyNewKeyword(tree: Tree): Doc =
     keywordSpaced(tree, TokenKind.KeywordNew, "new")
 
   /**
