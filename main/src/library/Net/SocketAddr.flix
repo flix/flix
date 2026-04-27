@@ -37,8 +37,8 @@ pub mod Net.SocketAddr {
 
     instance ToString[SocketAddr] {
         pub def toString(x: SocketAddr): String = match x {
-            case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ToString.toString(ip)}:${port}"
-            case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ToString.toString(ip)}]:${port}"
+            case SocketAddr.V4(SocketAddrV4.SocketAddrV4(ip, port)) => "${ip}:${port}"
+            case SocketAddr.V6(SocketAddrV6.SocketAddrV6(ip, port)) => "[${ip}]:${port}"
         }
     }
 
