@@ -200,7 +200,6 @@ object Library {
     "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutDisjointSets.flix" -> LocalResource.get("/src/library/MutDisjointSets.flix"),
-    "MutDisjointSets/Node.flix" -> LocalResource.get("/src/library/MutDisjointSets/Node.flix"),
     "MutHashMap.flix" -> LocalResource.get("/src/library/MutHashMap.flix"),
     "MutHashMap/Entry.flix" -> LocalResource.get("/src/library/MutHashMap/Entry.flix"),
     "MutHashSet.flix" -> LocalResource.get("/src/library/MutHashSet.flix"),
