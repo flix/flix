@@ -22,6 +22,14 @@ pub mod Fixpoint3.PrecedenceGraph.MutGraph {
     use Fixpoint3.Util.getOrCrash
 
     ///
+    /// A mutable graph.
+    ///
+    pub struct MutGraph[r] {
+        vertices: MutSet[Vertex, r],
+        adjList: MutMap[Vertex, Set[Vertex], r]
+    }
+
+    ///
     /// `Color` is used to label vertices during DFS traversal and topological sort.
     ///
     /// A vertex is colored `White` if unvisited, `Gray` if currently being visisted,
