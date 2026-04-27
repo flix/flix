@@ -85,7 +85,7 @@ pub mod Debug {
                 if (Objects.isNull(obj)) {
                     "null"
                 } else obj instanceof {
-                    case s: JString     => "\"" + escape(unchecked_cast(s as String)) + "\""
+                    case s: JString     => "\"" + escape(s) + "\""
                     case b: JBigInteger => b.toString() + "ii"
                     case b: JBigDecimal => b.toString() + "ff"
                     case _              => objectToString(obj)
