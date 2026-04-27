@@ -548,9 +548,9 @@ object HtmlDocumentor {
     docSideBar(mod.parent) { () =>
       docSubModules(mod)
       docSideBarSection(
-        "Traits",
-        sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        "Enums",
+        sortedEnums,
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -558,9 +558,9 @@ object HtmlDocumentor {
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
-        "Enums",
-        sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        "Traits",
+        sortedTraits,
+        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -621,9 +621,9 @@ object HtmlDocumentor {
         (d: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
       )
       docSideBarSection(
-        "Traits",
-        sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        "Enums",
+        sortedEnums,
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -631,9 +631,9 @@ object HtmlDocumentor {
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
-        "Enums",
-        sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        "Traits",
+        sortedTraits,
+        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -706,9 +706,9 @@ object HtmlDocumentor {
         sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(esc(o.sym.name))}'>${esc(o.sym.name)}</a>")
       )
       docSideBarSection(
-        "Traits",
-        sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        "Enums",
+        sortedEnums,
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -716,9 +716,9 @@ object HtmlDocumentor {
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
-        "Enums",
-        sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        "Traits",
+        sortedTraits,
+        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -782,9 +782,9 @@ object HtmlDocumentor {
     docSideBar(Some(enm.parent)) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
-        "Traits",
-        sortedTraits,
-        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
+        "Enums",
+        sortedEnums,
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -792,9 +792,9 @@ object HtmlDocumentor {
         (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
       )
       docSideBarSection(
-        "Enums",
-        sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName)}'>${esc(e.name)}</a>"),
+        "Traits",
+        sortedTraits,
+        (t: Trait) => sb.append(s"<a href='${escUrl(t.fileName)}'>${esc(t.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -942,13 +942,7 @@ object HtmlDocumentor {
   }
 
   private def docSubModules(parentMod: Module)(implicit sb: StringBuilder): Unit = {
-    val subItems: List[Item] =
-      parentMod.submodules ++
-        parentMod.traits ++
-        parentMod.effects ++
-        parentMod.enums
-
-    val sortedItems = subItems.sortBy(_.name)
+    val sortedItems = parentMod.submodules.sortBy(_.name)
 
     if (sortedItems.isEmpty) {
       return
