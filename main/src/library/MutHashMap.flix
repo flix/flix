@@ -24,9 +24,9 @@ pub mod MutHashMap {
     ///
     pub struct MutHashMap[k: Type, v: Type, r: Region] {
         rc: Region[r],
-        mut buckets: Array[Option[MutHashMap.Node[k, v, r]], r],   // Hash table buckets
-        mut head: Option[MutHashMap.Node[k, v, r]],                // First entry in insertion order
-        mut tail: Option[MutHashMap.Node[k, v, r]],                // Last entry in insertion order
+        mut buckets: Array[Option[Node[k, v, r]], r],   // Hash table buckets
+        mut head: Option[Node[k, v, r]],                // First entry in insertion order
+        mut tail: Option[Node[k, v, r]],                // Last entry in insertion order
         mut size: Int32                                             // Number of entries
     }
 
