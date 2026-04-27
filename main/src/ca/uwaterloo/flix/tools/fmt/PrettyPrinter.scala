@@ -866,6 +866,11 @@ object PrettyPrinter {
       case _ => false
     }
 
+  private def buildSig(parts: Array[SyntaxTree.Child]): Doc =
+    spaceJoin(parts,
+      noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
+      noSpaceBefore = Set(TokenKind.Colon))
+
   /**
     * Formatting for definitions.
     *
@@ -880,19 +885,12 @@ object PrettyPrinter {
       case _ => false
     }
 
-    if (eqIndex < 0) {
-      val sig = spaceJoin(rest,
-        noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
-        noSpaceBefore = Set(TokenKind.Colon))
-      return prepend(annDoc, sig)
-    }
+    if (eqIndex < 0) return prepend(annDoc, buildSig(rest))
 
     val sigParts  = rest.take(eqIndex)
     val bodyParts = rest.drop(eqIndex + 1)
 
-    val sig = spaceJoin(sigParts,
-      noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
-      noSpaceBefore = Set(TokenKind.Colon))
+    val sig = buildSig(sigParts)
 
     val body = bodyParts.map(prettyChild)
       .reduceLeftOption(_ <> _)
@@ -921,19 +919,12 @@ object PrettyPrinter {
       case token: Token if token.kind == TokenKind.Equal => true
       case _ => false
     }
-    if (eqIndex < 0) {
-      val sig = spaceJoin(rest,
-        noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
-        noSpaceBefore = Set(TokenKind.Colon))
-      return prepend(annDoc, sig)
-    }
+    if (eqIndex < 0) return prepend(annDoc, buildSig(rest))
 
     val sigParts  = rest.take(eqIndex)
     val bodyParts = rest.drop(eqIndex + 1)
 
-    val sig = spaceJoin(sigParts,
-      noSpacePairs = Set((TreeKind.Ident, TreeKind.ParameterList)),
-      noSpaceBefore = Set(TokenKind.Colon))
+    val sig = buildSig(sigParts)
 
     bodyParts.headOption.flatMap(unwrapToStatement) match {
       case Some(stmt) =>
