@@ -23,47 +23,6 @@ pub mod Sys {
     import java.io.OutputStream
 
     ///
-    /// A handle for a running process.
-    ///
-    pub enum ProcessHandle(JProcess)
-
-    ///
-    /// A wrapper for the stdin stream of a process.
-    ///
-    pub enum StdIn(OutputStream)
-    instance Writable[StdIn] {
-        type Elm = Int8
-        type Aef = IO
-        pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
-            let StdIn.StdIn(pr) = r;
-            Writable.write(b, pr)
-    }
-
-    ///
-    /// A wrapper for the stdout stream of a process.
-    ///
-    pub enum StdOut(InputStream)
-    instance Readable[StdOut] {
-        type Elm = Int8
-        type Aef = IO
-        pub def read(b: Array[Int8, r], r: StdOut): Result[IoError, Int32] \ r + IO =
-            let StdOut.StdOut(pr) = r;
-            Readable.read(b, pr)
-    }
-
-    ///
-    /// A wrapper for the stderr stream of a process.
-    ///
-    pub enum StdErr(InputStream)
-    instance Readable[StdErr] {
-        type Elm = Int8
-        type Aef = IO
-        pub def read(b: Array[Int8, r], r: StdErr): Result[IoError, Int32] \ r + IO =
-            let StdErr.StdErr(pr) = r;
-            Readable.read(b, pr)
-    }
-
-    ///
     /// An effect used to access the system environment.
     ///
     pub eff Env {
