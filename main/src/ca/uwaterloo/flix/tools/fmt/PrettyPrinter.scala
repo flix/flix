@@ -117,7 +117,7 @@ object PrettyPrinter {
     case TreeKind.Expr.NewStruct                => prettyCommaBracket(tree)
     case TreeKind.Type.Tuple                    => prettyCommaBracket(tree)
     case TreeKind.Type.ArgumentList             => prettyCommaBracket(tree)
-    case TreeKind.Type.EffectSet                => prettyEffectSet(tree)
+    case TreeKind.Type.EffectSet                => prettySpacedCommaBracket(tree)
     case TreeKind.Type.ConstraintList           => prettyConstraintList(tree)
     case TreeKind.Type.Constraint               => prettyTypeConcat(tree)
     case TreeKind.Type.RecordRow                => prettySpacedCommaBracket(tree)
@@ -567,14 +567,6 @@ object PrettyPrinter {
     prettyBracket(tree, tree.children, formatBody = commaBodyJoin)
 
   private def prettySpacedCommaBracket(tree: Tree): Doc =
-    splitAtBracket(tree.children) match {
-      case None        => prettyFallback(tree)
-      case Some(split) => renderBracket(tree, split,
-        bodyDoc = commaBodyJoin(split.body),
-        flatPad = space)
-    }
-
-  private def prettyEffectSet(tree: Tree): Doc =
     splitAtBracket(tree.children) match {
       case None        => prettyFallback(tree)
       case Some(split) => renderBracket(tree, split,
