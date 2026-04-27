@@ -28,7 +28,7 @@ pub mod Net.SocketAddrV4 {
     instance ToString[SocketAddrV4] {
         pub def toString(x: SocketAddrV4): String =
             let SocketAddrV4.SocketAddrV4(ip, port) = x;
-            "${ToString.toString(ip)}:${port}"
+            "${ip}:${port}"
     }
 
     instance Formattable[SocketAddrV4] {
