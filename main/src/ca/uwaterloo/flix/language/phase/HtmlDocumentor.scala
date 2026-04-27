@@ -1505,7 +1505,8 @@ object HtmlDocumentor {
     */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
-    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.startLine}-L${loc.endLine}"
+    val path = loc.source.name.split("[\\\\/]").map(escUrl).mkString("/")
+    s"$LibraryGitHub$path#L${loc.startLine}-L${loc.endLine}"
   }
 
   /**
