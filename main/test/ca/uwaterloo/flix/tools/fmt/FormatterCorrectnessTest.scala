@@ -1,12 +1,12 @@
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Library}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SyntaxTree.Tree
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{LibLevel, Options}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
@@ -59,6 +59,36 @@ class FormatterCorrectnessTest extends AnyFunSuite {
     flix
   }
 
+  /**
+    * All standard library files
+    */
+  private val StdlibFiles: List[(String, String)] =
+    Library.CoreLibrary ++ Library.StandardLibrary
+
+  private val stdlibAst: SyntaxTree.Root = sharedFlix.getParsedAst
+
+  private val parserFlix: Flix = {
+    val flix = new Flix().setOptions(Options.Default.copy(lib = LibLevel.Nix))
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    for ((name, content) <- StdlibFiles) {
+      flix.addVirtualPath(Paths.get(name), content)
+    }
+    flix.check()
+    flix
+  }
+
+  private val stdlibOriginals: Map[String, String] = StdlibFiles.toMap
+
+  private def reparseOnly(src: String, virtualPath: String): SyntaxTree.Root = {
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    parserFlix.addVirtualPath(Paths.get(virtualPath), src)
+    parserFlix.check()
+    val ast = parserFlix.getParsedAst
+    parserFlix.addVirtualPath(Paths.get(virtualPath), stdlibOriginals.getOrElse(virtualPath, ""))
+    parserFlix.check()
+    ast
+  }
+
   private val CommentKinds: Set[TokenKind] = Set(
     TokenKind.CommentLine,
     TokenKind.CommentBlock,
@@ -81,7 +111,7 @@ class FormatterCorrectnessTest extends AnyFunSuite {
   private def commentSequence(tree: SyntaxTree.Tree): List[String] = {
     collectTokens(tree)
       .filter(t => CommentKinds.contains(t.kind))
-      .map(_.text)
+      .map(_.text.stripTrailing())
   }
 
   /**
@@ -191,41 +221,6 @@ class FormatterCorrectnessTest extends AnyFunSuite {
   }
 
   // ---------------------------------------------------------------------------
-  // Property 2: Nondestructive — token sequence is preserved
-  //
-  // TODO: Decicde if this is a propery as we sometimes add keywords for formatting and remove commas
-  // Yes the test will fail for now...
-  // ---------------------------------------------------------------------------
-
-  /*
-  test("PrettyPrinter: formatting must not change the token sequence.") {
-    import ca.uwaterloo.flix.tools.fmt.PrettyPrinter
-
-    for ((program, programPath) <- Programs.zip(ProgramPathList)) {
-      val syntaxTreeRoot = compileAndGetSyntaxTree(program, programPath)
-      val syntaxTree = findTreeBasedOnUri(syntaxTreeRoot, programPath).getOrElse {
-        fail(s"Could not find syntax tree for $programPath")
-      }
-
-      val tokensBefore = semanticTokenSequence(syntaxTree)
-
-      resetSharedFlixInstance(programPath)
-      val formattedText = PrettyPrinter.format(syntaxTree)
-
-      val syntaxTreeRoot2 = compileAndGetSyntaxTree(formattedText, programPath)
-      val syntaxTree2 = findTreeBasedOnUri(syntaxTreeRoot2, programPath).getOrElse {
-        fail(s"Could not find syntax tree for $programPath after formatting")
-      }
-      resetSharedFlixInstance(programPath)
-
-      val tokensAfter = semanticTokenSequence(syntaxTree2)
-
-      assert(tokensBefore == tokensAfter,
-        s"PrettyPrinter changed tokens for $programPath:\n${tokenDivergence(tokensBefore, tokensAfter)}")
-    }
-  }
-  */
-  // ---------------------------------------------------------------------------
   // Property 3: Comment order preservation
   // ---------------------------------------------------------------------------
   test("PrettyPrinter: formatting must preserve comment order.") {
@@ -252,6 +247,66 @@ class FormatterCorrectnessTest extends AnyFunSuite {
 
       assert(commentsBefore == commentsAfter,
         s"PrettyPrinter changed comment order for $programPath:\n" +
+          s"  before: ${commentsBefore.length} comments\n" +
+          s"  after:  ${commentsAfter.length} comments")
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stdlib tests idempotency
+  // ---------------------------------------------------------------------------
+
+  test("PrettyPrinter: formatting must not crash on any stdlib file.") {
+    import ca.uwaterloo.flix.tools.fmt.PrettyPrinter
+    for ((name, _) <- StdlibFiles) {
+      val syntaxTree = findTreeBasedOnUri(stdlibAst, name).getOrElse {
+        fail(s"Could not find syntax tree for stdlib: $name")
+      }
+      val formattedText = PrettyPrinter.format(syntaxTree)
+      assert(formattedText.nonEmpty, s"PrettyPrinter produced empty output for stdlib: $name")
+    }
+  }
+
+  test("PrettyPrinter: formatting must be idempotent for stdlib files.") {
+    import ca.uwaterloo.flix.tools.fmt.PrettyPrinter
+    for ((name, _) <- StdlibFiles) {
+      val syntaxTree1 = findTreeBasedOnUri(stdlibAst, name).getOrElse {
+        fail(s"Could not find syntax tree for stdlib: $name")
+      }
+      val formattedOnce = PrettyPrinter.format(syntaxTree1)
+
+      val astRoot2 = reparseOnly(formattedOnce, name)
+      val syntaxTree2 = findTreeBasedOnUri(astRoot2, name).getOrElse {
+        fail(s"Could not find syntax tree for stdlib $name after first formatting (possible parse error in formatted output)")
+      }
+      val formattedTwice = PrettyPrinter.format(syntaxTree2)
+
+      println(s"Testing idempotency of PrettyPrinter for stdlib file: $name")
+      println(s"Formatted once:\n$formattedOnce")
+
+      assert(formattedOnce == formattedTwice,
+        s"PrettyPrinter not idempotent for stdlib $name:\n${firstDivergence(formattedOnce, formattedTwice)}")
+    }
+  }
+
+  test("PrettyPrinter: formatting must preserve comment order for stdlib files.") {
+    import ca.uwaterloo.flix.tools.fmt.PrettyPrinter
+    for ((name, _) <- StdlibFiles) {
+      val syntaxTree = findTreeBasedOnUri(stdlibAst, name).getOrElse {
+        fail(s"Could not find syntax tree for stdlib: $name")
+      }
+      val commentsBefore = commentSequence(syntaxTree)
+
+      val formattedText = PrettyPrinter.format(syntaxTree)
+
+      val astRoot2 = reparseOnly(formattedText, name)
+      val syntaxTree2 = findTreeBasedOnUri(astRoot2, name).getOrElse {
+        fail(s"Could not find syntax tree for stdlib $name after formatting (possible parse error in formatted output)")
+      }
+      val commentsAfter = commentSequence(syntaxTree2)
+
+      assert(commentsBefore == commentsAfter,
+        s"PrettyPrinter changed comment order for stdlib $name:\n" +
           s"  before: ${commentsBefore.length} comments\n" +
           s"  after:  ${commentsAfter.length} comments")
     }
