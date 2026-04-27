@@ -16,6 +16,9 @@
 
 pub mod Json {
 
+    use Json.JsonError.JsonError
+    use Json.JsonError.JsonError.{UnexpectedChar, UnexpectedEof, InvalidNumber, InvalidEscape, InvalidUnicode, DuplicateKey}
+
     ///
     /// Represents a JSON value.
     ///
@@ -31,6 +34,24 @@ pub mod Json {
         case JObject(Map[String, Json])
         case JString(String)
     }
+
+    ///
+    /// Parses `s` as a JSON value.
+    ///
+    /// Returns `Ok(j)` if `s` is a single well-formed JSON value (with
+    /// optional surrounding whitespace) and nothing else. Returns
+    /// `Err(JsonError)` otherwise — see `Json.JsonError` for the cases.
+    ///
+    pub def parse(s: String): Result[JsonError, Json] =
+        let n = String.length(s);
+        let i0 = skipWs(s, 0, n);
+        match parseValue(s, i0, n) {
+            case Err(e) => Err(e)
+            case Ok((j, i1)) =>
+                let i2 = skipWs(s, i1, n);
+                if (i2 >= n) Ok(j)
+                else Err(UnexpectedChar(String.charAt(i2, s)))
+        }
 
     ///
     /// Returns the compact JSON rendering of `j`: a single line with
@@ -260,6 +281,227 @@ pub mod Json {
         match Char.forDigit(radix = 16, n) {
             case Some(c) => c
             case None    => unreachable!()
+        }
+
+    ///
+    /// Returns the position of the first non-whitespace character at or after `i`.
+    ///
+    /// JSON whitespace per RFC 8259 is space, tab, line feed, and carriage return.
+    ///
+    def skipWs(s: String, i: Int32, n: Int32): Int32 =
+        if (i >= n) i
+        else {
+            let c = String.charAt(i, s);
+            if (c == ' ' or c == '\t' or c == '\n' or c == '\r') skipWs(s, i + 1, n)
+            else i
+        }
+
+    ///
+    /// Parses a single JSON value at position `i` (skipping leading whitespace).
+    ///
+    def parseValue(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] =
+        let j = skipWs(s, i, n);
+        if (j >= n) Err(UnexpectedEof)
+        else {
+            let c = String.charAt(j, s);
+            match c {
+                case '{' => parseObject(s, j, n)
+                case '[' => parseArray(s, j, n)
+                case 't' => parseLiteral(s, j, n, "true", JBool(true))
+                case 'f' => parseLiteral(s, j, n, "false", JBool(false))
+                case 'n' => parseLiteral(s, j, n, "null", JNull)
+                case _ if Char.toBmpCodePoint(c) == 0x22 =>
+                    Result.map(match (str, k) -> (JString(str), k), parseString(s, j, n))
+                case _ if Char.isDigit(c) or c == '-' => parseNumber(s, j, n)
+                case _ => Err(UnexpectedChar(c))
+            }
+        }
+
+    ///
+    /// Matches the literal `lit` at position `i` and returns `(v, i + length(lit))`.
+    ///
+    def parseLiteral(s: String, i: Int32, n: Int32, lit: String, v: Json): Result[JsonError, (Json, Int32)] =
+        let m = String.length(lit);
+        if (matchAt(s, i, n, lit, m, 0)) Ok((v, i + m))
+        else if (i >= n) Err(UnexpectedEof)
+        else Err(UnexpectedChar(String.charAt(i, s)))
+
+    ///
+    /// Returns `true` if `s[i..i+m]` equals `lit`. Returns `false` if it differs
+    /// or if there are fewer than `m` characters left in `s`.
+    ///
+    def matchAt(s: String, i: Int32, n: Int32, lit: String, m: Int32, j: Int32): Bool =
+        if (j >= m) true
+        else if (i + j >= n) false
+        else if (String.charAt(i + j, s) != String.charAt(j, lit)) false
+        else matchAt(s, i, n, lit, m, j + 1)
+
+    ///
+    /// Parses a JSON number starting at `i`. Defers to `BigDecimal.fromString`
+    /// for the actual parse; this just identifies the run of number characters.
+    ///
+    def parseNumber(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] =
+        let end = scanNumberEnd(s, i, n);
+        let str = String.slice(start = i, end = end, s);
+        match BigDecimal.fromString(str) {
+            case Some(bd) => Ok((JNumber(bd), end))
+            case None     => Err(InvalidNumber(str))
+        }
+
+    ///
+    /// Returns the position after the last character that could be part of a JSON
+    /// number starting at `i`.
+    ///
+    def scanNumberEnd(s: String, i: Int32, n: Int32): Int32 =
+        if (i >= n) i
+        else {
+            let c = String.charAt(i, s);
+            if (Char.isDigit(c) or c == '-' or c == '+' or c == '.' or c == 'e' or c == 'E')
+                scanNumberEnd(s, i + 1, n)
+            else i
+        }
+
+    ///
+    /// Parses a JSON string literal starting at position `i` (which must point
+    /// at the opening double quote).
+    ///
+    def parseString(s: String, i: Int32, n: Int32): Result[JsonError, (String, Int32)] = region rc {
+        if (i >= n) Err(UnexpectedEof)
+        else if (Char.toBmpCodePoint(String.charAt(i, s)) != 0x22)
+            Err(UnexpectedChar(String.charAt(i, s)))
+        else {
+            let sb = StringBuilder.empty(rc);
+            scanString(s, i + 1, n, sb)
+        }
+    }
+
+    ///
+    /// Scans the body of a JSON string starting at `i` (just past the opening `"`),
+    /// appending decoded characters to `sb`. Returns the decoded string and the
+    /// position just past the closing `"`.
+    ///
+    def scanString(s: String, i: Int32, n: Int32, sb: StringBuilder[r]): Result[JsonError, (String, Int32)] \ r =
+        if (i >= n) Err(UnexpectedEof)
+        else {
+            let c = String.charAt(i, s);
+            let cp = Char.toBmpCodePoint(c);
+            match cp {
+                case 0x22 => Ok((StringBuilder.toString(sb), i + 1))
+                case 0x5C => scanEscape(s, i + 1, n, sb)
+                case _ =>
+                    StringBuilder.append(c, sb);
+                    scanString(s, i + 1, n, sb)
+            }
+        }
+
+    ///
+    /// Decodes a JSON string escape starting at `i` (just past the backslash).
+    ///
+    def scanEscape(s: String, i: Int32, n: Int32, sb: StringBuilder[r]): Result[JsonError, (String, Int32)] \ r =
+        if (i >= n) Err(UnexpectedEof)
+        else {
+            let c = String.charAt(i, s);
+            let cp = Char.toBmpCodePoint(c);
+            match cp {
+                case 0x22 => StringBuilder.appendCodePoint(0x22, sb); scanString(s, i + 1, n, sb)
+                case 0x5C => StringBuilder.appendCodePoint(0x5C, sb); scanString(s, i + 1, n, sb)
+                case 0x2F => StringBuilder.appendCodePoint(0x2F, sb); scanString(s, i + 1, n, sb)
+                case 0x62 => StringBuilder.appendCodePoint(0x08, sb); scanString(s, i + 1, n, sb)
+                case 0x66 => StringBuilder.appendCodePoint(0x0C, sb); scanString(s, i + 1, n, sb)
+                case 0x6E => StringBuilder.appendCodePoint(0x0A, sb); scanString(s, i + 1, n, sb)
+                case 0x72 => StringBuilder.appendCodePoint(0x0D, sb); scanString(s, i + 1, n, sb)
+                case 0x74 => StringBuilder.appendCodePoint(0x09, sb); scanString(s, i + 1, n, sb)
+                case 0x75 => parseUnicode(s, i + 1, n, sb)
+                case _    => Err(InvalidEscape(Char.toString(c)))
+            }
+        }
+
+    ///
+    /// Decodes a `\uXXXX` escape starting at `i` (just past the `u`).
+    ///
+    def parseUnicode(s: String, i: Int32, n: Int32, sb: StringBuilder[r]): Result[JsonError, (String, Int32)] \ r =
+        if (i + 4 > n) Err(UnexpectedEof)
+        else {
+            let hex = String.slice(start = i, end = i + 4, s);
+            match Int32.parse(16, hex) {
+                case Ok(cp) =>
+                    StringBuilder.appendCodePoint(cp, sb);
+                    scanString(s, i + 4, n, sb)
+                case Err(_) =>
+                    Err(InvalidUnicode(hex))
+            }
+        }
+
+    ///
+    /// Parses a JSON array starting at `i` (which must point at the opening `[`).
+    ///
+    def parseArray(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] = region rc {
+        let i1 = i + 1;
+        let i2 = skipWs(s, i1, n);
+        if (i2 >= n) Err(UnexpectedEof)
+        else if (String.charAt(i2, s) == ']') Ok((JArray(Vector#{}), i2 + 1))
+        else {
+            let items = MutList.empty(rc);
+            scanArrayElements(s, i2, n, items)
+        }
+    }
+
+    ///
+    /// Scans a comma-separated list of array elements starting at `i`.
+    ///
+    def scanArrayElements(s: String, i: Int32, n: Int32, items: MutList[Json, r]): Result[JsonError, (Json, Int32)] \ r =
+        match parseValue(s, i, n) {
+            case Err(e) => Err(e)
+            case Ok((v, i1)) =>
+                MutList.push(v, items);
+                let i2 = skipWs(s, i1, n);
+                if (i2 >= n) Err(UnexpectedEof)
+                else {
+                    let c = String.charAt(i2, s);
+                    if (c == ',') scanArrayElements(s, skipWs(s, i2 + 1, n), n, items)
+                    else if (c == ']') Ok((JArray(MutList.toVector(items)), i2 + 1))
+                    else Err(UnexpectedChar(c))
+                }
+        }
+
+    ///
+    /// Parses a JSON object starting at `i` (which must point at the opening `{`).
+    ///
+    /// Rejects duplicate keys with `DuplicateKey(k)`.
+    ///
+    def parseObject(s: String, i: Int32, n: Int32): Result[JsonError, (Json, Int32)] =
+        let i1 = i + 1;
+        let i2 = skipWs(s, i1, n);
+        if (i2 >= n) Err(UnexpectedEof)
+        else if (String.charAt(i2, s) == '}') Ok((JObject(Map#{}), i2 + 1))
+        else scanObjectEntries(s, i2, n, Map#{})
+
+    ///
+    /// Scans a comma-separated list of `"key": value` entries starting at `i`.
+    ///
+    def scanObjectEntries(s: String, i: Int32, n: Int32, m: Map[String, Json]): Result[JsonError, (Json, Int32)] =
+        match parseString(s, i, n) {
+            case Err(e) => Err(e)
+            case Ok((k, i1)) =>
+                if (Map.memberOf(k, m)) Err(DuplicateKey(k))
+                else {
+                    let i2 = skipWs(s, i1, n);
+                    if (i2 >= n) Err(UnexpectedEof)
+                    else if (String.charAt(i2, s) != ':') Err(UnexpectedChar(String.charAt(i2, s)))
+                    else match parseValue(s, i2 + 1, n) {
+                        case Err(e) => Err(e)
+                        case Ok((v, i3)) =>
+                            let m1 = Map.insert(k, v, m);
+                            let i4 = skipWs(s, i3, n);
+                            if (i4 >= n) Err(UnexpectedEof)
+                            else {
+                                let c = String.charAt(i4, s);
+                                if (c == ',') scanObjectEntries(s, skipWs(s, i4 + 1, n), n, m1)
+                                else if (c == '}') Ok((JObject(m1), i4 + 1))
+                                else Err(UnexpectedChar(c))
+                            }
+                    }
+                }
         }
 
 }
