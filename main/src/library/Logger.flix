@@ -14,23 +14,23 @@
  *  limitations under the License.
  */
 
-///
-/// An effect used to log messages.
-///
-pub eff Logger {
-
-    ///
-    /// Logs the given message `m` at the given severity `s`.
-    ///
-    def log(s: Severity, m: RichString): Unit
-
-}
-
 pub mod Logger {
 
     use Sys.Console
     use RichString.{gray, cyan, green, yellow, red, bold, text};
     use Severity.{Warn, Fatal, Trace, Debug, Info}
+
+    ///
+    /// An effect used to log messages.
+    ///
+    pub eff Logger {
+
+        ///
+        /// Logs the given message `m` at the given severity `s`.
+        ///
+        def log(s: Severity, m: RichString): Unit
+
+    }
 
     ///
     /// Logs the message `m` at the `Trace` level.

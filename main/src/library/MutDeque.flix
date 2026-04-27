@@ -15,47 +15,47 @@
  */
 
 
-///
-/// Represents a mutable deque.
-///
-/// Explanation of component types (from left to right):
-/// The 1st component is a reference the backing array.
-/// The 2nd component is a reference to the front index.
-/// The 3rd component is a reference to the back index.
-///
-/// If front == back then the deque is empty.
-/// Otherwise, the front index always points to an element (going counter-clockwise)
-/// and the back index always points to the first empty index (going clockwise).
-///
-pub struct MutDeque[a: Type, r: Region] {
-    r: Region[r],
-    mut values: Array[a, r],
-    mut front: Int32,
-    mut back: Int32
-}
-
-instance Iterable[MutDeque[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutDeque.iterator(rc, md)
-}
-
-instance ForEach[MutDeque[a, r]] {
-    type Elm = a
-    type Aef = r
-    pub def forEach(f: a -> Unit \ ef, md: MutDeque[a, r]): Unit \ ef + r = MutDeque.forEach(f, md)
-}
-
-instance Formattable[MutDeque[a, r]] with Formattable[a] {
-    type Aef = Formattable.Aef[a] + r
-
-    pub def format(x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
-        use RichString.{fromString, joinWith};
-        fromString("MutDeque#{") + joinWith(Formattable.format, fromString(", "), MutDeque.toList(x)) + fromString("}")
-}
-
 pub mod MutDeque {
     use Math.Shuffle
+
+    ///
+    /// Represents a mutable deque.
+    ///
+    /// Explanation of component types (from left to right):
+    /// The 1st component is a reference the backing array.
+    /// The 2nd component is a reference to the front index.
+    /// The 3rd component is a reference to the back index.
+    ///
+    /// If front == back then the deque is empty.
+    /// Otherwise, the front index always points to an element (going counter-clockwise)
+    /// and the back index always points to the first empty index (going clockwise).
+    ///
+    pub struct MutDeque[a: Type, r: Region] {
+        r: Region[r],
+        mut values: Array[a, r],
+        mut front: Int32,
+        mut back: Int32
+    }
+
+    instance Iterable[MutDeque[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutDeque.iterator(rc, md)
+    }
+
+    instance ForEach[MutDeque[a, r]] {
+        type Elm = a
+        type Aef = r
+        pub def forEach(f: a -> Unit \ ef, md: MutDeque[a, r]): Unit \ ef + r = MutDeque.forEach(f, md)
+    }
+
+    instance Formattable[MutDeque[a, r]] with Formattable[a] {
+        type Aef = Formattable.Aef[a] + r
+
+        pub def format(x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
+            use RichString.{fromString, joinWith};
+            fromString("MutDeque#{") + joinWith(Formattable.format, fromString(", "), MutDeque.toList(x)) + fromString("}")
+    }
 
     ///
     /// Constant denoting the minimum allowed capacity of the backing array.
