@@ -303,4 +303,81 @@ mod TestJson {
             Json.toPrettyString(4, JArray(Vector#{num(1), num(2)}))
         )
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toRichString — primitives are coloured                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toRichString01(): Unit \ Assert =
+        assertEq(expected = RichString.gray("null"), Json.toRichString(2, JNull))
+
+    @Test
+    def toRichString02(): Unit \ Assert =
+        assertEq(expected = RichString.magenta("true"), Json.toRichString(2, JBool(true)))
+
+    @Test
+    def toRichString03(): Unit \ Assert =
+        assertEq(expected = RichString.magenta("false"), Json.toRichString(2, JBool(false)))
+
+    @Test
+    def toRichString04(): Unit \ Assert =
+        assertEq(expected = RichString.yellow("42"), Json.toRichString(2, num(42)))
+
+    @Test
+    def toRichString05(): Unit \ Assert =
+        assertEq(expected = RichString.green("\"hi\""), Json.toRichString(2, JString("hi")))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toRichString — layout matches toPrettyString                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toRichString06(): Unit \ Assert =
+        let j = JArray(Vector#{});
+        assertEq(expected = Json.toPrettyString(2, j), RichString.toPlainString(Json.toRichString(2, j)))
+
+    @Test
+    def toRichString07(): Unit \ Assert =
+        let j = JObject(Map#{});
+        assertEq(expected = Json.toPrettyString(2, j), RichString.toPlainString(Json.toRichString(2, j)))
+
+    @Test
+    def toRichString08(): Unit \ Assert =
+        let j = JArray(Vector#{num(1)});
+        assertEq(expected = Json.toPrettyString(2, j), RichString.toPlainString(Json.toRichString(2, j)))
+
+    @Test
+    def toRichString09(): Unit \ Assert =
+        let j = JArray(Vector#{num(1), num(2), num(3)});
+        assertEq(expected = Json.toPrettyString(2, j), RichString.toPlainString(Json.toRichString(2, j)))
+
+    @Test
+    def toRichString10(): Unit \ Assert =
+        let j = JObject(Map#{"a" => num(1), "b" => num(2)});
+        assertEq(expected = Json.toPrettyString(2, j), RichString.toPlainString(Json.toRichString(2, j)))
+
+    @Test
+    def toRichString11(): Unit \ Assert =
+        let j = JObject(Map#{
+            "users" => JArray(Vector#{
+                JObject(Map#{"name" => JString("alice")}),
+                JObject(Map#{"name" => JString("bob")})
+            })
+        });
+        assertEq(expected = Json.toPrettyString(2, j), RichString.toPlainString(Json.toRichString(2, j)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toRichString — full colour spot-check on a single-key object            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toRichString12(): Unit \ Assert =
+        let expected =
+            RichString.fromString("{\n  ") +
+            RichString.cyan("\"a\"") +
+            RichString.fromString(": ") +
+            RichString.yellow("1") +
+            RichString.fromString("\n}");
+        assertEq(expected = expected, Json.toRichString(2, JObject(Map#{"a" => num(1)})))
+
 }

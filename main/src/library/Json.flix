@@ -57,6 +57,18 @@ pub mod Json {
     }
 
     ///
+    /// Returns the pretty-printed JSON rendering of `j` as a `RichString`,
+    /// with syntax-coloured tokens.
+    ///
+    /// The layout is identical to `toPrettyString`. Colours: `null` is gray,
+    /// booleans are magenta, numbers are yellow, string values are green,
+    /// and object keys are cyan. Punctuation and whitespace use the default
+    /// colour.
+    ///
+    pub def toRichString(indent: Int32, j: Json): RichString =
+        richPretty(indent, 0, j)
+
+    ///
     /// Appends the compact JSON rendering of `j` to `sb`.
     ///
     def writeCompact(j: Json, sb: StringBuilder[r]): Unit \ r = match j {
@@ -136,6 +148,63 @@ pub mod Json {
     ///
     def writeIndent(n: Int32, sb: StringBuilder[r]): Unit \ r =
         if (n > 0) { StringBuilder.appendString(String.repeat(n, " "), sb) }
+
+    ///
+    /// Returns the pretty-printed JSON rendering of `j` as a coloured
+    /// `RichString`.
+    ///
+    /// `indent` is the number of spaces per nesting level; `depth` is the
+    /// current nesting level (0 at the root).
+    ///
+    def richPretty(indent: Int32, depth: Int32, j: Json): RichString = match j {
+        case JArray(v) if Vector.isEmpty(v) =>
+            RichString.fromString("[]")
+        case JArray(v) =>
+            let nl = RichString.fromString("\n");
+            let inner = richIndent(indent * (depth + 1));
+            let outer = richIndent(indent * depth);
+            let elements = Vector.map(e -> richPretty(indent, depth + 1, e), v);
+            let sep = RichString.fromString(",") + nl + inner;
+            RichString.fromString("[") + nl + inner +
+                RichString.join(sep, elements) + nl + outer + RichString.fromString("]")
+        case JBool(b) =>
+            RichString.magenta(if (b) "true" else "false")
+        case JNull =>
+            RichString.gray("null")
+        case JNumber(n) =>
+            RichString.yellow(n)
+        case JObject(m) if Map.isEmpty(m) =>
+            RichString.fromString("{}")
+        case JObject(m) =>
+            let nl = RichString.fromString("\n");
+            let colon = RichString.fromString(": ");
+            let inner = richIndent(indent * (depth + 1));
+            let outer = richIndent(indent * depth);
+            let entries = Map.toList(m) |> List.map(match (k, x) ->
+                RichString.cyan(escapeString(k)) + colon + richPretty(indent, depth + 1, x));
+            let sep = RichString.fromString(",") + nl + inner;
+            RichString.fromString("{") + nl + inner +
+                RichString.join(sep, entries) + nl + outer + RichString.fromString("}")
+        case JString(s) =>
+            RichString.green(escapeString(s))
+    }
+
+    ///
+    /// Returns a `RichString` of `n` plain spaces. Returns the empty `RichString`
+    /// if `n <= 0`.
+    ///
+    def richIndent(n: Int32): RichString =
+        if (n > 0) RichString.fromString(String.repeat(n, " ")) else RichString.empty()
+
+    ///
+    /// Returns `s` as a JSON string literal: enclosed in double quotes, with
+    /// backslash, double-quote, and control characters escaped per RFC 8259.
+    ///
+    def escapeString(s: String): String = region rc {
+        let sb = StringBuilder.empty(rc);
+        writeEscaped(s, sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Appends `s` to `sb` as a JSON string literal: enclosed in double quotes,
