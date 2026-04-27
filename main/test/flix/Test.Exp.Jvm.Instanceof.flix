@@ -12,6 +12,9 @@ mod Test.Exp.Jvm.Instanceof {
     import java.math.BigInteger
     import java.nio.file.OpenOption
     import java.nio.file.StandardOpenOption
+    import java.util.ArrayList
+    import java.util.HashMap
+    import java.util.Optional
 
     def isString(o: Object): Bool = o instanceof {
         case _: JString => true
@@ -189,5 +192,98 @@ mod Test.Exp.Jvm.Instanceof {
             case _ => "other"
         };
         Assert.assertEq(expected = "open-option-iface", tag)
+    }
+
+    // Refined-type binding: bound name is typed as BigInteger and a BigInteger method is invoked on it.
+    @Test
+    def testInstanceofBind01(): Unit \ Assert = {
+        let o: Object = checked_cast(100ii);
+        let s = o instanceof {
+            case b: BigInteger => b.toString()
+            case _ => "other"
+        };
+        Assert.assertEq(expected = "100", s)
+    }
+
+    // Refined-type binding: bound name is typed as Number and Number.intValue is invoked on it.
+    @Test
+    def testInstanceofBind02(): Unit \ Assert = {
+        let o: Object = checked_cast(100ii);
+        let n = o instanceof {
+            case x: Number => x.intValue()
+            case _ => -1
+        };
+        Assert.assertEq(expected = 100, n)
+    }
+
+    // Refined-type binding: bound name is typed as Enum and Enum.name is invoked on it.
+    @Test
+    def testInstanceofBind03(): Unit \ Assert = {
+        let o: Object = checked_cast(StandardOpenOption.DELETE_ON_CLOSE);
+        let s = o instanceof {
+            case e: Enum => e.name()
+            case _ => "other"
+        };
+        Assert.assertEq(expected = "DELETE_ON_CLOSE", s)
+    }
+
+    // Refined-type binding: bound name is typed as JString and a String method is invoked on it.
+    @Test
+    def testInstanceofBind04(): Unit \ Assert = {
+        let o: Object = checked_cast("hello");
+        let n = o instanceof {
+            case s: JString => String.length(s)
+            case _ => -1
+        };
+        Assert.assertEq(expected = 5, n)
+    }
+
+    // Parametric Java type: matching against the raw class ArrayList.
+    @Test
+    def testInstanceofParametric01(): Unit \ {Assert, IO} = {
+        let l: ArrayList[String] = new ArrayList();
+        let o: Object = checked_cast(l);
+        let result = o instanceof {
+            case _: ArrayList => true
+            case _ => false
+        };
+        assertTrue(result)
+    }
+
+    // Parametric Java type: matching against the raw class HashMap.
+    @Test
+    def testInstanceofParametric02(): Unit \ {Assert, IO} = {
+        let m: HashMap[String, Int32] = new HashMap();
+        let o: Object = checked_cast(m);
+        let result = o instanceof {
+            case _: HashMap => true
+            case _ => false
+        };
+        assertTrue(result)
+    }
+
+    // Parametric Java type: matching against the raw class Optional.
+    @Test
+    def testInstanceofParametric03(): Unit \ {Assert, IO} = {
+        let opt: Optional[String] = Optional.of("hi");
+        let o: Object = checked_cast(opt);
+        let result = o instanceof {
+            case _: Optional => true
+            case _ => false
+        };
+        assertTrue(result)
+    }
+
+    // Parametric Java type: dispatch between ArrayList and HashMap on a value of static type Object.
+    @Test
+    def testInstanceofParametric04(): Unit \ {Assert, IO} = {
+        let m: HashMap[String, Int32] = new HashMap();
+        let o: Object = checked_cast(m);
+        let tag = o instanceof {
+            case _: ArrayList => "list"
+            case _: HashMap => "map"
+            case _ => "other"
+        };
+        Assert.assertEq(expected = "map", tag)
     }
 }
