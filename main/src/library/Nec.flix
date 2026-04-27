@@ -15,140 +15,6 @@
  */
 
 
-///
-/// The NonEmpty Chain type.
-///
-/// A chain is a list represented as an unbalanced binary tree.
-/// It supports efficient append and "snoc" - appending elements at the tail
-/// of the list.
-///
-/// Note - the constructors `NecOne` and `Nec` should not be used directly.
-///
-pub enum Nec[t] {
-    case NecOne(t)
-    case Nec(Nec[t], Nec[t])
-}
-
-instance Eq[Nec[a]] with Eq[a] {
-    pub def eq(c1: Nec[a], c2: Nec[a]): Bool = Nec.equals(c1, c2)
-}
-
-instance Order[Nec[a]] with Order[a] {
-    ///
-    /// Compares `c1` and `c2` lexicographically.
-    ///
-    pub def compare(c1: Nec[a], c2: Nec[a]): Comparison =
-        use Nec.ViewLeft;
-        match (Nec.viewLeft(c1), Nec.viewLeft(c2)) {
-            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => x <=> y
-            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => match (x <=> y) {
-                case Comparison.EqualTo => Comparison.LessThan
-                case cmp     => cmp
-            }
-            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => match (x <=> y) {
-                case Comparison.EqualTo => Comparison.GreaterThan
-                case cmp     => cmp
-            }
-            case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) =>
-                let cmp = x <=> y;
-                if (cmp == Comparison.EqualTo) xs <=> ys else cmp
-        }
-}
-
-instance Hash[Nec[a]] with Hash[a] {
-    pub def hash(c: Nec[a]): Int32 = 39119 + Hash.hash(Nec.toList(c))
-}
-
-instance SemiGroup[Nec[a]] {
-    pub def combine(c1: Nec[a], c2: Nec[a]): Nec[a] = Nec.append(c1, c2)
-}
-
-instance Functor[Nec] {
-    pub def map(f: a -> b \ ef, c: Nec[a]): Nec[b] \ ef = Nec.map(f, c)
-}
-
-instance Applicative[Nec] {
-    pub def point(x: a) : Nec[a] = Nec.singleton(x)
-    pub def ap(f: Nec[a -> b \ ef], x: Nec[a]) : Nec[b] \ ef = Nec.ap(f, x)
-}
-
-instance Monad[Nec] {
-    pub def flatMap(f: a -> Nec[b] \ ef, x : Nec[a]) : Nec[b] \ ef = Nec.flatMap(f, x)
-}
-
-instance MonadZip[Nec] {
-    pub def zipWith(f: (a, b) -> c \ ef, xs: Nec[a], ys: Nec[b]): Nec[c] \ ef = Nec.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] = Nec.zipWithA(f, xs, ys)
-    redef zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
-    redef unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
-}
-
-instance Foldable[Nec] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
-    redef head(c: Nec[a]): Option[a] = Some(Nec.head(c))
-    redef isEmpty(_: Nec[a]): Bool = false
-    redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
-    redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
-    redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
-}
-
-instance UnorderedFoldable[Nec] {
-    pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
-    redef isEmpty(_: Nec[a]): Bool = false
-    redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
-    redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
-    redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
-}
-
-instance Traversable[Nec] {
-    pub def traverse(f: a -> m[b] \ ef, t: Nec[a]): m[Nec[b]] \ ef with Applicative[m] = Nec.traverse(f, t)
-    redef sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
-}
-
-instance Reducible[Nec] {
-    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
-    redef head(l: Nec[a]): a = Nec.head(l)
-    redef last(l: Nec[a]): a = Nec.last(l)
-    redef init(l: Nec[a]): List[a] = Nec.init(l)
-    redef tail(l: Nec[a]): List[a] = Nec.tail(l)
-    redef exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
-    redef forAll(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forAll(f, l)
-    redef find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
-    redef findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
-    redef findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
-    redef memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
-    redef dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
-    redef takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
-    redef toArray(rc: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(rc, l)
-    redef toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
-    redef toList(l: Nec[a]): List[a] = Nec.toList(l)
-}
-
-instance Formattable[Nec[a]] with Formattable[a] {
-    type Aef = Formattable.Aef[a]
-
-    pub def format(x: Nec[a]): RichString \ Formattable.Aef[a] =
-        RichString.fromString("Nec#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
-}
-
-instance ToString[Nec[a]] with ToString[a] {
-    pub def toString(c: Nec[a]): String = region rc {
-        "Nec#{" + (Nec.iterator(rc, c) |> Iterator.join(", ")) + "}"
-    }
-}
-
-instance Iterable[Nec[a]] {
-    type Elm = a
-    pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(rc, l)
-}
-
-instance ForEach[Nec[a]] {
-    type Elm = a
-    pub def forEach(f: a -> Unit \ ef, l: Nec[a]): Unit \ ef = Nec.forEach(f, l)
-}
-
 pub mod Nec {
     use Math.Shuffle
     use ViewLeft.{OneLeft, SomeLeft}
@@ -156,6 +22,140 @@ pub mod Nec {
 
     use Functor.{<$>}
     use Applicative.{<*>}
+
+    ///
+    /// The NonEmpty Chain type.
+    ///
+    /// A chain is a list represented as an unbalanced binary tree.
+    /// It supports efficient append and "snoc" - appending elements at the tail
+    /// of the list.
+    ///
+    /// Note - the constructors `NecOne` and `Nec` should not be used directly.
+    ///
+    pub enum Nec[t] {
+        case NecOne(t)
+        case Nec(Nec[t], Nec[t])
+    }
+
+    instance Eq[Nec[a]] with Eq[a] {
+        pub def eq(c1: Nec[a], c2: Nec[a]): Bool = Nec.equals(c1, c2)
+    }
+
+    instance Order[Nec[a]] with Order[a] {
+        ///
+        /// Compares `c1` and `c2` lexicographically.
+        ///
+        pub def compare(c1: Nec[a], c2: Nec[a]): Comparison =
+            use Nec.ViewLeft;
+            match (Nec.viewLeft(c1), Nec.viewLeft(c2)) {
+                case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => x <=> y
+                case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => match (x <=> y) {
+                    case Comparison.EqualTo => Comparison.LessThan
+                    case cmp     => cmp
+                }
+                case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => match (x <=> y) {
+                    case Comparison.EqualTo => Comparison.GreaterThan
+                    case cmp     => cmp
+                }
+                case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) =>
+                    let cmp = x <=> y;
+                    if (cmp == Comparison.EqualTo) xs <=> ys else cmp
+            }
+    }
+
+    instance Hash[Nec[a]] with Hash[a] {
+        pub def hash(c: Nec[a]): Int32 = 39119 + Hash.hash(Nec.toList(c))
+    }
+
+    instance SemiGroup[Nec[a]] {
+        pub def combine(c1: Nec[a], c2: Nec[a]): Nec[a] = Nec.append(c1, c2)
+    }
+
+    instance Functor[Nec] {
+        pub def map(f: a -> b \ ef, c: Nec[a]): Nec[b] \ ef = Nec.map(f, c)
+    }
+
+    instance Applicative[Nec] {
+        pub def point(x: a) : Nec[a] = Nec.singleton(x)
+        pub def ap(f: Nec[a -> b \ ef], x: Nec[a]) : Nec[b] \ ef = Nec.ap(f, x)
+    }
+
+    instance Monad[Nec] {
+        pub def flatMap(f: a -> Nec[b] \ ef, x : Nec[a]) : Nec[b] \ ef = Nec.flatMap(f, x)
+    }
+
+    instance MonadZip[Nec] {
+        pub def zipWith(f: (a, b) -> c \ ef, xs: Nec[a], ys: Nec[b]): Nec[c] \ ef = Nec.zipWith(f, xs, ys)
+        pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] = Nec.zipWithA(f, xs, ys)
+        redef zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
+        redef unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
+    }
+
+    instance Foldable[Nec] {
+        pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
+        pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
+        redef head(c: Nec[a]): Option[a] = Some(Nec.head(c))
+        redef isEmpty(_: Nec[a]): Bool = false
+        redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
+        redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
+        redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
+    }
+
+    instance UnorderedFoldable[Nec] {
+        pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
+        redef isEmpty(_: Nec[a]): Bool = false
+        redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
+        redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
+        redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
+    }
+
+    instance Traversable[Nec] {
+        pub def traverse(f: a -> m[b] \ ef, t: Nec[a]): m[Nec[b]] \ ef with Applicative[m] = Nec.traverse(f, t)
+        redef sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
+    }
+
+    instance Reducible[Nec] {
+        pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
+        pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
+        redef head(l: Nec[a]): a = Nec.head(l)
+        redef last(l: Nec[a]): a = Nec.last(l)
+        redef init(l: Nec[a]): List[a] = Nec.init(l)
+        redef tail(l: Nec[a]): List[a] = Nec.tail(l)
+        redef exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
+        redef forAll(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forAll(f, l)
+        redef find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
+        redef findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
+        redef findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
+        redef memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
+        redef dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
+        redef takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
+        redef toArray(rc: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(rc, l)
+        redef toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
+        redef toList(l: Nec[a]): List[a] = Nec.toList(l)
+    }
+
+    instance Formattable[Nec[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: Nec[a]): RichString \ Formattable.Aef[a] =
+            RichString.fromString("Nec#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
+    }
+
+    instance ToString[Nec[a]] with ToString[a] {
+        pub def toString(c: Nec[a]): String = region rc {
+            "Nec#{" + (Nec.iterator(rc, c) |> Iterator.join(", ")) + "}"
+        }
+    }
+
+    instance Iterable[Nec[a]] {
+        type Elm = a
+        pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(rc, l)
+    }
+
+    instance ForEach[Nec[a]] {
+        type Elm = a
+        pub def forEach(f: a -> Unit \ ef, l: Nec[a]): Unit \ ef = Nec.forEach(f, l)
+    }
 
     ///
     /// A datatype for pattern matching on a Nec (traversing left-to-right).

@@ -15,84 +15,84 @@
  */
 
 
-///
-/// The MultiMap type.
-///
-/// A MultiMap is a Map that allows multiple values for a key.
-/// Multiple values are stored in a Set so duplicates are not allowed.
-///
-/// The key and value types must implement the Eq and Order traits.
-///
-pub enum MultiMap[k, v] {
-    case MultiMap(Map[k, Set[v]])
-}
-
-instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
-}
-
-instance Formattable[MultiMap[k, v]] with Formattable[k], Formattable[v] {
-    type Aef = Formattable.Aef[k] + Formattable.Aef[v]
-
-    pub def format(x: MultiMap[k, v]): RichString \ Formattable.Aef[k] + Formattable.Aef[v] =
-        let kvs = MultiMap.toMap(x) |> Map.toList |> List.map(match (k, vs) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(vs));
-        RichString.fromString("MultiMap#{") + RichString.joinWith(identity, RichString.fromString(", "), kvs) + RichString.fromString("}")
-}
-
-instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
-    pub def hash(m: MultiMap[k, v]): Int32 =
-        let MultiMap.MultiMap(m1) = m;
-        Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m1)
-}
-
-instance Eq[MultiMap[k, v]] with Eq[k], Eq[v] {
-    pub def eq(m1: MultiMap[k, v], m2: MultiMap[k, v]): Bool =
-        MultiMap.toList(m1) == MultiMap.toList(m2)
-}
-
-instance Order[MultiMap[k, v]] with Order[k], Order[v] {
-    pub def compare(x: MultiMap[k, v], y: MultiMap[k, v]): Comparison =
-        MultiMap.toList(x) <=> MultiMap.toList(y)
-}
-
-instance Indexable[MultiMap[k, v]] with Order[k] {
-    type Idx = k
-    type Elm = Set[v]
-    type Aef = KeyNotFound
-    pub def get(t: MultiMap[k, v], i: k): Set[v] \ KeyNotFound =
-        let vs = MultiMap.get(i, t);
-        if (Set.isEmpty(vs))
-            KeyNotFound.keyNotFound("key not found")
-        else
-            vs
-}
-
-instance Foldable[MultiMap[k]] {
-    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
-    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRight(f, s, m)
-    redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
-}
-
-instance UnorderedFoldable[MultiMap[k]] {
-    pub def foldMap(f: v -> b \ ef, m: MultiMap[k, v]): b \ ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
-    redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
-    redef exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
-    redef forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
-}
-
-instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
-    pub def combine(x: MultiMap[k,v], y: MultiMap[k,v]): MultiMap[k,v] = MultiMap.union(x, y)
-}
-
-instance CommutativeSemiGroup[MultiMap[k,v]] with Order[k], Order[v]
-
-instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
-    pub def empty(): MultiMap[k, v] = MultiMap.empty()
-}
-
-instance CommutativeMonoid[MultiMap[k, v]] with Order[k], Order[v]
-
 pub mod MultiMap {
+
+    ///
+    /// The MultiMap type.
+    ///
+    /// A MultiMap is a Map that allows multiple values for a key.
+    /// Multiple values are stored in a Set so duplicates are not allowed.
+    ///
+    /// The key and value types must implement the Eq and Order traits.
+    ///
+    pub enum MultiMap[k, v] {
+        case MultiMap(Map[k, Set[v]])
+    }
+
+    instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
+        pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
+    }
+
+    instance Formattable[MultiMap[k, v]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+
+        pub def format(x: MultiMap[k, v]): RichString \ Formattable.Aef[k] + Formattable.Aef[v] =
+            let kvs = MultiMap.toMap(x) |> Map.toList |> List.map(match (k, vs) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(vs));
+            RichString.fromString("MultiMap#{") + RichString.joinWith(identity, RichString.fromString(", "), kvs) + RichString.fromString("}")
+    }
+
+    instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
+        pub def hash(m: MultiMap[k, v]): Int32 =
+            let MultiMap.MultiMap(m1) = m;
+            Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m1)
+    }
+
+    instance Eq[MultiMap[k, v]] with Eq[k], Eq[v] {
+        pub def eq(m1: MultiMap[k, v], m2: MultiMap[k, v]): Bool =
+            MultiMap.toList(m1) == MultiMap.toList(m2)
+    }
+
+    instance Order[MultiMap[k, v]] with Order[k], Order[v] {
+        pub def compare(x: MultiMap[k, v], y: MultiMap[k, v]): Comparison =
+            MultiMap.toList(x) <=> MultiMap.toList(y)
+    }
+
+    instance Indexable[MultiMap[k, v]] with Order[k] {
+        type Idx = k
+        type Elm = Set[v]
+        type Aef = KeyNotFound
+        pub def get(t: MultiMap[k, v], i: k): Set[v] \ KeyNotFound =
+            let vs = MultiMap.get(i, t);
+            if (Set.isEmpty(vs))
+                KeyNotFound.keyNotFound("key not found")
+            else
+                vs
+    }
+
+    instance Foldable[MultiMap[k]] {
+        pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
+        pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRight(f, s, m)
+        redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
+    }
+
+    instance UnorderedFoldable[MultiMap[k]] {
+        pub def foldMap(f: v -> b \ ef, m: MultiMap[k, v]): b \ ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
+        redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
+        redef exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
+        redef forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
+    }
+
+    instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
+        pub def combine(x: MultiMap[k,v], y: MultiMap[k,v]): MultiMap[k,v] = MultiMap.union(x, y)
+    }
+
+    instance CommutativeSemiGroup[MultiMap[k,v]] with Order[k], Order[v]
+
+    instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
+        pub def empty(): MultiMap[k, v] = MultiMap.empty()
+    }
+
+    instance CommutativeMonoid[MultiMap[k, v]] with Order[k], Order[v]
 
     ///
     /// Returns a string representation of `m`.

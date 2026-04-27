@@ -15,122 +15,122 @@
  */
 
 
-///
-/// The Map type.
-///
-/// A map is currently represented internally as a red-black tree.
-///
-pub enum Map[k, v] {
-    case Map(RedBlackTree[k, v])
-}
-
-instance Eq[Map[k, v]] with Eq[k], Eq[v] {
-    pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
-        Map.toList(m1) == Map.toList(m2)
-}
-
-instance Order[Map[k, v]] with Order[k], Order[v] {
-    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
-        Map.toList(x) <=> Map.toList(y)
-}
-
-instance Formattable[Map[k, v]] with Formattable[k], Formattable[v] {
-    type Aef = Formattable.Aef[k] + Formattable.Aef[v]
-
-    pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
-        let pairs = Map.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(v));
-        RichString.fromString("Map#{") + RichString.joinWith(identity, RichString.fromString(", "), pairs) + RichString.fromString("}")
-}
-
-instance ToString[Map[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: Map[k, v]): String = Map.toString(m)
-}
-
-instance Hash[Map[k, v]] with Hash[k], Hash[v] {
-    pub def hash(m: Map[k, v]): Int32 =
-        Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
-}
-
-instance Indexable[Map[k, v]] with Order[k] {
-    type Idx = k
-    type Elm = v
-    type Aef = KeyNotFound
-    pub def get(t: Map[k, v], i: k): v \ KeyNotFound = match Map.get(i, t) {
-        case Some(v) => v
-        case None    => KeyNotFound.keyNotFound("key not found")
-    }
-}
-
-instance Functor[Map[k]] {
-    pub def map(f: v1 -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef = Map.map(f, m)
-}
-
-instance Foldable[Map[k]] {
-    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
-    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
-    redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
-}
-
-instance UnorderedFoldable[Map[k]] {
-    pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
-    redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
-    redef exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
-    redef forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
-}
-
-instance Traversable[Map[k]] {
-    pub def traverse(f: a -> m[b] \ ef, t: Map[k, a]): m[Map[k, b]] \ ef with Applicative[m] = Map.traverse(f, t)
-    redef sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
-}
-
-instance Filterable[Map[k]] with Order[k] {
-    pub def filterMap(f: a -> Option[b] \ ef, m: Map[k, a]): Map[k, b] \ ef = Map.filterMap(f, m)
-    redef filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
-}
-
-instance Witherable[Map[k]] with Order[k]
-
-instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
-    pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
-}
-
-instance CommutativeSemiGroup[Map[k,v]] with Order[k], CommutativeSemiGroup[v]
-
-instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
-    pub def empty(): Map[k, v] = Map.empty()
-}
-
-instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
-
-instance LowerBound[Map[k, v]] {
-    pub def minValue(): Map[k, v] = Map.empty()
-}
-
-instance PartialOrder[Map[k, v]] with Order[k], Eq[v] {
-    pub def lessEqual(m1: Map[k, v], m2: Map[k, v]): Bool = m1 `Map.isSubmapOf` m2
-}
-
-instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
-    pub def leastUpperBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
-        Map.unionWith(JoinLattice.leastUpperBound, m1, m2)
-}
-
-instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
-    pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
-        Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
-}
-
-instance Iterable[Map[k, v]] {
-    type Elm = (k, v)
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
-}
-
-instance ForEach[Map[k, v]] {
-    type Elm = (k, v)
-    pub def forEach(f: ((k, v)) -> Unit \ ef, t: Map[k, v]): Unit \ ef = Map.forEach(k -> v -> f((k, v)), t)
-}
-
 pub mod Map {
+
+    ///
+    /// The Map type.
+    ///
+    /// A map is currently represented internally as a red-black tree.
+    ///
+    pub enum Map[k, v] {
+        case Map(RedBlackTree[k, v])
+    }
+
+    instance Eq[Map[k, v]] with Eq[k], Eq[v] {
+        pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
+            Map.toList(m1) == Map.toList(m2)
+    }
+
+    instance Order[Map[k, v]] with Order[k], Order[v] {
+        pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
+            Map.toList(x) <=> Map.toList(y)
+    }
+
+    instance Formattable[Map[k, v]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+
+        pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
+            let pairs = Map.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(v));
+            RichString.fromString("Map#{") + RichString.joinWith(identity, RichString.fromString(", "), pairs) + RichString.fromString("}")
+    }
+
+    instance ToString[Map[k, v]] with ToString[k], ToString[v] {
+        pub def toString(m: Map[k, v]): String = Map.toString(m)
+    }
+
+    instance Hash[Map[k, v]] with Hash[k], Hash[v] {
+        pub def hash(m: Map[k, v]): Int32 =
+            Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
+    }
+
+    instance Indexable[Map[k, v]] with Order[k] {
+        type Idx = k
+        type Elm = v
+        type Aef = KeyNotFound
+        pub def get(t: Map[k, v], i: k): v \ KeyNotFound = match Map.get(i, t) {
+            case Some(v) => v
+            case None    => KeyNotFound.keyNotFound("key not found")
+        }
+    }
+
+    instance Functor[Map[k]] {
+        pub def map(f: v1 -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef = Map.map(f, m)
+    }
+
+    instance Foldable[Map[k]] {
+        pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
+        pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
+        redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
+    }
+
+    instance UnorderedFoldable[Map[k]] {
+        pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
+        redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
+        redef exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
+        redef forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
+    }
+
+    instance Traversable[Map[k]] {
+        pub def traverse(f: a -> m[b] \ ef, t: Map[k, a]): m[Map[k, b]] \ ef with Applicative[m] = Map.traverse(f, t)
+        redef sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
+    }
+
+    instance Filterable[Map[k]] with Order[k] {
+        pub def filterMap(f: a -> Option[b] \ ef, m: Map[k, a]): Map[k, b] \ ef = Map.filterMap(f, m)
+        redef filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
+    }
+
+    instance Witherable[Map[k]] with Order[k]
+
+    instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
+        pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
+    }
+
+    instance CommutativeSemiGroup[Map[k,v]] with Order[k], CommutativeSemiGroup[v]
+
+    instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
+        pub def empty(): Map[k, v] = Map.empty()
+    }
+
+    instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
+
+    instance LowerBound[Map[k, v]] {
+        pub def minValue(): Map[k, v] = Map.empty()
+    }
+
+    instance PartialOrder[Map[k, v]] with Order[k], Eq[v] {
+        pub def lessEqual(m1: Map[k, v], m2: Map[k, v]): Bool = m1 `Map.isSubmapOf` m2
+    }
+
+    instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
+        pub def leastUpperBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+            Map.unionWith(JoinLattice.leastUpperBound, m1, m2)
+    }
+
+    instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
+        pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+            Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
+    }
+
+    instance Iterable[Map[k, v]] {
+        type Elm = (k, v)
+        pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
+    }
+
+    instance ForEach[Map[k, v]] {
+        type Elm = (k, v)
+        pub def forEach(f: ((k, v)) -> Unit \ ef, t: Map[k, v]): Unit \ ef = Map.forEach(k -> v -> f((k, v)), t)
+    }
 
     ///
     /// Returns a string representation of the given map `m`.
