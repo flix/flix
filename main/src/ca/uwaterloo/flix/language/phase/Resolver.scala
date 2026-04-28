@@ -195,7 +195,7 @@ object Resolver {
     * Semi-resolves the type aliases in the namespace.
     */
   private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Mod, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
-    case NamedAst.Declaration.Mod(_, _, sym, usesAndImports0, decls, _) =>
+    case NamedAst.Declaration.Mod(_, _, sym, _, usesAndImports0, decls, _) =>
       val ns0 = Name.mkUnlocatedNName(sym.ns)
       val usesAndImportsVal = Validation.traverse(usesAndImports0)(u => visitUseOrImport(u, ns0, root).toValidation)
       flatMapN(usesAndImportsVal) {
@@ -335,7 +335,7 @@ object Resolver {
     * Performs name resolution on the declaration.
     */
   private def visitDecl(decl: NamedAst.Declaration, scp0: LocalScope, ns0: Name.NName, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
-    case NamedAst.Declaration.Mod(_, _, sym, usesAndImports0, decls0, loc) =>
+    case NamedAst.Declaration.Mod(_, _, sym, _, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
       val ns = Name.mkUnlocatedNNameWithLoc(sym.ns, loc)
@@ -2810,7 +2810,7 @@ object Resolver {
     }.orElse {
       // Then see if there's a module with this name declared in our namespace
       root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Mod(_, _, sym, _, _, _) => sym.ns
+        case Declaration.Mod(_, _, sym, _, _, _, _) => sym.ns
         case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
@@ -2820,7 +2820,7 @@ object Resolver {
     }.orElse {
       // Then see if there's a module with this name declared in the root namespace
       root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Mod(_, _, sym, _, _, _) => sym.ns
+        case Declaration.Mod(_, _, sym, _, _, _, _) => sym.ns
         case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
@@ -3195,7 +3195,7 @@ object Resolver {
     * Gets the proper symbol from the given named symbol.
     */
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
-    case NamedAst.Declaration.Mod(_, _, sym, _, _, _) => sym
+    case NamedAst.Declaration.Mod(_, _, sym, _, _, _, _) => sym
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
