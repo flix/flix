@@ -372,7 +372,7 @@ object PrettyPrinter {
     (TokenKind.CurlyL,     TokenKind.CurlyR,    "{",  "}"),
     (TokenKind.ParenL,     TokenKind.ParenR,     "(",  ")"),
     (TokenKind.HashParenL, TokenKind.ParenR,     "#(", ")"),
-    (TokenKind.BracketL,   TokenKind.BracketR,   "[",  "]"),
+    (TokenKind.BracketL,   TokenKind.BracketR,   "[",  "]")
   )
 
   /**
@@ -654,8 +654,7 @@ object PrettyPrinter {
     }
 
   private def prettyInstance(tree: Tree): Doc =
-    prettyDeclBracket(tree,
-      headerJoin = cs => spaceJoin(cs, noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)), noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR), noSpaceAfter = Set(TokenKind.BracketL)))
+    prettyDeclBracket(tree, headerJoin = instanceHeaderJoin)
 
   private def prettyEffect(tree: Tree): Doc =
     prettyDeclBracket(tree,
@@ -708,9 +707,9 @@ object PrettyPrinter {
 
   private def prettyConstraintList(tree: Tree): Doc = {
     val children = filterEmpty(tree.children)
-    val rest = children.filter {
-      case t: Token if t.kind == TokenKind.KeywordWith => false
-      case _ => true
+    val rest = children.filterNot {
+      case t: Token => t.kind == TokenKind.KeywordWith
+      case _        => false
     }
     if (rest.isEmpty) return prettyFallback(tree)
     val bodyDoc = joinChildren(rest, TokenKind.Comma -> (text(",") <> line))
@@ -807,6 +806,12 @@ object PrettyPrinter {
     spaceJoin(cs,
       noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
       noSpaceBefore = Set(TokenKind.Colon))
+
+  private def instanceHeaderJoin(cs: Array[SyntaxTree.Child]): Doc =
+    spaceJoin(cs,
+      noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
+      noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR),
+      noSpaceAfter  = Set(TokenKind.BracketL))
 
   /**
     * Formatting for module declarations.
@@ -1498,8 +1503,8 @@ object PrettyPrinter {
       t.kind == TokenKind.CommentLine || t.kind == TokenKind.CommentDoc || t.kind == TokenKind.CommentBlock)
 
   private def docEndsWithLine(doc: Doc): Boolean = doc match {
-    case Doc.Line()              => true
-    case Doc.HardLine()          => true
+    case Doc.Line               => true
+    case Doc.HardLine           => true
     case Doc.Concat(_, right)    => docEndsWithLine(right)
     case Doc.Nest(_, inner)      => docEndsWithLine(inner)
     case Doc.SetLayout(_, inner) => docEndsWithLine(inner)

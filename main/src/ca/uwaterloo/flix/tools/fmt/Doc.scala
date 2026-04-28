@@ -20,16 +20,16 @@ object Doc {
   case object Empty extends Doc
   case class Text(str: String) extends Doc
   case class Concat(left: Doc, right: Doc) extends Doc
-  case class Line() extends Doc
-  case class HardLine() extends Doc
+  case object Line extends Doc
+  case object HardLine extends Doc
   case class Nest(level: Int, doc: Doc) extends Doc
   case class Align(doc: Doc) extends Doc
   case class LayoutChoice(singleLine: Doc, multiLine: Doc) extends Doc
   case class SetLayout(layout: Layout, doc: Doc) extends Doc
 
   def text(str: String): Doc = Text(str)
-  def line: Doc = Line()
-  def hardline: Doc = HardLine()
+  def line: Doc = Line
+  def hardline: Doc = HardLine
   def space: Doc = Text(" ")
   def empty: Doc = Empty
   def nest(level: Int, doc: Doc): Doc = Nest(level, doc)
@@ -75,7 +75,7 @@ object Doc {
       sb.append(s)
       render(sb, k + s.length, z)
 
-    case (i, l, Line()) :: z =>
+    case (i, l, Line) :: z =>
       l match {
         case Layout.SingleLine =>
           sb.append(' ')
@@ -86,7 +86,7 @@ object Doc {
           render(sb, i, z)
       }
 
-    case (i, _, HardLine()) :: z =>
+    case (i, _, HardLine) :: z =>
       sb.append('\n')
       sb.append(" " * i)
       render(sb, i, z)
@@ -101,15 +101,12 @@ object Doc {
       render(sb, k, (i, newLayout, x) :: z)
   }
 
-  def folddoc(f: (Doc, Doc) => Doc, docs: List[Doc]): Doc = docs match {
+  private def folddoc(f: (Doc, Doc) => Doc, docs: List[Doc]): Doc = docs match {
     case Nil      => Empty
     case x :: Nil => x
     case x :: xs  => f(x, folddoc(f, xs))
   }
-  def spread(docs: List[Doc]): Doc = folddoc(_ <+> _, docs)
   def stack(docs: List[Doc]): Doc = folddoc(_ <|> _, docs)
   def hardStack(docs: List[Doc]): Doc = folddoc((a, b) => a <> hardline <> b, docs)
   def sep(separator: Doc, docs: List[Doc]): Doc = folddoc((a, b) => a <> separator <> b, docs)
-  def bracket(l: String, x: Doc, r: String): Doc =
-    text(l) <> nest(2, line <> x) <> line <> text(r)
 }
