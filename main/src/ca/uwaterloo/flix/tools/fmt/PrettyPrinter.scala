@@ -285,7 +285,7 @@ object PrettyPrinter {
 
         val condPart = text("if") <+> text(open) <> condDoc <> text(close)
         val thenPart = if (thenIsBlock) condPart <+> thenBody else condPart <> nest(4, line <> thenBody)
-        val thenEndsWithComment = thenChildren.lastOption.exists(endsWithLineComment)
+        val thenEndsWithComment = thenChildren.lastOption.exists(endsWithComment)
         val elseConnector = if (thenEndsWithComment) hardline
                             else if (thenIsBlock)    space
                             else                     line
@@ -302,7 +302,7 @@ object PrettyPrinter {
     }
   }
 
-  private def prettyMatchRuleFragment(tree: Tree): Doc = {
+  private def prettyArrowRuleFragment(tree: Tree, headerJoin: Array[SyntaxTree.Child] => Doc): Doc = {
     val children = filterEmpty(tree.children)
     val arrowIndex = children.indexWhere {
       case token: Token if token.kind == TokenKind.ArrowThickR => true
@@ -311,17 +311,13 @@ object PrettyPrinter {
     if (arrowIndex < 0) return prettyFallback(tree)
 
     val header = children.take(arrowIndex + 1)
-    val body = children.drop(arrowIndex + 1)
+    val body   = children.drop(arrowIndex + 1)
 
-    val headerDoc = header.map(prettyChild)
-      .reduceLeftOption(_ <+> _)
-      .getOrElse(empty)
+    val headerDoc = headerJoin(header)
 
     if (body.isEmpty) headerDoc
     else {
-      val bodyDoc = body.map(prettyChild)
-        .reduceLeftOption(_ <|> _)
-        .getOrElse(empty)
+      val bodyDoc    = body.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
       val bodyIsBlock = body.headOption.exists(isBlockExpr)
       localLayout(tree) {
         if (bodyIsBlock) headerDoc <+> bodyDoc
@@ -329,6 +325,9 @@ object PrettyPrinter {
       }
     }
   }
+
+  private def prettyMatchRuleFragment(tree: Tree): Doc =
+    prettyArrowRuleFragment(tree, defaultHeaderJoin)
 
   private def prettyParYield(tree: Tree): Doc =
     splitAtBracket(filterEmpty(tree.children)) match {
@@ -339,7 +338,7 @@ object PrettyPrinter {
           TokenKind.Semi -> (text(";") <> space))
         val tailDoc = defaultHeaderJoin(tail)
         val tailPart = if (tail.isEmpty) empty else space <> tailDoc
-        val closeGap = if (body.nonEmpty && endsWithLineComment(body.last)) hardline else empty
+        val closeGap = if (body.nonEmpty && endsWithComment(body.last)) hardline else empty
         localLayout(tree) {
           headerDoc <+> text(open) <> bodyDoc <> closeGap <> text(close) <> tailPart
         }
@@ -683,26 +682,8 @@ object PrettyPrinter {
   private def prettyTry(tree: Tree): Doc =
     spaceJoin(filterEmpty(tree.children), Set.empty)
 
-  private def prettyTryCatchRuleFragment(tree: Tree): Doc = {
-    val children = filterEmpty(tree.children)
-    val arrowIdx = children.indexWhere {
-      case t: Token if t.kind == TokenKind.ArrowThickR => true
-      case _ => false
-    }
-    if (arrowIdx < 0) return prettyFallback(tree)
-    val header = children.take(arrowIdx + 1)
-    val body   = children.drop(arrowIdx + 1)
-    val headerDoc = spaceJoin(header, noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon))
-    if (body.isEmpty) headerDoc
-    else {
-      val bodyDoc    = body.map(prettyChild).reduceLeftOption(_ <|> _).getOrElse(empty)
-      val bodyIsBlock = body.headOption.exists(isBlockExpr)
-      localLayout(tree) {
-        if (bodyIsBlock) headerDoc <+> bodyDoc
-        else headerDoc <> nest(4, line <> bodyDoc)
-      }
-    }
-  }
+  private def prettyTryCatchRuleFragment(tree: Tree): Doc =
+    prettyArrowRuleFragment(tree, cs => spaceJoin(cs, noSpacePairs = Set.empty, noSpaceBefore = Set(TokenKind.Colon)))
 
   private def prettyAscribe(tree: Tree): Doc =
     joinChildren(filterEmpty(tree.children),
@@ -1014,7 +995,7 @@ object PrettyPrinter {
       val endsWithClose = rightMostToken(tree.children(0)).exists(t =>
         t.kind == TokenKind.CurlyR
       )
-      val sep = if (endsWithLineComment(tree.children(1))) hardline else space
+      val sep = if (endsWithComment(tree.children(1))) hardline else space
       localLayout(tree) {
         if (endsWithClose)
           parts(0) <> space <> parts(1) <> sep <> parts(2)
@@ -1078,7 +1059,7 @@ object PrettyPrinter {
           val hasSameLineComment = nextOpt.flatMap(leftMostToken).exists { t =>
             isCommentKind(t.kind) && t.start.lineOneIndexed == token.end.lineOneIndexed
           }
-          val gap = if (prev.exists(endsWithLineComment)) hardline else empty
+          val gap = if (prev.exists(endsWithComment)) hardline else empty
           if (hasSameLineComment) {
             acc = acc <> gap <> text(";") <> space
           } else {
@@ -1089,7 +1070,7 @@ object PrettyPrinter {
           prev = Some(token)
           i += 1
         case child =>
-          val gap = if (prev.exists(endsWithLineComment)) {
+          val gap = if (prev.exists(endsWithComment)) {
             if (hadBlankLineBetween(prev.get, child)) hardline <> hardline else hardline
           } else empty
           acc = acc <> gap <> prettyChild(child)
@@ -1126,7 +1107,7 @@ object PrettyPrinter {
           headerDoc <> text(open) <> bodyDoc <> text(close) <> tailSep
         } else {
           val bodyDoc = joinWithGap(body)
-          val closeSep = if (body.nonEmpty && endsWithLineComment(body.last)) hardline
+          val closeSep = if (body.nonEmpty && endsWithComment(body.last)) hardline
                          else Doc.layoutChoice(empty, line)
           headerDoc <> text(open) <>
             nest(4, Doc.layoutChoice(empty, line) <> bodyDoc) <>
@@ -1376,7 +1357,7 @@ object PrettyPrinter {
       val child = children(i)
       child match {
         case token: Token if replMap.contains(token.kind) =>
-          val gap = if (prev.exists(endsWithLineComment)) hardline else empty
+          val gap = if (prev.exists(endsWithComment)) hardline else empty
           val replDoc = replMap(token.kind)
           val hasSameLineComment = token.kind == TokenKind.Semi && {
             val nextOpt = if (i + 1 < children.length) Some(children(i + 1)) else None
@@ -1400,7 +1381,7 @@ object PrettyPrinter {
           val blank = prev.exists(p => hadBlankLineBetween(p, child))
           val gap = if (prevReplEndsWithLine) {
             if (blank) hardline else empty
-          } else if (prev.exists(endsWithLineComment)) {
+          } else if (prev.exists(endsWithComment)) {
             if (blank) hardline <> hardline else hardline
           } else if (sameLine) space
           else if (isComment) {
@@ -1503,7 +1484,7 @@ object PrettyPrinter {
             case _                  => false
           }
         }
-        val g = if (endsWithLineComment(prev))
+        val g = if (endsWithComment(prev))
           if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
                 else if (nextStartsWithComment && !sameLine)
                   if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
@@ -1515,7 +1496,7 @@ object PrettyPrinter {
     }
   }
 
-  private def endsWithLineComment(child: SyntaxTree.Child): Boolean =
+  private def endsWithComment(child: SyntaxTree.Child): Boolean =
     rightMostToken(child).exists(t =>
       t.kind == TokenKind.CommentLine || t.kind == TokenKind.CommentDoc || t.kind == TokenKind.CommentBlock)
 
