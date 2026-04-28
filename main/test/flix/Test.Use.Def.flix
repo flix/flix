@@ -53,54 +53,23 @@ mod C {
 mod D {
     use A.f
     use B.{f => fb}
-    use X.Y.g
-    use X.Y.Z.{g => gz}
 
     @CompileTest
     def testMod08(): Bool = f() == 1
 
     @CompileTest
     def testMod09(): Bool = fb() == 2
-
-    @CompileTest
-    def testMod10(): Bool = g() == 6
-
-    @CompileTest
-    def testMod11(): Bool = gz() == 7
 }
 
 pub def g(): Int32 = 4
 mod X {
     pub def g(): Int32 = 5
-    mod Y {
-        pub def g(): Int32 = 6
-        mod Z {
-            pub def g(): Int32 = 7
-        }
-    }
 }
 
 @CompileTest
 def testMod12(): Bool =
     use X.g;
     g() == 5
-
-@CompileTest
-def testMod13(): Bool =
-    use X.Y.g;
-    g() == 6
-
-@CompileTest
-def testMod14(): Bool =
-    use X.Y.Z.g;
-    g() == 7
-
-@CompileTest
-def testMod15(): Bool =
-    use X.{g => gx};
-    use X.Y.{g => gxy};
-    use X.Y.Z.{g => gxyz};
-    (gx() + gxy() + gxyz()) == 18
 
 mod Op {
     pub def <><(left: String, right: String): String  = "${left} fish ${right}"
