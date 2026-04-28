@@ -14,28 +14,28 @@
  *  limitations under the License.
  */
 
-///
-/// A trait for types that can be mapped over.
-///
-pub lawful trait Functor[m : Type -> Type] {
-    ///
-    /// Applies the function `f` to `x` preserving its structure.
-    ///
-    pub def map(f: a -> b \ ef, x: m[a]): m[b] \ ef
-
-    ///
-    /// Mapping the identity function over a functor preserves the functor.
-    ///
-    law identity: forall(x: m[a]) with Eq[m[a]] Functor.map(identity, x) == x
-
-    ///
-    /// Composing two functions and mapping the resulting function over a functor is the same as
-    /// mapping the functions one after the other over the functor.
-    ///
-    law composition: forall(f: b -> c, g: a -> b, v: m[a]) with Eq[m[c]] Functor.map(g >> f, v) == Functor.map(f, Functor.map(g, v))
-}
-
 pub mod Functor {
+
+    ///
+    /// A trait for types that can be mapped over.
+    ///
+    pub lawful trait Functor[m : Type -> Type] {
+        ///
+        /// Applies the function `f` to `x` preserving its structure.
+        ///
+        pub def map(f: a -> b \ ef, x: m[a]): m[b] \ ef
+
+        ///
+        /// Mapping the identity function over a functor preserves the functor.
+        ///
+        law identity: forall(x: m[a]) with Eq[m[a]] Functor.map(identity, x) == x
+
+        ///
+        /// Composing two functions and mapping the resulting function over a functor is the same as
+        /// mapping the functions one after the other over the functor.
+        ///
+        law composition: forall(f: b -> c, g: a -> b, v: m[a]) with Eq[m[c]] Functor.map(g >> f, v) == Functor.map(f, Functor.map(g, v))
+    }
 
     ///
     /// Replaces the value `a` in `s` by the given value `x` preserving the structure of `s`.
