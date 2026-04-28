@@ -1631,36 +1631,34 @@ object PrettyPrinter {
 
   private def isCommentToken(token: Token): Boolean = isCommentKind(token.kind)
 
-  private def isBlockExpr(child: SyntaxTree.Child): Boolean = child match {
-    case t: Tree if t.kind == TreeKind.Expr.Block => true
-    case t: Tree if t.kind == TreeKind.Expr.Expr  => t.children.exists(isBlockExpr)
-    case _ => false
+  private def exprMatches(child: SyntaxTree.Child, pred: Tree => Boolean): Boolean = child match {
+    case t: Tree if t.kind == TreeKind.Expr.Expr => t.children.exists(c => exprMatches(c, pred))
+    case t: Tree => pred(t)
+    case _       => false
   }
 
-  private def isBracedExpr(child: SyntaxTree.Child): Boolean = child match {
-    case t: Tree => t.kind match {
-      case TreeKind.Expr.Block                  => true
-      case TreeKind.Expr.Match                  => true
-      case TreeKind.Expr.ExtMatch               => true
-      case TreeKind.Expr.Select                 => true
-      case TreeKind.Expr.RestrictableChoose     => true
-      case TreeKind.Expr.RestrictableChooseStar => true
-      case TreeKind.Expr.Handler                => true
-      case TreeKind.Expr.Try                    => true
-      case TreeKind.Expr.Lambda                 => true
-      case TreeKind.Expr.LambdaMatch            => true
-      case TreeKind.Expr.LambdaExtMatch         => true
-      case TreeKind.Expr.Expr                   => t.children.exists(isBracedExpr)
-      case _ => false
-    }
-    case _ => false
-  }
+  private val BracedKinds: Set[TreeKind] = Set(
+    TreeKind.Expr.Block,
+    TreeKind.Expr.Match,
+    TreeKind.Expr.ExtMatch,
+    TreeKind.Expr.Select,
+    TreeKind.Expr.RestrictableChoose,
+    TreeKind.Expr.RestrictableChooseStar,
+    TreeKind.Expr.Handler,
+    TreeKind.Expr.Try,
+    TreeKind.Expr.Lambda,
+    TreeKind.Expr.LambdaMatch,
+    TreeKind.Expr.LambdaExtMatch
+  )
 
-  private def isIfThenElseExpr(child: SyntaxTree.Child): Boolean = child match {
-    case t: Tree if t.kind == TreeKind.Expr.IfThenElse => true
-    case t: Tree if t.kind == TreeKind.Expr.Expr       => t.children.exists(isIfThenElseExpr)
-    case _ => false
-  }
+  private def isBlockExpr(child: SyntaxTree.Child): Boolean =
+    exprMatches(child, _.kind == TreeKind.Expr.Block)
+
+  private def isBracedExpr(child: SyntaxTree.Child): Boolean =
+    exprMatches(child, t => BracedKinds.contains(t.kind))
+
+  private def isIfThenElseExpr(child: SyntaxTree.Child): Boolean =
+    exprMatches(child, _.kind == TreeKind.Expr.IfThenElse)
 
   /**
     * Sets the layout of the given document based on the layout of the given tree.
