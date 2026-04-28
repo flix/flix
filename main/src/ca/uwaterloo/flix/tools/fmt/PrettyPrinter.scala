@@ -346,7 +346,7 @@ object PrettyPrinter {
 
   private def prettyRestrictableChoose(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
-      headerJoin = cs => spaceJoin(cs, Set.empty))
+      headerJoin = defaultHeaderJoin)
 
   private def prettyFor(tree: Tree): Doc =
     splitAtBracket(filterEmpty(tree.children)) match {
@@ -473,7 +473,7 @@ object PrettyPrinter {
   /**
     * Extract annotations and doc comments from the beginning of the children.
     */
-  private def extractAnnAndDoc(tree: Tree): (Doc, Boolean, Array[SyntaxTree.Child]) = {
+  private def extractAnnAndDoc(tree: Tree): (Doc, Array[SyntaxTree.Child]) = {
     val children = filterEmpty(tree.children)
     val (prefixChildren, rest) = children.span {
       case t: Tree if t.kind == TreeKind.AnnotationList => true
@@ -481,11 +481,11 @@ object PrettyPrinter {
       case _ => false
     }
     val prefixDoc = hardStack(prefixChildren.map(prettyChild).toList)
-    (prefixDoc, prefixChildren.nonEmpty, rest)
+    (prefixDoc, rest)
   }
 
   private def wrapWithAnn(tree: Tree, inner: Array[SyntaxTree.Child] => Doc): Doc = {
-    val (annDoc, _, rest) = extractAnnAndDoc(tree)
+    val (annDoc, rest) = extractAnnAndDoc(tree)
     prepend(annDoc, inner(rest))
   }
 
@@ -657,8 +657,7 @@ object PrettyPrinter {
     prettyDeclBracket(tree, headerJoin = instanceHeaderJoin)
 
   private def prettyEffect(tree: Tree): Doc =
-    prettyDeclBracket(tree,
-      headerJoin = cs => spaceJoin(cs, Set.empty))
+    prettyDeclBracket(tree, headerJoin = defaultHeaderJoin)
 
   private def prettyTrait(tree: Tree): Doc =
     prettyDeclBracket(tree, headerJoin = declHeaderJoin)
@@ -676,7 +675,7 @@ object PrettyPrinter {
     */
   private def prettyMatch(tree: Tree): Doc =
     prettyBracket(tree, filterEmpty(tree.children),
-      headerJoin = cs => spaceJoin(cs, Set.empty))
+      headerJoin = defaultHeaderJoin)
 
   private def prettyTry(tree: Tree): Doc =
     spaceJoin(filterEmpty(tree.children), Set.empty)
@@ -864,7 +863,7 @@ object PrettyPrinter {
     * @return the formatted definition as Doc
     */
   private def prettyDef(tree: Tree): Doc = {
-    val (annDoc, _, rest) = extractAnnAndDoc(tree)
+    val (annDoc, rest) = extractAnnAndDoc(tree)
 
     val eqIndex = rest.indexWhere {
       case token: Token if token.kind == TokenKind.Equal => true
@@ -900,7 +899,7 @@ object PrettyPrinter {
     * @return the formatted local def expression as Doc
     */
   private def prettyLocalDef(tree: Tree): Doc = {
-    val (annDoc, _, rest) = extractAnnAndDoc(tree)
+    val (annDoc, rest) = extractAnnAndDoc(tree)
     val eqIndex = rest.indexWhere {
       case token: Token if token.kind == TokenKind.Equal => true
       case _ => false
@@ -943,7 +942,7 @@ object PrettyPrinter {
           val bodyPart =
             if (bodyIsBraced) sig <+> text("=") <+> bodyDoc
             else              sig <+> text("=") <> nest(4, line <> bodyDoc)
-          if (contDoc == empty) bodyPart <> text(";")
+          if (contExprs.isEmpty) bodyPart <> text(";")
           else bodyPart <> text(";") <> contSep <> contDoc
         })
         prepend(annDoc, defDoc)
@@ -966,9 +965,12 @@ object PrettyPrinter {
     * @param tree the type alias tree
     * @return the formatted type alias as Doc
     */
-  private def prettyTypeAlias(tree: Tree): Doc = wrapWithAnn(tree, rest => {
-    spaceJoin(rest, noSpacePairs = Set((TreeKind.Ident, TreeKind.TypeParameterList)), noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR), noSpaceAfter = Set(TokenKind.BracketL))
-  })
+  private def prettyTypeAlias(tree: Tree): Doc = wrapWithAnn(tree, rest =>
+    spaceJoin(rest,
+      noSpacePairs  = Set((TreeKind.Ident, TreeKind.TypeParameterList)),
+      noSpaceBefore = Set(TokenKind.BracketL, TokenKind.BracketR),
+      noSpaceAfter  = Set(TokenKind.BracketL))
+  )
 
   /**
     * Formatting for unary expressions and patterns.
@@ -1436,7 +1438,7 @@ object PrettyPrinter {
     TokenKind.Dot,
     TokenKind.DotWhiteSpace,
     TokenKind.Comma,
-    TokenKind.Semi,
+    TokenKind.Semi
   )
 
   /**
@@ -1447,9 +1449,8 @@ object PrettyPrinter {
     val prevKind = rightMostToken(prev).map(_.kind)
     val nextKind = leftMostToken(next).map(_.kind)
 
-    val afterLineComment = prevKind.exists(k =>
-      k == TokenKind.CommentLine || k == TokenKind.CommentDoc || k == TokenKind.CommentBlock)
-    if (afterLineComment) return if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
+    val afterComment = prevKind.exists(isCommentKind)
+    if (afterComment) return if (hadBlankLineBetween(prev, next)) hardline <> hardline else hardline
 
     val nextIsComment = nextKind.exists(isCommentKind)
     if (nextIsComment) {
@@ -1469,10 +1470,30 @@ object PrettyPrinter {
     else line
   }
 
+  private def joinWithGap(children: Array[SyntaxTree.Child]): Doc = {
+    if (children.isEmpty) return empty
+    children.sliding(2).foldLeft(prettyChild(children.head)) {
+      case (acc, Array(prev, next)) => acc <> structuralGap(prev, next) <> prettyChild(next)
+      case (acc, _) => acc
+    }
+  }
+
+  private def endsWithComment(child: SyntaxTree.Child): Boolean =
+    rightMostToken(child).exists(t => isCommentKind(t.kind))
+
+  private def docEndsWithLine(doc: Doc): Boolean = doc match {
+    case Doc.Line               => true
+    case Doc.HardLine           => true
+    case Doc.Concat(_, right)    => docEndsWithLine(right)
+    case Doc.Nest(_, inner)      => docEndsWithLine(inner)
+    case Doc.SetLayout(_, inner) => docEndsWithLine(inner)
+    case Doc.LayoutChoice(s, m)  => docEndsWithLine(s) || docEndsWithLine(m)
+    case _                       => false
+  }
+
   /**
-    * Joins code children with a gap between each pair.
-    * Default gap is [[structuralGap]]. Override with a fixed gap like `line` or `space`.
-    * No comment handling — comments are stripped by [[traverse]] before this is called.
+    * Like [[joinWithGap]] but uses a fixed `gap` instead of [[structuralGap]].
+    * Still handles interleaved comments and preserves blank lines from the source.
     */
   private def joinWithGap(children: Array[SyntaxTree.Child], gap: Doc): Doc = {
     if (children.isEmpty) return empty
@@ -1493,27 +1514,6 @@ object PrettyPrinter {
                 else if (hadBlankLineBetween(prev, next)) gap <> Doc.layoutChoice(empty, hardline)
                 else gap
         acc <> g <> prettyChild(next)
-      case (acc, _) => acc
-    }
-  }
-
-  private def endsWithComment(child: SyntaxTree.Child): Boolean =
-    rightMostToken(child).exists(t => isCommentKind(t.kind))
-
-  private def docEndsWithLine(doc: Doc): Boolean = doc match {
-    case Doc.Line               => true
-    case Doc.HardLine           => true
-    case Doc.Concat(_, right)    => docEndsWithLine(right)
-    case Doc.Nest(_, inner)      => docEndsWithLine(inner)
-    case Doc.SetLayout(_, inner) => docEndsWithLine(inner)
-    case Doc.LayoutChoice(s, m)  => docEndsWithLine(s) || docEndsWithLine(m)
-    case _                       => false
-  }
-
-  private def joinWithGap(children: Array[SyntaxTree.Child]): Doc = {
-    if (children.isEmpty) return empty
-    children.sliding(2).foldLeft(prettyChild(children.head)) {
-      case (acc, Array(prev, next)) => acc <> structuralGap(prev, next) <> prettyChild(next)
       case (acc, _) => acc
     }
   }
