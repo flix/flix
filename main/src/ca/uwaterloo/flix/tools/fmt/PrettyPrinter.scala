@@ -1310,10 +1310,7 @@ object PrettyPrinter {
     * @return the formatted root as Doc
     */
   private def prettyRoot(tree: Tree): Doc = {
-    val children = tree.children.filter {
-      case t: Tree if t.children.isEmpty => false
-      case _ => true
-    }
+    val children = filterEmpty(tree.children)
     if (children.isEmpty) return empty
     joinWithPreservedBlanks(children, hardline)
   }
