@@ -1233,8 +1233,7 @@ object PrettyPrinter {
   private def prettyOperator(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
 
-  private def prettyQName(tree: Tree): Doc =
-    tree.children.map(prettyChild).reduceLeftOption(_ <> _).getOrElse(empty)
+  private def prettyQName(tree: Tree): Doc = prettyOperator(tree)
 
   private def prettyModifierList(tree: Tree): Doc =
     tree.children.map(prettyChild).reduceLeftOption(_ <+> _).getOrElse(empty)
@@ -1499,8 +1498,7 @@ object PrettyPrinter {
   }
 
   private def endsWithComment(child: SyntaxTree.Child): Boolean =
-    rightMostToken(child).exists(t =>
-      t.kind == TokenKind.CommentLine || t.kind == TokenKind.CommentDoc || t.kind == TokenKind.CommentBlock)
+    rightMostToken(child).exists(t => isCommentKind(t.kind))
 
   private def docEndsWithLine(doc: Doc): Boolean = doc match {
     case Doc.Line               => true
