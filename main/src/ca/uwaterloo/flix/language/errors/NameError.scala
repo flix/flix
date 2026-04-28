@@ -128,9 +128,9 @@ object NameError {
       import fmt.*
       s""">> Duplicate module: '${red(name)}'.
          |
-         |${highlight(loc1, "first declaration", fmt)}
+         |${highlight(loc1, s"first declaration in ${loc1.source.name}", fmt)}
          |
-         |${highlight(loc2, "duplicate declaration", fmt)}
+         |${highlight(loc2, s"duplicate declaration in ${loc2.source.name}", fmt)}
          |
          |${underline("Explanation:")} A module may have only one declaration site
          |in the program. Reopening a module — either across files or as multiple
