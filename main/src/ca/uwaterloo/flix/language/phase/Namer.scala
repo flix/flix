@@ -63,9 +63,43 @@ object Namer {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
 
+      val modules = buildModuleMap(units)
+
       val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
-      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
+      (NamedAst.Root(symbols, instances, uses, units, modules, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
+
+  /**
+    * Returns every `Mod` declaration nested inside `decls`, including `decls` itself.
+    */
+  private def collectModNodes(decls: List[NamedAst.Declaration]): List[NamedAst.Declaration.Mod] =
+    decls.flatMap {
+      case m @ NamedAst.Declaration.Mod(_, _, _, _, inner, _) => m :: collectModNodes(inner)
+      case _ => Nil
+    }
+
+  /**
+    * Builds the canonical map from `Symbol.ModuleSym` to its `Mod` declaration.
+    *
+    * Each module symbol must have exactly one declaration site in the program. The first
+    * site encountered (in deterministic order by source name then start line) wins and is
+    * placed in the map. Any subsequent site for the same symbol is reported as a
+    * [[NameError.DuplicateModule]] error against the winner.
+    */
+  private def buildModuleMap(units: Map[Source, NamedAst.CompilationUnit])(implicit sctx: SharedContext): Map[Symbol.ModuleSym, NamedAst.Declaration.Mod] = {
+    val ordered = units.values.toList
+      .flatMap(u => collectModNodes(u.decls))
+      .sortBy(m => (m.loc.source.name, m.loc.startLine))
+
+    ordered.foldLeft(Map.empty[Symbol.ModuleSym, NamedAst.Declaration.Mod]) {
+      case (acc, modDecl) => acc.get(modDecl.sym) match {
+        case None => acc + (modDecl.sym -> modDecl)
+        case Some(prev) =>
+          sctx.errors.add(NameError.DuplicateModule(modDecl.sym.toString, prev.loc, modDecl.loc))
+          acc
+      }
+    }
+  }
 
   /**
     * Check that every module has a parent.
