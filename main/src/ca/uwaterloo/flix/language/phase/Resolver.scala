@@ -1029,7 +1029,7 @@ object Resolver {
     case NamedAst.Expr.StructNew(name, fields0, region0, loc) =>
       lookupStruct(name, scp0, ns0, root) match {
         case Result.Ok(st0) =>
-          checkStructIsAccessible(st0, ns0, root, loc)
+          checkStructIsAccessible(st0, ns0, loc)
           val fields = fields0.map {
             case (f, exp) =>
               val e = resolveExp(exp, scp0)
@@ -1661,7 +1661,7 @@ object Resolver {
   private def visitHandler(qname: Name.QName, rules0: List[NamedAst.HandlerRule], scp0: LocalScope)(implicit scope: RegionScope, ns: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Result[(EffSymUse, List[ResolvedAst.HandlerRule]), ResolutionError.UndefinedEffect] = {
     lookupEffect(qname, scp0, ns, root) match {
       case Result.Ok(decl) =>
-        checkEffectIsAccessible(decl, ns, root, qname.loc)
+        checkEffectIsAccessible(decl, ns, qname.loc)
         val symUse = EffSymUse(decl.sym, qname)
         val rules = rules0.flatMap {
           case NamedAst.HandlerRule(ident, fparams, body, loc) =>
@@ -2063,12 +2063,13 @@ object Resolver {
     * Finds the trait with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
   private def lookupTraitForImplementation(qname: Name.QName, traitUseKind: TraitUsageKind, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Result[NamedAst.Declaration.Trait, ResolutionError] = {
+    implicit val implicitRoot: NamedAst.Root = root
     val traitOpt = tryLookupName(qname, scp0, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
     } match {
       case Some(trt) =>
-        checkPathAccessibility(trt.sym.namespace, ns0, root, qname.loc)
+        checkPathAccessibility(trt.sym.namespace, ns0, qname.loc)
         getTraitAccessibility(trt, ns0) match {
           case TraitAccessibility.Accessible =>
             Result.Ok(trt)
@@ -2090,12 +2091,13 @@ object Resolver {
     * Finds the trait with the qualified name `qname` in the namespace `ns0`.
     */
   private def lookupTrait(qname: Name.QName, traitUseKind: TraitUsageKind, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[NamedAst.Declaration.Trait] = {
+    implicit val implicitRoot: NamedAst.Root = root
     val traitOpt = tryLookupName(qname, scp0, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
     } match {
       case Some(trt) =>
-        checkPathAccessibility(trt.sym.namespace, ns0, root, qname.loc)
+        checkPathAccessibility(trt.sym.namespace, ns0, qname.loc)
         getTraitAccessibility(trt, ns0) match {
           case TraitAccessibility.Accessible | TraitAccessibility.Sealed =>
             Some(trt)
@@ -2116,6 +2118,7 @@ object Resolver {
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupQName(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): ResolvedQName = {
+    implicit val implicitRoot: NamedAst.Root = root
     // first look in the LocalScope
     val resolutions = tryLookupName(qname, scp0, ns0, root)
 
@@ -2129,7 +2132,7 @@ object Resolver {
       case decl@Resolution.LocalDef(_, _, _) => decl
     } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
-        checkPathAccessibility(defn.sym.namespace, ns0, root, qname.loc)
+        checkPathAccessibility(defn.sym.namespace, ns0, qname.loc)
         if (isDefAccessible(defn, ns0)) {
           ResolvedQName.Def(defn)
         } else {
@@ -2138,7 +2141,7 @@ object Resolver {
           ResolvedQName.Def(defn)
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
-        checkPathAccessibility(sig.sym.trt.namespace, ns0, root, qname.loc)
+        checkPathAccessibility(sig.sym.trt.namespace, ns0, qname.loc)
         if (isSigAccessible(sig, ns0)) {
           ResolvedQName.Sig(sig)
         } else {
@@ -2279,6 +2282,7 @@ object Resolver {
     * Type aliases are given temporary placeholders.
     */
   private def semiResolveType(tpe0: NamedAst.Type, kindOpt: Option[Kind], wildness: Wildness, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit scope: RegionScope, sctx: SharedContext, flix: Flix): UnkindedType = {
+    implicit val implicitRoot: NamedAst.Root = root
     def visit(tpe0: NamedAst.Type): UnkindedType = tpe0 match {
       case NamedAst.Type.Var(ident, loc) =>
         lookupLowerType(ident, wildness, scp0) match {
@@ -2319,11 +2323,11 @@ object Resolver {
         // Disambiguate type.
         case _ => // typeName
           lookupType(qname, scp0, ns0, root) match {
-            case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, root, loc)
-            case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, root, loc)
-            case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, root, loc)
-            case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
-            case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
+            case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, loc)
+            case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
+            case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
+            case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
+            case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, loc)
             case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc)
             case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, loc)
             case TypeLookupResult.NotFound =>
@@ -2336,11 +2340,11 @@ object Resolver {
       case NamedAst.Type.Ambiguous(qname, loc) =>
         // Disambiguate type.
         lookupType(qname, scp0, ns0, root) match {
-          case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, root, loc)
-          case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, root, loc)
-          case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, root, loc)
-          case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
-          case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
+          case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, loc)
+          case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
+          case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
+          case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
+          case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, loc)
           case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc)
           case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, loc)
           case TypeLookupResult.NotFound =>
@@ -2368,7 +2372,7 @@ object Resolver {
         // Lookup the type alias.
         lookupTypeAlias(qname, scp0, ns0, root) match {
           case Result.Ok(typeAlias) =>
-            val t = getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+            val t = getTypeAliasTypeIfAccessible(typeAlias, ns0, loc)
             val ts = targs.map(visit)
             val r = visit(rest)
             val app = UnkindedType.mkApply(t, ts, loc)
@@ -2679,11 +2683,12 @@ object Resolver {
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
   private def lookupTypeAlias(qname: Name.QName, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Result[NamedAst.Declaration.TypeAlias, ResolutionError] = {
+    implicit val implicitRoot: NamedAst.Root = root
     val symOpt = tryLookupName(qname, scp0, ns0, root)
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
-        checkTypeAliasIsAccessible(alias, ns0, root, qname.loc)
+        checkTypeAliasIsAccessible(alias, ns0, qname.loc)
         Result.Ok(alias)
     }.getOrElse(Result.Err(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, scp0, qname.loc)))
   }
@@ -2908,7 +2913,7 @@ object Resolver {
     * If multiple `Declaration.Mod`s exist at the same prefix (re-opened modules), the prefix
     * is accessible if at least one of them is accessible.
     */
-  private def checkPathAccessibility(targetNs: List[String], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+  private def checkPathAccessibility(targetNs: List[String], ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
     for (i <- 1 to targetNs.length) {
       val parentNs = Name.mkUnlocatedNName(targetNs.take(i - 1))
       val name = targetNs(i - 1)
@@ -2989,8 +2994,8 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def checkEnumIsAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    checkPathAccessibility(enum0.sym.namespace, ns0, root, loc)
+  private def checkEnumIsAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    checkPathAccessibility(enum0.sym.namespace, ns0, loc)
     //
     // Check if the definition is marked public.
     //
@@ -3022,8 +3027,8 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def checkStructIsAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    checkPathAccessibility(struct0.sym.namespace, ns0, root, loc)
+  private def checkStructIsAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    checkPathAccessibility(struct0.sym.namespace, ns0, loc)
     //
     // Check if the definition is marked public.
     //
@@ -3056,8 +3061,8 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def checkRestrictableEnumIsAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    checkPathAccessibility(enum0.sym.namespace, ns0, root, loc)
+  private def checkRestrictableEnumIsAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    checkPathAccessibility(enum0.sym.namespace, ns0, loc)
     //
     // Check if the definition is marked public.
     //
@@ -3085,24 +3090,24 @@ object Resolver {
   /**
     * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
     */
-  private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
-    checkEnumIsAccessible(enum0, ns0, root, loc)
+  private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): UnkindedType = {
+    checkEnumIsAccessible(enum0, ns0, loc)
     mkEnum(enum0.sym, loc)
   }
 
   /**
     * Returns the type of the given `struct0` if it is accessible from the given namespace `ns0`.
     */
-  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
-    checkStructIsAccessible(struct0, ns0, root, loc)
+  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): UnkindedType = {
+    checkStructIsAccessible(struct0, ns0, loc)
     mkStruct(struct0.sym, loc)
   }
 
   /**
     * Returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
     */
-  private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
-    checkRestrictableEnumIsAccessible(enum0, ns0, root, loc)
+  private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): UnkindedType = {
+    checkRestrictableEnumIsAccessible(enum0, ns0, loc)
     mkRestrictableEnum(enum0.sym, loc)
   }
 
@@ -3114,8 +3119,8 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def checkTypeAliasIsAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    checkPathAccessibility(alias0.sym.namespace, ns0, root, loc)
+  private def checkTypeAliasIsAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    checkPathAccessibility(alias0.sym.namespace, ns0, loc)
     //
     // Check if the definition is marked public.
     //
@@ -3142,8 +3147,8 @@ object Resolver {
   /**
     * Returns the type of the given type alias `alias0` if it is accessible from the given namespace `ns0`.
     */
-  private def getTypeAliasTypeIfAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
-    checkTypeAliasIsAccessible(alias0, ns0, root, loc)
+  private def getTypeAliasTypeIfAccessible(alias0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): UnkindedType = {
+    checkTypeAliasIsAccessible(alias0, ns0, loc)
     mkUnappliedTypeAlias(alias0.sym, loc)
   }
 
@@ -3175,8 +3180,8 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  private def checkEffectIsAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    checkPathAccessibility(eff0.sym.namespace, ns0, root, loc)
+  private def checkEffectIsAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): Unit = {
+    checkPathAccessibility(eff0.sym.namespace, ns0, loc)
     //
     // Check if the definition is marked public.
     //
@@ -3203,8 +3208,8 @@ object Resolver {
   /**
     * Returns the type of the given effect `eff0` if it is accessible from the given namespace `ns0`.
     */
-  private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): UnkindedType = {
-    checkEffectIsAccessible(eff0, ns0, root, loc)
+  private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation)(implicit sctx: SharedContext, root: NamedAst.Root): UnkindedType = {
+    checkEffectIsAccessible(eff0, ns0, loc)
     mkEffect(eff0.sym, loc)
   }
 
