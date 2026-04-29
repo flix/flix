@@ -15,26 +15,6 @@
  */
 
 ///
-/// A trait for types that form a semigroup.
-///
-pub trait SemiGroup[a] {
-    ///
-    /// An associative binary operation on `a`.
-    ///
-    pub def combine(x: a, y: a): a
-
-    ///
-    /// Returns `x` combined with itself `n` times.
-    ///
-    pub def combineN(x: a, n: Int32): a =
-        if (n <= 1) x
-        else SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
-
-    law associative: forall(x: a, y: a, z: a) with Eq[a] SemiGroup.combine(SemiGroup.combine(x, y), z) == SemiGroup.combine(x, SemiGroup.combine(y, z))
-
-}
-
-///
 /// Alias for `SemiGroup.combine`.
 ///
 pub def ++(x: a, y: a): a with SemiGroup[a] = SemiGroup.combine(x, y)
@@ -134,6 +114,26 @@ instance SemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with SemiGroup[a1]
 }
 
 pub mod SemiGroup {
+
+    ///
+    /// A trait for types that form a semigroup.
+    ///
+    pub trait SemiGroup[a] {
+        ///
+        /// An associative binary operation on `a`.
+        ///
+        pub def combine(x: a, y: a): a
+
+        ///
+        /// Returns `x` combined with itself `n` times.
+        ///
+        pub def combineN(x: a, n: Int32): a =
+            if (n <= 1) x
+            else SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
+
+        law associative: forall(x: a, y: a, z: a) with Eq[a] SemiGroup.combine(SemiGroup.combine(x, y), z) == SemiGroup.combine(x, SemiGroup.combine(y, z))
+
+    }
 
     pub enum Any(Bool)
 
